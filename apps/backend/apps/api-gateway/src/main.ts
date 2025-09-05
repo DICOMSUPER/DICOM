@@ -1,8 +1,22 @@
+/**
+ * This is not a production server yet!
+ * This is only a minimal backend to get started.
+ */
+
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ApiGatewayModule } from './api-gateway.module';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(ApiGatewayModule);
-  await app.listen(process.env.port ?? 3000);
+  const logger = new Logger('ApiGateway');
+  const app = await NestFactory.create(AppModule);
+  const globalPrefix = 'api';
+  app.setGlobalPrefix(globalPrefix);
+  const port = process.env.PORT || 5000;
+  await app.listen(port);
+  logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+  );
 }
+
 bootstrap();

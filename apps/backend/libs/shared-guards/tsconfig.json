@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../shared-decorators"
+    },
+    {
+      "path": "../shared-enums"
+    },
+    {
+      "path": "../shared-interfaces"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}
