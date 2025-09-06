@@ -21,25 +21,8 @@ export class AuthGuard implements CanActivate {
     context: ExecutionContext
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const { method, path } = request;
 
     const accessToken = this.extractTokenFromRequest(request);
-
-    // Public route handling
-    if (
-      publicRoutes.some(
-        (route) => route.method === method && route.path === path
-      )
-    ) {
-      logger.log('Public route detected');
-
-      // If token is provided for public route, verify it but don't require it
-      if (accessToken) {
-        return this.verifyToken(accessToken, request);
-      }
-
-      return true;
-    }
 
     // Protected route - token is required
     if (!accessToken) {
