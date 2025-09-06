@@ -22,10 +22,6 @@ export class RoleGuard implements CanActivate {
       | { userId: string; role: string }
       | undefined;
 
-    if (allowedRoles.includes(RoleEnum.GUEST)) {
-      return true;
-    }
-
     // Check if user exists (set by AuthGuard)
     if (!user || !user.role) {
       throw new RpcException({
