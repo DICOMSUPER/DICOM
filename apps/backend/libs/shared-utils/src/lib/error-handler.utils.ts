@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 
-export const handleErrorFromMicroservies = (
+export const handleErrorFromMicroservices = (
   error: unknown,
   message: string,
   location: string

@@ -1,7 +1,7 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { handleErrorFromMicroservies } from '@backend/shared-utils';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
 @Controller()
 export class AppController {
   private readonly logger = new Logger('AuthService');
@@ -19,7 +19,7 @@ export class AppController {
       //verify token & return userId & role and other data
       return { userId: -1, role: 'Test-data' };
     } catch (error) {
-      handleErrorFromMicroservies(
+      handleErrorFromMicroservices(
         error,
         'Failed to verify token',
         'AuthService'
