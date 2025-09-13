@@ -1,16 +1,43 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { WorkspaceLayout } from "@/components/workspace-layout";
+import { SidebarNav } from "@/components/sidebar-nav";
+import { AppHeader } from "@/components/app-header";
+import { useState } from "react";
 
 export default function PatientRegistration() {
+  const [notificationCount] = useState(3);
+  const [currentRole, setCurrentRole] = useState("Reception Staff");
+
+  const handleNotificationClick = () => {
+    console.log("Notifications clicked");
+  };
+
+  const handleLogout = () => {
+    console.log("Logout clicked");
+  };
+
+  const handleRoleChange = (newRole: string) => {
+    setCurrentRole(newRole);
+    console.log("Role changed to:", newRole);
+  };
+
   return (
-    <DashboardLayout
-      title="Patient Registration"
-      subtitle="Register new patients in the DICOM system"
-      userRole="Reception Staff"
-      showBackButton={true}
-      onBackClick={() => window.history.back()}
-    >
+    <div className="min-h-screen bg-background">
+      {/* App Header */}
+      <AppHeader
+        notificationCount={notificationCount}
+        onNotificationClick={handleNotificationClick}
+        onLogout={handleLogout}
+        currentRole={currentRole}
+        onRoleChange={handleRoleChange}
+      />
+
+      {/* Workspace Layout */}
+      <WorkspaceLayout
+        sidebar={<SidebarNav userRole={currentRole} />}
+      >
         <div className="max-w-4xl mx-auto">
           {/* Registration Form */}
           <Card className="border-border mb-8">
@@ -206,6 +233,7 @@ export default function PatientRegistration() {
             </CardContent>
           </Card>
         </div>
-    </DashboardLayout>
+      </WorkspaceLayout>
+    </div>
   );
 }
