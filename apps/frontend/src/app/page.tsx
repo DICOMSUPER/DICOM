@@ -1,5 +1,12 @@
+"use client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
@@ -11,11 +18,18 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">D</span>
+                <span className="text-primary-foreground font-bold text-lg">
+                  D
+                </span>
               </div>
-              <h1 className="text-2xl font-display font-bold text-foreground">DICOM System</h1>
+              <h1 className="text-2xl font-display font-bold text-foreground">
+                DICOM System
+              </h1>
             </div>
-            <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
+            <Badge
+              variant="secondary"
+              className="bg-secondary text-secondary-foreground"
+            >
               AI-Integrated
             </Badge>
           </div>
@@ -31,11 +45,15 @@ export default function Home() {
             <span className="text-primary block">Image Management</span>
           </h2>
           <p className="text-xl text-foreground mb-8 max-w-2xl mx-auto">
-            Streamline medical imaging workflows with AI-powered DICOM processing, 
-            secure storage, and intelligent analysis for healthcare professionals.
+            Streamline medical imaging workflows with AI-powered DICOM
+            processing, secure storage, and intelligent analysis for healthcare
+            professionals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
               Get Started
             </Button>
             <Button variant="outline" size="lg" className="border-border">
@@ -53,7 +71,8 @@ export default function Home() {
               </div>
               <CardTitle className="text-foreground">AI Analysis</CardTitle>
               <CardDescription>
-                Advanced AI algorithms for medical image analysis and diagnosis assistance
+                Advanced AI algorithms for medical image analysis and diagnosis
+                assistance
               </CardDescription>
             </CardHeader>
           </Card>
@@ -65,7 +84,8 @@ export default function Home() {
               </div>
               <CardTitle className="text-foreground">Secure Storage</CardTitle>
               <CardDescription>
-                HIPAA-compliant storage with enterprise-grade security and encryption
+                HIPAA-compliant storage with enterprise-grade security and
+                encryption
               </CardDescription>
             </CardHeader>
           </Card>
@@ -109,13 +129,19 @@ export default function Home() {
         <section className="text-center">
           <Card className="border-border bg-card max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl text-foreground">Ready to Transform Your Medical Imaging?</CardTitle>
+              <CardTitle className="text-2xl text-foreground">
+                Ready to Transform Your Medical Imaging?
+              </CardTitle>
               <CardDescription className="text-lg">
-                Join thousands of healthcare professionals who trust our DICOM system
+                Join thousands of healthcare professionals who trust our DICOM
+                system
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
+              >
                 Start Free Trial
               </Button>
             </CardContent>
@@ -129,14 +155,24 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-4 mb-4 md:mb-0">
               <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">D</span>
+                <span className="text-primary-foreground font-bold text-sm">
+                  D
+                </span>
               </div>
-              <span className="text-foreground">© 2024 DICOM System. All rights reserved.</span>
+              <span className="text-foreground">
+                © 2024 DICOM System. All rights reserved.
+              </span>
             </div>
             <div className="flex space-x-6 text-sm text-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-              <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-              <a href="#" className="hover:text-foreground transition-colors">Support</a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Privacy
+              </a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Terms
+              </a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Support
+              </a>
             </div>
           </div>
         </div>
