@@ -35,7 +35,9 @@
         "libs/shared-guards/*",
         "libs/shared-interfaces/*",
         "libs/shared-enums/*",
-        "libs/shared-decorators/*"
+        "libs/shared-decorators/*",
+        "libs/entities/*",
+        "entities/*"
       ]
     },
     {
@@ -74,7 +76,9 @@
         "libs/shared-guards/*",
         "libs/shared-interfaces/*",
         "libs/shared-enums/*",
-        "libs/shared-decorators/*"
+        "libs/shared-decorators/*",
+        "libs/entities/*",
+        "entities/*"
       ],
       "options": {
         "typecheck": {

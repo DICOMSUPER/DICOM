@@ -2,7 +2,7 @@
  * This is not a production server yet!
  * This is only a minimal backend to get started.
  */
-
+import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
@@ -19,10 +19,10 @@ async function bootstrap() {
       port: port,
     },
   });
-
+  
   await app.listen();
   const logger = new Logger('AuthService');
-  logger.log(`Auth Service is running on port ${port}`);
+  logger.log(`HTTP Auth Service running on: http://localhost:${port}`);;
 }
 
 bootstrap();
