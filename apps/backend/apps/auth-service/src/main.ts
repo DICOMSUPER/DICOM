@@ -22,7 +22,7 @@ async function bootstrap() {
 
   await app.listen();
   const logger = new Logger('AuthService');
-  logger.log(`Auth Service is running on port ${port}`);
+  logger.log(`HTTP Auth Service running on: http://localhost:${port}`);;
 }
 
 bootstrap();
