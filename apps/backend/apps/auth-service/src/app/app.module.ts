@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from '../../../../entities/src/lib/database.module';
-import { BackendEntitiesModule } from '../../../../entities/src/lib/entities.module';
+import { DatabaseModule, BackendEntitiesModule } from '@backend/entities';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
-    BackendEntitiesModule,
+    DatabaseModule,          
+    BackendEntitiesModule,   
   ],
   controllers: [AppController],
   providers: [AppService],
