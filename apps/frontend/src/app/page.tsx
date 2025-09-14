@@ -30,7 +30,7 @@ export default function Home() {
             Advanced DICOM
             <span className="text-primary block">Image Management</span>
           </h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-foreground mb-8 max-w-2xl mx-auto">
             Streamline medical imaging workflows with AI-powered DICOM processing, 
             secure storage, and intelligent analysis for healthcare professionals.
           </p>
@@ -88,19 +88,19 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-primary mb-2">10K+</div>
-              <div className="text-muted-foreground">Images Processed</div>
+              <div className="text-foreground">Images Processed</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-secondary mb-2">500+</div>
-              <div className="text-muted-foreground">Hospitals</div>
+              <div className="text-foreground">Hospitals</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-accent mb-2">99.9%</div>
-              <div className="text-muted-foreground">Uptime</div>
+              <div className="text-foreground">Uptime</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-primary mb-2">24/7</div>
-              <div className="text-muted-foreground">Support</div>
+              <div className="text-foreground">Support</div>
             </div>
           </div>
         </section>
@@ -131,9 +131,9 @@ export default function Home() {
               <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">D</span>
               </div>
-              <span className="text-muted-foreground">© 2024 DICOM System. All rights reserved.</span>
+              <span className="text-foreground">© 2024 DICOM System. All rights reserved.</span>
             </div>
-            <div className="flex space-x-6 text-sm text-muted-foreground">
+            <div className="flex space-x-6 text-sm text-foreground">
               <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
               <a href="#" className="hover:text-foreground transition-colors">Terms</a>
               <a href="#" className="hover:text-foreground transition-colors">Support</a>

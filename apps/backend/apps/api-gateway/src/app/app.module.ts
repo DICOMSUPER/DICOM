@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
+import { AuthModule } from './modules/auth/auth.module'; 
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -22,6 +23,7 @@ dotenv.config();
         Number(process.env.USER_SERVICE_PORT || 5002)
       ),
     ]),
+    AuthModule, 
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,6 +18,19 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["development"]
+    "customConditions": ["development"],
+    "baseUrl": ".",
+    "paths": {
+      "@backend/entities": ["backend/libs/entities/src/index.ts"],
+      "@backend/shared-decorators": [
+        "backend/libs/shared-decorators/src/index.ts"
+      ],
+      "@backend/shared-enums": ["backend/libs/shared-enums/src/index.ts"],
+      "@backend/shared-guards": ["backend/libs/shared-guards/src/index.ts"],
+      "@backend/shared-interfaces": [
+        "backend/libs/shared-interfaces/src/index.ts"
+      ],
+      "@backend/shared-utils": ["backend/libs/shared-utils/src/index.ts"]
+    }
   }
 }
