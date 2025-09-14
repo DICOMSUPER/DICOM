@@ -22,6 +22,7 @@
     "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dicomweb-client": "^0.11.2",
     "fs": "^0.0.1-security",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
