@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 export default function PatientSearch() {
+  const router = useRouter();
   return (
     <DashboardLayout
       title="Patient Management"
@@ -13,7 +15,10 @@ export default function PatientSearch() {
       showBackButton={true}
       onBackClick={() => window.history.back()}
       headerActions={
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button 
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          onClick={() => router.push('/reception/register')}
+        >
           <UserPlus className="w-4 h-4 mr-2" />
           Add Patient
         </Button>
@@ -258,7 +263,12 @@ export default function PatientSearch() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full border-border">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full border-border"
+                  onClick={() => router.push('/reception/register')}
+                >
                   Register New Patient
                 </Button>
                 <Button variant="outline" size="sm" className="w-full border-border">
