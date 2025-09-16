@@ -123,7 +123,7 @@ export default function UploadedStudies({ studies }: { studies?: any[] }) {
         <div className="space-y-2 cursor-pointer">
           {selectedSeries.instances.map((instance: any) => (
             <Link
-              href={`/viewer?StudyInstanceUIDs=${instance.sop_instance_uid}`}
+              href={`/viewer2?StudyInstanceUIDs=${instance.sop_instance_uid}`}
               key={instance.instance_id}
             >
               <div className="flex items-center p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">

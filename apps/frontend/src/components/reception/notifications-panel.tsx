@@ -95,7 +95,7 @@ export function NotificationsPanel() {
                   {styles.icon}
                   <div>
                     <div className="font-medium text-foreground">{notification.title}</div>
-                    <div className="text-sm text-muted-foreground">{notification.description}</div>
+                    <div className="text-sm text-foreground">{notification.description}</div>
                   </div>
                 </div>
                 <Button 

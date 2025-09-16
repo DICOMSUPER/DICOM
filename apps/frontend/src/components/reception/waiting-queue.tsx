@@ -82,7 +82,7 @@ export function WaitingQueue() {
                 </div>
                 <div>
                   <div className="font-medium text-foreground">{patient.name}</div>
-                  <div className="text-sm text-muted-foreground">MRN: {patient.mrn} | {patient.waitTime}</div>
+                  <div className="text-sm text-foreground">MRN: {patient.mrn} | {patient.waitTime}</div>
                 </div>
               </div>
               <div className="flex space-x-2">

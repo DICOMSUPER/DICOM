@@ -21,7 +21,7 @@ export default function ViewerSideBar({
     return (
       <Link
         key={instance?.sop_instance_uid}
-        href={`/viewer?StudyInstanceUIDs=${instance?.sop_instance_uid}`}
+        href={`/viewer2?StudyInstanceUIDs=${instance?.sop_instance_uid}`}
       >
         <div className="flex flex-col justify-center items-center my-2 group relative px-2 py-1 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:border-slate-500 transition-all duration-200 hover:bg-slate-700/80 cursor-pointer overflow-hidden">
           <DicomThumbnail
