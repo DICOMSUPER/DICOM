@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import SmallBreadCrumb from "@/components/common/SmallBreadCrumb";
 import { Folder, File } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function UploadedStudies({ studies }: { studies?: any[] }) {
   // Navigation state
@@ -120,20 +122,25 @@ export default function UploadedStudies({ studies }: { studies?: any[] }) {
       return (
         <div className="space-y-2 cursor-pointer">
           {selectedSeries.instances.map((instance: any) => (
-            <div
+            <Link
+              href={`/viewer2?StudyInstanceUIDs=${instance.sop_instance_uid}`}
               key={instance.instance_id}
-              className="flex items-center p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]"
             >
-              <div className="text-[var(--neutral)]">
-                <File className="w-5 h-5 text-blue-500" />
+              <div className="flex items-center p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+                <div className="text-[var(--neutral)]">
+                  <File className="w-5 h-5 text-blue-500" />
+                </div>
+                <span className="ml-2 text-[var(--foreground)]">
+                  {instance.file_name || `Instance ${instance.instance_id}`}
+                </span>
+                <span className="ml-auto text-sm text-[var(--neutral)]">
+                  {instance.rows}x{instance.columns}
+                </span>
+                <Button className="ml-5" variant={"destructive"}>
+                  Recapture Required
+                </Button>
               </div>
-              <span className="ml-2 text-[var(--foreground)]">
-                {instance.file_name || `Instance ${instance.instance_id}`}
-              </span>
-              <span className="ml-auto text-sm text-[var(--neutral)]">
-                {instance.rows}x{instance.columns}
-              </span>
-            </div>
+            </Link>
           ))}
         </div>
       );

@@ -109,7 +109,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
         {order && <UploadedStudies studies={studies} />}
       </div>
       <div className="py-1">
-        {order && (
+        {order && order.order_status === "in_progress" ? (
           <FileUpload
             order={order}
             isImporting={isImporting}
@@ -120,6 +120,16 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             files={files}
             setFiles={setFiles}
           />
+        ) : (
+          <>
+            {order && (
+              <div className="px-5 py-20 mx-auto flex justify-center items-center bg-[var(--background)] rounded-lg shadow-lg p-6 border border-[var(--border)]">
+                <span className="text-gray-400 italic text-s font-semibold">
+                  This order has been {order.order_status}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
