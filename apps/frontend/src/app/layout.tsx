@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Raleway } from "next/font/google";
 import "./globals.css";
-
+import { Providers } from '../components/providers';
 const raleway = Raleway({
   variable: "--font-raleway",
   subsets: ["latin"],
@@ -21,7 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${raleway.variable} antialiased`}>{children}</body>
+      <body className={`${raleway.variable} antialiased`}>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
