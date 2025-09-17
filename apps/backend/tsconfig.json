@@ -38,6 +38,27 @@
     },
     {
       "path": "./entities"
+    },
+    {
+      "path": "./apps/patient-service-e2e"
+    },
+    {
+      "path": "./apps/patient-service"
+    },
+    {
+      "path": "./apps/imaging-service-e2e"
+    },
+    {
+      "path": "./apps/imaging-service"
+    },
+    {
+      "path": "./apps/system-service-e2e"
+    },
+    {
+      "path": "./apps/system-service"
+    },
+    {
+      "path": "./libs/database"
     }
   ]
 }
