@@ -1,2 +1,10 @@
 export * from './lib/shared-enums.module';
-export { RoleEnum } from './lib/role.enum';
+export * from './lib/roles.enum';
+export * from './lib/gender.enum';
+export * from './lib/patient.enum';
+export * from './lib/imaging.enum';
+export * from './lib/system.enum';
+export * from './lib/schedule.enum';
+export * from './lib/room.enum';
+export * from './lib/imaging-order.enum';
+export * from './lib/prescription.enum'
