@@ -1,11 +1,25 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
-import { OrderType, OrderPriority, OrderStatus, Urgency } from '@backend/shared-enums';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
+} from 'typeorm';
+import {
+  OrderType,
+  OrderPriority,
+  OrderStatus,
+  Urgency,
+} from '@backend/shared-enums';
 import { ImagingModality } from '../../imaging-modalities/entities/imaging-modality.entity';
-
 
 @Entity('imaging_orders')
 @Index(['patientId'])
-
 export class ImagingOrder {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   id!: string;
@@ -16,8 +30,8 @@ export class ImagingOrder {
   @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
 
-//   @Column({ name: 'visit_id', type: 'uuid', nullable: true })
-//   visitId?: string;
+  //   @Column({ name: 'visit_id', type: 'uuid', nullable: true })
+  //   visitId?: string;
 
   @Column({ name: 'ordering_physician_id', type: 'uuid' })
   orderingPhysicianId!: string;
@@ -25,27 +39,37 @@ export class ImagingOrder {
   @Column({ name: 'modality_id', type: 'uuid' })
   modalityId!: string;
 
-  @OneToMany(() => ImagingModality, modality => modality.id)
-  modality!: ImagingModality[];
+  @ManyToMany(() => ImagingModality)
+  @JoinColumn({ name: 'modality_id' })
+  modality!: ImagingModality;
 
   @Column({ name: 'body_part', length: 100 })
   bodyPart!: string;
 
-//   @Column({ name: 'procedure_code', length: 20, nullable: true })
-//   procedureCode?: string;
+  //   @Column({ name: 'procedure_code', length: 20, nullable: true })
+  //   procedureCode?: string;
 
-//   @Column({ name: 'procedure_description', type: 'text' })
-//   procedureDescription!: string;
+  //   @Column({ name: 'procedure_description', type: 'text' })
+  //   procedureDescription!: string;
 
   @Column({ name: 'order_type', type: 'enum', enum: OrderType })
   orderType!: OrderType;
 
-  @Column({ name: 'urgency', type: 'enum', enum: Urgency, default: Urgency.ROUTINE })
+  @Column({
+    name: 'urgency',
+    type: 'enum',
+    enum: Urgency,
+    default: Urgency.ROUTINE,
+  })
   urgency!: Urgency;
 
-  @Column({ name: 'order_status', type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING })
+  @Column({
+    name: 'order_status',
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
   orderStatus!: OrderStatus;
-
 
   @Column({ name: 'completed_date', type: 'timestamp', nullable: true })
   completedDate?: Date;
@@ -62,11 +86,11 @@ export class ImagingOrder {
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
   roomId!: string;
 
-//   @Column({ name: 'technologist_id', type: 'uuid', nullable: true })
-//   technologistId?: string;
+  //   @Column({ name: 'technologist_id', type: 'uuid', nullable: true })
+  //   technologistId?: string;
 
-//   @Column({ name: 'radiologist_id', type: 'uuid', nullable: true })
-//   radiologistId?: string;
+  //   @Column({ name: 'radiologist_id', type: 'uuid', nullable: true })
+  //   radiologistId?: string;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
