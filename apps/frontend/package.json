@@ -15,7 +15,6 @@
     "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
     "@cornerstonejs/tools": "^4.2.3",
     "@hookform/resolvers": "^5.2.1",
-    "@ohif/ui": "^3.11.0",
     "@ohif/ui-next": "^3.11.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

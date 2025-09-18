@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 import { AnalysisStatus } from '@backend/shared-enums';
+
 @Entity('ai_analyses')
 export class AiAnalysis {
   @PrimaryGeneratedColumn('uuid', { name: 'analysis_id' })
