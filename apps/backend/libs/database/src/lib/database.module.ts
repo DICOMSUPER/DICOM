@@ -26,7 +26,7 @@ export class DatabaseModule {
             username: configService.get(`${prefixUpper}_DB_USERNAME`, 'postgres'),
             password: configService.get(`${prefixUpper}_DB_PASSWORD`, 'postgres'),
             database: configService.get(`${prefixUpper}_DB_NAME`, defaultDbName || `${prefix.toLowerCase()}_service`),
-            entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+            // entities: [__dirname + '/../**/*.entity{.ts,.js}'],  
             synchronize: configService.get<boolean>(`${prefixUpper}_DB_SYNC`, false),
             logging: configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false),
             autoLoadEntities: true,
