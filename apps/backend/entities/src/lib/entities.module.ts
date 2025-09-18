@@ -1,11 +1,13 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user.entity';
 
-@Module({
-  imports: [TypeOrmModule.forFeature([User])],
-  controllers: [],
-  providers: [],
-  exports: [TypeOrmModule],
-})
-export class BackendEntitiesModule {}
+@Module({})
+export class BackendEntitiesModule {
+  static forFeature(entities: any[]): DynamicModule {
+    return {
+      module: BackendEntitiesModule,
+      imports: [TypeOrmModule.forFeature(entities)],
+      exports: [TypeOrmModule],
+    };
+  }
+}

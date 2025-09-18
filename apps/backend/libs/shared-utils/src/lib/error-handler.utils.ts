@@ -19,21 +19,77 @@ export const handleErrorFromMicroservices = (
   }
 };
 
-export const handleError = (error: unknown) => {
+type ParsedError = {
+  code?: number;
+  message?: string;
+  location?: string;
+};
+
+const isParsedError = (e: unknown): e is ParsedError => {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    ('code' in (e as Record<string, unknown>) ||
+      'message' in (e as Record<string, unknown>) ||
+      'location' in (e as Record<string, unknown>))
+  );
+};
+
+export const handleError = (error: unknown): HttpException => {
   const logger = new Logger('SharedUtils - ErrorHandler');
-  if (error instanceof HttpException) {
-    throw error;
-  }
-  if (error instanceof RpcException) {
-    throw new HttpException(
-      error?.message || 'Internal Server Error',
-      (error as any)?.code || HttpStatus.INTERNAL_SERVER_ERROR
+
+  if (isParsedError(error)) {
+    return new HttpException(
+      {
+        message: error.message || 'Internal Server Error',
+        location: error.location || 'Unknown',
+      },
+      error.code || HttpStatus.INTERNAL_SERVER_ERROR
     );
+  }
+  if (error instanceof HttpException) {
+    return error;
+  }
+
+  if (error instanceof RpcException) {
+    // Extract the error details from RpcException
+    const errorData = error.getError();
+
+    let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal Server Error';
+    let location = 'Unknown';
+
+    if (typeof errorData === 'object' && errorData !== null) {
+      const errObj = errorData as Partial<ParsedError> &
+        Record<string, unknown>;
+      statusCode =
+        (typeof errObj.code === 'number' ? errObj.code : undefined) ??
+        statusCode;
+      message =
+        (typeof errObj.message === 'string' ? errObj.message : undefined) ??
+        message;
+      location =
+        (typeof errObj.location === 'string' ? errObj.location : undefined) ??
+        location;
+    }
+
+    return new HttpException({ message, location }, statusCode);
   } else {
-    logger.error('Unhandled error has occured:', error);
-    throw new HttpException(
-      'Internal Server Error',
+    logger.error('Unhandled error has occurred:', error);
+    return new HttpException(
+      {
+        message: 'Internal Server Error',
+        location: 'Unknown',
+      },
       HttpStatus.INTERNAL_SERVER_ERROR
     );
   }
+};
+
+export const ThrowMicroserviceException = (
+  code: number,
+  message: string,
+  location: string
+) => {
+  throw new RpcException({ code, message, location });
 };

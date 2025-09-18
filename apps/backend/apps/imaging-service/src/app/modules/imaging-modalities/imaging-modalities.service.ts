@@ -1,26 +1,81 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateImagingModalityDto } from './dto/create-imaging-modality.dto';
 import { UpdateImagingModalityDto } from './dto/update-imaging-modality.dto';
+import { ImagingModalityRepository } from './imaging-modalities.repository';
+import { RepositoryPaginationDto } from '@backend/database';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
 
 @Injectable()
 export class ImagingModalitiesService {
-  create(createImagingModalityDto: CreateImagingModalityDto) {
-    return 'This action adds a new imagingModality';
-  }
+  constructor(
+    @Inject()
+    private readonly imagingModalityRepository: ImagingModalityRepository
+  ) {}
+  create = async (createImagingModalityDto: CreateImagingModalityDto) => {
+    return await this.imagingModalityRepository.create(
+      createImagingModalityDto
+    );
+  };
 
-  findAll() {
-    return `This action returns all imagingModalities`;
-  }
+  findAll = async () => {
+    return await this.imagingModalityRepository.findAll();
+  };
 
-  findOne(id: number) {
-    return `This action returns a #${id} imagingModality`;
-  }
+  findOne = async (id: string) => {
+    const modality = await this.imagingModalityRepository.findOne({
+      where: { id },
+    });
 
-  update(id: number, updateImagingModalityDto: UpdateImagingModalityDto) {
-    return `This action updates a #${id} imagingModality`;
-  }
+    if (!modality) {
+      ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Modality not found',
+        'ImagingService'
+      );
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} imagingModality`;
-  }
+    return modality;
+  };
+
+  update = async (
+    id: string,
+    updateImagingModalityDto: UpdateImagingModalityDto
+  ) => {
+    const modality = await this.imagingModalityRepository.findOne({
+      where: { id },
+    });
+
+    if (!modality) {
+      ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Modality not found',
+        'ImagingService'
+      );
+    }
+
+    return await this.imagingModalityRepository.update(
+      id,
+      updateImagingModalityDto
+    );
+  };
+
+  remove = async (id: string) => {
+    const modality = await this.imagingModalityRepository.findOne({
+      where: { id },
+    });
+
+    if (!modality) {
+      ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Modality not found',
+        'ImagingService'
+      );
+    }
+
+    return await this.imagingModalityRepository.softDelete(id, 'isDeleted');
+  };
+
+  findMany = async (paginationDto: RepositoryPaginationDto) => {
+    return await this.imagingModalityRepository.paginate(paginationDto);
+  };
 }

@@ -3,7 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
-import { AuthModule } from './modules/auth/auth.module'; 
+import { AuthModule } from './modules/auth/auth.module';
+import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -22,8 +23,15 @@ dotenv.config();
         process.env.USER_SERVICE_HOST || 'localhost',
         Number(process.env.USER_SERVICE_PORT || 5002)
       ),
+      getClient(
+        process.env.IMAGE_SERVICE_NAME || 'ImageService',
+        Number(process.env.IMAGE_SERVICE_TRANSPORT || Transport.TCP),
+        process.env.IMAGE_SERVICE_HOST || 'localhost',
+        Number(process.env.IMAGE_SERVICE_PORT || 5003)
+      ),
     ]),
-    AuthModule, 
+    AuthModule,
+    ImagingServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

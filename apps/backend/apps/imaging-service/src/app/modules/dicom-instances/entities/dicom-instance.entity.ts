@@ -1,5 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { DicomSeries } from '../../dicom-series/entities/dicom-sery.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { DicomSeries } from '../../dicom-series/entities/dicom-series.entity';
 
 @Entity('dicom_instances')
 @Index('idx_series_id', ['seriesId'])
@@ -33,7 +41,13 @@ export class DicomInstance {
   @Column({ name: 'pixel_spacing', type: 'json', nullable: true })
   pixelSpacing?: object;
 
-  @Column({ name: 'slice_thickness', type: 'decimal', precision: 8, scale: 4, nullable: true })
+  @Column({
+    name: 'slice_thickness',
+    type: 'decimal',
+    precision: 8,
+    scale: 4,
+    nullable: true,
+  })
   sliceThickness?: number;
 
   @Column({ name: 'window_center', type: 'int', nullable: true })
@@ -54,7 +68,7 @@ export class DicomInstance {
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @ManyToOne(() => DicomSeries, series => series.instances)
+  @ManyToOne(() => DicomSeries, (series) => series.instances)
   @JoinColumn({ name: 'series_id' })
   series!: DicomSeries;
 }
