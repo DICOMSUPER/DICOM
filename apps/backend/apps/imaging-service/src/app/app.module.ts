@@ -9,6 +9,7 @@ import { ImageAnnotationsModule } from './modules/image-annotations/image-annota
 import { ImagingModalitiesModule } from './modules/imaging-modalities/imaging-modalities.module';
 import { ImagingOrdersModule } from './modules/imaging-orders/imaging-orders.module';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm/dist';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +22,7 @@ import { ConfigModule } from '@nestjs/config';
       prefix: 'IMAGING',
       defaultDbName: 'dicom_imaging_service',
     }),
+    TypeOrmModule,
     DicomStudiesModule,
     ImageAnnotationsModule,
     ImagingModalitiesModule,
