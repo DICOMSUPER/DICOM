@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, Index } from 'typeorm';
-import { Prescription } from '../../prescriptions/entities/prescription.entity';
+import { Prescription } from './prescription.entity';
 
 @Entity('prescription_items')
 @Index(['prescriptionId'])

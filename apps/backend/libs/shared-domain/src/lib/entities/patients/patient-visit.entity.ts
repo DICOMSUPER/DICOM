@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Patient } from '../../patients/entities/patient.entity';
 import { VisitType } from '@backend/shared-enums';
+import { Patient } from './patient.entity';
 
 
 @Entity('patient_visits')

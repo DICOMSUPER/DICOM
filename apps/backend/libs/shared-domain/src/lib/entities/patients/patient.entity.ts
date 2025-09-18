@@ -1,7 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, JoinColumn, Index } from 'typeorm';
-import { PatientVisit } from '../../patient-visits/entities/patient-visit.entity';
-import { MedicalHistory } from '../../medical-history/entities/medical-history.entity';
+
 import { Gender } from '@backend/shared-enums';
+import { PatientVisit } from './patient-visit.entity';
+import { MedicalHistory } from './medical-history.entity';
 
 @Entity('patients')
 @Index('idx_patient_code', ['patientCode'])

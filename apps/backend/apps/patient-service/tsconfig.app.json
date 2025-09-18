@@ -9,7 +9,16 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/diagnoses-report.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/medical-history.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/patient-visit.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/patient.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/prescription-item.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/prescription.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/queue-assignment.entity.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",
@@ -22,7 +31,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared-enums/tsconfig.lib.json"
+      "path": "../../libs/shared-domain/tsconfig.lib.json"
     },
     {
       "path": "../../libs/database/tsconfig.lib.json"

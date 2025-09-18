@@ -9,14 +9,13 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { PatientVisit } from '../../patient-visits/entities/patient-visit.entity';
-import { PrescriptionItem } from '../../prescription-items/entities/prescription-item.entity';
-import { DiagnosesReport } from '../../diagnoses-report/entities/diagnoses-report.entity';
+import { PatientVisit } from './patient-visit.entity';
+import { DiagnosesReport } from './diagnoses-report.entity';
+import { PrescriptionItem } from './prescription-item.entity';
+
 
 @Entity('prescriptions')
 @Index(['visitId'])
-@Index(['prescriptionDate'])
-@Index(['prescribedBy'])
 export class Prescription {
   @PrimaryGeneratedColumn('uuid', { name: 'prescription_id' })
   id!: string;

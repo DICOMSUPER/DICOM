@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
 } from 'typeorm';
 
 import {
@@ -12,12 +13,18 @@ import {
   DiagnosisStatus,
   Severity,
 } from '@backend/shared-enums';
+import { PatientVisit } from './patient-visit.entity';
 
 @Entity('diagnoses_report')
 @Index(['visitId'])
 export class DiagnosesReport {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
+  @Column({ name: 'visit_id', type: 'uuid' })
+  visitId!: string;
+
+  @ManyToOne(() => PatientVisit)
+  visit!: PatientVisit;
 
   @Column({ name: 'study_id', type: 'uuid' })
   studyId!: string;

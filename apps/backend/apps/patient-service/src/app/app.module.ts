@@ -11,20 +11,22 @@ import { PrescriptionItemsModule } from './modules/prescription-items/prescripti
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
+    DatabaseModule.forService({
+      prefix: 'PATIENT',
+      defaultDbName: 'dicom_patient_service'
+
+    }),
     PatientsModule,
     PatientVisitsModule,
     QueueAssignmentsModule,
     MedicalHistoryModule,
-    DatabaseModule.forService({
-      prefix: 'PATIENT',
-      defaultDbName: 'dicom_patient_service',
-    }),
     DiagnosesReportModule,
     PrescriptionsModule,
     PrescriptionItemsModule,

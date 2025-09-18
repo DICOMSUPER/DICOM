@@ -9,10 +9,10 @@ import {
   Index,
 } from 'typeorm';
 import { QueueStatus, Priority } from '@backend/shared-enums';
-import { PatientVisit } from '../../patient-visits/entities/patient-visit.entity';
+import { PatientVisit } from './patient-visit.entity';
 
 @Entity('queue_assignments')
-@Index(['patientId'])
+
 @Index(['queueNumber'])
 export class QueueAssignment {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })

@@ -59,6 +59,9 @@
     },
     {
       "path": "./libs/database"
+    },
+    {
+      "path": "./libs/shared-domain"
     }
   ]
 }
