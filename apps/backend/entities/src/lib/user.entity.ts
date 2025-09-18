@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id!: number;   
+  id!: number;
 
   @Column()
   name!: string;
@@ -13,6 +13,9 @@ export class User {
 
   @Column()
   password!: string;
+
+  @Column({ nullable: true })
+  description?: string;
 
   @CreateDateColumn()
   createdAt!: Date;
