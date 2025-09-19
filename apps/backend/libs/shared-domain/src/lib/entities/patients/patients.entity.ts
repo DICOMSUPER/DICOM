@@ -1,12 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
 
 import { Gender } from '@backend/shared-enums';
-import { PatientVisit } from './patient-visit.entity';
-import { MedicalHistory } from './medical-history.entity';
+import { BloodType } from '@backend/shared-enums';
+import { PatientEncounter } from './patient-encounters.entity';
+import { PatientCondition } from './patient-conditions';
 
 @Entity('patients')
 @Index('idx_patient_code', ['patientCode'])
 @Index('idx_patient_name', ['lastName', 'firstName'])
+@Index('idx_patient_dob', ['dateOfBirth'])
 export class Patient {
   @PrimaryGeneratedColumn('uuid', { name: 'patient_id' })
   id!: string;
@@ -26,17 +28,14 @@ export class Patient {
   @Column({ type: 'enum', enum: Gender })
   gender!: Gender;
 
-  @Column({ length: 20, nullable: true })
-  phone?: string;
+  @Column({ name: 'phone_number', length: 20, nullable: true })
+  phoneNumber?: string;
 
   @Column({ type: 'text', nullable: true })
   address?: string;
 
-  @Column({ name: 'blood_type', length: 5, nullable: true })
-  bloodType?: string;
-
-  @Column({ name: 'medical_history_id', nullable: true })
-  medicalHistoryId?: string;
+  @Column({ name: 'blood_type', type: 'enum', enum: BloodType, nullable: true })
+  bloodType?: BloodType;
 
   @Column({ name: 'insurance_number', length: 50, nullable: true })
   insuranceNumber?: string;
@@ -57,10 +56,9 @@ export class Patient {
   isDeleted?: boolean;
 
   // Relations
-  @OneToMany(() => PatientVisit, visit => visit.patient)
-  visits!: PatientVisit[];
+  @OneToMany(() => PatientCondition, condition => condition.patient)
+  conditions!: PatientCondition[];
 
-  @OneToOne(() => MedicalHistory)
-  @JoinColumn({ name: 'medical_history_id' })
-  medicalHistory?: MedicalHistory;
+  @OneToMany(() => PatientEncounter, encounter => encounter.patient)
+  encounters!: PatientEncounter[];
 }

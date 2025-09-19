@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString, IsDate } from 'class-validator';
-import { ClinicalStatus, VerificationStatus } from '../entities/patient-condition.entity';
+import { ClinicalStatus, ConditionVerificationStatus } from '../entities/patient-condition.entity';
 
 export class CreateConditionDto {
   @IsString()
@@ -20,9 +20,9 @@ export class CreateConditionDto {
   @IsOptional()
   clinicalStatus?: ClinicalStatus;
 
-  @IsEnum(VerificationStatus)
+  @IsEnum(ConditionVerificationStatus)
   @IsOptional()
-  verificationStatus?: VerificationStatus;
+  verificationStatus?: ConditionVerificationStatus;
 
   @IsDate()
   @IsOptional()
@@ -70,9 +70,9 @@ export class UpdateConditionDto {
   @IsOptional()
   clinicalStatus?: ClinicalStatus;
 
-  @IsEnum(VerificationStatus)
+  @IsEnum(ConditionVerificationStatus)
   @IsOptional()
-  verificationStatus?: VerificationStatus;
+  verificationStatus?: ConditionVerificationStatus;
 
   @IsDate()
   @IsOptional()

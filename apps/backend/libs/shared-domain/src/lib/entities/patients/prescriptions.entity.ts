@@ -9,23 +9,26 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { PatientVisit } from './patient-visit.entity';
-import { DiagnosesReport } from './diagnoses-report.entity';
-import { PrescriptionItem } from './prescription-item.entity';
+import { PatientEncounter } from './patient-encounters.entity';
+import { DiagnosesReport } from './diagnoses-reports.entity';
+import { PrescriptionItem } from './prescription-items.entity';
 
 
 @Entity('prescriptions')
-@Index(['visitId'])
+@Index(['encounterId'])
+@Index(['report_id'])
+@Index(['physicianId'])
+@Index(['prescriptionDate'])
 export class Prescription {
   @PrimaryGeneratedColumn('uuid', { name: 'prescription_id' })
   id!: string;
 
-  @Column({ name: 'visit_id', type: 'uuid' })
-  visitId!: string;
+  @Column({ name: 'encounter_id', type: 'uuid' })
+  encounterId!: string;
 
-  @ManyToOne(() => PatientVisit)
-  @JoinColumn({ name: 'visit_id' })
-  visit!: PatientVisit;
+  @ManyToOne(() => PatientEncounter)
+  @JoinColumn({ name: 'encounter_id' })
+  encounter!: PatientEncounter;
   //   diagnosis report
   @Column({ name: 'report_id', type: 'text', nullable: true })
   report_id?: string;

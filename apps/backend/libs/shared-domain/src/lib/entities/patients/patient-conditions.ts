@@ -1,34 +1,24 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { BaseEntity } from './base.entity';
-import { Patient } from './patient.entity';
-
-export enum ClinicalStatus {
-  active = 'active',
-  recurrence = 'recurrence',
-  relapse = 'relapse',
-  inactive = 'inactive',
-  remission = 'remission',
-  resolved = 'resolved'
-}
-
-export enum ConditionVerificationStatus {
-  unconfirmed = 'unconfirmed',
-  provisional = 'provisional',
-  differential = 'differential',
-  confirmed = 'confirmed',
-  refuted = 'refuted',
-  entered_in_error = 'entered-in-error'
-}
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
+import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
+import { Patient } from './patients.entity';
 
 @Entity('patient_conditions')
-export class PatientCondition extends BaseEntity {
-  @Column({ name: 'condition_id', primary: true })
-  conditionId!: string;
+export class PatientCondition {
+  @PrimaryGeneratedColumn({ name: 'condition_id' })
+  id!: string;
 
   @Index()
   @Column({ name: 'patient_id' })
   patientId!: string;
 
+  @Index()
   @Column({ name: 'code', length: 50 })
   code!: string;
 
@@ -38,9 +28,11 @@ export class PatientCondition extends BaseEntity {
   @Column({ name: 'code_display', length: 255, nullable: true })
   codeDisplay?: string;
 
+  @Index()
   @Column({ name: 'clinical_status', type: 'enum', enum: ClinicalStatus, nullable: true })
   clinicalStatus?: ClinicalStatus;
 
+  @Index()
   @Column({ name: 'verification_status', type: 'enum', enum: ConditionVerificationStatus, nullable: true })
   verificationStatus?: ConditionVerificationStatus;
 
@@ -56,6 +48,7 @@ export class PatientCondition extends BaseEntity {
   @Column({ name: 'body_site', length: 100, nullable: true })
   bodySite?: string;
 
+  @Index()
   @Column({ name: 'recorded_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   recordedDate!: Date;
   
@@ -66,5 +59,3 @@ export class PatientCondition extends BaseEntity {
   @JoinColumn({ name: 'patient_id' })
   patient?: Patient;
 }
-
-

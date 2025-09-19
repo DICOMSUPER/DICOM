@@ -1,21 +1,24 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { VisitType } from '@backend/shared-enums';
-import { Patient } from './patient.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { EncounterType } from '@backend/shared-enums';
+import { Patient } from './patients.entity';
 
 
-@Entity('patient_visits')
-export class PatientVisit {
-  @PrimaryGeneratedColumn('uuid', { name: 'visit_id' })
+@Entity('patient_encounters')
+export class PatientEncounter {
+  @PrimaryGeneratedColumn('uuid', { name: 'encounter_id' })
   id!: string;
 
+  @Index()
   @Column({ name: 'patient_id' })
   patientId!: string;
 
-  @Column({ name: 'visit_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  visitDate!: Date;
+  @Index()
+  @Column({ name: 'encounter_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  encounterDate!: Date;
 
-  @Column({ name: 'visit_type', type: 'enum', enum: VisitType })
-  visitType!: VisitType;
+  @Index()
+  @Column({ name: 'encounter_type', type: 'enum', enum: EncounterType })
+  encounterType!: EncounterType;
 
   @Column({ name: 'chief_complaint', type: 'text', nullable: true })
   chiefComplaint?: string;
@@ -26,6 +29,7 @@ export class PatientVisit {
   @Column({ name: 'vital_signs', type: 'json', nullable: true })
   vitalSigns?: object;
 
+  @Index()
   @Column({ name: 'assigned_physician_id', nullable: true })
   assignedPhysicianId?: string;
 
@@ -38,14 +42,11 @@ export class PatientVisit {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
-  @Column({ name: 'created_by' })
-  createdBy!: string;
-
   @Column({ name: 'is_deleted', nullable: true })
   isDeleted?: boolean;
 
   // Relations
-  @ManyToOne(() => Patient, patient => patient.visits)
+  @ManyToOne(() => Patient, patient => patient.encounters)
   @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 }

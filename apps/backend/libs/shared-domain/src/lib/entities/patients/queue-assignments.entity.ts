@@ -8,12 +8,17 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { QueueStatus, Priority } from '@backend/shared-enums';
-import { PatientVisit } from './patient-visit.entity';
+import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+import { PatientEncounter } from './patient-encounters.entity';
 
 @Entity('queue_assignments')
-
 @Index(['queueNumber'])
+@Index(['visitId'])
+@Index(['status'])
+@Index(['priority'])
+@Index(['roomId'])
+@Index(['assignmentDate'])
+@Index(['assignmentExpiresDate'])
 export class QueueAssignment {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })
   id!: string;
@@ -21,9 +26,9 @@ export class QueueAssignment {
   @Column({ name: 'visit_id', type: 'uuid' })
   visitId!: string;
 
-  @ManyToOne(() => PatientVisit)
+  @ManyToOne(() => PatientEncounter)
   @JoinColumn({ name: 'visit_id' })
-  visit!: PatientVisit;
+  visit!: PatientEncounter;
 
   @Column({ name: 'queue_number', type: 'int' })
   queueNumber!: number;
@@ -37,8 +42,8 @@ export class QueueAssignment {
   @Column({ type: 'enum', enum: QueueStatus, default: QueueStatus.WAITING })
   status!: QueueStatus;
 
-  @Column({ type: 'enum', enum: Priority, default: Priority.NORMAL })
-  priority!: Priority;
+  @Column({ type: 'enum', enum: QueuePriorityLevel, default: QueuePriorityLevel.ROUTINE })
+  priority!: QueuePriorityLevel;
 
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
   roomId!: string;

@@ -13,18 +13,22 @@ import {
   DiagnosisStatus,
   Severity,
 } from '@backend/shared-enums';
-import { PatientVisit } from './patient-visit.entity';
+import { PatientEncounter } from './patient-encounters.entity';
 
-@Entity('diagnoses_report')
-@Index(['visitId'])
+@Entity('diagnoses_reports')
+@Index(['encounterId'])
+@Index(['studyId'])
+@Index(['diagnosisDate'])
+@Index(['diagnosisStatus'])
+@Index(['diagnosedBy'])
 export class DiagnosesReport {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
-  @Column({ name: 'visit_id', type: 'uuid' })
-  visitId!: string;
+  @Column({ name: 'encounter_id', type: 'uuid' })
+  encounterId!: string;
 
-  @ManyToOne(() => PatientVisit)
-  visit!: PatientVisit;
+  @ManyToOne(() => PatientEncounter)
+  encounter!: PatientEncounter;
 
   @Column({ name: 'study_id', type: 'uuid' })
   studyId!: string;

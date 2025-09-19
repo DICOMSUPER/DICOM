@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { DiagnosesReportService } from './diagnoses-report.service';
+import { DiagnosesReportService } from './diagnoses-reports.service';
 import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
 import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
 

@@ -1,34 +1,34 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { PrescriptionsService } from './prescriptions.service';
+import { PrescriptionService } from './prescriptions.service';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 
 @Controller('prescriptions')
-export class PrescriptionsController {
-  constructor(private readonly prescriptionsService: PrescriptionsService) {}
+export class PrescriptionController {
+  constructor(private readonly prescriptionService: PrescriptionService) {}
 
   @Post()
   create(@Body() createPrescriptionDto: CreatePrescriptionDto) {
-    return this.prescriptionsService.create(createPrescriptionDto);
+    return this.prescriptionService.create(createPrescriptionDto);
   }
 
   @Get()
   findAll() {
-    return this.prescriptionsService.findAll();
+    return this.prescriptionService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.prescriptionsService.findOne(+id);
+    return this.prescriptionService.findOne(+id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePrescriptionDto: UpdatePrescriptionDto) {
-    return this.prescriptionsService.update(+id, updatePrescriptionDto);
+    return this.prescriptionService.update(+id, updatePrescriptionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.prescriptionsService.remove(+id);
+    return this.prescriptionService.remove(+id);
   }
 }
