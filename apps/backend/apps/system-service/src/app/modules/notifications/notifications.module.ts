@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
-import { Notification } from './entities/notification.entity';
+import { Notification } from '@backend/shared-domain';
 
 @Module({
   imports: [
