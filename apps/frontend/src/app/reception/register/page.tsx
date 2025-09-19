@@ -139,16 +139,16 @@ export default function PatientRegistration() {
                 </div>
 
                 <div className="space-y-2 mt-4">
-                  <label className="text-sm font-medium text-foreground">Medical History</label>
+                  <label className="text-sm font-medium text-foreground">Patient Conditions (FHIR)</label>
                   <textarea 
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     rows={4}
-                    placeholder="Enter relevant medical history"
+                    placeholder="List known conditions, e.g., SNOMED code - description"
                   />
                 </div>
 
                 <div className="space-y-2 mt-4">
-                  <label className="text-sm font-medium text-foreground">Allergies</label>
+                  <label className="text-sm font-medium text-foreground">Allergies (FHIR AllergyIntolerance)</label>
                   <input 
                     type="text" 
                     className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"

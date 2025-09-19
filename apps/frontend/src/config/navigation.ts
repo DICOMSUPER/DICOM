@@ -118,7 +118,7 @@ export const roleNavigation: RoleNavigation = {
       href: "/medical-records",
       label: "Medical Records",
       icon: FileText,
-      description: "Patient medical history"
+      description: "Patient conditions and records"
     },
     {
       href: "/diagnosis",
