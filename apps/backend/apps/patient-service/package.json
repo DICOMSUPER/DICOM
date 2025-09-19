@@ -80,7 +80,11 @@
           "passWithNoTests": true
         }
       }
-    }
+    },
+    "tags": [
+      "scope:patient-service",
+      "type:service"
+    ]
   },
   "dependencies": {}
 }

@@ -1,26 +1,28 @@
+/**
+ * This is not a production server yet!
+ * This is only a minimal backend to get started.
+ */
+import 'reflect-metadata';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { PatientModule } from './patient.module';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app/app.module';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  const app = await NestFactory.create(PatientModule);
+  const transport = Number(process.env.TRANSPORT) || Transport.TCP;
+  const host = process.env.HOST || '0.0.0.0';
+  const port = Number(process.env.PORT) || 5004;
+  const app = await NestFactory.createMicroservice(AppModule, {
+    transport: transport,
+    options: {
+      host: host,
+      port: port,
+    },
+  });
 
-  app.useGlobalPipes(new ValidationPipe());
-  app.enableCors();
-
-  const config = new DocumentBuilder()
-    .setTitle('Patient Service API')
-    .setDescription('The Patient service API description')
-    .setVersion('1.0')
-    .addTag('patients')
-    .addBearerAuth()
-    .build();
-  
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
-  await app.listen(process.env.PORT || 3000);
+  await app.listen();
+  const logger = new Logger('PatientService');
+  logger.log(`HTTP Patient Service running on: http://localhost:${port}`);
 }
 
 bootstrap();

@@ -37,7 +37,9 @@
         "libs/shared-enums/*",
         "libs/shared-decorators/*",
         "libs/entities/*",
-        "entities/*"
+        "entities/*",
+        "libs/database/*",
+        "libs/shared-domain/*"
       ]
     },
     {
@@ -55,7 +57,11 @@
         "apps/api-gateway-e2e/**/*",
         "apps/auth-service-e2e/**/*",
         "apps/user-service-e2e/**/*",
-        "apps/api-gateway-e2e/**/*"
+        "apps/api-gateway-e2e/**/*",
+        "patient-service-e2e/**/*",
+        "apps/patient-service-e2e/**/*",
+        "apps/imaging-service-e2e/**/*",
+        "apps/system-service-e2e/**/*"
       ]
     },
     {
@@ -78,7 +84,9 @@
         "libs/shared-enums/*",
         "libs/shared-decorators/*",
         "libs/entities/*",
-        "entities/*"
+        "entities/*",
+        "libs/database/*",
+        "libs/shared-domain/*"
       ],
       "options": {
         "typecheck": {

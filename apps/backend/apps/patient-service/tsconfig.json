@@ -4,10 +4,10 @@
   "include": [],
   "references": [
     {
-      "path": "../../entities"
+      "path": "../../libs/shared-domain"
     },
     {
-      "path": "../../libs/shared-utils"
+      "path": "../../libs/database"
     },
     {
       "path": "./tsconfig.app.json"

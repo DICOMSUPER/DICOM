@@ -18,6 +18,8 @@
     "@types/express": "^4.17.23",
     "@types/nodemailer": "^7.0.1",
     "axios": "^1.6.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "nodemailer": "^7.0.6",
@@ -36,9 +38,9 @@
     "@nx/jest": "21.4.1",
     "@nx/js": "21.5.1",
     "@nx/nest": "^21.5.1",
-    "@nx/node": "21.4.1",
-    "@nx/web": "21.4.1",
-    "@nx/webpack": "21.4.1",
+    "@nx/node": "21.5.1",
+    "@nx/web": "21.5.1",
+    "@nx/webpack": "21.5.1",
     "@nx/workspace": "21.4.1",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "~1.5.7",
@@ -52,6 +54,7 @@
     "jest": "^30.0.2",
     "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
+    "jsonc-eslint-parser": "^2.1.0",
     "nx": "21.4.1",
     "prettier": "^2.6.2",
     "ts-jest": "^29.4.0",
@@ -64,6 +67,9 @@
   "workspaces": [
     "apps/*",
     "libs/*",
-    "entities"
+    "entities",
+    "patient-service",
+    "patient-service-e2e",
+    "user-management"
   ]
 }

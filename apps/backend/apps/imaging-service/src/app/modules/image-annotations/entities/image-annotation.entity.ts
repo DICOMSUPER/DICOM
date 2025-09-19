@@ -1,0 +1,91 @@
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
+import { DicomInstance } from '../../dicom-instances/entities/dicom-instance.entity';
+import { AnnotationType, AnnotationStatus } from '@backend/shared-enums';
+
+@Entity('image_annotations')
+@Index(['instanceId'])
+export class ImageAnnotation {
+  @PrimaryGeneratedColumn('uuid', { name: 'annotation_id' })
+  id!: string;
+
+  @Column({ name: 'instance_id', type: 'uuid' })
+  instanceId!: string;
+
+  @ManyToOne(() => DicomInstance)
+  @JoinColumn({ name: 'instance_id' })
+  instance!: DicomInstance;
+
+  @Column({ name: 'annotation_type', type: 'enum', enum: AnnotationType })
+  annotationType!: AnnotationType;
+
+  @Column({ name: 'annotation_data', type: 'json' })
+  annotationData!: object;
+
+  @Column({ name: 'coordinates', type: 'json', nullable: true })
+  coordinates?: object;
+
+  @Column({
+    name: 'measurement_value',
+    type: 'decimal',
+    precision: 10,
+    scale: 4,
+    nullable: true,
+  })
+  measurementValue?: number;
+
+  @Column({ name: 'measurement_unit', length: 20, nullable: true })
+  measurementUnit?: string;
+
+  @Column({ name: 'text_content', type: 'text', nullable: true })
+  textContent?: string;
+
+  @Column({ name: 'color_code', length: 7, nullable: true })
+  colorCode?: string;
+
+//   @Column({ name: 'line_thickness', type: 'int', nullable: true })
+//   lineThickness?: number;
+
+  @Column({
+    name: 'annotation_status',
+    type: 'enum',
+    enum: AnnotationStatus,
+    default: AnnotationStatus.DRAFT,
+  })
+  annotationStatus!: AnnotationStatus;
+
+  //   imaging_technician
+  @Column({ name: 'annotator_id', type: 'uuid' })
+  annotatorId!: string;
+
+  @Column({
+    name: 'annotation_date',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  annotationDate!: Date;
+
+//   //   physician
+//   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
+//   reviewedBy?: string;
+
+  @Column({ name: 'review_date', type: 'timestamp', nullable: true })
+  reviewDate?: Date;
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+}
