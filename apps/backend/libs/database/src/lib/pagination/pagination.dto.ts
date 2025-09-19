@@ -1,7 +1,7 @@
 import {
   IsIn,
   IsInt,
-  IsNumber,
+
   IsOptional,
   IsString,
   Min,

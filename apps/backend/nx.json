@@ -39,7 +39,8 @@
         "libs/entities/*",
         "entities/*",
         "libs/database/*",
-        "libs/shared-domain/*"
+        "libs/shared-domain/*",
+        "libs/redis/*"
       ]
     },
     {
@@ -86,7 +87,8 @@
         "libs/entities/*",
         "entities/*",
         "libs/database/*",
-        "libs/shared-domain/*"
+        "libs/shared-domain/*",
+        "libs/redis/*"
       ],
       "options": {
         "typecheck": {
