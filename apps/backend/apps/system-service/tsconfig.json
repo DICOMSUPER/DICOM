@@ -7,13 +7,10 @@
       "path": "../../libs/shared-utils"
     },
     {
-      "path": "../../libs/shared-enums"
+      "path": "../../libs/redis"
     },
     {
       "path": "../../libs/shared-domain"
-    },
-    {
-      "path": "../../libs/redis"
     },
     {
       "path": "../../libs/database"

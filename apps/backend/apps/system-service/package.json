@@ -65,6 +65,7 @@
         "options": {
           "buildTarget": "@backend/system-service:build",
           "runBuildTargetDependencies": false
+
         },
         "configurations": {
           "development": {

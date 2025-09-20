@@ -16,7 +16,7 @@ export class AiAnalysis {
   analysisStatus!: AnalysisStatus;
 
   @Column({ name: 'analysis_results', type: 'json', nullable: true })
-  analysisResults?: object;
+  analysisResults?: any;
 
   @Column({ type: 'text', nullable: true })
   findings?: string;
@@ -30,7 +30,7 @@ export class AiAnalysis {
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt?: Date;
 
-  @Column({ name: 'is_deleted', nullable: true })
+  @Column({ name: 'is_deleted', nullable: true , default: false})
   isDeleted?: boolean;
 
   @CreateDateColumn({ name: 'created_at' })

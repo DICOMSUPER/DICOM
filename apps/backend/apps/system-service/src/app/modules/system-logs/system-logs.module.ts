@@ -4,10 +4,9 @@ import { SystemLogsController } from './system-logs.controller';
 import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
 import { SystemLog } from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
-import { BackendRedisModule } from '@backend/redis';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SystemLog]), BackendRedisModule],
+  imports: [TypeOrmModule.forFeature([SystemLog])],
   controllers: [SystemLogsController],
   providers: [SystemLogsService, PaginationService],
 })

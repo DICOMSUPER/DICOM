@@ -1,3 +1,4 @@
 {
-    "nxConsole.nxWorkspacePath": "backend"
+    "nxConsole.nxWorkspacePath": "backend",
+    "nxConsole.generateAiAgentRules": true
 }

@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisService } from './redis.service';
 import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
 
+@Global()
 @Module({
   imports: [ConfigModule], 
   providers: [
@@ -11,7 +12,7 @@ import KeyvRedis from '@keyv/redis';
       provide: 'REDIS_INSTANCE',
       useFactory: (configService: ConfigService) => {
         try {
-          const redisUrl = `redis://:${configService.get('REDIS_PASSWORD')}@${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`;
+          const redisUrl = `rediss://:${configService.get('REDIS_PASSWORD')}@${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`;
           console.log('Creating Keyv with Redis URL:', redisUrl);
           const keyv = new Keyv({
             store: new KeyvRedis(redisUrl),
