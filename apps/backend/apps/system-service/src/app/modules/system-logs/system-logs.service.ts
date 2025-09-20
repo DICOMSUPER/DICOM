@@ -1,35 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSystemLogDto } from './dto/create-system-log.dto';
-
 import { SystemLog } from '@backend/shared-domain';
 import { RedisService } from '@backend/redis';
 import { createCacheKey } from '@backend/shared-utils';
 import { PaginatedResponseDto, PaginationService } from '@backend/database';
-import { FilterSystemLogDto } from './dto/filter-system-log.dto';
+import { FilterSystemLogDto } from '../../../../../../libs/shared-domain/src/lib/dto/systems/filter-system-log.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreateSystemLogDto } from '@backend/shared-domain';
 
 @Injectable()
 export class SystemLogsService {
   constructor(
-    @InjectRepository(SystemLog) 
+    @InjectRepository(SystemLog)
     private readonly systemLogRepository: Repository<SystemLog>,
     private readonly redisService: RedisService,
     private readonly paginationService: PaginationService
   ) {}
+
   async create(createSystemLogDto: CreateSystemLogDto): Promise<SystemLog> {
-    // Create entity instance with proper data
+    console.log('🔧 Creating system log in service:', createSystemLogDto);
+
     const systemLog = this.systemLogRepository.create({
       ...createSystemLogDto,
-      timestamp: new Date(), // Add timestamp
+      timestamp: new Date(),
     });
 
-    // Save to database
-    return await this.systemLogRepository.save(systemLog);
-  }
+    const savedLog = await this.systemLogRepository.save(systemLog);
+    console.log('✅ System log created successfully:', savedLog.id);
 
+    return savedLog;
+  }
   async findAll(filter: FilterSystemLogDto) {
-    const { page = 1, limit = 10, logLevel, category } = filter;
+    const { page, limit, logLevel, category } = filter;
 
     const options: any = {
       where: {},
@@ -50,10 +52,16 @@ export class SystemLogsService {
       return cachedService;
     }
     if (logLevel) {
-      options.where.logLevel = logLevel;
+      options.where = {
+        ...options.where,
+        logLevel,
+      };
     }
     if (category) {
-      options.where.category = category;
+      options.where = {
+        ...options.where,
+        category,
+      };
     }
 
     const result = await this.paginationService.paginate(
@@ -65,7 +73,8 @@ export class SystemLogsService {
       options
     );
 
-    await this.redisService.set(keyName, result, 3600);
+    await this.redisService.set(keyName, result, 60000);
+
     return result;
   }
 }

@@ -1,34 +1,34 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AiAnalysesService } from './ai-analyses.service';
-import { CreateAiAnalysisDto } from './dto/create-ai-analysis.dto';
-import { UpdateAiAnalysisDto } from './dto/update-ai-analysis.dto';
+import { CreateAiAnalysisDto, FilterAiAnalysisDto, UpdateAiAnalysisDto } from '@backend/shared-domain';
 
-@Controller('ai-analyses')
+@Controller()
 export class AiAnalysesController {
   constructor(private readonly aiAnalysesService: AiAnalysesService) {}
 
-  @Post()
-  create(@Body() createAiAnalysisDto: CreateAiAnalysisDto) {
-    return this.aiAnalysesService.create(createAiAnalysisDto);
+  @MessagePattern("ai_analysis.create")
+  async create(@Payload() createAiAnalysisDto: CreateAiAnalysisDto) {
+    return await this.aiAnalysesService.create(createAiAnalysisDto);
   }
 
-  @Get()
-  findAll() {
-    return this.aiAnalysesService.findAll();
+  @MessagePattern("ai_analysis.findAll")
+  async findAll(@Payload() filter: FilterAiAnalysisDto) {
+    return await this.aiAnalysesService.findAll(filter);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.aiAnalysesService.findOne(+id);
+  @MessagePattern('ai_analysis.findOne')
+  async findOne(@Payload() payload: { id: string }) {
+    return await this.aiAnalysesService.findOne(payload.id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAiAnalysisDto: UpdateAiAnalysisDto) {
-    return this.aiAnalysesService.update(+id, updateAiAnalysisDto);
+  @MessagePattern('ai_analysis.update')
+  async update(@Payload() payload: { id: string, data: UpdateAiAnalysisDto }) {
+    return await this.aiAnalysesService.update(payload.id, payload.data);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.aiAnalysesService.remove(+id);
+  @MessagePattern('ai_analysis.remove')
+  async remove(@Payload() payload: { id: string }) {
+    return await this.aiAnalysesService.remove(payload.id);
   }
 }

@@ -9,8 +9,6 @@ export class Department {
   @Column({ name: 'head_department_id', nullable: true })
   headDepartmentId!: string;
 
-  
-
   @Column({ name: 'department_name', length: 100, nullable: false })
   departmentName!: string;
 

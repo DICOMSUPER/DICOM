@@ -1,21 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
+import {  Controller } from '@nestjs/common';
 import { SystemLogsService } from './system-logs.service';
-import { CreateSystemLogDto } from './dto/create-system-log.dto';
-import { FilterSystemLogDto } from './dto/filter-system-log.dto';
+import { FilterSystemLogDto } from '@backend/shared-domain';
+import { MessagePattern } from '@nestjs/microservices/decorators/message-pattern.decorator';
+import { Payload } from '@nestjs/microservices';
+import { CreateSystemLogDto } from '@backend/shared-domain';
 
-@Controller('system-logs')
+@Controller()
 export class SystemLogsController {
   constructor(private readonly systemLogsService: SystemLogsService) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createSystemLogDto: CreateSystemLogDto) {
-    console.log('📝 Creating system log:', createSystemLogDto);
+  @MessagePattern('create_log')
+  async create(@Payload() createSystemLogDto: CreateSystemLogDto) {
+    console.log('Creating system log:', createSystemLogDto);
     return await this.systemLogsService.create(createSystemLogDto);
   }
 
-  @Get()
-  findAll(@Query() filter: FilterSystemLogDto) {
+  @MessagePattern('find_all_logs')
+  findAll(@Payload() filter: FilterSystemLogDto) {
+    console.log('🔍 Finding system logs with filter:', filter);
     return this.systemLogsService.findAll(filter);
   }
 }
