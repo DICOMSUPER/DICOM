@@ -24,7 +24,7 @@ export class Qualification {
   @Column({ name: 'emp_id' })
   empId!: string;
 
-  // Relations
+  
   @ManyToOne(() => User, user => user.qualifications)
   @JoinColumn({ name: 'emp_id' })
   employee!: User;
