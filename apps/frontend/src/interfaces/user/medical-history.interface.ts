@@ -1,6 +1,6 @@
 import { BaseEntity } from "../base.interface";
 
-export interface MedicalHistory extends BaseEntity {
+export interface PatientCondition extends BaseEntity {
   history_id: string;
   allergies?: string;
 }

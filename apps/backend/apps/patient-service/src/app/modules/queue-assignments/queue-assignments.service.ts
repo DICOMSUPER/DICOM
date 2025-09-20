@@ -3,7 +3,7 @@ import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
 import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
 
 @Injectable()
-export class QueueAssignmentsService {
+export class QueueAssignmentService {
   create(createQueueAssignmentDto: CreateQueueAssignmentDto) {
     return 'This action adds a new queueAssignment';
   }

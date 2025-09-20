@@ -103,7 +103,7 @@ export default function PatientDetailsPage() {
           <TabsList>
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="forward">Forward Patient</TabsTrigger>
-            <TabsTrigger value="history">Medical History</TabsTrigger>
+            <TabsTrigger value="conditions">Patient Conditions</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-4">
@@ -298,12 +298,12 @@ export default function PatientDetailsPage() {
             <PatientForward />
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value="conditions">
             <Card>
               <CardHeader>
-                <CardTitle>Medical History</CardTitle>
+                <CardTitle>Patient Conditions</CardTitle>
                 <CardDescription>
-                  Past visits and medical records
+                  Active and past conditions (FHIR Condition)
                 </CardDescription>
               </CardHeader>
               <CardContent>

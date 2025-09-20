@@ -1,7 +1,7 @@
 import { VisitType } from "@/enums/patient.enum";
 import { BaseEntity } from "../base.interface";
 
-export interface PatientVisit extends BaseEntity {
+export interface PatientEncounter extends BaseEntity {
   visit_id: string;
   patient_id: string;
   visit_date?: Date;

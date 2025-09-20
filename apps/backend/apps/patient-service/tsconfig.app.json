@@ -11,13 +11,13 @@
   },
   "include": [
     "src/**/*.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/diagnoses-report.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/medical-history.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/patient-visit.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/patient.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/prescription-item.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/prescription.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/queue-assignment.entity.ts"
+    "../../libs/shared-domain/src/lib/entities/patients/diagnoses-reports.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/patient-conditions.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/patient-encounters.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/patients.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/prescription-items.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/prescriptions.entity.ts",
+    "../../libs/shared-domain/src/lib/entities/patients/queue-assignments.entity.ts"
   ],
   "exclude": [
     "out-tsc",

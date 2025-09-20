@@ -1,7 +1,7 @@
-export { DiagnosesReport } from './diagnoses-report.entity';
-export { MedicalHistory } from './medical-history.entity';
-export { PatientVisit } from './patient-visit.entity';
-export { Patient } from './patient.entity';
-export { PrescriptionItem } from './prescription-item.entity';
-export { Prescription } from './prescription.entity';
-export { QueueAssignment } from './queue-assignment.entity';
+export { DiagnosesReport } from './diagnoses-reports.entity';
+export { PatientCondition } from './patient-conditions';
+export { PatientEncounter } from './patient-encounters.entity';
+export { Patient } from './patients.entity';
+export { PrescriptionItem } from './prescription-items.entity';
+export { Prescription } from './prescriptions.entity';
+export { QueueAssignment } from './queue-assignments.entity';

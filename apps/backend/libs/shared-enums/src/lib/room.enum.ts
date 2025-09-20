@@ -4,3 +4,8 @@ export enum AssignmentType {
   BACKUP = 'backup',
   ON_CALL = 'on_call',
 }
+
+export enum RoomType {
+  CT = 'CT',
+  WC = 'WC',
+}
