@@ -5,6 +5,9 @@ import { DicomStudiesController } from './dicom-studies.controller';
 import { DicomStudy } from './entities/dicom-study.entity';
 import { ImagingModality } from '../imaging-modalities/entities/imaging-modality.entity';
 import { ImagingOrder } from '../imaging-orders/entities/imaging-order.entity';
+import { DicomStudiesRepository } from './dicom-studies.repository';
+import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
+import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 
 @Module({
   imports: [
@@ -15,7 +18,12 @@ import { ImagingOrder } from '../imaging-orders/entities/imaging-order.entity';
     ]),
   ],
   controllers: [DicomStudiesController],
-  providers: [DicomStudiesService],
+  providers: [
+    DicomStudiesService,
+    DicomStudiesRepository,
+    ImagingModalityRepository,
+    ImagingOrderRepository,
+  ],
   exports: [BackendEntitiesModule],
 })
 export class DicomStudiesModule {}

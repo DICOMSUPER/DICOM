@@ -9,6 +9,6 @@ import { BackendEntitiesModule } from '@backend/entities';
   imports: [BackendEntitiesModule.forFeature([ImagingModality])],
   controllers: [ImagingModalitiesController],
   providers: [ImagingModalitiesService, ImagingModalityRepository],
-  exports: [BackendEntitiesModule],
+  exports: [BackendEntitiesModule, ImagingModalityRepository],
 })
 export class ImagingModalitiesModule {}

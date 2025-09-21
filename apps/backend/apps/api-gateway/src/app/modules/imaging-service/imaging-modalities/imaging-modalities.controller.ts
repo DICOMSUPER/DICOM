@@ -14,14 +14,14 @@ import { firstValueFrom } from 'rxjs';
 @Controller('imaging-modalities')
 export class ImagingModalitiesController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImageService')
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
     private readonly imagingService: ClientProxy
   ) {}
 
   @Get()
   async getImagingModalities() {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingModality.FindAll', {})
+      this.imagingService.send('ImagingService.ImagingModalities.FindAll', {})
     );
   }
 
@@ -43,7 +43,7 @@ export class ImagingModalitiesController {
       order,
     };
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingModality.FindMany', {
+      this.imagingService.send('ImagingService.ImagingModalities.FindMany', {
         paginationDto,
       })
     );
@@ -52,7 +52,9 @@ export class ImagingModalitiesController {
   @Get(':id')
   async getImagingModalityById(@Param('id') id: string) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingModality.FindOne', { id })
+      this.imagingService.send('ImagingService.ImagingModalities.FindOne', {
+        id,
+      })
     );
   }
 
@@ -60,7 +62,7 @@ export class ImagingModalitiesController {
   async createImagingModality(@Body() createImagingModalityDto: any) {
     return await firstValueFrom(
       this.imagingService.send(
-        'ImagingService.ImagingModality.Create',
+        'ImagingService.ImagingModalities.Create',
         createImagingModalityDto
       )
     );
@@ -72,7 +74,7 @@ export class ImagingModalitiesController {
     @Body() updateImagingModalityDto: any
   ) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingModality.Update', {
+      this.imagingService.send('ImagingService.ImagingModalities.Update', {
         id,
         updateImagingModalityDto,
       })
@@ -82,7 +84,9 @@ export class ImagingModalitiesController {
   @Delete(':id')
   async deleteImagingModality(@Param('id') id: string) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingModality.Delete', { id })
+      this.imagingService.send('ImagingService.ImagingModalities.Delete', {
+        id,
+      })
     );
   }
 }

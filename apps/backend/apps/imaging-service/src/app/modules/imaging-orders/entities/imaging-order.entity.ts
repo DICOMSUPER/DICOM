@@ -9,6 +9,7 @@ import {
   ManyToOne,
   JoinColumn,
   ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import {
   OrderType,
@@ -17,10 +18,10 @@ import {
   Urgency,
 } from '@backend/shared-enums';
 import { ImagingModality } from '../../imaging-modalities/entities/imaging-modality.entity';
-
+import { BaseEntity } from '@backend/entities';
 @Entity('imaging_orders')
 @Index(['patientId'])
-export class ImagingOrder {
+export class ImagingOrder extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   id!: string;
 
@@ -39,8 +40,8 @@ export class ImagingOrder {
   @Column({ name: 'modality_id', type: 'uuid' })
   modalityId!: string;
 
-  @ManyToMany(() => ImagingModality)
-  @JoinColumn({ name: 'modality_id' })
+  @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
+  @JoinColumn({ name: 'modality_id' }) // Creates/uses the FK column
   modality!: ImagingModality;
 
   @Column({ name: 'body_part', length: 100 })
@@ -94,10 +95,4 @@ export class ImagingOrder {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

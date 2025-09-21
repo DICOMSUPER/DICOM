@@ -4,24 +4,28 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImagingOrder } from './entities/imaging-order.entity';
-import { InjectEntityManager } from '@nestjs/typeorm';
+import { DicomStudy } from './entities/dicom-study.entity';
 import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
-export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
-  constructor(
-    @InjectEntityManager()
-    entityManager: EntityManager
-  ) {
-    super(ImagingOrder, entityManager);
+export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
+  constructor(@InjectEntityManager() entityManager: EntityManager) {
+    super(DicomStudy, entityManager);
   }
 
-  async findImagingOrderByReferenceId(
+  async findDicomStudiesByReferenceId(
     id: string,
-    type: 'physician' | 'room' | 'patient' | 'visit',
+    type:
+      | 'modality'
+      | 'order'
+      | 'patient'
+      | 'performingPhysician'
+      | 'technician'
+      | 'referringPhysician'
+      | 'studyInstanceUid',
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ) {
@@ -42,18 +46,30 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     let referenceField;
     switch (type) {
-      case 'physician':
-        referenceField = 'orderingPhysicianId';
+      case 'modality':
+        referenceField = 'modalityId';
         break;
-      case 'room':
-        referenceField = 'roomId';
+      case 'order':
+        referenceField = 'orderId';
         break;
-
       case 'patient':
         referenceField = 'patientId';
         break;
-      case 'visit':
-        referenceField = 'visitId';
+
+      case 'performingPhysician':
+        referenceField = 'performingPhysicianId';
+        break;
+
+      case 'technician':
+        referenceField = 'technicianId';
+        break;
+
+      case 'referringPhysician':
+        referenceField = 'referringPhysician';
+        break;
+
+      case 'studyInstanceUid':
+        referenceField = 'studyInstanceUid';
         break;
 
       default:
@@ -103,7 +119,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const hasNextPage = safePage < totalPages;
     const hasPreviousPage = safePage > 1;
 
-    return new PaginatedResponseDto<ImagingOrder>(
+    return new PaginatedResponseDto<DicomStudy>(
       data,
       total,
       safePage,

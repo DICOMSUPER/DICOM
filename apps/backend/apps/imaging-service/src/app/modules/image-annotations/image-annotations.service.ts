@@ -1,26 +1,109 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateImageAnnotationDto } from './dto/create-image-annotation.dto';
 import { UpdateImageAnnotationDto } from './dto/update-image-annotation.dto';
+import { RepositoryPaginationDto } from '@backend/database';
+import { ImageAnotationsRepository } from './image-anotations.repository';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 
+const relation = ['instance'];
 @Injectable()
 export class ImageAnnotationsService {
-  create(createImageAnnotationDto: CreateImageAnnotationDto) {
-    return 'This action adds a new imageAnnotation';
-  }
+  constructor(
+    @Inject()
+    private readonly imageAnnotationRepository: ImageAnotationsRepository,
+    @Inject()
+    private readonly dicomInstanceRepository: DicomInstancesRepository
+  ) {}
 
-  findAll() {
-    return `This action returns all imageAnnotations`;
-  }
+  private checkImageAnotation = async (id: string) => {
+    const annotation = await this.imageAnnotationRepository.findOne(
+      {
+        where: { id },
+      },
+      relation
+    );
+    if (!annotation) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Image annotation not found',
+        IMAGING_SERVICE
+      );
+    }
+    return annotation;
+  };
 
-  findOne(id: number) {
-    return `This action returns a #${id} imageAnnotation`;
-  }
+  private checkDicomInstance = async (id: string) => {
+    const instance = await this.dicomInstanceRepository.findOne({
+      where: { id },
+    });
 
-  update(id: number, updateImageAnnotationDto: UpdateImageAnnotationDto) {
-    return `This action updates a #${id} imageAnnotation`;
-  }
+    if (!instance) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to process for image annotation: Dicom instance not found',
+        IMAGING_SERVICE
+      );
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} imageAnnotation`;
-  }
+    return instance;
+  };
+
+  create = async (createImageAnnotationDto: CreateImageAnnotationDto) => {
+    return await this.imageAnnotationRepository.create(
+      createImageAnnotationDto
+    );
+  };
+
+  findAll = async () => {
+    return await this.imageAnnotationRepository.findAll({}, relation);
+  };
+
+  findOne = async (id: string) => {
+    //check image anotation & since it's already queried
+    return await this.checkImageAnotation(id);
+  };
+
+  update = async (
+    id: string,
+    updateImageAnnotationDto: UpdateImageAnnotationDto
+  ) => {
+    const annotation = await this.checkImageAnotation(id);
+
+    if (
+      updateImageAnnotationDto.instanceId &&
+      updateImageAnnotationDto.instanceId !== annotation.instanceId
+    ) {
+      await this.checkDicomInstance(updateImageAnnotationDto.instanceId);
+    }
+    return await this.imageAnnotationRepository.update(
+      id,
+      updateImageAnnotationDto
+    );
+  };
+
+  remove = async (id: string) => {
+    await this.checkImageAnotation(id);
+
+    return await this.imageAnnotationRepository.softDelete(id, 'isDeleted');
+  };
+
+  findMany = async (paginationDto: RepositoryPaginationDto) => {
+    return await this.imageAnnotationRepository.paginate({
+      ...paginationDto,
+      relation,
+    });
+  };
+
+  findByReferenceId = async (
+    id: string,
+    type: 'annotator' | 'instance',
+    paginationDto: RepositoryPaginationDto
+  ) => {
+    return await this.imageAnnotationRepository.findByReferenceId(id, type, {
+      ...paginationDto,
+      relation,
+    });
+  };
 }

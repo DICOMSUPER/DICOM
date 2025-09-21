@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ImagingModalitiesController } from './imaging-modalities.controller';
+import { DicomInstancesController } from './dicom-instances.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 
@@ -14,6 +14,6 @@ import { getClient } from '@backend/shared-utils';
       ),
     ]),
   ],
-  controllers: [ImagingModalitiesController],
+  controllers: [DicomInstancesController],
 })
-export class ImagingModalitiesModule {}
+export class DicomInstancesModule {}

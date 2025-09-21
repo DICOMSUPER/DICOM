@@ -4,24 +4,21 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImagingOrder } from './entities/imaging-order.entity';
-import { InjectEntityManager } from '@nestjs/typeorm';
+import { DicomInstance } from './entities/dicom-instance.entity';
 import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
-export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
-  constructor(
-    @InjectEntityManager()
-    entityManager: EntityManager
-  ) {
-    super(ImagingOrder, entityManager);
+export class DicomInstancesRepository extends BaseRepository<DicomInstance> {
+  constructor(@InjectEntityManager() entityManager: EntityManager) {
+    super(DicomInstance, entityManager);
   }
 
-  async findImagingOrderByReferenceId(
+  async findInstancesByReferenceId(
     id: string,
-    type: 'physician' | 'room' | 'patient' | 'visit',
+    type: 'series' | 'sopInstanceUid',
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ) {
@@ -42,18 +39,11 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     let referenceField;
     switch (type) {
-      case 'physician':
-        referenceField = 'orderingPhysicianId';
+      case 'series':
+        referenceField = 'seriesId';
         break;
-      case 'room':
-        referenceField = 'roomId';
-        break;
-
-      case 'patient':
-        referenceField = 'patientId';
-        break;
-      case 'visit':
-        referenceField = 'visitId';
+      case 'sopInstanceUid':
+        referenceField = 'sopInstanceUid';
         break;
 
       default:
@@ -62,8 +52,8 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
           'Invalid type find by referenceId for ImagingOrder',
           IMAGING_SERVICE
         );
+        break;
     }
-
     const query = repository.createQueryBuilder('entity');
 
     query.andWhere(`entity.${referenceField} = :referenceId`, {
@@ -103,7 +93,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const hasNextPage = safePage < totalPages;
     const hasPreviousPage = safePage > 1;
 
-    return new PaginatedResponseDto<ImagingOrder>(
+    return new PaginatedResponseDto<DicomInstance>(
       data,
       total,
       safePage,

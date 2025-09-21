@@ -8,12 +8,13 @@ import {
   Index,
 } from 'typeorm';
 import { DicomSeries } from '../../dicom-series/entities/dicom-series.entity';
+import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_instances')
 @Index('idx_series_id', ['seriesId'])
 @Index('idx_sop_instance_uid', ['sopInstanceUid'])
 @Index('idx_series_instance', ['seriesId', 'instanceNumber'])
-export class DicomInstance {
+export class DicomInstance extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'instance_id' })
   id!: string;
 
@@ -61,12 +62,6 @@ export class DicomInstance {
 
   @Column({ type: 'int', nullable: true })
   columns?: number;
-
-  @Column({ name: 'is_deleted', nullable: true })
-  isDeleted?: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 
   @ManyToOne(() => DicomSeries, (series) => series.instances)
   @JoinColumn({ name: 'series_id' })
