@@ -1,5 +1,6 @@
 import { QueueStatus } from "@/enums/patient.enum";
 import { BaseEntity } from "../base.interface";
+import { PatientEncounter } from "./patient-visit.interface";
 
 export interface QueueAssignment extends BaseEntity {
   queue_id: string;
@@ -9,6 +10,8 @@ export interface QueueAssignment extends BaseEntity {
   assigned_at?: Date;
   assignment_expires_date?: Date;
   priority_reason?: string;
-  status?: QueueStatus;
+  status: QueueStatus;
+  visit_id?: string;
+  visit: PatientEncounter;
   created_by?: string;
 }

@@ -103,37 +103,37 @@ export const roleNavigation: RoleNavigation = {
   // Physician - Patient care and medical records
   "Physician": [
     {
-      href: "/dashboard",
+      href: "/physicians/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient overview"
     },
     {
-      href: "/patients",
+      href: "/physicians/patients",
       label: "My Patients",
       icon: Users,
       description: "Assigned patients"
     },
     {
-      href: "/medical-records",
-      label: "Medical Records",
+      href: "/physicians/queue-assignment",
+      label: "Queue",
       icon: FileText,
-      description: "Patient conditions and records"
+      description: "Manage patient queue assignments"
     },
     {
-      href: "/diagnosis",
-      label: "Diagnosis",
+      href: "/physicians/prescription",
+      label: "Prescription",
       icon: Stethoscope,
-      description: "Diagnostic tools"
+      description: "Manage patient prescriptions"
     },
     {
-      href: "/schedule",
+      href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,
       description: "Appointment schedule"
     },
     {
-      href: "/settings",
+      href: "/physicians/settings",
       label: "Settings",
       icon: Settings,
       description: "Personal settings"

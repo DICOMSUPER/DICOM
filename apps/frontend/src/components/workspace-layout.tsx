@@ -35,7 +35,7 @@ export function WorkspaceLayout({ children, sidebar }: WorkspaceLayoutProps) {
         {/* Main Work Area */}
         <main className="flex-1 flex flex-col">
           {/* Main Content Area */}
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-4">
             <div className="mb-4">
               <Breadcrumb
                 items={[
