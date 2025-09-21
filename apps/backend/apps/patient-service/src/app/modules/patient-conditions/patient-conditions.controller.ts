@@ -9,33 +9,33 @@ import { PatientConditionResponseDto } from './dto/patient-condition-response.dt
 export class PatientConditionController {
   constructor(private readonly patientConditionService: PatientConditionService) {}
 
-  @MessagePattern('patient-condition.create')
+  @MessagePattern('PatientService.PatientCondition.Create')
   async create(createPatientConditionDto: CreatePatientConditionDto): Promise<PatientConditionResponseDto> {
     return await this.patientConditionService.create(createPatientConditionDto);
   }
 
-  @MessagePattern('patient-condition.findAll')
+  @MessagePattern('PatientService.PatientCondition.FindAll')
   async findAll(): Promise<PatientConditionResponseDto[]> {
     return await this.patientConditionService.findAll();
   }
 
-  @MessagePattern('patient-condition.findByPatientId')
-  async findByPatientId(patientId: string): Promise<PatientConditionResponseDto[]> {
-    return await this.patientConditionService.findByPatientId(patientId);
+  @MessagePattern('PatientService.PatientCondition.FindByPatientId')
+  async findByPatientId(data: { patientId: string }): Promise<PatientConditionResponseDto[]> {
+    return await this.patientConditionService.findByPatientId(data.patientId);
   }
 
-  @MessagePattern('patient-condition.findOne')
-  async findOne(id: string): Promise<PatientConditionResponseDto> {
-    return await this.patientConditionService.findOne(id);
+  @MessagePattern('PatientService.PatientCondition.FindOne')
+  async findOne(data: { id: string }): Promise<PatientConditionResponseDto> {
+    return await this.patientConditionService.findOne(data.id);
   }
 
-  @MessagePattern('patient-condition.update')
+  @MessagePattern('PatientService.PatientCondition.Update')
   async update(data: { id: string; updatePatientConditionDto: UpdatePatientConditionDto }): Promise<PatientConditionResponseDto> {
     return await this.patientConditionService.update(data.id, data.updatePatientConditionDto);
   }
 
-  @MessagePattern('patient-condition.remove')
-  async remove(id: string): Promise<void> {
-    return await this.patientConditionService.remove(id);
+  @MessagePattern('PatientService.PatientCondition.Delete')
+  async remove(data: { id: string }): Promise<void> {
+    return await this.patientConditionService.remove(data.id);
   }
 }

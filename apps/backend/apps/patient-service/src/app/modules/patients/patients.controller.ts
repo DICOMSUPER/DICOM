@@ -14,53 +14,54 @@ import {
 export class PatientController {
   constructor(private readonly patientService: PatientService) {}
 
-  @MessagePattern('patient.create')
+  @MessagePattern('PatientService.Patient.Create')
   async create(createPatientDto: CreatePatientDto): Promise<PatientResponseDto> {
     return await this.patientService.create(createPatientDto);
   }
 
-  @MessagePattern('patient.findAll')
+  @MessagePattern('PatientService.Patient.FindAll')
   async findAll(searchDto: PatientSearchDto): Promise<PatientResponseDto[]> {
     return await this.patientService.findAll(searchDto);
   }
 
-  @MessagePattern('patient.findPatientsWithPagination')
-  async findPatientsWithPagination(data: { page: number; limit: number; searchDto: Omit<PatientSearchDto, 'limit' | 'offset'> }): Promise<PaginatedResponseDto<PatientResponseDto>> {
-    return await this.patientService.findPatientsWithPagination(data.page, data.limit, data.searchDto);
+  @MessagePattern('PatientService.Patient.FindMany')
+  async findPatientsWithPagination(data: { paginationDto: { page?: number; limit?: number; [key: string]: any } }): Promise<PaginatedResponseDto<PatientResponseDto>> {
+    const { page = 1, limit = 10, ...searchDto } = data.paginationDto;
+    return await this.patientService.findPatientsWithPagination(page, limit, searchDto);
   }
 
-  @MessagePattern('patient.searchPatientsByName')
-  async searchPatientsByName(data: { searchTerm: string; limit: number }): Promise<PatientResponseDto[]> {
+  @MessagePattern('PatientService.Patient.SearchByName')
+  async searchPatientsByName(data: { searchTerm: string; limit?: number }): Promise<PatientResponseDto[]> {
     return await this.patientService.searchPatientsByName(data.searchTerm, data.limit);
   }
 
-  @MessagePattern('patient.getPatientStats')
+  @MessagePattern('PatientService.Patient.GetStats')
   async getPatientStats(): Promise<PatientStatsDto> {
     return await this.patientService.getPatientStats();
   }
 
-  @MessagePattern('patient.findPatientByCode')
-  async findPatientByCode(patientCode: string): Promise<PatientResponseDto> {
-    return await this.patientService.findPatientByCode(patientCode);
+  @MessagePattern('PatientService.Patient.FindByCode')
+  async findPatientByCode(data: { patientCode: string }): Promise<PatientResponseDto> {
+    return await this.patientService.findPatientByCode(data.patientCode);
   }
 
-  @MessagePattern('patient.findOne')
-  async findOne(id: string): Promise<PatientResponseDto> {
-    return await this.patientService.findOne(id);
+  @MessagePattern('PatientService.Patient.FindOne')
+  async findOne(data: { id: string }): Promise<PatientResponseDto> {
+    return await this.patientService.findOne(data.id);
   }
 
-  @MessagePattern('patient.update')
+  @MessagePattern('PatientService.Patient.Update')
   async update(data: { id: string; updatePatientDto: UpdatePatientDto }): Promise<PatientResponseDto> {
     return await this.patientService.update(data.id, data.updatePatientDto);
   }
 
-  @MessagePattern('patient.remove')
-  async remove(id: string): Promise<void> {
-    return await this.patientService.remove(id);
+  @MessagePattern('PatientService.Patient.Delete')
+  async remove(data: { id: string }): Promise<void> {
+    return await this.patientService.remove(data.id);
   }
 
-  @MessagePattern('patient.restore')
-  async restore(id: string): Promise<PatientResponseDto> {
-    return await this.patientService.restore(id);
+  @MessagePattern('PatientService.Patient.Restore')
+  async restore(data: { id: string }): Promise<PatientResponseDto> {
+    return await this.patientService.restore(data.id);
   }
 }

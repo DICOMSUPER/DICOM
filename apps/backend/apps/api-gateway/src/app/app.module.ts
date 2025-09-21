@@ -5,7 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 import { AuthModule } from './modules/auth/auth.module';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
-import { PatientsServiceModule } from './modules/patient-service/patients-service.module';
+import { PatientServiceModule } from './modules/patient-service/patient-service.module';
 import dotenv from 'dotenv';
 import { SystemLogsModule } from './modules/system-service/system-logs/system-logs.module';
 import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
@@ -34,6 +34,12 @@ dotenv.config();
         process.env.IMAGE_SERVICE_HOST || 'localhost',
         Number(process.env.IMAGE_SERVICE_PORT || 5003)
       ),
+      getClient(
+        process.env.PATIENT_SERVICE_NAME || 'PatientService',
+        Number(process.env.PATIENT_SERVICE_TRANSPORT || Transport.TCP),
+        process.env.PATIENT_SERVICE_HOST || 'localhost',
+        Number(process.env.PATIENT_SERVICE_PORT || 5004)
+      ),
     ]),
     AuthModule,
     ImagingServiceModule,
@@ -41,7 +47,7 @@ dotenv.config();
     AiAnalysisModule,
     AuditLogModule,
     NotificationsModule,
-    PatientsServiceModule,
+    PatientServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

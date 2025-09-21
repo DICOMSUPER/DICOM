@@ -1,40 +1,88 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Inject } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('patient-conditions')
 export class PatientConditionController {
+  private readonly logger = new Logger('PatientConditionController');
+
   constructor(
-    @Inject('PATIENT_SERVICE') private readonly patientService: ClientProxy
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService') 
+    private readonly patientService: ClientProxy
   ) {}
 
   @Post()
   async create(@Body() createPatientConditionDto: any) {
-    return this.patientService.send('patient-condition.create', createPatientConditionDto).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.Create', createPatientConditionDto)
+      );
+    } catch (error) {
+      this.logger.error('Error creating patient condition:', error);
+      throw error;
+    }
   }
 
   @Get()
   async findAll() {
-    return this.patientService.send('patient-condition.findAll', {}).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.FindAll', {})
+      );
+    } catch (error) {
+      this.logger.error('Error finding all patient conditions:', error);
+      throw error;
+    }
   }
 
   @Get('patient/:patientId')
   async findByPatientId(@Param('patientId') patientId: string) {
-    return this.patientService.send('patient-condition.findByPatientId', patientId).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.FindByPatientId', { patientId })
+      );
+    } catch (error) {
+      this.logger.error('Error finding patient conditions by patient ID:', error);
+      throw error;
+    }
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return this.patientService.send('patient-condition.findOne', id).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.FindOne', { id })
+      );
+    } catch (error) {
+      this.logger.error('Error finding patient condition by ID:', error);
+      throw error;
+    }
   }
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updatePatientConditionDto: any) {
-    return this.patientService.send('patient-condition.update', { id, updatePatientConditionDto }).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.Update', { 
+          id, 
+          updatePatientConditionDto 
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error updating patient condition:', error);
+      throw error;
+    }
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return this.patientService.send('patient-condition.remove', id).toPromise();
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.PatientCondition.Delete', { id })
+      );
+    } catch (error) {
+      this.logger.error('Error deleting patient condition:', error);
+      throw error;
+    }
   }
 }
