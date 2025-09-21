@@ -11,6 +11,13 @@ export class UsersService {
   findAll() {
     return `This action returns all users`;
   }
+  
+  login( username: string, password: string) {
+    const passwordHash = password;
+    
+
+    return `This action for user login`;
+  }
 
   findOne(id: number) {
     return `This action returns a #${id} user`;

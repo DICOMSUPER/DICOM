@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { BaseRepository, DatabaseModule } from '@backend/database';
+import {  DatabaseModule } from '@backend/database';
 import { AiAnalysesModule } from './modules/ai-analyses/ai-analyses.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SystemLogsModule } from './modules/system-logs/system-logs.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
-// import { BackendRedisModule } from '@backend/redis';
+import { BackendRedisModule } from '@backend/redis';
 
 @Module({
   imports: [
@@ -20,7 +20,7 @@ import { AuditLogModule } from './modules/audit-log/audit-log.module';
       defaultDbName: 'dicom_system_service',
     }),
     // BaseRepository,
-    // BackendRedisModule,
+    BackendRedisModule,
     AiAnalysesModule,
     AuditLogModule,
     NotificationsModule,

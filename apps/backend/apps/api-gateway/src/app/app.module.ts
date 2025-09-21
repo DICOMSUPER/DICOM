@@ -7,6 +7,10 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import { PatientsServiceModule } from './modules/patient-service/patients-service.module';
 import dotenv from 'dotenv';
+import { SystemLogsModule } from './modules/system-service/system-logs/system-logs.module';
+import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
+import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
+import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
 dotenv.config();
 
 @Module({
@@ -33,6 +37,10 @@ dotenv.config();
     ]),
     AuthModule,
     ImagingServiceModule,
+    SystemLogsModule,
+    AiAnalysisModule,
+    AuditLogModule,
+    NotificationsModule,
     PatientsServiceModule,
   ],
   controllers: [AppController],

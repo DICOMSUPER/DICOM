@@ -4,7 +4,7 @@
   "include": [],
   "references": [
     {
-      "path": "../shared-interfaces"
+      "path": "../database"
     },
     {
       "path": "../shared-enums"
