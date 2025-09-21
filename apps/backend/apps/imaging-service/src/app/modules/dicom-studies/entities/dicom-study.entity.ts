@@ -13,6 +13,7 @@ import { DicomSeries } from '../../dicom-series/entities/dicom-series.entity';
 import { ImagingModality } from '../../imaging-modalities/entities/imaging-modality.entity';
 import { DicomStudyStatus } from '@backend/shared-enums';
 import { ImagingOrder } from '../../imaging-orders/entities/imaging-order.entity';
+import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])
@@ -20,7 +21,7 @@ import { ImagingOrder } from '../../imaging-orders/entities/imaging-order.entity
 @Index('idx_modality_id', ['modalityId'])
 @Index('idx_study_instance_uid', ['studyInstanceUid'])
 @Index('idx_patient_study_date', ['patientId', 'studyDate'])
-export class DicomStudy {
+export class DicomStudy extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'study_id' })
   id!: string;
 
@@ -65,20 +66,11 @@ export class DicomStudy {
   @Column({ name: 'number_of_series', default: 0 })
   numberOfSeries!: number;
 
-  @Column({ name: 'number_of_instances', default: 0 })
-  numberOfInstances!: number;
+  // @Column({ name: 'number_of_instances', default: 0 })
+  // numberOfInstances!: number;
 
   @Column({ name: 'storage_path', length: 500, nullable: true })
   storagePath?: string;
-
-  @Column({ name: 'is_deleted', nullable: true })
-  isDeleted?: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 
   // Relations
   @OneToMany(() => DicomSeries, (series) => series.study)

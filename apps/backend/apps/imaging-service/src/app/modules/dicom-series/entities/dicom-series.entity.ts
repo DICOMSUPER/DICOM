@@ -1,12 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { DicomStudy } from '../../dicom-studies/entities/dicom-study.entity';
 import { DicomInstance } from '../../dicom-instances/entities/dicom-instance.entity';
+import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_series')
 @Index('idx_study_id', ['studyId'])
 @Index('idx_series_instance_uid', ['seriesInstanceUid'])
 @Index('idx_study_series', ['studyId', 'seriesNumber'])
-export class DicomSeries {
+export class DicomSeries extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'series_id' })
   id!: string;
 
@@ -22,8 +32,8 @@ export class DicomSeries {
   @Column({ name: 'series_description', type: 'text', nullable: true })
   seriesDescription?: string;
 
-//   @Column({ length: 10, nullable: true })
-//   modality?: string;
+  //   @Column({ length: 10, nullable: true })
+  //   modality?: string;
 
   @Column({ name: 'body_part_examined', length: 100, nullable: true })
   bodyPartExamined?: string;
@@ -40,17 +50,11 @@ export class DicomSeries {
   @Column({ name: 'number_of_instances', default: 0 })
   numberOfInstances!: number;
 
-  @Column({ name: 'is_deleted', nullable: true })
-  isDeleted?: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
   // Relations
-  @ManyToOne(() => DicomStudy, study => study.series)
+  @ManyToOne(() => DicomStudy, (study) => study.series)
   @JoinColumn({ name: 'study_id' })
   study!: DicomStudy;
 
-  @OneToMany(() => DicomInstance, instance => instance.series)
+  @OneToMany(() => DicomInstance, (instance) => instance.series)
   instances!: DicomInstance[];
 }

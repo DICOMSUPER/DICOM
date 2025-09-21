@@ -1,3 +1,4 @@
+import { BaseEntity } from '@backend/entities';
 import {
   Entity,
   Column,
@@ -7,7 +8,7 @@ import {
 } from 'typeorm';
 
 @Entity('imaging_modalities')
-export class ImagingModality {
+export class ImagingModality extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'modality_id' }) // Type string but increment => error =>Changed to UUID
   id!: string;
 
@@ -22,13 +23,4 @@ export class ImagingModality {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
-
-  @Column({ name: 'is_deleted', default: false }) //add for soft delete
-  isDeleted!: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

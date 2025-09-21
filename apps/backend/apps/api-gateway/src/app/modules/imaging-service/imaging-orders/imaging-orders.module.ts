@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ImagingModalitiesController } from './imaging-modalities.controller';
+
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
+import { ImagingOrdersController } from './imaging-orders.controller';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { getClient } from '@backend/shared-utils';
       ),
     ]),
   ],
-  controllers: [ImagingModalitiesController],
+  controllers: [ImagingOrdersController],
 })
-export class ImagingModalitiesModule {}
+export class ImagingOrdersModule {}

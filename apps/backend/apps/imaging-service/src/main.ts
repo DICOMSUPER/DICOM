@@ -7,6 +7,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
+import { IMAGING_SERVICE } from './constant/microservice.constant';
 
 async function bootstrap() {
   const transport = Number(process.env.TRANSPORT) || Transport.TCP;
@@ -21,7 +22,7 @@ async function bootstrap() {
   });
 
   await app.listen();
-  const logger = new Logger('ImagingService');
+  const logger = new Logger(IMAGING_SERVICE);
   logger.log(`HTTP Imaging Service running on: http://localhost:${port}`);
 }
 
