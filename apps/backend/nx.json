@@ -42,7 +42,8 @@
         "libs/shared-domain/*",
         "libs/redis/*",
         "libs/client/*",
-        "libs/shared-client/*"
+        "libs/shared-client/*",
+        "libs/auth-guards/*"
       ]
     },
     {
@@ -92,7 +93,8 @@
         "libs/shared-domain/*",
         "libs/redis/*",
         "libs/client/*",
-        "libs/shared-client/*"
+        "libs/shared-client/*",
+        "libs/auth-guards/*"
       ],
       "options": {
         "typecheck": {
