@@ -5,6 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 import { AuthModule } from './modules/auth/auth.module';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
+import { PatientsServiceModule } from './modules/patient-service/patients-service.module';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -32,6 +33,7 @@ dotenv.config();
     ]),
     AuthModule,
     ImagingServiceModule,
+    PatientsServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

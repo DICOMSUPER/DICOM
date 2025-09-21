@@ -12,4 +12,11 @@ export enum RoomType {
 export enum QueueStatus {
   WAITING = "waiting",
   COMPLETED = "completed",
+  EXPIRED = "expired",
+}
+
+export enum QueuePriorityLevel {
+  ROUTINE = "routine",
+  URGENT = "urgent",
+  STAT = "stat"
 }

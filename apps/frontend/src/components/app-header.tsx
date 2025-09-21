@@ -4,29 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Bell,
-  User,
-  ChevronDown
+  User
 } from "lucide-react";
-import { useState } from "react";
-import { getAvailableRoles } from "@/config/navigation";
 
 interface AppHeaderProps {
   notificationCount?: number;
   onNotificationClick?: () => void;
   onLogout?: () => void;
-  currentRole?: string;
-  onRoleChange?: (role: string) => void;
 }
 
 export function AppHeader({
   notificationCount = 0,
   onNotificationClick,
-  onLogout,
-  currentRole = "Reception Staff",
-  onRoleChange
+  onLogout
 }: AppHeaderProps) {
-  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
-  const roles = getAvailableRoles();
 
   return (
     <header className="border-b border-border bg-card">
@@ -43,43 +34,8 @@ export function AppHeader({
             </div>
           </div>
 
-          {/* Right Side - Role Switcher + Notifications + User */}
+          {/* Right Side - Notifications + User */}
           <div className="flex items-center space-x-4">
-            {/* Role Switcher */}
-            <div className="relative">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-border"
-                onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
-              >
-                <User className="w-4 h-4 mr-2" />
-                {currentRole}
-                <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-              
-              {showRoleSwitcher && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-border rounded-md shadow-lg z-50">
-                  <div className="p-2">
-                    {roles.map((role) => (
-                      <button
-                        key={role}
-                        className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-slate-100 ${
-                          currentRole === role ? 'bg-slate-100 font-medium' : ''
-                        }`}
-                        onClick={() => {
-                          onRoleChange?.(role);
-                          setShowRoleSwitcher(false);
-                        }}
-                      >
-                        {role}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Notifications */}
             <div className="relative">
               <Button 

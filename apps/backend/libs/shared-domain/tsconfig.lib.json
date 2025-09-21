@@ -14,8 +14,16 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/lib/entities/systems/ai-analysis.entity.ts", "src/lib/entities/systems/notification.entity.ts", "src/lib/entities/systems/system-log.entity.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/lib/entities/systems/ai-analysis.entity.ts",
+    "src/lib/entities/systems/notification.entity.ts",
+    "src/lib/entities/systems/system-log.entity.ts"
+  ],
   "references": [
+    {
+      "path": "../shared-interfaces/tsconfig.lib.json"
+    },
     {
       "path": "../shared-enums/tsconfig.lib.json"
     }

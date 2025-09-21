@@ -1,34 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { PatientConditionService } from './patient-conditions.service';
 import { CreatePatientConditionDto } from './dto/create-patient-condition.dto';
 import { UpdatePatientConditionDto } from './dto/update-patient-condition.dto';
+import { PatientConditionResponseDto } from './dto/patient-condition-response.dto';
 
-@Controller('patient-conditions')
+@Controller()
 export class PatientConditionController {
   constructor(private readonly patientConditionService: PatientConditionService) {}
 
-  @Post()
-  create(@Body() createPatientConditionDto: CreatePatientConditionDto) {
-    return this.patientConditionService.create(createPatientConditionDto);
+  @MessagePattern('patient-condition.create')
+  async create(createPatientConditionDto: CreatePatientConditionDto): Promise<PatientConditionResponseDto> {
+    return await this.patientConditionService.create(createPatientConditionDto);
   }
 
-  @Get()
-  findAll() {
-    return this.patientConditionService.findAll();
+  @MessagePattern('patient-condition.findAll')
+  async findAll(): Promise<PatientConditionResponseDto[]> {
+    return await this.patientConditionService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.patientConditionService.findOne(+id);
+  @MessagePattern('patient-condition.findByPatientId')
+  async findByPatientId(patientId: string): Promise<PatientConditionResponseDto[]> {
+    return await this.patientConditionService.findByPatientId(patientId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePatientConditionDto: UpdatePatientConditionDto) {
-    return this.patientConditionService.update(+id, updatePatientConditionDto);
+  @MessagePattern('patient-condition.findOne')
+  async findOne(id: string): Promise<PatientConditionResponseDto> {
+    return await this.patientConditionService.findOne(id);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.patientConditionService.remove(+id);
+  @MessagePattern('patient-condition.update')
+  async update(data: { id: string; updatePatientConditionDto: UpdatePatientConditionDto }): Promise<PatientConditionResponseDto> {
+    return await this.patientConditionService.update(data.id, data.updatePatientConditionDto);
+  }
+
+  @MessagePattern('patient-condition.remove')
+  async remove(id: string): Promise<void> {
+    return await this.patientConditionService.remove(id);
   }
 }

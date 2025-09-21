@@ -21,7 +21,6 @@ import { useState } from "react";
 
 export default function Dashboard() {
   const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Administrator");
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -31,11 +30,6 @@ export default function Dashboard() {
     console.log("Logout clicked");
   };
 
-  const handleRoleChange = (newRole: string) => {
-    setCurrentRole(newRole);
-    console.log("Role changed to:", newRole);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* App Header */}
@@ -43,13 +37,11 @@ export default function Dashboard() {
         notificationCount={notificationCount}
         onNotificationClick={handleNotificationClick}
         onLogout={handleLogout}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
       />
 
       {/* Workspace Layout */}
       <WorkspaceLayout
-        sidebar={<SidebarNav userRole={currentRole} />}
+        sidebar={<SidebarNav />}
       >
       {/* System Overview Stats */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

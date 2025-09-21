@@ -87,11 +87,11 @@ export function DashboardLayout({
                   Reception
                 </Button>
               </Link>
-              <Link href="/patients" className="block">
+              <Link href="/reception/patients" className="block">
                 <Button 
                   variant="ghost" 
                   className={`w-full justify-start hover:bg-slate-100 hover:text-slate-700 transition-colors ${
-                    pathname === "/patients" 
+                    pathname === "/reception/patients" 
                       ? "bg-slate-100 text-slate-700 font-medium" 
                       : "text-slate-600"
                   }`}
