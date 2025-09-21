@@ -1,26 +1,275 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateDicomInstanceDto } from './dto/create-dicom-instance.dto';
 import { UpdateDicomInstanceDto } from './dto/update-dicom-instance.dto';
-
+import { DicomInstancesRepository } from './dicom-instances.repository';
+import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { EntityManager } from 'typeorm';
+import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { RepositoryPaginationDto } from '@backend/database';
+const relation = ['series'];
 @Injectable()
 export class DicomInstancesService {
-  create(createDicomInstanceDto: CreateDicomInstanceDto) {
-    return 'This action adds a new dicomInstance';
-  }
+  constructor(
+    @Inject()
+    private readonly dicomInstancesRepository: DicomInstancesRepository,
+    @Inject()
+    private readonly dicomSeriesRepository: DicomSeriesRepository,
+    @Inject()
+    private readonly dicomStudiesRepository: DicomStudiesRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
+  ) {}
 
-  findAll() {
-    return `This action returns all dicomInstances`;
-  }
+  private checkDicomSeries = async (id: string, em?: EntityManager) => {
+    const series = await this.dicomSeriesRepository.findOne(
+      { where: { id } },
+      [],
+      em
+    );
+    if (!series) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to create dicom instance: dicom series not found',
+        IMAGING_SERVICE
+      );
+    }
+    return series;
+  };
 
-  findOne(id: number) {
-    return `This action returns a #${id} dicomInstance`;
-  }
+  private checkDicomInstance = async (id: string, em?: EntityManager) => {
+    const instance = await this.dicomInstancesRepository.findOne(
+      {
+        where: { id },
+      },
+      [],
+      em
+    );
 
-  update(id: number, updateDicomInstanceDto: UpdateDicomInstanceDto) {
-    return `This action updates a #${id} dicomInstance`;
-  }
+    if (!instance) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Dicom instance not found',
+        IMAGING_SERVICE
+      );
+    }
+    return instance;
+  };
 
-  remove(id: number) {
-    return `This action removes a #${id} dicomInstance`;
-  }
+  private getLatestInstanceNumber = async (id: string, em?: EntityManager) => {
+    let instanceNumber = 1;
+    const instance = await this.dicomInstancesRepository.findOne(
+      {
+        where: { seriesId: id },
+        order: { instanceNumber: -1 },
+      },
+      [],
+      em
+    );
+
+    if (instance) {
+      instanceNumber = instance.instanceNumber + 1;
+    }
+
+    return instanceNumber;
+  };
+
+  private updateDicomSeriesNumberOfInstance = async (
+    id: string,
+    quantity: number,
+    mode: 'add' | 'subtract',
+    entityManager?: EntityManager
+  ) => {
+    if (!['add', 'subtract'].includes(mode)) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to update number of series for study: invalid mode',
+        IMAGING_SERVICE
+      );
+    }
+    const series = await this.dicomSeriesRepository.findOne(
+      { where: { id } },
+      [],
+      entityManager
+    );
+    if (!series) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to process this dicom series: series not found',
+        IMAGING_SERVICE
+      );
+    }
+    const newTotal =
+      mode === 'add'
+        ? series.numberOfInstances + quantity
+        : series.numberOfInstances - quantity;
+
+    if (newTotal < 0) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Internal Server Error',
+        IMAGING_SERVICE
+      );
+    }
+
+    await this.dicomSeriesRepository.update(
+      id,
+      {
+        numberOfInstances: newTotal,
+      },
+      entityManager
+    );
+  };
+
+  create = async (createDicomInstanceDto: CreateDicomInstanceDto) => {
+    //check dicom series
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const series = await this.checkDicomSeries(
+          createDicomInstanceDto.seriesId,
+          transactionalEntityManager
+        );
+
+        //update number of instance in series
+        await this.updateDicomSeriesNumberOfInstance(
+          series.id,
+          1,
+          'add',
+          transactionalEntityManager
+        );
+
+        const instanceNumber = await this.getLatestInstanceNumber(
+          series.id,
+          transactionalEntityManager
+        );
+        //add instance number into instance
+        const data = {
+          ...createDicomInstanceDto,
+          instanceNumber: instanceNumber,
+        };
+
+        return await this.dicomInstancesRepository.create(
+          data,
+          transactionalEntityManager
+        );
+      }
+    );
+  };
+
+  findAll = async () => {
+    return await this.dicomInstancesRepository.findAll({}, relation);
+  };
+
+  findOne = async (id: string) => {
+    //check dicomInstance
+    await this.checkDicomInstance(id);
+
+    return await this.dicomInstancesRepository.findOne(
+      { where: { id } },
+      relation
+    );
+  };
+
+  update = async (
+    id: string,
+    updateDicomInstanceDto: UpdateDicomInstanceDto
+  ) => {
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        let updateData: any = updateDicomInstanceDto;
+        //check dicomInstance
+        const instance = await this.checkDicomInstance(
+          id,
+          transactionalEntityManager
+        );
+
+        //check dicom series if provided
+        if (
+          updateDicomInstanceDto.seriesId &&
+          updateDicomInstanceDto.seriesId !== instance.seriesId
+        ) {
+          //new series available
+          await this.checkDicomSeries(
+            updateDicomInstanceDto.seriesId,
+            transactionalEntityManager
+          );
+
+          //update old series number of instance
+          await this.updateDicomSeriesNumberOfInstance(
+            instance.seriesId,
+            1,
+            'subtract',
+            transactionalEntityManager
+          );
+          //update new series number of instance
+          await this.updateDicomSeriesNumberOfInstance(
+            updateDicomInstanceDto.seriesId,
+            1,
+            'add',
+            transactionalEntityManager
+          );
+
+          //get new series & update instance number for this instance
+          const number = await this.getLatestInstanceNumber(
+            updateDicomInstanceDto.seriesId,
+            transactionalEntityManager
+          );
+
+          updateData = { ...updateDicomInstanceDto, instanceNumber: number };
+        }
+
+        return await this.dicomInstancesRepository.update(
+          id,
+          {
+            ...updateData,
+          },
+          transactionalEntityManager
+        );
+      }
+    );
+  };
+
+  remove = async (id: string) => {
+    //update number of instance in series
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const instance = await this.checkDicomInstance(
+          id,
+          transactionalEntityManager
+        );
+
+        await this.updateDicomSeriesNumberOfInstance(
+          instance.seriesId,
+          1,
+          'subtract',
+          transactionalEntityManager
+        );
+        return await this.dicomInstancesRepository.softDelete(
+          id,
+          'isDeleted',
+          transactionalEntityManager
+        );
+      }
+    );
+  };
+
+  findMany = async (paginationDto: RepositoryPaginationDto) => {
+    return await this.dicomInstancesRepository.paginate({
+      ...paginationDto,
+      relation,
+    });
+  };
+
+  findByReferenceId = async (
+    id: string,
+    type: 'series' | 'sopInstanceUid',
+    paginationDto: RepositoryPaginationDto
+  ) => {
+    return await this.dicomInstancesRepository.findInstancesByReferenceId(
+      id,
+      type,
+      paginationDto
+    );
+  };
 }

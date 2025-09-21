@@ -10,10 +10,11 @@ import {
 } from 'typeorm';
 import { DicomInstance } from '../../dicom-instances/entities/dicom-instance.entity';
 import { AnnotationType, AnnotationStatus } from '@backend/shared-enums';
+import { BaseEntity } from '@backend/entities';
 
 @Entity('image_annotations')
 @Index(['instanceId'])
-export class ImageAnnotation {
+export class ImageAnnotation extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'annotation_id' })
   id!: string;
 
@@ -51,8 +52,8 @@ export class ImageAnnotation {
   @Column({ name: 'color_code', length: 7, nullable: true })
   colorCode?: string;
 
-//   @Column({ name: 'line_thickness', type: 'int', nullable: true })
-//   lineThickness?: number;
+  //   @Column({ name: 'line_thickness', type: 'int', nullable: true })
+  //   lineThickness?: number;
 
   @Column({
     name: 'annotation_status',
@@ -73,19 +74,13 @@ export class ImageAnnotation {
   })
   annotationDate!: Date;
 
-//   //   physician
-//   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
-//   reviewedBy?: string;
+  //   //   physician
+  //   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
+  //   reviewedBy?: string;
 
   @Column({ name: 'review_date', type: 'timestamp', nullable: true })
   reviewDate?: Date;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

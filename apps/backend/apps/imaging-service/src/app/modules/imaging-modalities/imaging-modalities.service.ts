@@ -4,6 +4,7 @@ import { UpdateImagingModalityDto } from './dto/update-imaging-modality.dto';
 import { ImagingModalityRepository } from './imaging-modalities.repository';
 import { RepositoryPaginationDto } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class ImagingModalitiesService {
@@ -27,10 +28,10 @@ export class ImagingModalitiesService {
     });
 
     if (!modality) {
-      ThrowMicroserviceException(
+      throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
         'Modality not found',
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
 
@@ -46,10 +47,10 @@ export class ImagingModalitiesService {
     });
 
     if (!modality) {
-      ThrowMicroserviceException(
+      throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
         'Modality not found',
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
 
@@ -65,10 +66,10 @@ export class ImagingModalitiesService {
     });
 
     if (!modality) {
-      ThrowMicroserviceException(
+      throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
         'Modality not found',
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
 
