@@ -3,7 +3,7 @@ import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { UpdatePrescriptionDto } from './dto/update-prescription.dto';
 
 @Injectable()
-export class PrescriptionsService {
+export class PrescriptionService {
   create(createPrescriptionDto: CreatePrescriptionDto) {
     return 'This action adds a new prescription';
   }

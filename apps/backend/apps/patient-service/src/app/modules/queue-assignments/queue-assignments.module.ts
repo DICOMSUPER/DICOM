@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { QueueAssignmentsService } from './queue-assignments.service';
-import { QueueAssignmentsController } from './queue-assignments.controller';
+import { QueueAssignmentService } from './queue-assignments.service';
+import { QueueAssignmentController } from './queue-assignments.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { QueueAssignment } from '@backend/shared-domain';
 
 @Module({
-  controllers: [QueueAssignmentsController],
-  providers: [QueueAssignmentsService],
+  imports: [TypeOrmModule.forFeature([QueueAssignment])],
+  controllers: [QueueAssignmentController],
+  providers: [QueueAssignmentService],
 })
-export class QueueAssignmentsModule {}
+export class QueueAssignmentModule {}

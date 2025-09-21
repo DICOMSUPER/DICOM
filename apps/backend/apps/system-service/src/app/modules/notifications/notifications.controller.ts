@@ -1,34 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { 
+  CreateNotificationDto, 
+  FilterNotificationDto, 
+  UpdateNotificationDto,
+  Notification
+} from '@backend/shared-domain';
+import { PaginatedResponseDto } from '@backend/database';
 
-@Controller('notifications')
+@Controller()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  create(@Body() createNotificationDto: CreateNotificationDto) {
+  @MessagePattern('notification.create')
+  async create(@Payload() createNotificationDto: CreateNotificationDto): Promise<Notification> {
     return this.notificationsService.create(createNotificationDto);
   }
 
-  @Get()
-  findAll() {
-    return this.notificationsService.findAll();
+  @MessagePattern('notification.findAll')
+  async findAll(@Payload() filter: FilterNotificationDto): Promise<PaginatedResponseDto<Notification>> {
+    return this.notificationsService.findAll(filter);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(+id);
+  @MessagePattern('notification.findOne')
+  async findOne(@Payload() data: { id: string }): Promise<Notification> {
+    return this.notificationsService.findOne(data.id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationsService.update(+id, updateNotificationDto);
+  @MessagePattern('notification.update')
+  async update(@Payload() data: { id: string; updateNotificationDto: UpdateNotificationDto }): Promise<Notification> {
+    return this.notificationsService.update(data.id, data.updateNotificationDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationsService.remove(+id);
+  @MessagePattern('notification.remove')
+  async remove(@Payload() data: { id: string }): Promise<void> {
+    return this.notificationsService.remove(data.id);
+  }
+
+  @MessagePattern('notification.markAsRead')
+  async markAsRead(@Payload() data: { id: string }): Promise<Notification> {
+    return this.notificationsService.markAsRead(data.id);
+  }
+
+  @MessagePattern('notification.markAllAsRead')
+  async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
+    return this.notificationsService.markAllAsRead(data.userId);
   }
 }

@@ -1,26 +1,80 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSystemLogDto } from './dto/create-system-log.dto';
-import { UpdateSystemLogDto } from './dto/update-system-log.dto';
+import { SystemLog } from '@backend/shared-domain';
+import { RedisService } from '@backend/redis';
+import { createCacheKey } from '@backend/shared-utils';
+import { PaginatedResponseDto, PaginationService } from '@backend/database';
+import { FilterSystemLogDto } from '../../../../../../libs/shared-domain/src/lib/dto/systems/filter-system-log.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateSystemLogDto } from '@backend/shared-domain';
 
 @Injectable()
 export class SystemLogsService {
-  create(createSystemLogDto: CreateSystemLogDto) {
-    return 'This action adds a new systemLog';
-  }
+  constructor(
+    @InjectRepository(SystemLog)
+    private readonly systemLogRepository: Repository<SystemLog>,
+    private readonly redisService: RedisService,
+    private readonly paginationService: PaginationService
+  ) {}
 
-  findAll() {
-    return `This action returns all systemLogs`;
-  }
+  async create(createSystemLogDto: CreateSystemLogDto): Promise<SystemLog> {
+    console.log('🔧 Creating system log in service:', createSystemLogDto);
 
-  findOne(id: number) {
-    return `This action returns a #${id} systemLog`;
-  }
+    const systemLog = this.systemLogRepository.create({
+      ...createSystemLogDto,
+      timestamp: new Date(),
+    });
 
-  update(id: number, updateSystemLogDto: UpdateSystemLogDto) {
-    return `This action updates a #${id} systemLog`;
-  }
+    const savedLog = await this.systemLogRepository.save(systemLog);
+    console.log('✅ System log created successfully:', savedLog.id);
 
-  remove(id: number) {
-    return `This action removes a #${id} systemLog`;
+    return savedLog;
+  }
+  async findAll(filter: FilterSystemLogDto) {
+    const { page, limit, logLevel, category } = filter;
+
+    const options: any = {
+      where: {},
+      order: { createdAt: 'DESC' },
+    };
+
+    const keyName = createCacheKey.system(
+      'system_logs',
+      undefined,
+      'filter_system_logs',
+      { ...filter }
+    );
+    const cachedService = await this.redisService.get<
+      PaginatedResponseDto<SystemLog>
+    >(keyName);
+    if (cachedService) {
+      console.log('cached service');
+      return cachedService;
+    }
+    if (logLevel) {
+      options.where = {
+        ...options.where,
+        logLevel,
+      };
+    }
+    if (category) {
+      options.where = {
+        ...options.where,
+        category,
+      };
+    }
+
+    const result = await this.paginationService.paginate(
+      SystemLog,
+      {
+        page,
+        limit,
+      },
+      options
+    );
+
+    await this.redisService.set(keyName, result, 60000);
+
+    return result;
   }
 }

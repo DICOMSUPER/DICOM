@@ -38,7 +38,11 @@
         "libs/shared-decorators/*",
         "libs/entities/*",
         "entities/*",
-        "libs/database/*"
+        "libs/database/*",
+        "libs/shared-domain/*",
+        "libs/redis/*",
+        "libs/client/*",
+        "libs/shared-client/*"
       ]
     },
     {
@@ -84,7 +88,11 @@
         "libs/shared-decorators/*",
         "libs/entities/*",
         "entities/*",
-        "libs/database/*"
+        "libs/database/*",
+        "libs/shared-domain/*",
+        "libs/redis/*",
+        "libs/client/*",
+        "libs/shared-client/*"
       ],
       "options": {
         "typecheck": {

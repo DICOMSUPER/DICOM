@@ -59,6 +59,15 @@
     },
     {
       "path": "./libs/database"
+    },
+    {
+      "path": "./libs/shared-domain"
+    },
+    {
+      "path": "./libs/redis"
+    },
+    {
+      "path": "./libs/shared-client"
     }
   ]
 }

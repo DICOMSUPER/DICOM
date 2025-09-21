@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PatientsModule } from './modules/patients/patients.module';
-import { PatientVisitsModule } from './modules/patient-visits/patient-visits.module';
-import { QueueAssignmentsModule } from './modules/queue-assignments/queue-assignments.module';
-import { MedicalHistoryModule } from './modules/medical-history/medical-history.module';
-import { DiagnosesReportModule } from './modules/diagnoses-report/diagnoses-report.module';
-import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
-import { PrescriptionItemsModule } from './modules/prescription-items/prescription-items.module';
+import { PatientModule } from './modules/patients/patients.module';
+import { PatientEncounterModule } from './modules/patient-encounters/patient-encounters.module';
+import { QueueAssignmentModule } from './modules/queue-assignments/queue-assignments.module';
+import { PatientConditionModule } from './modules/patient-conditions/patient-conditions.module';
+import { DiagnosesReportModule } from './modules/diagnoses-reports/diagnoses-reports.module';
+import { PrescriptionModule } from './modules/prescriptions/prescriptions.module';
+import { PrescriptionItemModule } from './modules/prescription-items/prescription-items.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
+
 
 @Module({
   imports: [
@@ -17,17 +18,18 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
-    PatientsModule,
-    PatientVisitsModule,
-    QueueAssignmentsModule,
-    MedicalHistoryModule,
     DatabaseModule.forService({
       prefix: 'PATIENT',
-      defaultDbName: 'dicom_patient_service',
+      defaultDbName: 'dicom_patient_service'
+
     }),
+    PatientModule,
+    PatientEncounterModule,
+    QueueAssignmentModule,
+    PatientConditionModule,
     DiagnosesReportModule,
-    PrescriptionsModule,
-    PrescriptionItemsModule,
+    PrescriptionModule,
+    PrescriptionItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
