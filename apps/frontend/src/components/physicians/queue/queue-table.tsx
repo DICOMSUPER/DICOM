@@ -34,8 +34,9 @@ import {
   Clock,
   ArrowUpDown,
 } from 'lucide-react';
-import { QueueStatus } from '@/enums/patient.enum';
+import { PriorityLevel, QueueStatus } from '@/enums/patient.enum';
 import { QueueAssignment } from '@/interfaces/patient/queue.interface';
+import { formatDate, formatTime } from '@/lib/formatTimeDate';
 
 interface QueueTableProps {
   queueItems: QueueAssignment[];
@@ -69,34 +70,48 @@ export function QueueTable({
     }
   };
 
-  const getPriorityLevel = (level: PriorityLevel) => {
-    switch (status) {
-      case QueueStatus.WAITING:
-        return <div className="w-3 h-3 bg-blue-500 rounded-full" />;
-      case QueueStatus.COMPLETED:
-        return <div className="w-3 h-3 bg-green-500 rounded-full" />;
-      default:
-        return <div className="w-3 h-3 bg-gray-400 rounded-full" />;
-    }
-  };
+const getPriorityLevel = (level: PriorityLevel) => {
+  switch (level) {
+    case PriorityLevel.ROUTINE:
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-blue-500 rounded-full" />
+          <span className="text-xs text-gray-700">Routine</span>
+        </div>
+      );
+    case PriorityLevel.MEDIUM:
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-green-500 rounded-full" />
+          <span className="text-xs text-gray-700">Medium</span>
+        </div>
+      );
+    case PriorityLevel.HIGH:
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+          <span className="text-xs text-gray-700">High</span>
+        </div>
+      );
+    case PriorityLevel.URGENT:
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-red-500 rounded-full" />
+          <span className="text-xs text-gray-700">Urgent</span>
+        </div>
+      );
+    default:
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-gray-400 rounded-full" />
+          <span className="text-xs text-gray-700">Unknown</span>
+        </div>
+      );
+  }
+};
 
-  const formatTime = (date?: Date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
 
-  const formatDate = (date?: Date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    });
-  };
+
 
   const columns = [
 
@@ -202,7 +217,7 @@ export function QueueTable({
       ),
       cell: ({ row }) => (
         <div className="flex text-center items-center gap-2">
-          {row.original.priority_level}
+          {getPriorityLevel(row?.original?.priority_level as PriorityLevel)}
         </div>
       ),
     }),

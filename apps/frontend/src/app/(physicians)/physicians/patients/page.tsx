@@ -3,6 +3,7 @@ import { SearchFilters } from '@/components/physicians/paitient/patient-filter';
 import { PatientsHeader } from '@/components/physicians/paitient/patient-header';
 import { PatientsTable } from '@/components/physicians/paitient/patients-table';
 import { usePatients } from '@/hooks/use-patients';
+import { useRouter } from 'next/navigation';
 import React from 'react'
 
 const page = () => {
@@ -13,6 +14,7 @@ const {
     setSearchQuery,
     setFilters,
   } = usePatients();
+  const router = useRouter();
 
   const handleAddPatient = () => {
     console.log('Add patient clicked');
@@ -21,6 +23,8 @@ const {
 
   const handleViewPatient = (id: string) => {
     console.log('View patient:', id);
+    router.push(`/physicians/patients/${id}`);
+
     
   };
 

@@ -13,3 +13,9 @@ export enum QueueStatus {
   WAITING = "waiting",
   COMPLETED = "completed",
 }
+export enum PriorityLevel {
+  ROUTINE = "Routine",  // bình thường
+  MEDIUM = "Medium",    // trung bình
+  HIGH = "High",        // cao
+  URGENT = "Urgent",    // khẩn cấp
+}

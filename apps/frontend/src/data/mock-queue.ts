@@ -1,4 +1,4 @@
-import { QueueStatus, VisitType } from '@/enums/patient.enum';
+import { PriorityLevel, QueueStatus, VisitType } from '@/enums/patient.enum';
 import { QueueAssignment } from '@/interfaces/patient/queue.interface';
 
 export const mockQueueData: QueueAssignment[] = [
@@ -7,7 +7,7 @@ export const mockQueueData: QueueAssignment[] = [
     queue_id: 'q1',
     queue_number: '1/23112022/4',
     status: QueueStatus.WAITING,
-    priority_level: 4,
+    priority_level: PriorityLevel.URGENT,
     assigned_at: new Date('2022-11-23T18:00:00'),
     visit_id: 'v1',
     visit: {
@@ -36,7 +36,7 @@ export const mockQueueData: QueueAssignment[] = [
     queue_id: 'q2',
     queue_number: '1/23112022/4',
     status: QueueStatus.WAITING,
-    priority_level: 4,
+    priority_level: PriorityLevel.ROUTINE,
     assigned_at: new Date('2022-11-23T20:20:00'),
     visit_id: 'v2',
     visit: {
@@ -64,7 +64,7 @@ export const mockQueueData: QueueAssignment[] = [
     queue_id: 'q3',
     queue_number: '1/23112022/4',
     status: QueueStatus.WAITING,
-    priority_level: 4,
+    priority_level: PriorityLevel.HIGH,
     assigned_at: new Date('2022-11-23T21:30:00'),
     visit_id: 'v3',
     visit: {

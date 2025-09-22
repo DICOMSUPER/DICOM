@@ -115,7 +115,7 @@ const ViewPortMain = () => {
           Wheel = 524288: Con lăn chuột
           Wheel_Primary = 524289: Con lăn chuột + nút chuột trái
          */
-        toolGroup?.setToolActive(PanTool.toolName, {
+        toolGroup?.setToolActive(WindowLevelTool.toolName, {
           bindings: [
             {
               mouseButton: 1,
@@ -170,7 +170,7 @@ const ViewPortMain = () => {
       ref={elementRef}
       style={{
         width: "100%",
-        height: "100%",
+        height: "100vh",
         backgroundColor: "#000",
         border: "1px solid #333",
       }}

@@ -35,6 +35,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { Patient } from '@/interfaces/patient/patient.interface';
+import { formatDate } from '@/lib/formatTimeDate';
 
 interface PatientsTableProps {
   patients: Patient[];
@@ -59,13 +60,6 @@ export function PatientsTable({
     return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase();
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
 
   const calcAge = (dob: Date) => {
     const birth = new Date(dob);
