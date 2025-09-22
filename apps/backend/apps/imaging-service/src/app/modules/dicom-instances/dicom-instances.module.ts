@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DicomInstancesService } from './dicom-instances.service';
 import { DicomInstancesController } from './dicom-instances.controller';
-import { DicomInstance } from './entities/dicom-instance.entity';
-import { DicomSeries } from '../dicom-series/entities/dicom-series.entity';
+import { DicomInstance } from '@backend/shared-domain';
+import { DicomSeries } from '@backend/shared-domain';
 import { BackendEntitiesModule } from '@backend/entities';
 import { DicomInstancesRepository } from './dicom-instances.repository';
 import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';

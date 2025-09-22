@@ -1,8 +1,15 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateImagingOrderDto } from './dto/create-imaging-order.dto';
-import { UpdateImagingOrderDto } from './dto/update-imaging-order.dto';
+import {
+  CreateImagingOrderDto,
+  ImagingModality,
+  ImagingOrder,
+} from '@backend/shared-domain';
+import { UpdateImagingOrderDto } from '@backend/shared-domain';
 import { ImagingOrderRepository } from './imaging-orders.repository';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
@@ -16,7 +23,7 @@ export class ImagingOrdersService {
     private readonly imagingModalityRepository: ImagingModalityRepository
   ) {}
 
-  private checkImagingOrder = async (id: string) => {
+  private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
     const order = await this.imagingOrderRepository.findOne({ where: { id } });
     if (!order) {
       throw ThrowMicroserviceException(
@@ -28,7 +35,7 @@ export class ImagingOrdersService {
     return order;
   };
 
-  private checkModality = async (id: string) => {
+  private checkModality = async (id: string): Promise<ImagingModality> => {
     const modality = await this.imagingModalityRepository.findById(id);
     if (!modality) {
       throw ThrowMicroserviceException(
@@ -43,18 +50,21 @@ export class ImagingOrdersService {
         IMAGING_SERVICE
       );
     }
+    return modality;
   };
 
-  create = async (createImagingOrderDto: CreateImagingOrderDto) => {
+  create = async (
+    createImagingOrderDto: CreateImagingOrderDto
+  ): Promise<ImagingOrder> => {
     await this.checkModality(createImagingOrderDto.modalityId);
     return await this.imagingOrderRepository.create(createImagingOrderDto);
   };
 
-  findAll = async () => {
+  findAll = async (): Promise<ImagingOrder[]> => {
     return await this.imagingOrderRepository.findAll({ where: {} }, relation);
   };
 
-  findOne = async (id: string) => {
+  findOne = async (id: string): Promise<ImagingOrder | null> => {
     const order = await this.imagingOrderRepository.findOne(
       { where: { id } },
       relation
@@ -70,7 +80,9 @@ export class ImagingOrdersService {
     return order;
   };
 
-  findMany = async (paginationDto: RepositoryPaginationDto) => {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImagingOrder>> => {
     return await this.imagingOrderRepository.paginate({
       ...paginationDto,
       relation,
@@ -81,7 +93,7 @@ export class ImagingOrdersService {
     id: string,
     type: 'physician' | 'room' | 'visit' | 'patient',
     paginationDto: RepositoryPaginationDto
-  ) => {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> => {
     return await this.imagingOrderRepository.findImagingOrderByReferenceId(
       id,
       type,
@@ -89,7 +101,10 @@ export class ImagingOrdersService {
     );
   };
 
-  update = async (id: string, updateImagingOrderDto: UpdateImagingOrderDto) => {
+  update = async (
+    id: string,
+    updateImagingOrderDto: UpdateImagingOrderDto
+  ): Promise<ImagingOrder | null> => {
     const order = await this.checkImagingOrder(id);
 
     //check availablity when update modality
@@ -102,7 +117,7 @@ export class ImagingOrdersService {
     return await this.imagingOrderRepository.update(id, updateImagingOrderDto);
   };
 
-  remove = async (id: string) => {
+  remove = async (id: string): Promise<boolean> => {
     await this.checkImagingOrder(id);
     return await this.imagingOrderRepository.softDelete(id, 'isDeleted');
   };

@@ -4,7 +4,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImagingOrder } from './entities/imaging-order.entity';
+import { ImagingOrder } from '@backend/shared-domain';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
