@@ -87,10 +87,10 @@ export class DicomSeriesController {
   }
 
   @Post()
-  async createDicomSeries(@Body() createDicomSeryDto: any) {
+  async createDicomSeries(@Body() createDicomSeriesDto: any) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.Create', {
-        createDicomSeryDto,
+        createDicomSeriesDto,
       })
     );
   }
@@ -98,12 +98,12 @@ export class DicomSeriesController {
   @Patch(':id')
   async updateDicomSeries(
     @Param('id') id: string,
-    @Body() updateDicomSeryDto: any
+    @Body() updateDicomSeriesDto: any
   ) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.Update', {
         id,
-        updateDicomSeryDto,
+        updateDicomSeriesDto,
       })
     );
   }

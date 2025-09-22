@@ -17,7 +17,7 @@ import {
   OrderStatus,
   Urgency,
 } from '@backend/shared-enums';
-import { ImagingModality } from '../../imaging-modalities/entities/imaging-modality.entity';
+import { ImagingModality } from './imaging-modality.entity';
 import { BaseEntity } from '@backend/entities';
 @Entity('imaging_orders')
 @Index(['patientId'])

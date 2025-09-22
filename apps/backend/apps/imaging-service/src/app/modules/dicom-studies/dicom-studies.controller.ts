@@ -9,15 +9,18 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DicomStudiesService } from './dicom-studies.service';
-import { CreateDicomStudyDto } from './dto/create-dicom-study.dto';
-import { UpdateDicomStudyDto } from './dto/update-dicom-study.dto';
+import { CreateDicomStudyDto, DicomStudy } from '@backend/shared-domain';
+import { UpdateDicomStudyDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   MESSAGE_PATTERNS,
   IMAGING_SERVICE,
 } from '../../../constant/microservice.constant';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 
 const moduleName = 'DicomStudies';
 @Controller('dicom-studies')
@@ -26,7 +29,9 @@ export class DicomStudiesController {
   constructor(private readonly dicomStudiesService: DicomStudiesService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
-  async create(@Payload() data: { createDicomStudyDto: CreateDicomStudyDto }) {
+  async create(
+    @Payload() data: { createDicomStudyDto: CreateDicomStudyDto }
+  ): Promise<DicomStudy> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
@@ -45,7 +50,7 @@ export class DicomStudiesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll() {
+  async findAll(): Promise<DicomStudy[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
@@ -63,7 +68,7 @@ export class DicomStudiesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }) {
+  async findOne(@Payload() data: { id: string }): Promise<DicomStudy | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -82,7 +87,7 @@ export class DicomStudiesController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
     @Payload() data: { id: string; updateDicomStudyDto: UpdateDicomStudyDto }
-  ) {
+  ): Promise<DicomStudy | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
@@ -100,7 +105,7 @@ export class DicomStudiesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }) {
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -131,7 +136,7 @@ export class DicomStudiesController {
         | 'studyInstanceUid';
       paginationDto: RepositoryPaginationDto;
     }
-  ) {
+  ): Promise<PaginatedResponseDto<DicomStudy>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
     );
@@ -161,7 +166,9 @@ export class DicomStudiesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<DicomStudy>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );

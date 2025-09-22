@@ -7,7 +7,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { DicomSeries } from '../../dicom-series/entities/dicom-series.entity';
+import { DicomSeries } from './dicom-series.entity';
 import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_instances')

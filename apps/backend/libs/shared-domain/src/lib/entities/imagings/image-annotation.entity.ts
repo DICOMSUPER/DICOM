@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { DicomInstance } from '../../dicom-instances/entities/dicom-instance.entity';
+import { DicomInstance } from './dicom-instance.entity';
 import { AnnotationType, AnnotationStatus } from '@backend/shared-enums';
 import { BaseEntity } from '@backend/entities';
 

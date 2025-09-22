@@ -4,7 +4,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { DicomInstance } from './entities/dicom-instance.entity';
+import { DicomInstance } from '@backend/shared-domain'; //using entity from shared domain
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -21,7 +21,7 @@ export class DicomInstancesRepository extends BaseRepository<DicomInstance> {
     type: 'series' | 'sopInstanceUid',
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
-  ) {
+  ): Promise<PaginatedResponseDto<DicomInstance>> {
     const repository = this.getRepository(entityManager);
     const {
       page = 1,

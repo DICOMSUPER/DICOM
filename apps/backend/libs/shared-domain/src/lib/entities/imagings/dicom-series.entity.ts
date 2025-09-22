@@ -8,8 +8,8 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { DicomStudy } from '../../dicom-studies/entities/dicom-study.entity';
-import { DicomInstance } from '../../dicom-instances/entities/dicom-instance.entity';
+import { DicomStudy } from './dicom-study.entity';
+import { DicomInstance } from './dicom-instance.entity';
 import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_series')

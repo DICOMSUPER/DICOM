@@ -1,8 +1,14 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateImagingModalityDto } from './dto/create-imaging-modality.dto';
-import { UpdateImagingModalityDto } from './dto/update-imaging-modality.dto';
+import {
+  CreateImagingModalityDto,
+  ImagingModality,
+} from '@backend/shared-domain';
+import { UpdateImagingModalityDto } from '@backend/shared-domain';
 import { ImagingModalityRepository } from './imaging-modalities.repository';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
@@ -12,17 +18,19 @@ export class ImagingModalitiesService {
     @Inject()
     private readonly imagingModalityRepository: ImagingModalityRepository
   ) {}
-  create = async (createImagingModalityDto: CreateImagingModalityDto) => {
+  create = async (
+    createImagingModalityDto: CreateImagingModalityDto
+  ): Promise<ImagingModality> => {
     return await this.imagingModalityRepository.create(
       createImagingModalityDto
     );
   };
 
-  findAll = async () => {
+  findAll = async (): Promise<ImagingModality[]> => {
     return await this.imagingModalityRepository.findAll();
   };
 
-  findOne = async (id: string) => {
+  findOne = async (id: string): Promise<ImagingModality | null> => {
     const modality = await this.imagingModalityRepository.findOne({
       where: { id },
     });
@@ -41,7 +49,7 @@ export class ImagingModalitiesService {
   update = async (
     id: string,
     updateImagingModalityDto: UpdateImagingModalityDto
-  ) => {
+  ): Promise<ImagingModality | null> => {
     const modality = await this.imagingModalityRepository.findOne({
       where: { id },
     });
@@ -60,7 +68,7 @@ export class ImagingModalitiesService {
     );
   };
 
-  remove = async (id: string) => {
+  remove = async (id: string): Promise<boolean> => {
     const modality = await this.imagingModalityRepository.findOne({
       where: { id },
     });
@@ -76,7 +84,9 @@ export class ImagingModalitiesService {
     return await this.imagingModalityRepository.softDelete(id, 'isDeleted');
   };
 
-  findMany = async (paginationDto: RepositoryPaginationDto) => {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImagingModality>> => {
     return await this.imagingModalityRepository.paginate(paginationDto);
   };
 }

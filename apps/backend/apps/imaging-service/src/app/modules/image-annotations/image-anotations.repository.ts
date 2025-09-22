@@ -4,7 +4,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImageAnnotation } from './entities/image-annotation.entity';
+import { ImageAnnotation } from '@backend/shared-domain';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -20,7 +20,7 @@ export class ImageAnotationsRepository extends BaseRepository<ImageAnnotation> {
     type: 'annotator' | 'instance',
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
-  ) {
+  ): Promise<PaginatedResponseDto<ImageAnnotation>> {
     const repository = this.getRepository(entityManager);
     const {
       page = 1,

@@ -9,10 +9,10 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { DicomSeries } from '../../dicom-series/entities/dicom-series.entity';
-import { ImagingModality } from '../../imaging-modalities/entities/imaging-modality.entity';
+import { DicomSeries } from './dicom-series.entity';
+import { ImagingModality } from './imaging-modality.entity';
 import { DicomStudyStatus } from '@backend/shared-enums';
-import { ImagingOrder } from '../../imaging-orders/entities/imaging-order.entity';
+import { ImagingOrder } from './imaging-order.entity';
 import { BaseEntity } from '@backend/entities';
 
 @Entity('dicom_studies')
