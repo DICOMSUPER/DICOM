@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared-enums"
+    },
+    {
       "path": "../../libs/shared-domain"
     },
     {

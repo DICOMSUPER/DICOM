@@ -7,7 +7,7 @@ import { getClient } from '@backend/shared-utils';
   imports: [
     ClientsModule.register([
       getClient(
-        process.env.IMAGE_SERVICE_NAME || 'ImageService',
+        process.env.IMAGE_SERVICE_NAME || 'ImagingService',
         Number(process.env.IMAGE_SERVICE_TRANSPORT || Transport.TCP),
         process.env.IMAGE_SERVICE_HOST || 'localhost',
         Number(process.env.IMAGE_SERVICE_PORT || 5003)

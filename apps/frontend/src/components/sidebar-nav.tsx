@@ -2,18 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { getNavigationForRole } from "@/config/navigation";
+import { detectRoleFromPath } from "@/utils/role-detection";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-interface SidebarNavProps {
-  userRole?: string;
-}
-
-export function SidebarNav({ userRole = "Administrator" }: SidebarNavProps) {
+export function SidebarNav() {
   const pathname = usePathname();
+  const userRole = detectRoleFromPath(pathname);
   const navItems = getNavigationForRole(userRole).map(item => ({
     ...item,
-    active: pathname === item.href || pathname.startsWith(item.href + "/")
+    active: pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
   }));
 
   return (
@@ -37,14 +35,6 @@ export function SidebarNav({ userRole = "Administrator" }: SidebarNavProps) {
             </Link>
           );
         })}
-      </div>
-      
-      {/* User Role Badge */}
-      <div className="mt-8 pt-4 border-t border-border">
-        <div className="text-xs text-slate-500 mb-2">Current Role</div>
-        <div className="text-sm font-medium text-slate-700 bg-slate-100 px-3 py-2 rounded-md">
-          {userRole}
-        </div>
       </div>
     </nav>
   );

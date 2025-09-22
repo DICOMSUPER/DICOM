@@ -17,6 +17,9 @@ const pathMap: Record<string, string> = {
   'queue': 'Queue',
   'settings': 'Settings',
   'profile': 'Profile',
+  'vital-signs': 'Vital Signs',
+  'encounters': 'Encounters',
+  'diagnoses': 'Diagnoses',
 }
 
 export function useBreadcrumb() {
@@ -26,10 +29,7 @@ export function useBreadcrumb() {
     const paths = pathname.split('/').filter(Boolean)
     const items: BreadcrumbItem[] = []
 
-    // Always add home
-    items.push({ label: 'Home', href: '/' })
-
-    // Build up the breadcrumb items based on the path
+    // Build up the breadcrumb items based on the path (excluding home)
     let currentPath = ''
     paths.forEach((path) => {
       currentPath += `/${path}`

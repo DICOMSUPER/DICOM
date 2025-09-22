@@ -38,14 +38,11 @@ export function WorkspaceLayout({ children, sidebar }: WorkspaceLayoutProps) {
           <div className="flex-1 p-4">
             <div className="mb-4">
               <Breadcrumb
-                items={[
-                  { label: 'Home', href: '/' },
-                  ...paths.map((path, index) => ({
-                    label: pathMap[path] || path.charAt(0).toUpperCase() + path.slice(1),
-                    href: '/' + paths.slice(0, index + 1).join('/'),
-                    active: index === paths.length - 1
-                  }))
-                ]}
+                items={paths.map((path, index) => ({
+                  label: pathMap[path] || path.charAt(0).toUpperCase() + path.slice(1),
+                  href: '/' + paths.slice(0, index + 1).join('/'),
+                  active: index === paths.length - 1
+                }))}
               />
             </div>
             {children}

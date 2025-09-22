@@ -9,7 +9,6 @@ import { useState } from "react";
 
 export default function PatientsPage() {
   const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Physician");
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -19,11 +18,6 @@ export default function PatientsPage() {
     console.log("Logout clicked");
   };
 
-  const handleRoleChange = (newRole: string) => {
-    setCurrentRole(newRole);
-    console.log("Role changed to:", newRole);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* App Header */}
@@ -31,13 +25,11 @@ export default function PatientsPage() {
         notificationCount={notificationCount}
         onNotificationClick={handleNotificationClick}
         onLogout={handleLogout}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
       />
 
       {/* Workspace Layout */}
       <WorkspaceLayout
-        sidebar={<SidebarNav userRole={currentRole} />}
+        sidebar={<SidebarNav />}
       >
         <div className="flex flex-col gap-6">
           <PatientToolbar />

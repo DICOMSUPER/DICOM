@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Clock, Users, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -10,7 +12,7 @@ export function QuickActionsBar() {
       <div className="flex items-center space-x-4">
         <Button 
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          onClick={() => router.push('/reception/register')}
+          onClick={() => router.push('/reception/registration')}
         >
           <UserPlus className="w-4 h-4 mr-2" />
           Register New Patient
