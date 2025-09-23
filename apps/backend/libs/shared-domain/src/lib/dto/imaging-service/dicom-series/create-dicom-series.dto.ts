@@ -1,6 +1,6 @@
 import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class CreateDicomSeryDto {
+export class CreateDicomSeriesDto {
   @IsString()
   seriesInstanceUid!: string;
 

@@ -9,15 +9,18 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DicomSeriesService } from './dicom-series.service';
-import { CreateDicomSeryDto } from './dto/create-dicom-sery.dto';
-import { UpdateDicomSeryDto } from './dto/update-dicom-sery.dto';
+import { CreateDicomSeriesDto, DicomSeries } from '@backend/shared-domain';
+import { UpdateDicomSeriesDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   MESSAGE_PATTERNS,
   IMAGING_SERVICE,
 } from '../../../constant/microservice.constant';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 
 const moduleName = 'DicomSeries';
 @Controller('dicom-series')
@@ -26,13 +29,15 @@ export class DicomSeriesController {
   constructor(private readonly dicomSeriesService: DicomSeriesService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
-  async create(@Payload() data: { createDicomSeryDto: CreateDicomSeryDto }) {
+  async create(
+    @Payload() data: { createDicomSeriesDto: CreateDicomSeriesDto }
+  ): Promise<DicomSeries> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      const { createDicomSeryDto } = data;
-      return await this.dicomSeriesService.create(createDicomSeryDto);
+      const { createDicomSeriesDto } = data;
+      return await this.dicomSeriesService.create(createDicomSeriesDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -45,7 +50,7 @@ export class DicomSeriesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll() {
+  async findAll(): Promise<DicomSeries[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
@@ -63,7 +68,7 @@ export class DicomSeriesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }) {
+  async findOne(@Payload() data: { id: string }): Promise<DicomSeries | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -81,14 +86,14 @@ export class DicomSeriesController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
-    @Payload() data: { id: string; updateDicomSeryDto: UpdateDicomSeryDto }
-  ) {
+    @Payload() data: { id: string; updateDicomSeriesDto: UpdateDicomSeriesDto }
+  ): Promise<DicomSeries | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
     try {
-      const { id, updateDicomSeryDto } = data;
-      return await this.dicomSeriesService.update(id, updateDicomSeryDto);
+      const { id, updateDicomSeriesDto } = data;
+      return await this.dicomSeriesService.update(id, updateDicomSeriesDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -99,7 +104,7 @@ export class DicomSeriesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }) {
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -118,7 +123,9 @@ export class DicomSeriesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<DicomSeries>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );
@@ -149,7 +156,7 @@ export class DicomSeriesController {
       type: 'study' | 'seriesInstanceUid' | 'order' | 'modality';
       paginationDto: RepositoryPaginationDto;
     }
-  ) {
+  ): Promise<PaginatedResponseDto<DicomSeries>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
     );

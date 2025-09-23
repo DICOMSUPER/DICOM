@@ -9,15 +9,18 @@ import {
   Logger,
 } from '@nestjs/common';
 import { DicomInstancesService } from './dicom-instances.service';
-import { CreateDicomInstanceDto } from './dto/create-dicom-instance.dto';
-import { UpdateDicomInstanceDto } from './dto/update-dicom-instance.dto';
+import { CreateDicomInstanceDto, DicomInstance } from '@backend/shared-domain';
+import { UpdateDicomInstanceDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   MESSAGE_PATTERNS,
   IMAGING_SERVICE,
 } from '../../../constant/microservice.constant';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 
 const moduleName = 'DicomInstances';
 @Controller('dicom-instances')
@@ -28,7 +31,7 @@ export class DicomInstancesController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
     @Payload() data: { createDicomInstanceDto: CreateDicomInstanceDto }
-  ) {
+  ): Promise<DicomInstance> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
@@ -47,7 +50,7 @@ export class DicomInstancesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll() {
+  async findAll(): Promise<DicomInstance[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
@@ -65,7 +68,9 @@ export class DicomInstancesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }) {
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<DicomInstance | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -88,7 +93,7 @@ export class DicomInstancesController {
       id: string;
       updateDicomInstanceDto: UpdateDicomInstanceDto;
     }
-  ) {
+  ): Promise<DicomInstance | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
@@ -108,7 +113,7 @@ export class DicomInstancesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }) {
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -127,7 +132,9 @@ export class DicomInstancesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<DicomInstance>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );
@@ -158,7 +165,7 @@ export class DicomInstancesController {
       type: 'sopInstanceUid' | 'series';
       paginationDto: RepositoryPaginationDto;
     }
-  ) {
+  ): Promise<PaginatedResponseDto<DicomInstance>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
     );

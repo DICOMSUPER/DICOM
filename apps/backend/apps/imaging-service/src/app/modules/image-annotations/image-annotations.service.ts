@@ -1,7 +1,14 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateImageAnnotationDto } from './dto/create-image-annotation.dto';
-import { UpdateImageAnnotationDto } from './dto/update-image-annotation.dto';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  CreateImageAnnotationDto,
+  DicomInstance,
+  ImageAnnotation,
+} from '@backend/shared-domain';
+import { UpdateImageAnnotationDto } from '@backend/shared-domain';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import { ImageAnotationsRepository } from './image-anotations.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
@@ -17,7 +24,9 @@ export class ImageAnnotationsService {
     private readonly dicomInstanceRepository: DicomInstancesRepository
   ) {}
 
-  private checkImageAnotation = async (id: string) => {
+  private checkImageAnotation = async (
+    id: string
+  ): Promise<ImageAnnotation> => {
     const annotation = await this.imageAnnotationRepository.findOne(
       {
         where: { id },
@@ -34,7 +43,7 @@ export class ImageAnnotationsService {
     return annotation;
   };
 
-  private checkDicomInstance = async (id: string) => {
+  private checkDicomInstance = async (id: string): Promise<DicomInstance> => {
     const instance = await this.dicomInstanceRepository.findOne({
       where: { id },
     });
@@ -50,17 +59,19 @@ export class ImageAnnotationsService {
     return instance;
   };
 
-  create = async (createImageAnnotationDto: CreateImageAnnotationDto) => {
+  create = async (
+    createImageAnnotationDto: CreateImageAnnotationDto
+  ): Promise<ImageAnnotation> => {
     return await this.imageAnnotationRepository.create(
       createImageAnnotationDto
     );
   };
 
-  findAll = async () => {
+  findAll = async (): Promise<ImageAnnotation[]> => {
     return await this.imageAnnotationRepository.findAll({}, relation);
   };
 
-  findOne = async (id: string) => {
+  findOne = async (id: string): Promise<ImageAnnotation | null> => {
     //check image anotation & since it's already queried
     return await this.checkImageAnotation(id);
   };
@@ -68,7 +79,7 @@ export class ImageAnnotationsService {
   update = async (
     id: string,
     updateImageAnnotationDto: UpdateImageAnnotationDto
-  ) => {
+  ): Promise<ImageAnnotation | null> => {
     const annotation = await this.checkImageAnotation(id);
 
     if (
@@ -83,13 +94,15 @@ export class ImageAnnotationsService {
     );
   };
 
-  remove = async (id: string) => {
+  remove = async (id: string): Promise<boolean> => {
     await this.checkImageAnotation(id);
 
     return await this.imageAnnotationRepository.softDelete(id, 'isDeleted');
   };
 
-  findMany = async (paginationDto: RepositoryPaginationDto) => {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImageAnnotation>> => {
     return await this.imageAnnotationRepository.paginate({
       ...paginationDto,
       relation,
@@ -100,7 +113,7 @@ export class ImageAnnotationsService {
     id: string,
     type: 'annotator' | 'instance',
     paginationDto: RepositoryPaginationDto
-  ) => {
+  ): Promise<PaginatedResponseDto<ImageAnnotation>> => {
     return await this.imageAnnotationRepository.findByReferenceId(id, type, {
       ...paginationDto,
       relation,

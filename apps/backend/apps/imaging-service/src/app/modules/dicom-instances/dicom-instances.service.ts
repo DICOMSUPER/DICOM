@@ -1,6 +1,6 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateDicomInstanceDto } from './dto/create-dicom-instance.dto';
-import { UpdateDicomInstanceDto } from './dto/update-dicom-instance.dto';
+import { CreateDicomInstanceDto } from '@backend/shared-domain';
+import { UpdateDicomInstanceDto } from '@backend/shared-domain';
 import { DicomInstancesRepository } from './dicom-instances.repository';
 import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -8,7 +8,12 @@ import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { EntityManager } from 'typeorm';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+import { DicomSeries } from '@backend/shared-domain';
+import { DicomInstance } from '@backend/shared-domain';
 const relation = ['series'];
 @Injectable()
 export class DicomInstancesService {
@@ -22,7 +27,10 @@ export class DicomInstancesService {
     @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
-  private checkDicomSeries = async (id: string, em?: EntityManager) => {
+  private checkDicomSeries = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<DicomSeries> => {
     const series = await this.dicomSeriesRepository.findOne(
       { where: { id } },
       [],
@@ -38,7 +46,10 @@ export class DicomInstancesService {
     return series;
   };
 
-  private checkDicomInstance = async (id: string, em?: EntityManager) => {
+  private checkDicomInstance = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<DicomInstance> => {
     const instance = await this.dicomInstancesRepository.findOne(
       {
         where: { id },
@@ -57,7 +68,10 @@ export class DicomInstancesService {
     return instance;
   };
 
-  private getLatestInstanceNumber = async (id: string, em?: EntityManager) => {
+  private getLatestInstanceNumber = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<number> => {
     let instanceNumber = 1;
     const instance = await this.dicomInstancesRepository.findOne(
       {
@@ -80,7 +94,7 @@ export class DicomInstancesService {
     quantity: number,
     mode: 'add' | 'subtract',
     entityManager?: EntityManager
-  ) => {
+  ): Promise<void> => {
     if (!['add', 'subtract'].includes(mode)) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
@@ -122,7 +136,9 @@ export class DicomInstancesService {
     );
   };
 
-  create = async (createDicomInstanceDto: CreateDicomInstanceDto) => {
+  create = async (
+    createDicomInstanceDto: CreateDicomInstanceDto
+  ): Promise<DicomInstance> => {
     //check dicom series
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
@@ -157,11 +173,11 @@ export class DicomInstancesService {
     );
   };
 
-  findAll = async () => {
+  findAll = async (): Promise<DicomInstance[]> => {
     return await this.dicomInstancesRepository.findAll({}, relation);
   };
 
-  findOne = async (id: string) => {
+  findOne = async (id: string): Promise<DicomInstance | null> => {
     //check dicomInstance
     await this.checkDicomInstance(id);
 
@@ -174,7 +190,7 @@ export class DicomInstancesService {
   update = async (
     id: string,
     updateDicomInstanceDto: UpdateDicomInstanceDto
-  ) => {
+  ): Promise<DicomInstance | null> => {
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
         let updateData: any = updateDicomInstanceDto;
@@ -230,7 +246,7 @@ export class DicomInstancesService {
     );
   };
 
-  remove = async (id: string) => {
+  remove = async (id: string): Promise<boolean> => {
     //update number of instance in series
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
@@ -254,7 +270,9 @@ export class DicomInstancesService {
     );
   };
 
-  findMany = async (paginationDto: RepositoryPaginationDto) => {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<DicomInstance>> => {
     return await this.dicomInstancesRepository.paginate({
       ...paginationDto,
       relation,
@@ -265,7 +283,7 @@ export class DicomInstancesService {
     id: string,
     type: 'series' | 'sopInstanceUid',
     paginationDto: RepositoryPaginationDto
-  ) => {
+  ): Promise<PaginatedResponseDto<DicomInstance>> => {
     return await this.dicomInstancesRepository.findInstancesByReferenceId(
       id,
       type,

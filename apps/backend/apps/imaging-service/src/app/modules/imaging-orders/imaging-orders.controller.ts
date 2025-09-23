@@ -9,10 +9,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ImagingOrdersService } from './imaging-orders.service';
-import { CreateImagingOrderDto } from './dto/create-imaging-order.dto';
-import { UpdateImagingOrderDto } from './dto/update-imaging-order.dto';
+import { CreateImagingOrderDto, ImagingOrder } from '@backend/shared-domain';
+import { UpdateImagingOrderDto } from '@backend/shared-domain';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
   IMAGING_SERVICE,
@@ -28,7 +31,7 @@ export class ImagingOrdersController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
     @Payload() data: { createImagingOrderDto: CreateImagingOrderDto }
-  ) {
+  ): Promise<ImagingOrder> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
@@ -47,7 +50,7 @@ export class ImagingOrdersController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll() {
+  async findAll(): Promise<ImagingOrder[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
@@ -65,7 +68,7 @@ export class ImagingOrdersController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }) {
+  async findOne(@Payload() data: { id: string }): Promise<ImagingOrder | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -88,7 +91,7 @@ export class ImagingOrdersController {
       id: string;
       updateImagingOrderDto: UpdateImagingOrderDto;
     }
-  ) {
+  ): Promise<ImagingOrder | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
@@ -105,7 +108,7 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }) {
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -129,7 +132,7 @@ export class ImagingOrdersController {
       type: 'physician' | 'room' | 'patient' | 'visit';
       paginationDto: RepositoryPaginationDto;
     }
-  ) {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
     );
@@ -159,7 +162,9 @@ export class ImagingOrdersController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );

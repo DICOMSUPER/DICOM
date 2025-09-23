@@ -1,13 +1,21 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateDicomStudyDto } from './dto/create-dicom-study.dto';
-import { UpdateDicomStudyDto } from './dto/update-dicom-study.dto';
+import {
+  CreateDicomStudyDto,
+  DicomStudy,
+  ImagingModality,
+  ImagingOrder,
+} from '@backend/shared-domain';
+import { UpdateDicomStudyDto } from '@backend/shared-domain';
 import { DicomStudiesRepository } from './dicom-studies.repository';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { OrderStatus } from '@backend/shared-enums';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
-import { RepositoryPaginationDto } from '@backend/database';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 
 //relation: imagingOrder, modality, series
 const relation = ['imagingOrder', 'modality', 'series'];
@@ -22,7 +30,7 @@ export class DicomStudiesService {
     @Inject()
     private readonly imagingOrdersRepository: ImagingOrderRepository
   ) {}
-  private checkDicomStudy = async (id: string) => {
+  private checkDicomStudy = async (id: string): Promise<DicomStudy> => {
     const dicomStudy = await this.dicomStudiesRepository.findOne({
       where: { id },
     });
@@ -38,7 +46,9 @@ export class DicomStudiesService {
     return dicomStudy;
   };
 
-  private checkImagingModality = async (id: string) => {
+  private checkImagingModality = async (
+    id: string
+  ): Promise<ImagingModality> => {
     const imagingModality = await this.imagingModalitiesRepository.findOne({
       where: { id },
     });
@@ -62,7 +72,7 @@ export class DicomStudiesService {
     return imagingModality;
   };
 
-  private checkImagingOrder = async (id: string) => {
+  private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
     const imagingOrder = await this.imagingOrdersRepository.findOne({
       where: { id },
     });
@@ -91,7 +101,9 @@ export class DicomStudiesService {
     return imagingOrder;
   };
 
-  create = async (createDicomStudyDto: CreateDicomStudyDto) => {
+  create = async (
+    createDicomStudyDto: CreateDicomStudyDto
+  ): Promise<DicomStudy> => {
     //check imaging order
     await this.checkImagingOrder(createDicomStudyDto.orderId);
 
@@ -101,11 +113,11 @@ export class DicomStudiesService {
     return await this.dicomStudiesRepository.create(createDicomStudyDto);
   };
 
-  findAll = async () => {
+  findAll = async (): Promise<DicomStudy[]> => {
     return await this.dicomStudiesRepository.findAll({ where: {} }, relation);
   };
 
-  findOne = async (id: string) => {
+  findOne = async (id: string): Promise<DicomStudy | null> => {
     //check studies
     await this.checkDicomStudy(id);
 
@@ -115,7 +127,10 @@ export class DicomStudiesService {
     );
   };
 
-  update = async (id: string, updateDicomStudyDto: UpdateDicomStudyDto) => {
+  update = async (
+    id: string,
+    updateDicomStudyDto: UpdateDicomStudyDto
+  ): Promise<DicomStudy | null> => {
     //check dicom study
     const dicomStudy = await this.checkDicomStudy(id);
 
@@ -137,7 +152,7 @@ export class DicomStudiesService {
     return await this.dicomStudiesRepository.update(id, updateDicomStudyDto);
   };
 
-  remove = async (id: string) => {
+  remove = async (id: string): Promise<boolean> => {
     await this.checkDicomStudy(id);
 
     return await this.dicomStudiesRepository.softDelete(id, 'isDeleted');
@@ -154,7 +169,7 @@ export class DicomStudiesService {
       | 'referringPhysician'
       | 'studyInstanceUid',
     paginationDto: RepositoryPaginationDto
-  ) => {
+  ): Promise<PaginatedResponseDto<DicomStudy>> => {
     return await this.dicomStudiesRepository.findDicomStudiesByReferenceId(
       id,
       type,
@@ -162,7 +177,9 @@ export class DicomStudiesService {
     );
   };
 
-  findMany = async (paginationDto: RepositoryPaginationDto) => {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<DicomStudy>> => {
     return await this.dicomStudiesRepository.paginate({
       ...paginationDto,
       relation,
