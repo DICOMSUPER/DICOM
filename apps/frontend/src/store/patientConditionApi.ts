@@ -9,10 +9,9 @@ import {
 export const patientConditionApi = createApi({
   reducerPath: 'patientConditionApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/patient-conditions`,
+    baseUrl: '/api/patient-conditions',
     prepareHeaders: (headers) => {
-      // Add auth token if available
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }

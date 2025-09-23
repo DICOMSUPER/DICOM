@@ -16,7 +16,7 @@ import { QueueStatus, QueuePriorityLevel } from "@/enums/patient.enum";
 import { Clock, Users, CheckCircle, AlertTriangle, UserPlus } from "lucide-react";
 
 interface QueueAssignmentProps {
-  onAssignPatient?: (visitId: string) => void;
+  onAssignPatient?: (encounterId: string) => void;
 }
 
 export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
@@ -33,16 +33,16 @@ export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
   const [completeQueueAssignment] = useCompleteQueueAssignmentMutation();
   const [expireQueueAssignment] = useExpireQueueAssignmentMutation();
 
-  const handleAssignPatient = async (visitId: string) => {
+  const handleAssignPatient = async (encounterId: string) => {
     try {
       await assignPatientToQueue({
-        visitId,
+        encounterId,
         priority: selectedPriority,
         roomId: selectedRoom || undefined
       }).unwrap();
       
       if (onAssignPatient) {
-        onAssignPatient(visitId);
+        onAssignPatient(encounterId);
       }
     } catch (error) {
       console.error('Failed to assign patient to queue:', error);

@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Bell, CheckCircle } from "lucide-react";
+import { NotificationType } from "@/enums/notification.enum";
 
 interface Notification {
   id: string;
-  type: 'urgent' | 'system' | 'info';
+  type: NotificationType;
   title: string;
   description: string;
   action: {
@@ -17,7 +18,7 @@ interface Notification {
 const notifications: Notification[] = [
   {
     id: '1',
-    type: 'urgent',
+    type: NotificationType.URGENT,
     title: 'Urgent: Patient waiting 45+ minutes',
     description: 'John Doe (MRN: 2024001) - Cardiology',
     action: {
@@ -27,7 +28,7 @@ const notifications: Notification[] = [
   },
   {
     id: '2',
-    type: 'system',
+    type: NotificationType.SYSTEM,
     title: 'System: Dr. Smith running 15 min late',
     description: 'Next 3 appointments may be delayed',
     action: {
@@ -37,7 +38,7 @@ const notifications: Notification[] = [
   },
   {
     id: '3',
-    type: 'info',
+    type: NotificationType.INFO,
     title: 'Info: New patient registration completed',
     description: 'Sarah Miller (MRN: 2024002) - Ready for consultation',
     action: {
@@ -49,19 +50,19 @@ const notifications: Notification[] = [
 
 const getNotificationStyles = (type: Notification['type']) => {
   switch (type) {
-    case 'urgent':
+    case NotificationType.URGENT:
       return {
         border: 'border-red-200',
         bg: 'bg-red-50',
         icon: <AlertCircle className="w-5 h-5 text-red-600" />
       };
-    case 'system':
+    case NotificationType.SYSTEM:
       return {
         border: 'border-yellow-200',
         bg: 'bg-yellow-50',
         icon: <AlertCircle className="w-5 h-5 text-yellow-600" />
       };
-    case 'info':
+    case NotificationType.INFO:
       return {
         border: 'border-blue-200',
         bg: 'bg-blue-50',

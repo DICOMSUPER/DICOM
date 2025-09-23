@@ -10,9 +10,9 @@ import {
 export const queueAssignmentApi = createApi({
   reducerPath: 'queueAssignmentApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/queue-assignments',
+    baseUrl: '/api/queue-assignments',
     prepareHeaders: (headers) => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }

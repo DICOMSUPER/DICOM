@@ -21,10 +21,9 @@ import {
 export const patientApi = createApi({
   reducerPath: 'patientApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/patients`,
+    baseUrl: '/api/patients',
     prepareHeaders: (headers) => {
-      // Add auth token if available
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = localStorage.getItem('token');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -117,7 +116,7 @@ export const patientApi = createApi({
     // Encounter endpoints
     getEncountersByPatientId: builder.query<PatientEncounter[], { patientId: string; limit?: number }>({
       query: ({ patientId, limit }) => ({
-        url: `/${patientId}/encounters`,
+        url: `/encounters/patient/${patientId}`,
         params: { limit },
       }),
       providesTags: (result, error, { patientId }) => [
@@ -151,7 +150,7 @@ export const patientApi = createApi({
 
     createEncounter: builder.mutation<PatientEncounter, CreatePatientEncounterDto>({
       query: (data) => ({
-        url: `/${data.patientId}/encounters`,
+        url: '/encounters',
         method: 'POST',
         body: data,
       }),
@@ -165,7 +164,7 @@ export const patientApi = createApi({
     updateEncounter: builder.mutation<PatientEncounter, { id: string; data: UpdatePatientEncounterDto }>({
       query: ({ id, data }) => ({
         url: `/encounters/${id}`,
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [

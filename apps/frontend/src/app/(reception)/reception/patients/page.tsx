@@ -4,7 +4,6 @@ import { SidebarNav } from "@/components/sidebar-nav";
 import { AppHeader } from "@/components/app-header";
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { PatientSearch } from "@/components/reception/patient-search";
-import { NotificationsPanel } from "@/components/reception/notifications-panel";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -47,10 +46,6 @@ export default function ReceptionPage() {
           />
         </section>
 
-        {/* Notifications & Alerts */}
-        <section className="mb-6">
-          <NotificationsPanel />
-        </section>
       </WorkspaceLayout>
     </div>
   );

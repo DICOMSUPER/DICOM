@@ -71,11 +71,17 @@ export interface PatientEncounter extends BaseEntity {
   vitalSigns?: VitalSignsCollection;
   assignedPhysicianId?: string;
   notes?: string;
+  status?: string;
+  priority?: string;
+  roomId?: string;
+  roomFloor?: string;
+  physicianSpecialty?: string;
   patient?: {
     id: string;
     patientCode: string;
     firstName: string;
     lastName: string;
+    phoneNumber?: string;
   };
   diagnosesCount?: number;
 }
@@ -232,6 +238,11 @@ export interface EncounterSearchFilters {
   encounterDateTo?: string;
   assignedPhysicianId?: string;
   chiefComplaint?: string;
+  searchTerm?: string;
+  priority?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: string;
   limit?: number;
   offset?: number;
 }

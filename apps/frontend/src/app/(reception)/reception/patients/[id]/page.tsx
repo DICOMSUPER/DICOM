@@ -5,9 +5,11 @@ import { useParams } from "next/navigation";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { PatientForward } from "@/components/reception/patient-forward";
-import { useGetPatientByIdQuery, useGetEncountersByPatientIdQuery } from "@/store/patientApi";
+import { useGetPatientByIdQuery, useGetEncountersByPatientIdQuery, useCreateEncounterMutation, useUpdateEncounterMutation } from "@/store/patientApi";
 import { useGetConditionsByPatientIdQuery } from "@/store/patientConditionApi";
 import { PatientConditionList } from "@/components/patient/PatientConditionList";
+import { EncounterList } from "@/components/patient/EncounterList";
+import { EncounterForm } from "@/components/patient/EncounterForm";
 import {
   Card,
   CardContent,
@@ -16,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
@@ -32,10 +35,51 @@ export default function PatientDetail() {
   const params = useParams();
   const patientId = params.id as string;
 
+  // State for encounter management
+  const [showEncounterForm, setShowEncounterForm] = useState(false);
+  const [editingEncounter, setEditingEncounter] = useState(null);
+
   // Fetch real patient data
   const { data: patient, isLoading: patientLoading, error: patientError } = useGetPatientByIdQuery(patientId);
   const { data: encounters, isLoading: encountersLoading } = useGetEncountersByPatientIdQuery(patientId);
   const { data: conditions, isLoading: conditionsLoading } = useGetConditionsByPatientIdQuery(patientId);
+
+  // Encounter mutations
+  const [createEncounter, { isLoading: isCreatingEncounter }] = useCreateEncounterMutation();
+  const [updateEncounter, { isLoading: isUpdatingEncounter }] = useUpdateEncounterMutation();
+
+  // Encounter handlers
+  const handleCreateEncounter = () => {
+    setEditingEncounter(null);
+    setShowEncounterForm(true);
+  };
+
+  const handleEditEncounter = (encounter) => {
+    setEditingEncounter(encounter);
+    setShowEncounterForm(true);
+  };
+
+  const handleCancelEncounter = () => {
+    setShowEncounterForm(false);
+    setEditingEncounter(null);
+  };
+
+  const handleEncounterSubmit = async (data) => {
+    try {
+      if (editingEncounter) {
+        await updateEncounter({
+          id: editingEncounter.id,
+          data: data
+        }).unwrap();
+      } else {
+        await createEncounter(data).unwrap();
+      }
+      setShowEncounterForm(false);
+      setEditingEncounter(null);
+    } catch (error) {
+      console.error('Error saving encounter:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,7 +122,7 @@ export default function PatientDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Patient Information */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="text-foreground">Patient Information</CardTitle>
                 <CardDescription>
@@ -147,50 +191,24 @@ export default function PatientDetail() {
             </Card>
 
             {/* Medical Encounters */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-foreground">Medical Encounters</CardTitle>
-                <CardDescription>
-                  Medical visits and appointments history
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {encountersLoading ? (
-                    <div className="text-center py-4">Loading encounters...</div>
-                  ) : encounters?.length ? (
-                    encounters.map((encounter) => (
-                      <div
-                        key={encounter.id}
-                        className="border border-border rounded-lg p-4 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-medium text-foreground">
-                              {encounter.encounterType} - {new Date(encounter.encounterDate).toLocaleDateString()}
-                            </h3>
-                            <p className="text-sm text-foreground">
-                              Chief Complaint: {encounter.chiefComplaint || 'N/A'}
-                            </p>
-                            <p className="text-sm text-foreground mt-1">
-                              {encounter.notes || 'No notes available'}
-                            </p>
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className="bg-green-100 text-green-800"
-                          >
-                            Active
-                          </Badge>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-foreground">No encounters found</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {showEncounterForm ? (
+              <EncounterForm
+                encounter={editingEncounter}
+                patientId={patientId}
+                onSubmit={handleEncounterSubmit}
+                onCancel={handleCancelEncounter}
+                loading={isCreatingEncounter || isUpdatingEncounter}
+              />
+            ) : (
+              <EncounterList
+                encounters={encounters || []}
+                loading={encountersLoading}
+                onEdit={handleEditEncounter}
+                onDelete={(encounterId) => console.log('Delete encounter:', encounterId)}
+                onView={(encounter) => console.log('View encounter:', encounter)}
+                onCreate={handleCreateEncounter}
+              />
+            )}
 
             {/* Patient Conditions */}
             <div className="col-span-1">

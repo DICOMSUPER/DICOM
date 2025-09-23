@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePatientConditionDto } from './dto/create-patient-condition.dto';
 import { UpdatePatientConditionDto } from './dto/update-patient-condition.dto';
 import { PatientConditionResponseDto } from './dto/patient-condition-response.dto';
-import { PatientCondition, PatientRepository } from '@backend/shared-domain';
+import { PatientRepository } from '@backend/shared-domain';
 
 @Injectable()
 export class PatientConditionService {

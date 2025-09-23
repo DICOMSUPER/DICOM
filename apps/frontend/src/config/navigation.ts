@@ -103,12 +103,6 @@ export const roleNavigation: RoleNavigation = {
       label: "Assignments",
       icon: UserCheck,
       description: "Patient assignments"
-    },
-    {
-      href: "/reception/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Personal settings"
     }
   ],
 
@@ -133,10 +127,16 @@ export const roleNavigation: RoleNavigation = {
       description: "Patient conditions and records"
     },
     {
-      href: "/physicians/diagnosis",
-      label: "Diagnosis",
+      href: "/physicians/diagnoses",
+      label: "Diagnoses",
       icon: Stethoscope,
-      description: "Diagnostic tools"
+      description: "Patient diagnoses management"
+    },
+    {
+      href: "/physicians/prescriptions",
+      label: "Prescriptions",
+      icon: FileText,
+      description: "Prescription management"
     },
     {
       href: "/physicians/schedule",

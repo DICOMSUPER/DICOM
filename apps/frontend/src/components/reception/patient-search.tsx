@@ -14,6 +14,7 @@ import {
 } from "@/store/patientApi";
 import { PatientSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
 import { Gender, BloodType } from "@/enums/patient-workflow.enum";
+import { PriorityLevel, HIGH_PRIORITY_LEVELS } from "@/enums/priority.enum";
 import { 
   Search, 
   Filter, 
@@ -23,7 +24,9 @@ import {
   Phone, 
   User, 
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react";
 
 interface PatientSearchProps {
@@ -41,7 +44,7 @@ export function PatientSearch({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
   
   const [filters, setFilters] = useState<PatientSearchFilters>({
     firstName: '',
@@ -106,34 +109,69 @@ export function PatientSearch({
   return (
     <div className="space-y-4">
       {/* Statistics */}
-      {showStats && patientStats && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{patientStats.totalPatients}</div>
-                <div className="text-sm text-gray-600">Total Patients</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">{patientStats.activePatients}</div>
-                <div className="text-sm text-gray-600">Active</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{patientStats.newPatientsThisMonth}</div>
-                <div className="text-sm text-gray-600">New This Month</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">{patientStats.inactivePatients}</div>
-                <div className="text-sm text-gray-600">Inactive</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {showStats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Patients */}
+          <Card className="border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-foreground">Total Patients</CardTitle>
+              <Users className="h-4 w-4 text-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{patientStats?.totalPatients || 0}</div>
+              <p className="text-xs text-foreground">
+                All registered patients
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Active Patients */}
+          <Card className="border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-foreground">Active Patients</CardTitle>
+              <CheckCircle className="h-4 w-4 text-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{patientStats?.activePatients || 0}</div>
+              <p className="text-xs text-foreground">
+                Currently active
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* New This Month */}
+          <Card className="border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-foreground">New This Month</CardTitle>
+              <Calendar className="h-4 w-4 text-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{patientStats?.newPatientsThisMonth || 0}</div>
+              <p className="text-xs text-foreground">
+                Registered this month
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Inactive Patients */}
+          <Card className="border-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-foreground">Inactive Patients</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{patientStats?.inactivePatients || 0}</div>
+              <p className="text-xs text-foreground">
+                Require attention
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Main Search Card */}
       <Card className="bg-card border border-border">
-        <CardHeader className="pb-4">
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -244,36 +282,29 @@ export function PatientSearch({
                     <SelectItem value={BloodType.AB_Negative}>AB-</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Show</span>
+                  <Select
+                    value={pageSize.toString()}
+                    onValueChange={(value) => setPageSize(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-600">per page</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50/50 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show</span>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(value) => setPageSize(parseInt(value))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-sm text-gray-600">per page</span>
-            </div>
-            <Button onClick={handleSearch}>
-              <Search className="w-4 h-4 mr-2" />
-              Search
-            </Button>
-          </div>
 
           {/* Results */}
           <div className="space-y-3">
@@ -283,8 +314,6 @@ export function PatientSearch({
                 <div className="text-lg font-medium mb-2">Search for patients</div>
                 <div className="text-sm">Enter a name or use filters to find patients</div>
               </div>
-            ) : isLoading ? (
-              <div className="text-center py-8 text-gray-500">Searching patients...</div>
             ) : results && results.length > 0 ? (
               <>
                 <div className="flex items-center justify-between">

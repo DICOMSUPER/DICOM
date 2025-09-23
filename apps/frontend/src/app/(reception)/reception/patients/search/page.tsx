@@ -8,11 +8,13 @@ import { AppHeader } from "@/components/app-header";
 import { PatientSearch } from "@/components/reception/patient-search";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Search } from "lucide-react";
 
 export default function PatientSearchPage() {
   const router = useRouter();
   const [notificationCount] = useState(3);
+  const [isLoading] = useState(true);
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -41,7 +43,7 @@ export default function PatientSearchPage() {
       <WorkspaceLayout sidebar={<SidebarNav />}>
         <div className="space-y-6">
           {/* Header */}
-          <Card>
+          <Card className="border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -68,13 +70,49 @@ export default function PatientSearchPage() {
           </Card>
 
           {/* Patient Search Component */}
-          <PatientSearch 
-            onPatientSelect={handlePatientSelect}
-            showStats={true}
-          />
+          {isLoading ? (
+            <div className="space-y-4">
+              <Card className="border-border">
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-24" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border">
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-24" />
+                            <Skeleton className="h-3 w-40" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-6 w-16" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <PatientSearch 
+              onPatientSelect={handlePatientSelect}
+              showStats={true}
+            />
+          )}
 
           {/* Information Card */}
-          <Card>
+          <Card className="border-border">
             <CardHeader>
               <CardTitle>Patient Search Features</CardTitle>
               <CardDescription>All search capabilities in one clean interface</CardDescription>

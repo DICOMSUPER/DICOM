@@ -22,6 +22,9 @@
   ],
   "references": [
     {
+      "path": "../shared-interfaces/tsconfig.lib.json"
+    },
+    {
       "path": "../database/tsconfig.lib.json"
     },
     {
