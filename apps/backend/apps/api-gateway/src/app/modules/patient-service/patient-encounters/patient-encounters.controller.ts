@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { CreatePatientEncounterDto, UpdatePatientEncounterDto, EncounterSearchFilters } from '@backend/shared-domain';
+import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
+import type { EncounterSearchFilters } from '@backend/shared-domain';
 
 @Controller('encounters')
 export class PatientEncounterController {
