@@ -18,9 +18,6 @@ export class UsersService {
     private userRepository: Repository<User>,
   ) { }
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
@@ -85,16 +82,95 @@ export class UsersService {
         return 24 * 60 * 60 * 1000;
     }
   }
+  async findAll(): Promise<Omit<User, 'passwordHash'>[]> {
+    const users = await this.userRepository.find({
+      select: [
+        'id',
+        'username',
+        'email',
+        'firstName',
+        'lastName',
+        'phone',
+        'employeeId',
+        'isVerified',
+        'role',
+        'departmentId',
+        'isActive',
+        'createdAt',
+        'updatedAt',
+        'createdBy'
+      ]
+    });
 
-  findAll() {
-    return `This action returns all users`;
+    return users;
   }
 
-  login(username: string, password: string) {
-    if
-    return `This action for user login`;
+  async login(email: string, password: string): Promise<TokenResponseDto | null> {
+    const user = await this.validateUser(email, password);
+
+    if (!user) {
+      return null;
+    }
+    return this.generateTokens(user);
   }
 
+  async register(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'> | null> {
+    try {
+      if (!createUserDto.password) {
+        throw new Error('Password là bắt buộc');
+      }
+
+      const existingUserByEmail = await this.findByEmail(createUserDto.email);
+      if (existingUserByEmail) {
+        throw new Error('Email đã được sử dụng');
+      }
+
+      const existingUserByUsername = await this.userRepository.findOne({
+        where: { username: createUserDto.username }
+      });
+      if (existingUserByUsername) {
+        throw new Error('Tên đăng nhập đã được sử dụng');
+      }
+
+      if (createUserDto.employeeId) {
+        const existingUserByEmployeeId = await this.userRepository.findOne({
+          where: { employeeId: createUserDto.employeeId }
+        });
+        if (existingUserByEmployeeId) {
+          throw new Error('Mã nhân viên đã được sử dụng');
+        }
+      }
+
+      const passwordHash = await bcrypt.hash(createUserDto.password, 10);
+
+      const newUser = this.userRepository.create({
+        username: createUserDto.username,
+        email: createUserDto.email,
+        passwordHash,
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+        phone: createUserDto.phone,
+        employeeId: createUserDto.employeeId,
+        isVerified: createUserDto.isVerified || false,
+        role: createUserDto.role,
+        departmentId: createUserDto.departmentId,
+        isActive: createUserDto.isActive !== undefined ? createUserDto.isActive : true,
+        createdBy: createUserDto.createdBy,
+      });
+
+      const savedUser = await this.userRepository.save(newUser);
+      const { passwordHash: _, ...userWithoutPassword } = savedUser;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
+  }
+  
+
+  create(createUserDto: CreateUserDto) {
+    return 'This action adds a new user';
+  }
   findOne(id: number) {
     return `This action returns a #${id} user`;
   }

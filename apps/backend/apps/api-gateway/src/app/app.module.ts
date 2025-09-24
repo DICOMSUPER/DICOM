@@ -10,6 +10,7 @@ import { SystemLogsModule } from './modules/system-service/system-logs/system-lo
 import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
+import { UserModule } from './modules/user/user.module';
 dotenv.config();
 
 @Module({
@@ -35,6 +36,7 @@ dotenv.config();
       ),
     ]),
     AuthModule,
+    UserModule,
     ImagingServiceModule,
     SystemLogsModule,
     AiAnalysisModule,

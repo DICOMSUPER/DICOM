@@ -1,34 +1,94 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
 
-@Controller('users')
+@Controller()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  private readonly logger = new Logger('UsersController');
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  constructor(private readonly usersService: UsersService) { }
+
+  @MessagePattern('user.check-health')
+  async checkHealth() {
+    return { message: 'UserService is running' };
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+
+  @MessagePattern('user.login')
+  async login(@Payload() data: { email: string; password: string }) {
+    try {
+      this.logger.log(`Login attempt for email: ${data.email}`);
+      const result = await this.usersService.login(data.email, data.password);
+
+      if (!result) {
+        throw new Error('Invalid credentials');
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Login error: `);
+      throw handleErrorFromMicroservices(
+        error,
+        'Login failed',
+        'UsersController.login'
+      );
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
+  @MessagePattern('user.register')
+  async register(@Payload() registerDto: {
+    username: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+  }) {
+    try {
+      this.logger.log(`Registration attempt for email: ${registerDto.email}`);
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+      const createUserDto: CreateUserDto = {
+        username: registerDto.username,
+        email: registerDto.email,
+        password: registerDto.password, 
+        firstName: registerDto.firstName,
+        lastName: registerDto.lastName,
+        phone: registerDto.phone,
+        isVerified: false,
+        isActive: true,
+      };
+
+
+    const result = await this.usersService.register(createUserDto);
+
+    if (!result) {
+      throw new Error('Registration failed');
+    }
+
+    return result;
+  } catch(error) {
+    this.logger.error(`Registration error: `);
+    throw handleErrorFromMicroservices(
+      error,
+      'Registration failed',
+      'UsersController.register'
+    );
   }
+}
+
+
+@MessagePattern('user.get-all-users')
+async getAllUsers() {
+  try {
+    const result = await this.usersService.findAll();
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
 }

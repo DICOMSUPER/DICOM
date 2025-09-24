@@ -19,7 +19,7 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @IsString({ message: 'Mật khẩu phải là chuỗi' })
   @Length(8, 30, { message: 'Mật khẩu phải từ 8 đến 30 ký tự' })
-  passwordHash!: string;
+  password!: string;
 
   @ApiProperty({ description: 'Tên', example: 'John' })
   @IsNotEmpty({ message: 'Tên không được để trống' })
