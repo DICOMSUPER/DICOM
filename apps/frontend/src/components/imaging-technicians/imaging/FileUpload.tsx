@@ -1,3 +1,5 @@
+"use client";
+
 import { Upload, X, File, CheckCircle, Loader2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { toast } from "@/components/common/Toast";

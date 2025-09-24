@@ -13,7 +13,7 @@ import { PatientEncounter } from './patient-encounters.entity';
 
 @Entity('queue_assignments')
 @Index(['queueNumber'])
-@Index(['visitId'])
+@Index(['encounter'])
 @Index(['status'])
 @Index(['priority'])
 @Index(['roomId'])
@@ -23,12 +23,9 @@ export class QueueAssignment {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })
   id!: string;
 
-  @Column({ name: 'visit_id', type: 'uuid' })
-  visitId!: string;
-
   @ManyToOne(() => PatientEncounter)
-  @JoinColumn({ name: 'visit_id' })
-  visit!: PatientEncounter;
+  @JoinColumn({ name: 'encounter_id' })
+  encounter!: PatientEncounter;
 
   @Column({ name: 'queue_number', type: 'int' })
   queueNumber!: number;
@@ -50,6 +47,18 @@ export class QueueAssignment {
 
   @Column({ name: 'priority_reason', type: 'text', nullable: true })
   priorityReason?: string;
+
+  @Column({ name: 'validation_token', type: 'varchar', length: 12, unique: true })
+  validationToken!: string;
+
+  @Column({ name: 'estimated_wait_time', type: 'int', nullable: true })
+  estimatedWaitTime?: number; // in minutes
+
+  @Column({ name: 'called_at', type: 'timestamp', nullable: true })
+  calledAt?: Date;
+
+  @Column({ name: 'called_by', type: 'uuid', nullable: true })
+  calledBy?: string;
 
   // created by reception staff
   @Column({ name: 'created_by', type: 'uuid' })

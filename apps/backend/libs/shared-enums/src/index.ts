@@ -12,4 +12,6 @@ export * from './lib/clinical-status.enum'
 export * from './lib/encounter-type.enum'
 export * from './lib/condition-verification-status.enum'
 export * from './lib/queue-status.enum'
-export * from './lib/queue-priority-level.enum'
+export * from './lib/queue-priority-level.enum';
+export * from './lib/vital-signs-code.enum';
+export * from './lib/vital-signs-unit.enum';

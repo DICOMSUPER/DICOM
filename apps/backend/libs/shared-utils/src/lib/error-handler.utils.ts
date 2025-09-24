@@ -11,21 +11,22 @@ export const handleErrorFromMicroservices = (
   if (error instanceof RpcException) {
     throw error;
   } else {
-    throw new RpcException({
+    const exception = new RpcException({
       code: 500,
-      message: `${message}: ${error instanceof Error ? error.message : error}`,
+      message: `${message}: ${(error as Error).message || error}`,
       location: location,
     });
+    throw exception;
   }
 };
 
-type ParsedError = {
+type ParsedMicroserviceError = {
   code?: number;
   message?: string;
   location?: string;
 };
 
-const isParsedError = (e: unknown): e is ParsedError => {
+const isParsedRPCException = (e: unknown): e is ParsedMicroserviceError => {
   return (
     typeof e === 'object' &&
     e !== null &&
@@ -38,7 +39,7 @@ const isParsedError = (e: unknown): e is ParsedError => {
 export const handleError = (error: unknown): HttpException => {
   const logger = new Logger('SharedUtils - ErrorHandler');
 
-  if (isParsedError(error)) {
+  if (isParsedRPCException(error)) {
     return new HttpException(
       {
         message: error.message || 'Internal Server Error',
@@ -60,7 +61,7 @@ export const handleError = (error: unknown): HttpException => {
     let location = 'Unknown';
 
     if (typeof errorData === 'object' && errorData !== null) {
-      const errObj = errorData as Partial<ParsedError> &
+      const errObj = errorData as Partial<ParsedMicroserviceError> &
         Record<string, unknown>;
       statusCode =
         (typeof errObj.code === 'number' ? errObj.code : undefined) ??
@@ -78,7 +79,7 @@ export const handleError = (error: unknown): HttpException => {
     logger.error('Unhandled error has occurred:', error);
     return new HttpException(
       {
-        message: 'Internal Server Error',
+        message: (error as Error).message || 'Internal Server Error',
         location: 'Unknown',
       },
       HttpStatus.INTERNAL_SERVER_ERROR

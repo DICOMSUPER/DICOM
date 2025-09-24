@@ -9,25 +9,34 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ImagingModalitiesService } from './imaging-modalities.service';
-import { CreateImagingModalityDto } from './dto/create-imaging-modality.dto';
-import { UpdateImagingModalityDto } from './dto/update-imaging-modality.dto';
+import { CreateImagingModalityDto } from '@backend/shared-domain';
+import { UpdateImagingModalityDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
-import { ImagingModality } from './entities/imaging-modality.entity';
-import { RepositoryPaginationDto } from '@backend/database';
-
+import { ImagingModality } from '@backend/shared-domain';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+import {
+  IMAGING_SERVICE,
+  MESSAGE_PATTERNS,
+} from '../../../constant/microservice.constant';
+const moduleName = 'ImagingModalities';
 @Controller('imaging-modalities')
 export class ImagingModalitiesController {
-  private logger = new Logger('ImagingService');
+  private logger = new Logger(IMAGING_SERVICE);
   constructor(
     private readonly imagingModalitiesService: ImagingModalitiesService
   ) {}
 
-  @MessagePattern('ImagingService.ImagingModality.Create')
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
     @Payload() createImagingModalityDto: CreateImagingModalityDto
   ): Promise<ImagingModality> {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.Create');
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
+    );
     try {
       return await this.imagingModalitiesService.create(
         createImagingModalityDto
@@ -36,28 +45,38 @@ export class ImagingModalitiesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to create imaging modality',
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }
 
-  @MessagePattern('ImagingService.ImagingModality.FindAll')
-  async findAll() {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.FindAll');
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+  )
+  async findAll(): Promise<ImagingModality[]> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+    );
     try {
       return await this.imagingModalitiesService.findAll();
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find all imaging modality',
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }
 
-  @MessagePattern('ImagingService.ImagingModality.FindOne')
-  async findOne(@Payload() data: { id: string }) {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.FindOne');
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+  )
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<ImagingModality | null> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+    );
     try {
       const { id } = data;
       return await this.imagingModalitiesService.findOne(id);
@@ -65,35 +84,42 @@ export class ImagingModalitiesController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find imaging modality with id: ${data.id}`,
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }
 
-  @MessagePattern('ImagingService.ImagingModality.Update')
-  update(
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
+  async update(
     @Payload()
     data: {
       id: string;
       updateImagingModalityDto: UpdateImagingModalityDto;
     }
-  ) {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.Update');
+  ): Promise<ImagingModality | null> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
+    );
     try {
       const { id, updateImagingModalityDto } = data;
-      return this.imagingModalitiesService.update(id, updateImagingModalityDto);
+      return await this.imagingModalitiesService.update(
+        id,
+        updateImagingModalityDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         `Failed to update for modality with this id: ${data.id}`,
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }
 
-  @MessagePattern('ImagingService.ImagingModality.Delete')
-  async remove(@Payload() data: { id: string }) {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.Delete');
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
+    );
     try {
       const { id } = data;
       return await this.imagingModalitiesService.remove(id);
@@ -101,14 +127,20 @@ export class ImagingModalitiesController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to delete for modality with this id: ${data.id}`,
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }
 
-  @MessagePattern('ImagingService.ImagingModality.FindMany')
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
-    this.logger.log('Using pattern: ImagingService.ImagingModality.FindMany');
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<ImagingModality>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+    );
     try {
       const { paginationDto } = data;
       return await this.imagingModalitiesService.findMany({
@@ -123,7 +155,7 @@ export class ImagingModalitiesController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find many modalities`,
-        'ImagingService'
+        IMAGING_SERVICE
       );
     }
   }

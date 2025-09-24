@@ -17,18 +17,33 @@ export class PrescriptionController {
     return this.prescriptionService.findAll();
   }
 
+  @Get('stats')
+  getStats() {
+    return this.prescriptionService.getPrescriptionStats();
+  }
+
+  @Get('encounter/:encounterId')
+  findByEncounter(@Param('encounterId') encounterId: string) {
+    return this.prescriptionService.findByEncounter(encounterId);
+  }
+
+  @Get('physician/:physicianId')
+  findByPhysician(@Param('physicianId') physicianId: string) {
+    return this.prescriptionService.findByPhysician(physicianId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.prescriptionService.findOne(+id);
+    return this.prescriptionService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePrescriptionDto: UpdatePrescriptionDto) {
-    return this.prescriptionService.update(+id, updatePrescriptionDto);
+    return this.prescriptionService.update(id, updatePrescriptionDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.prescriptionService.remove(+id);
+    return this.prescriptionService.remove(id);
   }
 }

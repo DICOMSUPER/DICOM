@@ -41,6 +41,12 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage all patients"
     },
     {
+      href: "/patients/registration",
+      label: "Register Patient",
+      icon: UserCheck,
+      description: "Register new patients"
+    },
+    {
       href: "/queue",
       label: "Queue Management",
       icon: Clock,
@@ -69,71 +75,77 @@ export const roleNavigation: RoleNavigation = {
   // Reception Staff - Patient registration and queue management
   "Reception Staff": [
     {
-      href: "/dashboard",
+      href: "/reception",
       label: "Dashboard",
       icon: BarChart3,
       description: "Daily overview"
     },
     {
-      href: "/reception",
+      href: "/reception/patients",
       label: "Patients",
       icon: Users,
       description: "Patient registration and search"
     },
     {
-      href: "/queue",
+      href: "/reception/registration",
+      label: "Register Patient",
+      icon: UserCheck,
+      description: "Register new patients"
+    },
+    {
+      href: "/reception/queue",
       label: "Queue",
       icon: Clock,
       description: "Waiting room management"
     },
     {
-      href: "/assignments",
+      href: "/reception/assignments",
       label: "Assignments",
       icon: UserCheck,
       description: "Patient assignments"
-    },
-    {
-      href: "/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Personal settings"
     }
   ],
 
   // Physician - Patient care and medical records
   "Physician": [
     {
-      href: "/dashboard",
+      href: "/physicians",
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient overview"
     },
     {
-      href: "/patients",
+      href: "/physicians/patients",
       label: "My Patients",
       icon: Users,
       description: "Assigned patients"
     },
     {
-      href: "/medical-records",
+      href: "/physicians/medical-records",
       label: "Medical Records",
       icon: FileText,
       description: "Patient conditions and records"
     },
     {
-      href: "/diagnosis",
-      label: "Diagnosis",
+      href: "/physicians/diagnoses",
+      label: "Diagnoses",
       icon: Stethoscope,
-      description: "Diagnostic tools"
+      description: "Patient diagnoses management"
     },
     {
-      href: "/schedule",
+      href: "/physicians/prescriptions",
+      label: "Prescriptions",
+      icon: FileText,
+      description: "Prescription management"
+    },
+    {
+      href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,
       description: "Appointment schedule"
     },
     {
-      href: "/settings",
+      href: "/physicians/settings",
       label: "Settings",
       icon: Settings,
       description: "Personal settings"
@@ -143,37 +155,37 @@ export const roleNavigation: RoleNavigation = {
   // Image Technician - DICOM and imaging
   "Image Technician": [
     {
-      href: "/dashboard",
+      href: "/imaging-technicians",
       label: "Dashboard",
       icon: BarChart3,
       description: "Imaging overview"
     },
     {
-      href: "/imaging",
+      href: "/imaging-technicians/imaging",
       label: "Imaging",
       icon: Camera,
       description: "DICOM image management"
     },
     {
-      href: "/patients",
+      href: "/imaging-technicians/patients",
       label: "Patients",
       icon: Users,
       description: "Patient imaging records"
     },
     {
-      href: "/queue",
+      href: "/imaging-technicians/queue",
       label: "Imaging Queue",
       icon: Clock,
       description: "Pending imaging studies"
     },
     {
-      href: "/equipment",
+      href: "/imaging-technicians/equipment",
       label: "Equipment",
       icon: Activity,
       description: "Imaging equipment status"
     },
     {
-      href: "/settings",
+      href: "/imaging-technicians/settings",
       label: "Settings",
       icon: Settings,
       description: "Imaging settings"
@@ -183,37 +195,37 @@ export const roleNavigation: RoleNavigation = {
   // Nurse - Patient care support
   "Nurse": [
     {
-      href: "/dashboard",
+      href: "/nurses",
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient care overview"
     },
     {
-      href: "/patients",
+      href: "/nurses/patients",
       label: "Patients",
       icon: Users,
       description: "Patient care management"
     },
     {
-      href: "/vitals",
+      href: "/nurses/vitals",
       label: "Vitals",
       icon: Activity,
       description: "Patient vital signs"
     },
     {
-      href: "/medications",
+      href: "/nurses/medications",
       label: "Medications",
       icon: Stethoscope,
       description: "Medication management"
     },
     {
-      href: "/schedule",
+      href: "/nurses/schedule",
       label: "Schedule",
       icon: Clock,
       description: "Care schedule"
     },
     {
-      href: "/settings",
+      href: "/nurses/settings",
       label: "Settings",
       icon: Settings,
       description: "Personal settings"

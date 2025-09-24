@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import SmallBreadCrumb from "@/components/common/SmallBreadCrumb";
 import { Folder, File } from "lucide-react";

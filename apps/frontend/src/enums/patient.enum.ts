@@ -1,15 +1,12 @@
-export enum VisitType {
-  OUTPATIENT = "outpatient",
-  INPATIENT = "inpatient",
-  EMERGENCY = "emergency",
-}
-
-export enum RoomType {
-  CT = "CT",
-  WC = "WC",
-}
-
 export enum QueueStatus {
-  WAITING = "waiting",
-  COMPLETED = "completed",
+  WAITING = 'waiting',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  EXPIRED = 'expired',
+}
+
+export enum QueuePriorityLevel {
+  ROUTINE = 'routine',
+  URGENT = 'urgent',
+  STAT = 'stat',
 }

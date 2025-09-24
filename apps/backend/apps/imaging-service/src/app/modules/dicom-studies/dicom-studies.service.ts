@@ -1,26 +1,188 @@
-import { Injectable } from '@nestjs/common';
-import { CreateDicomStudyDto } from './dto/create-dicom-study.dto';
-import { UpdateDicomStudyDto } from './dto/update-dicom-study.dto';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  CreateDicomStudyDto,
+  DicomStudy,
+  ImagingModality,
+  ImagingOrder,
+} from '@backend/shared-domain';
+import { UpdateDicomStudyDto } from '@backend/shared-domain';
+import { DicomStudiesRepository } from './dicom-studies.repository';
+import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
+import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { OrderStatus } from '@backend/shared-enums';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+
+//relation: imagingOrder, modality, series
+const relation = ['imagingOrder', 'modality', 'series'];
 
 @Injectable()
 export class DicomStudiesService {
-  create(createDicomStudyDto: CreateDicomStudyDto) {
-    return 'This action adds a new dicomStudy';
-  }
+  constructor(
+    @Inject()
+    private readonly dicomStudiesRepository: DicomStudiesRepository,
+    @Inject()
+    private readonly imagingModalitiesRepository: ImagingModalityRepository,
+    @Inject()
+    private readonly imagingOrdersRepository: ImagingOrderRepository
+  ) {}
+  private checkDicomStudy = async (id: string): Promise<DicomStudy> => {
+    const dicomStudy = await this.dicomStudiesRepository.findOne({
+      where: { id },
+    });
 
-  findAll() {
-    return `This action returns all dicomStudies`;
-  }
+    if (!dicomStudy) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Dicom study not found',
+        IMAGING_SERVICE
+      );
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} dicomStudy`;
-  }
+    return dicomStudy;
+  };
 
-  update(id: number, updateDicomStudyDto: UpdateDicomStudyDto) {
-    return `This action updates a #${id} dicomStudy`;
-  }
+  private checkImagingModality = async (
+    id: string
+  ): Promise<ImagingModality> => {
+    const imagingModality = await this.imagingModalitiesRepository.findOne({
+      where: { id },
+    });
 
-  remove(id: number) {
-    return `This action removes a #${id} dicomStudy`;
-  }
+    if (!imagingModality) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to process dicom study: Modality not found',
+        IMAGING_SERVICE
+      );
+    }
+
+    if (imagingModality?.isActive === false) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to process dicom study: Modality not available',
+        IMAGING_SERVICE
+      );
+    }
+
+    return imagingModality;
+  };
+
+  private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
+    const imagingOrder = await this.imagingOrdersRepository.findOne({
+      where: { id },
+    });
+
+    if (!imagingOrder) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to create dicom study: ImagingOrder not found',
+        IMAGING_SERVICE
+      );
+    }
+
+    //not allow creating studies for completed and cancelled order
+    //could be adjust later
+    if (
+      [OrderStatus.CANCELLED, OrderStatus.COMPLETED].includes(
+        imagingOrder?.orderStatus
+      )
+    ) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Failed to create dicom study: Invalid status for ImagingOrder',
+        IMAGING_SERVICE
+      );
+    }
+    return imagingOrder;
+  };
+
+  create = async (
+    createDicomStudyDto: CreateDicomStudyDto
+  ): Promise<DicomStudy> => {
+    //check imaging order
+    await this.checkImagingOrder(createDicomStudyDto.orderId);
+
+    //check imaging modality
+    await this.checkImagingModality(createDicomStudyDto.modalityId);
+
+    return await this.dicomStudiesRepository.create(createDicomStudyDto);
+  };
+
+  findAll = async (): Promise<DicomStudy[]> => {
+    return await this.dicomStudiesRepository.findAll({ where: {} }, relation);
+  };
+
+  findOne = async (id: string): Promise<DicomStudy | null> => {
+    //check studies
+    await this.checkDicomStudy(id);
+
+    return await this.dicomStudiesRepository.findOne(
+      { where: { id: id } },
+      relation
+    );
+  };
+
+  update = async (
+    id: string,
+    updateDicomStudyDto: UpdateDicomStudyDto
+  ): Promise<DicomStudy | null> => {
+    //check dicom study
+    const dicomStudy = await this.checkDicomStudy(id);
+
+    //check  imaging order if provided
+    if (
+      updateDicomStudyDto.orderId &&
+      dicomStudy.orderId !== updateDicomStudyDto.orderId
+    )
+      await this.checkImagingOrder(updateDicomStudyDto.orderId);
+
+    //check imaging modality if provided
+    if (
+      updateDicomStudyDto.modalityId &&
+      dicomStudy.modalityId !== updateDicomStudyDto.modalityId
+    ) {
+      await this.checkImagingModality(updateDicomStudyDto.modalityId);
+    }
+
+    return await this.dicomStudiesRepository.update(id, updateDicomStudyDto);
+  };
+
+  remove = async (id: string): Promise<boolean> => {
+    await this.checkDicomStudy(id);
+
+    return await this.dicomStudiesRepository.softDelete(id, 'isDeleted');
+  };
+
+  findDicomStudiesByReferenceId = async (
+    id: string,
+    type:
+      | 'modality'
+      | 'order'
+      | 'patient'
+      | 'performingPhysician'
+      | 'technician'
+      | 'referringPhysician'
+      | 'studyInstanceUid',
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<DicomStudy>> => {
+    return await this.dicomStudiesRepository.findDicomStudiesByReferenceId(
+      id,
+      type,
+      { ...paginationDto, relation }
+    );
+  };
+
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<DicomStudy>> => {
+    return await this.dicomStudiesRepository.paginate({
+      ...paginationDto,
+      relation,
+    });
+  };
 }

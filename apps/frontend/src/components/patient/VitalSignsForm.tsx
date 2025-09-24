@@ -1,0 +1,221 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/ui/loading-button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Activity, 
+  Heart, 
+  Thermometer, 
+  Wind, 
+  Save,
+  X
+} from 'lucide-react';
+import { VitalSignsCollection, VitalSignCode, VitalSignUnit } from '@/interfaces/patient/patient-workflow.interface';
+
+interface VitalSignsFormProps {
+  vitalSigns?: VitalSignsCollection;
+  onSubmit: (vitalSigns: VitalSignsCollection) => void;
+  onCancel: () => void;
+  loading?: boolean;
+  errors?: Record<string, string>;
+}
+
+const VITAL_SIGNS_CONFIG = [
+  {
+    code: '8867-4' as VitalSignCode,
+      display: 'Heart Rate',
+    unit: '/min' as VitalSignUnit,
+      icon: Heart,
+    normalRange: { min: 60, max: 100 },
+    color: 'text-red-600'
+  },
+  {
+    code: '8310-5' as VitalSignCode,
+    display: 'Body Temperature',
+    unit: '°C' as VitalSignUnit,
+    icon: Thermometer,
+    normalRange: { min: 36.1, max: 37.2 },
+    color: 'text-orange-600'
+  },
+  {
+    code: '9279-1' as VitalSignCode,
+    display: 'Respiratory Rate',
+    unit: '/min' as VitalSignUnit,
+    icon: Wind,
+    normalRange: { min: 12, max: 20 },
+    color: 'text-blue-600'
+  },
+  {
+    code: '85354-9' as VitalSignCode,
+    display: 'Blood Pressure Systolic',
+    unit: 'mmHg' as VitalSignUnit,
+      icon: Activity,
+    normalRange: { min: 90, max: 140 },
+    color: 'text-purple-600'
+  },
+  {
+    code: '8462-4' as VitalSignCode,
+    display: 'Blood Pressure Diastolic',
+    unit: 'mmHg' as VitalSignUnit,
+    icon: Activity,
+    normalRange: { min: 60, max: 90 },
+    color: 'text-purple-600'
+  },
+  {
+    code: '29463-7' as VitalSignCode,
+    display: 'Body Weight',
+    unit: 'kg' as VitalSignUnit,
+    icon: Activity,
+    normalRange: { min: 50, max: 150 },
+    color: 'text-green-600'
+  },
+  {
+    code: '8302-2' as VitalSignCode,
+    display: 'Body Height',
+    unit: 'cm' as VitalSignUnit,
+    icon: Activity,
+    normalRange: { min: 150, max: 200 },
+    color: 'text-green-600'
+  }
+];
+
+export function VitalSignsForm({
+  vitalSigns = {},
+  onSubmit,
+  onCancel,
+  loading = false,
+  errors = {}
+}: VitalSignsFormProps) {
+  const [formData, setFormData] = useState<VitalSignsCollection>(vitalSigns);
+  const [measuredAt, setMeasuredAt] = useState(new Date().toISOString());
+
+  useEffect(() => {
+    if (vitalSigns) {
+      setFormData(vitalSigns);
+    }
+  }, [vitalSigns]);
+
+  const handleInputChange = (code: VitalSignCode, value: string) => {
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue) && value !== '') return;
+
+    setFormData(prev => ({
+      ...prev,
+      [code]: {
+        code,
+        display: VITAL_SIGNS_CONFIG.find(config => config.code === code)?.display || '',
+        value: numericValue,
+        unit: VITAL_SIGNS_CONFIG.find(config => config.code === code)?.unit || '',
+        measuredAt: new Date(measuredAt).toISOString()
+      }
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const getValueStatus = (code: VitalSignCode, value: number) => {
+    const config = VITAL_SIGNS_CONFIG.find(c => c.code === code);
+    if (!config || !value) return 'normal';
+
+    if (value < config.normalRange.min || value > config.normalRange.max) {
+      return 'abnormal';
+    }
+    return 'normal';
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === 'abnormal' ? 'text-red-600' : 'text-green-600';
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Vital Signs
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {VITAL_SIGNS_CONFIG.map((config) => {
+              const Icon = config.icon;
+              const currentValue = formData[config.code]?.value || '';
+              const status = getValueStatus(config.code, currentValue);
+
+              return (
+                <div key={config.code} className="space-y-2">
+                  <Label htmlFor={config.code} className="flex items-center gap-2">
+                    <Icon className={`h-4 w-4 ${config.color}`} />
+                    {config.display}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                        <Input
+                      id={config.code}
+                          type="number"
+                          step="0.1"
+                      value={currentValue}
+                      onChange={(e) => handleInputChange(config.code, e.target.value)}
+                      placeholder={`Enter ${config.display.toLowerCase()}`}
+                      className={errors[config.code] ? 'border-red-500' : ''}
+                    />
+                    <span className="text-sm text-foreground">{config.unit}</span>
+                    {currentValue && (
+                      <span className={`text-sm font-medium ${getStatusColor(status)}`}>
+                        {status === 'abnormal' ? '⚠️' : '✓'}
+                      </span>
+                        )}
+                      </div>
+                  {errors[config.code] && (
+                    <p className="text-sm text-red-500">{errors[config.code]}</p>
+                  )}
+                  {currentValue && (
+                    <p className="text-xs text-foreground">
+                      Normal range: {config.normalRange.min}-{config.normalRange.max} {config.unit}
+                    </p>
+                  )}
+                    </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="measuredAt">Measured At</Label>
+            <Input
+              id="measuredAt"
+              type="datetime-local"
+              value={measuredAt}
+              onChange={(e) => setMeasuredAt(e.target.value)}
+              className={errors.measuredAt ? 'border-red-500' : ''}
+            />
+            {errors.measuredAt && (
+              <p className="text-sm text-red-500">{errors.measuredAt}</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <LoadingButton 
+              type="submit" 
+              loading={loading}
+              loadingText="Saving..."
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Vital Signs
+            </LoadingButton>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
