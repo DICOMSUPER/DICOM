@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Badge } from "@/components/ui/badge";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import {
   Calendar,
   Phone,
@@ -40,9 +41,9 @@ export default function PatientDetail() {
   const [editingEncounter, setEditingEncounter] = useState(null);
 
   // Fetch real patient data
-  const { data: patient, isLoading: patientLoading, error: patientError } = useGetPatientByIdQuery(patientId);
-  const { data: encounters, isLoading: encountersLoading } = useGetEncountersByPatientIdQuery(patientId);
-  const { data: conditions, isLoading: conditionsLoading } = useGetConditionsByPatientIdQuery(patientId);
+  const { data: patient, isLoading: patientLoading, error: patientError, refetch: refetchPatient } = useGetPatientByIdQuery(patientId);
+  const { data: encounters, isLoading: encountersLoading, refetch: refetchEncounters } = useGetEncountersByPatientIdQuery(patientId);
+  const { data: conditions, isLoading: conditionsLoading, refetch: refetchConditions } = useGetConditionsByPatientIdQuery(patientId);
 
   // Encounter mutations
   const [createEncounter, { isLoading: isCreatingEncounter }] = useCreateEncounterMutation();
@@ -81,6 +82,14 @@ export default function PatientDetail() {
     }
   };
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchPatient(),
+      refetchEncounters(),
+      refetchConditions()
+    ]);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* App Header */}
@@ -103,6 +112,10 @@ export default function PatientDetail() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={patientLoading || encountersLoading || conditionsLoading}
+            />
             <Button variant="outline" className="border-border">
               <Edit className="w-4 h-4 mr-2" />
               Edit Patient
@@ -215,7 +228,6 @@ export default function PatientDetail() {
               <PatientConditionList
                 conditions={conditions || []}
                 canEdit={true}
-                onAdd={() => console.log('Add condition')}
                 onEdit={(condition) => console.log('Edit condition', condition)}
               />
             </div>

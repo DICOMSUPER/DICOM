@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
   PatientCondition 
 } from "@/interfaces/patient/patient-condition.interface";
@@ -11,7 +10,7 @@ import {
   ClinicalStatus, 
   ConditionVerificationStatus 
 } from "@/enums/patient-workflow.enum";
-import { Edit, Plus, Calendar, MapPin, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Edit, Calendar, MapPin, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 interface PatientConditionListProps {
   conditions: PatientCondition[];
@@ -87,7 +86,7 @@ export function PatientConditionList({
 
   if (conditions.length === 0) {
     return (
-      <Card>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5" />
@@ -97,20 +96,12 @@ export function PatientConditionList({
             No medical conditions recorded for this patient
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {canEdit && onAdd && (
-            <Button onClick={onAdd} variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Condition
-            </Button>
-          )}
-        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="border-border">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -122,12 +113,6 @@ export function PatientConditionList({
               Patient's recorded medical conditions and diagnoses
             </CardDescription>
           </div>
-          {canEdit && onAdd && (
-            <Button onClick={onAdd} size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Condition
-            </Button>
-          )}
         </div>
       </CardHeader>
 

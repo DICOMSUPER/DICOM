@@ -190,7 +190,7 @@ export function DiagnosisForm({
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-border">
                   <SelectItem value={DiagnosisType.PRIMARY}>Primary</SelectItem>
                   <SelectItem value={DiagnosisType.SECONDARY}>Secondary</SelectItem>
                   <SelectItem value={DiagnosisType.DIFFERENTIAL}>Differential</SelectItem>
@@ -211,7 +211,7 @@ export function DiagnosisForm({
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-border">
                   <SelectItem value={DiagnosisStatus.ACTIVE}>Active</SelectItem>
                   <SelectItem value={DiagnosisStatus.RESOLVED}>Resolved</SelectItem>
                   <SelectItem value={DiagnosisStatus.INACTIVE}>Inactive</SelectItem>
@@ -232,7 +232,7 @@ export function DiagnosisForm({
                 <SelectTrigger>
                   <SelectValue placeholder="Select severity" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-border">
                   <SelectItem value={Severity.MILD}>Mild</SelectItem>
                   <SelectItem value={Severity.MODERATE}>Moderate</SelectItem>
                   <SelectItem value={Severity.SEVERE}>Severe</SelectItem>

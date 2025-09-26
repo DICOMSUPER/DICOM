@@ -161,7 +161,7 @@ const PatientForm: React.FC<PatientFormProps> = ({
                   <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border">
                     {Object.values(Gender).map((gender) => (
                       <SelectItem key={gender} value={gender}>
                         {gender}
@@ -177,14 +177,14 @@ const PatientForm: React.FC<PatientFormProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="bloodType">Blood Type</Label>
                 <Select
-                  value={formData.bloodType || ''}
-                  onValueChange={(value) => handleInputChange('bloodType', value || undefined)}
+                  value={formData.bloodType || 'not-specified'}
+                  onValueChange={(value) => handleInputChange('bloodType', value === 'not-specified' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select blood type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Not specified</SelectItem>
+                  <SelectContent className="border-border">
+                    <SelectItem value="not-specified">Not specified</SelectItem>
                     {Object.values(BloodType).map((bloodType) => (
                       <SelectItem key={bloodType} value={bloodType}>
                         {bloodType}
