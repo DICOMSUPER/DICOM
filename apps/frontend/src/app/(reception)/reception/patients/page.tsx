@@ -3,13 +3,60 @@ import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { AppHeader } from "@/components/app-header";
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
-import { PatientSearch } from "@/components/reception/patient-search";
-import { useState } from "react";
+import { ReceptionFilters } from "@/components/reception/reception-filters";
+import { PatientStatsCards } from "@/components/reception/patient-stats-cards";
+import { PatientTable } from "@/components/reception/patient-table";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useGetPatientsQuery, useGetPatientStatsQuery } from "@/store/patientApi";
+import { Users, UserPlus } from "lucide-react";
 
 export default function ReceptionPage() {
   const router = useRouter();
   const [notificationCount] = useState(3);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch real data
+  const { data: patients, isLoading: patientsLoading, error: patientsError, refetch: refetchPatients } = useGetPatientsQuery({});
+  const { data: patientStats, isLoading: statsLoading, refetch: refetchStats } = useGetPatientStatsQuery();
+
+  // Handle errors
+  useEffect(() => {
+    if (patientsError) {
+      setError('Failed to load patient data. Please try again.');
+    } else {
+      setError(null);
+    }
+  }, [patientsError]);
+
+  // Process real data from API
+  const filteredPatients = patients?.filter(patient => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      patient.firstName?.toLowerCase().includes(searchLower) ||
+      patient.lastName?.toLowerCase().includes(searchLower) ||
+      patient.patientCode?.toLowerCase().includes(searchLower) ||
+      patient.phoneNumber?.toLowerCase().includes(searchLower)
+    );
+  }).map(patient => ({
+    id: patient.id,
+    firstName: patient.firstName || 'Unknown',
+    lastName: patient.lastName || 'Patient',
+    patientCode: patient.patientCode || 'N/A',
+    dateOfBirth: patient.dateOfBirth?.toISOString() || new Date().toISOString(),
+    gender: patient.gender || 'Unknown',
+    phoneNumber: patient.phoneNumber,
+    address: patient.address,
+    bloodType: patient.bloodType,
+    isActive: patient.isActive ?? true,
+    priority: 'normal',
+    lastVisit: undefined
+  })) || [];
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -17,6 +64,25 @@ export default function ReceptionPage() {
 
   const handleLogout = () => {
     console.log("Logout clicked");
+  };
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchPatients(),
+      refetchStats()
+    ]);
+  };
+
+  const handleViewDetails = (patient: any) => {
+    router.push(`/reception/patients/${patient.id}`);
+  };
+
+  const handleEditPatient = (patient: any) => {
+    console.log("Edit patient:", patient);
+  };
+
+  const handleDeletePatient = (patient: any) => {
+    console.log("Delete patient:", patient);
   };
 
 
@@ -30,22 +96,59 @@ export default function ReceptionPage() {
       />
 
       {/* Workspace Layout */}
-      <WorkspaceLayout
-        sidebar={<SidebarNav />}
-      >
-        {/* Quick Actions Bar */}
-        <section className="mb-6">
-          <QuickActionsBar />
-        </section>
+      <WorkspaceLayout sidebar={<SidebarNav />}>
+        {/* Header with Quick Actions and Refresh */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Patient Management</h1>
+            <p className="text-foreground">Search and manage patient records</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={patientsLoading || statsLoading}
+            />
+            <QuickActionsBar />
+          </div>
+        </div>
 
-        {/* Patient Search Section */}
-        <section className="mb-6">
-          <PatientSearch 
-            onPatientSelect={(patient) => router.push(`/reception/patients/${patient.id}`)}
-            showStats={true}
-          />
-        </section>
+        {/* Error Display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
+        {/* Stats Cards */}
+        <PatientStatsCards
+          totalCount={patientStats?.totalPatients || 0}
+          activeCount={patientStats?.activePatients || 0}
+          newThisMonthCount={patientStats?.newPatientsThisMonth || 0}
+          inactiveCount={patientStats?.inactivePatients || 0}
+          isLoading={statsLoading}
+        />
+
+        {/* Filters */}
+        <ReceptionFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          priorityFilter={priorityFilter}
+          onPriorityChange={setPriorityFilter}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
+
+        {/* Patient Table */}
+        <PatientTable
+          patients={filteredPatients as any}
+          isLoading={patientsLoading}
+          emptyStateIcon={<Users className="h-12 w-12" />}
+          emptyStateTitle="No patients found"
+          emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
+          onViewDetails={handleViewDetails}
+          onEditPatient={handleEditPatient}
+          onDeletePatient={handleDeletePatient}
+        />
       </WorkspaceLayout>
     </div>
   );

@@ -10,6 +10,7 @@ import { ReceptionTableTabs } from "@/components/reception/reception-table-tabs"
 import { AssignmentsStatsCards } from "@/components/reception/assignments-stats-cards";
 import { AssignmentsTable } from "@/components/reception/assignments-table";
 import { TabsContent } from "@/components/ui/tabs";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Clock, Users, CheckCircle } from "lucide-react";
 import { 
   useGetAllEncountersQuery,
@@ -24,13 +25,13 @@ export default function AssignmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch real data
-  const { data: encounters, isLoading: encountersLoading, error: encountersError } =
+  const { data: encounters, isLoading: encountersLoading, error: encountersError, refetch: refetchEncounters } =
     useGetAllEncountersQuery({
       searchTerm: searchTerm || undefined,
       priority: priorityFilter !== 'all' ? priorityFilter : undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined,
     });
-  const { data: encounterStats, isLoading: statsLoading } =
+  const { data: encounterStats, isLoading: statsLoading, refetch: refetchStats } =
     useGetEncounterStatsQuery(undefined);
 
   // Handle errors
@@ -139,6 +140,13 @@ export default function AssignmentsPage() {
     console.log("Mark complete:", assignment);
   };
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchEncounters(),
+      refetchStats()
+    ]);
+  };
+
   const tabs = [
     { value: "active", label: "Active", count: activeAssignments.length },
     { value: "pending", label: "Pending", count: pendingAssignments.length },
@@ -156,10 +164,20 @@ export default function AssignmentsPage() {
 
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
-        {/* Quick Actions Bar */}
-        <section className="mb-6">
-          <QuickActionsBar />
-        </section>
+        {/* Header with Quick Actions and Refresh */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Assignment Management</h1>
+            <p className="text-foreground">Manage patient-physician assignments and room allocations</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={encountersLoading || statsLoading}
+            />
+            <QuickActionsBar />
+          </div>
+        </div>
 
         {/* Error Display */}
         {error && (

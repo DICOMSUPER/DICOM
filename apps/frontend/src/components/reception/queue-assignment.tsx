@@ -21,7 +21,7 @@ interface QueueAssignmentProps {
 
 export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
   const [selectedPriority, setSelectedPriority] = useState<string>(QueuePriorityLevel.ROUTINE);
-  const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [selectedRoom, setSelectedRoom] = useState<string>("none");
 
   const { data: queueAssignments, isLoading, error } = useGetQueueAssignmentsQuery({
     status: QueueStatus.WAITING,
@@ -38,7 +38,7 @@ export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
       await assignPatientToQueue({
         encounterId,
         priority: selectedPriority,
-        roomId: selectedRoom || undefined
+        roomId: selectedRoom === "none" ? undefined : selectedRoom
       }).unwrap();
       
       if (onAssignPatient) {
@@ -179,7 +179,7 @@ export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-border">
                   <SelectItem value={QueuePriorityLevel.ROUTINE}>Routine</SelectItem>
                   <SelectItem value={QueuePriorityLevel.URGENT}>Urgent</SelectItem>
                   <SelectItem value={QueuePriorityLevel.STAT}>Stat/Emergency</SelectItem>
@@ -192,8 +192,8 @@ export function QueueAssignment({ onAssignPatient }: QueueAssignmentProps) {
                 <SelectTrigger>
                   <SelectValue placeholder="Select room" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No specific room</SelectItem>
+                <SelectContent className="border-border">
+                  <SelectItem value="none">No specific room</SelectItem>
                   <SelectItem value="room-1">Room 1</SelectItem>
                   <SelectItem value="room-2">Room 2</SelectItem>
                   <SelectItem value="room-3">Room 3</SelectItem>

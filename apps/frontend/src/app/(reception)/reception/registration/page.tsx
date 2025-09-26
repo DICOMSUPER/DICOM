@@ -13,17 +13,9 @@ import { AppHeader } from "@/components/app-header";
 import { useState } from "react";
 import { useCreatePatientMutation } from "@/store/patientApi";
 import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interface";
-import { Gender, BloodType, ClinicalStatus, ConditionVerificationStatus } from "@/enums/patient-workflow.enum";
+import { Gender, BloodType } from "@/enums/patient-workflow.enum";
 import { useRouter } from "next/navigation";
-import { User, Plus, X, Save } from "lucide-react";
-
-interface PatientCondition {
-  conditionName: string;
-  clinicalStatus: ClinicalStatus;
-  verificationStatus: ConditionVerificationStatus;
-  severity: string;
-  notes?: string;
-}
+import { User, Save } from "lucide-react";
 
 export default function PatientRegistration() {
   const router = useRouter();
@@ -45,8 +37,6 @@ export default function PatientRegistration() {
     conditions: [],
   });
 
-  const [conditions, setConditions] = useState<PatientCondition[]>([]);
-
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
   };
@@ -63,45 +53,13 @@ export default function PatientRegistration() {
     }));
   };
 
-  const addCondition = () => {
-    setConditions(prev => [...prev, {
-      conditionName: "",
-      clinicalStatus: ClinicalStatus.ACTIVE,
-      verificationStatus: ConditionVerificationStatus.CONFIRMED,
-      severity: "mild",
-      notes: ""
-    }]);
-  };
-
-  const removeCondition = (index: number) => {
-    setConditions(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updateCondition = (index: number, field: keyof PatientCondition, value: string) => {
-    setConditions(prev => prev.map((condition, i) => 
-      i === index ? { ...condition, [field]: value } : condition
-    ));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setFormErrors({});
       
-      const patientData = {
-        ...formData,
-        conditions: conditions.map(condition => ({
-          patientId: '', // Will be set by backend
-          code: condition.conditionName,
-          codeDisplay: condition.conditionName,
-          clinicalStatus: condition.clinicalStatus,
-          verificationStatus: condition.verificationStatus,
-          severity: condition.severity,
-          stageSummary: condition.notes
-        }))
-      };
-      
-      await createPatient(patientData).unwrap();
+      await createPatient(formData).unwrap();
       router.push('/reception/patients');
     } catch (error: any) {
       if (error.data?.message) {
@@ -203,7 +161,7 @@ export default function PatientRegistration() {
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="border-border">
                         <SelectItem value={Gender.MALE}>Male</SelectItem>
                         <SelectItem value={Gender.FEMALE}>Female</SelectItem>
                         <SelectItem value={Gender.OTHER}>Other</SelectItem>
@@ -256,7 +214,7 @@ export default function PatientRegistration() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select blood type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-border">
                       <SelectItem value={BloodType.A_Positive}>A+</SelectItem>
                       <SelectItem value={BloodType.A_Negative}>A-</SelectItem>
                       <SelectItem value={BloodType.B_Positive}>B+</SelectItem>
@@ -270,118 +228,6 @@ export default function PatientRegistration() {
                   </Select>
                 </div>
 
-                {/* Medical Conditions Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-medium">Medical Conditions</h3>
-                      <p className="text-sm text-foreground">Add any known medical conditions</p>
-                    </div>
-                    <Button type="button" onClick={addCondition} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Condition
-                    </Button>
-                  </div>
-
-                  {conditions.length === 0 ? (
-                    <div className="text-center py-6 text-foreground border-2 border-dashed border-border rounded-lg">
-                      <div className="text-sm">No conditions added yet</div>
-                      <div className="text-xs">Click "Add Condition" to add medical conditions</div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {conditions.map((condition, index) => (
-                        <Card key={index} className="border-border">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <Badge variant="outline">Condition {index + 1}</Badge>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeCondition(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`condition-${index}`}>Condition Name</Label>
-                                <Input
-                                  id={`condition-${index}`}
-                                  value={condition.conditionName}
-                                  onChange={(e) => updateCondition(index, 'conditionName', e.target.value)}
-                                  placeholder="Enter condition name"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`clinicalStatus-${index}`}>Clinical Status</Label>
-                                <Select
-                                  value={condition.clinicalStatus}
-                                  onValueChange={(value) => updateCondition(index, 'clinicalStatus', value as ClinicalStatus)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={ClinicalStatus.ACTIVE}>Active</SelectItem>
-                                    <SelectItem value={ClinicalStatus.INACTIVE}>Inactive</SelectItem>
-                                    <SelectItem value={ClinicalStatus.RESOLVED}>Resolved</SelectItem>
-                                    <SelectItem value={ClinicalStatus.REMISSION}>Remission</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`verificationStatus-${index}`}>Verification Status</Label>
-                                <Select
-                                  value={condition.verificationStatus}
-                                  onValueChange={(value) => updateCondition(index, 'verificationStatus', value as ConditionVerificationStatus)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select verification" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={ConditionVerificationStatus.CONFIRMED}>Confirmed</SelectItem>
-                                    <SelectItem value={ConditionVerificationStatus.PROVISIONAL}>Provisional</SelectItem>
-                                    <SelectItem value={ConditionVerificationStatus.DIFFERENTIAL}>Differential</SelectItem>
-                                    <SelectItem value={ConditionVerificationStatus.REFUTED}>Refuted</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`severity-${index}`}>Severity</Label>
-                                <Select
-                                  value={condition.severity}
-                                  onValueChange={(value) => updateCondition(index, 'severity', value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select severity" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="mild">Mild</SelectItem>
-                                    <SelectItem value="moderate">Moderate</SelectItem>
-                                    <SelectItem value="severe">Severe</SelectItem>
-                                    <SelectItem value="critical">Critical</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="md:col-span-2 space-y-2">
-                                <Label htmlFor={`notes-${index}`}>Notes</Label>
-                                <Textarea
-                                  id={`notes-${index}`}
-                                  value={condition.notes || ''}
-                                  onChange={(e) => updateCondition(index, 'notes', e.target.value)}
-                                  placeholder="Additional notes about this condition"
-                                  rows={2}
-                                />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => router.push('/reception/patients')}>
