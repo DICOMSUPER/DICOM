@@ -1,182 +1,176 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+"use client"
+import React, { useState } from 'react';
+import { LoginForm } from '../components/loginPage/LoginForm';
+import { Header } from '../components/loginPage/Header';
+import { SecurityBadge } from '../components/loginPage/SecurityBadge';
+import { Background } from '../components/loginPage/Background'; 
+import { CheckCircle, Monitor, Users, FileText } from 'lucide-react';
 
-export default function Home() {
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+
+  const handleLogin = (email: string, password: string, rememberMe: boolean) => {
+
+    setUser({ email });
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsLoggedIn(false);
+  };
+
+  if (isLoggedIn && user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Background />
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center py-4">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-600 p-2 rounded-lg">
+                    <Monitor size={24} className="text-white" />
+                  </div>
+                  <h1 className="text-xl font-bold text-gray-900">DICOM System</h1>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
+              <p className="text-gray-600">Medical imaging and diagnostic tools</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Active Studies</p>
+                    <p className="text-2xl font-bold text-gray-900">247</p>
+                  </div>
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <FileText size={24} className="text-blue-600" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Online Users</p>
+                    <p className="text-2xl font-bold text-gray-900">12</p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <Users size={24} className="text-green-600" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">System Status</p>
+                    <p className="text-lg font-semibold text-green-600">Operational</p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <CheckCircle size={24} className="text-green-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <button className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                  View Studies
+                </button>
+                <button className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition-colors">
+                  New Patient
+                </button>
+                <button className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 transition-colors">
+                  Reports
+                </button>
+                <button className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700 transition-colors">
+                  Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">
-                  D
-                </span>
-              </div>
-              <h1 className="text-2xl font-display font-bold text-foreground">
-                DICOM System
-              </h1>
-            </div>
-            <Badge
-              variant="secondary"
-              className="bg-secondary text-secondary-foreground"
-            >
-              AI-Integrated
-            </Badge>
+    <div className="min-h-screen flex">
+      <Background />
+      
+      {/* Left side - Login Form */}
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+            <Header />
+            <LoginForm onLogin={handleLogin} />
+            <SecurityBadge />
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        {/* Hero Section */}
-        <section className="text-center mb-16">
-          <h2 className="text-4xl md:text-6xl font-display font-bold text-foreground mb-6">
-            Advanced DICOM
-            <span className="text-primary block">Image Management</span>
-          </h2>
-          <p className="text-xl text-foreground mb-8 max-w-2xl mx-auto">
-            Streamline medical imaging workflows with AI-powered DICOM
-            processing, secure storage, and intelligent analysis for healthcare
-            professionals.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Get Started
-            </Button>
-            <Button variant="outline" size="lg" className="border-border">
-              View Documentation
-            </Button>
+      {/* Right side - Medical themed illustration area */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-200 to-blue-800 items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
+        
+        {/* Medical equipment silhouettes */}
+        <div className="relative z-10 text-center text-white">
+          <div className="mb-8">
+            <Monitor size={80} className="mx-auto mb-4 opacity-90" />
+            <h2 className="text-3xl font-bold mb-4">Advanced Medical Imaging</h2>
+            <p className="text-xl opacity-90 max-w-md">
+              Professional DICOM imaging system for healthcare providers worldwide
+            </p>
           </div>
-        </section>
-
-        {/* Features Grid */}
-        <section className="grid md:grid-cols-3 gap-6 mb-16">
-          <Card className="border-border hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-primary text-2xl">📊</span>
+          
+          <div className="grid grid-cols-2 gap-6 mt-12 max-w-sm mx-auto">
+            <div className="text-center">
+              <div className="bg-white bg-opacity-20 rounded-full p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center">
+                <CheckCircle size={32} />
               </div>
-              <CardTitle className="text-foreground">AI Analysis</CardTitle>
-              <CardDescription>
-                Advanced AI algorithms for medical image analysis and diagnosis
-                assistance
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-border hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-secondary text-2xl">🔒</span>
+              <p className="text-sm">DICOM Compatible</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-white bg-opacity-20 rounded-full p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center">
+                <Monitor size={32} />
               </div>
-              <CardTitle className="text-foreground">Secure Storage</CardTitle>
-              <CardDescription>
-                HIPAA-compliant storage with enterprise-grade security and
-                encryption
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-border hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
-                <span className="text-accent text-2xl">⚡</span>
-              </div>
-              <CardTitle className="text-foreground">Fast Processing</CardTitle>
-              <CardDescription>
-                High-performance DICOM processing with real-time image rendering
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </section>
-
-        {/* Stats Section */}
-        <section className="bg-surface rounded-lg p-8 mb-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-primary mb-2">10K+</div>
-              <div className="text-foreground">Images Processed</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-secondary mb-2">500+</div>
-              <div className="text-foreground">Hospitals</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-accent mb-2">99.9%</div>
-              <div className="text-foreground">Uptime</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-primary mb-2">24/7</div>
-              <div className="text-foreground">Support</div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="text-center">
-          <Card className="border-border bg-card max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl text-foreground">
-                Ready to Transform Your Medical Imaging?
-              </CardTitle>
-              <CardDescription className="text-lg">
-                Join thousands of healthcare professionals who trust our DICOM
-                system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
-              >
-                Start Free Trial
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  D
-                </span>
-              </div>
-              <span className="text-foreground">
-                © 2024 DICOM System. All rights reserved.
-              </span>
-            </div>
-            <div className="flex space-x-6 text-sm text-foreground">
-              <a href="#" className="hover:text-foreground transition-colors">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Terms
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Support
-              </a>
+              <p className="text-sm">HD Imaging</p>
             </div>
           </div>
         </div>
-      </footer>
+        
+        {/* Animated background elements */}
+        <div className="absolute top-20 left-20 w-32 h-32 border border-white border-opacity-20 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 border border-white border-opacity-20 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-10 w-16 h-16 border border-white border-opacity-20 rounded-full animate-pulse delay-2000"></div>
+      </div>
     </div>
   );
 }
+
+export default App;
