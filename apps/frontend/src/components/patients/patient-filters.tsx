@@ -14,7 +14,7 @@ export function PatientFilters() {
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-border">
           <SelectItem value="all">All Status</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="scheduled">Scheduled</SelectItem>
@@ -26,7 +26,7 @@ export function PatientFilters() {
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Gender" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-border">
           <SelectItem value="all">All Genders</SelectItem>
           <SelectItem value="male">Male</SelectItem>
           <SelectItem value="female">Female</SelectItem>
@@ -38,7 +38,7 @@ export function PatientFilters() {
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Sort By" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="border-border">
           <SelectItem value="newest">Newest First</SelectItem>
           <SelectItem value="oldest">Oldest First</SelectItem>
           <SelectItem value="name">Name A-Z</SelectItem>

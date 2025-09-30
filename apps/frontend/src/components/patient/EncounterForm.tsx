@@ -98,11 +98,11 @@ export function EncounterForm({
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className='border-border'>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
-            {encounter ? 'Edit Encounter' : 'New Encounter'}
+            {encounter ? 'Edit Encounter' : 'Create Encounter'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -133,7 +133,7 @@ export function EncounterForm({
                   <SelectTrigger className={errors.encounterType ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select encounter type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border">
                     {Object.values(EncounterType).map((type) => (
                       <SelectItem key={type} value={type}>
                         {type.replace('_', ' ')}
@@ -228,7 +228,7 @@ export function EncounterForm({
       </Card>
 
       {/* Vital Signs Section */}
-      <Card>
+      <Card className='border-border'>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export function EncounterForm({
           </CardTitle>
         </CardHeader>
         {showVitalSigns && (
-          <CardContent>
+          <CardContent className='p-0 border-none'>
             <VitalSignsForm
               vitalSigns={formData.vitalSigns}
               onSubmit={handleVitalSignsChange}

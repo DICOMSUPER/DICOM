@@ -10,6 +10,7 @@ import { ReceptionTableTabs } from "@/components/reception/reception-table-tabs"
 import { QueueStatsCards } from "@/components/reception/queue-stats-cards";
 import { QueueTable } from "@/components/reception/queue-table";
 import { TabsContent } from "@/components/ui/tabs";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { Clock, Users, CheckCircle } from "lucide-react";
 import {
   useGetAllEncountersQuery,
@@ -24,13 +25,13 @@ export default function QueuePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch real data
-  const { data: encounters, isLoading: encountersLoading, error: encountersError } =
+  const { data: encounters, isLoading: encountersLoading, error: encountersError, refetch: refetchEncounters } =
     useGetAllEncountersQuery({
       searchTerm: searchTerm || undefined,
       priority: priorityFilter !== 'all' ? priorityFilter : undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined,
     });
-  const { data: encounterStats, isLoading: statsLoading } =
+  const { data: encounterStats, isLoading: statsLoading, refetch: refetchStats } =
     useGetEncounterStatsQuery(undefined);
 
   // Handle errors
@@ -122,6 +123,13 @@ export default function QueuePage() {
     console.log("Mark complete:", assignment);
   };
 
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchEncounters(),
+      refetchStats()
+    ]);
+  };
+
   const tabs = [
     { value: "waiting", label: "Waiting", count: waitingAssignments.length },
     { value: "in-progress", label: "In Progress", count: inProgressAssignments.length },
@@ -139,10 +147,20 @@ export default function QueuePage() {
 
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
-        {/* Quick Actions Bar */}
-        <section className="mb-6">
-          <QuickActionsBar />
-        </section>
+        {/* Header with Quick Actions and Refresh */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Queue Management</h1>
+            <p className="text-foreground">Monitor and manage patient queue assignments</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={encountersLoading || statsLoading}
+            />
+            <QuickActionsBar />
+          </div>
+        </div>
 
         {/* Error Display */}
         {error && (

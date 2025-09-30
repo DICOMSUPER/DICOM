@@ -93,6 +93,12 @@ export const roleNavigation: RoleNavigation = {
       description: "Register new patients"
     },
     {
+      href: "/reception/encounters",
+      label: "Encounters",
+      icon: Search,
+      description: "Search and filter patient encounters"
+    },
+    {
       href: "/reception/queue",
       label: "Queue",
       icon: Clock,

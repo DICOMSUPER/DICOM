@@ -169,63 +169,51 @@ export function PatientSearch({
         </div>
       )}
 
-      {/* Main Search Card */}
-      <Card className="bg-card border border-border">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="w-5 h-5" />
-                Patient Search
-              </CardTitle>
-              <CardDescription>
-                Search patients with advanced filters and pagination
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Search Input */}
-          <div className="space-y-4">
-            <div className="flex gap-2">
+      {/* Main Search */}
+      <div className="space-y-4">
+        {/* Search Input */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
               <Input
-                placeholder="Search by name..."
+                placeholder="Search patients, codes, or names..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
+                className="pl-10"
               />
-              <Button onClick={handleSearch}>
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
-            </div>
-            
-            {/* Filter Controls */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                {showAdvanced ? 'Hide' : 'Show'} Filters
-                {showAdvanced ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClear}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
             </div>
           </div>
+          <Button onClick={handleSearch}>
+            <Search className="w-4 h-4 mr-2" />
+            Search
+          </Button>
+        </div>
+        
+        {/* Filter Controls */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            {showAdvanced ? 'Hide' : 'Show'} Filters
+            {showAdvanced ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClear}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Clear
+          </Button>
+        </div>
 
-          {/* Advanced Search */}
-          {showAdvanced && (
-            <div className="space-y-4 p-4 rounded-lg bg-slate-50/50 shadow-sm">
+        {/* Advanced Search */}
+        {showAdvanced && (
+          <div className="space-y-4 p-4 rounded-lg bg-slate-50/50 shadow-sm">
               <h4 className="font-medium text-foreground">Advanced Filters</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Input
@@ -255,7 +243,7 @@ export function PatientSearch({
                   <SelectTrigger>
                     <SelectValue placeholder="Gender" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border">
                     <SelectItem value="all">All Genders</SelectItem>
                     <SelectItem value={Gender.MALE}>Male</SelectItem>
                     <SelectItem value={Gender.FEMALE}>Female</SelectItem>
@@ -270,7 +258,7 @@ export function PatientSearch({
                   <SelectTrigger>
                     <SelectValue placeholder="Blood Type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-border">
                     <SelectItem value="all">All Blood Types</SelectItem>
                     <SelectItem value={BloodType.A_Positive}>A+</SelectItem>
                     <SelectItem value={BloodType.A_Negative}>A-</SelectItem>
@@ -291,7 +279,7 @@ export function PatientSearch({
                     <SelectTrigger className="w-20">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-border">
                       <SelectItem value="5">5</SelectItem>
                       <SelectItem value="10">10</SelectItem>
                       <SelectItem value="20">20</SelectItem>
@@ -305,9 +293,8 @@ export function PatientSearch({
             </div>
           )}
 
-
-          {/* Results */}
-          <div className="space-y-3">
+        {/* Results */}
+        <div className="space-y-3">
             {!hasSearched ? (
               <div className="text-center py-8 text-gray-500">
                 <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -437,8 +424,7 @@ export function PatientSearch({
               </div>
             )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
     </div>
   );
 }

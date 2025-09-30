@@ -189,14 +189,14 @@ export function PatientConditionForm({
                       Clinical Status
                     </label>
                     <Select
-                      value={condition.clinicalStatus || ''}
-                      onValueChange={(value) => updateCondition(index, 'clinicalStatus', value || undefined)}
+                      value={condition.clinicalStatus || 'no-status'}
+                      onValueChange={(value) => updateCondition(index, 'clinicalStatus', value === 'no-status' ? undefined : value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No status</SelectItem>
+                      <SelectContent className="border-border">
+                        <SelectItem value="no-status">No status</SelectItem>
                         {Object.values(ClinicalStatus).map(status => (
                           <SelectItem key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -211,14 +211,14 @@ export function PatientConditionForm({
                       Verification Status
                     </label>
                     <Select
-                      value={condition.verificationStatus || ''}
-                      onValueChange={(value) => updateCondition(index, 'verificationStatus', value || undefined)}
+                      value={condition.verificationStatus || 'no-verification'}
+                      onValueChange={(value) => updateCondition(index, 'verificationStatus', value === 'no-verification' ? undefined : value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select verification" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No verification</SelectItem>
+                      <SelectContent className="border-border">
+                        <SelectItem value="no-verification">No verification</SelectItem>
                         {Object.values(ConditionVerificationStatus).map(status => (
                           <SelectItem key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}

@@ -1,20 +1,21 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Stethoscope, 
   Calendar, 
   User, 
+  Clock,
   FileText,
   Edit,
   Trash2,
   Eye,
-  Activity
+  Plus
 } from 'lucide-react';
-import { PatientEncounter, EncounterType } from '@/interfaces/patient/patient-workflow.interface';
+import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interface';
 
 interface EncounterListProps {
   encounters: PatientEncounter[];
@@ -33,41 +34,43 @@ export function EncounterList({
   onView,
   onCreate
 }: EncounterListProps) {
-  const getEncounterTypeColor = (type: EncounterType) => {
-    switch (type) {
-      case EncounterType.EMERGENCY:
-        return 'bg-red-100 text-red-800';
-      case EncounterType.INPATIENT:
-        return 'bg-blue-100 text-blue-800';
-      case EncounterType.OUTPATIENT:
-        return 'bg-green-100 text-green-800';
-      case EncounterType.CONSULTATION:
-        return 'bg-purple-100 text-purple-800';
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed':
+        return 'default';
+      case 'in-progress':
+        return 'secondary';
+      case 'scheduled':
+        return 'outline';
+      case 'cancelled':
+        return 'destructive';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'outline';
     }
   };
 
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const hasVitalSigns = (encounter: PatientEncounter) => {
-    return encounter.vitalSigns && Object.keys(encounter.vitalSigns).length > 0;
+  const getEncounterTypeColor = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'emergency':
+        return 'destructive';
+      case 'inpatient':
+        return 'default';
+      case 'outpatient':
+        return 'secondary';
+      case 'virtual':
+        return 'outline';
+      default:
+        return 'outline';
+    }
   };
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-border">
         <CardContent className="p-6">
-          <div className="text-center text-foreground">
-            Loading encounters...
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-foreground">Loading encounters...</span>
           </div>
         </CardContent>
       </Card>
@@ -76,146 +79,151 @@ export function EncounterList({
 
   if (encounters.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" />
-            Medical Encounters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="border-border">
+        <CardContent className="p-6">
           <div className="text-center py-8">
-            <Stethoscope className="mx-auto h-12 w-12 text-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No encounters found</h3>
-            <p className="text-foreground mb-4">
-              This patient hasn't had any medical encounters yet.
+            <Stethoscope className="h-12 w-12 text-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Encounters Found</h3>
+            <p className="text-foreground">
+              No patient encounters match your current filters.
             </p>
-            {onCreate && (
-              <Button onClick={onCreate}>
-                <Stethoscope className="h-4 w-4 mr-2" />
-                Create First Encounter
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Stethoscope className="h-5 w-5" />
-            Medical Encounters ({encounters.length})
-          </CardTitle>
-          {onCreate && (
-            <Button onClick={onCreate} size="sm">
-              <Stethoscope className="h-4 w-4 mr-2" />
-              New Encounter
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {encounters.map((encounter) => (
-            <div
-              key={encounter.id}
-              className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge className={getEncounterTypeColor(encounter.encounterType)}>
-                      {encounter.encounterType.replace('_', ' ')}
-                    </Badge>
-                    <span className="text-sm text-foreground">
-                      {formatDate(encounter.encounterDate)}
+    return (
+      <div className="space-y-4">
+        {encounters.map((encounter) => (
+          <Card key={encounter.id} className="border-border hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" />
+                  {encounter.patient ? 
+                    `${encounter.patient.firstName} ${encounter.patient.lastName}` : 
+                    'Unknown Patient'
+                  }
+                </CardTitle>
+                <CardDescription className="flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(encounter.encounterDate).toLocaleDateString()}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {new Date(encounter.encounterDate).toLocaleTimeString()}
+                  </span>
+                  {encounter.duration && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {encounter.duration}
                     </span>
-                    {hasVitalSigns(encounter) && (
-                      <Badge variant="outline" className="text-green-600">
-                        <Activity className="h-3 w-3 mr-1" />
-                        Vital Signs
-                      </Badge>
-                    )}
-                  </div>
-
-                  {encounter.chiefComplaint && (
-                    <div>
-                      <h4 className="font-medium text-foreground">Chief Complaint</h4>
-                      <p className="text-sm text-foreground">{encounter.chiefComplaint}</p>
-                    </div>
                   )}
-
-                  {encounter.symptoms && (
-                    <div>
-                      <h4 className="font-medium text-foreground">Symptoms</h4>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {encounter.symptoms}
-                      </p>
-                    </div>
-                  )}
-
-                  {encounter.assignedPhysicianId && (
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <User className="h-4 w-4" />
-                      <span>Physician: {encounter.assignedPhysicianId}</span>
-                    </div>
-                  )}
-
-                  {encounter.notes && (
-                    <div>
-                      <h4 className="font-medium text-foreground">Notes</h4>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {encounter.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-4 text-xs text-foreground">
-                    <span>Created: {formatDate(encounter.createdAt)}</span>
-                    {encounter.updatedAt && encounter.updatedAt !== encounter.createdAt && (
-                      <span>Updated: {formatDate(encounter.updatedAt)}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 ml-4">
-                  {onView && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onView(encounter)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(encounter)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {onDelete && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(encounter.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={getStatusColor(encounter.status || '')}>
+                  {encounter.status || 'Unknown'}
+                </Badge>
+                <Badge variant={getEncounterTypeColor(encounter.encounterType || '')}>
+                  {encounter.encounterType || 'Unknown'}
+                </Badge>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {/* Chief Complaint */}
+              {encounter.chiefComplaint && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Chief Complaint</h4>
+                  <p className="text-sm">{encounter.chiefComplaint}</p>
+                </div>
+              )}
+
+              {/* Symptoms */}
+              {encounter.symptoms && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Symptoms</h4>
+                  <p className="text-sm">{encounter.symptoms}</p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {encounter.notes && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Notes</h4>
+                  <p className="text-sm">{encounter.notes}</p>
+                </div>
+              )}
+
+              {/* Patient Info */}
+              {encounter.patient && (
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    ID: {encounter.patient.patientCode}
+                  </span>
+                  <span>
+                    DOB: {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
+                  </span>
+                  <span>
+                    Gender: {encounter.patient.gender}
+                  </span>
+                </div>
+              )}
+
+              {/* Assigned Physician */}
+              {encounter.assignedPhysicianId && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Assigned Physician</h4>
+                  <p className="text-sm">{encounter.assignedPhysicianId}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2 border-t">
+                {onView && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onView(encounter)}
+                    className="flex items-center gap-1"
+                  >
+                    <Eye className="h-4 w-4" />
+                    View
+                  </Button>
+                )}
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(encounter)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(encounter.id)}
+                    className="flex items-center gap-1 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }

@@ -129,14 +129,14 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender</Label>
                 <Select
-                  value={localFilters.gender || ''}
-                  onValueChange={(value) => handleFilterChange('gender', value || undefined)}
+                  value={localFilters.gender || 'all'}
+                  onValueChange={(value) => handleFilterChange('gender', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Genders</SelectItem>
+                  <SelectContent className="border-border">
+                    <SelectItem value="all">All Genders</SelectItem>
                     {Object.values(Gender).map((gender) => (
                       <SelectItem key={gender} value={gender}>
                         {gender}
@@ -149,14 +149,14 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="bloodType">Blood Type</Label>
                 <Select
-                  value={localFilters.bloodType || ''}
-                  onValueChange={(value) => handleFilterChange('bloodType', value || undefined)}
+                  value={localFilters.bloodType || 'all'}
+                  onValueChange={(value) => handleFilterChange('bloodType', value === 'all' ? undefined : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select blood type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Blood Types</SelectItem>
+                  <SelectContent className="border-border">
+                    <SelectItem value="all">All Blood Types</SelectItem>
                     {Object.values(BloodType).map((bloodType) => (
                       <SelectItem key={bloodType} value={bloodType}>
                         {bloodType}
@@ -169,14 +169,14 @@ const PatientFilters: React.FC<PatientFiltersProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="isActive">Status</Label>
                 <Select
-                  value={localFilters.isActive?.toString() || ''}
-                  onValueChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+                  value={localFilters.isActive?.toString() || 'all'}
+                  onValueChange={(value) => handleFilterChange('isActive', value === 'all' ? undefined : value === 'true')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                  <SelectContent className="border-border">
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="true">Active</SelectItem>
                     <SelectItem value="false">Inactive</SelectItem>
                   </SelectContent>
