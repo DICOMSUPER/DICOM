@@ -104,15 +104,48 @@ export class UsersService {
 
     return users;
   }
-
-  async login(email: string, password: string): Promise<TokenResponseDto | null> {
+  async login(email: string, password: string): Promise<{
+    tokenResponse: TokenResponseDto;
+    cookieOptions: {
+      name: string;
+      value: string;
+      options: {
+        httpOnly: boolean;
+        secure: boolean;
+        sameSite: 'strict' | 'lax' | 'none';
+        maxAge: number;
+        path: string;
+      }
+    }
+  } | null> {
     const user = await this.validateUser(email, password);
 
     if (!user) {
       return null;
     }
-    return this.generateTokens(user);
+
+    const tokenResponse = this.generateTokens(user);
+
+
+    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
+    const maxAge = this.parseExpiresIn(expiresIn);
+
+    return {
+      tokenResponse,
+      cookieOptions: {
+        name: 'access_token',
+        value: tokenResponse.accessToken,
+        options: {
+          httpOnly: true, // Ngăn chặn truy cập từ JavaScript
+          secure: this.configService.get<string>('NODE_ENV') === 'production', // HTTPS only trong production
+          sameSite: 'strict', // CSRF protection
+          maxAge: maxAge, // Thời gian sống của cookie (milliseconds)
+          path: '/', // Cookie available cho toàn bộ domain
+        }
+      }
+    };
   }
+
 
   async register(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'> | null> {
     try {
@@ -166,7 +199,7 @@ export class UsersService {
       throw error;
     }
   }
-  
+
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
