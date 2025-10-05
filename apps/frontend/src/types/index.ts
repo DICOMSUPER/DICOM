@@ -8,8 +8,8 @@ import type {
   BaseDataSourceConfigurationAPIItem,
 } from './DataSourceConfigurationAPI';
 
-export type * from '../components/viewer/viewport-1/services/ViewportGridService';
-export type * from '../components/viewer/viewport-1/services/CustomizationService/types';
+// export type * from '../components/viewer/viewport-1/services/ViewportGridService';
+
 // Separate out some generic types
 export type * from './Consumer';
 export type * from './Command';
