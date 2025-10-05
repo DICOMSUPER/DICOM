@@ -37,6 +37,38 @@ export class UsersController {
     }
   }
 
+  @MessagePattern('user.request-login')
+  async requestLogin(@Payload() data: { email: string; password: string }) {
+    try {
+      this.logger.log(`Request login attempt for email: ${data.email}`);
+      const result = await this.usersService.requestLogin(data.email, data.password);
+      return result;
+    } catch (error) {
+      this.logger.error(`Request login error: `);
+      throw handleErrorFromMicroservices(
+        error,
+        'Request login failed',
+        'UsersController.requestLogin'
+      );
+    }
+  }
+
+  @MessagePattern('user.verify-otp')
+  async verifyOtp(@Payload() data: { email: string; code: string }) {
+    try {
+      this.logger.log(`OTP verification attempt for email: ${data.email}`);
+      const result = await this.usersService.verifyLoginOtp(data.email, data.code);
+      return result;
+    } catch (error) {
+      this.logger.error(`OTP verification error: `);
+      throw handleErrorFromMicroservices(
+        error,
+        'OTP verification failed',
+        'UsersController.verifyOtp'
+      );
+    }
+  }
+
 
   @MessagePattern('user.register')
   async register(@Payload() registerDto: {

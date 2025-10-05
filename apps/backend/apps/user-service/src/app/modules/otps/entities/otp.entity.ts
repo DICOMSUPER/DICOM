@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDa
 import { User } from '../../users/entities/user.entity';
 
 
+
 @Entity('otps')
 @Index(['userId'])
 @Index(['expiresAt'])

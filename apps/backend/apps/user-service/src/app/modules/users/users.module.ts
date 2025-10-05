@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { OtpsModule  } from '../otps/otps.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       User
     ]),
     ConfigModule,
+    OtpsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

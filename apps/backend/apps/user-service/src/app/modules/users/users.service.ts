@@ -8,12 +8,14 @@ import { TokenResponseDto } from './dto/token-response.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { OtpService } from '../otps/otps.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private configService: ConfigService,
     private jwtService: JwtService,
+    private otpService: OtpService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) { }
@@ -104,6 +106,90 @@ export class UsersService {
 
     return users;
   }
+
+async requestLogin(email: string, password: string): Promise<{ 
+  success: boolean; 
+  message: string; 
+  requireOtp?: boolean 
+}> {
+  const user = await this.validateUser(email, password);
+
+  if (!user) {
+    return { 
+      success: false, 
+      message: 'Email hoặc mật khẩu không đúng' 
+    };
+  }
+
+  await this.otpService.generateOtp(email);
+
+  return {
+    success: true,
+    message: 'Mã OTP đã được gửi đến email của bạn',
+    requireOtp: true
+  };
+}
+
+async verifyLoginOtp(email: string, otpCode: string): Promise<{
+  tokenResponse?: TokenResponseDto;
+  cookieOptions?: {
+    name: string;
+    value: string;
+    options: {
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: 'strict' | 'lax' | 'none';
+      maxAge: number;
+      path: string;
+    }
+  };
+  success: boolean;
+  message: string;
+} | null> {
+  const isOtpValid = await this.otpService.verifyOtp({ email, code: otpCode });
+  
+  if (!isOtpValid) {
+    return {
+      success: false,
+      message: 'Mã OTP không hợp lệ hoặc đã hết hạn'
+    };
+  }
+
+  const user = await this.findByEmail(email);
+  if (!user) {
+    return {
+      success: false,
+      message: 'Không tìm thấy người dùng'
+    };
+  }
+
+  const { passwordHash, ...userWithoutPassword } = user;
+  const tokenResponse = this.generateTokens(userWithoutPassword);
+
+  const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
+  const maxAge = this.parseExpiresIn(expiresIn);
+
+  return {
+    success: true,
+    message: 'Đăng nhập thành công',
+    tokenResponse,
+    cookieOptions: {
+      name: 'access_token',
+      value: tokenResponse.accessToken,
+      options: {
+        httpOnly: true, 
+        secure: this.configService.get<string>('NODE_ENV') === 'production', 
+        sameSite: 'strict', 
+        maxAge: maxAge,
+        path: '/',
+      }
+    }
+  };
+}
+
+
+
+
   async login(email: string, password: string): Promise<{
     tokenResponse: TokenResponseDto;
     cookieOptions: {
@@ -136,11 +222,11 @@ export class UsersService {
         name: 'access_token',
         value: tokenResponse.accessToken,
         options: {
-          httpOnly: true, // Ngăn chặn truy cập từ JavaScript
-          secure: this.configService.get<string>('NODE_ENV') === 'production', // HTTPS only trong production
-          sameSite: 'strict', // CSRF protection
-          maxAge: maxAge, // Thời gian sống của cookie (milliseconds)
-          path: '/', // Cookie available cho toàn bộ domain
+          httpOnly: true, 
+          secure: this.configService.get<string>('NODE_ENV') === 'production', 
+          sameSite: 'strict', 
+          maxAge: maxAge,
+          path: '/',
         }
       }
     };
