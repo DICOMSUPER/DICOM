@@ -10,7 +10,7 @@ export interface PatientEncounter extends BaseEntity {
   visit_type: VisitType;
   chief_complaint?: string;
   symptoms?: string;
-  vital_signs?: Record<string, any>;
+  vital_signs?: Record<string, any> | null;
   assigned_physician_id?: string;
   notes?: string;
   created_by?: string;

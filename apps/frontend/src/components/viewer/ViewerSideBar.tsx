@@ -2,6 +2,7 @@ import React from "react";
 import DicomImageLoader from "./DicomImageLoader";
 import Link from "next/link";
 import DicomThumbnail from "./DicomThumbnail";
+import { RenderingEngine } from "@cornerstonejs/core";
 
 export default function ViewerSideBar({
   isOpen,

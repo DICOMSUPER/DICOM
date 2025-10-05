@@ -1,10 +1,9 @@
 'use client';
-
-
 import { QueueFiltersSection } from '@/components/physicians/queue/queue-filters';
 import { QueueStatsCards } from '@/components/physicians/queue/queue-stats';
 import { QueueTable } from '@/components/physicians/queue/queue-table';
 import { useQueue } from '@/hooks/use-queue';
+import { useRouter } from 'next/navigation';
 
 export default function QueuePage() {
   const {
@@ -16,6 +15,11 @@ export default function QueuePage() {
     handleFiltersChange,
     handleReset,
   } = useQueue();
+  const router = useRouter();
+
+  const handleViewDetails = (id: string) => {
+    router.push(`/physicians/clinic-visit/${id}`);
+  };
 
   const handleStartServing = (id: string) => {
     console.log('Start serving:', id);
@@ -38,7 +42,7 @@ export default function QueuePage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Medical Queue
+              Clinic Visit
             </h1>
             <div className="text-sm text-gray-500">
               General • Nov 23, 2022
@@ -61,7 +65,10 @@ export default function QueuePage() {
           onStartServing={handleStartServing}
           onEdit={handleEdit}
           onCancel={handleCancel}
+          onViewDetails={handleViewDetails}
         />
+
+
       </div>
     </div>
   );

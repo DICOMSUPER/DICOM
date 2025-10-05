@@ -1,38 +1,113 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, List, Grid3X3, Calendar, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, Grid3X3, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+
+interface SeriesImage {
+  id: string;
+  instanceNumber: number;
+  thumbnail?: string;
+}
+
+interface Series {
+  id: string;
+  seriesNumber: string;
+  modality: string;
+  description: string;
+  instanceCount: number;
+  thumbnail: string;
+  images: SeriesImage[];
+}
 
 interface Study {
   id: string;
   date: string;
-  type: string;
-  series: number;
-  images: {
-    id: string;
-    type: string;
-    seriesNumber: string;
-    imageNumber: string;
-    thumbnail: string;
-    hasWarning?: boolean;
-  }[];
+  description: string;
+  modality: string;
+  seriesCount: number;
+  series: Series[];
 }
 
 const mockStudies: Study[] = [
   {
-    id: '01-Jan-2024',
-    date: 'Jan 1, 2024',
-    type: 'CT\\MR\\CR\\US\\DS\\DR\\SR',
-    series: 27,
-    images: [
-      { id: '1', type: 'MR', seriesNumber: 'S:0', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089020/pexels-photo-7089020.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop', hasWarning: true },
-      { id: '2', type: 'CR', seriesNumber: 'S:0', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089391/pexels-photo-7089391.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop' },
-      { id: '3', type: 'CT', seriesNumber: 'S:1', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089334/pexels-photo-7089334.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop', hasWarning: true },
-      { id: '4', type: 'CR', seriesNumber: 'S:1', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089020/pexels-photo-7089020.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop' },
-      { id: '5', type: 'DR', seriesNumber: 'S:1', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089391/pexels-photo-7089391.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop', hasWarning: true },
-      { id: '6', type: 'CT', seriesNumber: 'S:2', imageNumber: '1', thumbnail: 'https://images.pexels.com/photos/7089334/pexels-photo-7089334.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop' },
+    id: '22-May-2014',
+    date: '22-May-2014',
+    description: 'DFCI CT CHEST W CONTRAST 6023',
+    modality: 'CT',
+    seriesCount: 381,
+    series: [
+      {
+        id: 'series-1',
+        seriesNumber: '2.0',
+        modality: 'CT',
+        description: 'Lung 5.0 Lung I+ CE',
+        instanceCount: 2,
+        thumbnail: '/api/placeholder/80/80',
+        images: Array.from({ length: 55 }, (_, i) => ({
+          id: `img-${i}`,
+          instanceNumber: i + 1
+        }))
+      },
+      {
+        id: 'series-2',
+        seriesNumber: '4.0',
+        modality: 'CT',
+        description: 'Body 4.0 Lung I+/C...',
+        instanceCount: 51,
+        thumbnail: '/api/placeholder/80/80',
+        images: Array.from({ length: 51 }, (_, i) => ({
+          id: `img-${i}`,
+          instanceNumber: i + 1
+        }))
+      },
+      {
+        id: 'series-3',
+        seriesNumber: '4.0',
+        modality: 'CT',
+        description: 'Body 4.0 Lung I+/S...',
+        instanceCount: 81,
+        thumbnail: '/api/placeholder/80/80',
+        images: Array.from({ length: 81 }, (_, i) => ({
+          id: `img-${i}`,
+          instanceNumber: i + 1
+        }))
+      },
+      {
+        id: 'series-4',
+        seriesNumber: '5.0',
+        modality: 'CT',
+        description: 'Body 5.0 Lung I+ CE',
+        instanceCount: 55,
+        thumbnail: '/api/placeholder/80/80',
+        images: Array.from({ length: 55 }, (_, i) => ({
+          id: `img-${i}`,
+          instanceNumber: i + 1
+        }))
+      }
+    ]
+  },
+  {
+    id: '25-Mar-2014',
+    date: '25-Mar-2014',
+    description: 'DFCI CT CHEST W CONTRAST 6023',
+    modality: 'CT',
+    seriesCount: 249,
+    series: [
+      {
+        id: 'series-5',
+        seriesNumber: '2.0',
+        modality: 'CT',
+        description: 'Chest CT',
+        instanceCount: 125,
+        thumbnail: '/api/placeholder/80/80',
+        images: Array.from({ length: 125 }, (_, i) => ({
+          id: `img-${i}`,
+          instanceNumber: i + 1
+        }))
+      }
     ]
   }
 ];
@@ -42,8 +117,20 @@ interface StudiesPanelProps {
   onToggleCollapse: () => void;
 }
 
-const StudiesPanel = ({ isCollapsed, onToggleCollapse }: StudiesPanelProps) => {
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+interface StudiesPanelProps {
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  onSeriesSelect?: (series: Series) => void;
+}
+
+const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect }: StudiesPanelProps) => {
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
+
+  const handleSeriesClick = (series: Series) => {
+    setSelectedSeries(series.id);
+    onSeriesSelect?.(series);
+  };
 
   if (isCollapsed) {
     return (
@@ -70,67 +157,80 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse }: StudiesPanelProps) => {
   return (
     <div className="w-80 bg-slate-900 border-r border-slate-700 flex flex-col">
       {/* Header */}
-      <div className="h-12 flex items-center justify-between px-4 border-b border-slate-700">
+      <div className="h-12 flex items-center justify-between px-3 border-b border-slate-700">
         <div className="flex items-center gap-2">
-          <h2 className="text-blue-400 font-medium">Studies</h2>
+          <h2 className="text-blue-400 font-medium text-sm">Studies</h2>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-            className="h-8 w-8 p-0 text-slate-400 hover:text-blue-300 hover:bg-slate-800"
+            className="h-7 w-7 p-0 text-slate-400 hover:text-blue-300 hover:bg-slate-800"
           >
-            {viewMode === 'list' ? <Grid3X3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
+            <Filter className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+            className="h-7 w-7 p-0 text-slate-400 hover:text-blue-300 hover:bg-slate-800"
+          >
+            {viewMode === 'list' ? <Grid3X3 className="h-3 w-3" /> : <List className="h-3 w-3" />}
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleCollapse}
-            className="h-8 w-8 p-0 text-slate-400 hover:text-blue-300 hover:bg-slate-800"
+            className="h-7 w-7 p-0 text-slate-400 hover:text-blue-300 hover:bg-slate-800"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           </Button>
         </div>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="p-2 space-y-4">
+        <div className="p-2 space-y-1">
           {mockStudies.map((study) => (
-            <div key={study.id} className="space-y-3">
+            <div key={study.id} className="space-y-2">
               {/* Study Header */}
-              <div className="flex items-center gap-2 text-sm">
-               
-                <span className="text-white font-medium">{study.id}</span>
-                <span className="text-slate-400 text-xs">{study.type}</span>
-                <span className="text-slate-500 text-xs ml-auto">{study.series}</span>
+              <div className="px-2 py-1 bg-slate-800 rounded text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-medium">{study.date}</span>
+                  <span className="text-blue-400 text-xs">{study.modality}</span>
+                </div>
+                <div className="text-slate-300 text-xs truncate">{study.description}</div>
+                <div className="text-slate-500 text-xs">{study.seriesCount}</div>
               </div>
 
-              {/* Images Grid */}
-              <div className="grid grid-cols-2 gap-2">
-                {study.images.map((image) => (
+              {/* Series List */}
+              <div className="space-y-1">
+                {study.series.map((series) => (
                   <div
-                    key={image.id}
-                    className="relative group cursor-pointer bg-slate-800 rounded-lg overflow-hidden border border-slate-700 hover:border-blue-500 transition-colors"
+                    key={series.id}
+                    onClick={() => handleSeriesClick(series)}
+                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors hover:bg-slate-800 ${
+                      selectedSeries === series.id ? 'bg-blue-900 border border-blue-600' : 'bg-slate-800/50'
+                    }`}
                   >
-                    <div className="aspect-square relative">
-                      <img
-                        src={image.thumbnail}
-                        alt={`${image.type} scan`}
-                        className="w-full h-full object-cover"
-                      />
-                      {image.hasWarning && (
-                        <div className="absolute top-1 left-1">
-                          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 left-1 bg-blue-600 text-white text-xs px-1 py-0.5 rounded">
-                        {image.type}
+                    {/* Thumbnail */}
+                    <div className="w-12 h-12 bg-slate-700 rounded overflow-hidden flex-shrink-0">
+                      <div className="w-full h-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                        <div className="w-8 h-8 bg-slate-300 rounded-sm opacity-30"></div>
                       </div>
                     </div>
-                    <div className="p-2 text-xs text-slate-400">
-                      <div>{image.seriesNumber} □ {image.imageNumber}</div>
+
+                    {/* Series Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary" className="bg-blue-600 text-white text-xs px-1 py-0.5 h-auto">
+                          {series.modality}
+                        </Badge>
+                        <span className="text-white text-xs font-medium">{series.seriesNumber}</span>
+                        <span className="text-slate-400 text-xs">□ {series.instanceCount}</span>
+                      </div>
+                      <div className="text-slate-300 text-xs truncate">{series.description}</div>
+                      <div className="text-slate-500 text-xs">S:{series.seriesNumber.split('.')[0]} □ {series.instanceCount}</div>
                     </div>
                   </div>
                 ))}

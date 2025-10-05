@@ -20,7 +20,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
    const { 
     patient, 
     summary, 
-    appointments, 
     medications, 
     labResults, 
     procedures,
@@ -84,25 +83,25 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="appointments">Appointments</TabsTrigger>
+                {/* <TabsTrigger value="appointments">Appointments</TabsTrigger> */}
                 <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
-                <TabsTrigger value="lab-results">Lab Results</TabsTrigger>
+                <TabsTrigger value="results">Results</TabsTrigger>
                 <TabsTrigger value="medical-history">Medical History</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
                 <PatientSummaryTab summary={summary} />
               </TabsContent>
-
+{/* 
               <TabsContent value="appointments" className="space-y-6">
-                {/* <AppointmentsTab appointments={appointments} /> */}
-              </TabsContent>
+                <AppointmentsTab appointments={appointments} />
+              </TabsContent> */}
 
               <TabsContent value="prescriptions" className="space-y-6">
                 <MedicationsTab medications={medications} />
               </TabsContent>
 
-              <TabsContent value="lab-results" className="space-y-6">
+              <TabsContent value="results" className="space-y-6">
                 <LabResultsTab labResults={labResults} />
               </TabsContent>
 

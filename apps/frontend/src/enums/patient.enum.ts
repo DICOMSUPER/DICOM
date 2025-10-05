@@ -2,6 +2,7 @@ export enum VisitType {
   OUTPATIENT = "outpatient",
   INPATIENT = "inpatient",
   EMERGENCY = "emergency",
+  FOLLOW_UP = "follow_up",
 }
 
 export enum RoomType {

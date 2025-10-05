@@ -33,6 +33,7 @@ import {
   User,
   Clock,
   ArrowUpDown,
+  Eye,
 } from 'lucide-react';
 import { PriorityLevel, QueueStatus } from '@/enums/patient.enum';
 import { QueueAssignment } from '@/interfaces/patient/queue.interface';
@@ -43,6 +44,7 @@ interface QueueTableProps {
   onStartServing: (id: string) => void;
   onEdit: (id: string) => void;
   onCancel: (id: string) => void;
+  onViewDetails: (id: string) => void;
 }
 
 const columnHelper = createColumnHelper<QueueAssignment>();
@@ -52,6 +54,7 @@ export function QueueTable({
   onStartServing,
   onEdit,
   onCancel,
+  onViewDetails,
 }: QueueTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -196,7 +199,7 @@ const getPriorityLevel = (level: PriorityLevel) => {
     }),
 
     columnHelper.accessor('visit.visit_type', {
-      header: 'Type',
+      header: 'Visit Type',
       cell: ({ row }) => (
         <Badge variant="outline" className="bg-gray-50">
           {row.original.visit.visit_type}
@@ -224,7 +227,7 @@ const getPriorityLevel = (level: PriorityLevel) => {
 
     columnHelper.display({
       id: 'queue_status',
-      header: 'Queue Status',
+      header: 'Status',
       cell: ({ row }) => getStatusBadge(row.original.status),
     }),
 
@@ -253,6 +256,10 @@ const getPriorityLevel = (level: PriorityLevel) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onViewDetails(queueItem.queue_id)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(queueItem.queue_id)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit

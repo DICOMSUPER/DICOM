@@ -128,8 +128,8 @@ export const roleNavigation: RoleNavigation = {
       description: "Assigned patients"
     },
     {
-      href: "/physicians/queue-assignment",
-      label: "Queue",
+      href: "/physicians/clinic-visit",
+      label: "Clinic Visit",
 
       icon: FileText,
       description: "Manage patient queue assignments"

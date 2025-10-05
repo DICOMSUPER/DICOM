@@ -1,4 +1,6 @@
 import { PriorityLevel, QueueStatus, VisitType } from '@/enums/patient.enum';
+import { Gender } from '@/enums/user.enum';
+import { PatientEncounter } from '@/interfaces/patient/patient-visit.interface';
 import { QueueAssignment } from '@/interfaces/patient/queue.interface';
 
 export const mockQueueData: QueueAssignment[] = [
@@ -88,3 +90,25 @@ export const mockQueueData: QueueAssignment[] = [
     created_at: new Date('2022-11-23T21:30:00'),
   },
 ];
+
+export const mockPatientEncounter: PatientEncounter = {
+  visit_id: "visit-123",
+  patient_id: "p1",
+  patient: {
+    patient_id: "patient-456",
+    patient_code: "patient-456",
+    first_name: "John",
+    last_name: "Doe",
+    date_of_birth: new Date("1990-01-01"),
+    phone: "1234567890",
+    insurance_number: "INS-123456",
+    gender: Gender.MALE,
+  },
+  visit_date: new Date("2025-09-24T09:30:00"),
+  visit_type: VisitType.FOLLOW_UP,
+  chief_complaint: "Headache",
+  symptoms: "Fever, nausea",
+  vital_signs: null,
+  notes: "Patient advised to rest and hydrate.",
+
+};
