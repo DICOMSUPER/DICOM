@@ -1,5 +1,6 @@
 export enum QueuePriorityLevel {
-    ROUTINE = 'routine',
-    URGENT = 'urgent',
-    STAT = 'stat'
+  ROUTINE = "Routine",   // bình thường
+  MEDIUM = "Medium",    // trung bình
+  HIGH = "High",      // cao
+  URGENT = "Urgent",    // khẩn cấp
 }
