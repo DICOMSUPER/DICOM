@@ -138,9 +138,6 @@ export default function UploadedStudies({ studies }: { studies?: any[] }) {
                 <span className="ml-auto text-sm text-[var(--neutral)]">
                   {instance.rows}x{instance.columns}
                 </span>
-                <Button className="ml-5" variant={"destructive"}>
-                  Recapture Required
-                </Button>
               </div>
             </Link>
           ))}
