@@ -4,7 +4,6 @@ describe('Patient Service E2E Tests', () => {
   // Test data
   let testPatientId: string = 'patient-123';
   let testEncounterId: string = 'encounter-123';
-  let testPrescriptionId: string = 'prescription-123';
   let testQueueAssignmentId: string = 'queue-123';
 
   describe('Health Check', () => {
@@ -94,103 +93,6 @@ describe('Patient Service E2E Tests', () => {
     });
   });
 
-  describe('Prescriptions Module (REST API)', () => {
-    describe('Prescription Management', () => {
-      it('should create a new prescription', async () => {
-        const prescriptionData = {
-          encounterId: testEncounterId,
-          physicianId: 'physician-123',
-          prescriptionDate: new Date().toISOString(),
-          notes: 'Uống thuốc sau bữa ăn',
-          status: 'ACTIVE'
-        };
-
-        try {
-          const res = await axios.post('/prescriptions', prescriptionData);
-          expect(res.status).toBe(201);
-          testPrescriptionId = res.data.id;
-        } catch (error) {
-          // Mock response for testing
-          expect(prescriptionData).toBeDefined();
-        }
-      });
-
-      it('should get all prescriptions', async () => {
-        try {
-          const res = await axios.get('/prescriptions');
-          expect(res.status).toBe(200);
-          expect(Array.isArray(res.data)).toBe(true);
-        } catch (error) {
-          // Mock response for testing
-          expect(true).toBe(true);
-        }
-      });
-
-      it('should get prescription statistics', async () => {
-        try {
-          const res = await axios.get('/prescriptions/stats');
-          expect(res.status).toBe(200);
-          expect(res.data).toHaveProperty('totalPrescriptions');
-        } catch (error) {
-          // Mock response for testing
-          const stats = {
-            totalPrescriptions: 200,
-            prescriptionsThisMonth: 25,
-            activePrescriptions: 180
-          };
-          expect(stats).toBeDefined();
-        }
-      });
-
-      it('should find prescriptions by encounter', async () => {
-        try {
-          const res = await axios.get(`/prescriptions/encounter/${testEncounterId}`);
-          expect(res.status).toBe(200);
-          expect(Array.isArray(res.data)).toBe(true);
-        } catch (error) {
-          // Mock response for testing
-          expect(testEncounterId).toBeDefined();
-        }
-      });
-
-      it('should find prescriptions by physician', async () => {
-        const physicianId = 'physician-123';
-        try {
-          const res = await axios.get(`/prescriptions/physician/${physicianId}`);
-          expect(res.status).toBe(200);
-          expect(Array.isArray(res.data)).toBe(true);
-        } catch (error) {
-          // Mock response for testing
-          expect(physicianId).toBeDefined();
-        }
-      });
-
-      it('should update a prescription', async () => {
-        const updateData = {
-          notes: 'Cập nhật ghi chú',
-          status: 'COMPLETED'
-        };
-
-        try {
-          const res = await axios.patch(`/prescriptions/${testPrescriptionId}`, updateData);
-          expect(res.status).toBe(200);
-        } catch (error) {
-          // Mock response for testing
-          expect(updateData).toBeDefined();
-        }
-      });
-
-      it('should delete a prescription', async () => {
-        try {
-          const res = await axios.delete(`/prescriptions/${testPrescriptionId}`);
-          expect(res.status).toBe(200);
-        } catch (error) {
-          // Mock response for testing
-          expect(testPrescriptionId).toBeDefined();
-        }
-      });
-    });
-  });
 
   describe('Queue Assignments Module (REST API)', () => {
     describe('Queue Management', () => {
@@ -342,16 +244,7 @@ describe('Patient Service E2E Tests', () => {
     it('should handle invalid patient ID', async () => {
       const invalidId = 'invalid-id';
       try {
-        await axios.get(`/prescriptions/encounter/${invalidId}`);
-      } catch (error: any) {
-        expect(error.response?.status).toBe(404);
-      }
-    });
-
-    it('should handle invalid prescription ID', async () => {
-      const invalidId = 'invalid-prescription-id';
-      try {
-        await axios.get(`/prescriptions/${invalidId}`);
+        await axios.get(`/patients/${invalidId}`);
       } catch (error: any) {
         expect(error.response?.status).toBe(404);
       }
@@ -368,19 +261,6 @@ describe('Patient Service E2E Tests', () => {
   });
 
   describe('Data Validation', () => {
-    it('should validate prescription creation data', async () => {
-      const invalidData = {
-        // Missing required fields
-        notes: 'Test prescription'
-      };
-
-      try {
-        await axios.post('/prescriptions', invalidData);
-      } catch (error: any) {
-        expect(error.response?.status).toBe(400);
-      }
-    });
-
     it('should validate queue assignment creation data', async () => {
       const invalidData = {
         // Missing required encounterId
@@ -398,7 +278,7 @@ describe('Patient Service E2E Tests', () => {
   describe('Performance Tests', () => {
     it('should handle multiple concurrent requests', async () => {
       const promises = Array.from({ length: 10 }, (_, i) => 
-        axios.get('/prescriptions').catch(() => ({ status: 200, data: [] }))
+        axios.get('/queue-assignments').catch(() => ({ status: 200, data: [] }))
       );
 
       const results = await Promise.all(promises);

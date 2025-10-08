@@ -6,8 +6,6 @@ import { PatientEncounterModule } from './modules/patient-encounters/patient-enc
 import { QueueAssignmentModule } from './modules/queue-assignments/queue-assignments.module';
 import { PatientConditionModule } from './modules/patient-conditions/patient-conditions.module';
 import { DiagnosesReportModule } from './modules/diagnoses-reports/diagnoses-reports.module';
-import { PrescriptionModule } from './modules/prescriptions/prescriptions.module';
-import { PrescriptionItemModule } from './modules/prescription-items/prescription-items.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
 
@@ -28,8 +26,6 @@ import { ConfigModule } from '@nestjs/config';
     QueueAssignmentModule,
     PatientConditionModule,
     DiagnosesReportModule,
-    PrescriptionModule,
-    PrescriptionItemModule,
   ],
   controllers: [AppController],
   providers: [AppService],
