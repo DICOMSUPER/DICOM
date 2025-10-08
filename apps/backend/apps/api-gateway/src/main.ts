@@ -43,13 +43,14 @@ async function bootstrap() {
 
   // ✅ Express setup
   app.use(express.json());
-  expressApp.set('query parser', (str : any ) => qs.parse(str, { depth: 10 }));
+  expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
 
   // ✅ Validation & Exception Filter
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
+      whitelist: false, 
+      forbidNonWhitelisted: false,
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
