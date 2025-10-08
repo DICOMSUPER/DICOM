@@ -1,5 +1,10 @@
+// COMMENTED OUT UNTIL DATABASE IS SET UP
+// This file contains cron jobs that depend on database entities
+// Uncomment when database is properly configured
+
+/*
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { QueueAssignmentService } from './queue-assignments.service';
 
 @Injectable()
@@ -13,7 +18,7 @@ export class QueueCronService {
   /**
    * Auto-expire queue assignments every 5 minutes
    */
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron('*/5 * * * *')
   async handleAutoExpire() {
     this.logger.log('Starting auto-expire queue assignments job');
     
@@ -38,7 +43,7 @@ export class QueueCronService {
   /**
    * Update estimated wait times every 2 minutes
    */
-  @Cron(CronExpression.EVERY_2_MINUTES)
+  @Cron('*/2 * * * *')
   async handleUpdateWaitTimes() {
     this.logger.log('Updating estimated wait times');
     
@@ -75,3 +80,4 @@ export class QueueCronService {
     }
   }
 }
+*/

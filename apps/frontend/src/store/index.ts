@@ -1,6 +1,6 @@
 
 import { configureStore } from "@reduxjs/toolkit";
-import { authApi } from "./authApi";
+// import { authApi } from "./authApi";
 import { patientApi } from "./patientApi";
 import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
@@ -11,14 +11,14 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     patient: patientReducer,
-    [authApi.reducerPath]: authApi.reducer,
+    // [authApi.reducerPath]: authApi.reducer,
     [patientApi.reducerPath]: patientApi.reducer,
     [queueAssignmentApi.reducerPath]: queueAssignmentApi.reducer,
     [patientConditionApi.reducerPath]: patientConditionApi.reducer,
   },
-  middleware: (getDefault) => 
+  middleware: (getDefault) =>
     getDefault()
-      .concat(authApi.middleware)
+      // .concat(authApi.middleware)
       .concat(patientApi.middleware)
       .concat(queueAssignmentApi.middleware)
       .concat(patientConditionApi.middleware),

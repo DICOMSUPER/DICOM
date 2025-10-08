@@ -1,0 +1,72 @@
+doctype html
+html
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Xác thực OTP
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .email-container {
+        background-color: #ffffff;
+        max-width: 500px;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .header h1 {
+        color: #333333;
+        font-size: 24px;
+        margin: 0;
+      }
+      .content {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .content p {
+        color: #555555;
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      .otp {
+        display: inline-block;
+        background-color: #f4f4f4;
+        color: #333333;
+        font-size: 20px;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin: 10px 0;
+        letter-spacing: 2px;
+      }
+      .footer {
+        text-align: center;
+        font-size: 14px;
+        color: #888888;
+      }
+  body
+    .email-container
+      .header
+        h1 Xác minh tài khoản của bạn
+      .content
+        p Xin chào #{name},
+        p Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Dưới đây là mã OTP của bạn:
+        div.otp #{otp}
+        p Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã với bất kỳ ai!
+      .footer
+        p Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.
+        p &copy; #{year} PawShop. All rights reserved.

@@ -1,0 +1,67 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { WorkspaceLayout } from "@/components/workspace-layout";
+import { SidebarNav } from "@/components/sidebar-nav";
+import { AppHeader } from "@/components/app-header";
+import {
+  Users,
+  FileText,
+  Activity,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+  Database,
+  Shield,
+  BarChart3,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+
+interface PhysicianLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function PhysicianLayout({ children }: PhysicianLayoutProps) {
+  const [notificationCount] = useState(3);
+  const [currentRole, setCurrentRole] = useState("Physician");
+
+  const handleNotificationClick = () => {
+    console.log("Notifications clicked");
+  };
+
+  const handleLogout = () => {
+    console.log("Logout clicked");
+  };
+
+  const handleRoleChange = (newRole: string) => {
+    setCurrentRole(newRole);
+    console.log("Role changed to:", newRole);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* App Header */}
+      <AppHeader
+        notificationCount={notificationCount}
+        onNotificationClick={handleNotificationClick}
+        onLogout={handleLogout}
+        currentRole={currentRole}
+        onRoleChange={handleRoleChange}
+      />
+
+      {/* Workspace Layout */}
+      <WorkspaceLayout sidebar={<SidebarNav userRole={currentRole} />}>
+        {children}
+      </WorkspaceLayout>
+    </div>
+  );
+}

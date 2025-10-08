@@ -1,0 +1,114 @@
+import { PriorityLevel, QueueStatus, VisitType } from '@/enums/patient.enum';
+import { Gender } from '@/enums/user.enum';
+import { PatientEncounter } from '@/interfaces/patient/patient-visit.interface';
+import { QueueAssignment } from '@/interfaces/patient/queue.interface';
+
+export const mockQueueData: QueueAssignment[] = [
+  {
+
+    queue_id: 'q1',
+    queue_number: '1/23112022/4',
+    status: QueueStatus.WAITING,
+    priority_level: PriorityLevel.URGENT,
+    assigned_at: new Date('2022-11-23T18:00:00'),
+    visit_id: 'v1',
+    visit: {
+      visit_id: 'v1',
+      patient_id: 'p1',
+      visit_date: new Date('2022-11-23T18:00:00'),
+      visit_type: VisitType.INPATIENT,
+      patient: {
+        patient_id: 'p1',
+        patient_code: 'P001',
+        first_name: 'Ajay',
+        last_name: 'S',
+        date_of_birth: new Date('1990-01-01'),
+        gender: 'Male' as any, // cần enum Gender
+        phone: '6543128970',
+        insurance_number: 'INS-001',
+        is_active: true,
+        created_by: 'admin',
+      },
+      chief_complaint: 'Fever and cough',
+      symptoms: 'High temperature, throat pain',
+    },
+    created_at: new Date('2022-11-23T18:00:00'),
+  },
+  {
+    queue_id: 'q2',
+    queue_number: '1/23112022/4',
+    status: QueueStatus.WAITING,
+    priority_level: PriorityLevel.ROUTINE,
+    assigned_at: new Date('2022-11-23T20:20:00'),
+    visit_id: 'v2',
+    visit: {
+      visit_id: 'v2',
+      patient_id: 'p2',
+      visit_date: new Date('2022-11-23T20:20:00'),
+      visit_type: VisitType.OUTPATIENT, // sửa từ CLINIC thành OUTPATIENT
+      patient: {
+        patient_id: 'p2',
+        patient_code: 'P002',
+        first_name: 'Lakshmi',
+        last_name: 'T',
+        date_of_birth: new Date('1993-05-10'),
+        gender: 'Female' as any,
+        phone: '9442493340',
+        insurance_number: 'INS-002',
+        is_active: true,
+        created_by: 'admin',
+      },
+      chief_complaint: 'Headache',
+    },
+    created_at: new Date('2022-11-23T20:20:00'),
+  },
+  {
+    queue_id: 'q3',
+    queue_number: '1/23112022/4',
+    status: QueueStatus.WAITING,
+    priority_level: PriorityLevel.HIGH,
+    assigned_at: new Date('2022-11-23T21:30:00'),
+    visit_id: 'v3',
+    visit: {
+      visit_id: 'v3',
+      patient_id: 'p3',
+      visit_date: new Date('2022-11-23T21:30:00'),
+      visit_type: VisitType.EMERGENCY,
+      patient: {
+        patient_id: 'p3',
+        patient_code: 'P003',
+        first_name: 'Nila',
+        last_name: 'B',
+        date_of_birth: new Date('1992-07-15'),
+        gender: 'Female' as any,
+        phone: '9443790262',
+        insurance_number: 'INS-003',
+        is_active: true,
+        created_by: 'admin',
+      },
+    },
+    created_at: new Date('2022-11-23T21:30:00'),
+  },
+];
+
+export const mockPatientEncounter: PatientEncounter = {
+  visit_id: "visit-123",
+  patient_id: "p1",
+  patient: {
+    patient_id: "patient-456",
+    patient_code: "patient-456",
+    first_name: "John",
+    last_name: "Doe",
+    date_of_birth: new Date("1990-01-01"),
+    phone: "1234567890",
+    insurance_number: "INS-123456",
+    gender: Gender.MALE,
+  },
+  visit_date: new Date("2025-09-24T09:30:00"),
+  visit_type: VisitType.FOLLOW_UP,
+  chief_complaint: "Headache",
+  symptoms: "Fever, nausea",
+  vital_signs: null,
+  notes: "Patient advised to rest and hydrate.",
+
+};
