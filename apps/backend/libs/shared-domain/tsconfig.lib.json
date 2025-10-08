@@ -25,6 +25,9 @@
       "path": "../../entities/tsconfig.lib.json"
     },
     {
+      "path": "../shared-utils/tsconfig.lib.json"
+    },
+    {
       "path": "../shared-interfaces/tsconfig.lib.json"
     },
     {

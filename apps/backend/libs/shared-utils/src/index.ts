@@ -6,4 +6,5 @@ export * from './lib/create-cachekey.utils';
 export * from './lib/name-key.utils';
 export * from './lib/vital-signs-validation.util';
 export * from './lib/vital-signs-examples.util';
+export * from './lib/validators/insurance-number.validator';
     
