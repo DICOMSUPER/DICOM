@@ -32,7 +32,7 @@ export enum Severity {
 }
 
 export enum AnnotationType {
-  TEXT = 'textt',
+  TEXT = 'text',
   ARROW = 'arrow',
   CIRCLE = 'circle',
   RECTANGLE = 'rectangle',
@@ -40,17 +40,12 @@ export enum AnnotationType {
   MEASUREMENT = 'measurement',
 }
 
-
-
-
 export enum AnnotationStatus {
   DRAFT = 'draft',
   FINAL = 'final',
   REVIEWED = 'reviewed',
   ARCHIVED = 'archived',
 }
-
-
 
 export enum DiagnosisType {
   PRIMARY = 'primary',

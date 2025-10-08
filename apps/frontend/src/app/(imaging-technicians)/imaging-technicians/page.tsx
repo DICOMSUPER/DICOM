@@ -1,11 +1,9 @@
-"use client"
+import ImageTechnicianPageWrapper from "@/components/imaging-technicians/ImageTechnicianPageWrapper";
 
-const page = () => {
+export default function Page() {
   return (
-    <div>
-      anh minh dep trai 
-    </div>
-  )
+    <>
+      <ImageTechnicianPageWrapper></ImageTechnicianPageWrapper>
+    </>
+  );
 }
-
-export default page

@@ -7,6 +7,7 @@ import { DicomStudiesModule } from './dicom-studies/dicom-studies.module';
 import { DicomSeriesModule } from './dicom-series/dicom-series.module';
 import { DicomInstancesModule } from './dicom-instances/dicom-instances.module';
 import { ImageAnnotationsModule } from './image-annotations/image-annotations.module';
+import { ImagingServiceController } from './imaging-service.controller';
 
 @Module({
   imports: [
@@ -27,5 +28,6 @@ import { ImageAnnotationsModule } from './image-annotations/image-annotations.mo
     ImageAnnotationsModule,
   ],
   exports: [ImagingModalitiesModule, ImagingOrdersModule],
+  controllers: [ImagingServiceController],
 })
 export class ImagingServiceModule {}
