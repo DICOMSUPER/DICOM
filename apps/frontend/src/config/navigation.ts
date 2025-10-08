@@ -139,12 +139,6 @@ export const roleNavigation: RoleNavigation = {
       description: "Patient diagnoses management"
     },
     {
-      href: "/physicians/prescriptions",
-      label: "Prescriptions",
-      icon: FileText,
-      description: "Prescription management"
-    },
-    {
       href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,

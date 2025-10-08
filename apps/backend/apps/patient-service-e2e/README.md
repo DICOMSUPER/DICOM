@@ -24,14 +24,8 @@ Bộ test end-to-end (E2E) toàn diện cho Patient Service, bao gồm tất c�
 - Thống kê encounters
 - Validation dữ liệu
 
-### 4. **prescriptions.e2e.spec.ts** - Test module Prescriptions (REST API)
-- CRUD operations cho đơn thuốc
-- Tìm kiếm đơn thuốc theo encounter/physician
-- Quản lý prescription items
-- Thống kê đơn thuốc
-- Validation dữ liệu
 
-### 5. **queue-assignments.e2e.spec.ts** - Test module Queue Assignments (REST API)
+### 4. **queue-assignments.e2e.spec.ts** - Test module Queue Assignments (REST API)
 - CRUD operations cho xếp hàng
 - Quản lý trạng thái queue
 - Call next patient functionality
@@ -39,12 +33,12 @@ Bộ test end-to-end (E2E) toàn diện cho Patient Service, bao gồm tất c�
 - Wait time estimation
 - Thống kê queue
 
-### 6. **patient-conditions.e2e.spec.ts** - Test module Patient Conditions (Microservice)
+### 5. **patient-conditions.e2e.spec.ts** - Test module Patient Conditions (Microservice)
 - CRUD operations cho tình trạng bệnh nhân
 - Tìm kiếm conditions theo bệnh nhân
 - Validation dữ liệu
 
-### 7. **diagnoses-reports.e2e.spec.ts** - Test module Diagnoses Reports (Microservice)
+### 6. **diagnoses-reports.e2e.spec.ts** - Test module Diagnoses Reports (Microservice)
 - CRUD operations cho báo cáo chẩn đoán
 - Tìm kiếm reports theo bệnh nhân/encounter/physician
 - Thống kê chẩn đoán
@@ -62,8 +56,6 @@ nx e2e patient-service-e2e
 # Chạy test cho module Patients
 nx e2e patient-service-e2e --testNamePattern="Patients Module"
 
-# Chạy test cho module Prescriptions
-nx e2e patient-service-e2e --testNamePattern="Prescriptions Module"
 
 # Chạy test cho module Queue Assignments
 nx e2e patient-service-e2e --testNamePattern="Queue Assignments Module"
@@ -100,7 +92,6 @@ nx e2e patient-service-e2e --verbose
 ### Test IDs
 - `testPatientId`: ID bệnh nhân test
 - `testEncounterId`: ID cuộc khám test
-- `testPrescriptionId`: ID đơn thuốc test
 - `testQueueAssignmentId`: ID queue assignment test
 
 ### Sample Data
@@ -126,7 +117,7 @@ Tests sử dụng dữ liệu mẫu tiếng Việt phù hợp với hệ thống
 ## Lưu ý
 
 1. **Microservice Tests**: Một số tests sử dụng mock data vì chúng gọi microservice patterns
-2. **REST API Tests**: Tests cho Prescriptions và Queue Assignments sử dụng real HTTP calls
+2. **REST API Tests**: Tests cho Queue Assignments sử dụng real HTTP calls
 3. **Database**: Tests không yêu cầu database thật, sử dụng mock responses
 4. **Authentication**: Tests hiện tại không bao gồm authentication, có thể thêm sau
 
