@@ -5,9 +5,9 @@ import { getClient } from '@backend/shared-utils';
 @Module({
   imports: [
     ClientsModule.register([
-      getClient('PATIENT_SERVICE', Transport.TCP, 'localhost', 5004),
+      getClient('AUTH_SERVICE', Transport.TCP, 'localhost', 5001),
     ]),
   ],
   exports: [ClientsModule],
 })
-export class PatientServiceClientModule {}
+export class AuthServiceClientModule {}

@@ -1,14 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PatientEncounterService } from './patient-encounters.service';
 import { CreatePatientEncounterDto } from './dto/create-patient-encounter.dto';
 import { UpdatePatientEncounterDto } from './dto/update-patient-encounter.dto';
-import { EncounterSearchFilters, PatientEncounterResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import type { EncounterSearchFilters, PatientEncounterResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
 import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class PatientEncounterController {
-  private readonly logger = new Logger('PatientEncounterController');
 
   constructor(private readonly patientEncounterService: PatientEncounterService) {}
 
