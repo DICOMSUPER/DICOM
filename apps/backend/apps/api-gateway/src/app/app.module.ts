@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 import { AuthModule } from './modules/auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import { PatientServiceModule } from './modules/patient-service/patient-service.module';
 import dotenv from 'dotenv';
@@ -15,7 +16,11 @@ import { UserModule } from './modules/user/user.module';
 dotenv.config();
 
 @Module({
-  imports: [
+  imports: [  
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env', '.env.local'],
+    }),
     ClientsModule.register([
       getClient(
         process.env.AUTH_SERVICE_NAME || 'AuthService',

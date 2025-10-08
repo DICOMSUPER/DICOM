@@ -43,7 +43,7 @@ export class OtpService {
     const html = pug.renderFile(viewsPath, {
       name: to.split('@')[0],
       otp: code,
-      year: new Date().getFull
+      year: new Date().getFullYear(),
     });
     
     await transporter.sendMail({
