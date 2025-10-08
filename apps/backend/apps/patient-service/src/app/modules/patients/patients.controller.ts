@@ -9,6 +9,7 @@ import {
   PaginatedResponseDto,
   PatientStatsDto
 } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class PatientController {
@@ -25,9 +26,8 @@ export class PatientController {
   }
 
   @MessagePattern('PatientService.Patient.FindMany')
-  async findPatientsWithPagination(data: { paginationDto: { page?: number; limit?: number; [key: string]: any } }): Promise<PaginatedResponseDto<PatientResponseDto>> {
-    const { page = 1, limit = 10, ...searchDto } = data.paginationDto;
-    return await this.patientService.findPatientsWithPagination(page, limit, searchDto);
+  async findPatientsWithPagination(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<PatientResponseDto>> {
+    return await this.patientService.findPatientsWithPagination(paginationDto);
   }
 
   @MessagePattern('PatientService.Patient.SearchByName')

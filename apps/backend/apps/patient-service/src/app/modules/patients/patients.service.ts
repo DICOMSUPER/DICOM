@@ -8,6 +8,7 @@ import {
   PatientStatsDto,
   PatientRepository
 } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Injectable()
 export class PatientService {
@@ -34,21 +35,19 @@ export class PatientService {
   }
 
   async findAll(searchDto: PatientSearchDto = {}): Promise<PatientResponseDto[]> {
-    const patients = await this.patientRepository.findAll(searchDto);
+    const patients = await this.patientRepository.findAllWithFilters(searchDto);
     return patients.map(patient => this.mapToResponseDto(patient));
   }
 
   async findPatientsWithPagination(
-    page: number, 
-    limit: number, 
-    searchDto: Omit<PatientSearchDto, 'limit' | 'offset'> = {}
+    paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientResponseDto>> {
-    const result = await this.patientRepository.findWithPagination(page, limit, searchDto);
+    const result = await this.patientRepository.findWithPagination(paginationDto);
     return {
       data: result.patients.map((patient: any) => this.mapToResponseDto(patient)),
       total: result.total,
       page: result.page,
-      limit: limit,
+      limit: paginationDto.limit || 10,
       totalPages: result.totalPages
     };
   }
@@ -71,7 +70,7 @@ export class PatientService {
   }
 
   async findOne(id: string): Promise<PatientResponseDto> {
-    const patient = await this.patientRepository.findById(id);
+    const patient = await this.patientRepository.findByIdWithRelations(id);
     if (!patient) {
       throw new NotFoundException(`Patient with ID ${id} not found`);
     }
@@ -112,16 +111,21 @@ export class PatientService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.patientRepository.softDelete(id);
+    const result = await this.patientRepository.softDeletePatient(id);
     if (!result) {
       throw new NotFoundException(`Patient with ID ${id} not found`);
     }
   }
 
   async restore(id: string): Promise<PatientResponseDto> {
-    const patient = await this.patientRepository.restore(id);
-    if (!patient) {
+    const result = await this.patientRepository.restorePatient(id);
+    if (!result) {
       throw new NotFoundException(`Patient with ID ${id} not found`);
+    }
+    // Get the restored patient to return
+    const patient = await this.patientRepository.findByIdWithRelations(id);
+    if (!patient) {
+      throw new NotFoundException(`Patient with ID ${id} not found after restore`);
     }
     return this.mapToResponseDto(patient);
   }

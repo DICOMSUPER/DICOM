@@ -6,11 +6,12 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
+import { BaseEntity } from '@backend/entities';
 import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
 import { Patient } from './patients.entity';
 
 @Entity('patient_conditions')
-export class PatientCondition {
+export class PatientCondition extends BaseEntity {
   @PrimaryGeneratedColumn({ name: 'condition_id' })
   id!: string;
 

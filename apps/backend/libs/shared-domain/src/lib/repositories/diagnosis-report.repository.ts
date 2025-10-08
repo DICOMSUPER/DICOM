@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Between } from 'typeorm';
+import { Between, EntityManager } from 'typeorm';
+import { BaseRepository } from '@backend/database';
+import { RepositoryPaginationDto } from '@backend/database';
 import { DiagnosesReport } from '../entities/patients/diagnoses-reports.entity';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { Patient } from '../entities/patients/patients.entity';
@@ -16,7 +17,6 @@ export interface DiagnosisSearchFilters {
   diagnosisDateFrom?: Date;
   diagnosisDateTo?: Date;
   diagnosisName?: string;
-  followupRequired?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -33,7 +33,6 @@ export interface DiagnosisWithDetails {
   diagnosisDate: Date;
   diagnosedBy: string;
   notes?: string;
-  followupRequired: boolean;
   followUpInstructions: boolean;
   isDeleted?: boolean;
   createdAt: Date;
@@ -43,50 +42,38 @@ export interface DiagnosisWithDetails {
 }
 
 @Injectable()
-export class DiagnosisReportRepository {
+export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
   constructor(
-    @InjectRepository(DiagnosesReport)
-    private readonly diagnosisRepository: Repository<DiagnosesReport>,
-    @InjectRepository(PatientEncounter)
-    private readonly encounterRepository: Repository<PatientEncounter>,
-    @InjectRepository(Patient)
-    private readonly patientRepository: Repository<Patient>,
-  ) {}
-
-  /**
-   * Create a new diagnosis report
-   */
-  async create(diagnosisData: Partial<DiagnosesReport>): Promise<DiagnosesReport> {
-    const diagnosis = this.diagnosisRepository.create(diagnosisData);
-    return await this.diagnosisRepository.save(diagnosis);
+    entityManager: EntityManager,
+  ) {
+    super(DiagnosesReport, entityManager);
   }
 
   /**
-   * Find diagnosis by ID
+   * Find diagnosis by ID with relations
    */
-  async findById(id: string): Promise<DiagnosesReport | null> {
-    return await this.diagnosisRepository.findOne({
-      where: { id, isDeleted: false },
-      relations: ['encounter', 'encounter.patient']
-    });
+  async findByIdWithRelations(id: string): Promise<DiagnosesReport | null> {
+    return await this.findOne(
+      { where: { id } },
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
    * Find diagnoses by encounter ID
    */
   async findByEncounterId(encounterId: string): Promise<DiagnosesReport[]> {
-    return await this.diagnosisRepository.find({
-      where: { encounterId, isDeleted: false },
-      relations: ['encounter'],
-      order: { diagnosisDate: 'DESC' }
-    });
+    return await this.findAll(
+      { where: { encounterId }, order: { diagnosisDate: 'DESC' } },
+      ['encounter']
+    );
   }
 
   /**
    * Find diagnoses by patient ID
    */
   async findByPatientId(patientId: string, limit?: number): Promise<DiagnosesReport[]> {
-    const queryBuilder = this.diagnosisRepository
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -104,8 +91,8 @@ export class DiagnosisReportRepository {
   /**
    * Find all diagnoses with optional filters
    */
-  async findAll(filters: DiagnosisSearchFilters = {}): Promise<DiagnosesReport[]> {
-    const queryBuilder = this.diagnosisRepository
+  async findAllWithFilters(filters: DiagnosisSearchFilters = {}): Promise<DiagnosesReport[]> {
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -165,11 +152,6 @@ export class DiagnosisReportRepository {
       });
     }
 
-    if (filters.followupRequired !== undefined) {
-      queryBuilder.andWhere('diagnosis.followupRequired = :followupRequired', {
-        followupRequired: filters.followupRequired
-      });
-    }
 
     if (filters.limit) {
       queryBuilder.limit(filters.limit);
@@ -185,71 +167,51 @@ export class DiagnosisReportRepository {
   }
 
   /**
-   * Find diagnoses with pagination
+   * Find diagnoses with pagination using BaseRepository paginate method
    */
   async findWithPagination(
-    page: number = 1,
-    limit: number = 10,
-    filters: Omit<DiagnosisSearchFilters, 'limit' | 'offset'> = {}
+    paginationDto: RepositoryPaginationDto
   ): Promise<{ diagnoses: DiagnosesReport[]; total: number; page: number; totalPages: number }> {
-    const offset = (page - 1) * limit;
-    
-    const [diagnoses, total] = await this.diagnosisRepository.findAndCount({
-      where: this.buildWhereClause(filters),
-      relations: ['encounter', 'encounter.patient'],
-      order: { diagnosisDate: 'DESC' },
-      skip: offset,
-      take: limit,
-    });
+    // Set default relations for diagnosis queries
+    const paginationWithRelations = {
+      ...paginationDto,
+      relation: paginationDto.relation || ['encounter', 'encounter.patient']
+    };
+
+    const result = await this.paginate(paginationWithRelations);
 
     return {
-      diagnoses,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
+      diagnoses: result.data,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages
     };
-  }
-
-  /**
-   * Update diagnosis by ID
-   */
-  async update(id: string, updateData: Partial<DiagnosesReport>): Promise<DiagnosesReport | null> {
-    await this.diagnosisRepository.update(id, updateData);
-    return await this.findById(id);
   }
 
   /**
    * Soft delete diagnosis by ID
    */
-  async softDelete(id: string): Promise<boolean> {
-    const result = await this.diagnosisRepository.update(id, { isDeleted: true });
-    return result.affected > 0;
-  }
-
-  /**
-   * Hard delete diagnosis by ID (use with caution)
-   */
-  async hardDelete(id: string): Promise<boolean> {
-    const result = await this.diagnosisRepository.delete(id);
-    return result.affected > 0;
+  async softDeleteDiagnosis(id: string): Promise<boolean> {
+    const result = await this.getRepository().update(id, { isDeleted: true });
+    return (result.affected ?? 0) > 0;
   }
 
   /**
    * Restore soft-deleted diagnosis
    */
-  async restore(id: string): Promise<boolean> {
-    const result = await this.diagnosisRepository.update(id, { isDeleted: false });
-    return result.affected > 0;
+  async restoreDiagnosis(id: string): Promise<boolean> {
+    const result = await this.getRepository().update(id, { isDeleted: false });
+    return (result.affected ?? 0) > 0;
   }
 
   /**
    * Get diagnosis with detailed information
    */
   async findDiagnosisWithDetails(id: string): Promise<DiagnosisWithDetails | null> {
-    const diagnosis = await this.diagnosisRepository.findOne({
-      where: { id, isDeleted: false },
-      relations: ['encounter', 'encounter.patient']
-    });
+    const diagnosis = await this.findOne(
+      { where: { id } },
+      ['encounter', 'encounter.patient']
+    );
 
     if (!diagnosis) {
       return null;
@@ -265,7 +227,7 @@ export class DiagnosisReportRepository {
    * Get diagnoses by physician ID
    */
   async findByPhysicianId(physicianId: string, limit?: number): Promise<DiagnosesReport[]> {
-    const queryBuilder = this.diagnosisRepository
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -289,7 +251,6 @@ export class DiagnosisReportRepository {
     diagnosesByStatus: Record<string, number>;
     diagnosesBySeverity: Record<string, number>;
     diagnosesThisMonth: number;
-    followupRequiredCount: number;
   }> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -299,16 +260,16 @@ export class DiagnosisReportRepository {
       : { isDeleted: false };
 
     const [totalDiagnoses, diagnosesThisMonth, allDiagnoses] = await Promise.all([
-      this.diagnosisRepository.count({ where: whereClause }),
-      this.diagnosisRepository.count({ 
+      this.getRepository().count({ where: whereClause }),
+      this.getRepository().count({ 
         where: { 
           ...whereClause,
           diagnosisDate: Between(startOfMonth, now)
         } 
       }),
-      this.diagnosisRepository.find({ 
+      this.getRepository().find({ 
         where: whereClause,
-        select: ['diagnosisType', 'diagnosisStatus', 'severity', 'followupRequired']
+        select: ['diagnosisType', 'diagnosisStatus', 'severity']
       })
     ]);
 
@@ -333,16 +294,12 @@ export class DiagnosisReportRepository {
       return acc;
     }, {} as Record<string, number>);
 
-    // Count follow-up required
-    const followupRequiredCount = allDiagnoses.filter(d => d.followupRequired).length;
-
     return {
       totalDiagnoses,
       diagnosesByType,
       diagnosesByStatus,
       diagnosesBySeverity,
-      diagnosesThisMonth,
-      followupRequiredCount
+      diagnosesThisMonth
     };
   }
 
@@ -350,7 +307,7 @@ export class DiagnosisReportRepository {
    * Search diagnoses by name
    */
   async searchByDiagnosisName(searchTerm: string, limit: number = 10): Promise<DiagnosesReport[]> {
-    return await this.diagnosisRepository
+    return await this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -367,11 +324,11 @@ export class DiagnosisReportRepository {
    * Get diagnoses requiring follow-up
    */
   async getFollowupRequired(limit?: number): Promise<DiagnosesReport[]> {
-    const queryBuilder = this.diagnosisRepository
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
-      .where('diagnosis.followupRequired = :followupRequired', { followupRequired: true })
+      .where('diagnosis.followUpInstructions = :followUpInstructions', { followUpInstructions: true })
       .andWhere('diagnosis.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('diagnosis.diagnosisDate', 'ASC');
 
@@ -386,7 +343,7 @@ export class DiagnosisReportRepository {
    * Get recent diagnoses for a patient
    */
   async getRecentDiagnoses(patientId: string, limit: number = 5): Promise<DiagnosesReport[]> {
-    return await this.diagnosisRepository
+    return await this.getRepository()
       .createQueryBuilder('diagnosis')
       .leftJoinAndSelect('diagnosis.encounter', 'encounter')
       .where('encounter.patientId = :patientId', { patientId })
@@ -396,47 +353,4 @@ export class DiagnosisReportRepository {
       .getMany();
   }
 
-  /**
-   * Build where clause for filtering
-   */
-  private buildWhereClause(filters: Omit<DiagnosisSearchFilters, 'limit' | 'offset'>): FindOptionsWhere<DiagnosesReport> {
-    const where: FindOptionsWhere<DiagnosesReport> = { isDeleted: false };
-
-    if (filters.encounterId) {
-      where.encounterId = filters.encounterId;
-    }
-
-    if (filters.diagnosisType) {
-      where.diagnosisType = filters.diagnosisType;
-    }
-
-    if (filters.diagnosisStatus) {
-      where.diagnosisStatus = filters.diagnosisStatus;
-    }
-
-    if (filters.severity) {
-      where.severity = filters.severity;
-    }
-
-    if (filters.diagnosedBy) {
-      where.diagnosedBy = filters.diagnosedBy;
-    }
-
-    if (filters.diagnosisName) {
-      where.diagnosisName = { $like: `%${filters.diagnosisName}%` } as any;
-    }
-
-    if (filters.followupRequired !== undefined) {
-      where.followupRequired = filters.followupRequired;
-    }
-
-    if (filters.diagnosisDateFrom || filters.diagnosisDateTo) {
-      where.diagnosisDate = Between(
-        filters.diagnosisDateFrom || new Date('1900-01-01'),
-        filters.diagnosisDateTo || new Date()
-      );
-    }
-
-    return where;
-  }
 }

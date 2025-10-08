@@ -4,10 +4,9 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { BaseEntity } from '@backend/entities';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
 import { PatientEncounter } from './patient-encounters.entity';
 
@@ -19,7 +18,7 @@ import { PatientEncounter } from './patient-encounters.entity';
 @Index(['roomId'])
 @Index(['assignmentDate'])
 @Index(['assignmentExpiresDate'])
-export class QueueAssignment {
+export class QueueAssignment extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })
   id!: string;
 
@@ -64,9 +63,4 @@ export class QueueAssignment {
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

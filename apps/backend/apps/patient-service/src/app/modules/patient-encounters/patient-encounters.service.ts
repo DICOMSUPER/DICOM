@@ -3,6 +3,7 @@ import { CreatePatientEncounterDto } from './dto/create-patient-encounter.dto';
 import { UpdatePatientEncounterDto } from './dto/update-patient-encounter.dto';
 import { PatientEncounterRepository, EncounterSearchFilters, EncounterWithDetails } from '@backend/shared-domain';
 import { PatientEncounterResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Injectable()
 export class PatientEncounterService {
@@ -14,22 +15,21 @@ export class PatientEncounterService {
   }
 
   async findAll(filters: EncounterSearchFilters = {}): Promise<PatientEncounterResponseDto[]> {
-    const encounters = await this.encounterRepository.findAll(filters);
+    const encounters = await this.encounterRepository.findAllWithFilters(filters);
     return encounters.map(encounter => this.mapToResponseDto(encounter));
   }
 
   async findWithPagination(
-    page: number = 1,
-    limit: number = 10,
-    filters: Omit<EncounterSearchFilters, 'limit' | 'offset'> = {}
+    paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientEncounterResponseDto>> {
-    const result = await this.encounterRepository.findWithPagination(page, limit, filters);
+    const result = await this.encounterRepository.findWithPagination(paginationDto);
     return {
       data: result.encounters.map(encounter => this.mapToResponseDto(encounter)),
       total: result.total,
       page: result.page,
-      limit: limit,
-      totalPages: result.totalPages
+      totalPages: result.totalPages,
+      hasNextPage: result.page < result.totalPages,
+      hasPreviousPage: result.page > 1
     };
   }
 
@@ -44,7 +44,7 @@ export class PatientEncounterService {
   }
 
   async findOne(id: string): Promise<PatientEncounterResponseDto> {
-    const encounter = await this.encounterRepository.findById(id);
+    const encounter = await this.encounterRepository.findByIdWithRelations(id);
     if (!encounter) {
       throw new NotFoundException(`Encounter with ID ${id} not found`);
     }
@@ -60,7 +60,7 @@ export class PatientEncounterService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.encounterRepository.softDelete(id);
+    const result = await this.encounterRepository.softDeleteEncounter(id);
     if (!result) {
       throw new NotFoundException(`Encounter with ID ${id} not found`);
     }
