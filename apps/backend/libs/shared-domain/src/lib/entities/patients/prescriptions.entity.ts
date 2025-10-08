@@ -33,6 +33,7 @@ export class Prescription {
   @Column({ name: 'report_id', type: 'text', nullable: true })
   report_id?: string;
 
+
   @ManyToOne(() => DiagnosesReport)
   @JoinColumn({ name: 'report_id' })
   report?: DiagnosesReport;
@@ -46,6 +47,12 @@ export class Prescription {
 
   @Column({ name: 'physician_id', type: 'uuid' })
   physicianId!: string;
+  
+  @Column({ name: 'followup_required', default: false })
+  followupRequired!: boolean;
+
+  @Column({ name: 'follow_up_date', type: 'date', nullable: true })
+  followUpDate?: Date;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;

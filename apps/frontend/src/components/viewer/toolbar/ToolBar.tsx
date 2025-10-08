@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layers, User, Undo, Redo } from "lucide-react";
+import { Layers, User, Undo, Redo, Grid, RotateCw, FlipHorizontal, FlipVertical, RotateCcw, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DropdownTool, { DropdownToolItemsProps } from "./tools/DropdownTool";
 import {
@@ -16,14 +16,56 @@ import {
   mainTools,
   shapeToolsMenu,
 } from "@/constants/lengthToolsMenu";
+import { useViewer, ToolType, GridLayout } from "@/contexts/ViewerContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ToolBar = () => {
-  const [selectedTool, setSelectedTool] =
-    useState<DropdownToolItemsProps | null>(null);
+  const { state, setActiveTool, setLayout, resetView, rotateViewport, flipViewport, invertViewport } = useViewer();
+  const [selectedTool, setSelectedTool] = useState<DropdownToolItemsProps | null>(null);
 
   const handleToolSelect = (tool: DropdownToolItemsProps) => {
     setSelectedTool(tool);
+    // Map dropdown tool items to ToolType
+    const toolMap: Record<string, ToolType> = {
+      'Length': 'Length',
+      'Probe': 'Probe',
+      'Rectangle ROI': 'RectangleROI',
+      'Elliptical ROI': 'EllipticalROI',
+      'Circle ROI': 'CircleROI',
+      'Bidirectional': 'Bidirectional',
+      'Angle': 'Angle',
+      'Cobb Angle': 'CobbAngle',
+      'Arrow Annotate': 'ArrowAnnotate',
+      'Magnify': 'Magnify',
+      'Reset': 'Reset',
+      'Invert': 'Invert'
+    };
+    
+    const mappedTool = toolMap[tool.item];
+    if (mappedTool) {
+      setActiveTool(mappedTool);
+    }
     console.log("Selected tool:", tool);
+  };
+
+  const handleMainToolClick = (toolName: string) => {
+    const toolMap: Record<string, ToolType> = {
+      'Window/Level': 'WindowLevel',
+      'Zoom': 'Zoom',
+      'Pan': 'Pan',
+      'Stack Scroll': 'StackScroll',
+      'Reset': 'Reset'
+    };
+    
+    const mappedTool = toolMap[toolName];
+    if (mappedTool) {
+      setActiveTool(mappedTool);
+    }
   };
 
   return (
@@ -43,22 +85,7 @@ const ToolBar = () => {
 
         {/* Main Tools */}
         <div className="flex gap-2 mr-8">
-          {/* <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <DropdownTool
-                  list={lengthToolsMenu}
-                  onItemSelect={handleToolSelect}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="bg-slate-800 border-slate-600 text-white"
-            >
-              Length Tools
-            </TooltipContent>
-          </Tooltip> */}
+          {/* Length Tools Dropdown */}
           <div>
             <DropdownTool
               list={lengthToolsMenu}
@@ -67,49 +94,200 @@ const ToolBar = () => {
             />
           </div>
 
-          {mainTools.map((tool, index) => (
-            <Tooltip key={index}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+          {/* Main Interactive Tools */}
+          {mainTools.map((tool, index) => {
+            const isActive = state.activeTool === tool.tooltip.replace('/', '').replace(' ', '');
+            return (
+              <Tooltip key={index}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleMainToolClick(tool.tooltip)}
+                    className={`h-12 w-12 p-0 hover:bg-slate-700/50 transition-colors ${
+                      isActive 
+                        ? 'bg-blue-600 text-white' 
+                        : 'text-white hover:text-blue-300'
+                    }`}
+                  >
+                    <tool.icon className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-slate-800 border-slate-600 text-white"
                 >
-                  <tool.icon className="h-6 w-6" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="bg-slate-800 border-slate-600 text-white"
+                  {tool.tooltip}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+
+          {/* Shape Tools Dropdown */}
+          <div>
+            <DropdownTool
+              list={shapeToolsMenu}
+              onItemSelect={handleToolSelect}
+              tooltip="Shape Tools"
+            />
+          </div>
+
+          {/* Layout Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+                  >
+                    <Grid className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-slate-800 border-slate-600 text-white"
+                >
+                  Layout: {state.layout}
+                </TooltipContent>
+              </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-slate-800 border-slate-600">
+              <DropdownMenuItem 
+                onClick={() => setLayout('1x1')}
+                className="text-white hover:bg-slate-700"
               >
-                {tool.tooltip}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-          {/* 
+                1x1
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setLayout('1x2')}
+                className="text-white hover:bg-slate-700"
+              >
+                1x2
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setLayout('2x1')}
+                className="text-white hover:bg-slate-700"
+              >
+                2x1
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setLayout('2x2')}
+                className="text-white hover:bg-slate-700"
+              >
+                2x2
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setLayout('1x3')}
+                className="text-white hover:bg-slate-700"
+              >
+                1x3
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setLayout('3x1')}
+                className="text-white hover:bg-slate-700"
+              >
+                3x1
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Transform Tools */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div>
-                <DropdownTool
-                  list={shapeToolsMenu}
-                  onItemSelect={handleToolSelect}
-                />
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => rotateViewport(90)}
+                className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+              >
+                <RotateCw className="h-6 w-6" />
+              </Button>
             </TooltipTrigger>
             <TooltipContent
               side="bottom"
               className="bg-slate-800 border-slate-600 text-white"
             >
-              Shape Tools
+              Rotate Right
             </TooltipContent>
-          </Tooltip> */}
-          <div>
-            <DropdownTool
-              list={shapeToolsMenu}
-              onItemSelect={handleToolSelect}
-              tooltip="Reset View"
-            />
-          </div>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => rotateViewport(-90)}
+                className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+              >
+                <RotateCcw className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-slate-800 border-slate-600 text-white"
+            >
+              Rotate Left
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => flipViewport('horizontal')}
+                className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+              >
+                <FlipHorizontal className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-slate-800 border-slate-600 text-white"
+            >
+              Flip Horizontal
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => flipViewport('vertical')}
+                className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+              >
+                <FlipVertical className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-slate-800 border-slate-600 text-white"
+            >
+              Flip Vertical
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetView}
+                className="h-12 w-12 p-0 hover:bg-slate-700/50 text-white hover:text-blue-300 transition-colors"
+              >
+                <RefreshCw className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-slate-800 border-slate-600 text-white"
+            >
+              Reset View
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Dropdown Tools */}

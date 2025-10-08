@@ -1,11 +1,12 @@
 import { Severity } from "@/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
+import { DiagnosisStatus } from "./patient-workflow.interface";
 
 export interface DiagnosesReport extends BaseEntity {
   diagnosis_id: string;
   study_id: string;
   primary_diagnosis?: string;
-  secondary_diagnoses?: string[];
+  status: DiagnosisStatus;
   severity?: Severity;
   notes?: string;
   physician_notes?: string;

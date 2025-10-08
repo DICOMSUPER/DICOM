@@ -1,0 +1,524 @@
+import { useImageViewer } from '@/contexts/ImageViewerProvider';
+import React, { useState, useEffect, useRef } from 'react';
+import { defaultActionIcons, defaultViewPresets } from './constants';
+import { actionIcon, viewPreset } from './types';
+import StudyBrowser, { ViewPreset } from '@/components/ui-next/StudyBrowser/StudyBrowser';
+import { useViewportGrid } from '@/contexts/ViewportGridProvider';
+import { PanelStudyBrowserHeader } from './PanelStudiesHeader';
+import { Separator } from '@/components/ui-next/Separator';
+
+const thumbnailNoImageModalities = ['SR', 'SEG', 'RTSTRUCT', 'RTPLAN', 'RTDOSE', 'DOC', 'PMAP'];
+
+export type PanelStudyBrowserTrackingProps = {
+  customMapDisplaySets?: (
+    displaySets: any[],
+    displaySetLoadingState: { [key: string]: number },
+    thumbnailImageSrcMap: { [key: string]: string },
+    viewports: Map<string, any>
+  ) => any[];
+  onClickUntrack?: (displaySetInstanceUID: string) => void;
+  onDoubleClickThumbnailHandlerCallBack?: (displaySetInstanceUID: string) => void;
+  dataSource?: any;
+  displaySetService?: any;
+  getStudiesForPatientByMRN?: (studies: any[]) => Promise<any[]>;
+  navigate?: (path: string, target: string) => void;
+  formatDate?: (date: string) => string;
+  getImageSrc?: (imageId: string) => Promise<string>;
+  createStudyBrowserTabs?: (studyUIDs: string[], studyList: any[], displaySets: any[]) => any[];
+  requestDisplaySetCreationForStudy?: (service: any, studyUID: string, madeInClient: boolean) => void;
+  sortStudyInstances?: (displaySets: any[]) => void;
+};
+
+const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
+  customMapDisplaySets,
+  onClickUntrack,
+  onDoubleClickThumbnailHandlerCallBack,
+  dataSource,
+  displaySetService,
+  getStudiesForPatientByMRN,
+  navigate,
+  formatDate,
+  getImageSrc,
+  createStudyBrowserTabs,
+  requestDisplaySetCreationForStudy,
+  sortStudyInstances,
+}) => {
+  const studyMode = 'all';
+
+  const internalImageViewer = useImageViewer();
+  const StudyInstanceUIDs = internalImageViewer?.StudyInstanceUIDs || [];
+  const fetchedStudiesRef = useRef(new Set<string>());
+
+  const [{ activeViewportId, viewports, isHangingProtocolLayout }] = useViewportGrid();
+
+  const [activeTabName, setActiveTabName] = useState<string>(studyMode);
+  const [expandedStudyInstanceUIDs, setExpandedStudyInstanceUIDs] = useState<string[]>([
+    ...StudyInstanceUIDs,
+  ]);
+  const [hasLoadedViewports, setHasLoadedViewports] = useState<boolean>(false);
+  const [studyDisplayList, setStudyDisplayList] = useState<any[]>([]);
+  const [displaySets, setDisplaySets] = useState<any[]>([]);
+  const [displaySetsLoadingState, setDisplaySetsLoadingState] = useState<{ [key: string]: number }>({});
+  const [thumbnailImageSrcMap, setThumbnailImageSrcMap] = useState<{ [key: string]: string }>({});
+  const [jumpToDisplaySet, setJumpToDisplaySet] = useState<string | null>(null);
+
+  const [viewPresets, setViewPresets] = useState<viewPreset[]>(defaultViewPresets);
+  const [actionIcons, setActionIcons] = useState<actionIcon[]>(defaultActionIcons);
+
+  const updateActionIconValue = (actionIcon: actionIcon) => {
+    actionIcon.value = !actionIcon.value;
+    const newActionIcons = [...actionIcons];
+    setActionIcons(newActionIcons);
+  };
+
+  const updateViewPresetValue = (viewPreset: ViewPreset) => {
+    if (!viewPreset) {
+      return;
+    }
+    const newViewPresets = viewPresets.map(preset => {
+      preset.selected = preset.id === viewPreset.id;
+      return preset;
+    });
+    setViewPresets(newViewPresets);
+  };
+
+  const mapDisplaySetsWithState = customMapDisplaySets || _mapDisplaySets;
+
+  // ~~ studyDisplayList
+  useEffect(() => {
+    if (!dataSource || !formatDate || !navigate || !getStudiesForPatientByMRN) {
+      return;
+    }
+
+    async function fetchStudiesForPatient(StudyInstanceUID: string) {
+      if (fetchedStudiesRef.current.has(StudyInstanceUID)) {
+        return;
+      }
+
+      fetchedStudiesRef.current.add(StudyInstanceUID);
+
+      try {
+        const qidoForStudyUID = await dataSource.query.studies.search({
+          studyInstanceUid: StudyInstanceUID,
+        });
+
+        if (!qidoForStudyUID?.length) {
+          navigate!('/notfoundstudy', '_self');
+          throw new Error('Invalid study URL');
+        }
+
+        let qidoStudiesForPatient = qidoForStudyUID;
+
+        try {
+          qidoStudiesForPatient = await getStudiesForPatientByMRN!(qidoForStudyUID);
+        } catch (error) {
+          console.warn(error);
+        }
+
+        const mappedStudies = _mapDataSourceStudies(qidoStudiesForPatient);
+        const actuallyMappedStudies = mappedStudies.map(qidoStudy => {
+          return {
+            studyInstanceUid: qidoStudy.StudyInstanceUID,
+            date: formatDate!(qidoStudy.StudyDate) || '',
+            description: qidoStudy.StudyDescription,
+            modalities: qidoStudy.ModalitiesInStudy,
+            numInstances: Number(qidoStudy.NumInstances),
+          };
+        });
+
+        setStudyDisplayList(prevArray => {
+          const ret = [...prevArray];
+          for (const study of actuallyMappedStudies) {
+            if (!prevArray.find(it => it.studyInstanceUid === study.studyInstanceUid)) {
+              ret.push(study);
+            }
+          }
+          return ret;
+        });
+      } catch (error) {
+        console.error('Error fetching studies:', error);
+      }
+    }
+
+    StudyInstanceUIDs.forEach(sid => fetchStudiesForPatient(sid));
+  }, [StudyInstanceUIDs, dataSource, getStudiesForPatientByMRN, navigate, formatDate]);
+
+  // ~~ Initial Thumbnails
+  useEffect(() => {
+    if (!displaySetService || !dataSource || !getImageSrc) {
+      return;
+    }
+
+    if (!hasLoadedViewports) {
+      if (activeViewportId) {
+        const delayMs = 250 + displaySetService.getActiveDisplaySets().length * 10;
+        window.setTimeout(() => setHasLoadedViewports(true), delayMs);
+      }
+      return;
+    }
+
+    let currentDisplaySets = displaySetService.activeDisplaySets;
+    currentDisplaySets = currentDisplaySets.filter(
+      (ds: any) => !thumbnailNoImageModalities.includes(ds.Modality) || ds.thumbnailSrc === null
+    );
+
+    if (!currentDisplaySets.length) {
+      return;
+    }
+
+    currentDisplaySets.forEach(async (dSet: any) => {
+      const newImageSrcEntry: { [key: string]: string } = {};
+      const displaySet = displaySetService.getDisplaySetByUID(dSet.displaySetInstanceUID);
+      const imageIds = dataSource.getImageIdsForDisplaySet(dSet);
+      const imageId = getImageIdForThumbnail(displaySet, imageIds);
+
+      if (displaySet?.unsupported) {
+        return;
+      }
+
+      let thumbnailSrc = displaySet?.thumbnailSrc;
+      if (!thumbnailSrc && displaySet.getThumbnailSrc) {
+        thumbnailSrc = await displaySet.getThumbnailSrc({ getImageSrc });
+      }
+      if (!thumbnailSrc && imageId) {
+        thumbnailSrc = await getImageSrc!(imageId);
+        displaySet.thumbnailSrc = thumbnailSrc;
+      }
+      newImageSrcEntry[dSet.displaySetInstanceUID] = thumbnailSrc;
+
+      setThumbnailImageSrcMap(prevState => {
+        return { ...prevState, ...newImageSrcEntry };
+      });
+    });
+  }, [displaySetService, dataSource, getImageSrc, activeViewportId, hasLoadedViewports]);
+
+  // ~~ displaySets
+  useEffect(() => {
+    if (!displaySetService) {
+      return;
+    }
+
+    const currentDisplaySets = displaySetService.activeDisplaySets;
+
+    if (!currentDisplaySets.length) {
+      return;
+    }
+
+    const mappedDisplaySets = mapDisplaySetsWithState(
+      currentDisplaySets,
+      displaySetsLoadingState,
+      thumbnailImageSrcMap,
+      viewports
+    );
+
+    if (!customMapDisplaySets && sortStudyInstances) {
+      sortStudyInstances(mappedDisplaySets);
+    }
+
+    setDisplaySets(mappedDisplaySets);
+  }, [
+    displaySetService?.activeDisplaySets,
+    displaySetsLoadingState,
+    viewports,
+    thumbnailImageSrcMap,
+    customMapDisplaySets,
+    sortStudyInstances,
+  ]);
+
+  // ~~ subscriptions --> displaySets
+  useEffect(() => {
+    if (!displaySetService || !dataSource || !getImageSrc) {
+      return;
+    }
+
+    const SubscriptionDisplaySetsAdded = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SETS_ADDED,
+      (data: any) => {
+        if (!hasLoadedViewports) {
+          return;
+        }
+        const { displaySetsAdded, options } = data;
+        displaySetsAdded.forEach(async (dSet: any) => {
+          const displaySetInstanceUID = dSet.displaySetInstanceUID;
+          const newImageSrcEntry: { [key: string]: string } = {};
+          const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
+          if (displaySet?.unsupported) {
+            return;
+          }
+          if (options?.madeInClient) {
+            setJumpToDisplaySet(displaySetInstanceUID);
+          }
+
+          const imageIds = dataSource.getImageIdsForDisplaySet(displaySet);
+          const imageId = getImageIdForThumbnail(displaySet, imageIds);
+
+          if (!imageId) {
+            return;
+          }
+
+          let thumbnailSrc = displaySet?.thumbnailSrc;
+          if (!thumbnailSrc && displaySet.getThumbnailSrc) {
+            thumbnailSrc = await displaySet.getThumbnailSrc({ getImageSrc });
+          }
+          if (!thumbnailSrc) {
+            thumbnailSrc = await getImageSrc!(imageId);
+            displaySet.thumbnailSrc = thumbnailSrc;
+          }
+          newImageSrcEntry[displaySetInstanceUID] = thumbnailSrc;
+
+          setThumbnailImageSrcMap(prevState => {
+            return { ...prevState, ...newImageSrcEntry };
+          });
+        });
+      }
+    );
+
+    return () => {
+      SubscriptionDisplaySetsAdded.unsubscribe();
+    };
+  }, [displaySetService, dataSource, getImageSrc, hasLoadedViewports]);
+
+  useEffect(() => {
+    if (!displaySetService) {
+      return;
+    }
+
+    const SubscriptionDisplaySetsChanged = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SETS_CHANGED,
+      (changedDisplaySets: any[]) => {
+        const mappedDisplaySets = mapDisplaySetsWithState(
+          changedDisplaySets,
+          displaySetsLoadingState,
+          thumbnailImageSrcMap,
+          viewports
+        );
+
+        if (!customMapDisplaySets && sortStudyInstances) {
+          sortStudyInstances(mappedDisplaySets);
+        }
+
+        setDisplaySets(mappedDisplaySets);
+      }
+    );
+
+    const SubscriptionDisplaySetMetaDataInvalidated = displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SET_SERIES_METADATA_INVALIDATED,
+      () => {
+        const mappedDisplaySets = mapDisplaySetsWithState(
+          displaySetService.getActiveDisplaySets(),
+          displaySetsLoadingState,
+          thumbnailImageSrcMap,
+          viewports
+        );
+
+        if (!customMapDisplaySets && sortStudyInstances) {
+          sortStudyInstances(mappedDisplaySets);
+        }
+
+        setDisplaySets(mappedDisplaySets);
+      }
+    );
+
+    return () => {
+      SubscriptionDisplaySetsChanged.unsubscribe();
+      SubscriptionDisplaySetMetaDataInvalidated.unsubscribe();
+    };
+  }, [
+    displaySetsLoadingState,
+    thumbnailImageSrcMap,
+    viewports,
+    displaySetService,
+    customMapDisplaySets,
+    sortStudyInstances,
+  ]);
+
+  const tabs = createStudyBrowserTabs
+    ? createStudyBrowserTabs(StudyInstanceUIDs, studyDisplayList, displaySets)
+    : [];
+
+  function _handleStudyClick(StudyInstanceUID: string) {
+    const shouldCollapseStudy = expandedStudyInstanceUIDs.includes(StudyInstanceUID);
+    const updatedExpandedStudyInstanceUIDs = shouldCollapseStudy
+      ? [...expandedStudyInstanceUIDs.filter(stdyUid => stdyUid !== StudyInstanceUID)]
+      : [...expandedStudyInstanceUIDs, StudyInstanceUID];
+
+    setExpandedStudyInstanceUIDs(updatedExpandedStudyInstanceUIDs);
+
+    if (!shouldCollapseStudy && displaySetService && requestDisplaySetCreationForStudy) {
+      const madeInClient = true;
+      requestDisplaySetCreationForStudy(displaySetService, StudyInstanceUID, madeInClient);
+    }
+  }
+
+  useEffect(() => {
+    if (jumpToDisplaySet) {
+      const displaySetInstanceUID = jumpToDisplaySet;
+      const element = document.getElementById(`thumbnail-${displaySetInstanceUID}`);
+
+      if (element && typeof element.scrollIntoView === 'function') {
+        element.scrollIntoView({ behavior: 'smooth' });
+        setJumpToDisplaySet(null);
+      }
+    }
+  }, [jumpToDisplaySet, expandedStudyInstanceUIDs, activeTabName]);
+
+  useEffect(() => {
+    if (!jumpToDisplaySet) {
+      return;
+    }
+
+    const displaySetInstanceUID = jumpToDisplaySet;
+    const thumbnailLocation = _findTabAndStudyOfDisplaySet(displaySetInstanceUID, tabs);
+    if (!thumbnailLocation) {
+      return;
+    }
+    const { tabName, StudyInstanceUID } = thumbnailLocation;
+    setActiveTabName(tabName);
+    const studyExpanded = expandedStudyInstanceUIDs.includes(StudyInstanceUID);
+    if (!studyExpanded) {
+      const updatedExpandedStudyInstanceUIDs = [...expandedStudyInstanceUIDs, StudyInstanceUID];
+      setExpandedStudyInstanceUIDs(updatedExpandedStudyInstanceUIDs);
+    }
+  }, [expandedStudyInstanceUIDs, jumpToDisplaySet, tabs]);
+
+  const activeDisplaySetInstanceUIDs = activeViewportId ? viewports.get(activeViewportId)?.displaySetInstanceUIDs : undefined;
+
+  return (
+    <>
+      <PanelStudyBrowserHeader
+        viewPresets={viewPresets}
+        updateViewPresetValue={updateViewPresetValue}
+        actionIcons={actionIcons}
+        updateActionIconValue={updateActionIconValue}
+      />
+      <Separator
+        orientation="horizontal"
+        className="bg-black"
+        thickness="2px"
+      />
+      <StudyBrowser
+        tabs={tabs}
+        activeTabName={activeTabName}
+        expandedStudyInstanceUIDs={expandedStudyInstanceUIDs}
+        onClickStudy={_handleStudyClick}
+        onClickTab={(clickedTabName: string) => {
+          setActiveTabName(clickedTabName);
+        }}
+        onClickUntrack={onClickUntrack}
+        onClickThumbnail={() => {}}
+        onDoubleClickThumbnail={() => {}}
+        activeDisplaySetInstanceUIDs={activeDisplaySetInstanceUIDs}
+        showSettings={actionIcons.find(icon => icon.id === 'settings')?.value}
+        viewPresets={viewPresets}
+      />
+    </>
+  );
+};
+
+export default PanelStudyBrowser;
+
+function _mapDataSourceStudies(studies: any[]) {
+  return studies.map(study => {
+    return {
+      AccessionNumber: study.accession,
+      StudyDate: study.date,
+      StudyDescription: study.description,
+      NumInstances: study.instances,
+      ModalitiesInStudy: study.modalities,
+      PatientID: study.mrn,
+      PatientName: study.patientName,
+      StudyInstanceUID: study.studyInstanceUid,
+      StudyTime: study.time,
+    };
+  });
+}
+
+function _mapDisplaySets(
+  displaySets: any[],
+  displaySetLoadingState: { [key: string]: number },
+  thumbnailImageSrcMap: { [key: string]: string },
+  viewports: Map<string, any>
+) {
+  const thumbnailDisplaySets: any[] = [];
+  const thumbnailNoImageDisplaySets: any[] = [];
+  displaySets
+    .filter(ds => !ds.excludeFromThumbnailBrowser)
+    .forEach(ds => {
+      const { thumbnailSrc, displaySetInstanceUID } = ds;
+      const componentType = _getComponentType(ds);
+
+      const array =
+        componentType === 'thumbnail' ? thumbnailDisplaySets : thumbnailNoImageDisplaySets;
+
+      const loadingProgress = displaySetLoadingState?.[displaySetInstanceUID];
+
+      array.push({
+        displaySetInstanceUID,
+        description: ds.SeriesDescription || '',
+        seriesNumber: ds.SeriesNumber,
+        modality: ds.Modality,
+        seriesDate: ds.SeriesDate,
+        numInstances: ds.numImageFrames,
+        loadingProgress,
+        countIcon: ds.countIcon,
+        messages: ds.messages,
+        StudyInstanceUID: ds.StudyInstanceUID,
+        componentType,
+        imageSrc: thumbnailSrc || thumbnailImageSrcMap[displaySetInstanceUID],
+        dragData: {
+          type: 'displayset',
+          displaySetInstanceUID,
+        },
+        isHydratedForDerivedDisplaySet: ds.isHydrated,
+      });
+    });
+
+  return [...thumbnailDisplaySets, ...thumbnailNoImageDisplaySets];
+}
+
+function _getComponentType(ds: any): string {
+  if (
+    thumbnailNoImageModalities.includes(ds.Modality) ||
+    ds?.unsupported ||
+    ds.thumbnailSrc === null
+  ) {
+    return 'thumbnailNoImage';
+  }
+
+  return 'thumbnail';
+}
+
+function getImageIdForThumbnail(displaySet: any, imageIds: string[]): string | undefined {
+  let imageId;
+  if (displaySet?.isDynamicVolume) {
+    const timePoints = displaySet.dynamicVolumeInfo.timePoints;
+    const middleIndex = Math.floor(timePoints.length / 2);
+    const middleTimePointImageIds = timePoints[middleIndex];
+    imageId = middleTimePointImageIds[Math.floor(middleTimePointImageIds.length / 2)];
+  } else {
+    imageId = imageIds[Math.floor(imageIds.length / 2)];
+  }
+  return imageId;
+}
+
+function _findTabAndStudyOfDisplaySet(displaySetInstanceUID: string, tabs: any[]) {
+  for (let t = 0; t < tabs.length; t++) {
+    const { studies } = tabs[t];
+
+    for (let s = 0; s < studies.length; s++) {
+      const { displaySets } = studies[s];
+
+      for (let d = 0; d < displaySets.length; d++) {
+        const displaySet = displaySets[d];
+
+        if (displaySet.displaySetInstanceUID === displaySetInstanceUID) {
+          return {
+            tabName: tabs[t].name,
+            StudyInstanceUID: studies[s].studyInstanceUid,
+          };
+        }
+      }
+    }
+  }
+  return null;
+}

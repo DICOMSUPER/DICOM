@@ -61,12 +61,6 @@ export class DiagnosesReport {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
-  @Column({ name: 'followup_required', default: false })
-  followupRequired!: boolean;
-
-  @Column({ name: 'follow_up_instructions', default: false })
-  followUpInstructions!: boolean;
-
   @Column({ name: 'is_deleted', default: false })
   isDeleted?: boolean;
 

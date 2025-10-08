@@ -2,7 +2,6 @@ import { Gender } from "@/enums/user.enum";
 import { BaseEntity } from "../base.interface";
 
 
-
 export interface Patient extends BaseEntity {
   patient_id: string;
   patient_code: string;
@@ -19,3 +18,15 @@ export interface Patient extends BaseEntity {
   created_by?: string;
 }
 
+export interface PatientFilters {
+  status?: 'Active' | 'Inactive' | 'All';
+  gender?: 'Male' | 'Female' | 'All';
+  doctor?: string;
+}
+
+export interface PatientsPageProps {
+  searchQuery: string;
+  filters: PatientFilters;
+  onSearchChange: (query: string) => void;
+  onFiltersChange: (filters: PatientFilters) => void;
+}
