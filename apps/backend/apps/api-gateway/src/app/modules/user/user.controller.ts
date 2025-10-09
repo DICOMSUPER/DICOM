@@ -71,8 +71,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async requestLogin(@Body() requestLoginDto: LoginDto) {
     try {
-      this.logger.log(`Request login attempt for email: ${requestLoginDto.email}`);
-
+      this.logger.log(`Request login attempt for email: ${requestLoginDto.email}`);   
       const result = await firstValueFrom(
         this.userClient.send('user.request-login', requestLoginDto)
       );
@@ -96,6 +95,7 @@ export class UserController {
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto, @Res({ passthrough: true }) res: Response) {
     try {
       this.logger.log(`OTP verification attempt for email: ${verifyOtpDto.email}`);
+    
 
       const result = await firstValueFrom(
         this.userClient.send('user.verify-otp', verifyOtpDto)

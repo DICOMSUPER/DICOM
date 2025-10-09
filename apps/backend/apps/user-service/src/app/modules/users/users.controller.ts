@@ -2,7 +2,13 @@ import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { 
+  InvalidCredentialsException,
+  UserAlreadyExistsException,
+  UserNotFoundException,
+  OtpVerificationFailedException,
+  RegistrationFailedException
+} from '@backend/shared-exception';
 
 @Controller()
 export class UsersController {
@@ -15,7 +21,6 @@ export class UsersController {
     return { message: 'UserService is running' };
   }
 
-
   @MessagePattern('user.login')
   async login(@Payload() data: { email: string; password: string }) {
     try {
@@ -23,17 +28,15 @@ export class UsersController {
       const result = await this.usersService.login(data.email, data.password);
 
       if (!result) {
-        throw new Error('Invalid credentials');
+        throw new InvalidCredentialsException('Invalid email or password');
       }
 
       return result;
     } catch (error) {
-      this.logger.error(`Login error: `);
-      throw handleErrorFromMicroservices(
-        error,
-        'Login failed',
-        'UsersController.login'
-      );
+      if (error instanceof InvalidCredentialsException) {
+        throw error;
+      }
+      throw new InvalidCredentialsException('Login failed');
     }
   }
 
@@ -44,12 +47,10 @@ export class UsersController {
       const result = await this.usersService.requestLogin(data.email, data.password);
       return result;
     } catch (error) {
-      this.logger.error(`Request login error: `);
-      throw handleErrorFromMicroservices(
-        error,
-        'Request login failed',
-        'UsersController.requestLogin'
-      );
+      if (error instanceof UserNotFoundException || error instanceof InvalidCredentialsException) {
+        throw error;
+      }
+      throw new InvalidCredentialsException('Request login failed');
     }
   }
 
@@ -60,15 +61,12 @@ export class UsersController {
       const result = await this.usersService.verifyLoginOtp(data.email, data.code);
       return result;
     } catch (error) {
-      this.logger.error(`OTP verification error: `);
-      throw handleErrorFromMicroservices(
-        error,
-        'OTP verification failed',
-        'UsersController.verifyOtp'
-      );
+      if (error instanceof OtpVerificationFailedException || error instanceof UserNotFoundException) {
+        throw error;
+      }
+      throw new OtpVerificationFailedException('OTP verification failed');
     }
   }
-
 
   @MessagePattern('user.register')
   async register(@Payload() registerDto: {
@@ -93,34 +91,28 @@ export class UsersController {
         isActive: true,
       };
 
+      const result = await this.usersService.register(createUserDto);
 
-    const result = await this.usersService.register(createUserDto);
+      if (!result) {
+        throw new RegistrationFailedException('Registration failed');
+      }
 
-    if (!result) {
-      throw new Error('Registration failed');
+      return result;
+    } catch (error) {
+      if (error instanceof UserAlreadyExistsException || error instanceof RegistrationFailedException) {
+        throw error;
+      }
+      throw new RegistrationFailedException('Registration failed');
     }
-
-    return result;
-  } catch(error) {
-    this.logger.error(`Registration error: `);
-    throw handleErrorFromMicroservices(
-      error,
-      'Registration failed',
-      'UsersController.register'
-    );
   }
-}
 
-
-@MessagePattern('user.get-all-users')
-async getAllUsers() {
-  try {
-    const result = await this.usersService.findAll();
-    return result;
-  } catch (error) {
-    throw error;
+  @MessagePattern('user.get-all-users')
+  async getAllUsers() {
+    try {
+      const result = await this.usersService.findAll();
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
-}
-
-
 }
