@@ -1,13 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PatientEncounterService } from './patient-encounters.service';
 import { CreatePatientEncounterDto } from './dto/create-patient-encounter.dto';
 import { UpdatePatientEncounterDto } from './dto/update-patient-encounter.dto';
-import { EncounterSearchFilters, PatientEncounterResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import type { EncounterSearchFilters, PatientEncounterResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class PatientEncounterController {
-  private readonly logger = new Logger('PatientEncounterController');
 
   constructor(private readonly patientEncounterService: PatientEncounterService) {}
 
@@ -23,9 +23,8 @@ export class PatientEncounterController {
   }
 
   @MessagePattern('PatientService.Encounter.FindMany')
-  async findWithPagination(data: { paginationDto: { page?: number; limit?: number; [key: string]: any } }): Promise<PaginatedResponseDto<PatientEncounterResponseDto>> {
-    const { page = 1, limit = 10, ...filters } = data.paginationDto;
-    return await this.patientEncounterService.findWithPagination(page, limit, filters);
+  async findWithPagination(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<PatientEncounterResponseDto>> {
+    return await this.patientEncounterService.findWithPagination(paginationDto);
   }
 
   @MessagePattern('PatientService.Encounter.FindByPatientId')

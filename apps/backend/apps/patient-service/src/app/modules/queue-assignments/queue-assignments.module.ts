@@ -3,6 +3,7 @@ import { QueueAssignmentService } from './queue-assignments.service';
 import { QueueAssignmentController } from './queue-assignments.controller';
 // import { QueueCronService } from './queue-cron.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import { QueueAssignment, QueueAssignmentRepository } from '@backend/shared-domain';
 // import { ScheduleModule } from '@nestjs/schedule';
 
@@ -12,7 +13,15 @@ import { QueueAssignment, QueueAssignmentRepository } from '@backend/shared-doma
     // ScheduleModule.forRoot() // Commented out until database is set up
   ],
   controllers: [QueueAssignmentController],
-  providers: [QueueAssignmentService, QueueAssignmentRepository], // Removed QueueCronService
-  exports: [QueueAssignmentService],
+  providers: [
+    QueueAssignmentService,
+    {
+      provide: QueueAssignmentRepository,
+      useFactory: (entityManager: EntityManager) => 
+        new QueueAssignmentRepository(entityManager),
+      inject: [EntityManager],
+    },
+  ],
+  exports: [QueueAssignmentService, QueueAssignmentRepository],
 })
 export class QueueAssignmentModule {}

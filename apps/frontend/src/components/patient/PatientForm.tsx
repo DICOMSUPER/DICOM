@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PatientFormProps, CreatePatientDto, UpdatePatientDto, Patient } from '@/interfaces/patient/patient-workflow.interface';
 import { Gender, BloodType } from '@/enums/patient-workflow.enum';
+import { formatInsuranceNumber, validateInsuranceNumber } from '@/lib/validation/patient-form';
 
 const PatientForm: React.FC<PatientFormProps> = ({
   patient,
@@ -63,10 +64,19 @@ const PatientForm: React.FC<PatientFormProps> = ({
   }, [patient]);
 
   const handleInputChange = (field: keyof (CreatePatientDto | UpdatePatientDto), value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // Special handling for insurance number
+    if (field === 'insuranceNumber') {
+      const formattedValue = formatInsuranceNumber(value);
+      setFormData(prev => ({
+        ...prev,
+        [field]: formattedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -242,22 +252,29 @@ const PatientForm: React.FC<PatientFormProps> = ({
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Insurance Information</h3>
             
-            <div className="space-y-2">
-              <Label htmlFor="insuranceNumber">Insurance Number</Label>
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="insuranceNumber"
-                  placeholder="Enter insurance number"
-                  value={formData.insuranceNumber || ''}
-                  onChange={(e) => handleInputChange('insuranceNumber', e.target.value)}
-                  className={`pl-10 ${errors.insuranceNumber ? 'border-red-500' : ''}`}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="insuranceNumber">Insurance Number</Label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="insuranceNumber"
+                    placeholder="Enter 10-digit insurance number"
+                    value={formData.insuranceNumber || ''}
+                    onChange={(e) => handleInputChange('insuranceNumber', e.target.value)}
+                    className={`pl-10 ${errors.insuranceNumber ? 'border-red-500' : ''}`}
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                  />
+                </div>
+                {errors.insuranceNumber && (
+                  <p className="text-sm text-red-600">{errors.insuranceNumber}</p>
+                )}
+                {formData.insuranceNumber && !validateInsuranceNumber(formData.insuranceNumber) && (
+                  <p className="text-sm text-amber-600">
+                    Insurance number must be exactly 10 digits
+                  </p>
+                )}
               </div>
-              {errors.insuranceNumber && (
-                <p className="text-sm text-red-600">{errors.insuranceNumber}</p>
-              )}
-            </div>
           </div>
 
           {/* Status */}

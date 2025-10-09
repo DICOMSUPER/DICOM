@@ -1,79 +1,80 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
 import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
 import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
 import type { QueueAssignmentSearchFilters } from '@backend/shared-domain';
 
-@Controller('queue-assignments')
+@Controller()
 export class QueueAssignmentController {
   constructor(private readonly queueAssignmentService: QueueAssignmentService) {}
 
-  @Post()
-  create(@Body() createQueueAssignmentDto: CreateQueueAssignmentDto) {
+  @MessagePattern('PatientService.QueueAssignment.Create')
+  create(createQueueAssignmentDto: CreateQueueAssignmentDto) {
     return this.queueAssignmentService.create(createQueueAssignmentDto);
   }
 
-  @Get()
-  findAll(@Query() filters: QueueAssignmentSearchFilters) {
+  @MessagePattern('PatientService.QueueAssignment.FindAll')
+  findAll(filters: QueueAssignmentSearchFilters) {
     return this.queueAssignmentService.findAll(filters);
   }
 
-  @Get('stats')
+  @MessagePattern('PatientService.QueueAssignment.GetStats')
   getStats() {
     return this.queueAssignmentService.getStats();
   }
 
-  @Get('room/:roomId')
-  findByRoom(@Param('roomId') roomId: string) {
-    return this.queueAssignmentService.findByRoom(roomId);
+  @MessagePattern('PatientService.QueueAssignment.FindByRoom')
+  findByRoom(data: { roomId: string }) {
+    return this.queueAssignmentService.findByRoom(data.roomId);
   }
 
-  @Get('physician/:physicianId')
-  findByPhysician(@Param('physicianId') physicianId: string) {
-    return this.queueAssignmentService.findByPhysician(physicianId);
+  @MessagePattern('PatientService.QueueAssignment.FindByPhysician')
+  findByPhysician(data: { physicianId: string }) {
+    return this.queueAssignmentService.findByPhysician(data.physicianId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.queueAssignmentService.findOne(id);
+  @MessagePattern('PatientService.QueueAssignment.FindOne')
+  findOne(data: { id: string }) {
+    return this.queueAssignmentService.findOne(data.id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQueueAssignmentDto: UpdateQueueAssignmentDto) {
-    return this.queueAssignmentService.update(id, updateQueueAssignmentDto);
+  @MessagePattern('PatientService.QueueAssignment.Update')
+  update(data: { id: string; updateQueueAssignmentDto: UpdateQueueAssignmentDto }) {
+    return this.queueAssignmentService.update(data.id, data.updateQueueAssignmentDto);
   }
 
-  @Patch(':id/complete')
-  complete(@Param('id') id: string) {
-    return this.queueAssignmentService.complete(id);
+  @MessagePattern('PatientService.QueueAssignment.Complete')
+  complete(data: { id: string }) {
+    return this.queueAssignmentService.complete(data.id);
   }
 
-  @Patch(':id/expire')
-  expire(@Param('id') id: string) {
-    return this.queueAssignmentService.expire(id);
+  @MessagePattern('PatientService.QueueAssignment.Expire')
+  expire(data: { id: string }) {
+    return this.queueAssignmentService.expire(data.id);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.queueAssignmentService.remove(id);
+  @MessagePattern('PatientService.QueueAssignment.Delete')
+  remove(data: { id: string }) {
+    return this.queueAssignmentService.remove(data.id);
   }
 
-  @Post('call-next')
-  callNextPatient(@Body() body: { roomId?: string; calledBy?: string }) {
-    return this.queueAssignmentService.callNextPatient(body.roomId, body.calledBy);
+  @MessagePattern('PatientService.QueueAssignment.CallNext')
+  callNextPatient(data: { roomId?: string; calledBy?: string }) {
+    return this.queueAssignmentService.callNextPatient(data.roomId, data.calledBy);
   }
 
-  @Get('validate/:token')
-  validateToken(@Param('token') token: string) {
-    return this.queueAssignmentService.validateToken(token);
+  @MessagePattern('PatientService.QueueAssignment.ValidateToken')
+  validateToken(data: { token: string }) {
+    return this.queueAssignmentService.validateToken(data.token);
   }
 
-  @Get(':id/wait-time')
-  getEstimatedWaitTime(@Param('id') id: string) {
-    return this.queueAssignmentService.getEstimatedWaitTime(id);
+  @MessagePattern('PatientService.QueueAssignment.GetEstimatedWaitTime')
+  getEstimatedWaitTime(data: { id: string }) {
+    return this.queueAssignmentService.getEstimatedWaitTime(data.id);
   }
 
-  @Post('auto-expire')
+  @MessagePattern('PatientService.QueueAssignment.AutoExpire')
   autoExpireAssignments() {
     return this.queueAssignmentService.autoExpireAssignments();
   }

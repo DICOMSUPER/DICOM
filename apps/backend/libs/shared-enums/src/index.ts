@@ -7,7 +7,6 @@ export * from './lib/system.enum';
 export * from './lib/schedule.enum';
 export * from './lib/room.enum';
 export * from './lib/imaging-order.enum';
-export * from './lib/prescription.enum'
 export * from './lib/clinical-status.enum'
 export * from './lib/encounter-type.enum'
 export * from './lib/condition-verification-status.enum'

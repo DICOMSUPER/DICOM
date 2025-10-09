@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Between } from 'typeorm';
+import { Between, EntityManager } from 'typeorm';
+import { BaseRepository } from '@backend/database';
+import { RepositoryPaginationDto } from '@backend/database';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { Patient } from '../entities/patients/patients.entity';
 import { DiagnosesReport } from '../entities/patients/diagnoses-reports.entity';
@@ -37,39 +38,28 @@ export interface EncounterWithDetails {
 }
 
 @Injectable()
-export class PatientEncounterRepository {
+export class PatientEncounterRepository extends BaseRepository<PatientEncounter> {
   constructor(
-    @InjectRepository(PatientEncounter)
-    private readonly encounterRepository: Repository<PatientEncounter>,
-    @InjectRepository(Patient)
-    private readonly patientRepository: Repository<Patient>,
-    @InjectRepository(DiagnosesReport)
-    private readonly diagnosisRepository: Repository<DiagnosesReport>,
-  ) {}
-
-  /**
-   * Create a new patient encounter
-   */
-  async create(encounterData: Partial<PatientEncounter>): Promise<PatientEncounter> {
-    const encounter = this.encounterRepository.create(encounterData);
-    return await this.encounterRepository.save(encounter);
+    entityManager: EntityManager,
+  ) {
+    super(PatientEncounter, entityManager);
   }
 
   /**
-   * Find encounter by ID
+   * Find encounter by ID with relations
    */
-  async findById(id: string): Promise<PatientEncounter | null> {
-    return await this.encounterRepository.findOne({
-      where: { id, isDeleted: false },
-      relations: ['patient']
-    });
+  async findByIdWithRelations(id: string): Promise<PatientEncounter | null> {
+    return await this.findOne(
+      { where: { id } },
+      ['patient']
+    );
   }
 
   /**
    * Find encounters by patient ID
    */
   async findByPatientId(patientId: string, limit?: number): Promise<PatientEncounter[]> {
-    const queryBuilder = this.encounterRepository
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
       .where('encounter.patientId = :patientId', { patientId })
@@ -86,8 +76,8 @@ export class PatientEncounterRepository {
   /**
    * Find all encounters with optional filters
    */
-  async findAll(filters: EncounterSearchFilters = {}): Promise<PatientEncounter[]> {
-    const queryBuilder = this.encounterRepository
+  async findAllWithFilters(filters: EncounterSearchFilters = {}): Promise<PatientEncounter[]> {
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
       .where('encounter.isDeleted = :isDeleted', { isDeleted: false });
@@ -142,78 +132,58 @@ export class PatientEncounterRepository {
   }
 
   /**
-   * Find encounters with pagination
+   * Find encounters with pagination using BaseRepository paginate method
    */
   async findWithPagination(
-    page: number = 1,
-    limit: number = 10,
-    filters: Omit<EncounterSearchFilters, 'limit' | 'offset'> = {}
+    paginationDto: RepositoryPaginationDto
   ): Promise<{ encounters: PatientEncounter[]; total: number; page: number; totalPages: number }> {
-    const offset = (page - 1) * limit;
-    
-    const [encounters, total] = await this.encounterRepository.findAndCount({
-      where: this.buildWhereClause(filters),
-      relations: ['patient'],
-      order: { encounterDate: 'DESC' },
-      skip: offset,
-      take: limit,
-    });
+    // Set default relations for encounter queries
+    const paginationWithRelations = {
+      ...paginationDto,
+      relation: paginationDto.relation || ['patient']
+    };
+
+    const result = await this.paginate(paginationWithRelations);
 
     return {
-      encounters,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
+      encounters: result.data,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages
     };
-  }
-
-  /**
-   * Update encounter by ID
-   */
-  async update(id: string, updateData: Partial<PatientEncounter>): Promise<PatientEncounter | null> {
-    await this.encounterRepository.update(id, updateData);
-    return await this.findById(id);
   }
 
   /**
    * Soft delete encounter by ID
    */
-  async softDelete(id: string): Promise<boolean> {
-    const result = await this.encounterRepository.update(id, { isDeleted: true });
-    return result.affected > 0;
-  }
-
-  /**
-   * Hard delete encounter by ID (use with caution)
-   */
-  async hardDelete(id: string): Promise<boolean> {
-    const result = await this.encounterRepository.delete(id);
-    return result.affected > 0;
+  async softDeleteEncounter(id: string): Promise<boolean> {
+    const result = await this.getRepository().update(id, { isDeleted: true });
+    return (result.affected ?? 0) > 0;
   }
 
   /**
    * Restore soft-deleted encounter
    */
-  async restore(id: string): Promise<boolean> {
-    const result = await this.encounterRepository.update(id, { isDeleted: false });
-    return result.affected > 0;
+  async restoreEncounter(id: string): Promise<boolean> {
+    const result = await this.getRepository().update(id, { isDeleted: false });
+    return (result.affected ?? 0) > 0;
   }
 
   /**
    * Get encounter with detailed information including diagnoses
    */
   async findEncounterWithDetails(id: string): Promise<EncounterWithDetails | null> {
-    const encounter = await this.encounterRepository.findOne({
-      where: { id, isDeleted: false },
-      relations: ['patient']
-    });
+    const encounter = await this.findOne(
+      { where: { id } },
+      ['patient']
+    );
 
     if (!encounter) {
       return null;
     }
 
     // Get diagnoses for this encounter
-    const diagnoses = await this.diagnosisRepository.find({
+    const diagnoses = await this.getRepository().manager.find(DiagnosesReport, {
       where: { encounterId: id, isDeleted: false },
       order: { diagnosisDate: 'DESC' }
     });
@@ -229,7 +199,7 @@ export class PatientEncounterRepository {
    * Get encounters by physician ID
    */
   async findByPhysicianId(physicianId: string, limit?: number): Promise<PatientEncounter[]> {
-    const queryBuilder = this.encounterRepository
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
       .where('encounter.assignedPhysicianId = :physicianId', { physicianId })
@@ -258,14 +228,14 @@ export class PatientEncounterRepository {
     const whereClause = patientId ? { patientId, isDeleted: false } : { isDeleted: false };
 
     const [totalEncounters, encountersThisMonth, allEncounters] = await Promise.all([
-      this.encounterRepository.count({ where: whereClause }),
-      this.encounterRepository.count({ 
+      this.getRepository().count({ where: whereClause }),
+      this.getRepository().count({ 
         where: { 
           ...whereClause,
           encounterDate: Between(startOfMonth, now)
         } 
       }),
-      this.encounterRepository.find({ 
+      this.getRepository().find({ 
         where: whereClause,
         select: ['encounterType']
       })
@@ -294,7 +264,7 @@ export class PatientEncounterRepository {
    * Search encounters by chief complaint
    */
   async searchByChiefComplaint(searchTerm: string, limit: number = 10): Promise<PatientEncounter[]> {
-    return await this.encounterRepository
+    return await this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
       .where('encounter.isDeleted = :isDeleted', { isDeleted: false })
@@ -310,43 +280,10 @@ export class PatientEncounterRepository {
    * Get recent encounters for a patient
    */
   async getRecentEncounters(patientId: string, limit: number = 5): Promise<PatientEncounter[]> {
-    return await this.encounterRepository.find({
-      where: { patientId, isDeleted: false },
-      relations: ['patient'],
-      order: { encounterDate: 'DESC' },
-      take: limit
-    });
+    return await this.findAll(
+      { where: { patientId }, take: limit, order: { encounterDate: 'DESC' } },
+      ['patient']
+    );
   }
 
-  /**
-   * Build where clause for filtering
-   */
-  private buildWhereClause(filters: Omit<EncounterSearchFilters, 'limit' | 'offset'>): FindOptionsWhere<PatientEncounter> {
-    const where: FindOptionsWhere<PatientEncounter> = { isDeleted: false };
-
-    if (filters.patientId) {
-      where.patientId = filters.patientId;
-    }
-
-    if (filters.encounterType) {
-      where.encounterType = filters.encounterType;
-    }
-
-    if (filters.assignedPhysicianId) {
-      where.assignedPhysicianId = filters.assignedPhysicianId;
-    }
-
-    if (filters.chiefComplaint) {
-      where.chiefComplaint = { $like: `%${filters.chiefComplaint}%` } as any;
-    }
-
-    if (filters.encounterDateFrom || filters.encounterDateTo) {
-      where.encounterDate = Between(
-        filters.encounterDateFrom || new Date('1900-01-01'),
-        filters.encounterDateTo || new Date()
-      );
-    }
-
-    return where;
-  }
 }

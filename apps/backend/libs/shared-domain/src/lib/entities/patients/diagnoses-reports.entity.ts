@@ -2,11 +2,10 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   Index,
   ManyToOne,
 } from 'typeorm';
+import { BaseEntity } from '@backend/entities';
 
 import {
   DiagnosisType,
@@ -21,7 +20,7 @@ import { PatientEncounter } from './patient-encounters.entity';
 @Index(['diagnosisDate'])
 @Index(['diagnosisStatus'])
 @Index(['diagnosedBy'])
-export class DiagnosesReport {
+export class DiagnosesReport extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
   @Column({ name: 'encounter_id', type: 'uuid' })
@@ -61,12 +60,4 @@ export class DiagnosesReport {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
-  @Column({ name: 'is_deleted', default: false })
-  isDeleted?: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

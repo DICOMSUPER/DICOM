@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, FindManyOptions, Between } from 'typeorm';
+import { Between, EntityManager } from 'typeorm';
+import { BaseRepository } from '@backend/database';
 import { QueueAssignment } from '../entities/patients/queue-assignments.entity';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
 
@@ -29,29 +29,23 @@ export interface QueueStats {
 }
 
 @Injectable()
-export class QueueAssignmentRepository {
+export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   constructor(
-    @InjectRepository(QueueAssignment)
-    private readonly queueRepository: Repository<QueueAssignment>,
-  ) {}
-
-  /**
-   * Create a new queue assignment
-   */
-  async create(assignmentData: Partial<QueueAssignment>): Promise<QueueAssignment> {
-    const assignment = this.queueRepository.create(assignmentData);
-    return await this.queueRepository.save(assignment);
+    entityManager: EntityManager,
+  ) {
+    super(QueueAssignment, entityManager);
   }
+
 
   /**
    * Find all queue assignments with optional filters
    */
-  async findAll(filters: QueueAssignmentSearchFilters = {}): Promise<QueueAssignment[]> {
-    const queryBuilder = this.queueRepository
+  async findAllWithFilters(filters: QueueAssignmentSearchFilters = {}): Promise<QueueAssignment[]> {
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('queue')
       .leftJoinAndSelect('queue.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
-      .where('queue.isDeleted = :isDeleted', { isDeleted: false });
+      .where('1=1');
 
     if (filters.status) {
       queryBuilder.andWhere('queue.status = :status', { status: filters.status });
@@ -96,59 +90,53 @@ export class QueueAssignmentRepository {
   }
 
   /**
-   * Find queue assignment by ID
+   * Find queue assignment by ID with relations
    */
-  async findById(id: string): Promise<QueueAssignment | null> {
-    return await this.queueRepository.findOne({
-      where: { id },
-      relations: ['encounter', 'encounter.patient']
-    });
+  async findByIdWithRelations(id: string): Promise<QueueAssignment | null> {
+    return await this.findOne(
+      { where: { id } },
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
    * Find queue assignment by encounter ID
    */
   async findByEncounterId(encounterId: string): Promise<QueueAssignment | null> {
-    return await this.queueRepository.findOne({
-      where: { encounter: { id: encounterId } },
-      relations: ['encounter', 'encounter.patient']
-    });
+    return await this.findOne(
+      { where: { encounter: { id: encounterId } } },
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
-   * Update queue assignment
+   * Delete queue assignment (hard delete)
    */
-  async update(id: string, updateData: Partial<QueueAssignment>): Promise<QueueAssignment | null> {
-    await this.queueRepository.update(id, updateData);
-    return await this.findById(id);
-  }
-
-  /**
-   * Delete queue assignment (soft delete)
-   */
-  async delete(id: string): Promise<boolean> {
-    const result = await this.queueRepository.update(id, { isDeleted: true });
-    return result.affected > 0;
+  async deleteQueueAssignment(id: string): Promise<boolean> {
+    const result = await this.getRepository().delete(id);
+    return (result.affected ?? 0) > 0;
   }
 
   /**
    * Complete queue assignment
    */
   async complete(id: string): Promise<QueueAssignment | null> {
-    return await this.update(id, { 
+    await this.getRepository().update(id, { 
       status: QueueStatus.COMPLETED,
       updatedAt: new Date()
     });
+    return await this.findByIdWithRelations(id);
   }
 
   /**
    * Expire queue assignment
    */
   async expire(id: string): Promise<QueueAssignment | null> {
-    return await this.update(id, { 
+    await this.getRepository().update(id, { 
       status: QueueStatus.EXPIRED,
       updatedAt: new Date()
     });
+    return await this.findByIdWithRelations(id);
   }
 
   /**
@@ -161,7 +149,7 @@ export class QueueAssignmentRepository {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const lastAssignment = await this.queueRepository.findOne({
+    const lastAssignment = await this.getRepository().findOne({
       where: {
         assignmentDate: Between(startOfDay, endOfDay)
       },
@@ -175,10 +163,10 @@ export class QueueAssignmentRepository {
    * Find assignment by validation token
    */
   async findByValidationToken(validationToken: string): Promise<QueueAssignment | null> {
-    return await this.queueRepository.findOne({
-      where: { validationToken },
-      relations: ['encounter', 'encounter.patient']
-    });
+    return await this.findOne(
+      { where: { validationToken } },
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
@@ -186,49 +174,49 @@ export class QueueAssignmentRepository {
    */
   async findExpiredAssignments(): Promise<QueueAssignment[]> {
     const now = new Date();
-    return await this.queueRepository.find({
-      where: {
-        status: QueueStatus.WAITING,
-        assignmentExpiresDate: { $lt: now } as any
+    return await this.findAll(
+      {
+        where: {
+          status: QueueStatus.WAITING,
+          assignmentExpiresDate: { $lt: now } as any
+        }
       },
-      relations: ['encounter', 'encounter.patient']
-    });
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
    * Get queue statistics
    */
   async getQueueStats(): Promise<QueueStats> {
-    const total = await this.queueRepository.count({
-      where: { isDeleted: false }
+    const total = await this.getRepository().count();
+
+    const waiting = await this.getRepository().count({
+      where: { status: QueueStatus.WAITING }
     });
 
-    const waiting = await this.queueRepository.count({
-      where: { status: QueueStatus.WAITING, isDeleted: false }
+    const inProgress = await this.getRepository().count({
+      where: { status: QueueStatus.IN_PROGRESS }
     });
 
-    const inProgress = await this.queueRepository.count({
-      where: { status: QueueStatus.IN_PROGRESS, isDeleted: false }
+    const completed = await this.getRepository().count({
+      where: { status: QueueStatus.COMPLETED }
     });
 
-    const completed = await this.queueRepository.count({
-      where: { status: QueueStatus.COMPLETED, isDeleted: false }
+    const expired = await this.getRepository().count({
+      where: { status: QueueStatus.EXPIRED }
     });
 
-    const expired = await this.queueRepository.count({
-      where: { status: QueueStatus.EXPIRED, isDeleted: false }
+    const routine = await this.getRepository().count({
+      where: { priority: QueuePriorityLevel.ROUTINE }
     });
 
-    const routine = await this.queueRepository.count({
-      where: { priority: QueuePriorityLevel.ROUTINE, isDeleted: false }
+    const urgent = await this.getRepository().count({
+      where: { priority: QueuePriorityLevel.URGENT }
     });
 
-    const urgent = await this.queueRepository.count({
-      where: { priority: QueuePriorityLevel.URGENT, isDeleted: false }
-    });
-
-    const stat = await this.queueRepository.count({
-      where: { priority: QueuePriorityLevel.STAT, isDeleted: false }
+    const stat = await this.getRepository().count({
+      where: { priority: QueuePriorityLevel.STAT }
     });
 
     return {
@@ -249,23 +237,24 @@ export class QueueAssignmentRepository {
    * Find assignments by room
    */
   async findByRoom(roomId: string): Promise<QueueAssignment[]> {
-    return await this.queueRepository.find({
-      where: { roomId, isDeleted: false },
-      relations: ['encounter', 'encounter.patient'],
-      order: { queueNumber: 'ASC' }
-    });
+    return await this.findAll(
+      {
+        where: { roomId },
+        order: { queueNumber: 'ASC' }
+      },
+      ['encounter', 'encounter.patient']
+    );
   }
 
   /**
    * Find assignments by physician
    */
   async findByPhysician(physicianId: string): Promise<QueueAssignment[]> {
-    return await this.queueRepository
+    return await this.getRepository()
       .createQueryBuilder('queue')
       .leftJoinAndSelect('queue.encounter', 'encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
       .where('encounter.assignedPhysicianId = :physicianId', { physicianId })
-      .andWhere('queue.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('queue.priority', 'DESC')
       .addOrderBy('queue.assignmentDate', 'ASC')
       .getMany();

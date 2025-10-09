@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Index } from 'typeorm';
+import { BaseEntity } from '@backend/entities';
 
 import { Gender } from '@backend/shared-enums';
 import { BloodType } from '@backend/shared-enums';
@@ -9,7 +10,7 @@ import { PatientCondition } from './patient-conditions';
 @Index('idx_patient_code', ['patientCode'])
 @Index('idx_patient_name', ['lastName', 'firstName'])
 @Index('idx_patient_dob', ['dateOfBirth'])
-export class Patient {
+export class Patient extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'patient_id' })
   id!: string;
 
@@ -43,17 +44,8 @@ export class Patient {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
-
   @Column({ name: 'created_by', nullable: true })
   createdBy?: string;
-
-  @Column({ name: 'is_deleted', nullable: true })
-  isDeleted?: boolean;
 
   // Relations
   @OneToMany(() => PatientCondition, condition => condition.patient)

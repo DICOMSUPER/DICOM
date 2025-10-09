@@ -7,6 +7,9 @@
       "path": "../../entities"
     },
     {
+      "path": "../shared-utils"
+    },
+    {
       "path": "../shared-interfaces"
     },
     {

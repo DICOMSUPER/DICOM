@@ -1,11 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '@backend/entities';
 import { EncounterType } from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
 import { Patient } from './patients.entity';
 
-
-  @Entity('patient_encounters')
-  export class PatientEncounter {
+@Entity('patient_encounters')
+export class PatientEncounter extends BaseEntity {
     @PrimaryGeneratedColumn('uuid', { name: 'encounter_id' })
     id!: string;
 
@@ -37,14 +37,6 @@ import { Patient } from './patients.entity';
     @Column({ type: 'text', nullable: true })
     notes?: string;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt!: Date;
-
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt!: Date;
-
-    @Column({ name: 'is_deleted', nullable: true })
-    isDeleted?: boolean;
 
     // Relations
     @ManyToOne(() => Patient, patient => patient.encounters)

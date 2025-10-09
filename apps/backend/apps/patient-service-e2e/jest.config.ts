@@ -21,4 +21,16 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  testMatch: [
+    '<rootDir>/src/**/*.spec.ts',
+    '<rootDir>/src/**/*.e2e.spec.ts'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.spec.ts',
+    '!src/**/*.e2e.spec.ts',
+    '!src/support/**'
+  ],
+  testTimeout: 30000, // 30 seconds timeout for e2e tests
+  maxWorkers: 1, // Run e2e tests sequentially to avoid conflicts
 };

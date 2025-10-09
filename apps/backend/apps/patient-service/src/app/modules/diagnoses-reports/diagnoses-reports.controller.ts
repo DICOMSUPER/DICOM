@@ -1,60 +1,61 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { DiagnosesReportService } from './diagnoses-reports.service';
 import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
 import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
-import { DiagnosisSearchFilters } from '@backend/shared-domain';
+import type { DiagnosisSearchFilters } from '@backend/shared-domain';
 
-@Controller('diagnoses')
+@Controller()
 export class DiagnosesReportController {
   constructor(private readonly diagnosesReportService: DiagnosesReportService) {}
 
-  @Post()
-  create(@Body() createDiagnosesReportDto: CreateDiagnosesReportDto) {
+  @MessagePattern('PatientService.Diagnosis.Create')
+  create(createDiagnosesReportDto: CreateDiagnosesReportDto) {
     return this.diagnosesReportService.create(createDiagnosesReportDto);
   }
 
-  @Get()
-  findAll(@Query() filters: DiagnosisSearchFilters) {
+  @MessagePattern('PatientService.Diagnosis.FindAll')
+  findAll(filters: DiagnosisSearchFilters) {
     return this.diagnosesReportService.findAll(filters);
   }
 
-  @Get('stats')
+  @MessagePattern('PatientService.Diagnosis.GetStats')
   getStats() {
     return this.diagnosesReportService.getDiagnosisStats();
   }
 
-  @Get('types')
+  @MessagePattern('PatientService.Diagnosis.GetByType')
   getDiagnosesByType() {
     return this.diagnosesReportService.getDiagnosesByType();
   }
 
-  @Get('encounter/:encounterId')
-  findByEncounter(@Param('encounterId') encounterId: string) {
-    return this.diagnosesReportService.findByEncounter(encounterId);
+  @MessagePattern('PatientService.Diagnosis.FindByEncounter')
+  findByEncounter(data: { encounterId: string }) {
+    return this.diagnosesReportService.findByEncounter(data.encounterId);
   }
 
-  @Get('patient/:patientId')
-  findByPatient(@Param('patientId') patientId: string, @Query('limit') limit?: number) {
-    return this.diagnosesReportService.findByPatient(patientId, limit);
+  @MessagePattern('PatientService.Diagnosis.FindByPatient')
+  findByPatient(data: { patientId: string; limit?: number }) {
+    return this.diagnosesReportService.findByPatient(data.patientId, data.limit);
   }
 
-  @Get('physician/:physicianId')
-  findByPhysician(@Param('physicianId') physicianId: string) {
-    return this.diagnosesReportService.findByPhysician(physicianId);
+  @MessagePattern('PatientService.Diagnosis.FindByPhysician')
+  findByPhysician(data: { physicianId: string }) {
+    return this.diagnosesReportService.findByPhysician(data.physicianId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.diagnosesReportService.findOne(id);
+  @MessagePattern('PatientService.Diagnosis.FindOne')
+  findOne(data: { id: string }) {
+    return this.diagnosesReportService.findOne(data.id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDiagnosesReportDto: UpdateDiagnosesReportDto) {
-    return this.diagnosesReportService.update(id, updateDiagnosesReportDto);
+  @MessagePattern('PatientService.Diagnosis.Update')
+  update(data: { id: string; updateDiagnosesReportDto: UpdateDiagnosesReportDto }) {
+    return this.diagnosesReportService.update(data.id, data.updateDiagnosesReportDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.diagnosesReportService.remove(id);
+  @MessagePattern('PatientService.Diagnosis.Delete')
+  remove(data: { id: string }) {
+    return this.diagnosesReportService.remove(data.id);
   }
 }

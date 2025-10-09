@@ -7,3 +7,4 @@ export * from './lib/name-key.utils';
 export * from './lib/vital-signs-validation.util';
 export * from './lib/vital-signs-examples.util';
 export * from './lib/file-handler.utils.';
+export * from './lib/validators/insurance-number.validator';

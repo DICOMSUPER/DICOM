@@ -1,10 +1,5 @@
-// COMMENTED OUT UNTIL DATABASE IS SET UP
-// This file contains cron jobs that depend on database entities
-// Uncomment when database is properly configured
-
-/*
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+// import { Cron, CronExpression } from '@nestjs/schedule'; // Commented out - package not installednpx 
 import { QueueAssignmentService } from './queue-assignments.service';
 
 @Injectable()
@@ -17,8 +12,9 @@ export class QueueCronService {
 
   /**
    * Auto-expire queue assignments every 5 minutes
+   * Note: Cron functionality disabled - @nestjs/schedule package not installed
    */
-  @Cron('*/5 * * * *')
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   async handleAutoExpire() {
     this.logger.log('Starting auto-expire queue assignments job');
     
@@ -42,8 +38,9 @@ export class QueueCronService {
 
   /**
    * Update estimated wait times every 2 minutes
+   * Note: Cron functionality disabled - @nestjs/schedule package not installed
    */
-  @Cron('*/2 * * * *')
+  // @Cron(CronExpression.EVERY_2_MINUTES)
   async handleUpdateWaitTimes() {
     this.logger.log('Updating estimated wait times');
     
@@ -58,8 +55,9 @@ export class QueueCronService {
 
   /**
    * Generate daily queue reports at 11:59 PM
+   * Note: Cron functionality disabled - @nestjs/schedule package not installed
    */
-  @Cron('59 23 * * *')
+  // @Cron('59 23 * * *')
   async handleDailyReport() {
     this.logger.log('Generating daily queue report');
     
@@ -72,7 +70,7 @@ export class QueueCronService {
         inProgress: stats.inProgress,
         completed: stats.completed,
         expired: stats.expired,
-        averageWaitTime: stats.averageWaitTime,
+        byPriority: stats.byPriority,
         date: new Date().toISOString().split('T')[0]
       });
     } catch (error) {
@@ -80,4 +78,3 @@ export class QueueCronService {
     }
   }
 }
-*/

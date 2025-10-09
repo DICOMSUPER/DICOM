@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useCreatePatientMutation } from "@/store/patientApi";
 import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interface";
 import { Gender, BloodType } from "@/enums/patient-workflow.enum";
+import { formatInsuranceNumber, validateInsuranceNumber } from "@/lib/validation/patient-form";
 import { useRouter } from "next/navigation";
 import { User, Save } from "lucide-react";
 
@@ -47,10 +48,20 @@ export default function PatientRegistration() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Special handling for insurance number
+    if (name === 'insuranceNumber') {
+      const formattedValue = formatInsuranceNumber(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
 
@@ -187,8 +198,15 @@ export default function PatientRegistration() {
                       name="insuranceNumber"
                       value={formData.insuranceNumber}
                       onChange={handleInputChange}
-                      placeholder="Enter insurance number"
+                      placeholder="Enter 10-digit insurance number"
+                      maxLength={10}
+                      pattern="[0-9]{10}"
                     />
+                    {formData.insuranceNumber && !validateInsuranceNumber(formData.insuranceNumber) && (
+                      <p className="text-sm text-amber-600">
+                        Insurance number must be exactly 10 digits
+                      </p>
+                    )}
                   </div>
                 </div>
 

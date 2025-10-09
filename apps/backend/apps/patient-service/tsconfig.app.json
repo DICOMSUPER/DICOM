@@ -15,8 +15,6 @@
     "../../libs/shared-domain/src/lib/entities/patients/patient-conditions.entity.ts",
     "../../libs/shared-domain/src/lib/entities/patients/patient-encounters.entity.ts",
     "../../libs/shared-domain/src/lib/entities/patients/patients.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/prescription-items.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/prescriptions.entity.ts",
     "../../libs/shared-domain/src/lib/entities/patients/queue-assignments.entity.ts"
   ],
   "exclude": [

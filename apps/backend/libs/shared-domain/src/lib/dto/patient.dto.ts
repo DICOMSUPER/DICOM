@@ -2,6 +2,7 @@ import { IsString, IsDate, IsEnum, IsOptional, IsBoolean, IsUUID, IsEmail, IsPho
 import { Type, Transform } from 'class-transformer';
 import { Gender, BloodType, EncounterType, DiagnosisType, DiagnosisStatus, Severity } from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
+import { IsInsuranceNumber } from '@backend/shared-utils';
 
 // Base DTOs
 export class CreatePatientDto {
@@ -93,8 +94,8 @@ export class UpdatePatientDto {
   bloodType?: BloodType;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
+  @IsInsuranceNumber({ message: 'Insurance number must be exactly 10 digits' })
+  @Transform(({ value }) => value?.replace(/\D/g, '')) // Remove non-digits
   insuranceNumber?: string;
 
   @IsOptional()
