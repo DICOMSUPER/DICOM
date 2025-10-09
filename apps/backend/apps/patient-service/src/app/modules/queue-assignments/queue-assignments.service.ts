@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
 import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
-import { QueueAssignmentRepository, QueueAssignmentSearchFilters } from '@backend/shared-domain';
+import { QueueAssignmentRepository, QueueAssignmentResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Injectable()
 export class QueueAssignmentService {
@@ -40,8 +41,17 @@ export class QueueAssignmentService {
     return await this.queueRepository.create(assignmentData);
   }
 
-  async findAll(filters: QueueAssignmentSearchFilters = {}) {
-    return await this.queueRepository.findAll(filters);
+  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignmentResponseDto>> {
+    const result = await this.queueRepository.findWithPagination(paginationDto);
+    return {
+      data: result.data.map((assignment: any) => this.mapToResponseDto(assignment)),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      hasNextPage: result.hasNextPage,
+      hasPreviousPage: result.hasPreviousPage
+    };
   }
 
   async findOne(id: string) {

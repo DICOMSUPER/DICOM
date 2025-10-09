@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, Logger, Query, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { ValidationUtils } from '@backend/shared-utils';
 
 @Controller('patient-conditions')
 export class PatientConditionController {
@@ -10,6 +11,8 @@ export class PatientConditionController {
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService') 
     private readonly patientService: ClientProxy
   ) {}
+
+
 
   @Post()
   async create(@Body() createPatientConditionDto: any) {
@@ -24,10 +27,21 @@ export class PatientConditionController {
   }
 
   @Get()
-  async findAll() {
+  async findAll(
+    @Query() searchDto: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
     try {
+      // Validate pagination parameters
+      const validatedParams = ValidationUtils.validatePaginationParams(page, limit);
+      
+      const paginationDto = {
+        ...validatedParams,
+        ...searchDto
+      };
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientCondition.FindAll', {})
+        this.patientService.send('PatientService.PatientCondition.FindMany', { paginationDto })
       );
     } catch (error) {
       this.logger.error('Error finding all patient conditions:', error);
@@ -35,21 +49,15 @@ export class PatientConditionController {
     }
   }
 
-  @Get('patient/:patientId')
-  async findByPatientId(@Param('patientId') patientId: string) {
-    try {
-      return await firstValueFrom(
-        this.patientService.send('PatientService.PatientCondition.FindByPatientId', { patientId })
-      );
-    } catch (error) {
-      this.logger.error('Error finding patient conditions by patient ID:', error);
-      throw error;
-    }
-  }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
     try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
       return await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.FindOne', { id })
       );
@@ -62,6 +70,11 @@ export class PatientConditionController {
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updatePatientConditionDto: any) {
     try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
       return await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.Update', { 
           id, 
@@ -77,6 +90,11 @@ export class PatientConditionController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
       return await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.Delete', { id })
       );

@@ -303,22 +303,6 @@ export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
     };
   }
 
-  /**
-   * Search diagnoses by name
-   */
-  async searchByDiagnosisName(searchTerm: string, limit: number = 10): Promise<DiagnosesReport[]> {
-    return await this.getRepository()
-      .createQueryBuilder('diagnosis')
-      .leftJoinAndSelect('diagnosis.encounter', 'encounter')
-      .leftJoinAndSelect('encounter.patient', 'patient')
-      .where('diagnosis.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('diagnosis.diagnosisName ILIKE :searchTerm', {
-        searchTerm: `%${searchTerm}%`
-      })
-      .orderBy('diagnosis.diagnosisDate', 'DESC')
-      .limit(limit)
-      .getMany();
-  }
 
   /**
    * Get diagnoses requiring follow-up

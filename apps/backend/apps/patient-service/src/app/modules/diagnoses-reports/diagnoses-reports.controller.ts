@@ -3,7 +3,8 @@ import { MessagePattern } from '@nestjs/microservices';
 import { DiagnosesReportService } from './diagnoses-reports.service';
 import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
 import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
-import type { DiagnosisSearchFilters } from '@backend/shared-domain';
+import type { DiagnosesReportResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class DiagnosesReportController {
@@ -14,9 +15,9 @@ export class DiagnosesReportController {
     return this.diagnosesReportService.create(createDiagnosesReportDto);
   }
 
-  @MessagePattern('PatientService.Diagnosis.FindAll')
-  findAll(filters: DiagnosisSearchFilters) {
-    return this.diagnosesReportService.findAll(filters);
+  @MessagePattern('PatientService.Diagnosis.FindMany')
+  findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<DiagnosesReportResponseDto>> {
+    return this.diagnosesReportService.findMany(paginationDto);
   }
 
   @MessagePattern('PatientService.Diagnosis.GetStats')
@@ -27,21 +28,6 @@ export class DiagnosesReportController {
   @MessagePattern('PatientService.Diagnosis.GetByType')
   getDiagnosesByType() {
     return this.diagnosesReportService.getDiagnosesByType();
-  }
-
-  @MessagePattern('PatientService.Diagnosis.FindByEncounter')
-  findByEncounter(data: { encounterId: string }) {
-    return this.diagnosesReportService.findByEncounter(data.encounterId);
-  }
-
-  @MessagePattern('PatientService.Diagnosis.FindByPatient')
-  findByPatient(data: { patientId: string; limit?: number }) {
-    return this.diagnosesReportService.findByPatient(data.patientId, data.limit);
-  }
-
-  @MessagePattern('PatientService.Diagnosis.FindByPhysician')
-  findByPhysician(data: { physicianId: string }) {
-    return this.diagnosesReportService.findByPhysician(data.physicianId);
   }
 
   @MessagePattern('PatientService.Diagnosis.FindOne')

@@ -272,21 +272,6 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
     };
   }
 
-  /**
-   * Search conditions by code or display name
-   */
-  async searchByConditionCode(searchTerm: string, limit: number = 10): Promise<PatientCondition[]> {
-    return await this.getRepository()
-      .createQueryBuilder('condition')
-      .leftJoinAndSelect('condition.patient', 'patient')
-      .where('condition.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('(condition.code ILIKE :searchTerm OR condition.codeDisplay ILIKE :searchTerm)', {
-        searchTerm: `%${searchTerm}%`
-      })
-      .orderBy('condition.recordedDate', 'DESC')
-      .limit(limit)
-      .getMany();
-  }
 
   /**
    * Get recent conditions for a patient

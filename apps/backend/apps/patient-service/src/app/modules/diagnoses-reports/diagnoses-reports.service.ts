@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
 import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
-import { DiagnosisReportRepository, DiagnosisSearchFilters } from '@backend/shared-domain';
+import { DiagnosisReportRepository, DiagnosesReportResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
 import { DiagnosisType, DiagnosisStatus, Severity } from '@backend/shared-enums';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Injectable()
 export class DiagnosesReportService {
@@ -23,8 +24,17 @@ export class DiagnosesReportService {
     return await this.diagnosisRepository.create(diagnosisData);
   }
 
-  async findAll(filters: DiagnosisSearchFilters = {}) {
-    return await this.diagnosisRepository.findAll(filters);
+  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<DiagnosesReportResponseDto>> {
+    const result = await this.diagnosisRepository.findWithPagination(paginationDto);
+    return {
+      data: result.data.map((diagnosis: any) => this.mapToResponseDto(diagnosis)),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      hasNextPage: result.hasNextPage,
+      hasPreviousPage: result.hasPreviousPage
+    };
   }
 
   async findOne(id: string) {
@@ -145,6 +155,27 @@ export class DiagnosesReportService {
       primary,
       secondary,
       differential
+    };
+  }
+
+  private mapToResponseDto(diagnosis: any): DiagnosesReportResponseDto {
+    return {
+      id: diagnosis.id,
+      encounterId: diagnosis.encounterId,
+      patientId: diagnosis.patientId,
+      physicianId: diagnosis.physicianId,
+      studyId: diagnosis.studyId,
+      diagnosisName: diagnosis.diagnosisName,
+      diagnosisCode: diagnosis.diagnosisCode,
+      diagnosisType: diagnosis.diagnosisType,
+      diagnosisStatus: diagnosis.diagnosisStatus,
+      severity: diagnosis.severity,
+      description: diagnosis.description,
+      followUpInstructions: diagnosis.followUpInstructions,
+      diagnosisDate: diagnosis.diagnosisDate,
+      recordedDate: diagnosis.recordedDate,
+      createdAt: diagnosis.createdAt,
+      updatedAt: diagnosis.updatedAt
     };
   }
 }

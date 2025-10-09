@@ -260,21 +260,6 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     };
   }
 
-  /**
-   * Search encounters by chief complaint
-   */
-  async searchByChiefComplaint(searchTerm: string, limit: number = 10): Promise<PatientEncounter[]> {
-    return await this.getRepository()
-      .createQueryBuilder('encounter')
-      .leftJoinAndSelect('encounter.patient', 'patient')
-      .where('encounter.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere('encounter.chiefComplaint ILIKE :searchTerm', {
-        searchTerm: `%${searchTerm}%`
-      })
-      .orderBy('encounter.encounterDate', 'DESC')
-      .limit(limit)
-      .getMany();
-  }
 
   /**
    * Get recent encounters for a patient
