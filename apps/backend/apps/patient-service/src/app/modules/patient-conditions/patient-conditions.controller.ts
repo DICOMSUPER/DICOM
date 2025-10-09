@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PatientConditionService } from './patient-conditions.service';
 import { CreatePatientConditionDto } from './dto/create-patient-condition.dto';
 import { UpdatePatientConditionDto } from './dto/update-patient-condition.dto';
 import { PatientConditionResponseDto } from './dto/patient-condition-response.dto';
+import { RepositoryPaginationDto } from '@backend/database';
+import { PaginatedResponseDto } from '@backend/shared-domain';
 
 @Controller()
 export class PatientConditionController {
@@ -14,15 +16,12 @@ export class PatientConditionController {
     return await this.patientConditionService.create(createPatientConditionDto);
   }
 
-  @MessagePattern('PatientService.PatientCondition.FindAll')
-  async findAll(): Promise<PatientConditionResponseDto[]> {
-    return await this.patientConditionService.findAll();
+  @MessagePattern('PatientService.PatientCondition.FindMany')
+  async findMany(data: { paginationDto: RepositoryPaginationDto }): Promise<PaginatedResponseDto<PatientConditionResponseDto>> {
+    return await this.patientConditionService.findMany(data.paginationDto);
   }
 
-  @MessagePattern('PatientService.PatientCondition.FindByPatientId')
-  async findByPatientId(data: { patientId: string }): Promise<PatientConditionResponseDto[]> {
-    return await this.patientConditionService.findByPatientId(data.patientId);
-  }
+
 
   @MessagePattern('PatientService.PatientCondition.FindOne')
   async findOne(data: { id: string }): Promise<PatientConditionResponseDto> {

@@ -4,16 +4,19 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared-utils"
+    },
+    {
       "path": "../../libs/shared-interfaces"
     },
     {
       "path": "../../libs/shared-enums"
     },
     {
-      "path": "../../libs/shared-domain"
+      "path": "../../libs/database"
     },
     {
-      "path": "../../libs/database"
+      "path": "../../libs/shared-domain"
     },
     {
       "path": "./tsconfig.app.json"

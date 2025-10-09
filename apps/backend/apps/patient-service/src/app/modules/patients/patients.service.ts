@@ -1,90 +1,127 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { 
   CreatePatientDto, 
   UpdatePatientDto, 
-  PatientSearchDto, 
   PatientResponseDto,
   PaginatedResponseDto,
   PatientStatsDto,
   PatientRepository
 } from '@backend/shared-domain';
 import { RepositoryPaginationDto } from '@backend/database';
+import { IPatient, IPatientWithRelations } from '@backend/shared-interfaces';
+import { ValidationUtils } from '@backend/shared-utils';
 
 @Injectable()
 export class PatientService {
   constructor(private readonly patientRepository: PatientRepository) {}
 
   async create(createPatientDto: CreatePatientDto): Promise<PatientResponseDto> {
-    const { conditions, ...patientData } = createPatientDto;
-    
-    // Create the patient first
-    const patient = await this.patientRepository.create(patientData);
-    
-    // Create conditions if provided
-    if (conditions && conditions.length > 0) {
-      const conditionPromises = conditions.map(condition => 
-        this.patientRepository.createCondition({
-          ...condition,
-          patientId: patient.id
-        })
-      );
-      await Promise.all(conditionPromises);
+    try {
+      const { conditions, ...patientData } = createPatientDto;
+      
+      // Create the patient first
+      const patient = await this.patientRepository.create(patientData);
+      
+      // Create conditions if provided
+      if (conditions && conditions.length > 0) {
+        const conditionPromises = conditions.map(condition => 
+          this.patientRepository.createCondition({
+            ...condition,
+            patientId: patient.id
+          })
+        );
+        await Promise.all(conditionPromises);
+      }
+      
+      return this.mapToResponseDto(patient);
+    } catch (error) {
+      throw new BadRequestException('Failed to create patient');
     }
-    
-    return this.mapToResponseDto(patient);
   }
 
-  async findAll(searchDto: PatientSearchDto = {}): Promise<PatientResponseDto[]> {
-    const patients = await this.patientRepository.findAllWithFilters(searchDto);
-    return patients.map(patient => this.mapToResponseDto(patient));
+  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<PatientResponseDto>> {
+    try {
+      const result = await this.patientRepository.findWithPagination(paginationDto);
+      return {
+        data: result.patients.map((patient: IPatient) => this.mapToResponseDto(patient)),
+        total: result.total,
+        page: result.page,
+        totalPages: result.totalPages,
+        hasNextPage: result.page < result.totalPages,
+        hasPreviousPage: result.page > 1
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch patients');
+    }
   }
 
-  async findPatientsWithPagination(
-    paginationDto: RepositoryPaginationDto
-  ): Promise<PaginatedResponseDto<PatientResponseDto>> {
-    const result = await this.patientRepository.findWithPagination(paginationDto);
-    return {
-      data: result.patients.map((patient: any) => this.mapToResponseDto(patient)),
-      total: result.total,
-      page: result.page,
-      limit: paginationDto.limit || 10,
-      totalPages: result.totalPages
-    };
-  }
-
-  async searchPatientsByName(searchTerm: string, limit: number = 10): Promise<PatientResponseDto[]> {
-    const patients = await this.patientRepository.searchByName(searchTerm, limit);
-    return patients.map((patient: any) => this.mapToResponseDto(patient));
-  }
 
   async getPatientStats(): Promise<PatientStatsDto> {
-    return await this.patientRepository.getPatientStats();
+    try {
+      return await this.patientRepository.getPatientStats();
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch patient statistics');
+    }
   }
 
   async findPatientByCode(patientCode: string): Promise<PatientResponseDto> {
-    const patient = await this.patientRepository.findByPatientCode(patientCode);
-    if (!patient) {
-      throw new NotFoundException(`Patient with code ${patientCode} not found`);
+    try {
+      // Validate patient code
+      if (!patientCode || patientCode.trim().length === 0) {
+        throw new BadRequestException('Patient code is required');
+      }
+      
+      const patient = await this.patientRepository.findByPatientCode(patientCode);
+      if (!patient) {
+        throw new NotFoundException(`Patient with code ${patientCode} not found`);
+      }
+      return this.mapToResponseDto(patient);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw error;
     }
-    return this.mapToResponseDto(patient);
   }
 
   async findOne(id: string): Promise<PatientResponseDto> {
-    const patient = await this.patientRepository.findByIdWithRelations(id);
-    if (!patient) {
-      throw new NotFoundException(`Patient with ID ${id} not found`);
+    try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
+      const patient = await this.patientRepository.findByIdWithRelations(id);
+      if (!patient) {
+        throw new NotFoundException(`Patient with ID ${id} not found`);
+      }
+      return this.mapToResponseDto(patient);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // Handle database errors
+      if (error instanceof Error && error.message?.includes('invalid input syntax for type uuid')) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      throw error;
     }
-    return this.mapToResponseDto(patient);
   }
 
   async update(id: string, updatePatientDto: UpdatePatientDto): Promise<PatientResponseDto> {
-    const { conditions, ...patientData } = updatePatientDto;
-    
-    // Update the patient
-    const patient = await this.patientRepository.update(id, patientData);
-    if (!patient) {
-      throw new NotFoundException(`Patient with ID ${id} not found`);
-    }
+    try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
+      const { conditions, ...patientData } = updatePatientDto as any;
+      
+      // Update the patient
+      const patient = await this.patientRepository.update(id, patientData);
+      if (!patient) {
+        throw new NotFoundException(`Patient with ID ${id} not found`);
+      }
     
     // Update conditions if provided
     if (conditions !== undefined) {
@@ -97,7 +134,7 @@ export class PatientService {
       
       // Create new conditions
       if (conditions.length > 0) {
-        const conditionPromises = conditions.map(condition => 
+        const conditionPromises = conditions.map((condition: any) => 
           this.patientRepository.createCondition({
             ...condition,
             patientId: id
@@ -108,29 +145,72 @@ export class PatientService {
     }
     
     return this.mapToResponseDto(patient);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // Handle database errors
+      if (error instanceof Error && error.message?.includes('invalid input syntax for type uuid')) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      throw error;
+    }
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.patientRepository.softDeletePatient(id);
-    if (!result) {
-      throw new NotFoundException(`Patient with ID ${id} not found`);
+    try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
+      const result = await this.patientRepository.softDeletePatient(id);
+      if (!result) {
+        throw new NotFoundException(`Patient with ID ${id} not found`);
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // Handle database errors
+      if (error instanceof Error && error.message?.includes('invalid input syntax for type uuid')) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      throw error;
     }
   }
 
   async restore(id: string): Promise<PatientResponseDto> {
-    const result = await this.patientRepository.restorePatient(id);
-    if (!result) {
-      throw new NotFoundException(`Patient with ID ${id} not found`);
+    try {
+      // Validate UUID format
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      
+      const result = await this.patientRepository.restorePatient(id);
+      if (!result) {
+        throw new NotFoundException(`Patient with ID ${id} not found`);
+      }
+      // Get the restored patient to return
+      const patient = await this.patientRepository.findByIdWithRelations(id);
+      if (!patient) {
+        throw new NotFoundException(`Patient with ID ${id} not found after restore`);
+      }
+      return this.mapToResponseDto(patient);
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      // Handle database errors
+      if (error instanceof Error && error.message?.includes('invalid input syntax for type uuid')) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      throw error;
     }
-    // Get the restored patient to return
-    const patient = await this.patientRepository.findByIdWithRelations(id);
-    if (!patient) {
-      throw new NotFoundException(`Patient with ID ${id} not found after restore`);
-    }
-    return this.mapToResponseDto(patient);
   }
 
-  private mapToResponseDto(patient: any): PatientResponseDto {
+
+  private mapToResponseDto(patient: IPatient | IPatientWithRelations): PatientResponseDto {
     return {
       id: patient.id,
       patientCode: patient.patientCode,

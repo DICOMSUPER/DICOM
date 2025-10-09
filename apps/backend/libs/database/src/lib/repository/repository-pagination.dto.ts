@@ -31,7 +31,6 @@ export class RepositoryPaginationDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['name', 'price', 'createdAt'])
   sortField?: string = 'createdAt';
 
   @IsOptional()

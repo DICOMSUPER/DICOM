@@ -195,22 +195,6 @@ export class PatientRepository extends BaseRepository<Patient> {
     };
   }
 
-  /**
-   * Search patients by name (first name or last name)
-   */
-  async searchByName(searchTerm: string, limit: number = 10): Promise<Patient[]> {
-    return await this.getRepository()
-      .createQueryBuilder('patient')
-      .where('patient.isDeleted = :isDeleted', { isDeleted: false })
-      .andWhere(
-        '(patient.firstName ILIKE :searchTerm OR patient.lastName ILIKE :searchTerm)',
-        { searchTerm: `%${searchTerm}%` }
-      )
-      .orderBy('patient.lastName', 'ASC')
-      .addOrderBy('patient.firstName', 'ASC')
-      .limit(limit)
-      .getMany();
-  }
 
   /**
    * Get patient with detailed information including encounters and diagnoses

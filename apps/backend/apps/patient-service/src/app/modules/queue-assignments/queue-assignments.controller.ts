@@ -3,7 +3,8 @@ import { MessagePattern } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
 import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
 import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
-import type { QueueAssignmentSearchFilters } from '@backend/shared-domain';
+import type { QueueAssignmentResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class QueueAssignmentController {
@@ -14,24 +15,14 @@ export class QueueAssignmentController {
     return this.queueAssignmentService.create(createQueueAssignmentDto);
   }
 
-  @MessagePattern('PatientService.QueueAssignment.FindAll')
-  findAll(filters: QueueAssignmentSearchFilters) {
-    return this.queueAssignmentService.findAll(filters);
+  @MessagePattern('PatientService.QueueAssignment.FindMany')
+  findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignmentResponseDto>> {
+    return this.queueAssignmentService.findMany(paginationDto);
   }
 
   @MessagePattern('PatientService.QueueAssignment.GetStats')
   getStats() {
     return this.queueAssignmentService.getStats();
-  }
-
-  @MessagePattern('PatientService.QueueAssignment.FindByRoom')
-  findByRoom(data: { roomId: string }) {
-    return this.queueAssignmentService.findByRoom(data.roomId);
-  }
-
-  @MessagePattern('PatientService.QueueAssignment.FindByPhysician')
-  findByPhysician(data: { physicianId: string }) {
-    return this.queueAssignmentService.findByPhysician(data.physicianId);
   }
 
   @MessagePattern('PatientService.QueueAssignment.FindOne')
