@@ -1,18 +1,20 @@
 // src/otp/otp.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Otp } from './entities/otp.entity';
-import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import * as pug from 'pug';
 import * as path from 'path';
 import { LessThan } from 'typeorm';
 import { CreateOtpDTO } from './dtos/create-otp.dto';
-import { sendMail } from 'libs/shared-utils/src';
+import { sendMail } from '@backend/shared-utils';
 
 @Injectable()
 export class OtpService {
+  private readonly logger = new Logger(OtpService.name);
+
   constructor(
     @InjectRepository(Otp)
     private otpRepo: Repository<Otp>,
@@ -51,7 +53,7 @@ export class OtpService {
       } catch (pugError) {
         this.logger.warn('Failed to render Pug template, using fallback HTML');
         // Fallback HTML template
-        html = this.getDefaultOtpHtm(to.split('@')[0], code);
+        html = this.getDefaultOtpHtml(to.split('@')[0], code);
       }
 
       const subject = 'Mã OTP xác thực - Authentication Code';
@@ -71,7 +73,7 @@ export class OtpService {
       this.logger.log(`OTP email sent successfully to ${to}`);
     } catch (error) {
       this.logger.error(`Failed to send OTP email to ${to}:`, error);
-      throw new Error(`Failed to send OTP email: ${error.message}`);
+      throw new Error(`Failed to send OTP email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 //  async sendEmail(to: string, code: string) {
@@ -128,6 +130,27 @@ export class OtpService {
     await this.otpRepo.delete({
       expiresAt: LessThan(now),
     });
+  }
+
+  private getDefaultOtpHtml(name: string, otp: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Mã OTP xác thực</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Xin chào ${name}!</h2>
+        <p>Mã OTP xác thực của bạn là:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; letter-spacing: 5px; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p>Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+        <p style="color: #666; font-size: 12px;">© ${new Date().getFullYear()} DICOM System</p>
+      </body>
+      </html>
+    `;
   }
 
 }
