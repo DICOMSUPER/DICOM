@@ -4,8 +4,7 @@ import {
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PatientConditionService } from './patient-conditions.service';
-import { CreatePatientConditionDto } from './dto/create-patient-condition.dto';
-import { UpdatePatientConditionDto } from './dto/update-patient-condition.dto';
+import { CreatePatientConditionDto, UpdatePatientConditionDto } from '@backend/shared-domain';
 import { PatientCondition } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,

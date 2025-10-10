@@ -1,6 +1,5 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreatePatientEncounterDto } from './dto/create-patient-encounter.dto';
-import { UpdatePatientEncounterDto } from './dto/update-patient-encounter.dto';
+import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
 import { PatientEncounterRepository, EncounterWithDetails, PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,

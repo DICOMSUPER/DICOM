@@ -1,4 +1,5 @@
-import { IsUUID, IsDateString, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsString, IsDate, IsEnum, IsOptional, IsBoolean, IsUUID, IsEmail, IsPhoneNumber, MinLength, MaxLength, IsDateString, IsNumber, Min, Max } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { EncounterType } from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
 

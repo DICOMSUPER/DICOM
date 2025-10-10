@@ -1,6 +1,5 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
-import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
+import { CreateDiagnosesReportDto, UpdateDiagnosesReportDto } from '@backend/shared-domain';
 import { DiagnosisReportRepository, DiagnosesReport } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,

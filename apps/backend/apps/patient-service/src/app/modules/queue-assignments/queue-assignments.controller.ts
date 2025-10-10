@@ -4,8 +4,7 @@ import {
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
-import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
-import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
+import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto } from '@backend/shared-domain';
 import { QueueAssignment } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,

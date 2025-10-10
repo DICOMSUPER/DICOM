@@ -9,8 +9,6 @@ import { PatientConditionModule } from './modules/patient-conditions/patient-con
 import { DiagnosesReportModule } from './modules/diagnoses-reports/diagnoses-reports.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
-import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { PatientServiceExceptionFilter } from './filters/exception.filter';
 
 
 @Module({

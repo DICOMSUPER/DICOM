@@ -213,7 +213,7 @@ export default function ScheduleManagementPage() {
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 italic m-2">
-                  No appointments
+                  No schedules
                 </div>
               )}
             </div>

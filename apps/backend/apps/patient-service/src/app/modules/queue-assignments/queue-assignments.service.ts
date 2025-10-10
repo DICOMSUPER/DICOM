@@ -1,6 +1,5 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
-import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
+import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto } from '@backend/shared-domain';
 import { QueueAssignmentRepository, QueueAssignment } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
