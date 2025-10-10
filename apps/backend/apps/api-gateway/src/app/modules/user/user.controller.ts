@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Inject, Logger, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Logger, Res, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
+import { TransformInterceptor } from '@backend/shared-interceptor';
+
 
 class LoginDto {
   email!: string;
@@ -24,15 +26,16 @@ class VerifyOtpDto {
   code!: string;
 }
 
+
 @ApiTags('User Management')
 @Controller('user')
+@UseInterceptors(TransformInterceptor)
 export class UserController {
   private readonly logger = new Logger('UserController');
 
   constructor(
     @Inject('UserService') private readonly userClient: ClientProxy,
   ) { }
-
 
   @Post('login')
   @ApiOperation({ summary: 'User login' })
@@ -52,17 +55,16 @@ export class UserController {
       const cookieOptions = result.cookieOptions;
       res.cookie(cookieOptions.name, cookieOptions.value, cookieOptions.options);
 
+      // ✅ Chỉ return data, TransformInterceptor sẽ wrap nó
       return {
-        success: true,
-        message: 'Login successful',
-        data: result.tokenResponse,
+        tokenResponse: result.tokenResponse,
+        message: 'Đăng nhập thành công'
       };
     } catch (error) {
       this.logger.error('Error during login:', error);
       throw handleError(error);
     }
   }
-
 
   @Post('request-login')
   @ApiOperation({ summary: 'Request login with OTP verification' })
@@ -71,15 +73,16 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async requestLogin(@Body() requestLoginDto: LoginDto) {
     try {
-      this.logger.log(`Request login attempt for email: ${requestLoginDto.email}`);   
+      this.logger.log(`Request login attempt for email: ${requestLoginDto.email}`);
       const result = await firstValueFrom(
         this.userClient.send('user.request-login', requestLoginDto)
       );
 
+      // ✅ Return clean data
       return {
         success: result.success,
-        message: result.message,
-        requireOtp: result.requireOtp
+        requireOtp: result.requireOtp,
+        message: result.message || 'OTP đã được gửi'
       };
     } catch (error) {
       this.logger.error('Error during request login:', error);
@@ -95,17 +98,13 @@ export class UserController {
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto, @Res({ passthrough: true }) res: Response) {
     try {
       this.logger.log(`OTP verification attempt for email: ${verifyOtpDto.email}`);
-    
 
       const result = await firstValueFrom(
         this.userClient.send('user.verify-otp', verifyOtpDto)
       );
 
       if (!result || !result.success) {
-        return {
-          success: false,
-          message: result?.message || 'OTP verification failed'
-        };
+        throw new Error(result?.message || 'OTP verification failed');
       }
 
       if (result.cookieOptions) {
@@ -114,9 +113,8 @@ export class UserController {
       }
 
       return {
-        success: true,
-        message: result.message,
-        data: result.tokenResponse
+        tokenResponse: result.tokenResponse,
+        message: result.message || 'Xác thực OTP thành công'
       };
     } catch (error) {
       this.logger.error('Error during OTP verification:', error);
@@ -140,16 +138,14 @@ export class UserController {
       }
 
       return {
-        success: true,
-        message: 'Registration successful',
-        data: result
+        user: result.user,
+        message: 'Đăng ký thành công'
       };
     } catch (error) {
       this.logger.error('Error during registration:', error);
       throw handleError(error);
     }
   }
-
 
   @Get('users')
   @ApiOperation({ summary: 'Get all users' })
@@ -159,10 +155,11 @@ export class UserController {
       const result = await firstValueFrom(
         this.userClient.send('user.get-all-users', {})
       );
+
       return {
-        success: true,
-        message: 'Users retrieved successfully',
-        data: result
+        users: result.users,
+        count: result.count,
+        message: 'Lấy danh sách người dùng thành công'
       };
     } catch (error) {
       this.logger.error('Error fetching users:', error);
