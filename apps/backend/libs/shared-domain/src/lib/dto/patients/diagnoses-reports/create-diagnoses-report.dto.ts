@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsEnum, IsUUID, IsDateString, IsArray, ValidateNested, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DiagnosisStatus, DiagnosisType } from '@backend/shared-enums';
+import { DiagnosisStatus } from '@backend/shared-enums';
 import { DiagnosisDto } from './diagnosis.dto';
 
 export class CreateDiagnosesReportDto {
@@ -43,7 +43,7 @@ export class CreateDiagnosesReportDto {
 
   @IsOptional()
   @IsEnum(DiagnosisStatus)
-  status?: DiagnosisStatus = DiagnosisStatus.FINAL;
+  status?: DiagnosisStatus = DiagnosisStatus.ACTIVE;
 
   @IsOptional()
   @IsString()

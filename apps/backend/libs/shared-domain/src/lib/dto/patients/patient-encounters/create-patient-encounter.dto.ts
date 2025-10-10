@@ -1,7 +1,7 @@
-import { IsString, IsDate, IsEnum, IsOptional, IsBoolean, IsUUID, IsEmail, IsPhoneNumber, MinLength, MaxLength, IsDateString, IsNumber, Min, Max } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { IsString, IsEnum, IsOptional, IsUUID, IsDateString, ValidateNested, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { EncounterType } from '@backend/shared-enums';
-import type { VitalSignsCollection } from '@backend/shared-interfaces';
+import { VitalSignsDto } from './vital-signs.dto';
 
 export class CreatePatientEncounterDto {
   @IsUUID()
@@ -24,7 +24,9 @@ export class CreatePatientEncounterDto {
   symptoms?: string;
 
   @IsOptional()
-  vitalSigns?: VitalSignsCollection;
+  @ValidateNested()
+  @Type(() => VitalSignsDto)
+  vitalSigns?: VitalSignsDto;
 
   @IsOptional()
   @IsUUID()

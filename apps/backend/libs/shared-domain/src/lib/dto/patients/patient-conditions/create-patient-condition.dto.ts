@@ -1,10 +1,10 @@
-import { IsString, IsOptional, IsEnum, IsDateString, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, IsUUID, ValidateNested, MaxLength, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
+import { ConditionStageDto } from './condition-stage.dto';
 
 export class CreatePatientConditionDto {
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
+  @IsUUID()
   patientId!: string;
 
   @IsString()
@@ -31,19 +31,9 @@ export class CreatePatientConditionDto {
   verificationStatus?: ConditionVerificationStatus;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  severity?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  stageSummary?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  bodySite?: string;
+  @ValidateNested()
+  @Type(() => ConditionStageDto)
+  stage?: ConditionStageDto;
 
   @IsOptional()
   @IsDateString()
@@ -51,5 +41,6 @@ export class CreatePatientConditionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   notes?: string;
 }

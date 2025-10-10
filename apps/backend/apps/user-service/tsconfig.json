@@ -4,16 +4,13 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared-utils"
-    },
-    {
       "path": "../../libs/shared-exception"
     },
     {
-      "path": "../../libs/shared-utils"
+      "path": "../../libs/shared-domain"
     },
     {
-      "path": "../../libs/shared-domain"
+      "path": "../../libs/shared-utils"
     },
     {
       "path": "../../libs/shared-enums"

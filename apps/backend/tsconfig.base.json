@@ -31,6 +31,12 @@
       "@backend/shared-interfaces": [
         "backend/libs/shared-interfaces/src/index.ts"
       ],
+      "@backend/shared-interceptor": [
+        "backend/libs/shared-interceptor/src/index.ts"
+      ],
+      "@backend/shared-exception": [
+        "backend/libs/shared-exception/src/index.ts"
+      ],
       "@backend/shared-utils": ["backend/libs/shared-utils/src/index.ts"]
     }
   }
