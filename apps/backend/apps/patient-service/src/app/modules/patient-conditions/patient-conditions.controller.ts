@@ -1,40 +1,143 @@
-import { Controller } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import {
+  Controller,
+  Logger,
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PatientConditionService } from './patient-conditions.service';
 import { CreatePatientConditionDto } from './dto/create-patient-condition.dto';
 import { UpdatePatientConditionDto } from './dto/update-patient-condition.dto';
-import { PatientConditionResponseDto } from './dto/patient-condition-response.dto';
-import { RepositoryPaginationDto } from '@backend/database';
-import { PaginatedResponseDto } from '@backend/shared-domain';
+import { PatientCondition } from '@backend/shared-domain';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import {
+  PATIENT_SERVICE,
+  MESSAGE_PATTERNS,
+} from '../../../constant/microservice.constant';
 
-@Controller()
+const moduleName = 'PatientCondition';
+@Controller('patient-conditions')
 export class PatientConditionController {
+  private logger = new Logger(PATIENT_SERVICE);
   constructor(private readonly patientConditionService: PatientConditionService) {}
 
-  @MessagePattern('PatientService.PatientCondition.Create')
-  async create(createPatientConditionDto: CreatePatientConditionDto): Promise<PatientConditionResponseDto> {
-    return await this.patientConditionService.create(createPatientConditionDto);
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
+  async create(
+    @Payload() data: { createPatientConditionDto: CreatePatientConditionDto }
+  ): Promise<PatientCondition> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
+    );
+    try {
+      const { createPatientConditionDto } = data;
+      return await this.patientConditionService.create(createPatientConditionDto);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to create patient condition',
+        PATIENT_SERVICE
+      );
+    }
   }
 
-  @MessagePattern('PatientService.PatientCondition.FindMany')
-  async findMany(data: { paginationDto: RepositoryPaginationDto }): Promise<PaginatedResponseDto<PatientConditionResponseDto>> {
-    return await this.patientConditionService.findMany(data.paginationDto);
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`)
+  async findAll(): Promise<PatientCondition[]> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+    );
+    try {
+      return await this.patientConditionService.findAll();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find all patient conditions',
+        PATIENT_SERVICE
+      );
+    }
   }
 
-
-
-  @MessagePattern('PatientService.PatientCondition.FindOne')
-  async findOne(data: { id: string }): Promise<PatientConditionResponseDto> {
-    return await this.patientConditionService.findOne(data.id);
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
+  async findOne(@Payload() data: { id: string }): Promise<PatientCondition | null> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+    );
+    try {
+      const { id } = data;
+      return await this.patientConditionService.findOne(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find patient condition with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
   }
 
-  @MessagePattern('PatientService.PatientCondition.Update')
-  async update(data: { id: string; updatePatientConditionDto: UpdatePatientConditionDto }): Promise<PatientConditionResponseDto> {
-    return await this.patientConditionService.update(data.id, data.updatePatientConditionDto);
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
+  async update(
+    @Payload()
+    data: {
+      id: string;
+      updatePatientConditionDto: UpdatePatientConditionDto;
+    }
+  ): Promise<PatientCondition | null> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
+    );
+    try {
+      const { id, updatePatientConditionDto } = data;
+      return await this.patientConditionService.update(id, updatePatientConditionDto);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to update patient condition with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
   }
 
-  @MessagePattern('PatientService.PatientCondition.Delete')
-  async remove(data: { id: string }): Promise<void> {
-    return await this.patientConditionService.remove(data.id);
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
+    );
+    try {
+      const { id } = data;
+      return await this.patientConditionService.remove(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to delete patient condition with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<PatientCondition>> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+    );
+    try {
+      const { paginationDto } = data;
+      return await this.patientConditionService.findMany({
+        page: paginationDto.page || 1,
+        limit: paginationDto.limit || 5,
+        search: paginationDto.search || '',
+        searchField: paginationDto.searchField || 'conditionName',
+        sortField: paginationDto.sortField || 'createdAt',
+        order: paginationDto.order || 'asc',
+      });
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find many patient conditions',
+        PATIENT_SERVICE
+      );
+    }
   }
 }

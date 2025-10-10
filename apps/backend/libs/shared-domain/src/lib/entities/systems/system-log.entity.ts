@@ -1,10 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
-
+import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { LogLevel, LogCategory } from '@backend/shared-enums';
-@Entity('system_logs')
 
+@Entity('system_logs')
 @Index(['category'])
-export class SystemLog {
+export class SystemLog extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'log_id' })
   id!: string;
 
@@ -19,7 +19,4 @@ export class SystemLog {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 }

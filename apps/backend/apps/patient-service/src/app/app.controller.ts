@@ -1,10 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { Controller, Get, HttpStatus, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
-import { HealthCheckResponseDto } from '@backend/shared-domain';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { PATIENT_SERVICE } from '../constant/microservice.constant';
 
 @Controller()
 export class AppController {
+  private logger = new Logger(PATIENT_SERVICE);
   constructor(private readonly appService: AppService) {}
 
   @Get()
@@ -12,8 +14,17 @@ export class AppController {
     return this.appService.getData();
   }
 
-  @MessagePattern('PatientService.HealthCheck')
-  checkHealth(): HealthCheckResponseDto {
-    return new HealthCheckResponseDto('PatientService');
+  @MessagePattern(`${PATIENT_SERVICE}.HealthCheck`)
+  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.HealthCheck`);
+    try {
+      return await this.appService.healthCheck();
+    } catch (error) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Health check failed',
+        PATIENT_SERVICE
+      );
+    }
   }
 }

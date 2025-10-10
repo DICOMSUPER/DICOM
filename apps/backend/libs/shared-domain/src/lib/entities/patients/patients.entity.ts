@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Index } from 'typeorm';
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 
 import { Gender } from '@backend/shared-enums';
 import { BloodType } from '@backend/shared-enums';

@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { AnalysisStatus } from '@backend/shared-enums';
 
 @Entity('ai_analyses')
-export class AiAnalysis {
+export class AiAnalysis extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'analysis_id' })
   id!: string;
 
@@ -32,7 +33,4 @@ export class AiAnalysis {
 
   @Column({ name: 'is_deleted', nullable: true , default: false})
   isDeleted?: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 }

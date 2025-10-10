@@ -1,21 +1,32 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
 import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
-import { QueueAssignmentRepository, QueueAssignmentResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { QueueAssignmentRepository, QueueAssignment } from '@backend/shared-domain';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
-import { RepositoryPaginationDto } from '@backend/database';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class QueueAssignmentService {
   constructor(
-    private readonly queueRepository: QueueAssignmentRepository,
+    @Inject() private readonly queueRepository: QueueAssignmentRepository,
   ) {}
 
-  async create(createQueueAssignmentDto: CreateQueueAssignmentDto) {
+  create = async (
+    createQueueAssignmentDto: CreateQueueAssignmentDto
+  ): Promise<QueueAssignment> => {
     // Check if encounter already has an active assignment
     const existingAssignment = await this.queueRepository.findByEncounterId(createQueueAssignmentDto.encounterId);
     if (existingAssignment && existingAssignment.status === QueueStatus.WAITING) {
-      throw new BadRequestException('Encounter already has an active queue assignment');
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Encounter already has an active queue assignment',
+        PATIENT_SERVICE
+      );
     }
 
     // Get next queue number for today
@@ -39,88 +50,88 @@ export class QueueAssignmentService {
     };
 
     return await this.queueRepository.create(assignmentData);
-  }
+  };
 
-  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignmentResponseDto>> {
-    const result = await this.queueRepository.findWithPagination(paginationDto);
-    return {
-      data: result.data.map((assignment: any) => this.mapToResponseDto(assignment)),
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-      hasNextPage: result.hasNextPage,
-      hasPreviousPage: result.hasPreviousPage
-    };
-  }
+  findAll = async (): Promise<QueueAssignment[]> => {
+    return await this.queueRepository.findAll({ where: {} });
+  };
 
-  async findOne(id: string) {
+  findOne = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.queueRepository.findById(id);
     if (!assignment) {
-      throw new NotFoundException(`Queue assignment with ID ${id} not found`);
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Failed to find queue assignment',
+        PATIENT_SERVICE
+      );
     }
     return assignment;
-  }
+  };
 
-  async update(id: string, updateQueueAssignmentDto: UpdateQueueAssignmentDto) {
-    await this.findOne(id); // Verify assignment exists
-    
-    const updatedAssignment = await this.queueRepository.update(id, {
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<QueueAssignment>> => {
+    return await this.queueRepository.paginate(paginationDto);
+  };
+
+  update = async (
+    id: string,
+    updateQueueAssignmentDto: UpdateQueueAssignmentDto
+  ): Promise<QueueAssignment | null> => {
+    const assignment = await this.findOne(id);
+    return await this.queueRepository.update(id, {
       ...updateQueueAssignmentDto,
       updatedAt: new Date()
     });
+  };
 
-    return updatedAssignment;
-  }
+  remove = async (id: string): Promise<boolean> => {
+    await this.findOne(id);
+    return await this.queueRepository.softDelete(id, 'isDeleted');
+  };
 
-  async remove(id: string) {
-    await this.findOne(id); // Verify assignment exists
-    
-    const deleted = await this.queueRepository.delete(id);
-    if (!deleted) {
-      throw new NotFoundException(`Failed to delete queue assignment with ID ${id}`);
-    }
-
-    return { message: 'Queue assignment deleted successfully' };
-  }
-
-  async complete(id: string) {
+  complete = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
     
     if (assignment.status !== QueueStatus.WAITING && assignment.status !== QueueStatus.IN_PROGRESS) {
-      throw new BadRequestException('Only waiting or in-progress assignments can be completed');
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Only waiting or in-progress assignments can be completed',
+        PATIENT_SERVICE
+      );
     }
 
     return await this.queueRepository.complete(id);
-  }
+  };
 
-  async expire(id: string) {
+  expire = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
     
     if (assignment.status === QueueStatus.COMPLETED || assignment.status === QueueStatus.EXPIRED) {
-      throw new BadRequestException('Assignment is already completed or expired');
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Assignment is already completed or expired',
+        PATIENT_SERVICE
+      );
     }
 
     return await this.queueRepository.expire(id);
-  }
+  };
 
-  async getStats() {
+  getStats = async () => {
     return await this.queueRepository.getQueueStats();
-  }
+  };
 
-  async findByRoom(roomId: string) {
+  findByRoom = async (roomId: string): Promise<QueueAssignment[]> => {
     return await this.queueRepository.findByRoom(roomId);
-  }
+  };
 
-  async findByPhysician(physicianId: string) {
+  findByPhysician = async (physicianId: string): Promise<QueueAssignment[]> => {
     return await this.queueRepository.findByPhysician(physicianId);
-  }
+  };
 
-  /**
-   * Call next patient in queue
-   */
-  async callNextPatient(roomId?: string, calledBy?: string) {
-    const filters: QueueAssignmentSearchFilters = {
+  callNextPatient = async (roomId?: string, calledBy?: string): Promise<QueueAssignment | null> => {
+    const filters: any = {
       status: QueueStatus.WAITING,
       limit: 1,
       offset: 0
@@ -133,7 +144,11 @@ export class QueueAssignmentService {
     // Get next patient by priority and assignment time
     const assignments = await this.queueRepository.findAll(filters);
     if (assignments.length === 0) {
-      throw new NotFoundException('No patients waiting in queue');
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'No patients waiting in queue',
+        PATIENT_SERVICE
+      );
     }
 
     const nextAssignment = assignments[0];
@@ -145,31 +160,37 @@ export class QueueAssignmentService {
       calledBy: calledBy,
       updatedAt: new Date()
     });
-  }
+  };
 
-  /**
-   * Validate queue token
-   */
-  async validateToken(validationToken: string) {
+  validateToken = async (validationToken: string): Promise<QueueAssignment | null> => {
     const assignment = await this.queueRepository.findByValidationToken(validationToken);
     if (!assignment) {
-      throw new NotFoundException('Invalid validation token');
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Invalid validation token',
+        PATIENT_SERVICE
+      );
     }
     
     if (assignment.status === QueueStatus.EXPIRED) {
-      throw new BadRequestException('Queue assignment has expired');
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Queue assignment has expired',
+        PATIENT_SERVICE
+      );
     }
 
     return assignment;
-  }
+  };
 
-  /**
-   * Get estimated wait time for a patient
-   */
-  async getEstimatedWaitTime(queueId: string) {
+  getEstimatedWaitTime = async (queueId: string) => {
     const assignment = await this.queueRepository.findById(queueId);
     if (!assignment) {
-      throw new NotFoundException('Queue assignment not found');
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Queue assignment not found',
+        PATIENT_SERVICE
+      );
     }
 
     return {
@@ -178,12 +199,9 @@ export class QueueAssignmentService {
       currentPosition: await this.getCurrentPosition(queueId),
       averageWaitTime: await this.getAverageWaitTime()
     };
-  }
+  };
 
-  /**
-   * Auto-expire old assignments (should be called by cron job)
-   */
-  async autoExpireAssignments() {
+  autoExpireAssignments = async () => {
     const expiredAssignments = await this.queueRepository.findExpiredAssignments();
     const expiredCount = expiredAssignments.length;
 
@@ -195,7 +213,7 @@ export class QueueAssignmentService {
     }
 
     return { expiredCount, assignments: expiredAssignments };
-  }
+  };
 
   /**
    * Generate unique validation token

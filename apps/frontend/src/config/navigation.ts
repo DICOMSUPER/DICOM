@@ -11,7 +11,10 @@ import {
   Bell,
   Database,
   Shield,
-  Activity
+  Activity,
+  BookOpen,
+  Monitor,
+  Cog
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -29,46 +32,64 @@ export const roleNavigation: RoleNavigation = {
   // Administrator - Full system access
   "Administrator": [
     {
-      href: "/dashboard",
+      href: "/admin",
       label: "Dashboard",
       icon: BarChart3,
       description: "System overview and analytics"
     },
     {
-      href: "/patients",
-      label: "Patient Management",
+      href: "/admin/users",
+      label: "User Management",
       icon: Users,
-      description: "Manage all patients"
+      description: "Manage system users and roles"
     },
     {
-      href: "/patients/registration",
-      label: "Register Patient",
-      icon: UserCheck,
-      description: "Register new patients"
-    },
-    {
-      href: "/queue",
-      label: "Queue Management",
+      href: "/admin/schedule",
+      label: "Schedule Management",
       icon: Clock,
-      description: "Monitor waiting queues"
+      description: "Manage staff schedules and assignments"
     },
     {
-      href: "/assignments",
-      label: "Staff Assignments",
-      icon: UserCheck,
-      description: "Manage staff schedules"
+      href: "/admin/settings",
+      label: "System Settings",
+      icon: Settings,
+      description: "Configure system settings"
     },
     {
-      href: "/reports",
-      label: "Reports",
+      href: "/admin/configurations",
+      label: "System Configurations",
+      icon: Cog,
+      description: "Advanced system configurations"
+    },
+    {
+      href: "/admin/reports",
+      label: "Analytics & Reports",
       icon: FileText,
       description: "Generate system reports"
     },
     {
-      href: "/settings",
-      label: "System Settings",
-      icon: Settings,
-      description: "Configure system settings"
+      href: "/admin/security",
+      label: "Security & Audit",
+      icon: Shield,
+      description: "Monitor security and audit logs"
+    },
+    {
+      href: "/admin/database",
+      label: "Database Management",
+      icon: Database,
+      description: "Manage database and backups"
+    },
+    {
+      href: "/admin/docs",
+      label: "Documentation",
+      icon: BookOpen,
+      description: "System documentation and guides"
+    },
+    {
+      href: "/admin/monitoring",
+      label: "System Monitoring",
+      icon: Monitor,
+      description: "Monitor system performance"
     }
   ],
 
