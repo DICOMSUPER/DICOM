@@ -51,3 +51,28 @@ export const sendMail = async (
     }
   });
 };
+//  async sendEmail(to: string, code: string) {
+//     const transporter = nodemailer.createTransport({
+//       service: 'Gmail',
+//       auth: {
+//         user: 'naminh24032003@gmail.com',
+//         pass: 'fhuw ewhz veht bzdu',
+//       },
+//     });
+
+    
+//     const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
+
+//     const html = pug.renderFile(viewsPath, {
+//       name: to.split('@')[0],
+//       otp: code,
+//       year: new Date().getFullYear(),
+//     });
+    
+//     await transporter.sendMail({
+//       from: '"Xác thực OTP" <naminh24032003@gmail.com>',
+//       to,
+//       subject: 'Mã OTP xác thực',
+//       html,
+//     });
+//   }

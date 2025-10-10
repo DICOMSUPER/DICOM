@@ -68,6 +68,9 @@
     },
     {
       "path": "./libs/shared-exception"
+    },
+    {
+      "path": "./libs/shared-interceptor"
     }
   ]
 }

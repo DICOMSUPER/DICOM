@@ -10,7 +10,6 @@ import { Request, Response } from 'express';
 
 // Các import này nên trỏ vào cùng lib shared-exception
 import {
-  CustomException,
   isCustomException,
   getErrorCode,
 } from './custom-exceptions';
@@ -128,10 +127,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       error:
         exception instanceof Error
           ? {
-              name: exception.name,
-              message: exception.message,
-              stack: exception.stack,
-            }
+            name: exception.name,
+            message: exception.message,
+            stack: exception.stack,
+          }
           : exception,
     };
 
