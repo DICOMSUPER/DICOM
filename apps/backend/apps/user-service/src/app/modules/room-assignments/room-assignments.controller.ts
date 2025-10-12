@@ -1,34 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomAssignmentsService } from './room-assignments.service';
-import { CreateRoomAssignmentDto } from './dto/create-room-assignment.dto';
-import { UpdateRoomAssignmentDto } from './dto/update-room-assignment.dto';
+import {
+  CreateRoomAssignmentDto,
+  UpdateRoomAssignmentDto,
+  QueryRoomAssignmentDto,
+} from '@backend/shared-domain';
 
-@Controller('room-assignments')
+@Controller()
 export class RoomAssignmentsController {
   constructor(private readonly roomAssignmentsService: RoomAssignmentsService) {}
 
-  @Post()
-  create(@Body() createRoomAssignmentDto: CreateRoomAssignmentDto) {
+
+  @MessagePattern('room_assignment.create')
+  async create(@Payload() createRoomAssignmentDto: CreateRoomAssignmentDto) {
     return this.roomAssignmentsService.create(createRoomAssignmentDto);
   }
 
-  @Get()
-  findAll() {
-    return this.roomAssignmentsService.findAll();
+
+  // Get all room assignments
+  @MessagePattern('room_assignment.findAll')
+  async findAll(@Payload() queryDto: QueryRoomAssignmentDto) {
+    return this.roomAssignmentsService.findAll(queryDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.roomAssignmentsService.findOne(+id);
+
+  @MessagePattern('room_assignment.findOne')
+  async findOne(@Payload() id: string) {
+    return this.roomAssignmentsService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoomAssignmentDto: UpdateRoomAssignmentDto) {
-    return this.roomAssignmentsService.update(+id, updateRoomAssignmentDto);
+  @MessagePattern('room_assignment.update')
+  async update(@Payload() data: { id: string; dto: UpdateRoomAssignmentDto }) {
+    const { id, dto } = data;
+    return this.roomAssignmentsService.update(id, dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.roomAssignmentsService.remove(+id);
+  @MessagePattern('room_assignment.remove')
+  async remove(@Payload() id: string) {
+    await this.roomAssignmentsService.remove(id);
+    return { message: 'Room assignment soft deleted successfully' };
+  }
+
+
+  @MessagePattern('room_assignment.hardRemove')
+  async hardRemove(@Payload() id: string) {
+    await this.roomAssignmentsService.hardRemove(id);
+    return { message: 'Room assignment permanently deleted successfully' };
   }
 }

@@ -4,5 +4,6 @@ export * from './audit-logs';
 export * from './notifications';
 export * from './patient.dto';
 export * from './common-response.dto';
-
+export * from './user-service';
 export * from './imaging-service';
+export * from './patient-service';

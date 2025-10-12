@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateQueueAssignmentDto } from './dto/create-queue-assignment.dto';
-import { UpdateQueueAssignmentDto } from './dto/update-queue-assignment.dto';
-import { QueueAssignmentRepository, QueueAssignmentResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
+import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto, QueueAssignmentSearchFilters } from '@backend/shared-domain';
+import { QueueAssignmentRepository, PaginatedResponseDto, QueueAssignment } from '@backend/shared-domain';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
 import { RepositoryPaginationDto } from '@backend/database';
 
@@ -40,6 +39,8 @@ export class QueueAssignmentService {
 
     return await this.queueRepository.create(assignmentData);
   }
+
+
 
   async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignmentResponseDto>> {
     const result = await this.queueRepository.findWithPagination(paginationDto);
@@ -273,5 +274,10 @@ export class QueueAssignmentService {
     }, 0);
 
     return Math.round(totalWaitTime / completedAssignments.length);
+  }
+
+  // Get all queue assignments in a specific room
+  async getAllInRoom(paginationDto: RepositoryPaginationDto, userId: string): Promise<PaginatedResponseDto<QueueAssignment>> {
+   return ""
   }
 }

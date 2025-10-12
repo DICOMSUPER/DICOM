@@ -3,6 +3,7 @@ import { UserController } from './user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 
+import { RoomAssignmentsModule } from './room-assignment/room-assignment.module';
 @Module({
   imports: [
     ClientsModule.register([
@@ -14,6 +15,7 @@ import { getClient } from '@backend/shared-utils';
       ),
     ]),
   
+    RoomAssignmentsModule,
   ],
   controllers: [UserController],
 })

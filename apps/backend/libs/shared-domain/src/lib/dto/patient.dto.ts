@@ -1,8 +1,8 @@
-import { IsString, IsDate, IsEnum, IsOptional, IsBoolean, IsUUID, IsEmail, IsPhoneNumber, MinLength, MaxLength, IsDateString, IsNumber, Min, Max } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
-import { Gender, BloodType, EncounterType, DiagnosisType, DiagnosisStatus, Severity } from '@backend/shared-enums';
+import { BloodType, DiagnosisStatus, DiagnosisType, EncounterType, Gender, Severity } from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
 import { IsInsuranceNumber } from '@backend/shared-utils';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 // Base DTOs
 export class CreatePatientDto {

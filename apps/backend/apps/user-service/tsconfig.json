@@ -10,6 +10,9 @@
       "path": "../../libs/shared-exception"
     },
     {
+      "path": "../../libs/shared-domain"
+    },
+    {
       "path": "../../libs/shared-enums"
     },
     {

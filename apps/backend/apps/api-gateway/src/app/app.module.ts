@@ -13,6 +13,7 @@ import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analys
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
 import { UserModule } from './modules/user/user.module';
+import { RoomAssignmentsModule } from './modules/user/room-assignment/room-assignment.module';
 dotenv.config();
 
 @Module({
@@ -55,6 +56,7 @@ dotenv.config();
     AuditLogModule,
     NotificationsModule,
     PatientServiceModule,
+    RoomAssignmentsModule
   ],
   controllers: [AppController],
   providers: [AppService],

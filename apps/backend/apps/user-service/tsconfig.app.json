@@ -9,7 +9,11 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/update-room-assignment.dto.ts",
+    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/create-room-assignment.dto.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",
@@ -26,6 +30,9 @@
     },
     {
       "path": "../../libs/shared-exception/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-domain/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-enums/tsconfig.lib.json"
