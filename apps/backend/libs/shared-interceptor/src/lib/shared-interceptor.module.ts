@@ -1,8 +1,14 @@
 import { Module } from '@nestjs/common';
+import { RequestLoggingInterceptor } from './request-logging.interceptor';
+import { TransformInterceptor } from './tranform.interceptor';
+import { LoggingService } from './service/logging.service';
 
 @Module({
-  controllers: [],
-  providers: [],
-  exports: [],
+  providers: [
+    LoggingService,
+  ],
+  exports: [
+    LoggingService,
+  ],
 })
-export class BackendSharedInterceptorModule {}
+export class SharedInterceptorModule {}

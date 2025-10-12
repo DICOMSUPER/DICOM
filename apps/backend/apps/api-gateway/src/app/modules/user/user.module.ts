@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
+import { SharedInterceptorModule } from '@backend/shared-interceptor';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { getClient } from '@backend/shared-utils';
         Number(process.env.USER_SERVICE_PORT || 5002)
       ),
     ]),
+    SharedInterceptorModule
   
   ],
   controllers: [UserController],
