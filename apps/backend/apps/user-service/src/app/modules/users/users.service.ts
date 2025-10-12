@@ -19,7 +19,7 @@ import {
   DatabaseException,
   ValidationException
 } from '@backend/shared-exception';
-
+  
 @Injectable()
 export class UsersService {
   constructor(

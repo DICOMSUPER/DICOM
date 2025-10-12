@@ -129,4 +129,25 @@ export class OtpService {
     });
   }
 
+  private getDefaultOtpHtml(name: string, otp: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Mã OTP xác thực</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Xin chào ${name}!</h2>
+        <p>Mã OTP xác thực của bạn là:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; letter-spacing: 5px; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p>Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+        <p style="color: #666; font-size: 12px;">© ${new Date().getFullYear()} DICOM System</p>
+      </body>
+      </html>
+    `;
+  }
+
 }

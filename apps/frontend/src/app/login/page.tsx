@@ -102,16 +102,16 @@ export default function LoginPage() {
             <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <button className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                <button className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors cursor-pointer">
                   View Studies
                 </button>
-                <button className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition-colors">
+                <button className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition-colors cursor-pointer">
                   New Patient
                 </button>
-                <button className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 transition-colors">
+                <button className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 transition-colors cursor-pointer">
                   Reports
                 </button>
-                <button className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700 transition-colors">
+                <button className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700 transition-colors cursor-pointer">
                   Settings
                 </button>
               </div>

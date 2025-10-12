@@ -21,6 +21,7 @@ export function detectRoleFromPath(pathname: string): string {
     'physicians': 'Physician',
     'imaging-technicians': 'Image Technician',
     'nurses': 'Nurse',
+    'admin': 'Administrator', // Admin routes
     'dashboard': 'Administrator', // Default admin dashboard
     'patients': 'Administrator', // Default admin patients
     'settings': 'Administrator' // Default admin settings
@@ -40,5 +41,5 @@ export function detectRoleFromPath(pathname: string): string {
  * @returns Array of available role names
  */
 export function getAvailableRoles(): string[] {
-  return getAvailableRoles();
+  return ["Administrator", "Reception Staff", "Physician", "Image Technician", "Nurse"];
 }

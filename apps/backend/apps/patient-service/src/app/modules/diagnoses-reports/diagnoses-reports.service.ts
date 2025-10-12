@@ -1,181 +1,69 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateDiagnosesReportDto } from './dto/create-diagnoses-report.dto';
-import { UpdateDiagnosesReportDto } from './dto/update-diagnoses-report.dto';
-import { DiagnosisReportRepository, DiagnosesReportResponseDto, PaginatedResponseDto } from '@backend/shared-domain';
-import { DiagnosisType, DiagnosisStatus, Severity } from '@backend/shared-enums';
-import { RepositoryPaginationDto } from '@backend/database';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { CreateDiagnosesReportDto, UpdateDiagnosesReportDto } from '@backend/shared-domain';
+import { DiagnosisReportRepository, DiagnosesReport } from '@backend/shared-domain';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class DiagnosesReportService {
   constructor(
-    private readonly diagnosisRepository: DiagnosisReportRepository,
+    @Inject() private readonly diagnosisReportRepository: DiagnosisReportRepository
   ) {}
 
-  async create(createDiagnosesReportDto: CreateDiagnosesReportDto) {
-    const diagnosisData = {
-      ...createDiagnosesReportDto,
-      diagnosisDate: createDiagnosesReportDto.diagnosisDate || new Date(),
-      diagnosisStatus: createDiagnosesReportDto.diagnosisStatus || DiagnosisStatus.ACTIVE,
-      followupRequired: createDiagnosesReportDto.followupRequired || false,
-      followUpInstructions: createDiagnosesReportDto.followUpInstructions || false,
-      isDeleted: false,
-    };
-
-    return await this.diagnosisRepository.create(diagnosisData);
-  }
-
-  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<DiagnosesReportResponseDto>> {
-    const result = await this.diagnosisRepository.findWithPagination(paginationDto);
-    return {
-      data: result.data.map((diagnosis: any) => this.mapToResponseDto(diagnosis)),
-      total: result.total,
-      page: result.page,
-      limit: result.limit,
-      totalPages: result.totalPages,
-      hasNextPage: result.hasNextPage,
-      hasPreviousPage: result.hasPreviousPage
-    };
-  }
-
-  async findOne(id: string) {
-    const diagnosis = await this.diagnosisRepository.findById(id);
-    if (!diagnosis) {
-      throw new NotFoundException(`Diagnosis report with ID ${id} not found`);
+  private checkDiagnosesReport = async (id: string): Promise<DiagnosesReport> => {
+    const report = await this.diagnosisReportRepository.findById(id);
+    if (!report) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Diagnoses report not found',
+        PATIENT_SERVICE
+      );
     }
-    return diagnosis;
-  }
+    return report;
+  };
 
-  async findByEncounter(encounterId: string) {
-    return await this.diagnosisRepository.findByEncounterId(encounterId);
-  }
+  create = async (
+    createDiagnosesReportDto: CreateDiagnosesReportDto
+  ): Promise<DiagnosesReport> => {
+    return await this.diagnosisReportRepository.create(createDiagnosesReportDto);
+  };
 
-  async findByPatient(patientId: string, limit?: number) {
-    return await this.diagnosisRepository.findByPatientId(patientId, limit);
-  }
+  findAll = async (): Promise<DiagnosesReport[]> => {
+    return await this.diagnosisReportRepository.findAll({ where: {} });
+  };
 
-  async findByPhysician(physicianId: string) {
-    return await this.diagnosisRepository.findByPhysician(physicianId);
-  }
-
-  async update(id: string, updateDiagnosesReportDto: UpdateDiagnosesReportDto) {
-    const diagnosis = await this.findOne(id);
-    
-    const updatedDiagnosis = await this.diagnosisRepository.update(id, {
-      ...updateDiagnosesReportDto,
-      updatedAt: new Date()
-    });
-
-    return updatedDiagnosis;
-  }
-
-  async remove(id: string) {
-    const diagnosis = await this.findOne(id);
-    
-    const deleted = await this.diagnosisRepository.delete(id);
-    if (!deleted) {
-      throw new NotFoundException(`Failed to delete diagnosis report with ID ${id}`);
+  findOne = async (id: string): Promise<DiagnosesReport | null> => {
+    const report = await this.diagnosisReportRepository.findById(id);
+    if (!report) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Failed to find diagnoses report',
+        PATIENT_SERVICE
+      );
     }
+    return report;
+  };
 
-    return { message: 'Diagnosis report deleted successfully' };
-  }
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<DiagnosesReport>> => {
+    return await this.diagnosisReportRepository.paginate(paginationDto);
+  };
 
-  async getDiagnosisStats() {
-    const total = await this.diagnosisRepository.count({
-      where: { isDeleted: false }
-    });
+  update = async (
+    id: string,
+    updateDiagnosesReportDto: UpdateDiagnosesReportDto
+  ): Promise<DiagnosesReport | null> => {
+    const report = await this.checkDiagnosesReport(id);
+    return await this.diagnosisReportRepository.update(id, updateDiagnosesReportDto);
+  };
 
-    const active = await this.diagnosisRepository.count({
-      where: { 
-        diagnosisStatus: DiagnosisStatus.ACTIVE,
-        isDeleted: false 
-      }
-    });
-
-    const resolved = await this.diagnosisRepository.count({
-      where: { 
-        diagnosisStatus: DiagnosisStatus.RESOLVED,
-        isDeleted: false 
-      }
-    });
-
-    const critical = await this.diagnosisRepository.count({
-      where: { 
-        severity: Severity.CRITICAL,
-        isDeleted: false 
-      }
-    });
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todayDiagnoses = await this.diagnosisRepository.count({
-      where: {
-        diagnosisDate: {
-          $gte: today,
-          $lt: tomorrow
-        } as any,
-        isDeleted: false
-      }
-    });
-
-    return {
-      total,
-      active,
-      resolved,
-      critical,
-      today: todayDiagnoses
-    };
-  }
-
-  async getDiagnosesByType() {
-    const primary = await this.diagnosisRepository.count({
-      where: { 
-        diagnosisType: DiagnosisType.PRIMARY,
-        isDeleted: false 
-      }
-    });
-
-    const secondary = await this.diagnosisRepository.count({
-      where: { 
-        diagnosisType: DiagnosisType.SECONDARY,
-        isDeleted: false 
-      }
-    });
-
-    const differential = await this.diagnosisRepository.count({
-      where: { 
-        diagnosisType: DiagnosisType.DIFFERENTIAL,
-        isDeleted: false 
-      }
-    });
-
-    return {
-      primary,
-      secondary,
-      differential
-    };
-  }
-
-  private mapToResponseDto(diagnosis: any): DiagnosesReportResponseDto {
-    return {
-      id: diagnosis.id,
-      encounterId: diagnosis.encounterId,
-      patientId: diagnosis.patientId,
-      physicianId: diagnosis.physicianId,
-      studyId: diagnosis.studyId,
-      diagnosisName: diagnosis.diagnosisName,
-      diagnosisCode: diagnosis.diagnosisCode,
-      diagnosisType: diagnosis.diagnosisType,
-      diagnosisStatus: diagnosis.diagnosisStatus,
-      severity: diagnosis.severity,
-      description: diagnosis.description,
-      followUpInstructions: diagnosis.followUpInstructions,
-      diagnosisDate: diagnosis.diagnosisDate,
-      recordedDate: diagnosis.recordedDate,
-      createdAt: diagnosis.createdAt,
-      updatedAt: diagnosis.updatedAt
-    };
-  }
+  remove = async (id: string): Promise<boolean> => {
+    await this.checkDiagnosesReport(id);
+    return await this.diagnosisReportRepository.softDelete(id, 'isDeleted');
+  };
 }

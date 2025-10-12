@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PatientModule } from './modules/patients/patients.module';
@@ -9,9 +8,7 @@ import { PatientConditionModule } from './modules/patient-conditions/patient-con
 import { DiagnosesReportModule } from './modules/diagnoses-reports/diagnoses-reports.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
-import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { PatientServiceExceptionFilter } from './filters/exception.filter';
-
+import { TypeOrmModule } from '@nestjs/typeorm/dist';
 
 @Module({
   imports: [
@@ -19,28 +16,18 @@ import { PatientServiceExceptionFilter } from './filters/exception.filter';
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
-    DatabaseModule.forService({
-      prefix: 'PATIENT',
-      defaultDbName: 'dicom_patient_service'
-
-    }),
     PatientModule,
     PatientEncounterModule,
     QueueAssignmentModule,
     PatientConditionModule,
     DiagnosesReportModule,
+    DatabaseModule.forService({
+      prefix: 'PATIENT',
+      defaultDbName: 'dicom_patient_service',
+    }),
+    TypeOrmModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: ResponseInterceptor,
-    },
-    {
-      provide: APP_FILTER,
-      useClass: PatientServiceExceptionFilter,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
