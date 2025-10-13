@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 import { Request } from 'express';
 import { IAuthenticatedRequest } from '@backend/shared-interfaces';
-import { RoleEnum } from '@backend/shared-enums';
+import { Roles } from '@backend/shared-enums';
 import { ROLES_KEY } from '@backend/shared-decorators';
 import { Reflector } from '@nestjs/core';
 @Injectable()
@@ -32,7 +32,7 @@ export class RoleGuard implements CanActivate {
     }
 
     // Check if user's role is in the allowedRoles array
-    const hasRole = allowedRoles.includes(user.role as RoleEnum);
+    const hasRole = allowedRoles.includes(user.role as Roles);
 
     if (!hasRole) {
       throw new RpcException({

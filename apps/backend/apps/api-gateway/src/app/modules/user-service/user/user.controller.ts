@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Body, Inject, Logger, Res, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Logger, Res, UseInterceptors, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
+import { Roles } from '@backend/shared-enums';
+import { RolesGuard } from '@backend/auth-guards';
+import {Public} from '@backend/auth-guards';
+import { Role1s } from '@backend/auth-guards';
 
 class LoginDto {
   email!: string;
@@ -35,6 +39,7 @@ export class UserController {
     @Inject('UserService') private readonly userClient: ClientProxy,
   ) { }
 
+  @Public()
   @Post('login') 
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: LoginDto })
@@ -67,6 +72,7 @@ export class UserController {
     }
   }
 
+  @Public()
   @Post('request-login')
   @ApiOperation({ summary: 'Request login with OTP verification' })
   @ApiBody({ type: LoginDto })
@@ -93,6 +99,7 @@ export class UserController {
     }
   }
 
+  @Public()
   @Post('verify-otp')
   @ApiOperation({ summary: 'Verify OTP and complete login' })
   @ApiBody({ type: VerifyOtpDto })
@@ -127,6 +134,7 @@ export class UserController {
     }
   }
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'User registration' })
   @ApiBody({ type: RegisterDto })
@@ -157,6 +165,7 @@ export class UserController {
   }
 
   @Get('users')
+  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   async getAllUsers() {

@@ -12,11 +12,15 @@ import { SystemLogsModule } from './modules/system-service/system-logs/system-lo
 import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
-import { UserModule } from './modules/user/user.module';
+import { UserModule } from './modules/user-service/user/user.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard, RolesGuard } from '@backend/auth-guards';
+import { AuthGuardsModule } from '@backend/auth-guards';
 dotenv.config();
 
 @Module({
   imports: [  
+    AuthGuardsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
@@ -57,6 +61,15 @@ dotenv.config();
     PatientServiceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
