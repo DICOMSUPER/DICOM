@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { useState } from "react";
 import { useCreatePatientMutation } from "@/store/patientApi";
 import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interface";

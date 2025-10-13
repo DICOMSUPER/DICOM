@@ -4,3 +4,4 @@ export * from './imaging-service';
 export * from './notifications';
 export * from './systems';
 export * from './patients';
+export * from './schedule';

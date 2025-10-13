@@ -5,6 +5,7 @@ export * from './lib/blood-type.enum';
 export * from './lib/imaging.enum';
 export * from './lib/system.enum';
 export * from './lib/schedule.enum';
+export * from './lib/schedule.enums';
 export * from './lib/room.enum';
 export * from './lib/imaging-order.enum';
 export * from './lib/clinical-status.enum'

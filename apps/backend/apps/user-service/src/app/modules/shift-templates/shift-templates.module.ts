@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ShiftTemplatesService } from './shift-templates.service';
-import { ShiftTemplatesController } from './shift-templates.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ShiftTemplate } from './entities/shift-template.entity';
+import { ShiftTemplateService } from './shift-templates.service';
+import { ShiftTemplateController } from './shift-templates.controller';
+import { ShiftTemplate } from '@backend/shared-domain';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ShiftTemplate])],
-  controllers: [ShiftTemplatesController],
-  providers: [ShiftTemplatesService],
+  imports: [
+    TypeOrmModule.forFeature([ShiftTemplate])
+  ],
+  controllers: [ShiftTemplateController],
+  providers: [ShiftTemplateService],
+  exports: [ShiftTemplateService]
 })
 export class ShiftTemplatesModule {}
