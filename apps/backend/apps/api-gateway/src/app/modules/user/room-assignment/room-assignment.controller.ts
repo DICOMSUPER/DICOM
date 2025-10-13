@@ -23,7 +23,7 @@ export class RoomAssignmentsController {
   async findAll(@Query() filter: QueryRoomAssignmentDto) {
     return this.userService.send('room_assignment.findAll', filter);
   }
-  //get room assignment by user id
+  //get room assignment by employee id
   @Get('user/:userId')
   async findByUserId(@Param('userId') userId: string) {
     return this.userService.send('room_assignment.findByUserId', { userId });

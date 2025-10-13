@@ -12,12 +12,7 @@ import { PatientEncounter } from './patient-encounters.entity';
 
 @Entity('queue_assignments')
 @Index(['queueNumber'])
-@Index(['encounter'])
-@Index(['status'])
-@Index(['priority'])
-@Index(['roomId'])
-@Index(['assignmentDate'])
-@Index(['assignmentExpiresDate'])
+
 export class QueueAssignment extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })
   id!: string;

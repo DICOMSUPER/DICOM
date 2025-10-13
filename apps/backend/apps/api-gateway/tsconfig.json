@@ -10,6 +10,12 @@
       "path": "../../libs/shared-client"
     },
     {
+      "path": "../../libs/shared-enums"
+    },
+    {
+      "path": "../../libs/shared-decorators"
+    },
+    {
       "path": "../../libs/shared-domain"
     },
     {

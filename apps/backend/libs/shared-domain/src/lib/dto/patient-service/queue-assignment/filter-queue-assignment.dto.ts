@@ -1,7 +1,7 @@
 import { IsOptional, IsUUID, IsEnum, IsInt } from 'class-validator';
 
 import { RepositoryPaginationDto } from '@backend/database';
-import { QueueStatus } from '@backend/shared-enums';
+import { QueuePriorityLevel, QueueStatus } from '@backend/shared-enums';
 
 export class FilterQueueAssignmentDto extends RepositoryPaginationDto {
   @IsOptional()
@@ -13,13 +13,16 @@ export class FilterQueueAssignmentDto extends RepositoryPaginationDto {
   @IsOptional()
   @IsUUID()
   patientId?: string;
+  @IsEnum(QueuePriorityLevel)
+  @IsOptional()
+  priority?: QueuePriorityLevel;
   @IsOptional()
   @IsUUID()
   encounterId?: string;
   @IsOptional()
-  dateFrom?: Date;
+  assignmentDateFrom?: Date;
   @IsOptional()
-  dateTo?: Date;
+  assignmentDateTo?: Date;
   @IsOptional()
   @IsInt()
   queueNumber?: number;

@@ -3,27 +3,38 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
 import { CreateQueueAssignmentDto } from '@backend/shared-domain';
 import { UpdateQueueAssignmentDto } from '@backend/shared-domain';
-import type { QueueAssignment, PaginatedResponseDto } from '@backend/shared-domain';
+import type {
+  QueueAssignment,
+  PaginatedResponseDto,
+} from '@backend/shared-domain';
 import { RepositoryPaginationDto } from '@backend/database';
 
 @Controller()
 export class QueueAssignmentController {
-  constructor(private readonly queueAssignmentService: QueueAssignmentService) {}
+  constructor(
+    private readonly queueAssignmentService: QueueAssignmentService
+  ) {}
 
   @MessagePattern('PatientService.QueueAssignment.Create')
   create(@Payload() createQueueAssignmentDto: CreateQueueAssignmentDto) {
     console.log(createQueueAssignmentDto);
-    
     return this.queueAssignmentService.create(createQueueAssignmentDto);
-  } 
+  }
 
-@MessagePattern('PatientService.QueueAssignment.FindManyInRoom')
-findByRoom(@Payload() data: { filterQueue: RepositoryPaginationDto; userId: string }) {
-  return this.queueAssignmentService.getAllInRoom(data.filterQueue, data.userId);
-}
+  @MessagePattern('PatientService.QueueAssignment.FindManyInRoom')
+  findByRoom(
+    @Payload() data: { filterQueue: RepositoryPaginationDto; userId: string }
+  ) {
+    return this.queueAssignmentService.getAllInRoom(
+      data.filterQueue,
+      data.userId
+    );
+  }
 
   @MessagePattern('PatientService.QueueAssignment.FindMany')
-  findMany(@Payload() paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignment>> {
+  findMany(
+    @Payload() paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<QueueAssignment>> {
     return this.queueAssignmentService.findMany(paginationDto);
   }
 
@@ -38,8 +49,17 @@ findByRoom(@Payload() data: { filterQueue: RepositoryPaginationDto; userId: stri
   }
 
   @MessagePattern('PatientService.QueueAssignment.Update')
-  update(@Payload() data: { id: string; updateQueueAssignmentDto: UpdateQueueAssignmentDto }) {
-    return this.queueAssignmentService.update(data.id, data.updateQueueAssignmentDto);
+  update(
+    @Payload()
+    data: {
+      id: string;
+      updateQueueAssignmentDto: UpdateQueueAssignmentDto;
+    }
+  ) {
+    return this.queueAssignmentService.update(
+      data.id,
+      data.updateQueueAssignmentDto
+    );
   }
 
   @MessagePattern('PatientService.QueueAssignment.Complete')
@@ -59,7 +79,10 @@ findByRoom(@Payload() data: { filterQueue: RepositoryPaginationDto; userId: stri
 
   @MessagePattern('PatientService.QueueAssignment.CallNext')
   callNextPatient(@Payload() data: { roomId?: string; calledBy?: string }) {
-    return this.queueAssignmentService.callNextPatient(data.roomId, data.calledBy);
+    return this.queueAssignmentService.callNextPatient(
+      data.roomId,
+      data.calledBy
+    );
   }
 
   @MessagePattern('PatientService.QueueAssignment.ValidateToken')

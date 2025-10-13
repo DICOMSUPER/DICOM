@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomAssignmentsService } from './room-assignments.service';
 import { RoomAssignmentsController } from './room-assignments.controller';
-import { RoomAssignment } from './entities/room-assignment.entity';
+
 import { User } from '../users/entities/user.entity';
 import { Room } from '../rooms/entities/room.entity';
+import { RoomAssignment } from './entities/room-assignments.entity';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { Room } from '../rooms/entities/room.entity';
       User,
       Room,
     ]),
+    
   ],
   controllers: [RoomAssignmentsController],
   providers: [RoomAssignmentsService],

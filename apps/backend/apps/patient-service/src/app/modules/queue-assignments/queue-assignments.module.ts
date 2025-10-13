@@ -5,12 +5,22 @@ import { QueueAssignmentController } from './queue-assignments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { QueueAssignment, QueueAssignmentRepository } from '@backend/shared-domain';
+import { PaginationService } from '@backend/database';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { getClient } from '@backend/shared-utils';
 // import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([QueueAssignment]),
-    // ScheduleModule.forRoot() // Commented out until database is set up
+ClientsModule.register([
+      getClient(
+        process.env.USER_SERVICE_NAME || 'UserService',
+        Number(process.env.USER_SERVICE_TRANSPORT || Transport.TCP),
+        process.env.USER_SERVICE_HOST || 'localhost',
+        Number(process.env.USER_SERVICE_PORT || 5002)
+      ),
+    ]),
   ],
   controllers: [QueueAssignmentController],
   providers: [
@@ -21,6 +31,7 @@ import { QueueAssignment, QueueAssignmentRepository } from '@backend/shared-doma
         new QueueAssignmentRepository(entityManager),
       inject: [EntityManager],
     },
+    PaginationService
   ],
   exports: [QueueAssignmentService, QueueAssignmentRepository],
 })

@@ -44,7 +44,7 @@ export class QueueAssignmentController {
     }
   }
 
-  @Get()
+  @Get("in-room")
   async findAllInRoom(
     @Query('userId') userId: string,
     @Query() filterQueue?: FilterQueueAssignmentDto,
@@ -54,10 +54,16 @@ export class QueueAssignmentController {
         filterQueue?.page,
         filterQueue?.limit
       );
+      console.log("validatedParams", validatedParams);
+      const payload = {
+        ...filterQueue,
+        ...validatedParams
+      }
+
 
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.FindManyInRoom', {
-          validatedParams,
+          filterQueue: payload,
           userId
         })
       );

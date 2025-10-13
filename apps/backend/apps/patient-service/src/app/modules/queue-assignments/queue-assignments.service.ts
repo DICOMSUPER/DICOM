@@ -1,30 +1,61 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto, QueueAssignmentSearchFilters } from '@backend/shared-domain';
-import { QueueAssignmentRepository, PaginatedResponseDto, QueueAssignment } from '@backend/shared-domain';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
+import {
+  CreateQueueAssignmentDto,
+  UpdateQueueAssignmentDto,
+  QueueAssignmentSearchFilters,
+  FilterQueueAssignmentDto,
+} from '@backend/shared-domain';
+import {
+  QueueAssignmentRepository,
+  PaginatedResponseDto,
+  QueueAssignment,
+} from '@backend/shared-domain';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
-import { RepositoryPaginationDto } from '@backend/database';
+import { PaginationService, RepositoryPaginationDto } from '@backend/database';
+import { ClientProxy } from '@nestjs/microservices';
+import { log } from 'console';
+import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
 
 @Injectable()
 export class QueueAssignmentService {
   constructor(
     private readonly queueRepository: QueueAssignmentRepository,
+    private readonly paginationService: PaginationService,
+    @Inject(process.env.USER_SERVICE_NAME || 'UserService')
+    private readonly userService: ClientProxy
   ) {}
 
   async create(createQueueAssignmentDto: CreateQueueAssignmentDto) {
     // Check if encounter already has an active assignment
-    const existingAssignment = await this.queueRepository.findByEncounterId(createQueueAssignmentDto.encounterId);
-    if (existingAssignment && existingAssignment.status === QueueStatus.WAITING) {
-      throw new BadRequestException('Encounter already has an active queue assignment');
+    const existingAssignment = await this.queueRepository.findByEncounterId(
+      createQueueAssignmentDto.encounterId
+    );
+    if (
+      existingAssignment &&
+      existingAssignment.status === QueueStatus.WAITING
+    ) {
+      throw new BadRequestException(
+        'Encounter already has an active queue assignment'
+      );
     }
 
     // Get next queue number for today
-    const queueNumber = await this.queueRepository.getNextQueueNumber(new Date());
-    
+    const queueNumber = await this.queueRepository.getNextQueueNumber(
+      new Date()
+    );
+
     // Generate unique validation token
     const validationToken = this.generateValidationToken();
-    
+
     // Calculate estimated wait time based on current queue
-    const estimatedWaitTime = await this.calculateEstimatedWaitTime(createQueueAssignmentDto.priority);
+    const estimatedWaitTime = await this.calculateEstimatedWaitTime(
+      createQueueAssignmentDto.priority
+    );
 
     const assignmentData = {
       ...createQueueAssignmentDto,
@@ -40,18 +71,20 @@ export class QueueAssignmentService {
     return await this.queueRepository.create(assignmentData);
   }
 
-
-
-  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<QueueAssignmentResponseDto>> {
+  async findMany(
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<QueueAssignment>> {
     const result = await this.queueRepository.findWithPagination(paginationDto);
     return {
-      data: result.data.map((assignment: any) => this.mapToResponseDto(assignment)),
+      data: result.data.map((assignment: any) =>
+        this.mapToResponseDto(assignment)
+      ),
       total: result.total,
       page: result.page,
       limit: result.limit,
       totalPages: result.totalPages,
       hasNextPage: result.hasNextPage,
-      hasPreviousPage: result.hasPreviousPage
+      hasPreviousPage: result.hasPreviousPage,
     };
   }
 
@@ -65,10 +98,10 @@ export class QueueAssignmentService {
 
   async update(id: string, updateQueueAssignmentDto: UpdateQueueAssignmentDto) {
     await this.findOne(id); // Verify assignment exists
-    
+
     const updatedAssignment = await this.queueRepository.update(id, {
       ...updateQueueAssignmentDto,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
 
     return updatedAssignment;
@@ -76,10 +109,12 @@ export class QueueAssignmentService {
 
   async remove(id: string) {
     await this.findOne(id); // Verify assignment exists
-    
+
     const deleted = await this.queueRepository.delete(id);
     if (!deleted) {
-      throw new NotFoundException(`Failed to delete queue assignment with ID ${id}`);
+      throw new NotFoundException(
+        `Failed to delete queue assignment with ID ${id}`
+      );
     }
 
     return { message: 'Queue assignment deleted successfully' };
@@ -87,9 +122,14 @@ export class QueueAssignmentService {
 
   async complete(id: string) {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status !== QueueStatus.WAITING && assignment.status !== QueueStatus.IN_PROGRESS) {
-      throw new BadRequestException('Only waiting or in-progress assignments can be completed');
+
+    if (
+      assignment.status !== QueueStatus.WAITING &&
+      assignment.status !== QueueStatus.IN_PROGRESS
+    ) {
+      throw new BadRequestException(
+        'Only waiting or in-progress assignments can be completed'
+      );
     }
 
     return await this.queueRepository.complete(id);
@@ -97,9 +137,14 @@ export class QueueAssignmentService {
 
   async expire(id: string) {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status === QueueStatus.COMPLETED || assignment.status === QueueStatus.EXPIRED) {
-      throw new BadRequestException('Assignment is already completed or expired');
+
+    if (
+      assignment.status === QueueStatus.COMPLETED ||
+      assignment.status === QueueStatus.EXPIRED
+    ) {
+      throw new BadRequestException(
+        'Assignment is already completed or expired'
+      );
     }
 
     return await this.queueRepository.expire(id);
@@ -124,7 +169,7 @@ export class QueueAssignmentService {
     const filters: QueueAssignmentSearchFilters = {
       status: QueueStatus.WAITING,
       limit: 1,
-      offset: 0
+      offset: 0,
     };
 
     if (roomId) {
@@ -138,13 +183,13 @@ export class QueueAssignmentService {
     }
 
     const nextAssignment = assignments[0];
-    
+
     // Update assignment to IN_PROGRESS and mark as called
     return await this.queueRepository.update(nextAssignment.id, {
       status: QueueStatus.IN_PROGRESS,
       calledAt: new Date(),
       calledBy: calledBy,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   }
 
@@ -152,11 +197,13 @@ export class QueueAssignmentService {
    * Validate queue token
    */
   async validateToken(validationToken: string) {
-    const assignment = await this.queueRepository.findByValidationToken(validationToken);
+    const assignment = await this.queueRepository.findByValidationToken(
+      validationToken
+    );
     if (!assignment) {
       throw new NotFoundException('Invalid validation token');
     }
-    
+
     if (assignment.status === QueueStatus.EXPIRED) {
       throw new BadRequestException('Queue assignment has expired');
     }
@@ -177,7 +224,7 @@ export class QueueAssignmentService {
       queueId,
       estimatedWaitTime: assignment.estimatedWaitTime,
       currentPosition: await this.getCurrentPosition(queueId),
-      averageWaitTime: await this.getAverageWaitTime()
+      averageWaitTime: await this.getAverageWaitTime(),
     };
   }
 
@@ -185,13 +232,14 @@ export class QueueAssignmentService {
    * Auto-expire old assignments (should be called by cron job)
    */
   async autoExpireAssignments() {
-    const expiredAssignments = await this.queueRepository.findExpiredAssignments();
+    const expiredAssignments =
+      await this.queueRepository.findExpiredAssignments();
     const expiredCount = expiredAssignments.length;
 
     for (const assignment of expiredAssignments) {
       await this.queueRepository.update(assignment.id, {
         status: QueueStatus.EXPIRED,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
     }
 
@@ -213,9 +261,11 @@ export class QueueAssignmentService {
   /**
    * Calculate estimated wait time based on current queue
    */
-  private async calculateEstimatedWaitTime(priority?: QueuePriorityLevel): Promise<number> {
+  private async calculateEstimatedWaitTime(
+    priority?: QueuePriorityLevel
+  ): Promise<number> {
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING
+      status: QueueStatus.WAITING,
     });
     const waitingCount = waitingAssignments.length;
 
@@ -247,11 +297,11 @@ export class QueueAssignmentService {
     if (!assignment) return 0;
 
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING
+      status: QueueStatus.WAITING,
     });
-    
-    const waitingBefore = waitingAssignments.filter(a => 
-      a.assignmentDate < assignment.assignmentDate
+
+    const waitingBefore = waitingAssignments.filter(
+      (a) => a.assignmentDate < assignment.assignmentDate
     ).length;
 
     return waitingBefore + 1;
@@ -263,13 +313,15 @@ export class QueueAssignmentService {
   private async getAverageWaitTime(): Promise<number> {
     const completedAssignments = await this.queueRepository.findAll({
       status: QueueStatus.COMPLETED,
-      limit: 10
+      limit: 10,
     });
 
     if (completedAssignments.length === 0) return 15; // Default 15 minutes
 
     const totalWaitTime = completedAssignments.reduce((sum, assignment) => {
-      const waitTime = (assignment.updatedAt.getTime() - assignment.assignmentDate.getTime()) / (1000 * 60);
+      const waitTime =
+        (assignment.updatedAt.getTime() - assignment.assignmentDate.getTime()) /
+        (1000 * 60);
       return sum + waitTime;
     }, 0);
 
@@ -277,7 +329,66 @@ export class QueueAssignmentService {
   }
 
   // Get all queue assignments in a specific room
-  async getAllInRoom(paginationDto: RepositoryPaginationDto, userId: string): Promise<PaginatedResponseDto<QueueAssignment>> {
-   return ""
+  async getAllInRoom(
+    filterQueue: FilterQueueAssignmentDto,
+    userId: string
+  ): Promise<PaginatedResponseDto<QueueAssignment>> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      assignmentDateFrom,
+      assignmentDateTo,
+    } = filterQueue;
+    const whereConditions: any = {};
+
+    // get room assigned to the user
+    const roomAssignments = await firstValueFrom(
+      this.userService.send('room_assignment.findByUserId', { userId })
+    );
+
+    console.log('roomAssignments', roomAssignments);
+    if (!roomAssignments) {
+      throw new NotFoundException(`No room assigned to user ID ${userId}`);
+    }
+
+    // Filter by status if provided
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    // Filter by priority if provided
+    if (priority) {
+      whereConditions.priority = priority;
+    }
+
+    // Filter by date range if provided
+    if (assignmentDateFrom || assignmentDateTo) {
+      whereConditions.assignmentDate = {};
+      if (assignmentDateFrom) {
+        whereConditions.assignmentDate.gte = new Date(assignmentDateFrom);
+      }
+      if (assignmentDateTo) {
+        const endDate = new Date(assignmentDateTo);
+        endDate.setHours(23, 59, 59, 999); // End of day
+        whereConditions.assignmentDate.lte = endDate;
+      }
+    }
+
+    // Use PaginationService to paginate
+    return await this.paginationService.paginate(
+      QueueAssignment,
+      { page, limit },
+      {
+        where: { ...whereConditions, roomId: roomAssignments[0].roomId },
+        order: {
+          assignmentDate: 'DESC',
+          queueNumber: 'ASC',
+        },
+        relations: { encounter: true },
+        // select: ['id', 'queueNumber', 'status', 'priority', 'assignmentDate'] // Optional: specific fields
+      }
+    );
   }
 }

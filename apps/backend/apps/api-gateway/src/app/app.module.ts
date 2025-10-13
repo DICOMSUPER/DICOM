@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
-import { AuthModule } from './modules/auth/auth.module';
+// import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import { PatientServiceModule } from './modules/patient-service/patient-service.module';
@@ -14,17 +14,19 @@ import { AuditLogModule } from './modules/system-service/audit-log/audit-log.mod
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
 import { UserModule } from './modules/user/user.module';
 import { RoomAssignmentsModule } from './modules/user/room-assignment/room-assignment.module';
+
+
 dotenv.config();
 
 @Module({
-  imports: [  
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
     ClientsModule.register([
       getClient(
-        process.env.AUTH_SERVICE_NAME || 'AuthService',
+        process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE',
         Number(process.env.AUTH_SERVICE_TRANSPORT || Transport.TCP),
         process.env.AUTH_SERVICE_HOST || 'localhost',
         Number(process.env.AUTH_SERVICE_PORT || 5001)
@@ -48,7 +50,7 @@ dotenv.config();
         Number(process.env.PATIENT_SERVICE_PORT || 5004)
       ),
     ]),
-    AuthModule,
+    // AuthModule,
     UserModule,
     ImagingServiceModule,
     SystemLogsModule,
@@ -56,9 +58,19 @@ dotenv.config();
     AuditLogModule,
     NotificationsModule,
     PatientServiceModule,
-    RoomAssignmentsModule
+    RoomAssignmentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RoleGuard,
+    // },
+  ],
 })
 export class AppModule {}

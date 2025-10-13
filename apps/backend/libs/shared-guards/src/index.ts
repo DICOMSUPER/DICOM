@@ -1,1 +1,2 @@
-export * from './lib/shared-guards.module';
+export * from './lib/role.guard';
+export * from './lib/auth.guard';

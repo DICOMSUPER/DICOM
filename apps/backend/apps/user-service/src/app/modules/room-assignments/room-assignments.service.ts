@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RoomAssignment } from './entities/room-assignment.entity';
 import { CreateRoomAssignmentDto, UpdateRoomAssignmentDto, QueryRoomAssignmentDto } from '@backend/shared-domain';
 import { User } from '../users/entities/user.entity';
 import { Room } from '../rooms/entities/room.entity';
+import { RoomAssignment } from './entities/room-assignments.entity';
 
 @Injectable()
 export class RoomAssignmentsService {
@@ -37,6 +37,20 @@ export class RoomAssignmentsService {
 
     const roomAssignment = this.roomAssignmentsRepository.create(createRoomAssignmentDto);
     return this.roomAssignmentsRepository.save(roomAssignment);
+  }
+
+  // get room assignments by user id
+  async findByUserId(userId: string): Promise<RoomAssignment[]> {
+    // check if user exists
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    return this.roomAssignmentsRepository.find({
+      where: { userId, isActive: true },
+      relations: ['room'],
+      
+    });
   }
 
   async findAll(queryDto: QueryRoomAssignmentDto): Promise<{ data: RoomAssignment[]; total: number; page: number; limit: number }> {

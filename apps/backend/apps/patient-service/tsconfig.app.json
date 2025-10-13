@@ -15,8 +15,10 @@
     "../../libs/shared-domain/src/lib/entities/patients/patient-conditions.entity.ts",
     "../../libs/shared-domain/src/lib/entities/patients/patient-encounters.entity.ts",
     "../../libs/shared-domain/src/lib/entities/patients/patients.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/patients/queue-assignments.entity.ts"
-, "../../libs/shared-domain/src/lib/dto/patient-service/queue-assignment/update-queue-assignment.dto.ts", "../../libs/shared-domain/src/lib/dto/patient-service/queue-assignment/create-queue-assignment.dto.ts"  ],
+    "../../libs/shared-domain/src/lib/entities/patients/queue-assignments.entity.ts",
+    "../../libs/shared-domain/src/lib/dto/patient-service/queue-assignment/update-queue-assignment.dto.ts",
+    "../../libs/shared-domain/src/lib/dto/patient-service/queue-assignment/create-queue-assignment.dto.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",

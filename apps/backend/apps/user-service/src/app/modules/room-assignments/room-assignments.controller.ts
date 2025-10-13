@@ -17,6 +17,12 @@ export class RoomAssignmentsController {
     return this.roomAssignmentsService.create(createRoomAssignmentDto);
   }
 
+  @MessagePattern('room_assignment.findByUserId')
+  async findByUserId(@Payload() data: { userId: string }) {
+    return await this.roomAssignmentsService.findByUserId(data.userId);
+  }
+
+
 
   // Get all room assignments
   @MessagePattern('room_assignment.findAll')

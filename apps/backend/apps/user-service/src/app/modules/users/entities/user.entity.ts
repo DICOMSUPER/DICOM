@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Roles } from '@backend/shared-enums';
 import { Department } from '../../departments/entities/department.entity';
 import { Qualification } from '../../qualifications/entities/qualification.entity';
-import { RoomAssignment } from '../../room-assignments/entities/room-assignment.entity';
+import { RoomAssignment } from '../../room-assignments/entities/room-assignments.entity';
 
 @Entity('users')
 export class User {
