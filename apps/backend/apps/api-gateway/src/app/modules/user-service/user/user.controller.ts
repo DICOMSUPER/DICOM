@@ -1,11 +1,14 @@
-import { Controller, Get, Post, Body, Inject, Logger, Res, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Inject, Logger, Res, UseInterceptors, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
-import { TransformInterceptor } from '@backend/shared-interceptor';
-
+import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
+import { Roles } from '@backend/shared-enums';
+import { RolesGuard } from '@backend/auth-guards';
+import {Public} from '@backend/auth-guards';
+import { Role1s } from '@backend/auth-guards';
 
 class LoginDto {
   email!: string;
@@ -26,10 +29,9 @@ class VerifyOtpDto {
   code!: string;
 }
 
-
 @ApiTags('User Management')
 @Controller('user')
-@UseInterceptors(TransformInterceptor)
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor) 
 export class UserController {
   private readonly logger = new Logger('UserController');
 
@@ -37,13 +39,16 @@ export class UserController {
     @Inject('UserService') private readonly userClient: ClientProxy,
   ) { }
 
-  @Post('login')
+  @Public()
+  @Post('login') 
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     try {
+      this.logger.log(`🔐 Login attempt for email: ${loginDto.email}`);
+      
       const result = await firstValueFrom(
         this.userClient.send('user.login', loginDto)
       );
@@ -55,17 +60,19 @@ export class UserController {
       const cookieOptions = result.cookieOptions;
       res.cookie(cookieOptions.name, cookieOptions.value, cookieOptions.options);
 
-      // ✅ Chỉ return data, TransformInterceptor sẽ wrap nó
+      this.logger.log(`✅ Login successful for email: ${loginDto.email}`);
+      
       return {
         tokenResponse: result.tokenResponse,
         message: 'Đăng nhập thành công'
       };
     } catch (error) {
-      this.logger.error('Error during login:', error);
+      this.logger.error(`❌ Login failed for email: ${loginDto.email}`, error);
       throw handleError(error);
     }
   }
 
+  @Public()
   @Post('request-login')
   @ApiOperation({ summary: 'Request login with OTP verification' })
   @ApiBody({ type: LoginDto })
@@ -73,23 +80,26 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async requestLogin(@Body() requestLoginDto: LoginDto) {
     try {
-      this.logger.log(`Request login attempt for email: ${requestLoginDto.email}`);
+      this.logger.log(`📧 Request login with OTP for email: ${requestLoginDto.email}`);
+      
       const result = await firstValueFrom(
         this.userClient.send('user.request-login', requestLoginDto)
       );
 
-      // ✅ Return clean data
+      this.logger.log(`✅ OTP sent successfully to: ${requestLoginDto.email}`);
+
       return {
         success: result.success,
         requireOtp: result.requireOtp,
         message: result.message || 'OTP đã được gửi'
       };
     } catch (error) {
-      this.logger.error('Error during request login:', error);
+      this.logger.error(`❌ Request login failed for email: ${requestLoginDto.email}`, error);
       throw handleError(error);
     }
   }
 
+  @Public()
   @Post('verify-otp')
   @ApiOperation({ summary: 'Verify OTP and complete login' })
   @ApiBody({ type: VerifyOtpDto })
@@ -97,7 +107,7 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto, @Res({ passthrough: true }) res: Response) {
     try {
-      this.logger.log(`OTP verification attempt for email: ${verifyOtpDto.email}`);
+      this.logger.log(`🔢 OTP verification attempt for email: ${verifyOtpDto.email}`);
 
       const result = await firstValueFrom(
         this.userClient.send('user.verify-otp', verifyOtpDto)
@@ -112,16 +122,19 @@ export class UserController {
         res.cookie(cookieOptions.name, cookieOptions.value, cookieOptions.options);
       }
 
+      this.logger.log(`✅ OTP verified successfully for email: ${verifyOtpDto.email}`);
+
       return {
         tokenResponse: result.tokenResponse,
         message: result.message || 'Xác thực OTP thành công'
       };
     } catch (error) {
-      this.logger.error('Error during OTP verification:', error);
+      this.logger.error(`❌ OTP verification failed for email: ${verifyOtpDto.email}`, error);
       throw handleError(error);
     }
   }
 
+  @Public()
   @Post('register')
   @ApiOperation({ summary: 'User registration' })
   @ApiBody({ type: RegisterDto })
@@ -129,6 +142,8 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   async register(@Body() registerDto: RegisterDto) {
     try {
+      this.logger.log(`👤 Registration attempt for email: ${registerDto.email}`);
+      
       const result = await firstValueFrom(
         this.userClient.send('user.register', registerDto)
       );
@@ -137,24 +152,31 @@ export class UserController {
         throw new Error('Registration failed');
       }
 
+      this.logger.log(`✅ Registration successful for email: ${registerDto.email}`);
+
       return {
         user: result.user,
         message: 'Đăng ký thành công'
       };
     } catch (error) {
-      this.logger.error('Error during registration:', error);
+      this.logger.error(`❌ Registration failed for email: ${registerDto.email}`, error);
       throw handleError(error);
     }
   }
 
   @Get('users')
+  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   async getAllUsers() {
     try {
+      this.logger.log(`📋 Fetching all users`);
+      
       const result = await firstValueFrom(
         this.userClient.send('user.get-all-users', {})
       );
+
+      this.logger.log(`✅ Retrieved ${result.count || 0} users`);
 
       return {
         users: result.users,
@@ -162,7 +184,7 @@ export class UserController {
         message: 'Lấy danh sách người dùng thành công'
       };
     } catch (error) {
-      this.logger.error('Error fetching users:', error);
+      this.logger.error(`❌ Failed to fetch users`, error);
       throw handleError(error);
     }
   }
