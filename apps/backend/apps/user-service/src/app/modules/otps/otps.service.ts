@@ -1,18 +1,19 @@
 // src/otp/otp.service.ts
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Otp } from './entities/otp.entity';
-import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import * as pug from 'pug';
 import * as path from 'path';
 import { LessThan } from 'typeorm';
 import { CreateOtpDTO } from './dtos/create-otp.dto';
-import { sendMail } from 'libs/shared-utils/src';
+import { sendMail } from '@backend/shared-utils';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class OtpService {
+  private readonly logger = new Logger(OtpService.name);
   constructor(
     @InjectRepository(Otp)
     private otpRepo: Repository<Otp>,
@@ -26,79 +27,77 @@ export class OtpService {
     const otp = this.otpRepo.create({ email, otpCode, expiresAt });
     await this.otpRepo.save(otp);
 
-    await this.sendEmail(email, otpCode);
+    await this.sendOtpEmail(email, otpCode);
 
     return otpCode;
   }
-  // async sendOtpEmail(to: string, code: string): Promise<void> {
-  //   try {
-  //     // Get email configuration from environment
-  //     const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL') || 'naminh24032003@gmail.com';
-  //     const fromEmailPassword = this.configService.get<string>('MAIL_FROM_PASSWORD') || 'fhuw ewhz veht bzdu';
-  //     const smtpHost = this.configService.get<string>('MAIL_SMTP_HOST') || 'smtp.gmail.com';
-  //     const smtpPort = this.configService.get<number>('MAIL_SMTP_PORT') || 465;
+  async sendOtpEmail(to: string, code: string): Promise<void> {
+    try {
+      const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL') || 'naminh24032003@gmail.com';
+      const fromEmailPassword =
+        this.configService.get<string>('MAIL_FROM_PASSWORD') || 'fhuw ewhz veht bzdu';
+      const smtpHost = this.configService.get<string>('MAIL_SMTP_HOST') || 'smtp.gmail.com';
+      const smtpPort = this.configService.get<number>('MAIL_SMTP_PORT') || 465;
 
-  //     // Generate HTML content using Pug template
-  //     const viewsPath = path.join(__dirname, 'views', 'otp.pug');
+      // Đường dẫn chính xác tới file Pug
+      const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
 
-  //     let html: string;
-  //     try {
-  //       html = pug.renderFile(viewsPath, {
-  //         name: to.split('@')[0],
-  //         otp: code,
-  //         year: new Date().getFullYear(),
-  //       });
-  //     } catch (pugError) {
-  //       this.logger.warn('Failed to render Pug template, using fallback HTML');
-  //       // Fallback HTML template
-  //       html = this.getDefaultOtpHtm(to.split('@')[0], code);
-  //     }
+      // Render nội dung HTML từ pug
+      const html = pug.renderFile(viewsPath, {
+        name: to.split('@')[0],
+        otp: code,
+        year: new Date().getFullYear(),
+      });
 
-  //     const subject = 'Mã OTP xác thực - Authentication Code';
-  //     const text = `Mã OTP của bạn là: ${code}. Mã này sẽ hết hạn sau 5 phút.`;
+      // Tiêu đề và nội dung email
+      const subject = 'Mã OTP xác thực';
+      const text = `Mã OTP của bạn là: ${code}. Mã sẽ hết hạn sau 5 phút.`;
+      await sendMail(
+        fromEmail,
+        fromEmailPassword,
+        to,
+        subject,
+        text,
+        html,
+        smtpHost,
+        smtpPort
+      );
 
-  //     await sendMail(
-  //       fromEmail,
-  //       fromEmailPassword,
-  //       to,
-  //       subject,
-  //       text,
-  //       html,
-  //       smtpHost,
-  //       smtpPort
-  //     );
-
-  //     this.logger.log(`OTP email sent successfully to ${to}`);
-  //   } catch (error) {
-  //     this.logger.error(`Failed to send OTP email to ${to}:`, error);
-  //     throw new Error(`Failed to send OTP email: ${error.message}`);
-  //   }
-  // }
-  async sendEmail(to: string, code: string) {
-    const transporter = nodemailer.createTransport({
-      service: 'Gmail',
-      auth: {
-        user: 'naminh24032003@gmail.com',
-        pass: 'fhuw ewhz veht bzdu',
-      },
-    });
-
-
-    const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
-
-    const html = pug.renderFile(viewsPath, {
-      name: to.split('@')[0],
-      otp: code,
-      year: new Date().getFullYear(),
-    });
-
-    await transporter.sendMail({
-      from: '"Xác thực OTP" <naminh24032003@gmail.com>',
-      to,
-      subject: 'Mã OTP xác thực',
-      html,
-    });
+      this.logger.log(`✅ Đã gửi email OTP thành công đến ${to}`);
+    } catch (error: any) {
+      this.logger.error(`❌ Lỗi gửi email OTP: ${error.message}`);
+      throw new RpcException({
+        code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: `Gửi email OTP thất bại: ${error.message}`,
+        location: 'MailService.sendOtpEmail',
+      });
+    }
   }
+  // async sendEmail(to: string, code: string) {
+  //   const transporter = nodemailer.createTransport({
+  //     service: 'Gmail',
+  //     auth: {
+  //       user: 'naminh24032003@gmail.com',
+  //       pass: 'fhuw ewhz veht bzdu',
+  //     },
+  //   });
+
+
+  //   const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
+
+  //   const html = pug.renderFile(viewsPath, {
+  //     name: to.split('@')[0],
+  //     otp: code,
+  //     year: new Date().getFullYear(),
+  //   });
+
+  //   await transporter.sendMail({
+  //     from: '"Xác thực OTP" <naminh24032003@gmail.com>',
+  //     to,
+  //     subject: 'Mã OTP xác thực',
+  //     html,
+  //   });
+  // }
 
 
   async verifyOtp(createOtpDto: CreateOtpDTO): Promise<boolean> {
@@ -128,6 +127,27 @@ export class OtpService {
     await this.otpRepo.delete({
       expiresAt: LessThan(now),
     });
+  }
+
+  private getDefaultOtpHtml(name: string, otp: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Mã OTP xác thực</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Xin chào ${name}!</h2>
+        <p>Mã OTP xác thực của bạn là:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #007bff; letter-spacing: 5px; margin: 20px 0;">
+          ${otp}
+        </div>
+        <p>Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+        <p style="color: #666; font-size: 12px;">© ${new Date().getFullYear()} DICOM System</p>
+      </body>
+      </html>
+    `;
   }
 
 }

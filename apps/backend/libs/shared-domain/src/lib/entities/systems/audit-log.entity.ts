@@ -1,12 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { AuditAction } from '@backend/shared-enums';
-
 
 @Entity('audit_log')
 @Index(['userId'])
 @Index(['action'])
-
-export class AuditLog {
+export class AuditLog extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'audit_id' })
   id!: string;
 
@@ -44,7 +43,4 @@ export class AuditLog {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   timestamp!: Date;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 }

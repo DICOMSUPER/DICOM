@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from 'typeorm';
 import { ShiftType } from '@backend/shared-enums';
+import { EmployeeSchedule } from '../../employee-schedules/entities/employee-schedule.entity';
 
 @Entity('shift_templates')
 export class ShiftTemplate {
@@ -32,4 +33,7 @@ export class ShiftTemplate {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
+
+  @OneToMany(() => EmployeeSchedule, (schedule) => schedule.shiftTemplate)
+  employeeSchedules!: EmployeeSchedule[];
 }

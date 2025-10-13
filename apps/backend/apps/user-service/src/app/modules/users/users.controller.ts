@@ -10,6 +10,7 @@ import {
   RegistrationFailedException
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Roles } from '@backend/shared-enums';
 
 @Controller()
 export class UsersController {
@@ -92,6 +93,7 @@ export class UsersController {
     username: string;
     email: string;
     password: string;
+    role: Roles;
     firstName: string;
     lastName: string;
     phone?: string;
@@ -104,12 +106,13 @@ export class UsersController {
         email: registerDto.email,
         password: registerDto.password, 
         firstName: registerDto.firstName,
+        role: Roles.RECEPTION_STAFF,
         lastName: registerDto.lastName,
         phone: registerDto.phone,
         isVerified: false,
         isActive: true,
       };
-
+      
       const result = await this.usersService.register(createUserDto);
 
       if (!result) {

@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 
 @Entity('dicom_instances')
 @Index('idx_series_id', ['seriesId'])

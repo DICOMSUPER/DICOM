@@ -1,9 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
-
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { NotificationType, NotificationPriority } from '@backend/shared-enums';
 
 @Entity('notifications')
-export class Notification {
+export class Notification extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'notification_id' })
   id!: string;
 
@@ -36,7 +36,4 @@ export class Notification {
 
   @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt?: Date;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 }

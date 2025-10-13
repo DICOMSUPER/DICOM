@@ -1,26 +1,135 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { Room } from './entities/room.entity';
+import {
+  RoomNotFoundException,
+  RoomAlreadyExistsException,
+  RoomCreationFailedException,
+  RoomUpdateFailedException,
+  RoomDeletionFailedException,
+  InvalidRoomDataException,
+} from '@backend/shared-exception';
 
 @Injectable()
 export class RoomsService {
-  create(createRoomDto: CreateRoomDto) {
-    return 'This action adds a new room';
+  private readonly logger = new Logger(RoomsService.name);
+
+  constructor(
+    @InjectRepository(Room)
+    private readonly roomRepository: Repository<Room>,
+  ) {}
+  async create(createRoomDto: CreateRoomDto): Promise<Room> {
+    try {
+      this.logger.log(`Creating room with data: ${JSON.stringify(createRoomDto)}`);
+
+      // Validate input
+      if (!createRoomDto.roomCode) {
+        throw new InvalidRoomDataException('Mã phòng (roomCode) không được để trống');
+      }
+
+      // Check duplicate room code
+      const existingRoom = await this.roomRepository.findOne({
+        where: { roomCode: createRoomDto.roomCode },
+      });
+      if (existingRoom) {
+        throw new RoomAlreadyExistsException(`Phòng với mã "${createRoomDto.roomCode}" đã tồn tại`);
+      }
+
+      const newRoom = this.roomRepository.create(createRoomDto);
+      const savedRoom = await this.roomRepository.save(newRoom);
+
+      this.logger.log(`✅ Room created successfully with ID: ${savedRoom.id}`);
+      return savedRoom;
+    } catch (error: unknown) {
+      this.logger.error(`❌ Create room error: ${(error as Error).message}`);
+      if (
+        error instanceof RoomAlreadyExistsException ||
+        error instanceof InvalidRoomDataException
+      ) {
+        throw error;
+      }
+      throw new RoomCreationFailedException('Không thể tạo phòng');
+    }
   }
 
-  findAll() {
-    return `This action returns all rooms`;
+  async findOne(id: string): Promise<Room> {
+    try {
+      this.logger.log(`Finding room with ID: ${id}`);
+
+      const room = await this.roomRepository.findOne({
+        where: { id },
+      });
+
+      if (!room) {
+        throw new RoomNotFoundException(`Không tìm thấy phòng với ID: ${id}`);
+      }
+
+      this.logger.log(`Room found: ${room.roomCode}`);
+      return room;
+    } catch (error: unknown) {
+      this.logger.error(`Find room error: ${(error as Error).message}`);
+      if (error instanceof RoomNotFoundException) throw error;
+      throw new RoomNotFoundException('Không thể tìm thấy phòng');
+    }
+  }
+  async findAll(): Promise<Room[]> {
+    try {
+      this.logger.log(`Fetching all rooms`);
+      return await this.roomRepository.find();
+    } catch (error: unknown) {
+      this.logger.error(`Find all rooms error: ${(error as Error).message}`);
+      throw new RoomNotFoundException('Không thể lấy danh sách phòng');
+    }
+  }
+  async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room> {
+    try {
+      this.logger.log(`Updating room ID: ${id} with data: ${JSON.stringify(updateRoomDto)}`);
+
+      const room = await this.findOne(id);
+
+      // Check trùng mã phòng nếu cập nhật roomCode
+      if (updateRoomDto.roomCode && updateRoomDto.roomCode !== room.roomCode) {
+        const existingRoom = await this.roomRepository.findOne({
+          where: { roomCode: updateRoomDto.roomCode },
+        });
+        if (existingRoom && existingRoom.id !== id) {
+          throw new RoomAlreadyExistsException(`Phòng với mã "${updateRoomDto.roomCode}" đã tồn tại`);
+        }
+      }
+
+      Object.assign(room, updateRoomDto);
+      const updatedRoom = await this.roomRepository.save(room);
+
+      this.logger.log(`✅ Room updated successfully: ${updatedRoom.id}`);
+      return updatedRoom;
+    } catch (error: unknown) {
+      this.logger.error(`Update room error: ${(error as Error).message}`);
+      if (
+        error instanceof RoomNotFoundException ||
+        error instanceof RoomAlreadyExistsException
+      ) {
+        throw error;
+      }
+      throw new RoomUpdateFailedException('Không thể cập nhật phòng');
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} room`;
-  }
+  async remove(id: string): Promise<boolean> {
+    try {
+      this.logger.log(`Deleting room ID: ${id}`);
 
-  update(id: number, updateRoomDto: UpdateRoomDto) {
-    return `This action updates a #${id} room`;
-  }
+      const room = await this.findOne(id);
+      await this.roomRepository.remove(room);
 
-  remove(id: number) {
-    return `This action removes a #${id} room`;
+      this.logger.log(`✅ Room deleted successfully: ${id}`);
+      return true;
+    } catch (error: unknown) {
+      this.logger.error(`Remove room error: ${(error as Error).message}`);
+      if (error instanceof RoomNotFoundException) throw error;
+      throw new RoomDeletionFailedException('Không thể xóa phòng');
+    }
   }
 }
