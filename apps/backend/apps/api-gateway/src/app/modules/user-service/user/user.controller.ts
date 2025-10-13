@@ -6,7 +6,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
-import { RolesGuard } from '@backend/auth-guards';
 import {Public} from '@backend/auth-guards';
 import { Role1s } from '@backend/auth-guards';
 
@@ -36,7 +35,7 @@ export class UserController {
   private readonly logger = new Logger('UserController');
 
   constructor(
-    @Inject('UserService') private readonly userClient: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
   ) { }
 
   @Public()
