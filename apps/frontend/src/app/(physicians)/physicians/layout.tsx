@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import {
   Users,
   FileText,

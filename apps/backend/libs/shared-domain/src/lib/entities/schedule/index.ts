@@ -4,3 +4,6 @@ export * from './leave-requests.entity';
 export * from './schedule-replacements.entity';
 export * from './weekly-schedule-patterns.entity';
 export * from './room-assignments.entity';
+export * from './working-hours.entity';
+export * from './break-times.entity';
+export * from './special-hours.entity';

@@ -2,7 +2,6 @@
 
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { 
   AdminStats, 
   AdminQuickActions, 
@@ -62,13 +61,6 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Dashboard Header */}

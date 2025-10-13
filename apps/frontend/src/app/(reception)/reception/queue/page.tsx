@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 import { ReceptionTableTabs } from "@/components/reception/reception-table-tabs";
