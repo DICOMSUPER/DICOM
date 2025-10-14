@@ -3,12 +3,15 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 import { ShiftTemplateRepository } from '@backend/shared-domain';
 import {
   CreateShiftTemplateDto,
   UpdateShiftTemplateDto,
 } from '@backend/shared-domain';
-import { ShiftTemplate, ShiftType } from '@backend/shared-domain';
+import { ShiftType } from '@backend/shared-enums';
+import { ShiftTemplate } from '@backend/shared-domain';
 import {
   RepositoryPaginationDto,
   PaginatedResponseDto,
@@ -16,14 +19,19 @@ import {
 
 @Injectable()
 export class ShiftTemplateService {
+  private readonly shiftTemplateRepository: ShiftTemplateRepository;
+
   constructor(
-    private readonly shiftTemplateRepository: ShiftTemplateRepository
-  ) {}
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager
+  ) {
+    this.shiftTemplateRepository = new ShiftTemplateRepository(this.entityManager);
+  }
 
   async create(createDto: CreateShiftTemplateDto): Promise<ShiftTemplate> {
     try {
-      const template = this.shiftTemplateRepository.create(createDto);
-      return await this.shiftTemplateRepository.save(template);
+      const template = this.entityManager.create(ShiftTemplate, createDto);
+      return await this.entityManager.save(ShiftTemplate, template);
     } catch (error) {
       throw new BadRequestException('Failed to create shift template');
     }
@@ -40,6 +48,7 @@ export class ShiftTemplateService {
         data: result.templates,
         total: result.total,
         page: result.page,
+        limit: paginationDto.limit || 10,
         totalPages: result.totalPages,
         hasNextPage: result.page < result.totalPages,
         hasPreviousPage: result.page > 1,
@@ -76,7 +85,7 @@ export class ShiftTemplateService {
       const template = await this.findOne(id);
 
       Object.assign(template, updateDto);
-      return await this.shiftTemplateRepository.save(template);
+      return await this.entityManager.save(ShiftTemplate, template);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -87,8 +96,8 @@ export class ShiftTemplateService {
 
   async remove(id: string): Promise<boolean> {
     try {
-      const template = await this.findOne(id);
-      await this.shiftTemplateRepository.remove(template);
+      await this.findOne(id); // Check if exists
+      await this.shiftTemplateRepository.remove(await this.findOne(id));
       return true;
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -134,17 +143,17 @@ export class ShiftTemplateService {
 
       const duplicateData = {
         shiftName: newName,
-        shiftType: originalTemplate.shiftType,
-        startTime: originalTemplate.startTime,
-        endTime: originalTemplate.endTime,
-        breakStartTime: originalTemplate.breakStartTime,
-        breakEndTime: originalTemplate.breakEndTime,
+        shiftType: originalTemplate.shift_type,
+        startTime: originalTemplate.start_time,
+        endTime: originalTemplate.end_time,
+        breakStartTime: originalTemplate.break_start_time,
+        breakEndTime: originalTemplate.break_end_time,
         description: originalTemplate.description,
         isActive: true,
       };
 
-      const template = this.shiftTemplateRepository.create(duplicateData);
-      return await this.shiftTemplateRepository.save(template);
+      const template = this.entityManager.create(ShiftTemplate, duplicateData);
+      return await this.entityManager.save(ShiftTemplate, template);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -159,7 +168,7 @@ export class ShiftTemplateService {
     employeeIds: string[]
   ): Promise<{ success: number; failed: number; errors: string[] }> {
     try {
-      const template = await this.findOne(templateId);
+      await this.findOne(templateId); // Check if exists
       const errors: string[] = [];
       let success = 0;
       let failed = 0;
@@ -175,7 +184,7 @@ export class ShiftTemplateService {
           } catch (error) {
             failed++;
             errors.push(
-              `Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`
+              `Failed to create schedule for employee ${employeeId} on ${date}: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
           }
         }
@@ -197,7 +206,7 @@ export class ShiftTemplateService {
     endDate: string
   ): Promise<{ success: number; failed: number; errors: string[] }> {
     try {
-      const template = await this.findOne(templateId);
+      await this.findOne(templateId); // Check if exists
       const errors: string[] = [];
       let success = 0;
       let failed = 0;
@@ -214,7 +223,7 @@ export class ShiftTemplateService {
           } catch (error) {
             failed++;
             errors.push(
-              `Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`
+              `Failed to create schedule for employee ${employeeId} on ${date}: ${error instanceof Error ? error.message : 'Unknown error'}`
             );
           }
         }

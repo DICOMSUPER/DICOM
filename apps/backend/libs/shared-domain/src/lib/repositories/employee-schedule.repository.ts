@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { EmployeeSchedule } from '../entities/schedule/employee-schedules.entity';
-import { CreateEmployeeScheduleDto, UpdateEmployeeScheduleDto, EmployeeScheduleSearchFilters } from '../dto/schedule';
-import { RepositoryPaginationDto, PaginatedResponseDto } from '@backend/database';
+import { EmployeeSchedule } from '../entities/users/employee-schedules.entity';
+import { CreateEmployeeScheduleDto, EmployeeScheduleSearchFilters } from '../dto/schedule';
+import { RepositoryPaginationDto } from '@backend/database';
 
 @Injectable()
 export class EmployeeScheduleRepository {

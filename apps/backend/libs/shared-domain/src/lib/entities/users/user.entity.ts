@@ -1,9 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { BaseEntity } from '@backend/database';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Roles } from '@backend/shared-enums';
+import { Department } from './department.entity';
+import { Qualification } from './qualification.entity';
+import { RoomAssignment } from './room-assignment.entity';
 
 @Entity('users')
-export class User extends BaseEntity {
+export class User {
   @PrimaryGeneratedColumn('uuid', { name: 'user_id' })
   id!: string;
 
@@ -13,6 +15,9 @@ export class User extends BaseEntity {
   @Column({ length: 100, unique: true })
   email!: string;
 
+  @Column({ name: 'password_hash', length: 255 })
+  passwordHash!: string;
+
   @Column({ name: 'first_name', length: 50 })
   firstName!: string;
 
@@ -20,23 +25,44 @@ export class User extends BaseEntity {
   lastName!: string;
 
   @Column({ length: 20, nullable: true })
-  phone?: string;
+  phone!: string;
 
   @Column({ name: 'employee_id', length: 20, unique: true, nullable: true })
-  employeeId?: string;
+  employeeId!: string;
 
-  @Column({ name: 'is_verified', default: false })
+  @Column({ name: 'is_verified', nullable: true })
   isVerified!: boolean;
 
   @Column({ type: 'enum', enum: Roles, nullable: true })
-  role?: Roles;
+  role!: Roles;
 
   @Column({ name: 'department_id', nullable: true })
-  departmentId?: string;
+  departmentId!: string;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+
   @Column({ name: 'created_by', nullable: true })
-  createdBy?: string;
+  createdBy!: string;
+
+  // Relations
+  @ManyToOne(() => Department, department => department.users)
+  @JoinColumn({ name: 'department_id' })
+  department!: Department;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  creator!: User;
+
+  @OneToMany(() => Qualification, qualification => qualification.employee)
+  qualifications!: Qualification[];
+
+  @OneToMany(() => RoomAssignment, roomAssignment => roomAssignment.employee)
+  roomAssignments!: RoomAssignment[];
 }

@@ -2,58 +2,76 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
 import { ScheduleFormData } from '@/schemas/schedule-schema';
 
-export interface Employee {
+export interface User {
   id: string;
+  username: string;
+  email: string;
   firstName: string;
   lastName: string;
-  role: string;
-  department?: string;
-}
-
-export interface Room {
-  id: string;
-  roomCode: string;
-  roomType: 'CT' | 'WC';
-  description: string;
+  phone?: string;
+  employeeId?: string;
+  isVerified: boolean;
+  role?: string;
+  departmentId?: string;
   isActive: boolean;
-}
-
-export interface ShiftTemplate {
-  id: string;
-  shiftName: string;
-  shiftType: 'morning' | 'afternoon' | 'night' | 'full_day' | 'custom';
-  startTime: string;
-  endTime: string;
-  breakStartTime?: string;
-  breakEndTime?: string;
-  description?: string;
-  isActive: boolean;
-}
-
-export interface EmployeeSchedule {
-  id: string;
-  employee: Employee;
-  room?: Room;
-  shiftTemplate?: ShiftTemplate;
-  workDate: string;
-  actualStartTime?: string;
-  actualEndTime?: string;
-  scheduleStatus: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-  notes?: string;
-  overtimeHours: number;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface Room {
+  room_id: string;
+  room_code: string;
+  room_type: 'CT' | 'WC';
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShiftTemplate {
+  shift_template_id: string;
+  shift_name: string;
+  shift_type: 'morning' | 'afternoon' | 'night' | 'full_day' | 'custom';
+  start_time: string;
+  end_time: string;
+  break_start_time?: string;
+  break_end_time?: string;
+  description?: string;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeSchedule {
+  schedule_id: string;
+  employee_id: string;
+  room_id?: string;
+  shift_template_id?: string;
+  work_date: string;
+  actual_start_time?: string;
+  actual_end_time?: string;
+  schedule_status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  notes?: string;
+  overtime_hours: number;
+  created_by?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  employee: User;
+  room?: Room;
+  shift_template?: ShiftTemplate;
+}
+
 export interface ScheduleSearchFilters {
-  employeeId?: string;
-  roomId?: string;
-  workDateFrom?: string;
-  workDateTo?: string;
-  scheduleStatus?: string;
+  employee_id?: string;
+  room_id?: string;
+  work_date_from?: string;
+  work_date_to?: string;
+  schedule_status?: string;
   search?: string;
-  searchField?: string;
-  sortField?: string;
+  search_field?: string;
+  sort_field?: string;
   order?: 'asc' | 'desc';
 }
 
@@ -129,21 +147,21 @@ export interface SpecialHoursFormData {
 
 export const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
-  baseQuery: axiosBaseQuery(),
+  baseQuery: axiosBaseQuery(''),
   tagTypes: ['EmployeeSchedule', 'ShiftTemplate', 'Room', 'ScheduleStats', 'WorkingHours', 'BreakTimes', 'SpecialHours'],
   endpoints: (builder) => ({
     // Employee Schedules
     getEmployeeSchedules: builder.query<PaginatedResponse<EmployeeSchedule>, {
       page?: number;
       limit?: number;
-      employeeId?: string;
-      roomId?: string;
-      workDateFrom?: string;
-      workDateTo?: string;
-      scheduleStatus?: string;
+      employee_id?: string;
+      room_id?: string;
+      work_date_from?: string;
+      work_date_to?: string;
+      schedule_status?: string;
       search?: string;
-      searchField?: string;
-      sortField?: string;
+      search_field?: string;
+      sort_field?: string;
       order?: 'asc' | 'desc';
     }>({
       query: (params: any) => ({
@@ -162,9 +180,9 @@ export const scheduleApi = createApi({
       providesTags: (result: any, error: any, id: string) => [{ type: 'EmployeeSchedule', id }],
     }),
 
-    getSchedulesByEmployee: builder.query<EmployeeSchedule[], { employeeId: string; limit?: number }>({
-      query: ({ employeeId, limit }: { employeeId: string; limit?: number }) => ({
-        url: `/employee-schedules/employee/${employeeId}`,
+    getSchedulesByEmployee: builder.query<EmployeeSchedule[], { employee_id: string; limit?: number }>({
+      query: ({ employee_id, limit }: { employee_id: string; limit?: number }) => ({
+        url: `/employee-schedules/employee/${employee_id}`,
         method: 'GET',
         params: { limit },
       }),
@@ -172,23 +190,23 @@ export const scheduleApi = createApi({
     }),
 
     getSchedulesByDateRange: builder.query<EmployeeSchedule[], {
-      startDate: string;
-      endDate: string;
-      employeeId?: string;
+      start_date: string;
+      end_date: string;
+      employee_id?: string;
     }>({
-      query: ({ startDate, endDate, employeeId }: { startDate: string; endDate: string; employeeId?: string }) => ({
+      query: ({ start_date, end_date, employee_id }: { start_date: string; end_date: string; employee_id?: string }) => ({
         url: '/employee-schedules/date-range',
         method: 'GET',
-        params: { startDate, endDate, employeeId },
+        params: { start_date, end_date, employee_id },
       }),
       providesTags: ['EmployeeSchedule'],
     }),
 
-    getSchedulesByRoomAndDate: builder.query<EmployeeSchedule[], { roomId: string; workDate: string }>({
-      query: ({ roomId, workDate }: { roomId: string; workDate: string }) => ({
+    getSchedulesByRoomAndDate: builder.query<EmployeeSchedule[], { room_id: string; work_date: string }>({
+      query: ({ room_id, work_date }: { room_id: string; work_date: string }) => ({
         url: '/employee-schedules/room-date',
         method: 'GET',
-        params: { roomId, workDate },
+        params: { room_id, work_date },
       }),
       providesTags: ['EmployeeSchedule'],
     }),
@@ -226,8 +244,8 @@ export const scheduleApi = createApi({
     getShiftTemplates: builder.query<PaginatedResponse<ShiftTemplate>, {
       page?: number;
       limit?: number;
-      shiftType?: string;
-      isActive?: boolean;
+      shift_type?: string;
+      is_active?: boolean;
     }>({
       query: (params: any) => ({
         url: '/shift-templates',
@@ -246,8 +264,8 @@ export const scheduleApi = createApi({
     }),
 
     getShiftTemplatesByType: builder.query<ShiftTemplate[], string>({
-      query: (shiftType: string) => ({
-        url: `/shift-templates/type/${shiftType}`,
+      query: (shift_type: string) => ({
+        url: `/shift-templates/type/${shift_type}`,
         method: 'GET',
       }),
       providesTags: ['ShiftTemplate'],
@@ -294,8 +312,8 @@ export const scheduleApi = createApi({
     getRooms: builder.query<PaginatedResponse<Room>, {
       page?: number;
       limit?: number;
-      roomType?: string;
-      isActive?: boolean;
+      room_type?: string;
+      is_active?: boolean;
     }>({
       query: (params: any) => ({
         url: '/rooms',
@@ -314,8 +332,8 @@ export const scheduleApi = createApi({
     }),
 
     getRoomsByType: builder.query<Room[], string>({
-      query: (roomType: string) => ({
-        url: `/rooms/type/${roomType}`,
+      query: (room_type: string) => ({
+        url: `/rooms/type/${room_type}`,
         method: 'GET',
       }),
       providesTags: ['Room'],
@@ -351,11 +369,11 @@ export const scheduleApi = createApi({
     }),
 
     // Schedule Statistics
-    getScheduleStats: builder.query<any, { employeeId?: string }>({
-      query: ({ employeeId }: { employeeId?: string }) => ({
+    getScheduleStats: builder.query<any, { employee_id?: string }>({
+      query: ({ employee_id }: { employee_id?: string }) => ({
         url: '/employee-schedules/stats',
         method: 'GET',
-        params: { employeeId },
+        params: { employee_id },
       }),
       providesTags: ['ScheduleStats'],
     }),
@@ -502,8 +520,8 @@ export const scheduleApi = createApi({
     // Working Hours Utilities
     checkTimeAvailability: builder.query<boolean, {
       date: string;
-      startTime: string;
-      endTime: string;
+      start_time: string;
+      end_time: string;
     }>({
       query: (params: any) => ({
         url: '/working-hours/check-availability',
@@ -551,11 +569,11 @@ export const scheduleApi = createApi({
     }),
 
     copyWeekSchedules: builder.mutation<EmployeeSchedule[], {
-      sourceWeekStart: string;
-      targetWeekStart: string;
-      employeeId?: string;
+      source_week_start: string;
+      target_week_start: string;
+      employee_id?: string;
     }>({
-      query: (data: { sourceWeekStart: string; targetWeekStart: string; employeeId?: string }) => ({
+      query: (data: { source_week_start: string; target_week_start: string; employee_id?: string }) => ({
         url: '/employee-schedules/copy-week',
         method: 'POST',
         data: data,
@@ -568,11 +586,11 @@ export const scheduleApi = createApi({
       hasConflict: boolean;
       conflictingSchedule?: EmployeeSchedule;
     }, {
-      employeeId: string;
+      employee_id: string;
       date: string;
-      startTime: string;
-      endTime: string;
-      excludeScheduleId?: string;
+      start_time: string;
+      end_time: string;
+      exclude_schedule_id?: string;
     }>({
       query: (params: any) => ({
         url: '/employee-schedules/check-conflict',
@@ -593,11 +611,11 @@ export const scheduleApi = createApi({
     }),
 
     // Template Operations
-    duplicateShiftTemplate: builder.mutation<ShiftTemplate, { id: string; newName: string }>({
-      query: (data: { id: string; newName: string }) => ({
+    duplicateShiftTemplate: builder.mutation<ShiftTemplate, { id: string; new_name: string }>({
+      query: (data: { id: string; new_name: string }) => ({
         url: `/shift-templates/duplicate/${data.id}`,
         method: 'POST',
-        data: { newName: data.newName },
+        data: { new_name: data.new_name },
       }),
       invalidatesTags: ['ShiftTemplate'],
     }),
@@ -607,11 +625,11 @@ export const scheduleApi = createApi({
       failed: number;
       errors: string[];
     }, {
-      templateId: string;
+      template_id: string;
       dates: string[];
-      employeeIds: string[];
+      employee_ids: string[];
     }>({
-      query: (data: { templateId: string; dates: string[]; employeeIds: string[] }) => ({
+      query: (data: { template_id: string; dates: string[]; employee_ids: string[] }) => ({
         url: '/shift-templates/create-from-template',
         method: 'POST',
         data: data,
@@ -624,12 +642,12 @@ export const scheduleApi = createApi({
       failed: number;
       errors: string[];
     }, {
-      templateId: string;
-      employeeIds: string[];
-      startDate: string;
-      endDate: string;
+      template_id: string;
+      employee_ids: string[];
+      start_date: string;
+      end_date: string;
     }>({
-      query: (data: { templateId: string; employeeIds: string[]; startDate: string; endDate: string }) => ({
+      query: (data: { template_id: string; employee_ids: string[]; start_date: string; end_date: string }) => ({
         url: '/shift-templates/apply-to-employees',
         method: 'POST',
         data: data,

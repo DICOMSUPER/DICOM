@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '@backend/database';
 import { ScheduleStatus } from '@backend/shared-enums';
-import { User } from '../users/user.entity';
-import { Room } from '../rooms/rooms.entity';
+import { Room } from './room.entity';
 import { ShiftTemplate } from './shift-templates.entity';
+import { User } from './user.entity';
 
 @Entity('employee_schedules')
 @Index(['employee_id', 'work_date'])
@@ -14,13 +14,13 @@ export class EmployeeSchedule extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   schedule_id!: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: false })
+  @Column({ type: 'uuid', nullable: false })
   employee_id!: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   room_id?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   shift_template_id?: string;
 
   @Column({ type: 'date', nullable: false })
@@ -41,7 +41,7 @@ export class EmployeeSchedule extends BaseEntity {
   @Column({ type: 'decimal', precision: 4, scale: 2, default: 0 })
   overtime_hours!: number;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   created_by?: string;
 
   // Relations

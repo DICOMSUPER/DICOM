@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '@backend/shared-domain';
+import { User } from './user.entity';
 
 @Entity('departments')
 export class Department {

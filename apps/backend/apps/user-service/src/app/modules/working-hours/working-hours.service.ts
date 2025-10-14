@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { WorkingHoursRepository } from './working-hours.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { WorkingHoursRepository } from '@backend/shared-domain';
 import { 
   CreateWorkingHoursDto, 
   UpdateWorkingHoursDto,
@@ -13,7 +15,14 @@ import { WorkingHours, BreakTime, SpecialHours } from '@backend/shared-domain';
 
 @Injectable()
 export class WorkingHoursService {
-  constructor(private readonly workingHoursRepository: WorkingHoursRepository) {}
+  private readonly workingHoursRepository: WorkingHoursRepository;
+
+  constructor(
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
+  ) {
+    this.workingHoursRepository = new WorkingHoursRepository(this.entityManager);
+  }
 
   // Working Hours
   async createWorkingHours(createDto: CreateWorkingHoursDto): Promise<WorkingHours> {
@@ -58,7 +67,7 @@ export class WorkingHoursService {
 
   async updateWorkingHours(id: string, updateDto: UpdateWorkingHoursDto): Promise<WorkingHours> {
     try {
-      const workingHours = await this.findWorkingHoursById(id);
+      await this.findWorkingHoursById(id); // Check if exists
       return await this.workingHoursRepository.updateWorkingHours(id, updateDto);
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -88,6 +97,9 @@ export class WorkingHoursService {
       
       // Validate break time is within working hours
       const workingHours = await this.workingHoursRepository.findWorkingHoursById(createDto.workingHoursId);
+      if (!workingHours) {
+        throw new NotFoundException('Working hours not found');
+      }
       if (createDto.startTime < workingHours.startTime || createDto.endTime > workingHours.endTime) {
         throw new BadRequestException('Break time must be within working hours');
       }
@@ -115,12 +127,12 @@ export class WorkingHoursService {
 
   async updateBreakTime(id: string, updateDto: UpdateBreakTimeDto): Promise<BreakTime> {
     try {
-      const breakTime = await this.workingHoursRepository.breakTimeRepo.findOne({ where: { id } });
-      if (!breakTime) {
+      // Check if break time exists by trying to update it
+      const result = await this.workingHoursRepository.updateBreakTime(id, updateDto);
+      if (!result) {
         throw new NotFoundException('Break time not found');
       }
-
-      return await this.workingHoursRepository.updateBreakTime(id, updateDto);
+      return result;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -131,12 +143,11 @@ export class WorkingHoursService {
 
   async deleteBreakTime(id: string): Promise<boolean> {
     try {
-      const breakTime = await this.workingHoursRepository.breakTimeRepo.findOne({ where: { id } });
-      if (!breakTime) {
+      const result = await this.workingHoursRepository.deleteBreakTime(id);
+      if (!result) {
         throw new NotFoundException('Break time not found');
       }
-
-      return await this.workingHoursRepository.deleteBreakTime(id);
+      return result;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -221,7 +232,7 @@ export class WorkingHoursService {
 
   async getWorkingHoursForDate(date: string): Promise<{ workingHours: WorkingHours | null, specialHours: SpecialHours | null }> {
     try {
-      const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'lowercase' });
+      const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
       const workingHours = await this.workingHoursRepository.findWorkingHoursByDay(dayOfWeek);
       const specialHours = await this.workingHoursRepository.findSpecialHoursByDate(date);
       

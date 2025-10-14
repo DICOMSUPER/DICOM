@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { RoomType } from '@backend/shared-enums';
-import { RoomAssignment } from '@backend/shared-domain';
+import { RoomAssignment } from './room-assignment.entity';
 
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
