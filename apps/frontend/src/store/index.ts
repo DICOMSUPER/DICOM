@@ -4,7 +4,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { patientApi } from "./patientApi";
 import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
-import { scheduleApi } from "../lib/api/schedule-api";
+import { scheduleApi } from "./scheduleApi";
 import authReducer from "./authSlice";
 import patientReducer from "./patientSlice";
 

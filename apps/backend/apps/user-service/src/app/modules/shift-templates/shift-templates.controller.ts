@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, MessagePattern, Payload } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ShiftTemplateService } from './shift-templates.service';
 import { CreateShiftTemplateDto, UpdateShiftTemplateDto } from '@backend/shared-domain';
-import { ShiftType } from '@backend/shared-domain';
+import { ShiftType } from '@backend/shared-enums';
 import { RepositoryPaginationDto } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 
