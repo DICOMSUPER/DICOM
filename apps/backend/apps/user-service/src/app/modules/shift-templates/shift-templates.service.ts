@@ -1,12 +1,24 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ShiftTemplateRepository } from '@backend/shared-domain';
-import { CreateShiftTemplateDto, UpdateShiftTemplateDto } from '@backend/shared-domain';
+import {
+  CreateShiftTemplateDto,
+  UpdateShiftTemplateDto,
+} from '@backend/shared-domain';
 import { ShiftTemplate, ShiftType } from '@backend/shared-domain';
-import { RepositoryPaginationDto, PaginatedResponseDto } from '@backend/database';
+import {
+  RepositoryPaginationDto,
+  PaginatedResponseDto,
+} from '@backend/database';
 
 @Injectable()
 export class ShiftTemplateService {
-  constructor(private readonly shiftTemplateRepository: ShiftTemplateRepository) {}
+  constructor(
+    private readonly shiftTemplateRepository: ShiftTemplateRepository
+  ) {}
 
   async create(createDto: CreateShiftTemplateDto): Promise<ShiftTemplate> {
     try {
@@ -17,16 +29,20 @@ export class ShiftTemplateService {
     }
   }
 
-  async findMany(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<ShiftTemplate>> {
+  async findMany(
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ShiftTemplate>> {
     try {
-      const result = await this.shiftTemplateRepository.findWithPagination(paginationDto);
+      const result = await this.shiftTemplateRepository.findWithPagination(
+        paginationDto
+      );
       return {
         data: result.templates,
         total: result.total,
         page: result.page,
         totalPages: result.totalPages,
         hasNextPage: result.page < result.totalPages,
-        hasPreviousPage: result.page > 1
+        hasPreviousPage: result.page > 1,
       };
     } catch (error) {
       throw new BadRequestException('Failed to fetch shift templates');
@@ -36,7 +52,7 @@ export class ShiftTemplateService {
   async findOne(id: string): Promise<ShiftTemplate> {
     try {
       const template = await this.shiftTemplateRepository.findOne({
-        where: { shift_template_id: id }
+        where: { shift_template_id: id },
       });
 
       if (!template) {
@@ -52,10 +68,13 @@ export class ShiftTemplateService {
     }
   }
 
-  async update(id: string, updateDto: UpdateShiftTemplateDto): Promise<ShiftTemplate> {
+  async update(
+    id: string,
+    updateDto: UpdateShiftTemplateDto
+  ): Promise<ShiftTemplate> {
     try {
       const template = await this.findOne(id);
-      
+
       Object.assign(template, updateDto);
       return await this.shiftTemplateRepository.save(template);
     } catch (error) {
@@ -99,15 +118,20 @@ export class ShiftTemplateService {
     try {
       return await this.shiftTemplateRepository.getTemplateStats();
     } catch (error) {
-      throw new BadRequestException('Failed to fetch shift template statistics');
+      throw new BadRequestException(
+        'Failed to fetch shift template statistics'
+      );
     }
   }
 
   // Template Operations
-  async duplicateTemplate(templateId: string, newName: string): Promise<ShiftTemplate> {
+  async duplicateTemplate(
+    templateId: string,
+    newName: string
+  ): Promise<ShiftTemplate> {
     try {
       const originalTemplate = await this.findOne(templateId);
-      
+
       const duplicateData = {
         shiftName: newName,
         shiftType: originalTemplate.shiftType,
@@ -116,7 +140,7 @@ export class ShiftTemplateService {
         breakStartTime: originalTemplate.breakStartTime,
         breakEndTime: originalTemplate.breakEndTime,
         description: originalTemplate.description,
-        isActive: true
+        isActive: true,
       };
 
       const template = this.shiftTemplateRepository.create(duplicateData);
@@ -130,8 +154,8 @@ export class ShiftTemplateService {
   }
 
   async createFromTemplate(
-    templateId: string, 
-    dates: string[], 
+    templateId: string,
+    dates: string[],
     employeeIds: string[]
   ): Promise<{ success: number; failed: number; errors: string[] }> {
     try {
@@ -150,7 +174,9 @@ export class ShiftTemplateService {
             success++;
           } catch (error) {
             failed++;
-            errors.push(`Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`);
+            errors.push(
+              `Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`
+            );
           }
         }
       }
@@ -187,7 +213,9 @@ export class ShiftTemplateService {
             success++;
           } catch (error) {
             failed++;
-            errors.push(`Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`);
+            errors.push(
+              `Failed to create schedule for employee ${employeeId} on ${date}: ${error.message}`
+            );
           }
         }
       }
@@ -197,7 +225,9 @@ export class ShiftTemplateService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Failed to apply template to multiple employees');
+      throw new BadRequestException(
+        'Failed to apply template to multiple employees'
+      );
     }
   }
 
@@ -205,11 +235,15 @@ export class ShiftTemplateService {
     const dates: string[] = [];
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+
+    for (
+      let date = new Date(start);
+      date <= end;
+      date.setDate(date.getDate() + 1)
+    ) {
       dates.push(date.toISOString().split('T')[0]);
     }
-    
+
     return dates;
   }
 }

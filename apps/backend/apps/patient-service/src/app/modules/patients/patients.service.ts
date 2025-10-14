@@ -1,10 +1,10 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { 
-  CreatePatientDto, 
-  UpdatePatientDto, 
+import {
+  CreatePatientDto,
+  UpdatePatientDto,
   Patient,
   PatientStatsDto,
-  PatientRepository
+  PatientRepository,
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -12,6 +12,7 @@ import {
 } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PatientService {
@@ -31,10 +32,30 @@ export class PatientService {
     return patient;
   };
 
-  create = async (
-    createPatientDto: CreatePatientDto
-  ): Promise<Patient> => {
-    return await this.patientRepository.create(createPatientDto);
+  private checkPatientCode = async (
+    patientCode: string
+  ): Promise<Patient | null> => {
+    const patient = await this.patientRepository.findByPatientCode(patientCode);
+    if (patient && patient.isDeleted !== false) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Payment code generated has been taken, please try again',
+        PATIENT_SERVICE
+      );
+    }
+    return patient;
+  };
+
+  private generatePatientCode = (): string => {
+    return 'PA' + uuidv4();
+  };
+  create = async (createPatientDto: CreatePatientDto): Promise<Patient> => {
+    const patientCode = this.generatePatientCode();
+    this.checkPatientCode(patientCode);
+    return await this.patientRepository.create({
+      ...createPatientDto,
+      patientCode,
+    });
   };
 
   findAll = async (): Promise<Patient[]> => {

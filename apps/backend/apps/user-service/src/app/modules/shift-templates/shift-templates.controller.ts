@@ -5,18 +5,25 @@ import { CreateShiftTemplateDto, UpdateShiftTemplateDto } from '@backend/shared-
 import { ShiftType } from '@backend/shared-enums';
 import { RepositoryPaginationDto } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
-
+import { MessagePattern, Payload } from '@nestjs/microservices';
 @Controller('shift-templates')
 export class ShiftTemplateController {
   constructor(private readonly shiftTemplateService: ShiftTemplateService) {}
 
   @Post()
   @MessagePattern('UserService.ShiftTemplate.Create')
-  async create(@Payload() createDto: CreateShiftTemplateDto) {
+  async create(
+    @Payload()
+    createDto: CreateShiftTemplateDto
+  ) {
     try {
       return await this.shiftTemplateService.create(createDto);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to create shift template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to create shift template',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -26,7 +33,11 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.findMany(data.paginationDto);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch shift templates', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch shift templates',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -36,17 +47,27 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.findOne(data.id);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch shift template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch shift template',
+        'ShiftTemplateController'
+      );
     }
   }
 
   @Patch(':id')
   @MessagePattern('UserService.ShiftTemplate.Update')
-  async update(@Payload() data: { id: string; updateDto: UpdateShiftTemplateDto }) {
+  async update(
+    @Payload() data: { id: string; updateDto: UpdateShiftTemplateDto }
+  ) {
     try {
       return await this.shiftTemplateService.update(data.id, data.updateDto);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to update shift template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to update shift template',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -56,7 +77,11 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.remove(data.id);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to delete shift template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to delete shift template',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -66,7 +91,11 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.findByType(data.shiftType);
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch shift templates by type', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch shift templates by type',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -76,7 +105,11 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.findActiveTemplates();
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch active shift templates', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch active shift templates',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -86,7 +119,11 @@ export class ShiftTemplateController {
     try {
       return await this.shiftTemplateService.getStats();
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch shift template statistics', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch shift template statistics',
+        'ShiftTemplateController'
+      );
     }
   }
 
@@ -95,29 +132,68 @@ export class ShiftTemplateController {
   @MessagePattern('UserService.ShiftTemplate.Duplicate')
   async duplicateTemplate(@Payload() data: { id: string; newName: string }) {
     try {
-      return await this.shiftTemplateService.duplicateTemplate(data.id, data.newName);
+      return await this.shiftTemplateService.duplicateTemplate(
+        data.id,
+        data.newName
+      );
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to duplicate shift template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to duplicate shift template',
+        'ShiftTemplateController'
+      );
     }
   }
 
   @Post('create-from-template')
   @MessagePattern('UserService.ShiftTemplate.CreateFromTemplate')
-  async createFromTemplate(@Payload() data: { templateId: string; dates: string[]; employeeIds: string[] }) {
+  async createFromTemplate(
+    @Payload()
+    data: {
+      templateId: string;
+      dates: string[];
+      employeeIds: string[];
+    }
+  ) {
     try {
-      return await this.shiftTemplateService.createFromTemplate(data.templateId, data.dates, data.employeeIds);
+      return await this.shiftTemplateService.createFromTemplate(
+        data.templateId,
+        data.dates,
+        data.employeeIds
+      );
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to create schedules from template', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to create schedules from template',
+        'ShiftTemplateController'
+      );
     }
   }
 
   @Post('apply-to-employees')
   @MessagePattern('UserService.ShiftTemplate.ApplyToEmployees')
-  async applyToMultipleEmployees(@Payload() data: { templateId: string; employeeIds: string[]; startDate: string; endDate: string }) {
+  async applyToMultipleEmployees(
+    @Payload()
+    data: {
+      templateId: string;
+      employeeIds: string[];
+      startDate: string;
+      endDate: string;
+    }
+  ) {
     try {
-      return await this.shiftTemplateService.applyToMultipleEmployees(data.templateId, data.employeeIds, data.startDate, data.endDate);
+      return await this.shiftTemplateService.applyToMultipleEmployees(
+        data.templateId,
+        data.employeeIds,
+        data.startDate,
+        data.endDate
+      );
     } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to apply template to multiple employees', 'ShiftTemplateController');
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to apply template to multiple employees',
+        'ShiftTemplateController'
+      );
     }
   }
 }

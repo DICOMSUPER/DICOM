@@ -7,7 +7,7 @@ import { UrgentNotifications } from "@/components/reception/urgent-notifications
 import { QueuePreview } from "@/components/reception/queue-preview";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
+import {
   useGetPatientStatsQuery,
   useGetEncounterStatsQuery,
   useGetAllEncountersQuery,
@@ -23,7 +23,11 @@ export default function ReceptionDashboard() {
   const { data: encounterStats, isLoading: encounterStatsLoading } =
     useGetEncounterStatsQuery(undefined);
   const { data: recentEncounters, isLoading: encountersLoading } =
-    useGetAllEncountersQuery({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' });
+    useGetAllEncountersQuery({
+      limit: 5,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
 
   // Calculate stats from real data
   const stats = {
@@ -34,12 +38,15 @@ export default function ReceptionDashboard() {
   };
 
   // Transform encounters to queue format for preview
-  const recentQueue = recentEncounters?.map(encounter => ({
-    id: encounter.id,
-    name: encounter.patient ? `${encounter.patient.firstName} ${encounter.patient.lastName}` : 'Unknown Patient',
-    time: new Date(encounter.encounterDate).toLocaleTimeString(),
-    priority: (encounter.priority || 'normal') as any,
-  })) || [];
+  const recentQueue =
+    recentEncounters?.map((encounter) => ({
+      id: encounter.id,
+      name: encounter.patient
+        ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+        : "Unknown Patient",
+      time: new Date(encounter.encounterDate).toLocaleTimeString(),
+      priority: (encounter.priority || "normal") as any,
+    })) || [];
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -70,7 +77,7 @@ export default function ReceptionDashboard() {
             Reception Dashboard
           </h1>
           <p className="text-foreground">
-            Welcome back! Here's what's happening today.
+            Welcome back! Here&apos;s what&apos;s happening today.
           </p>
         </div>
 

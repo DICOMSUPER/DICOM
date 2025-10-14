@@ -8,11 +8,8 @@ import { WorkingHoursModule } from '../working-hours/working-hours.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      EmployeeSchedule,
-      Room
-    ]),
-    WorkingHoursModule
+    TypeOrmModule.forFeature([EmployeeSchedule, Room]),
+    WorkingHoursModule,
   ],
   controllers: [
     EmployeeScheduleController

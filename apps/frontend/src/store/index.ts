@@ -1,7 +1,7 @@
-
 import { configureStore } from "@reduxjs/toolkit";
 // import { authApi } from "./authApi";
 import { patientApi } from "./patientApi";
+import { patientEncounterApi } from "./patientEncounterApi";
 import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
 import { scheduleApi } from "./scheduleApi";
@@ -14,6 +14,7 @@ export const store = configureStore({
     patient: patientReducer,
     // [authApi.reducerPath]: authApi.reducer,
     [patientApi.reducerPath]: patientApi.reducer,
+    [patientEncounterApi.reducerPath]: patientEncounterApi.reducer,
     [queueAssignmentApi.reducerPath]: queueAssignmentApi.reducer,
     [patientConditionApi.reducerPath]: patientConditionApi.reducer,
     [scheduleApi.reducerPath]: scheduleApi.reducer,
@@ -22,6 +23,7 @@ export const store = configureStore({
     getDefault()
       // .concat(authApi.middleware)
       .concat(patientApi.middleware)
+      .concat(patientEncounterApi.middleware)
       .concat(queueAssignmentApi.middleware)
       .concat(patientConditionApi.middleware)
       .concat(scheduleApi.middleware),
