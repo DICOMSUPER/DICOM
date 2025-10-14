@@ -11,8 +11,15 @@ import { WorkingHoursModule } from '../working-hours/working-hours.module';
     TypeOrmModule.forFeature([EmployeeSchedule, Room]),
     WorkingHoursModule,
   ],
-  controllers: [EmployeeScheduleController],
-  providers: [EmployeeScheduleService, EmployeeScheduleRepository],
-  exports: [EmployeeScheduleService],
+  controllers: [
+    EmployeeScheduleController
+  ],
+  providers: [
+    EmployeeScheduleService,
+    EmployeeScheduleRepository
+  ],
+  exports: [
+    EmployeeScheduleService
+  ]
 })
 export class ScheduleModule {}

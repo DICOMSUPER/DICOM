@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQuery } from './axiosBaseQuery';
+import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
 import { ScheduleFormData } from '@/schemas/schedule-schema';
 
 export interface Employee {
@@ -129,7 +129,7 @@ export interface SpecialHoursFormData {
 
 export const scheduleApi = createApi({
   reducerPath: 'scheduleApi',
-  baseQuery,
+  baseQuery: axiosBaseQuery(),
   tagTypes: ['EmployeeSchedule', 'ShiftTemplate', 'Room', 'ScheduleStats', 'WorkingHours', 'BreakTimes', 'SpecialHours'],
   endpoints: (builder) => ({
     // Employee Schedules
@@ -148,19 +148,24 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/employee-schedules',
+        method: 'GET',
         params,
       }),
       providesTags: ['EmployeeSchedule'],
     }),
 
     getEmployeeScheduleById: builder.query<EmployeeSchedule, string>({
-      query: (id: string) => `/employee-schedules/${id}`,
+      query: (id: string) => ({
+        url: `/employee-schedules/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result: any, error: any, id: string) => [{ type: 'EmployeeSchedule', id }],
     }),
 
     getSchedulesByEmployee: builder.query<EmployeeSchedule[], { employeeId: string; limit?: number }>({
       query: ({ employeeId, limit }: { employeeId: string; limit?: number }) => ({
         url: `/employee-schedules/employee/${employeeId}`,
+        method: 'GET',
         params: { limit },
       }),
       providesTags: ['EmployeeSchedule'],
@@ -173,6 +178,7 @@ export const scheduleApi = createApi({
     }>({
       query: ({ startDate, endDate, employeeId }: { startDate: string; endDate: string; employeeId?: string }) => ({
         url: '/employee-schedules/date-range',
+        method: 'GET',
         params: { startDate, endDate, employeeId },
       }),
       providesTags: ['EmployeeSchedule'],
@@ -181,6 +187,7 @@ export const scheduleApi = createApi({
     getSchedulesByRoomAndDate: builder.query<EmployeeSchedule[], { roomId: string; workDate: string }>({
       query: ({ roomId, workDate }: { roomId: string; workDate: string }) => ({
         url: '/employee-schedules/room-date',
+        method: 'GET',
         params: { roomId, workDate },
       }),
       providesTags: ['EmployeeSchedule'],
@@ -190,7 +197,7 @@ export const scheduleApi = createApi({
       query: (schedule: ScheduleFormData) => ({
         url: '/employee-schedules',
         method: 'POST',
-        body: schedule,
+        data: schedule,
       }),
       invalidatesTags: ['EmployeeSchedule'],
     }),
@@ -199,7 +206,7 @@ export const scheduleApi = createApi({
       query: ({ id, updates }: { id: string; updates: Partial<ScheduleFormData> }) => ({
         url: `/employee-schedules/${id}`,
         method: 'PATCH',
-        body: updates,
+        data: updates,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'EmployeeSchedule', id },
@@ -224,23 +231,33 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/shift-templates',
+        method: 'GET',
         params,
       }),
       providesTags: ['ShiftTemplate'],
     }),
 
     getShiftTemplateById: builder.query<ShiftTemplate, string>({
-      query: (id: string) => `/shift-templates/${id}`,
+      query: (id: string) => ({
+        url: `/shift-templates/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result: any, error: any, id: string) => [{ type: 'ShiftTemplate', id }],
     }),
 
     getShiftTemplatesByType: builder.query<ShiftTemplate[], string>({
-      query: (shiftType: string) => `/shift-templates/type/${shiftType}`,
+      query: (shiftType: string) => ({
+        url: `/shift-templates/type/${shiftType}`,
+        method: 'GET',
+      }),
       providesTags: ['ShiftTemplate'],
     }),
 
     getActiveShiftTemplates: builder.query<ShiftTemplate[], void>({
-      query: () => '/shift-templates/active',
+      query: () => ({
+        url: '/shift-templates/active',
+        method: 'GET',
+      }),
       providesTags: ['ShiftTemplate'],
     }),
 
@@ -248,7 +265,7 @@ export const scheduleApi = createApi({
       query: (template: any) => ({
         url: '/shift-templates',
         method: 'POST',
-        body: template,
+        data: template,
       }),
       invalidatesTags: ['ShiftTemplate'],
     }),
@@ -257,7 +274,7 @@ export const scheduleApi = createApi({
       query: ({ id, updates }: { id: string; updates: any }) => ({
         url: `/shift-templates/${id}`,
         method: 'PATCH',
-        body: updates,
+        data: updates,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'ShiftTemplate', id },
@@ -282,18 +299,25 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/rooms',
+        method: 'GET',
         params,
       }),
       providesTags: ['Room'],
     }),
 
     getRoomById: builder.query<Room, string>({
-      query: (id: string) => `/rooms/${id}`,
+      query: (id: string) => ({
+        url: `/rooms/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result: any, error: any, id: string) => [{ type: 'Room', id }],
     }),
 
     getRoomsByType: builder.query<Room[], string>({
-      query: (roomType: string) => `/rooms/type/${roomType}`,
+      query: (roomType: string) => ({
+        url: `/rooms/type/${roomType}`,
+        method: 'GET',
+      }),
       providesTags: ['Room'],
     }),
 
@@ -301,7 +325,7 @@ export const scheduleApi = createApi({
       query: (room: any) => ({
         url: '/rooms',
         method: 'POST',
-        body: room,
+        data: room,
       }),
       invalidatesTags: ['Room'],
     }),
@@ -310,7 +334,7 @@ export const scheduleApi = createApi({
       query: ({ id, updates }: { id: string; updates: any }) => ({
         url: `/rooms/${id}`,
         method: 'PATCH',
-        body: updates,
+        data: updates,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'Room', id },
@@ -330,6 +354,7 @@ export const scheduleApi = createApi({
     getScheduleStats: builder.query<any, { employeeId?: string }>({
       query: ({ employeeId }: { employeeId?: string }) => ({
         url: '/employee-schedules/stats',
+        method: 'GET',
         params: { employeeId },
       }),
       providesTags: ['ScheduleStats'],
@@ -342,13 +367,17 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/working-hours',
+        method: 'GET',
         params,
       }),
       providesTags: ['WorkingHours'],
     }),
 
     getWorkingHoursById: builder.query<WorkingHours, string>({
-      query: (id: string) => `/working-hours/${id}`,
+      query: (id: string) => ({
+        url: `/working-hours/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result: any, error: any, id: string) => [{ type: 'WorkingHours', id }],
     }),
 
@@ -356,7 +385,7 @@ export const scheduleApi = createApi({
       query: (data: WorkingHoursFormData) => ({
         url: '/working-hours',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['WorkingHours'],
     }),
@@ -365,7 +394,7 @@ export const scheduleApi = createApi({
       query: ({ id, data }: { id: string; data: Partial<WorkingHoursFormData> }) => ({
         url: `/working-hours/${id}`,
         method: 'PATCH',
-        body: data,
+        data: data,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'WorkingHours', id },
@@ -383,7 +412,10 @@ export const scheduleApi = createApi({
 
     // Break Times
     getBreakTimes: builder.query<BreakTime[], string>({
-      query: (workingHoursId: string) => `/working-hours/break-times/${workingHoursId}`,
+      query: (workingHoursId: string) => ({
+        url: `/working-hours/break-times/${workingHoursId}`,
+        method: 'GET',
+      }),
       providesTags: ['BreakTimes'],
     }),
 
@@ -391,7 +423,7 @@ export const scheduleApi = createApi({
       query: (data: BreakTimeFormData) => ({
         url: '/working-hours/break-times',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['BreakTimes', 'WorkingHours'],
     }),
@@ -400,7 +432,7 @@ export const scheduleApi = createApi({
       query: ({ id, data }: { id: string; data: Partial<BreakTimeFormData> }) => ({
         url: `/working-hours/break-times/${id}`,
         method: 'PATCH',
-        body: data,
+        data: data,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'BreakTimes', id },
@@ -424,13 +456,17 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/working-hours/special-hours',
+        method: 'GET',
         params,
       }),
       providesTags: ['SpecialHours'],
     }),
 
     getSpecialHoursById: builder.query<SpecialHours, string>({
-      query: (id: string) => `/working-hours/special-hours/${id}`,
+      query: (id: string) => ({
+        url: `/working-hours/special-hours/${id}`,
+        method: 'GET',
+      }),
       providesTags: (result: any, error: any, id: string) => [{ type: 'SpecialHours', id }],
     }),
 
@@ -438,7 +474,7 @@ export const scheduleApi = createApi({
       query: (data: SpecialHoursFormData) => ({
         url: '/working-hours/special-hours',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['SpecialHours'],
     }),
@@ -447,7 +483,7 @@ export const scheduleApi = createApi({
       query: ({ id, data }: { id: string; data: Partial<SpecialHoursFormData> }) => ({
         url: `/working-hours/special-hours/${id}`,
         method: 'PATCH',
-        body: data,
+        data: data,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
         { type: 'SpecialHours', id },
@@ -471,6 +507,7 @@ export const scheduleApi = createApi({
     }>({
       query: (params: any) => ({
         url: '/working-hours/check-availability',
+        method: 'GET',
         params,
       }),
     }),
@@ -479,7 +516,10 @@ export const scheduleApi = createApi({
       workingHours: WorkingHours | null;
       specialHours: SpecialHours | null;
     }, string>({
-      query: (date: string) => `/working-hours/for-date/${date}`,
+      query: (date: string) => ({
+        url: `/working-hours/for-date/${date}`,
+        method: 'GET',
+      }),
     }),
 
     // Bulk Operations
@@ -487,7 +527,7 @@ export const scheduleApi = createApi({
       query: (schedules: ScheduleFormData[]) => ({
         url: '/employee-schedules/bulk',
         method: 'POST',
-        body: { schedules },
+        data: { schedules },
       }),
       invalidatesTags: ['EmployeeSchedule'],
     }),
@@ -496,7 +536,7 @@ export const scheduleApi = createApi({
       query: (data: { updates: { id: string; data: Partial<ScheduleFormData> }[] }) => ({
         url: '/employee-schedules/bulk',
         method: 'PATCH',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['EmployeeSchedule'],
     }),
@@ -505,7 +545,7 @@ export const scheduleApi = createApi({
       query: (data: { ids: string[] }) => ({
         url: '/employee-schedules/bulk',
         method: 'DELETE',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['EmployeeSchedule'],
     }),
@@ -518,7 +558,7 @@ export const scheduleApi = createApi({
       query: (data: { sourceWeekStart: string; targetWeekStart: string; employeeId?: string }) => ({
         url: '/employee-schedules/copy-week',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['EmployeeSchedule'],
     }),
@@ -537,7 +577,7 @@ export const scheduleApi = createApi({
       query: (params: any) => ({
         url: '/employee-schedules/check-conflict',
         method: 'POST',
-        body: params,
+        data: params,
       }),
     }),
 
@@ -548,7 +588,7 @@ export const scheduleApi = createApi({
       query: (data: { schedules: EmployeeSchedule[] }) => ({
         url: '/employee-schedules/validate-working-hours',
         method: 'POST',
-        body: data,
+        data: data,
       }),
     }),
 
@@ -557,7 +597,7 @@ export const scheduleApi = createApi({
       query: (data: { id: string; newName: string }) => ({
         url: `/shift-templates/duplicate/${data.id}`,
         method: 'POST',
-        body: { newName: data.newName },
+        data: { newName: data.newName },
       }),
       invalidatesTags: ['ShiftTemplate'],
     }),
@@ -574,7 +614,7 @@ export const scheduleApi = createApi({
       query: (data: { templateId: string; dates: string[]; employeeIds: string[] }) => ({
         url: '/shift-templates/create-from-template',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['EmployeeSchedule', 'ShiftTemplate'],
     }),
@@ -592,7 +632,7 @@ export const scheduleApi = createApi({
       query: (data: { templateId: string; employeeIds: string[]; startDate: string; endDate: string }) => ({
         url: '/shift-templates/apply-to-employees',
         method: 'POST',
-        body: data,
+        data: data,
       }),
       invalidatesTags: ['EmployeeSchedule', 'ShiftTemplate'],
     }),
