@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Stethoscope, CheckCircle } from "lucide-react";
 
 const departments = [
@@ -7,7 +13,7 @@ const departments = [
   "Neurology",
   "Orthopedics",
   "Emergency",
-  "General Medicine"
+  "General Medicine",
 ];
 
 const doctors = [
@@ -15,7 +21,7 @@ const doctors = [
   "Dr. Johnson (Neurology)",
   "Dr. Brown (Orthopedics)",
   "Dr. Wilson (Emergency)",
-  "Dr. Davis (General Medicine)"
+  "Dr. Davis (General Medicine)",
 ];
 
 export function PatientForward() {
@@ -32,36 +38,51 @@ export function PatientForward() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Select Department</label>
             <select className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
               {departments.map(dept => (
                 <option key={dept}>{dept}</option>
               ))}
             </select>
-          </div>
-          
+          </div> */}
+
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Select Doctor</label>
+            <label className="text-sm font-medium text-foreground">
+              Select Physician
+            </label>
             <select className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-              {doctors.map(doctor => (
+              {doctors.map((doctor) => (
                 <option key={doctor}>{doctor}</option>
               ))}
             </select>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Priority Level</label>
+            <label className="text-sm font-medium text-foreground">
+              Priority Level
+            </label>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" className="border-border">Low</Button>
-              <Button variant="outline" size="sm" className="border-border">Medium</Button>
-              <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white">High</Button>
+              <Button variant="outline" size="sm" className="border-border">
+                Low
+              </Button>
+              <Button variant="outline" size="sm" className="border-border">
+                Medium
+              </Button>
+              <Button
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                High
+              </Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
-            <textarea 
+            <label className="text-sm font-medium text-foreground">
+              Notes (Optional)
+            </label>
+            <textarea
               className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}
               placeholder="Add any symptoms or intake notes..."

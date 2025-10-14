@@ -7,12 +7,12 @@ import { UrgentNotifications } from "@/components/reception/urgent-notifications
 import { QueuePreview } from "@/components/reception/queue-preview";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  useGetPatientStatsQuery,
-  useGetEncounterStatsQuery,
-  useGetAllEncountersQuery,
-} from "@/store/patientApi";
-
+import { useGetPatientStatsQuery } from "@/store/patientApi";
+import {
+  useGetPatientEncounterStatsQuery,
+  useGetPatientEncountersQuery,
+} from "@/store/patientEncounterApi";
+import { AppHeader } from "@/components/app-header";
 export default function ReceptionDashboard() {
   const router = useRouter();
   const [notificationCount] = useState(3);
@@ -21,9 +21,13 @@ export default function ReceptionDashboard() {
   const { data: patientStats, isLoading: patientStatsLoading } =
     useGetPatientStatsQuery();
   const { data: encounterStats, isLoading: encounterStatsLoading } =
-    useGetEncounterStatsQuery(undefined);
+    useGetPatientEncounterStatsQuery(undefined);
   const { data: recentEncounters, isLoading: encountersLoading } =
-    useGetAllEncountersQuery({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' });
+    useGetPatientEncountersQuery({
+      limit: 5,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
 
   // Calculate stats from real data
   const stats = {
@@ -34,12 +38,15 @@ export default function ReceptionDashboard() {
   };
 
   // Transform encounters to queue format for preview
-  const recentQueue = recentEncounters?.map(encounter => ({
-    id: encounter.id,
-    name: encounter.patient ? `${encounter.patient.firstName} ${encounter.patient.lastName}` : 'Unknown Patient',
-    time: new Date(encounter.encounterDate).toLocaleTimeString(),
-    priority: (encounter.priority || 'normal') as any,
-  })) || [];
+  const recentQueue =
+    recentEncounters?.map((encounter) => ({
+      id: encounter.id,
+      name: encounter.patient
+        ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+        : "Unknown Patient",
+      time: new Date(encounter.encounterDate).toLocaleTimeString(),
+      priority: (encounter.priority || "normal") as any,
+    })) || [];
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -55,13 +62,6 @@ export default function ReceptionDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Dashboard Header */}
@@ -70,7 +70,7 @@ export default function ReceptionDashboard() {
             Reception Dashboard
           </h1>
           <p className="text-foreground">
-            Welcome back! Here's what's happening today.
+            Welcome back! Here&apos;s what&apos;s happening today.
           </p>
         </div>
 

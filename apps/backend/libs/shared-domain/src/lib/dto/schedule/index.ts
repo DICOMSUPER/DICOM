@@ -9,3 +9,7 @@ export * from './update-employee-schedule.dto';
 export * from './employee-schedule-search-filters.dto';
 export * from './create-schedule-replacement.dto';
 export * from './update-schedule-replacement.dto';
+export * from './create-shift-template.dto';
+export * from './update-shift-template.dto';
+export * from './create-weekly-schedule-pattern.dto';
+export * from './update-weekly-schedule-pattern.dto';

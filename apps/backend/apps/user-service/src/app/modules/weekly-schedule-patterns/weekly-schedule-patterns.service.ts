@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateWeeklySchedulePatternDto } from './dto/create-weekly-schedule-pattern.dto';
-import { UpdateWeeklySchedulePatternDto } from './dto/update-weekly-schedule-pattern.dto';
+import { CreateWeeklySchedulePatternDto, UpdateWeeklySchedulePatternDto } from '@backend/shared-domain';
 
 @Injectable()
 export class WeeklySchedulePatternsService {

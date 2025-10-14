@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { User } from '@backend/shared-domain';
 import { LeaveType, LeaveStatus } from '@backend/shared-enums';
 
 @Entity('leave_requests')

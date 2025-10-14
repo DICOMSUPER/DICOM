@@ -1,29 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { WorkingHours, BreakTime, SpecialHours } from '@backend/shared-domain';
+import { EntityManager } from 'typeorm';
+import { BaseRepository } from '@backend/database';
+import { WorkingHours } from '../entities/users/working-hours.entity';
+import { BreakTime } from '../entities/users/break-times.entity';
+import { SpecialHours } from '../entities/users/special-hours.entity';
 import { RepositoryPaginationDto, PaginatedResponseDto } from '@backend/database';
 
 @Injectable()
-export class WorkingHoursRepository {
+export class WorkingHoursRepository extends BaseRepository<WorkingHours> {
   constructor(
-    @InjectRepository(WorkingHours)
-    private readonly workingHoursRepo: Repository<WorkingHours>,
-    @InjectRepository(BreakTime)
-    private readonly breakTimeRepo: Repository<BreakTime>,
-    @InjectRepository(SpecialHours)
-    private readonly specialHoursRepo: Repository<SpecialHours>,
-  ) {}
+    entityManager: EntityManager,
+  ) {
+    super(WorkingHours, entityManager);
+  }
 
   // Working Hours
   async createWorkingHours(workingHours: Partial<WorkingHours>): Promise<WorkingHours> {
-    const entity = this.workingHoursRepo.create(workingHours);
-    return await this.workingHoursRepo.save(entity);
+    const entity = this.repository.create(workingHours);
+    return await this.repository.save(entity);
   }
 
   async findWorkingHours(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<WorkingHours>> {
     const { page = 1, limit = 10 } = paginationDto;
-    const [data, total] = await this.workingHoursRepo.findAndCount({
+    const [data, total] = await this.repository.findAndCount({
       relations: ['breakTimes'],
       skip: (page - 1) * limit,
       take: limit,
@@ -34,6 +33,7 @@ export class WorkingHoursRepository {
       data,
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
       hasNextPage: page < Math.ceil(total / limit),
       hasPreviousPage: page > 1
@@ -41,61 +41,69 @@ export class WorkingHoursRepository {
   }
 
   async findWorkingHoursById(id: string): Promise<WorkingHours | null> {
-    return await this.workingHoursRepo.findOne({
+    return await this.repository.findOne({
       where: { id },
       relations: ['breakTimes']
     });
   }
 
   async findWorkingHoursByDay(dayOfWeek: string): Promise<WorkingHours | null> {
-    return await this.workingHoursRepo.findOne({
+    return await this.repository.findOne({
       where: { dayOfWeek: dayOfWeek as any },
       relations: ['breakTimes']
     });
   }
 
   async updateWorkingHours(id: string, updates: Partial<WorkingHours>): Promise<WorkingHours> {
-    await this.workingHoursRepo.update(id, updates);
-    return await this.findWorkingHoursById(id);
+    await this.repository.update(id, updates);
+    const result = await this.findWorkingHoursById(id);
+    if (!result) {
+      throw new Error('Working hours not found');
+    }
+    return result;
   }
 
   async deleteWorkingHours(id: string): Promise<boolean> {
-    const result = await this.workingHoursRepo.delete(id);
-    return result.affected > 0;
+    const result = await this.repository.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 
   // Break Times
   async createBreakTime(breakTime: Partial<BreakTime>): Promise<BreakTime> {
-    const entity = this.breakTimeRepo.create(breakTime);
-    return await this.breakTimeRepo.save(entity);
+    const entity = this.entityManager.create(BreakTime, breakTime);
+    return await this.entityManager.save(BreakTime, entity);
   }
 
   async findBreakTimesByWorkingHours(workingHoursId: string): Promise<BreakTime[]> {
-    return await this.breakTimeRepo.find({
+    return await this.entityManager.find(BreakTime, {
       where: { workingHoursId, isActive: true },
       order: { startTime: 'ASC' }
     });
   }
 
   async updateBreakTime(id: string, updates: Partial<BreakTime>): Promise<BreakTime> {
-    await this.breakTimeRepo.update(id, updates);
-    return await this.breakTimeRepo.findOne({ where: { id } });
+    await this.entityManager.update(BreakTime, id, updates);
+    const result = await this.entityManager.findOne(BreakTime, { where: { id } });
+    if (!result) {
+      throw new Error('Break time not found');
+    }
+    return result;
   }
 
   async deleteBreakTime(id: string): Promise<boolean> {
-    const result = await this.breakTimeRepo.delete(id);
-    return result.affected > 0;
+    const result = await this.entityManager.delete(BreakTime, id);
+    return (result.affected ?? 0) > 0;
   }
 
   // Special Hours
   async createSpecialHours(specialHours: Partial<SpecialHours>): Promise<SpecialHours> {
-    const entity = this.specialHoursRepo.create(specialHours);
-    return await this.specialHoursRepo.save(entity);
+    const entity = this.entityManager.create(SpecialHours, specialHours);
+    return await this.entityManager.save(SpecialHours, entity);
   }
 
   async findSpecialHours(paginationDto: RepositoryPaginationDto): Promise<PaginatedResponseDto<SpecialHours>> {
     const { page = 1, limit = 10 } = paginationDto;
-    const [data, total] = await this.specialHoursRepo.findAndCount({
+    const [data, total] = await this.entityManager.findAndCount(SpecialHours, {
       skip: (page - 1) * limit,
       take: limit,
       order: { date: 'DESC' }
@@ -105,6 +113,7 @@ export class WorkingHoursRepository {
       data,
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
       hasNextPage: page < Math.ceil(total / limit),
       hasPreviousPage: page > 1
@@ -112,28 +121,32 @@ export class WorkingHoursRepository {
   }
 
   async findSpecialHoursByDate(date: string): Promise<SpecialHours | null> {
-    return await this.specialHoursRepo.findOne({
+    return await this.entityManager.findOne(SpecialHours, {
       where: { date, isActive: true }
     });
   }
 
   async findSpecialHoursById(id: string): Promise<SpecialHours | null> {
-    return await this.specialHoursRepo.findOne({ where: { id } });
+    return await this.entityManager.findOne(SpecialHours, { where: { id } });
   }
 
   async updateSpecialHours(id: string, updates: Partial<SpecialHours>): Promise<SpecialHours> {
-    await this.specialHoursRepo.update(id, updates);
-    return await this.findSpecialHoursById(id);
+    await this.entityManager.update(SpecialHours, id, updates);
+    const result = await this.findSpecialHoursById(id);
+    if (!result) {
+      throw new Error('Special hours not found');
+    }
+    return result;
   }
 
   async deleteSpecialHours(id: string): Promise<boolean> {
-    const result = await this.specialHoursRepo.delete(id);
-    return result.affected > 0;
+    const result = await this.entityManager.delete(SpecialHours, id);
+    return (result.affected ?? 0) > 0;
   }
 
   // Utility methods
   async checkTimeAvailability(date: string, startTime: string, endTime: string): Promise<boolean> {
-    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'lowercase' });
+    const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     
     // Check if it's a holiday
     const specialHours = await this.findSpecialHoursByDate(date);

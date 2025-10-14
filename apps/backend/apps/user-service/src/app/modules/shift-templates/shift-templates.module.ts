@@ -5,11 +5,9 @@ import { ShiftTemplateController } from './shift-templates.controller';
 import { ShiftTemplate } from '@backend/shared-domain';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ShiftTemplate])
-  ],
+  imports: [TypeOrmModule.forFeature([ShiftTemplate])],
   controllers: [ShiftTemplateController],
   providers: [ShiftTemplateService],
-  exports: [ShiftTemplateService]
+  exports: [ShiftTemplateService],
 })
 export class ShiftTemplatesModule {}

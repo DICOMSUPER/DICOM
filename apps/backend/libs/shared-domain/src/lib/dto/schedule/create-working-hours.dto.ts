@@ -1,5 +1,5 @@
 import { IsEnum, IsString, IsTimeZone, IsOptional, IsBoolean, IsUUID } from 'class-validator';
-import { DayOfWeek } from '../../entities/schedule/working-hours.entity';
+import { DayOfWeek } from '../../entities/users/working-hours.entity';
 
 export class CreateWorkingHoursDto {
   @IsEnum(DayOfWeek)
