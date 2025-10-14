@@ -5,11 +5,7 @@ import { useParams } from "next/navigation";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { PatientForward } from "@/components/reception/patient-forward";
-import {
-  useGetPatientByIdQuery,
-  useCreateEncounterMutation,
-  useUpdateEncounterMutation,
-} from "@/store/patientApi";
+import { useGetPatientByIdQuery } from "@/store/patientApi";
 import { useGetConditionsByPatientIdQuery } from "@/store/patientConditionApi";
 import { PatientConditionList } from "@/components/patient/PatientConditionList";
 import { EncounterList } from "@/components/patient/EncounterList";
@@ -36,7 +32,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGetPatientEncountersByPatientIdQuery } from "@/store/patientEncounterApi";
+import {
+  useGetPatientEncountersByPatientIdQuery,
+  useCreatePatientEncounterMutation,
+  useUpdatePatientEncounterMutation,
+} from "@/store/patientEncounterApi";
 
 export default function PatientDetail() {
   const params = useParams();
@@ -66,9 +66,9 @@ export default function PatientDetail() {
 
   // Encounter mutations
   const [createEncounter, { isLoading: isCreatingEncounter }] =
-    useCreateEncounterMutation();
+    useCreatePatientEncounterMutation();
   const [updateEncounter, { isLoading: isUpdatingEncounter }] =
-    useUpdateEncounterMutation();
+    useUpdatePatientEncounterMutation();
 
   // Encounter handlers
   const handleCreateEncounter = () => {

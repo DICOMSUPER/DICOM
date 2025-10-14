@@ -14,6 +14,7 @@ import {
   useDeletePatientMutation,
 } from "@/store/patientApi";
 import { Users, UserPlus } from "lucide-react";
+import { AppHeader } from "@/components/app-header";
 
 export default function ReceptionPage() {
   const router = useRouter();
@@ -109,11 +110,6 @@ export default function ReceptionPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
 
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>

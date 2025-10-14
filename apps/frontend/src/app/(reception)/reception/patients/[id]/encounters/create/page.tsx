@@ -8,20 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { 
-  useCreateEncounterMutation,
-  useGetPatientByIdQuery
-} from "@/store/patientApi";
-import { 
-  CreatePatientEncounterDto
-} from "@/interfaces/patient/patient-workflow.interface";
-import { 
-  Stethoscope, 
+import { useGetPatientByIdQuery } from "@/store/patientApi";
+import { CreatePatientEncounterDto } from "@/interfaces/patient/patient-workflow.interface";
+import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
+import {
+  Stethoscope,
   ArrowLeft,
   User,
   Calendar,
   FileText,
-  Activity
+  Activity,
 } from "lucide-react";
 import { EncounterForm } from "@/components/patient/EncounterForm";
 
@@ -32,8 +28,14 @@ export default function CreatePatientEncounterPage() {
   const [notificationCount] = useState(3);
 
   // API hooks
-  const [createEncounter, { isLoading: isCreating }] = useCreateEncounterMutation();
-  const { data: patient, isLoading: patientLoading, error: patientError, refetch: refetchPatient } = useGetPatientByIdQuery(patientId);
+  const [createEncounter, { isLoading: isCreating }] =
+    useCreatePatientEncounterMutation();
+  const {
+    data: patient,
+    isLoading: patientLoading,
+    error: patientError,
+    refetch: refetchPatient,
+  } = useGetPatientByIdQuery(patientId);
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -51,13 +53,13 @@ export default function CreatePatientEncounterPage() {
     try {
       const encounterData = {
         ...data,
-        patientId: patientId
+        patientId: patientId,
       };
 
       await createEncounter(encounterData).unwrap();
       router.push(`/reception/patients/${patientId}`);
     } catch (error) {
-      console.error('Error creating encounter:', error);
+      console.error("Error creating encounter:", error);
     }
   };
 
@@ -84,9 +86,13 @@ export default function CreatePatientEncounterPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-destructive mb-2">Patient Not Found</h2>
-          <p className="text-foreground mb-4">The requested patient could not be found.</p>
-          <Button onClick={() => router.push('/reception/patients')}>
+          <h2 className="text-2xl font-bold text-destructive mb-2">
+            Patient Not Found
+          </h2>
+          <p className="text-foreground mb-4">
+            The requested patient could not be found.
+          </p>
+          <Button onClick={() => router.push("/reception/patients")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Patients
           </Button>
@@ -97,12 +103,6 @@ export default function CreatePatientEncounterPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       <WorkspaceLayout sidebar={<SidebarNav />}>
         <div className="space-y-6">
           {/* Header */}
@@ -118,14 +118,12 @@ export default function CreatePatientEncounterPage() {
                   Create Encounter
                 </h1>
                 <p className="text-foreground">
-                  Create a new encounter for {patient.firstName} {patient.lastName}
+                  Create a new encounter for {patient.firstName}{" "}
+                  {patient.lastName}
                 </p>
               </div>
             </div>
-            <RefreshButton 
-              onRefresh={handleRefresh} 
-              loading={patientLoading}
-            />
+            <RefreshButton onRefresh={handleRefresh} loading={patientLoading} />
           </div>
 
           {/* Patient Information */}
@@ -150,12 +148,14 @@ export default function CreatePatientEncounterPage() {
                       <p className="text-foreground">Patient Name</p>
                     </div>
                     <div>
-                      <p className="text-lg font-medium">{patient.patientCode}</p>
+                      <p className="text-lg font-medium">
+                        {patient.patientCode}
+                      </p>
                       <p className="text-foreground">Patient ID</p>
                     </div>
                     <div>
                       <p className="text-lg font-medium">
-                        {patient.phoneNumber || 'Not provided'}
+                        {patient.phoneNumber || "Not provided"}
                       </p>
                       <p className="text-foreground">Phone Number</p>
                     </div>
