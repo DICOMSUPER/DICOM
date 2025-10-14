@@ -9,7 +9,11 @@ import { PatientTable } from "@/components/reception/patient-table";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useGetPatientsQuery, useGetPatientStatsQuery } from "@/store/patientApi";
+import {
+  useGetPatientsQuery,
+  useGetPatientStatsQuery,
+  useDeletePatientMutation,
+} from "@/store/patientApi";
 import { Users, UserPlus } from "lucide-react";
 
 export default function ReceptionPage() {
@@ -21,42 +25,55 @@ export default function ReceptionPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch real data
-  const { data: patients, isLoading: patientsLoading, error: patientsError, refetch: refetchPatients } = useGetPatientsQuery({});
-  const { data: patientStats, isLoading: statsLoading, refetch: refetchStats } = useGetPatientStatsQuery();
+  const {
+    data: patients,
+    isLoading: patientsLoading,
+    error: patientsError,
+    refetch: refetchPatients,
+  } = useGetPatientsQuery({});
+  const {
+    data: patientStats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetPatientStatsQuery();
 
   // Handle errors
   useEffect(() => {
     if (patientsError) {
-      setError('Failed to load patient data. Please try again.');
+      setError("Failed to load patient data. Please try again.");
     } else {
       setError(null);
     }
   }, [patientsError]);
 
   // Process real data from API
-  const filteredPatients = patients?.filter(patient => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      patient.firstName?.toLowerCase().includes(searchLower) ||
-      patient.lastName?.toLowerCase().includes(searchLower) ||
-      patient.patientCode?.toLowerCase().includes(searchLower) ||
-      patient.phoneNumber?.toLowerCase().includes(searchLower)
-    );
-  }).map(patient => ({
-    id: patient.id,
-    firstName: patient.firstName || 'Unknown',
-    lastName: patient.lastName || 'Patient',
-    patientCode: patient.patientCode || 'N/A',
-    dateOfBirth: patient.dateOfBirth?.toISOString() || new Date().toISOString(),
-    gender: patient.gender || 'Unknown',
-    phoneNumber: patient.phoneNumber,
-    address: patient.address,
-    bloodType: patient.bloodType,
-    isActive: patient.isActive ?? true,
-    priority: 'normal',
-    lastVisit: undefined
-  })) || [];
+  const filteredPatients = Array.isArray(patients?.data)
+    ? ((patients as any)?.data as any[])
+        .filter((patient) => {
+          if (!searchTerm) return true;
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            patient.firstName?.toLowerCase().includes(searchLower) ||
+            patient.lastName?.toLowerCase().includes(searchLower) ||
+            patient.patientCode?.toLowerCase().includes(searchLower) ||
+            patient.phoneNumber?.toLowerCase().includes(searchLower)
+          );
+        })
+        .map((patient) => ({
+          id: patient.id,
+          firstName: patient.firstName || "Unknown",
+          lastName: patient.lastName || "Patient",
+          patientCode: patient.patientCode || "N/A",
+          dateOfBirth: patient.dateOfBirth || new Date(),
+          gender: patient.gender || "Unknown",
+          phoneNumber: patient.phoneNumber,
+          address: patient.address,
+          bloodType: patient.bloodType,
+          isActive: patient.isActive ?? true,
+          priority: "normal",
+          lastVisit: undefined,
+        }))
+    : [];
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -67,10 +84,7 @@ export default function ReceptionPage() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchPatients(),
-      refetchStats()
-    ]);
+    await Promise.all([refetchPatients(), refetchStats()]);
   };
 
   const handleViewDetails = (patient: any) => {
@@ -78,13 +92,20 @@ export default function ReceptionPage() {
   };
 
   const handleEditPatient = (patient: any) => {
-    console.log("Edit patient:", patient);
+    router.push(`/reception/patients/edit/${patient.id}`);
   };
+
+  const [deletePatient] = useDeletePatientMutation();
 
   const handleDeletePatient = (patient: any) => {
-    console.log("Delete patient:", patient);
+    if (
+      confirm(
+        `Are you sure you want to delete patient ${patient.firstName} ${patient.lastName}?`
+      )
+    ) {
+      deletePatient(patient.id);
+    }
   };
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,12 +121,14 @@ export default function ReceptionPage() {
         {/* Header with Quick Actions and Refresh */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Patient Management</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Patient Management
+            </h1>
             <p className="text-foreground">Search and manage patient records</p>
           </div>
           <div className="flex items-center gap-4">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
+            <RefreshButton
+              onRefresh={handleRefresh}
               loading={patientsLoading || statsLoading}
             />
             <QuickActionsBar />
@@ -139,16 +162,18 @@ export default function ReceptionPage() {
         />
 
         {/* Patient Table */}
-        <PatientTable
-          patients={filteredPatients as any}
-          isLoading={patientsLoading}
-          emptyStateIcon={<Users className="h-12 w-12" />}
-          emptyStateTitle="No patients found"
-          emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
-          onViewDetails={handleViewDetails}
-          onEditPatient={handleEditPatient}
-          onDeletePatient={handleDeletePatient}
-        />
+        {!patientsLoading && (
+          <PatientTable
+            patients={filteredPatients as any}
+            isLoading={patientsLoading}
+            emptyStateIcon={<Users className="h-12 w-12" />}
+            emptyStateTitle="No patients found"
+            emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
+            onViewDetails={handleViewDetails}
+            onEditPatient={handleEditPatient}
+            onDeletePatient={handleDeletePatient}
+          />
+        )}
       </WorkspaceLayout>
     </div>
   );

@@ -7,6 +7,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const transport = Number(process.env.TRANSPORT) || Transport.TCP;
@@ -21,8 +22,8 @@ async function bootstrap() {
   });
 
   await app.listen();
-  // const logger = new Logger('SystemService');
-  // logger.log(`HTTP System Service running on: http://localhost:${port}`);
+  const logger = new Logger('SystemService');
+  logger.log(`HTTP System Service running on: http://localhost:${port}`);
 }
 
 bootstrap();

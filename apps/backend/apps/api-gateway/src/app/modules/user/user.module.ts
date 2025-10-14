@@ -14,8 +14,7 @@ import { SharedInterceptorModule } from '@backend/shared-interceptor';
         Number(process.env.USER_SERVICE_PORT || 5002)
       ),
     ]),
-    SharedInterceptorModule
-  
+    SharedInterceptorModule,
   ],
   controllers: [UserController],
 })
