@@ -4,19 +4,26 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { 
-  useGetEncounterByIdQuery,
-  useUpdateEncounterMutation,
-  useDeleteEncounterMutation
-} from "@/store/patientApi";
-import { 
-  Stethoscope, 
-  Calendar, 
-  User, 
+
+import {
+  useGetPatientEncounterByIdQuery,
+  useUpdatePatientEncounterMutation,
+  useDeletePatientEncounterMutation,
+} from "@/store/patientEncounterApi";
+import {
+  Stethoscope,
+  Calendar,
+  User,
   Clock,
   FileText,
   Edit,
@@ -24,7 +31,7 @@ import {
   ArrowLeft,
   Save,
   X,
-  Activity
+  Activity,
 } from "lucide-react";
 import { EncounterForm } from "@/components/patient/EncounterForm";
 // import { VitalSignsDisplay } from "@/components/patient/VitalSignsDisplay";
@@ -37,9 +44,15 @@ export default function EncounterDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   // API hooks
-  const { data: encounter, isLoading, error } = useGetEncounterByIdQuery(encounterId);
-  const [updateEncounter, { isLoading: isUpdating }] = useUpdateEncounterMutation();
-  const [deleteEncounter, { isLoading: isDeleting }] = useDeleteEncounterMutation();
+  const {
+    data: encounter,
+    isLoading,
+    error,
+  } = useGetPatientEncounterByIdQuery(encounterId);
+  const [updateEncounter, { isLoading: isUpdating }] =
+    useUpdatePatientEncounterMutation();
+  const [deleteEncounter, { isLoading: isDeleting }] =
+    useDeletePatientEncounterMutation();
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -61,27 +74,27 @@ export default function EncounterDetailPage() {
     try {
       await updateEncounter({
         id: encounterId,
-        data: data
+        data: data,
       }).unwrap();
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating encounter:', error);
+      console.error("Error updating encounter:", error);
     }
   };
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this encounter?')) {
+    if (confirm("Are you sure you want to delete this encounter?")) {
       try {
         await deleteEncounter(encounterId).unwrap();
-        router.push('/reception/encounters');
+        router.push("/reception/encounters");
       } catch (error) {
-        console.error('Error deleting encounter:', error);
+        console.error("Error deleting encounter:", error);
       }
     }
   };
 
   const handleBack = () => {
-    router.push('/reception/encounters');
+    router.push("/reception/encounters");
   };
 
   if (isLoading) {
@@ -99,8 +112,12 @@ export default function EncounterDetailPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-destructive mb-2">Encounter Not Found</h2>
-          <p className="text-foreground mb-4">The requested encounter could not be found.</p>
+          <h2 className="text-2xl font-bold text-destructive mb-2">
+            Encounter Not Found
+          </h2>
+          <p className="text-foreground mb-4">
+            The requested encounter could not be found.
+          </p>
           <Button onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Encounters
@@ -112,12 +129,6 @@ export default function EncounterDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       <WorkspaceLayout sidebar={<SidebarNav />}>
         <div className="space-y-6">
           {/* Header */}
@@ -132,9 +143,12 @@ export default function EncounterDetailPage() {
                   <Stethoscope className="h-8 w-8" />
                   Encounter Details
                 </h1>
-              <p className="text-foreground">
-                {encounter.patient ? `${encounter.patient.firstName} ${encounter.patient.lastName}` : 'Unknown Patient'} - {new Date(encounter.encounterDate).toLocaleDateString()}
-              </p>
+                <p className="text-foreground">
+                  {encounter.patient
+                    ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+                    : "Unknown Patient"}{" "}
+                  - {new Date(encounter.encounterDate).toLocaleDateString()}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -144,9 +158,13 @@ export default function EncounterDetailPage() {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {isDeleting ? 'Deleting...' : 'Delete'}
+                    {isDeleting ? "Deleting..." : "Delete"}
                   </Button>
                 </>
               )}
@@ -176,23 +194,39 @@ export default function EncounterDetailPage() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Encounter Type</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          Encounter Type
+                        </Label>
                         <p className="text-lg">{encounter.encounterType}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          Status
+                        </Label>
                         <div className="mt-1">
-                          <Badge variant={encounter.status === 'completed' ? 'default' : 'secondary'}>
+                          <Badge
+                            variant={
+                              encounter.status === "completed"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {encounter.status}
                           </Badge>
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Date & Time</Label>
-                        <p className="text-lg">{new Date(encounter.encounterDate).toLocaleString()}</p>
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          Date & Time
+                        </Label>
+                        <p className="text-lg">
+                          {new Date(encounter.encounterDate).toLocaleString()}
+                        </p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">Duration</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          Duration
+                        </Label>
                         <p className="text-lg">N/A</p>
                       </div>
                     </div>
@@ -205,7 +239,10 @@ export default function EncounterDetailPage() {
                     <CardTitle>Chief Complaint</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg">{encounter.chiefComplaint || 'No chief complaint recorded'}</p>
+                    <p className="text-lg">
+                      {encounter.chiefComplaint ||
+                        "No chief complaint recorded"}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -215,7 +252,9 @@ export default function EncounterDetailPage() {
                     <CardTitle>Symptoms</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg">{encounter.symptoms || 'No symptoms recorded'}</p>
+                    <p className="text-lg">
+                      {encounter.symptoms || "No symptoms recorded"}
+                    </p>
                   </CardContent>
                 </Card>
 
@@ -225,7 +264,9 @@ export default function EncounterDetailPage() {
                     <CardTitle>Notes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg">{encounter.notes || 'No notes recorded'}</p>
+                    <p className="text-lg">
+                      {encounter.notes || "No notes recorded"}
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -244,45 +285,61 @@ export default function EncounterDetailPage() {
                     {encounter.patient ? (
                       <div className="space-y-2">
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Name</Label>
-                          <p className="text-lg">{encounter.patient.firstName} {encounter.patient.lastName}</p>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Name
+                          </Label>
+                          <p className="text-lg">
+                            {encounter.patient.firstName}{" "}
+                            {encounter.patient.lastName}
+                          </p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Patient ID</Label>
-                          <p className="text-lg">{encounter.patient.patientCode}</p>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Patient ID
+                          </Label>
+                          <p className="text-lg">
+                            {encounter.patient.patientCode}
+                          </p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Date of Birth</Label>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Date of Birth
+                          </Label>
                           <p className="text-lg">N/A</p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">Gender</Label>
+                          <Label className="text-sm font-medium text-muted-foreground">
+                            Gender
+                          </Label>
                           <p className="text-lg">N/A</p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-foreground">Patient information not available</p>
+                      <p className="text-foreground">
+                        Patient information not available
+                      </p>
                     )}
                   </CardContent>
                 </Card>
 
                 {/* Vital Signs */}
-                {encounter.vitalSigns && Object.keys(encounter.vitalSigns).length > 0 && (
-                  <Card className="border-border">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5" />
-                        Vital Signs
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-4 text-foreground">
-                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>Vital signs display component</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                {encounter.vitalSigns &&
+                  Object.keys(encounter.vitalSigns).length > 0 && (
+                    <Card className="border-border">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Clock className="h-5 w-5" />
+                          Vital Signs
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-center py-4 text-foreground">
+                          <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p>Vital signs display component</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                 {/* Assigned Physician */}
                 <Card className="border-border">
@@ -290,7 +347,9 @@ export default function EncounterDetailPage() {
                     <CardTitle>Assigned Physician</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-lg">{encounter.assignedPhysicianId || 'Not assigned'}</p>
+                    <p className="text-lg">
+                      {encounter.assignedPhysicianId || "Not assigned"}
+                    </p>
                   </CardContent>
                 </Card>
               </div>

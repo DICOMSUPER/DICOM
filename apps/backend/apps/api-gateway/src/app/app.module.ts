@@ -33,7 +33,8 @@ dotenv.config();
     PatientServiceModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
@@ -44,4 +45,4 @@ dotenv.config();
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

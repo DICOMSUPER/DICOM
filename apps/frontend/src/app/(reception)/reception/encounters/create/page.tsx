@@ -7,24 +7,23 @@ import { SidebarNav } from "@/components/sidebar-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  useCreateEncounterMutation,
-  useGetPatientsQuery
-} from "@/store/patientApi";
-import { 
+import { useGetPatientsQuery } from "@/store/patientApi";
+
+import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
+import {
   CreatePatientEncounterDto,
-  Patient
+  Patient,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { EncounterType } from "@/enums/patient-workflow.enum";
-import { 
-  Stethoscope, 
+import {
+  Stethoscope,
   ArrowLeft,
   Save,
   X,
   User,
   Calendar,
   FileText,
-  Activity
+  Activity,
 } from "lucide-react";
 import { EncounterForm } from "@/components/patient/EncounterForm";
 
@@ -35,11 +34,12 @@ export default function CreateEncounterPage() {
   const [showPatientSearch, setShowPatientSearch] = useState(false);
 
   // API hooks
-  const [createEncounter, { isLoading: isCreating }] = useCreateEncounterMutation();
+  const [createEncounter, { isLoading: isCreating }] =
+    useCreatePatientEncounterMutation();
   const { data: patients, isLoading: patientsLoading } = useGetPatientsQuery({
     limit: 50,
-    sortBy: 'firstName',
-    sortOrder: 'asc'
+    sortBy: "firstName",
+    sortOrder: "asc",
   });
 
   const handleNotificationClick = () => {
@@ -51,7 +51,7 @@ export default function CreateEncounterPage() {
   };
 
   const handleBack = () => {
-    router.push('/reception/encounters/search');
+    router.push("/reception/encounters/search");
   };
 
   const handlePatientSelect = (patient: Patient) => {
@@ -62,34 +62,28 @@ export default function CreateEncounterPage() {
   const handleEncounterSubmit = async (data: CreatePatientEncounterDto) => {
     try {
       if (!selectedPatient) {
-        alert('Please select a patient first');
+        alert("Please select a patient first");
         return;
       }
 
       const encounterData = {
         ...data,
-        patientId: selectedPatient.id
+        patientId: selectedPatient.id,
       };
 
       await createEncounter(encounterData).unwrap();
-      router.push('/reception/encounters/search');
+      router.push("/reception/encounters/search");
     } catch (error) {
-      console.error('Error creating encounter:', error);
+      console.error("Error creating encounter:", error);
     }
   };
 
   const handleCancel = () => {
-    router.push('/reception/encounters/search');
+    router.push("/reception/encounters/search");
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       <WorkspaceLayout sidebar={<SidebarNav />}>
         <div className="space-y-6">
           {/* Header */}
@@ -127,8 +121,8 @@ export default function CreateEncounterPage() {
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {patients?.slice(0, 6).map((patient) => (
-                      <Card 
-                        key={patient.id} 
+                      <Card
+                        key={patient.id}
                         className="border-border cursor-pointer hover:shadow-md transition-shadow"
                         onClick={() => handlePatientSelect(patient)}
                       >
@@ -151,8 +145,8 @@ export default function CreateEncounterPage() {
                     ))}
                   </div>
                   {patients && patients.length > 6 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setShowPatientSearch(true)}
                       className="w-full"
                     >
@@ -175,8 +169,8 @@ export default function CreateEncounterPage() {
                       </p>
                     </div>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedPatient(null)}
                   >
@@ -205,8 +199,8 @@ export default function CreateEncounterPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Select Patient</CardTitle>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowPatientSearch(false)}
                     >
@@ -217,8 +211,8 @@ export default function CreateEncounterPage() {
                 <CardContent className="overflow-y-auto max-h-96">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {patients?.map((patient) => (
-                      <Card 
-                        key={patient.id} 
+                      <Card
+                        key={patient.id}
                         className="border-border cursor-pointer hover:shadow-md transition-shadow"
                         onClick={() => handlePatientSelect(patient)}
                       >

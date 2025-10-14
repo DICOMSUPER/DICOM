@@ -134,16 +134,4 @@ export const {
   useDeletePatientMutation,
   useRestorePatientMutation,
   useGetPatientStatsQuery,
-
-  // Diagnosis hooks
-  useGetDiagnosesByEncounterIdQuery,
-  useGetDiagnosesByPatientIdQuery,
-  useGetAllDiagnosesQuery,
-  useGetDiagnosesPaginatedQuery,
-  useGetDiagnosisByIdQuery,
-  useCreateDiagnosisMutation,
-  useUpdateDiagnosisMutation,
-  useDeleteDiagnosisMutation,
-  useGetDiagnosisStatsQuery,
-  useGetFollowupRequiredDiagnosesQuery,
 } = patientApi;
