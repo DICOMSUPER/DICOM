@@ -5,7 +5,7 @@ import { CreateShiftTemplateDto, UpdateShiftTemplateDto } from '@backend/shared-
 import { ShiftType } from '@backend/shared-enums';
 import { RepositoryPaginationDto } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+
 @Controller('shift-templates')
 export class ShiftTemplateController {
   constructor(private readonly shiftTemplateService: ShiftTemplateService) {}
