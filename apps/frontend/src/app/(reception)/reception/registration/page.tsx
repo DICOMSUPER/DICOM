@@ -1,11 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
@@ -13,7 +25,10 @@ import { useState } from "react";
 import { useCreatePatientMutation } from "@/store/patientApi";
 import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interface";
 import { Gender, BloodType } from "@/enums/patient-workflow.enum";
-import { formatInsuranceNumber, validateInsuranceNumber } from "@/lib/validation/patient-form";
+import {
+  formatInsuranceNumber,
+  validateInsuranceNumber,
+} from "@/lib/validation/patient-form";
 import { useRouter } from "next/navigation";
 import { User, Save } from "lucide-react";
 
@@ -22,7 +37,7 @@ export default function PatientRegistration() {
   const [notificationCount] = useState(3);
   const [createPatient, { isLoading: isCreating }] = useCreatePatientMutation();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  
+
   const [formData, setFormData] = useState<CreatePatientDto>({
     patientCode: `PAT${Date.now()}`,
     firstName: "",
@@ -45,39 +60,40 @@ export default function PatientRegistration() {
     console.log("Logout clicked");
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    
+
     // Special handling for insurance number
-    if (name === 'insuranceNumber') {
+    if (name === "insuranceNumber") {
       const formattedValue = formatInsuranceNumber(value);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: formattedValue
+        [name]: formattedValue,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setFormErrors({});
-      
+
       await createPatient(formData).unwrap();
-      router.push('/reception/patients');
+      router.push("/reception/patients");
     } catch (error: any) {
       if (error.data?.message) {
         setFormErrors({ general: error.data.message });
       } else if (error.data?.errors) {
         setFormErrors(error.data.errors);
       } else {
-        setFormErrors({ general: 'An error occurred. Please try again.' });
+        setFormErrors({ general: "An error occurred. Please try again." });
       }
     }
   };
@@ -117,17 +133,16 @@ export default function PatientRegistration() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="patientCode">Patient Code</Label>
                     <Input
                       id="patientCode"
                       name="patientCode"
                       value={formData.patientCode}
                       onChange={handleInputChange}
-                      disabled
                       className="bg-muted"
                     />
-                  </div>
+                  </div> */}
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name *</Label>
                     <Input
@@ -166,7 +181,12 @@ export default function PatientRegistration() {
                     <Select
                       name="gender"
                       value={formData.gender}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value as Gender }))}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          gender: value as Gender,
+                        }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
@@ -201,11 +221,12 @@ export default function PatientRegistration() {
                       maxLength={10}
                       pattern="[0-9]{10}"
                     />
-                    {formData.insuranceNumber && !validateInsuranceNumber(formData.insuranceNumber) && (
-                      <p className="text-sm text-amber-600">
-                        Insurance number must be exactly 10 digits
-                      </p>
-                    )}
+                    {formData.insuranceNumber &&
+                      !validateInsuranceNumber(formData.insuranceNumber) && (
+                        <p className="text-sm text-amber-600">
+                          Insurance number must be exactly 10 digits
+                        </p>
+                      )}
                   </div>
                 </div>
 
@@ -226,7 +247,12 @@ export default function PatientRegistration() {
                   <Select
                     name="bloodType"
                     value={formData.bloodType}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, bloodType: value as BloodType }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        bloodType: value as BloodType,
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select blood type" />
@@ -245,14 +271,17 @@ export default function PatientRegistration() {
                   </Select>
                 </div>
 
-
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => router.push('/reception/patients')}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/reception/patients")}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isCreating}>
                     <Save className="h-4 w-4 mr-2" />
-                    {isCreating ? 'Creating...' : 'Create Patient'}
+                    {isCreating ? "Creating..." : "Create Patient"}
                   </Button>
                 </div>
               </CardContent>

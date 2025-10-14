@@ -1,4 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Inject, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
@@ -8,18 +22,18 @@ export class PatientServiceController {
   private readonly logger = new Logger('PatientServiceController');
 
   constructor(
-    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService') 
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
     private readonly patientService: ClientProxy
   ) {}
-
-
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createPatientDto: any) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.Patient.Create', createPatientDto)
+        this.patientService.send('PatientService.Patient.Create', {
+          createPatientDto,
+        })
       );
     } catch (error) {
       this.logger.error('Error creating patient:', error);
@@ -36,28 +50,34 @@ export class PatientServiceController {
   ) {
     try {
       // Validate pagination parameters
-      const validatedParams = ValidationUtils.validatePaginationParams(page, limit);
-      
+      const validatedParams = ValidationUtils.validatePaginationParams(
+        page,
+        limit
+      );
+
       // Validate search term if provided
-      if (searchTerm !== undefined && (!searchTerm || searchTerm.trim().length === 0)) {
+      if (
+        searchTerm !== undefined &&
+        (!searchTerm || searchTerm.trim().length === 0)
+      ) {
         throw new BadRequestException('Search term cannot be empty');
       }
-      
+
       const paginationDto = {
         ...validatedParams,
         search: searchTerm,
-        ...searchDto
+        ...searchDto,
       };
       return await firstValueFrom(
-        this.patientService.send('PatientService.Patient.FindMany', { paginationDto })
+        this.patientService.send('PatientService.Patient.FindMany', {
+          paginationDto,
+        })
       );
     } catch (error) {
       this.logger.error('Error finding all patients:', error);
       throw error;
     }
   }
-
-
 
   @Get('stats')
   async getPatientStats() {
@@ -75,7 +95,9 @@ export class PatientServiceController {
   async findPatientByCode(@Param('patientCode') patientCode: string) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.Patient.FindByCode', { patientCode })
+        this.patientService.send('PatientService.Patient.FindByCode', {
+          patientCode,
+        })
       );
     } catch (error) {
       this.logger.error('Error finding patient by code:', error);
@@ -90,7 +112,7 @@ export class PatientServiceController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.FindOne', { id })
       );
@@ -107,11 +129,11 @@ export class PatientServiceController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
-        this.patientService.send('PatientService.Patient.Update', { 
-          id, 
-          updatePatientDto 
+        this.patientService.send('PatientService.Patient.Update', {
+          id,
+          updatePatientDto,
         })
       );
     } catch (error) {
@@ -127,7 +149,7 @@ export class PatientServiceController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.Delete', { id })
       );
@@ -144,7 +166,7 @@ export class PatientServiceController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.Restore', { id })
       );

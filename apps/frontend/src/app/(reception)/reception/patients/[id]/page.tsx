@@ -5,7 +5,11 @@ import { useParams } from "next/navigation";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { PatientForward } from "@/components/reception/patient-forward";
-import { useGetPatientByIdQuery, useGetEncountersByPatientIdQuery, useCreateEncounterMutation, useUpdateEncounterMutation } from "@/store/patientApi";
+import {
+  useGetPatientByIdQuery,
+  useCreateEncounterMutation,
+  useUpdateEncounterMutation,
+} from "@/store/patientApi";
 import { useGetConditionsByPatientIdQuery } from "@/store/patientConditionApi";
 import { PatientConditionList } from "@/components/patient/PatientConditionList";
 import { EncounterList } from "@/components/patient/EncounterList";
@@ -31,23 +35,40 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useGetPatientEncountersByPatientIdQuery } from "@/store/patientEncounterApi";
 
 export default function PatientDetail() {
   const params = useParams();
   const patientId = params.id as string;
-
+  const router = useRouter();
   // State for encounter management
   const [showEncounterForm, setShowEncounterForm] = useState(false);
   const [editingEncounter, setEditingEncounter] = useState(null);
 
   // Fetch real patient data
-  const { data: patient, isLoading: patientLoading, error: patientError, refetch: refetchPatient } = useGetPatientByIdQuery(patientId);
-  const { data: encounters, isLoading: encountersLoading, refetch: refetchEncounters } = useGetEncountersByPatientIdQuery(patientId);
-  const { data: conditions, isLoading: conditionsLoading, refetch: refetchConditions } = useGetConditionsByPatientIdQuery(patientId);
+  const {
+    data: patient,
+    isLoading: patientLoading,
+    error: patientError,
+    refetch: refetchPatient,
+  } = useGetPatientByIdQuery(patientId);
+  const {
+    data: encounters,
+    isLoading: encountersLoading,
+    refetch: refetchEncounters,
+  } = useGetPatientEncountersByPatientIdQuery(patientId);
+  const {
+    data: conditions,
+    isLoading: conditionsLoading,
+    refetch: refetchConditions,
+  } = useGetConditionsByPatientIdQuery(patientId);
 
   // Encounter mutations
-  const [createEncounter, { isLoading: isCreatingEncounter }] = useCreateEncounterMutation();
-  const [updateEncounter, { isLoading: isUpdatingEncounter }] = useUpdateEncounterMutation();
+  const [createEncounter, { isLoading: isCreatingEncounter }] =
+    useCreateEncounterMutation();
+  const [updateEncounter, { isLoading: isUpdatingEncounter }] =
+    useUpdateEncounterMutation();
 
   // Encounter handlers
   const handleCreateEncounter = () => {
@@ -70,7 +91,7 @@ export default function PatientDetail() {
       if (editingEncounter) {
         await updateEncounter({
           id: editingEncounter.id,
-          data: data
+          data: data,
         }).unwrap();
       } else {
         await createEncounter(data).unwrap();
@@ -78,7 +99,7 @@ export default function PatientDetail() {
       setShowEncounterForm(false);
       setEditingEncounter(null);
     } catch (error) {
-      console.error('Error saving encounter:', error);
+      console.error("Error saving encounter:", error);
     }
   };
 
@@ -86,7 +107,7 @@ export default function PatientDetail() {
     await Promise.all([
       refetchPatient(),
       refetchEncounters(),
-      refetchConditions()
+      refetchConditions(),
     ]);
   };
 
@@ -100,6 +121,9 @@ export default function PatientDetail() {
               variant="outline"
               size="sm"
               className="border-border"
+              onClick={() => {
+                router.push("/reception/patients");
+              }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -108,36 +132,47 @@ export default function PatientDetail() {
               <h1 className="text-2xl font-bold text-foreground">
                 {patient?.firstName} {patient?.lastName}
               </h1>
-              <p className="text-foreground">Patient ID: {patient?.patientCode}</p>
+              <p className="text-foreground">
+                Patient ID: {patient?.patientCode}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
+            <RefreshButton
+              onRefresh={handleRefresh}
               loading={patientLoading || encountersLoading || conditionsLoading}
             />
-            <Button variant="outline" className="border-border">
+            <Button
+              variant="outline"
+              className="border-border"
+              onClick={() => {
+                router.push(`/reception/patients/edit/${patient?.id}`);
+              }}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit Patient
             </Button>
-            <Button variant="outline" className="border-border text-red-600 hover:text-red-700">
+            {/* <Button
+              variant="outline"
+              className="border-border text-red-600 hover:text-red-700"
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
 
       {/* Workspace Layout */}
-      <WorkspaceLayout
-        sidebar={<SidebarNav />}
-      >
+      <WorkspaceLayout sidebar={<SidebarNav />}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Patient Information */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Patient Information</CardTitle>
+                <CardTitle className="text-foreground">
+                  Patient Information
+                </CardTitle>
                 <CardDescription>
                   Personal details and contact information
                 </CardDescription>
@@ -151,7 +186,9 @@ export default function PatientDetail() {
                         <span className="text-foreground">Date of Birth:</span>
                       </div>
                       <p className="font-medium text-foreground">
-                        {patient?.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
+                        {patient?.dateOfBirth
+                          ? new Date(patient.dateOfBirth).toLocaleDateString()
+                          : "N/A"}
                       </p>
                     </div>
 
@@ -160,7 +197,9 @@ export default function PatientDetail() {
                         <Activity className="w-4 h-4 mr-2 text-foreground" />
                         <span className="text-foreground">Gender:</span>
                       </div>
-                      <p className="font-medium text-foreground">{patient?.gender || 'N/A'}</p>
+                      <p className="font-medium text-foreground">
+                        {patient?.gender || "N/A"}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -168,8 +207,11 @@ export default function PatientDetail() {
                         <Activity className="w-4 h-4 mr-2 text-foreground" />
                         <span className="text-foreground">Blood Type:</span>
                       </div>
-                      <Badge variant="secondary" className="bg-red-100 text-red-800">
-                        {patient?.bloodType || 'Unknown'}
+                      <Badge
+                        variant="secondary"
+                        className="bg-red-100 text-red-800"
+                      >
+                        {patient?.bloodType || "Unknown"}
                       </Badge>
                     </div>
                   </div>
@@ -180,7 +222,9 @@ export default function PatientDetail() {
                         <Phone className="w-4 h-4 mr-2 text-foreground" />
                         <span className="text-foreground">Phone:</span>
                       </div>
-                      <p className="font-medium text-foreground">{patient?.phoneNumber || 'N/A'}</p>
+                      <p className="font-medium text-foreground">
+                        {patient?.phoneNumber || "N/A"}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -188,7 +232,9 @@ export default function PatientDetail() {
                         <MapPin className="w-4 h-4 mr-2 text-foreground" />
                         <span className="text-foreground">Address:</span>
                       </div>
-                      <p className="font-medium text-foreground">{patient?.address || 'N/A'}</p>
+                      <p className="font-medium text-foreground">
+                        {patient?.address || "N/A"}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -196,7 +242,9 @@ export default function PatientDetail() {
                         <FileText className="w-4 h-4 mr-2 text-foreground" />
                         <span className="text-foreground">Insurance:</span>
                       </div>
-                      <p className="font-medium text-foreground">{patient?.insuranceNumber || 'N/A'}</p>
+                      <p className="font-medium text-foreground">
+                        {patient?.insuranceNumber || "N/A"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -217,8 +265,12 @@ export default function PatientDetail() {
                 encounters={encounters || []}
                 loading={encountersLoading}
                 onEdit={handleEditEncounter}
-                onDelete={(encounterId) => console.log('Delete encounter:', encounterId)}
-                onView={(encounter) => console.log('View encounter:', encounter)}
+                onDelete={(encounterId) =>
+                  console.log("Delete encounter:", encounterId)
+                }
+                onView={(encounter) =>
+                  console.log("View encounter:", encounter)
+                }
                 onCreate={handleCreateEncounter}
               />
             )}
@@ -228,7 +280,7 @@ export default function PatientDetail() {
               <PatientConditionList
                 conditions={conditions || []}
                 canEdit={true}
-                onEdit={(condition) => console.log('Edit condition', condition)}
+                onEdit={(condition) => console.log("Edit condition", condition)}
               />
             </div>
           </div>
