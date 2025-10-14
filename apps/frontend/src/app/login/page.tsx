@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation';
 import { LoginForm } from '../../components/loginPage/LoginForm';
 import { Header } from '../../components/loginPage/Header';
 import { SecurityBadge } from '../../components/loginPage/SecurityBadge';
-import { Background } from '../../components/loginPage/Background'; 
+import { Background } from '../../components/loginPage/Background';
 import { CheckCircle, Monitor, Users, FileText } from 'lucide-react';
 import { setCredentials } from '../../store/authSlice';
 import { useDispatch } from 'react-redux';
+import  {jwtDecode} from "jwt-decode";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,64 +16,60 @@ export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
- const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
-  try {
-    const res = await fetch("http://localhost:5000/api/user/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-      credentials: "include", 
-    });
+  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
 
-    if (!res.ok) {
-      const err = await res.json();
-      alert(err.message || "Login failed");
-      return;
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || "Login failed");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Lưu token
+      const token = data.data.tokenResponse.accessToken;
+      dispatch(setCredentials({ token }));
+
+      // Giải mã token để lấy role
+      const decoded: any = jwtDecode(token);
+      console.log("🧩 Token payload:", decoded);
+
+      const role = decoded.role;
+      if (!role) {
+        alert("Không tìm thấy role trong token");
+        return;
+      }
+
+      // Điều hướng theo role
+      switch (role) {
+        case "SYSTEM_ADMIN":
+          router.push("/system-admin");
+          break;
+        case "IMAGING_TECHNICIAN":
+          router.push("/imaging-technicians");
+          break;
+        case "RECEPTION_STAFF":
+          router.push("/reception");
+          break;
+        case "PHYSICIAN":
+          router.push("/physicians");
+          break;
+        default:
+          router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Unable to connect to server");
     }
+  };
 
-    const data = await res.json();
-
-    // 🔹 Lưu vào Redux
-    dispatch(setCredentials({
-      user: data.user,
-      token: data.access_token,
-    }));
-
-    // 🔹 Lưu token vào cookie cho middleware đọc
-    document.cookie = `token=${data.access_token}; path=/;`;
-
-    // 🔹 Nếu muốn nhớ đăng nhập lâu hơn:
-    if (rememberMe) {
-      localStorage.setItem("token", data.access_token);
-    }
-
-    setUser(data.user);
-    setIsLoggedIn(true);
-
-    // 🔹 Điều hướng theo role
-    switch (data.user.role) {
-      case "admin":
-        router.push("/system-admin");
-        break;
-      case "imaging-technicians":
-        router.push("/imaging-technicians");
-        break;
-      case "reception":
-        router.push("/reception");
-        break;
-      case "physicians":
-        router.push("/physicians");
-        break;
-      default:
-        router.push("/dashboard");
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("Unable to connect to server");
-  }
-};
   const handleLogout = () => {
     setUser(null);
     setIsLoggedIn(false);
@@ -179,7 +176,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       <Background />
-      
+
       {/* Left side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="w-full max-w-md">
@@ -194,7 +191,7 @@ export default function LoginPage() {
       {/* Right side - Medical themed illustration area */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-200 to-blue-800 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
-        
+
         {/* Medical equipment silhouettes */}
         <div className="relative z-10 text-center text-white">
           <div className="mb-8">
@@ -204,7 +201,7 @@ export default function LoginPage() {
               Professional DICOM imaging system for healthcare providers worldwide
             </p>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-6 mt-12 max-w-sm mx-auto">
             <div className="text-center">
               <div className="bg-white bg-opacity-20 rounded-full p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center">
@@ -220,7 +217,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Animated background elements */}
         <div className="absolute top-20 left-20 w-32 h-32 border border-white border-opacity-20 rounded-full animate-pulse"></div>
         <div className="absolute bottom-20 right-20 w-24 h-24 border border-white border-opacity-20 rounded-full animate-pulse delay-1000"></div>

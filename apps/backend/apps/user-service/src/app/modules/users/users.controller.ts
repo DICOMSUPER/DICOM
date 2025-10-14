@@ -180,17 +180,17 @@ export class UsersController {
   }
 
   @MessagePattern('user.verify-token')
-async verifyToken(@Payload() data: { token: string }) {
-  try {
-    const decoded = await this.usersService.verifyToken(data.token);
-    return {
-      userId: decoded.sub,
-      role: decoded.role,
-    };
-  } catch (error) {
-    this.logger.error(`Token verification failed: ${(error as Error).message}`);
-    throw new InvalidTokenException();
+  async verifyToken(@Payload() data: { token: string }) {
+    try {
+      const decoded = await this.usersService.verifyToken(data.token);
+      return {
+        userId: decoded.sub,
+        role: decoded.role,
+      };
+    } catch (error) {
+      this.logger.error(`Token verification failed: ${(error as Error).message}`);
+      throw new InvalidTokenException();
+    }
   }
-}
 
 }

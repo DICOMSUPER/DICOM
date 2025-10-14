@@ -20,7 +20,7 @@ import {
   ValidationException,
   InvalidTokenException
 } from '@backend/shared-exception';
-  
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -142,7 +142,7 @@ export class UsersService {
     }
   }
 
-  
+
 
 
   async findAll(): Promise<Omit<User, 'passwordHash'>[]> {
@@ -410,24 +410,24 @@ export class UsersService {
     }
   }
 
- 
+
 
   async verifyToken(token: string): Promise<any> {
-  try {
-    const jwtSecret = this.configService.get<string>('JWT_SECRET');
-    if (!jwtSecret) {
-      throw new TokenGenerationFailedException('JWT_SECRET không được cấu hình');
+    try {
+      const jwtSecret = this.configService.get<string>('JWT_SECRET');
+      if (!jwtSecret) {
+        throw new TokenGenerationFailedException('JWT_SECRET không được cấu hình');
+      }
+
+      // Xác minh và decode token
+      const decoded = this.jwtService.verify(token, { secret: jwtSecret });
+      return decoded; // { email, sub: userId, role }
+    } catch (error) {
+      throw new InvalidTokenException();
     }
-
-    // Xác minh và decode token
-    const decoded = this.jwtService.verify(token, { secret: jwtSecret });
-    return decoded; // { email, sub: userId, role }
-  } catch (error) {
-    throw new InvalidTokenException();
   }
-}
 
-   
+
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
