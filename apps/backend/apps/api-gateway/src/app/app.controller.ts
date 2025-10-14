@@ -16,8 +16,6 @@ export class AppController {
     return this.appService.getData();
   }
 
- 
-
   //test user service
   @Get('user-check')
   async userCheck() {
