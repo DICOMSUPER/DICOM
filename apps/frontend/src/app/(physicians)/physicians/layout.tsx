@@ -48,14 +48,6 @@ export default function PhysicianLayout({ children }: PhysicianLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
-      />
 
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav userRole={currentRole} />}>

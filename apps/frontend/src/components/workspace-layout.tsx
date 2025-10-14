@@ -66,7 +66,7 @@ export function WorkspaceLayout({ children, sidebar, topToolbar, noPadding = fal
 
         {/* Main Work Area */}
         <main className="flex-1 flex flex-col min-h-screen">
-          <div className="border-b border-border">
+          <div>
             {/* Always render AppHeader here; allow extra toolbar via topToolbar below if needed */}
             <AppHeader />
             {topToolbar}

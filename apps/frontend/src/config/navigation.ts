@@ -137,6 +137,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Assignments",
       icon: UserCheck,
       description: "Patient assignments"
+    },
+    {
+      href: "/reception/schedule",
+      label: "Schedule",
+      icon: Clock,
+      description: "View your work schedule"
     }
   ],
 
@@ -173,7 +179,7 @@ export const roleNavigation: RoleNavigation = {
       href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "Appointment schedule"
+      description: "View your clinical schedule"
     },
     {
       href: "/physicians/settings",
