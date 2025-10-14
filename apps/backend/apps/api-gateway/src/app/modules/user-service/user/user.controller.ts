@@ -19,8 +19,8 @@ import {
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
-import { Public } from '@backend/auth-guards';
-import { Role1s } from '@backend/auth-guards';
+import { Public } from '@backend/shared-decorators';
+import { Role } from '@backend/shared-decorators';
 
 class LoginDto {
   email!: string;
@@ -213,7 +213,7 @@ export class UserController {
   }
 
   @Get('users')
-  @Role1s(Roles.RECEPTION_STAFF)
+  @Role(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   async getAllUsers() {

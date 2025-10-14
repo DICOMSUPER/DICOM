@@ -1,6 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, MaxLength, IsBoolean, IsUUID } from 'class-validator';
+import { PaginationDto } from '@backend/database';
 
-export class CreateDepartmentDto {
+export class CreateDepartmentDto extends PaginationDto{
   @IsUUID()
   @IsOptional()
   headDepartmentId?: string;

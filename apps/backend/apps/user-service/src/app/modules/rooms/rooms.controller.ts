@@ -1,8 +1,8 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto } from './dto/create-room.dto';
-import { UpdateRoomDto } from './dto/update-room.dto';
+import { CreateRoomDto } from '@backend/shared-domain';
+import { UpdateRoomDto } from '@backend/shared-domain';
 import {
   RoomNotFoundException,
   RoomAlreadyExistsException,

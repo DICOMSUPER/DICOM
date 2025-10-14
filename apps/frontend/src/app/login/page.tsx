@@ -6,19 +6,73 @@ import { Header } from '../../components/loginPage/Header';
 import { SecurityBadge } from '../../components/loginPage/SecurityBadge';
 import { Background } from '../../components/loginPage/Background'; 
 import { CheckCircle, Monitor, Users, FileText } from 'lucide-react';
+import { setCredentials } from '../../store/authSlice';
+import { useDispatch } from 'react-redux';
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const handleLogin = (email: string, password: string, rememberMe: boolean) => {
-    setUser({ email });
-    setIsLoggedIn(true);
-    // Redirect to dashboard after successful login
-    router.push('/dashboard');
-  };
+ const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
+  try {
+    const res = await fetch("http://localhost:5000/api/user/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+      credentials: "include", 
+    });
 
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err.message || "Login failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    // 🔹 Lưu vào Redux
+    dispatch(setCredentials({
+      user: data.user,
+      token: data.access_token,
+    }));
+
+    // 🔹 Lưu token vào cookie cho middleware đọc
+    document.cookie = `token=${data.access_token}; path=/;`;
+
+    // 🔹 Nếu muốn nhớ đăng nhập lâu hơn:
+    if (rememberMe) {
+      localStorage.setItem("token", data.access_token);
+    }
+
+    setUser(data.user);
+    setIsLoggedIn(true);
+
+    // 🔹 Điều hướng theo role
+    switch (data.user.role) {
+      case "admin":
+        router.push("/system-admin");
+        break;
+      case "imaging-technicians":
+        router.push("/imaging-technicians");
+        break;
+      case "reception":
+        router.push("/reception");
+        break;
+      case "physicians":
+        router.push("/physicians");
+        break;
+      default:
+        router.push("/dashboard");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Unable to connect to server");
+  }
+};
   const handleLogout = () => {
     setUser(null);
     setIsLoggedIn(false);

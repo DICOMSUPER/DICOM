@@ -4,7 +4,7 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/auth-guards"
+      "path": "../../libs/shared-decorators"
     },
     {
       "path": "../../libs/shared-enums"
@@ -20,6 +20,9 @@
     },
     {
       "path": "../../libs/shared-utils"
+    },
+    {
+      "path": "../../libs/shared-guards"
     },
     {
       "path": "./tsconfig.app.json"

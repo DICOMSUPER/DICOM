@@ -8,25 +8,33 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable, catchError, map } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
-import { publicRoutes } from './public-routes';
+import { IS_PUBLIC_KEY } from '@backend/shared-decorators';
+import { Reflector } from '@nestjs/core';
+
 
 const logger = new Logger('AuthGuard');
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy
-  ) {}
+    private readonly reflector: Reflector,
+    @Inject('USER_SERVICE') private readonly authClient: ClientProxy
+  ) { }
 
   canActivate(
     context: ExecutionContext
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
 
+    const request = context.switchToHttp().getRequest();
     const accessToken = this.extractTokenFromRequest(request);
 
-    // Protected route - token is required
     if (!accessToken) {
-      logger.error('Protected route accessed without token');
       throw new RpcException({
         message: 'Missing or invalid Authorization header',
         code: 401,
@@ -39,7 +47,7 @@ export class AuthGuard implements CanActivate {
 
   private verifyToken(accessToken: string, request: any): Observable<boolean> {
     return this.authClient
-      .send<{ userId: string; role: string }>('auth.verify-token', {
+      .send<{ userId: string; role: string }>('user.verify-token', {
         token: accessToken,
       })
       .pipe(

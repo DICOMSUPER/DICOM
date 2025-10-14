@@ -18,23 +18,11 @@ import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
-import { Roles } from '@backend/shared-enums';
-import { Public } from '@backend/auth-guards';
-import { Role1s } from '@backend/auth-guards';
 
-// DTOs
-class CreateRoomDto {
-  roomCode!: string;
-  roomName!: string;
-  capacity?: number;
-  status?: string;
-}
 
-class UpdateRoomDto {
-  roomName?: string;
-  capacity?: number;
-  status?: string;
-}
+import { CreateRoomDto } from '@backend/shared-domain';
+import { UpdateRoomDto } from '@backend/shared-domain';
+
 
 @ApiTags('Room Management')
 @Controller('rooms')
@@ -47,7 +35,7 @@ export class RoomsController {
   ) {}
 
   // 🩺 Kiểm tra tình trạng service
-  @Public()
+ 
   @Get('health')
   @ApiOperation({ summary: 'Check Room service health' })
   async checkHealth() {
@@ -66,9 +54,9 @@ export class RoomsController {
     }
   }
 
-  // 🏠 Lấy toàn bộ danh sách phòng
+  
   @Get()
-  @Role1s(Roles.RECEPTION_STAFF)
+
   @ApiOperation({ summary: 'Get all rooms' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng thành công' })
   async getAllRooms() {
@@ -88,7 +76,6 @@ export class RoomsController {
 
   // 🆕 Tạo phòng mới
   @Post()
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Create a new room' })
   @ApiBody({ type: CreateRoomDto })
   @ApiResponse({ status: 201, description: 'Tạo phòng thành công' })
@@ -111,7 +98,6 @@ export class RoomsController {
 
   // 🔍 Lấy chi tiết 1 phòng
   @Get(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get room by ID' })
   @ApiParam({ name: 'id', description: 'Room ID' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin phòng thành công' })
@@ -131,7 +117,6 @@ export class RoomsController {
 
   // ✏️ Cập nhật thông tin phòng
   @Put(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Update room details' })
   @ApiParam({ name: 'id', description: 'Room ID' })
   @ApiBody({ type: UpdateRoomDto })
@@ -155,7 +140,6 @@ export class RoomsController {
 
   // 🗑️ Xóa phòng
   @Delete(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Delete room' })
   @ApiParam({ name: 'id', description: 'Room ID' })
   @ApiResponse({ status: 200, description: 'Xóa phòng thành công' })

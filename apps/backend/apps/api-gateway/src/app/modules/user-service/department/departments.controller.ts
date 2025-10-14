@@ -16,7 +16,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/s
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
-import { Role1s, Public } from '@backend/auth-guards';
+
 
 class CreateDepartmentDto {
   departmentCode!: string;
@@ -42,7 +42,7 @@ export class DepartmentsController {
   ) {}
 
   // 🩺 Kiểm tra tình trạng service
-  @Public()
+  
   @Get('health')
   @ApiOperation({ summary: 'Check Department service health' })
   async checkHealth() {
@@ -59,7 +59,7 @@ export class DepartmentsController {
 
   // 🏢 Lấy toàn bộ danh sách phòng ban
   @Get()
-  @Role1s(Roles.RECEPTION_STAFF)
+
   @ApiOperation({ summary: 'Get all departments' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
   async getAllDepartments() {
@@ -78,7 +78,6 @@ export class DepartmentsController {
 
   // 🆕 Tạo phòng ban mới
   @Post()
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Create a new department' })
   @ApiBody({ type: CreateDepartmentDto })
   @ApiResponse({ status: 201, description: 'Tạo phòng ban thành công' })
@@ -100,7 +99,6 @@ export class DepartmentsController {
 
   // 🔍 Lấy chi tiết 1 phòng ban theo ID
   @Get(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get department by ID' })
   @ApiParam({ name: 'id', description: 'Department ID' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin phòng ban thành công' })
@@ -119,7 +117,6 @@ export class DepartmentsController {
 
   // ✏️ Cập nhật thông tin phòng ban
   @Put(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Update department details' })
   @ApiParam({ name: 'id', description: 'Department ID' })
   @ApiBody({ type: UpdateDepartmentDto })
@@ -145,7 +142,6 @@ export class DepartmentsController {
 
   // 🗑️ Xóa phòng ban
   @Delete(':id')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Delete department' })
   @ApiParam({ name: 'id', description: 'Department ID' })
   @ApiResponse({ status: 200, description: 'Xóa phòng ban thành công' })
@@ -164,7 +160,6 @@ export class DepartmentsController {
 
   // 🔢 Lấy phòng ban theo mã code
   @Get('code/:code')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get department by code' })
   @ApiParam({ name: 'code', description: 'Department Code' })
   @ApiResponse({ status: 200, description: 'Lấy thông tin phòng ban thành công' })
@@ -183,7 +178,6 @@ export class DepartmentsController {
 
   // 🟢 Lấy các phòng ban đang hoạt động
   @Get('active')
-  @Role1s(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get active departments' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban hoạt động thành công' })
   async getActiveDepartments() {

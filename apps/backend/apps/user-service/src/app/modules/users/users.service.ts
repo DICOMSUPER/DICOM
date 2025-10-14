@@ -17,7 +17,8 @@ import {
   OtpGenerationFailedException,
   TokenGenerationFailedException,
   DatabaseException,
-  ValidationException
+  ValidationException,
+  InvalidTokenException
 } from '@backend/shared-exception';
   
 @Injectable()
@@ -140,6 +141,9 @@ export class UsersService {
       return 24 * 60 * 60 * 1000; // Default 1 day
     }
   }
+
+  
+
 
   async findAll(): Promise<Omit<User, 'passwordHash'>[]> {
     try {
@@ -405,6 +409,25 @@ export class UsersService {
       throw new DatabaseException('Lỗi trong quá trình đăng ký');
     }
   }
+
+ 
+
+  async verifyToken(token: string): Promise<any> {
+  try {
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new TokenGenerationFailedException('JWT_SECRET không được cấu hình');
+    }
+
+    // Xác minh và decode token
+    const decoded = this.jwtService.verify(token, { secret: jwtSecret });
+    return decoded; // { email, sub: userId, role }
+  } catch (error) {
+    throw new InvalidTokenException();
+  }
+}
+
+   
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';

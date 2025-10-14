@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, Ma
 import { User } from './user.entity';
 
 @Entity('departments')
-export class Department {
+export class Department  {
   @PrimaryGeneratedColumn('uuid', { name: 'department_id' })
   id!: string;
 

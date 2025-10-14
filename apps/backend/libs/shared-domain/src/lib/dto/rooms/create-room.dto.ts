@@ -9,7 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { RoomType } from '@backend/shared-enums';
-import { RoomStatus } from '../entities/room.entity';
+import { RoomStatus } from '../../entities/users/room.entity';
 
 export class CreateRoomDto {
   @ApiProperty({

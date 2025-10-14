@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateRoomDto } from './dto/create-room.dto';
-import { UpdateRoomDto } from './dto/update-room.dto';
-import { Room } from './entities/room.entity';
+import { CreateRoomDto } from '@backend/shared-domain';
+import { UpdateRoomDto } from '@backend/shared-domain';
+import { Room } from '@backend/shared-domain';
 import {
   RoomNotFoundException,
   RoomAlreadyExistsException,

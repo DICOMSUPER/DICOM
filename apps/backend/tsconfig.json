@@ -64,9 +64,6 @@
       "path": "./libs/shared-client"
     },
     {
-      "path": "./libs/auth-guards"
-    },
-    {
       "path": "./libs/shared-exception"
     },
     {
