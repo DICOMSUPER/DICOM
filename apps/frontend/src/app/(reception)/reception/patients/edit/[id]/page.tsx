@@ -31,12 +31,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader
-        notificationCount={0}
-        onNotificationClick={() => {}}
-        onLogout={() => {}}
-      />
-
       <WorkspaceLayout sidebar={<SidebarNav />}>
         <PatientForm
           patient={patient}

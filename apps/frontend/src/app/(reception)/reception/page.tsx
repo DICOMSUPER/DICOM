@@ -7,12 +7,12 @@ import { UrgentNotifications } from "@/components/reception/urgent-notifications
 import { QueuePreview } from "@/components/reception/queue-preview";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useGetPatientStatsQuery } from "@/store/patientApi";
 import {
-  useGetPatientStatsQuery,
-  useGetEncounterStatsQuery,
-  useGetAllEncountersQuery,
-} from "@/store/patientApi";
-
+  useGetPatientEncounterStatsQuery,
+  useGetPatientEncountersQuery,
+} from "@/store/patientEncounterApi";
+import { AppHeader } from "@/components/app-header";
 export default function ReceptionDashboard() {
   const router = useRouter();
   const [notificationCount] = useState(3);
@@ -21,9 +21,9 @@ export default function ReceptionDashboard() {
   const { data: patientStats, isLoading: patientStatsLoading } =
     useGetPatientStatsQuery();
   const { data: encounterStats, isLoading: encounterStatsLoading } =
-    useGetEncounterStatsQuery(undefined);
+    useGetPatientEncounterStatsQuery(undefined);
   const { data: recentEncounters, isLoading: encountersLoading } =
-    useGetAllEncountersQuery({
+    useGetPatientEncountersQuery({
       limit: 5,
       sortBy: "createdAt",
       sortOrder: "desc",
@@ -62,13 +62,6 @@ export default function ReceptionDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Dashboard Header */}
