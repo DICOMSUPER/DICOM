@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
+import { WorkspaceLayout } from "@/components/workspace-layout";
+import { SidebarNav } from "@/components/sidebar-nav";
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
@@ -57,16 +59,14 @@ interface EmployeeSchedule {
 }
 
 const timeSlots = [
-  { time: "8:00 AM", hour: 8 },
   { time: "9:00 AM", hour: 9 },
   { time: "10:00 AM", hour: 10 },
   { time: "11:00 AM", hour: 11 },
   { time: "12:00 PM", hour: 12 },
-  { time: "1:00 PM", hour: 13 },
-  { time: "2:00 PM", hour: 14 },
-  { time: "3:00 PM", hour: 15 },
-  { time: "4:00 PM", hour: 16 },
-  { time: "5:00 PM", hour: 17 },
+  { time: "13:00 1 PM", hour: 13 },
+  { time: "14:00 2 PM", hour: 14 },
+  { time: "15:00 3 PM", hour: 15 },
+  { time: "16:00 4 PM", hour: 16 },
 ];
 
 const mockSchedules: EmployeeSchedule[] = [
@@ -78,20 +78,20 @@ const mockSchedules: EmployeeSchedule[] = [
     actual_start_time: "08:00",
     actual_end_time: "12:00",
     schedule_status: "confirmed",
-    notes: "Morning clinic - General consultations",
+    notes: "Morning shift - Patient registration",
     overtime_hours: 0,
     employee: {
       id: "1",
-      firstName: "Dr. Sarah",
+      firstName: "Sarah",
       lastName: "Johnson",
-      role: "physician",
+      role: "reception_staff",
       avatar: "/avatars/sarah-johnson.jpg"
     },
     room: {
       id: "1",
-      roomCode: "CLINIC-01",
-      roomType: "Clinic",
-      description: "General Practice Room 1",
+      roomCode: "REC-01",
+      roomType: "Reception",
+      description: "Main Reception Desk",
     }
   },
   {
@@ -99,58 +99,34 @@ const mockSchedules: EmployeeSchedule[] = [
     employee_id: "1",
     room_id: "2",
     work_date: "2025-09-30",
-    actual_start_time: "14:00",
-    actual_end_time: "18:00",
+    actual_start_time: "13:00",
+    actual_end_time: "17:00",
     schedule_status: "confirmed",
-    notes: "Afternoon clinic - Follow-up appointments",
+    notes: "Afternoon shift - Queue management",
     overtime_hours: 0,
     employee: {
       id: "1",
-      firstName: "Dr. Sarah",
+      firstName: "Sarah",
       lastName: "Johnson",
-      role: "physician",
+      role: "reception_staff",
       avatar: "/avatars/sarah-johnson.jpg"
     },
     room: {
       id: "2",
-      roomCode: "CLINIC-02",
-      roomType: "Clinic",
-      description: "General Practice Room 2",
-    }
-  },
-  {
-    schedule_id: "3",
-    employee_id: "1",
-    room_id: "3",
-    work_date: "2025-10-01",
-    actual_start_time: "09:00",
-    actual_end_time: "13:00",
-    schedule_status: "scheduled",
-    notes: "Specialist consultation - Cardiology",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Dr. Sarah",
-      lastName: "Johnson",
-      role: "physician",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "3",
-      roomCode: "CARDIO-01",
-      roomType: "Cardiology",
-      description: "Cardiology Consultation Room",
+      roomCode: "REC-02",
+      roomType: "Reception",
+      description: "Secondary Reception Desk",
     }
   }
 ];
 
 const mockEmployees: Employee[] = [
-  { id: "1", firstName: "Dr. Sarah", lastName: "Johnson", role: "physician" },
-  { id: "2", firstName: "Dr. Michael", lastName: "Chen", role: "physician" },
-  { id: "3", firstName: "Dr. Emily", lastName: "Wilson", role: "physician" },
+  { id: "1", firstName: "Sarah", lastName: "Johnson", role: "reception_staff" },
+  { id: "2", firstName: "John", lastName: "Smith", role: "reception_staff" },
+  { id: "3", firstName: "Mike", lastName: "Wilson", role: "reception_staff" },
 ];
 
-export default function PhysicianSchedulePage() {
+export default function ReceptionSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date("2025-09-30"));
   const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
   const [schedules, setSchedules] = useState<EmployeeSchedule[]>(mockSchedules);
@@ -184,9 +160,9 @@ export default function PhysicianSchedulePage() {
       case "scheduled":
         return "bg-blue-100 text-blue-800";
       case "confirmed":
-        return "bg-green-100 text-green-800";
+        return "bg-blue-100 text-blue-800";
       case "completed":
-        return "bg-gray-100 text-gray-800";
+        return "bg-green-100 text-green-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
       case "no_show":
@@ -307,90 +283,93 @@ export default function PhysicianSchedulePage() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="pb-4 border-b border-gray-200">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              My Schedule
-            </h1>
-            <p className="text-sm text-gray-600">
-              View and manage your clinical schedule and appointments
-            </p>
-          </div>
-          <div className="flex items-center justify-end space-x-2">
-            <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
-              {format(selectedDate, "MMMM d, yyyy")}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+    <div className="min-h-screen bg-white">
+      {/* Workspace Layout with header on the right of sidebar */}
+      <WorkspaceLayout sidebar={<SidebarNav />}>
+        {/* Page Header */}
+        <div className="pb-4 border-b border-gray-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                My Schedule
+              </h1>
+              <p className="text-sm text-gray-600">
+                View and manage your work schedule
+              </p>
+            </div>
+            <div className="flex items-center justify-end space-x-2">
+              <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
+                {format(selectedDate, "MMMM d, yyyy")}
+              </span>
+              <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
-        {/* Left Panel - Calendar and Filters */}
-        <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
+        {/* Main Content */}
+        <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
+          {/* Left Panel - Calendar and Filters */}
+          <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
 
-        {/* Right Panel - Schedule View */}
-        <div className="lg:col-span-2 p-4 lg:p-6">
-          {/* View Mode Tabs */}
-          <div className="mb-4 lg:mb-6">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-              <TabsList className="bg-gray-100 w-full grid grid-cols-4">
-                <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
-                  Day
-                </TabsTrigger>
-                <TabsTrigger value="week" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
-                  Week
-                </TabsTrigger>
-                <TabsTrigger value="month" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
-                  Month
-                </TabsTrigger>
-                <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
-                  List
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          {/* Right Panel - Schedule View */}
+          <div className="lg:col-span-2 p-4 lg:p-6">
+            {/* View Mode Tabs */}
+            <div className="mb-4 lg:mb-6">
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
+                <TabsList className="bg-gray-100 w-full grid grid-cols-4">
+                  <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                    Day
+                  </TabsTrigger>
+                  <TabsTrigger value="week" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                    Week
+                  </TabsTrigger>
+                  <TabsTrigger value="month" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                    Month
+                  </TabsTrigger>
+                  <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                    List
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
-          {viewMode === "day" && (
-            <div>
-              <div className="mb-4 xl:mb-6">
-                <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
-                <p className="text-xs xl:text-sm text-gray-600">
-                  Your schedule for {format(selectedDate, "MMMM d, yyyy")}
-                </p>
+            {viewMode === "day" && (
+              <div>
+                <div className="mb-4 xl:mb-6">
+                  <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                  <p className="text-xs xl:text-sm text-gray-600">
+                    Your schedule for {format(selectedDate, "MMMM d, yyyy")}
+                  </p>
+                </div>
+                {renderDayView()}
               </div>
-              {renderDayView()}
-            </div>
-          )}
+            )}
 
-          {viewMode === "week" && (
-            <div>
-              {renderWeekView()}
-            </div>
-          )}
+            {viewMode === "week" && (
+              <div>
+                {renderWeekView()}
+              </div>
+            )}
 
-          {viewMode === "month" && (
-            <div>
-              {renderMonthView()}
-            </div>
-          )}
+            {viewMode === "month" && (
+              <div>
+                {renderMonthView()}
+              </div>
+            )}
 
-          {viewMode === "list" && (
-            <div>
-              {renderListView()}
-            </div>
-          )}
+            {viewMode === "list" && (
+              <div>
+                {renderListView()}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </WorkspaceLayout>
     </div>
   );
 }

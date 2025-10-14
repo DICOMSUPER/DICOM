@@ -24,7 +24,6 @@ export function AppHeader({
 
   return (
     <header className="h-16 border-b border-border bg-card">
-      <div className="h-16">
         <div className="h-full flex items-center justify-between px-4">
           {/* Left: mobile menu only (branding moved to sidebar) */}
           <div className="flex items-center">
@@ -72,7 +71,6 @@ export function AppHeader({
             </Button>
           </div>
         </div>
-      </div>
     </header>
   );
 }
