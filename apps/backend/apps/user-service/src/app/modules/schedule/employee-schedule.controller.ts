@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, MessagePattern, Payload } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EmployeeScheduleService } from './employee-schedule.service';
-import { CreateEmployeeScheduleDto, UpdateEmployeeScheduleDto, EmployeeScheduleSearchFilters } from '@backend/shared-domain';
+import { CreateEmployeeScheduleDto, UpdateEmployeeScheduleDto, EmployeeScheduleSearchFilters, EmployeeSchedule } from '@backend/shared-domain';
 import { RepositoryPaginationDto } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 
@@ -105,6 +106,67 @@ export class EmployeeScheduleController {
       return await this.employeeScheduleService.getStats(data.employeeId);
     } catch (error) {
       throw handleErrorFromMicroservices(error, 'Failed to fetch schedule statistics', 'EmployeeScheduleController');
+    }
+  }
+
+  // Bulk Operations
+  @Post('bulk')
+  @MessagePattern('UserService.EmployeeSchedule.CreateBulk')
+  async createBulk(@Payload() data: { schedules: CreateEmployeeScheduleDto[] }) {
+    try {
+      return await this.employeeScheduleService.createBulk(data.schedules);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to create bulk schedules', 'EmployeeScheduleController');
+    }
+  }
+
+  @Patch('bulk')
+  @MessagePattern('UserService.EmployeeSchedule.UpdateBulk')
+  async updateBulk(@Payload() data: { updates: { id: string; data: UpdateEmployeeScheduleDto }[] }) {
+    try {
+      return await this.employeeScheduleService.updateBulk(data.updates);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to update bulk schedules', 'EmployeeScheduleController');
+    }
+  }
+
+  @Delete('bulk')
+  @MessagePattern('UserService.EmployeeSchedule.DeleteBulk')
+  async deleteBulk(@Payload() data: { ids: string[] }) {
+    try {
+      return await this.employeeScheduleService.deleteBulk(data.ids);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to delete bulk schedules', 'EmployeeScheduleController');
+    }
+  }
+
+  @Post('copy-week')
+  @MessagePattern('UserService.EmployeeSchedule.CopyWeek')
+  async copyWeek(@Payload() data: { sourceWeekStart: string; targetWeekStart: string; employeeId?: string }) {
+    try {
+      return await this.employeeScheduleService.copyWeek(data.sourceWeekStart, data.targetWeekStart, data.employeeId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to copy week schedules', 'EmployeeScheduleController');
+    }
+  }
+
+  @Post('check-conflict')
+  @MessagePattern('UserService.EmployeeSchedule.CheckConflict')
+  async checkConflict(@Payload() data: { employeeId: string; date: string; startTime: string; endTime: string; excludeScheduleId?: string }) {
+    try {
+      return await this.employeeScheduleService.checkConflict(data.employeeId, data.date, data.startTime, data.endTime, data.excludeScheduleId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to check schedule conflict', 'EmployeeScheduleController');
+    }
+  }
+
+  @Post('validate-working-hours')
+  @MessagePattern('UserService.EmployeeSchedule.ValidateWorkingHours')
+  async validateAgainstWorkingHours(@Payload() data: { schedules: EmployeeSchedule[] }) {
+    try {
+      return await this.employeeScheduleService.validateAgainstWorkingHours(data.schedules);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to validate schedules against working hours', 'EmployeeScheduleController');
     }
   }
 }

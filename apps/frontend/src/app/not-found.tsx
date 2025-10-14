@@ -2,6 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, ArrowLeft, Search, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   const router = useRouter();
@@ -31,21 +32,22 @@ export default function NotFound() {
 
         {/* Action Buttons */}
         <div className="space-y-4">
-          <button
+          <Button
             onClick={handleGoHome}
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+            className="w-full flex items-center justify-center space-x-2"
           >
             <Home size={20} />
             <span>Go to Login</span>
-          </button>
-          
-          <button
+          </Button>
+
+          <Button
             onClick={handleGoBack}
-            className="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center space-x-2"
+            variant="secondary"
+            className="w-full flex items-center justify-center space-x-2"
           >
             <ArrowLeft size={20} />
             <span>Go Back</span>
-          </button>
+          </Button>
         </div>
 
         {/* Help Text */}

@@ -2,7 +2,6 @@
 
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { DashboardStats } from "@/components/reception/dashboard-stats";
 import { UrgentNotifications } from "@/components/reception/urgent-notifications";
 import { QueuePreview } from "@/components/reception/queue-preview";

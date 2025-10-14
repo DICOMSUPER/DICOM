@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ScheduleReplacementsService } from './schedule-replacements.service';
-import { CreateScheduleReplacementDto } from './dto/create-schedule-replacement.dto';
-import { UpdateScheduleReplacementDto } from './dto/update-schedule-replacement.dto';
+import { CreateScheduleReplacementDto, UpdateScheduleReplacementDto } from '@backend/shared-domain';
 
 @Controller('schedule-replacements')
 export class ScheduleReplacementsController {

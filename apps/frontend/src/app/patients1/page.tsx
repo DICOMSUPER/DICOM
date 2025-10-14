@@ -1,7 +1,6 @@
 "use client";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { PatientToolbar } from "@/components/patients/patient-toolbar";
 import { PatientList } from "@/components/patients/patient-list";
 import { PatientFilters } from "@/components/patients/patient-filters";

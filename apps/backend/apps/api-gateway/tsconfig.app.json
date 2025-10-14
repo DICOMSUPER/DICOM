@@ -22,6 +22,12 @@
   ],
   "references": [
     {
+      "path": "../../libs/auth-guards/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-enums/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared-interceptor/tsconfig.lib.json"
     },
     {

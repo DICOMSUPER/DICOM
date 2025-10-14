@@ -3,14 +3,18 @@ import cors from 'cors';
 import * as express from 'express';
 import * as qs from 'qs';
 
+
+
+
 // @nestjs packages
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 
 // Internal imports
 import { AppModule } from './app/app.module';
 import { AllExceptionsFilter } from './utils/exception-filter.utils';
+
 
 async function bootstrap() {
   const startTime = Date.now();
@@ -58,6 +62,11 @@ async function bootstrap() {
   // ✅ Prefix cho toàn bộ route
   app.setGlobalPrefix('api');
 
+  
+  // ✅ Register RoleGuard TRƯỚC khi init
+
+
+
   // ✅ Khởi tạo app
   const initStart = Date.now();
   await app.init();
@@ -69,6 +78,8 @@ async function bootstrap() {
   await app.listen(port);
   logger.log(`⏱️  HTTP Listen: ${Date.now() - listenStart}ms`);
   logger.log(`🎯 API Gateway is running at: http://localhost:${port}/api`);
+
+
 
   // ✅ Tổng thời gian
   const totalTime = Date.now() - startTime;

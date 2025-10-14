@@ -4,6 +4,7 @@ import { patientApi } from "./patientApi";
 import { patientEncounterApi } from "./patientEncounterApi";
 import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
+import { scheduleApi } from "../lib/api/schedule-api";
 import authReducer from "./authSlice";
 import patientReducer from "./patientSlice";
 
@@ -16,6 +17,7 @@ export const store = configureStore({
     [patientEncounterApi.reducerPath]: patientEncounterApi.reducer,
     [queueAssignmentApi.reducerPath]: queueAssignmentApi.reducer,
     [patientConditionApi.reducerPath]: patientConditionApi.reducer,
+    [scheduleApi.reducerPath]: scheduleApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -23,7 +25,8 @@ export const store = configureStore({
       .concat(patientApi.middleware)
       .concat(patientEncounterApi.middleware)
       .concat(queueAssignmentApi.middleware)
-      .concat(patientConditionApi.middleware),
+      .concat(patientConditionApi.middleware)
+      .concat(scheduleApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
