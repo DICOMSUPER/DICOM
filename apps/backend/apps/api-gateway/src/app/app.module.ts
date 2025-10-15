@@ -12,6 +12,7 @@ import { NotificationsModule } from './modules/system-service/notifications/noti
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard, RoleGuard } from '@backend/shared-guards';
 import { UserServiceModule } from './modules/user-service/user-service.module';
+import { SeedingModule } from './modules/seeding/seeding.module';
 dotenv.config();
 
 @Module({
@@ -28,6 +29,7 @@ dotenv.config();
     AuditLogModule,
     NotificationsModule,
     PatientServiceModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [

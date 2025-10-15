@@ -85,5 +85,17 @@
   "dependencies": {
     "@types/cors": "^2.8.19",
     "cors": "^2.8.5"
+  },
+  "scripts": {
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed:dev": "ts-node-dev --respawn src/scripts/seed.ts",
+    "seed:run": "ts-node src/scripts/seed.ts run",
+    "seed:reset": "ts-node src/scripts/seed.ts reset",
+    "seed:clear": "ts-node src/scripts/seed.ts clear",
+    "seed:departments": "ts-node src/scripts/seed.ts departments",
+    "seed:users": "ts-node src/scripts/seed.ts users",
+    "seed:rooms": "ts-node src/scripts/seed.ts rooms",
+    "seed:shift-templates": "ts-node src/scripts/seed.ts shift-templates",
+    "seed:status": "ts-node src/scripts/seed.ts status"
   }
 }

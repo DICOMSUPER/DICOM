@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Clock, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,47 +16,20 @@ import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
+import { 
+  useGetSchedulesByDateRangeQuery,
+  useGetSchedulesByDateQuery,
+  useGetScheduleStatsQuery,
+  useGetActiveShiftTemplatesQuery,
+  useGetRoomsByTypeQuery,
+  useCreateEmployeeScheduleMutation,
+  useUpdateEmployeeScheduleMutation,
+  useDeleteEmployeeScheduleMutation,
+  useUpdateScheduleStatusMutation,
+} from "@/store/scheduleApi";
+import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
-// Backend interfaces based on actual entities
-interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  avatar?: string;
-}
-
-interface Room {
-  id: string;
-  roomCode: string;
-  roomType: string;
-  description: string;
-}
-
-interface ShiftTemplate {
-  id: string;
-  shiftName: string;
-  shiftType: string;
-  startTime: string;
-  endTime: string;
-}
-
-interface EmployeeSchedule {
-  schedule_id: string;
-  employee_id: string;
-  room_id?: string;
-  shift_template_id?: string;
-  work_date: string;
-  actual_start_time?: string;
-  actual_end_time?: string;
-  schedule_status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-  notes?: string;
-  overtime_hours: number;
-  created_by?: string;
-  employee: Employee;
-  room?: Room;
-  shift_template?: ShiftTemplate;
-}
+// Time slots for UI
 
 const timeSlots = [
   { time: "9:00 AM", hour: 9 },
@@ -69,68 +42,75 @@ const timeSlots = [
   { time: "16:00 4 PM", hour: 16 },
 ];
 
-const mockSchedules: EmployeeSchedule[] = [
-  {
-    schedule_id: "1",
-    employee_id: "1",
-    room_id: "1",
-    work_date: "2025-09-30",
-    actual_start_time: "08:00",
-    actual_end_time: "12:00",
-    schedule_status: "confirmed",
-    notes: "Morning shift - Patient registration",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      role: "reception_staff",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "1",
-      roomCode: "REC-01",
-      roomType: "Reception",
-      description: "Main Reception Desk",
-    }
-  },
-  {
-    schedule_id: "2",
-    employee_id: "1",
-    room_id: "2",
-    work_date: "2025-09-30",
-    actual_start_time: "13:00",
-    actual_end_time: "17:00",
-    schedule_status: "confirmed",
-    notes: "Afternoon shift - Queue management",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      role: "reception_staff",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "2",
-      roomCode: "REC-02",
-      roomType: "Reception",
-      description: "Secondary Reception Desk",
-    }
-  }
-];
-
-const mockEmployees: Employee[] = [
+// Mock employees for now - will be replaced with API call
+const mockEmployees = [
   { id: "1", firstName: "Sarah", lastName: "Johnson", role: "reception_staff" },
   { id: "2", firstName: "John", lastName: "Smith", role: "reception_staff" },
   { id: "3", firstName: "Mike", lastName: "Wilson", role: "reception_staff" },
 ];
 
 export default function ReceptionSchedulePage() {
-  const [selectedDate, setSelectedDate] = useState(new Date("2025-09-30"));
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
-  const [schedules, setSchedules] = useState<EmployeeSchedule[]>(mockSchedules);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [notificationCount] = useState(3);
+
+  // API calls
+  const { 
+    data: schedules = [], 
+    isLoading: schedulesLoading, 
+    error: schedulesError,
+    refetch: refetchSchedules 
+  } = useGetSchedulesByDateQuery({
+    date: format(selectedDate, "yyyy-MM-dd"),
+    filters: { role: "reception_staff" }
+  });
+
+  const { 
+    data: weekSchedules = [], 
+    isLoading: weekLoading 
+  } = useGetSchedulesByDateRangeQuery({
+    start_date: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
+    end_date: format(endOfWeek(selectedDate), "yyyy-MM-dd"),
+    employee_id: undefined, // Get all reception staff
+  });
+
+  const { 
+    data: monthSchedules = [], 
+    isLoading: monthLoading 
+  } = useGetSchedulesByDateRangeQuery({
+    start_date: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
+    end_date: format(endOfMonth(selectedDate), "yyyy-MM-dd"),
+    employee_id: undefined,
+  });
+
+  const { data: stats } = useGetScheduleStatsQuery({ employee_id: undefined });
+  const { data: shiftTemplates = [] } = useGetActiveShiftTemplatesQuery();
+  const { data: rooms = [] } = useGetRoomsByTypeQuery("Reception");
+
+  // Mutations
+  const [createSchedule] = useCreateEmployeeScheduleMutation();
+  const [updateSchedule] = useUpdateEmployeeScheduleMutation();
+  const [deleteSchedule] = useDeleteEmployeeScheduleMutation();
+  const [updateStatus] = useUpdateScheduleStatusMutation();
+
+  // Get current schedules based on view mode
+  const getCurrentSchedules = (): EmployeeSchedule[] => {
+    switch (viewMode) {
+      case "day":
+        return schedules;
+      case "week":
+        return weekSchedules;
+      case "month":
+        return monthSchedules;
+      case "list":
+        return schedules;
+      default:
+        return schedules;
+    }
+  };
+
+  const currentSchedules = getCurrentSchedules();
+  const isLoading = schedulesLoading || weekLoading || monthLoading;
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -142,12 +122,12 @@ export default function ReceptionSchedulePage() {
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.filter((schedule) => schedule.work_date === dateStr);
+    return currentSchedules.filter((schedule) => schedule.work_date === dateStr);
   };
 
   const getScheduleForTimeSlot = (date: Date, hour: number) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.find(
+    return currentSchedules.find(
       (schedule) =>
         schedule.work_date === dateStr &&
         schedule.actual_start_time &&
@@ -184,7 +164,7 @@ export default function ReceptionSchedulePage() {
     <DayView
       selectedDate={selectedDate}
       timeSlots={timeSlots}
-      schedules={schedules}
+      schedules={currentSchedules}
       getScheduleForTimeSlot={getScheduleForTimeSlot}
       getStatusColor={getStatusColor}
     />
@@ -223,7 +203,7 @@ export default function ReceptionSchedulePage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={schedules} selectedDate={selectedDate} />
+        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={currentSchedules} selectedDate={selectedDate} />
       </div>
     );
   };
@@ -262,7 +242,7 @@ export default function ReceptionSchedulePage() {
           {format(selectedDate, "MMMM yyyy")}
         </div>
 
-        <MonthView calendarDays={calendarDays} schedules={schedules} selectedDate={selectedDate} />
+        <MonthView calendarDays={calendarDays} schedules={currentSchedules} selectedDate={selectedDate} />
       </div>
     );
   };
@@ -278,7 +258,7 @@ export default function ReceptionSchedulePage() {
           </div>
         </div>
 
-      <ListView schedules={schedules} getStatusColor={getStatusColor} />
+      <ListView schedules={currentSchedules} getStatusColor={getStatusColor} />
     </div>
   );
 
@@ -338,34 +318,59 @@ export default function ReceptionSchedulePage() {
               </Tabs>
             </div>
 
-            {viewMode === "day" && (
-              <div>
-                <div className="mb-4 xl:mb-6">
-                  <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
-                  <p className="text-xs xl:text-sm text-gray-600">
-                    Your schedule for {format(selectedDate, "MMMM d, yyyy")}
-                  </p>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading schedules...</span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {schedulesError && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <p className="text-red-600 mb-2">Failed to load schedules</p>
+                  <Button onClick={() => refetchSchedules()} variant="outline" size="sm">
+                    Try Again
+                  </Button>
                 </div>
-                {renderDayView()}
               </div>
             )}
 
-            {viewMode === "week" && (
-              <div>
-                {renderWeekView()}
-              </div>
-            )}
+            {/* Content */}
+            {!isLoading && !schedulesError && (
+              <>
+                {viewMode === "day" && (
+                  <div>
+                    <div className="mb-4 xl:mb-6">
+                      <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                      <p className="text-xs xl:text-sm text-gray-600">
+                        Your schedule for {format(selectedDate, "MMMM d, yyyy")}
+                      </p>
+                    </div>
+                    {renderDayView()}
+                  </div>
+                )}
 
-            {viewMode === "month" && (
-              <div>
-                {renderMonthView()}
-              </div>
-            )}
+                {viewMode === "week" && (
+                  <div>
+                    {renderWeekView()}
+                  </div>
+                )}
 
-            {viewMode === "list" && (
-              <div>
-                {renderListView()}
-              </div>
+                {viewMode === "month" && (
+                  <div>
+                    {renderMonthView()}
+                  </div>
+                )}
+
+                {viewMode === "list" && (
+                  <div>
+                    {renderListView()}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
