@@ -16,6 +16,7 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 
+
 const moduleName = 'PatientEncounter';
 @Controller('patient-encounters')
 export class PatientEncounterController {
@@ -58,6 +59,7 @@ export class PatientEncounterController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
+  
   async findOne(@Payload() data: { id: string }): Promise<PatientEncounter | null> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`

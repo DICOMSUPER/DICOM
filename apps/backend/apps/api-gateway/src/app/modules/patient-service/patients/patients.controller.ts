@@ -16,7 +16,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
-import { Roles } from '@backend/shared-decorators';
+import { Role } from '@backend/shared-decorators';
 import { Roles as RoleEnum } from '@backend/shared-enums';
 
 @Controller('patients')
@@ -29,7 +29,7 @@ export class PatientServiceController {
   ) {}
 
   @Post()
-  @Roles(RoleEnum.RECEPTION_STAFF, RoleEnum.PHYSICIAN)
+  @Role(RoleEnum.RECEPTION_STAFF, RoleEnum.PHYSICIAN)
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createPatientDto: any) {
     try {

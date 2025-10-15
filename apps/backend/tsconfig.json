@@ -19,9 +19,6 @@
       "path": "./libs/shared-utils"
     },
     {
-      "path": "./libs/shared-guards"
-    },
-    {
       "path": "./libs/shared-interfaces"
     },
     {

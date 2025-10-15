@@ -1,10 +1,10 @@
-import { PatientEncounter } from "@/interfaces/patient/patient-visit.interface";
 import { formatDate } from "@/lib/formatTimeDate";
 import { EyeClosed, Plus } from "lucide-react";
 import React, { useState } from "react";
 import { VitalSignForm } from "./vital-sign-form";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
 
 
 
@@ -14,7 +14,7 @@ interface ClinicVisitProps {
 
 const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false);
-  const [vitalSignsData, setVitalSignsData] = useState(detail.vital_signs);
+  const [vitalSignsData, setVitalSignsData] = useState(detail.vitalSigns || null);
   const router = useRouter();
 
   const handleOpenVitalSignsModal = () => {
@@ -71,9 +71,9 @@ const convertVitalSignsToFormData = (vitalSigns: any) => {
         <h1 className="text-2xl font-bold text-gray-900">
           Clinic Visit Details
         </h1>
-        <p className="text-sm text-gray-600">Visit ID: {detail.visit_id}</p>
+        <p className="text-sm text-gray-600">Visit ID: {detail.id}</p>
         </div>
-        <Button onClick={() => onViewPatientProfile(detail.patient.patient_id)}>
+        <Button onClick={() => onViewPatientProfile(detail?.patient?.id || "")} variant="outline" size="sm">
           <EyeClosed size={16} className="mr-2" />
           <span>View patient profile</span>
         </Button>
@@ -89,28 +89,28 @@ const convertVitalSignsToFormData = (vitalSigns: any) => {
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Name:</span>
               <span>
-                {detail.patient.first_name} {detail.patient.last_name}
+                {detail.patient?.firstName} {detail.patient?.lastName}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Patient ID:</span>
-              <span>{detail.patient.patient_id}</span>
+              <span>{detail.patient?.id}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Date of Birth:</span>
-              <span>{formatDate(detail.patient.date_of_birth)}</span>
+              <span>{formatDate(detail.patient?.dateOfBirth)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Gender:</span>
-              <span>{detail.patient.gender}</span>
+              <span>{detail.patient?.gender}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Phone:</span>
-              <span>{detail.patient.phone}</span>
+              <span>{detail.patient?.phoneNumber}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Insurance:</span>
-              <span>{detail.patient.insurance_number}</span>
+              <span>{detail.patient?.insuranceNumber}</span>
             </div>
           </div>
         </div>
@@ -123,17 +123,17 @@ const convertVitalSignsToFormData = (vitalSigns: any) => {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Visit Date:</span>
-              <span>{formatDate(detail.visit_date)}</span>
+              <span>{formatDate(detail.createdAt)}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Visit Type:</span>
               <span className="px-2 py-1 bg-green-200 text-green-800 rounded-full text-sm">
-                {detail.visit_type}
+                {detail.encounterType}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium text-gray-700">Physician ID:</span>
-              <span>{detail.assigned_physician_id || "Not assigned"}</span>
+              <span>{detail.assignedPhysicianId || "Not assigned"}</span>
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@ const convertVitalSignsToFormData = (vitalSigns: any) => {
                 Chief Complaint:
               </label>
               <p className="text-gray-800 bg-white p-2 rounded border">
-                {detail.chief_complaint || "None specified"}
+                {detail.chiefComplaint || "None specified"}
               </p>
             </div>
             <div>
@@ -171,9 +171,9 @@ const convertVitalSignsToFormData = (vitalSigns: any) => {
           <h2 className="text-lg font-semibold text-red-900 mb-3">
             Vital Signs
           </h2>
-          {detail.vital_signs ? (
+          {detail.vitalSigns ? (
             <div className="space-y-2">
-              {Object.entries(detail.vital_signs).map(([key, value]) => (
+              {Object.entries(detail.vitalSigns).map(([key, value]) => (
                 <div key={key} className="flex justify-between">
                   <span className="font-medium text-gray-700 capitalize">
                     {key.replace("_", " ")}:

@@ -3,6 +3,7 @@ import { PatientServiceModule as PatientModule } from './patients/patients.modul
 import { PatientConditionModule } from './patient-conditions/patient-conditions.module';
 import { PatientEncounterModule } from './patient-encounters/patient-encounters.module';
 import { QueueAssignmentModule } from './queue-assignment/queue-assignment.module';
+import { SharedInterceptorModule } from '@backend/shared-interceptor';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { QueueAssignmentModule } from './queue-assignment/queue-assignment.modul
     PatientConditionModule,
     PatientEncounterModule,
     QueueAssignmentModule,
+    
   ],
   exports: [
     PatientModule,

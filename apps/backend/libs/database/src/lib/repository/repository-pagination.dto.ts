@@ -1,7 +1,10 @@
 import { Type } from 'class-transformer';
 import {
+  IsArray,
+  IsIn,
   IsInt,
   IsOptional,
+  IsString,
   Min
 } from 'class-validator';
 
@@ -18,24 +21,24 @@ export class RepositoryPaginationDto {
   @Type(() => Number)
   limit?: number = 10;
 
-  // @IsOptional()
-  // @IsString()
-  // searchField?: string;
+  @IsOptional()
+  @IsString()
+  searchField?: string;
 
-  // @IsOptional()
-  // @IsString()
-  // search?: string;
+  @IsOptional()
+  @IsString()
+  search?: string;
 
-  // @IsOptional()
-  // @IsString()
-  // sortField?: string = 'createdAt';
+  @IsOptional()
+  @IsString()
+  sortField?: string = 'createdAt';
 
-  // @IsOptional()
-  // @IsString()
-  // @IsIn(['asc', 'desc'])
-  // order?: string = 'desc';
+  @IsOptional()
+  @IsString()
+  @IsIn(['asc', 'desc'])
+  order?: string = 'desc';
 
-  // @IsOptional()
-  // @IsArray()
-  // relation?: string[];
+  @IsOptional()
+  @IsArray()
+  relation?: string[];
 }

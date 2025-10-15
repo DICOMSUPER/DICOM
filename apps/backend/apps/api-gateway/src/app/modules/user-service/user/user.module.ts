@@ -3,8 +3,9 @@ import { UserController } from './user.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
+import { RoomAssignmentsModule } from '../../user/room-assignment/room-assignment.module';
 
-import { RoomAssignmentsModule } from './room-assignment/room-assignment.module';
+
 @Module({
   imports: [
     ClientsModule.register([
@@ -15,8 +16,7 @@ import { RoomAssignmentsModule } from './room-assignment/room-assignment.module'
         Number(process.env.USER_SERVICE_PORT || 5002)
       ),
     ]),
-    SharedInterceptorModule
-  
+    SharedInterceptorModule,
     RoomAssignmentsModule,
   ],
   controllers: [UserController],

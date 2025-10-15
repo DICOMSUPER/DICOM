@@ -12,6 +12,8 @@ import {
   Inject,
   Logger,
   BadRequestException,
+  Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -19,7 +21,15 @@ import { ValidationUtils } from '@backend/shared-utils';
 import { CreateQueueAssignmentDto } from '@backend/shared-domain';
 import { FilterQueueAssignmentDto } from '@backend/shared-domain';
 
+import { Role1s } from '@backend/auth-guards';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
+import { Roles } from '@backend/shared-enums';
+
 @Controller('queue-assignments')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class QueueAssignmentController {
   private readonly logger = new Logger('QueueAssignmentController');
 
@@ -44,35 +54,43 @@ export class QueueAssignmentController {
     }
   }
 
-  @Get("in-room")
+  @Get('in-room')
+  // @Role1s(Roles.PHYSICIAN)
   async findAllInRoom(
     @Query('userId') userId: string,
-    @Query() filterQueue?: FilterQueueAssignmentDto,
+    // @Req() req: any,
+    @Query() filterQueue?: FilterQueueAssignmentDto
   ) {
     try {
       const validatedParams = ValidationUtils.validatePaginationParams(
         filterQueue?.page,
         filterQueue?.limit
       );
-      console.log("validatedParams", validatedParams);
+      // const userId = req.sub;
+      // console.log('user id', userId);
+        
+      // console.log('user from request:', req.user);
+
+      console.log('validatedParams', validatedParams);
       const payload = {
         ...filterQueue,
-        ...validatedParams
-      }
-
+        ...validatedParams,
+      };
 
       return await firstValueFrom(
-        this.patientService.send('PatientService.QueueAssignment.FindManyInRoom', {
-          filterQueue: payload,
-          userId
-        })
+        this.patientService.send(
+          'PatientService.QueueAssignment.FindManyInRoom',
+          {
+            filterQueue: payload,
+            userId,
+          }
+        )
       );
     } catch (error) {
       this.logger.error('Error finding all queue assignments:', error);
       throw error;
     }
   }
-
 
   @Get()
   async findAll(

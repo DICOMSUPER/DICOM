@@ -1,10 +1,9 @@
-
 import {
   CreateQueueAssignmentDto,
   UpdateQueueAssignmentDto,
-  QueueAssignmentSearchFilters,
   FilterQueueAssignmentDto,
   QueueAssignment,
+  QueueAssignmentRepository,
 } from '@backend/shared-domain';
 
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
@@ -12,7 +11,12 @@ import { PaginationService } from '@backend/database';
 import { ClientProxy } from '@nestjs/microservices';
 
 import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
-import { HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import {
   PaginatedResponseDto,
@@ -34,9 +38,13 @@ export class QueueAssignmentService {
   create = async (
     createQueueAssignmentDto: CreateQueueAssignmentDto
   ): Promise<QueueAssignment> => {
-
-    const existingAssignment = await this.queueRepository.findByEncounterId(createQueueAssignmentDto.encounterId);
-    if (existingAssignment && existingAssignment.status === QueueStatus.WAITING) {
+    const existingAssignment = await this.queueRepository.findByEncounterId(
+      createQueueAssignmentDto.encounterId
+    );
+    if (
+      existingAssignment &&
+      existingAssignment.status === QueueStatus.WAITING
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Encounter already has an active queue assignment',
@@ -111,8 +119,11 @@ export class QueueAssignmentService {
 
   complete = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status !== QueueStatus.WAITING && assignment.status !== QueueStatus.IN_PROGRESS) {
+
+    if (
+      assignment.status !== QueueStatus.WAITING &&
+      assignment.status !== QueueStatus.IN_PROGRESS
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Only waiting or in-progress assignments can be completed',
@@ -125,8 +136,11 @@ export class QueueAssignmentService {
 
   expire = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status === QueueStatus.COMPLETED || assignment.status === QueueStatus.EXPIRED) {
+
+    if (
+      assignment.status === QueueStatus.COMPLETED ||
+      assignment.status === QueueStatus.EXPIRED
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Assignment is already completed or expired',
@@ -149,7 +163,10 @@ export class QueueAssignmentService {
     return await this.queueRepository.findByPhysician(physicianId);
   };
 
-  callNextPatient = async (roomId?: string, calledBy?: string): Promise<QueueAssignment | null> => {
+  callNextPatient = async (
+    roomId?: string,
+    calledBy?: string
+  ): Promise<QueueAssignment | null> => {
     const filters: any = {
       status: QueueStatus.WAITING,
       limit: 1,
@@ -181,8 +198,12 @@ export class QueueAssignmentService {
     });
   };
 
-  validateToken = async (validationToken: string): Promise<QueueAssignment | null> => {
-    const assignment = await this.queueRepository.findByValidationToken(validationToken);
+  validateToken = async (
+    validationToken: string
+  ): Promise<QueueAssignment | null> => {
+    const assignment = await this.queueRepository.findByValidationToken(
+      validationToken
+    );
     if (!assignment) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
@@ -221,7 +242,8 @@ export class QueueAssignmentService {
   };
 
   autoExpireAssignments = async () => {
-    const expiredAssignments = await this.queueRepository.findExpiredAssignments();
+    const expiredAssignments =
+      await this.queueRepository.findExpiredAssignments();
     const expiredCount = expiredAssignments.length;
 
     for (const assignment of expiredAssignments) {
@@ -374,7 +396,11 @@ export class QueueAssignmentService {
           assignmentDate: 'DESC',
           queueNumber: 'ASC',
         },
-        relations: { encounter: true },
+        relations: {
+          encounter: {
+            patient: true,
+          },
+        },
         // select: ['id', 'queueNumber', 'status', 'priority', 'assignmentDate'] // Optional: specific fields
       }
     );

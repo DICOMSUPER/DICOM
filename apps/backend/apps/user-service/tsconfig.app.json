@@ -12,8 +12,9 @@
   "include": [
     "src/**/*.ts",
     "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/update-room-assignment.dto.ts",
-    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/create-room-assignment.dto.ts"
-, "src/app/modules/room-assignments/entities/room-assignment.entity.ts"  ],
+    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/create-room-assignment.dto.ts",
+    "src/app/modules/room-assignments/entities/room-assignment.entity.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",
@@ -26,19 +27,16 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared-exception/tsconfig.lib.json"
+      "path": "../../libs/shared-domain/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-domain/tsconfig.lib.json"
+      "path": "../../libs/shared-enums/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-utils/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-domain/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/shared-enums/tsconfig.lib.json"
+      "path": "../../libs/shared-exception/tsconfig.lib.json"
     },
     {
       "path": "../../libs/database/tsconfig.lib.json"

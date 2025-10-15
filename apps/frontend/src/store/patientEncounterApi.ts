@@ -5,13 +5,14 @@ import {
   UpdatePatientEncounterDto,
   EncounterSearchFilters,
   PaginatedResponse,
-  EncounterStats
+  EncounterStats,
+  ApiResponse
 } from '@/interfaces/patient/patient-workflow.interface';
 
 export const patientEncounterApi = createApi({
   reducerPath: 'patientEncounterApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: '/api/patient-encounters',
+    baseUrl: 'http://localhost:2001/api/encounters',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) {
@@ -44,7 +45,7 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<PatientEncounter, string>({
+    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
       query: (id) => `/${id}`,
       providesTags: (result, error, id) => [{ type: 'PatientEncounter', id }],
     }),

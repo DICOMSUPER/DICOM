@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Inject, Logger, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Inject, Logger, BadRequestException, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
 import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
 import type { EncounterSearchFilters } from '@backend/shared-domain';
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 
 @Controller('encounters')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor) 
 export class PatientEncounterController {
   private readonly logger = new Logger('PatientEncounterController');
 
@@ -77,7 +79,7 @@ export class PatientEncounterController {
       }
       
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.FindOne', { id })
+        this.patientService.send('PatientService.PatientEncounter.FindOne', { id })
       );
     } catch (error) {
       this.logger.error('Error fetching encounter:', error);

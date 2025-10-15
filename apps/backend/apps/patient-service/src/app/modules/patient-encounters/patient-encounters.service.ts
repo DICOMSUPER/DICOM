@@ -25,7 +25,10 @@ export class PatientEncounterService {
   };
 
   findOne = async (id: string): Promise<PatientEncounter | null> => {
-    const encounter = await this.encounterRepository.findById(id);
+    const encounter = await this.encounterRepository.findOne({
+      where: { id },
+      relations: ['patient'],
+    });
     if (!encounter) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,

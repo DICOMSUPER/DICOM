@@ -12,11 +12,13 @@ import { PatientEncounter } from './patient-encounters.entity';
 
 @Entity('queue_assignments')
 @Index(['queueNumber'])
-
 export class QueueAssignment extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'queue_id' })
   id!: string;
 
+  @Column({ name: 'encounter_id', type: 'uuid', nullable: true })
+  encounterId?: string;
+  
   @ManyToOne(() => PatientEncounter)
   @JoinColumn({ name: 'encounter_id' })
   encounter!: PatientEncounter;
@@ -33,7 +35,11 @@ export class QueueAssignment extends BaseEntity {
   @Column({ type: 'enum', enum: QueueStatus, default: QueueStatus.WAITING })
   status!: QueueStatus;
 
-  @Column({ type: 'enum', enum: QueuePriorityLevel, default: QueuePriorityLevel.ROUTINE })
+  @Column({
+    type: 'enum',
+    enum: QueuePriorityLevel,
+    default: QueuePriorityLevel.ROUTINE,
+  })
   priority!: QueuePriorityLevel;
 
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
@@ -42,7 +48,12 @@ export class QueueAssignment extends BaseEntity {
   @Column({ name: 'priority_reason', type: 'text', nullable: true })
   priorityReason?: string;
 
-  @Column({ name: 'validation_token', type: 'varchar', length: 12, unique: true })
+  @Column({
+    name: 'validation_token',
+    type: 'varchar',
+    length: 12,
+    unique: true,
+  })
   validationToken!: string;
 
   @Column({ name: 'estimated_wait_time', type: 'int', nullable: true })
@@ -57,5 +68,4 @@ export class QueueAssignment extends BaseEntity {
   // created by reception staff
   @Column({ name: 'created_by', type: 'uuid' })
   createdBy?: string;
-
 }
