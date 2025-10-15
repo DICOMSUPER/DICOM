@@ -11,6 +11,7 @@ import {
   RoomUpdateFailedException,
   RoomDeletionFailedException,
   InvalidRoomDataException,
+  DatabaseException,
 } from '@backend/shared-exception';
 
 @Injectable()
@@ -20,40 +21,46 @@ export class RoomsService {
   constructor(
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-  ) {}
+  ) { }
+
   async create(createRoomDto: CreateRoomDto): Promise<Room> {
-    try {
-      this.logger.log(`Creating room with data: ${JSON.stringify(createRoomDto)}`);
+  try {
+    this.logger.log(`Creating room with data: ${JSON.stringify(createRoomDto)}`);
 
-      // Validate input
-      if (!createRoomDto.roomCode) {
-        throw new InvalidRoomDataException('Mã phòng (roomCode) không được để trống');
-      }
-
-      // Check duplicate room code
-      const existingRoom = await this.roomRepository.findOne({
-        where: { roomCode: createRoomDto.roomCode },
-      });
-      if (existingRoom) {
-        throw new RoomAlreadyExistsException(`Phòng với mã "${createRoomDto.roomCode}" đã tồn tại`);
-      }
-
-      const newRoom = this.roomRepository.create(createRoomDto);
-      const savedRoom = await this.roomRepository.save(newRoom);
-
-      this.logger.log(`✅ Room created successfully with ID: ${savedRoom.id}`);
-      return savedRoom;
-    } catch (error: unknown) {
-      this.logger.error(`❌ Create room error: ${(error as Error).message}`);
-      if (
-        error instanceof RoomAlreadyExistsException ||
-        error instanceof InvalidRoomDataException
-      ) {
-        throw error;
-      }
-      throw new RoomCreationFailedException('Không thể tạo phòng');
+    if (!createRoomDto.roomCode) {
+      throw new InvalidRoomDataException('Mã phòng (roomCode) không được để trống');
     }
+
+    const existingRoom = await this.roomRepository.findOne({
+      where: { roomCode: createRoomDto.roomCode },
+    });
+    if (existingRoom) {
+      throw new RoomAlreadyExistsException(`Phòng với mã "${createRoomDto.roomCode}" đã tồn tại`);
+    }
+
+    const newRoom = this.roomRepository.create({
+      ...createRoomDto,
+      department: createRoomDto.department
+        ? { id: createRoomDto.department } 
+        : undefined,
+    });
+
+    const savedRoom = await this.roomRepository.save(newRoom);
+
+    this.logger.log(`✅ Room created successfully with ID: ${savedRoom.id}`);
+    return savedRoom;
+  } catch (error: unknown) {
+    this.logger.error(`❌ Create room error: ${(error as Error).message}`);
+    if (
+      error instanceof RoomAlreadyExistsException ||
+      error instanceof InvalidRoomDataException
+    ) {
+      throw error;
+    }
+    throw new RoomCreationFailedException('Không thể tạo phòng');
   }
+}
+
 
   async findOne(id: string): Promise<Room> {
     try {
@@ -75,15 +82,55 @@ export class RoomsService {
       throw new RoomNotFoundException('Không thể tìm thấy phòng');
     }
   }
-  async findAll(): Promise<Room[]> {
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
     try {
-      this.logger.log(`Fetching all rooms`);
-      return await this.roomRepository.find();
-    } catch (error: unknown) {
-      this.logger.error(`Find all rooms error: ${(error as Error).message}`);
-      throw new RoomNotFoundException('Không thể lấy danh sách phòng');
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 10;
+      const skip = (page - 1) * limit;
+
+      const qb = this.roomRepository
+        .createQueryBuilder('room')
+        .orderBy('room.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit);
+
+      if (query.search) {
+        qb.andWhere('(room.roomName ILIKE :search OR room.roomCode ILIKE :search)', {
+          search: `%${query.search}%`,
+        });
+      }
+
+      if (query.isActive !== undefined) {
+        qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
+      }
+
+      const [data, total] = await qb.getManyAndCount();
+
+      return {
+        data: {
+          data,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+          count: data.length,
+        },
+        message: 'Lấy danh sách phòng thành công',
+      };
+    } catch (error: any) {
+      this.logger.error(`Find all rooms error: ${error.message}`);
+      throw new DatabaseException('Lỗi khi lấy danh sách phòng');
     }
   }
+
+
   async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room> {
     try {
       this.logger.log(`Updating room ID: ${id} with data: ${JSON.stringify(updateRoomDto)}`);

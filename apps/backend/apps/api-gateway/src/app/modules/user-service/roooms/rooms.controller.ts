@@ -1,27 +1,26 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Inject, 
-  Logger, 
-  UseInterceptors, 
-  UseGuards, 
-  Res, 
-  Delete, 
-  Put 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Inject,
+  Logger,
+  UseInterceptors,
+  Delete,
+  Put,
+  Query
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
-
-
 import { CreateRoomDto } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
+import { Roles } from '@backend/shared-enums';
+import { Public } from '@backend/shared-decorators';
+import { Role } from '@backend/shared-decorators';
 
 
 @ApiTags('Room Management')
@@ -32,10 +31,10 @@ export class RoomsController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly roomClient: ClientProxy,
-  ) {}
+  ) { }
 
   // 🩺 Kiểm tra tình trạng service
- 
+
   @Get('health')
   @ApiOperation({ summary: 'Check Room service health' })
   async checkHealth() {
@@ -54,27 +53,46 @@ export class RoomsController {
     }
   }
 
-  
+  @Public()
   @Get()
-
   @ApiOperation({ summary: 'Get all rooms' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng thành công' })
-  async getAllRooms() {
+  async getAllRooms(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
     try {
-      this.logger.log('📋 Fetching all rooms...');
+      const pageNum = page ? Number(page) : 1;
+      const limitNum = limit ? Number(limit) : 10;
+
+      this.logger.log(`📋 Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`);
+
       const result = await firstValueFrom(
-        this.roomClient.send('room.get-all', {})
+        this.roomClient.send('room.get-all', {
+          page: pageNum,
+          limit: limitNum,
+          search,
+          status,
+        }),
       );
 
-      this.logger.log(`✅ Retrieved ${result.count || 0} rooms`);
-      return result;
+      this.logger.log(`✅ Retrieved ${result.data?.length || 0} rooms (Total: ${result.total || 0})`);
+
+      return {
+        data: result.data,
+        count: result.total || result.data?.length || 0,
+        message: 'Lấy danh sách phòng thành công',
+      };
     } catch (error) {
       this.logger.error('❌ Failed to fetch rooms', error);
       throw handleError(error);
     }
   }
 
-  // 🆕 Tạo phòng mới
+
+  @Role(Roles.SYSTEM_ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create a new room' })
   @ApiBody({ type: CreateRoomDto })
@@ -96,7 +114,7 @@ export class RoomsController {
     }
   }
 
-  // 🔍 Lấy chi tiết 1 phòng
+  @Role(Roles.SYSTEM_ADMIN)
   @Get(':id')
   @ApiOperation({ summary: 'Get room by ID' })
   @ApiParam({ name: 'id', description: 'Room ID' })
@@ -115,7 +133,8 @@ export class RoomsController {
     }
   }
 
-  // ✏️ Cập nhật thông tin phòng
+
+  @Role(Roles.SYSTEM_ADMIN)
   @Put(':id')
   @ApiOperation({ summary: 'Update room details' })
   @ApiParam({ name: 'id', description: 'Room ID' })
@@ -138,7 +157,8 @@ export class RoomsController {
     }
   }
 
-  // 🗑️ Xóa phòng
+
+  @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete room' })
   @ApiParam({ name: 'id', description: 'Room ID' })

@@ -8,6 +8,7 @@ import {
   Res,
   UseInterceptors,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -49,7 +50,7 @@ export class UserController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy
-  ) {}
+  ) { }
 
   @Public()
   @Post('login')
@@ -213,27 +214,41 @@ export class UserController {
   }
 
   @Get('users')
-  @Role(Roles.RECEPTION_STAFF)
+  @Role(Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  async getAllUsers() {
+  @ApiResponse({ status: 200, description: 'Lấy danh sách người dùng thành công' })
+  async getAllUsers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+  ) {
     try {
-      this.logger.log(`📋 Fetching all users`);
+      const pageNum = page ? Number(page) : 1;
+      const limitNum = limit ? Number(limit) : 10;
+
+      this.logger.log(`📋 Fetching users - Page: ${pageNum}, Limit: ${limitNum}`);
 
       const result = await firstValueFrom(
-        this.userClient.send('user.get-all-users', {})
+        this.userClient.send('user.get-all-users', {
+          page: pageNum,
+          limit: limitNum,
+          search,
+          role,
+        }),
       );
 
-      this.logger.log(`✅ Retrieved ${result.count || 0} users`);
+      this.logger.log(`✅ Retrieved ${result.data?.length || 0} users (Total: ${result.total || 0})`);
 
       return {
-        users: result.users,
-        count: result.count,
+        data: result.data,
+        count: result.total || result.data?.length || 0,
         message: 'Lấy danh sách người dùng thành công',
       };
     } catch (error) {
-      this.logger.error(`❌ Failed to fetch users`, error);
+      this.logger.error('❌ Failed to fetch users', error);
       throw handleError(error);
     }
   }
+
 }
