@@ -1,14 +1,11 @@
-import {
-  Controller,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PatientService } from './patients.service';
-import { 
-  CreatePatientDto, 
-  UpdatePatientDto, 
+import {
+  CreatePatientDto,
+  UpdatePatientDto,
   Patient,
-  PatientStatsDto
+  PatientStatsDto,
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -45,7 +42,9 @@ export class PatientController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+  )
   async findAll(): Promise<Patient[]> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
@@ -61,7 +60,9 @@ export class PatientController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+  )
   async findOne(@Payload() data: { id: string }): Promise<Patient | null> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
@@ -118,7 +119,9 @@ export class PatientController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<Patient>> {
@@ -165,9 +168,7 @@ export class PatientController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
   async getPatientStats(): Promise<PatientStatsDto> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`
-    );
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.patientService.getPatientStats();
     } catch (error) {
@@ -181,9 +182,7 @@ export class PatientController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Restore`)
   async restore(@Payload() data: { id: string }): Promise<Patient | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Restore`
-    );
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Restore`);
     try {
       const { id } = data;
       return await this.patientService.restore(id);

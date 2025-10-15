@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { getClient } from '@backend/shared-utils';
-// import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import { PatientServiceModule } from './modules/patient-service/patient-service.module';
@@ -12,48 +9,20 @@ import { SystemLogsModule } from './modules/system-service/system-logs/system-lo
 import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
-import { UserModule } from './modules/user-service/user/user.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard, RolesGuard } from '@backend/auth-guards';
-import { AuthGuardsModule } from '@backend/auth-guards';
+
+import { UserServiceModule } from './modules/user-service/user-service.module';
 import { RoomAssignmentsModule } from './modules/user/room-assignment/room-assignment.module';
 dotenv.config();
 
 @Module({
-  imports: [  
-    AuthGuardsModule,
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
-    ClientsModule.register([
-      getClient(
-        process.env.AUTH_SERVICE_NAME || 'AUTH_SERVICE',
-        Number(process.env.AUTH_SERVICE_TRANSPORT || Transport.TCP),
-        process.env.AUTH_SERVICE_HOST || 'localhost',
-        Number(process.env.AUTH_SERVICE_PORT || 5001)
-      ),
-      getClient(
-        process.env.USER_SERVICE_NAME || 'UserService',
-        Number(process.env.USER_SERVICE_TRANSPORT || Transport.TCP),
-        process.env.USER_SERVICE_HOST || 'localhost',
-        Number(process.env.USER_SERVICE_PORT || 5002)
-      ),
-      getClient(
-        process.env.IMAGE_SERVICE_NAME || 'ImagingService',
-        Number(process.env.IMAGE_SERVICE_TRANSPORT || Transport.TCP),
-        process.env.IMAGE_SERVICE_HOST || 'localhost',
-        Number(process.env.IMAGE_SERVICE_PORT || 5003)
-      ),
-      getClient(
-        process.env.PATIENT_SERVICE_NAME || 'PatientService',
-        Number(process.env.PATIENT_SERVICE_TRANSPORT || Transport.TCP),
-        process.env.PATIENT_SERVICE_HOST || 'localhost',
-        Number(process.env.PATIENT_SERVICE_PORT || 5004)
-      ),
-    ]),
-    // AuthModule,
-    UserModule,
+
+    UserServiceModule,
     ImagingServiceModule,
     SystemLogsModule,
     AiAnalysisModule,
@@ -63,15 +32,16 @@ dotenv.config();
     RoomAssignmentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard,
-    // },
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: RolesGuard,
-    // },
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RoleGuard,
+    },
   ],
 })
 export class AppModule {}

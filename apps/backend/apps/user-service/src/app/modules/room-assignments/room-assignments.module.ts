@@ -3,19 +3,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomAssignmentsService } from './room-assignments.service';
 import { RoomAssignmentsController } from './room-assignments.controller';
 
-import { User } from '../users/entities/user.entity';
-import { Room } from '../rooms/entities/room.entity';
-import { RoomAssignment } from './entities/room-assignments.entity';
+import { User, Department, Qualification, RoomAssignment, Room } from '@backend/shared-domain';
+
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      RoomAssignment,
-      User,
-      Room,
-    ]),
-    
-  ],
+   imports: [
+      TypeOrmModule.forFeature([
+        RoomAssignment,
+        User,
+        Department,
+        Qualification,
+        Room
+      ]),
+    ],
   controllers: [RoomAssignmentsController],
   providers: [RoomAssignmentsService],
   exports: [RoomAssignmentsService],

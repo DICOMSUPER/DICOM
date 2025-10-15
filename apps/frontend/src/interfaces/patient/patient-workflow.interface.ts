@@ -1,9 +1,9 @@
-import { 
-  Gender, 
-  BloodType, 
-  EncounterType, 
-  DiagnosisType, 
-  DiagnosisStatus, 
+import {
+  Gender,
+  BloodType,
+  EncounterType,
+  DiagnosisType,
+  DiagnosisStatus,
   Severity,
   VitalSignCode,
   VitalSignUnit,
@@ -11,9 +11,12 @@ import {
   PatientWorkflowStep,
   PatientViewMode,
   PatientSortBy,
-  PatientFilterType
-} from '@/enums/patient-workflow.enum';
-import { PatientCondition, CreatePatientConditionDto } from './patient-condition.interface';
+  PatientFilterType,
+} from "@/enums/patient-workflow.enum";
+import {
+  PatientCondition,
+  CreatePatientConditionDto,
+} from "./patient-condition.interface";
 
 // Re-export enums for convenience
 export {
@@ -29,7 +32,7 @@ export {
   PatientWorkflowStep,
   PatientViewMode,
   PatientSortBy,
-  PatientFilterType
+  PatientFilterType,
 };
 
 /**
@@ -330,7 +333,7 @@ export interface PatientListState {
   total: number;
   filters: PatientSearchFilters;
   sortBy: PatientSortBy;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
   viewMode: PatientViewMode;
   selectedPatients: string[];
 }
@@ -341,7 +344,7 @@ export interface PatientDetailState {
   diagnoses: DiagnosisReport[];
   loading: boolean;
   error: string | null;
-  activeTab: 'overview' | 'encounters' | 'diagnoses' | 'vital-signs';
+  activeTab: "overview" | "encounters" | "diagnoses" | "vital-signs";
 }
 
 export interface PatientFormState {
@@ -379,7 +382,7 @@ export interface PatientListProps {
   selectedPatients: string[];
   viewMode: PatientViewMode;
   sortBy: PatientSortBy;
-  sortOrder: 'asc' | 'desc';
+  sortOrder: "asc" | "desc";
   onSort: (field: PatientSortBy) => void;
 }
 
@@ -397,12 +400,15 @@ export interface PatientFormProps {
   onCancel: () => void;
   loading: boolean;
   errors: Record<string, string>;
+  className?: string;
 }
 
 export interface EncounterFormProps {
   patientId: string;
   encounter?: PatientEncounter;
-  onSubmit: (data: CreatePatientEncounterDto | UpdatePatientEncounterDto) => void;
+  onSubmit: (
+    data: CreatePatientEncounterDto | UpdatePatientEncounterDto
+  ) => void;
   onCancel: () => void;
   loading: boolean;
   errors: Record<string, string>;

@@ -1,32 +1,29 @@
+import { CreateQueueAssignmentDto, FilterQueueAssignmentDto } from '@backend/shared-domain';
+import { ValidationUtils } from '@backend/shared-utils';
 import {
-  Controller,
-  Get,
-  Post,
+  BadRequestException,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  Query,
+  Get,
   HttpCode,
   HttpStatus,
   Inject,
   Logger,
-  BadRequestException,
-  Req,
-  UseInterceptors,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ValidationUtils } from '@backend/shared-utils';
-import { CreateQueueAssignmentDto } from '@backend/shared-domain';
-import { FilterQueueAssignmentDto } from '@backend/shared-domain';
 
-import { Role1s } from '@backend/auth-guards';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
-import { Roles } from '@backend/shared-enums';
+
 
 @Controller('queue-assignments')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)

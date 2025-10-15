@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import {
   Users,
   FileText,
@@ -49,14 +48,6 @@ export default function PhysicianLayout({ children }: PhysicianLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-        currentRole={currentRole}
-        onRoleChange={handleRoleChange}
-      />
 
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav userRole={currentRole} />}>

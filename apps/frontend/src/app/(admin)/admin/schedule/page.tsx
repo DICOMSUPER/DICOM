@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Clock, User } from "lucide-react";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
+import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
+import { DayView } from "@/components/schedule/DayView";
+import { WeekView } from "@/components/schedule/WeekView";
+import { MonthView } from "@/components/schedule/MonthView";
+import { ListView } from "@/components/schedule/ListView";
 
 // Backend interfaces based on actual entities
 interface Employee {
@@ -177,50 +181,13 @@ export default function ScheduleManagementPage() {
   };
 
   const renderDayView = () => (
-    <div className="space-y-0">
-      {timeSlots.map((slot, index) => {
-        const schedule = getScheduleForTimeSlot(selectedDate, slot.hour);
-        
-        return (
-          <div key={slot.hour} className="grid grid-cols-12 gap-4 h-20">
-            <div className="col-span-2 text-sm font-medium text-gray-700">
-              {slot.time}
-            </div>
-            <div className="col-span-10 h-full flex items-center border-t border-gray-200">
-              {schedule ? (
-                <div className="my-4 bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm relative w-full m-2">
-                  {/* Left color indicator */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
-                  
-                  <div className="grid grid-cols-2 gap-4 ml-2">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 text-base">
-                          {schedule.employee.firstName} {schedule.employee.lastName}
-                        </h4>
-                        <div className="flex items-center space-x-1 text-xs text-gray-600">
-                          <Clock className="h-3 w-3" />
-                          <span>{schedule.actual_start_time} - {schedule.actual_end_time}</span>
-                          <span className="text-gray-500">•</span>
-                          <span className="text-gray-500">{schedule.room?.roomCode || 'Consultation'}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <Badge className={`${getStatusColor(schedule.schedule_status)} border border-blue-400 text-xs`}>
-                      {schedule.schedule_status.charAt(0).toUpperCase() + schedule.schedule_status.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 italic m-2">
-                  No schedules
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <DayView
+      selectedDate={selectedDate}
+      timeSlots={timeSlots}
+      schedules={schedules}
+      getScheduleForTimeSlot={getScheduleForTimeSlot}
+      getStatusColor={getStatusColor}
+    />
   );
 
   const renderWeekView = () => {
@@ -256,58 +223,7 @@ export default function ScheduleManagementPage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <div className="grid grid-cols-4 md:grid-cols-8 gap-2 md:gap-4">
-          <div className="text-xs md:text-sm font-medium text-gray-700">Time</div>
-          {weekDays.map((day, index) => (
-            <div key={index} className={`text-center ${isSameDay(day, selectedDate) ? 'bg-blue-50 rounded-lg p-1 md:p-2' : ''}`}>
-              <div className="text-xs md:text-sm font-medium text-gray-700">
-                {format(day, "EEE")}
-              </div>
-              <div className={`text-xs ${isSameDay(day, selectedDate) ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                {format(day, "MMM d")}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
-            <div className="space-y-0">
-              {timeSlots.map((slot) => (
-                <div key={slot.hour} className="grid grid-cols-8 gap-4 items-center h-20">
-                  <div className="text-xs md:text-sm text-gray-700 font-medium">{slot.time}</div>
-                  <div className="col-span-7 h-full border-t border-gray-200">
-                    <div className="grid grid-cols-7 gap-4 h-full">
-                      {weekDays.map((day, dayIndex) => {
-                        const daySchedules = schedules.filter(s => 
-                          s.work_date === format(day, "yyyy-MM-dd") && 
-                          s.actual_start_time &&
-                          parseInt(s.actual_start_time.split(":")[0]) === slot.hour
-                        );
-                        
-                        return (
-                          <div key={dayIndex} className={`h-full flex items-center ${isSameDay(day, selectedDate) ? 'bg-blue-50 rounded' : ''}`}>
-                            {daySchedules.map((schedule) => (
-                              <div key={schedule.schedule_id} className="bg-blue-50 border border-blue-200 rounded p-2 text-xs relative w-full m-1">
-                                {/* Left color indicator */}
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l"></div>
-                                
-                                <div className="ml-2">
-                                  <div className="font-medium text-gray-900 truncate">{schedule.employee.firstName} {schedule.employee.lastName}</div>
-                                  <div className="text-gray-600 text-xs">{schedule.actual_start_time} - {schedule.actual_end_time}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={schedules} selectedDate={selectedDate} />
       </div>
     );
   };
@@ -346,48 +262,7 @@ export default function ScheduleManagementPage() {
           {format(selectedDate, "MMMM yyyy")}
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {/* Days of week header */}
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <div key={day} className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-700 bg-gray-50">
-              {day}
-            </div>
-          ))}
-          
-          {/* Calendar days */}
-          {calendarDays.map((day, index) => {
-            const daySchedules = schedules.filter(s => s.work_date === format(day, "yyyy-MM-dd"));
-            const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
-            const isToday = isSameDay(day, new Date());
-            
-            return (
-              <div 
-                key={index} 
-                className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-200 ${
-                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                } ${isToday ? 'bg-blue-50 border-blue-200' : ''}`}
-              >
-                <div className={`text-xs md:text-sm font-medium ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'} ${isToday ? 'text-blue-600' : ''}`}>
-                  {format(day, 'd')}
-                </div>
-                <div className="mt-1 space-y-1">
-                  {daySchedules.slice(0, 2).map((schedule) => (
-                    <div key={schedule.schedule_id} className="text-xs bg-blue-50 text-gray-900 rounded px-1 py-0.5 truncate relative border border-blue-200">
-                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 rounded-l"></div>
-                      <span className="ml-1">{schedule.employee.firstName} {schedule.employee.lastName}</span>
-                    </div>
-                  ))}
-                  {daySchedules.length > 2 && (
-                    <div className="text-xs text-gray-500">
-                      +{daySchedules.length - 2} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <MonthView calendarDays={calendarDays} schedules={schedules} selectedDate={selectedDate} />
       </div>
     );
   };
@@ -403,56 +278,13 @@ export default function ScheduleManagementPage() {
           </div>
         </div>
 
-      <div className="space-y-3">
-        {schedules.map((schedule) => (
-          <div key={schedule.schedule_id} className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4 shadow-sm relative">
-            {/* Left color indicator */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 lg:items-center justify-between gap-2 ml-2">
-              <div className="flex items-center space-x-3">
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm lg:text-base">
-                    {schedule.employee.firstName} {schedule.employee.lastName}
-                  </h4>
-                  <div className="flex items-center space-x-1 text-xs lg:text-sm text-gray-600">
-                    <Clock className="h-3 w-3" />
-                    <span>{schedule.actual_start_time} - {schedule.actual_end_time}</span>
-                    <span className="text-gray-500">•</span>
-                    <span className="text-gray-500">{schedule.room?.roomCode || 'Consultation'}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:space-x-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 md:w-8 md:h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <User className="h-3 w-3 md:h-4 md:w-4 text-gray-600" />
-                  </div>
-                  <span className="text-xs md:text-sm text-gray-900 hidden md:block">
-                    Dr. {schedule.employee.firstName} {schedule.employee.lastName}
-                  </span>
-                </div>
-                <Badge className={`${getStatusColor(schedule.schedule_status)} border border-blue-400`}>
-                  {schedule.schedule_status.charAt(0).toUpperCase() + schedule.schedule_status.slice(1)}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <ListView schedules={schedules} getStatusColor={getStatusColor} />
     </div>
   );
 
   return (
     <div className="min-h-screen bg-white">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
-      {/* Workspace Layout */}
+      {/* Workspace Layout with header on the right of sidebar */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Page Header */}
         <div className="pb-4 border-b border-gray-200">
@@ -465,7 +297,7 @@ export default function ScheduleManagementPage() {
                 Manage and view doctor schedules and appointments
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-end space-x-2">
               <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -482,46 +314,7 @@ export default function ScheduleManagementPage() {
         {/* Main Content */}
         <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
           {/* Left Panel - Calendar and Filters */}
-          <div className="bg-gray-50 border-r-0 lg:border-r border-b lg:border-b-0 border-gray-200 p-4 lg:p-6">
-            {/* Calendar Section */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Calendar
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Select a date to view schedules.
-              </p>
-              <div className="bg-white rounded-lg border border-gray-200 p-2 lg:p-4">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  className="rounded-md border-0 w-full"
-                  captionLayout="dropdown"
-                  showOutsideDays={true}
-                />
-              </div>
-            </div>
-
-            {/* Filter by Doctor */}
-            <div className="mb-4 lg:mb-6">
-              <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-2">
-                Filter by Doctor
-              </h3>
-              <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                <option>All Doctors</option>
-                <option>Dr. John Smith</option>
-                <option>Dr. Sarah Johnson</option>
-                <option>Dr. Michael Chen</option>
-              </select>
-            </div>
-
-            {/* Add Appointment Button */}
-            <Button className="w-full bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 text-sm lg:text-base">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Appointment
-            </Button>
-          </div>
+          <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
 
           {/* Right Panel - Schedule View */}
           <div className="lg:col-span-2 p-4 lg:p-6">

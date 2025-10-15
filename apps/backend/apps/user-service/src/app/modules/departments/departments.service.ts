@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Department } from './entities/department.entity';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { Department } from '@backend/shared-domain';
+import { CreateDepartmentDto } from '@backend/shared-domain';
+import { UpdateDepartmentDto } from '@backend/shared-domain';
 import {
   DepartmentAlreadyExistsException,
   DepartmentCreationFailedException,

@@ -34,10 +34,9 @@ export class PatientServiceController {
   async create(@Body() createPatientDto: any) {
     try {
       return await firstValueFrom(
-        this.patientService.send(
-          'PatientService.Patient.Create',
-          createPatientDto
-        )
+        this.patientService.send('PatientService.Patient.Create', {
+          createPatientDto,
+        })
       );
     } catch (error) {
       this.logger.error('Error creating patient:', error);

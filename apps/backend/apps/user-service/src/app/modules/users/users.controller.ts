@@ -2,12 +2,16 @@ import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { 
+import { RpcException } from '@nestjs/microservices';
+import {
   InvalidCredentialsException,
   UserAlreadyExistsException,
   UserNotFoundException,
   OtpVerificationFailedException,
-  RegistrationFailedException
+  RegistrationFailedException,
+  InvalidTokenException,
+  ValidationException,
+  TokenGenerationFailedException
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';
@@ -20,7 +24,7 @@ export class UsersController {
 
   @MessagePattern('user.check-health')
   async checkHealth() {
-    return { 
+    return {
       service: 'UserService',
       status: 'running',
       timestamp: new Date().toISOString()
@@ -50,12 +54,14 @@ export class UsersController {
     }
   }
 
+
+
   @MessagePattern('user.request-login')
   async requestLogin(@Payload() data: { email: string; password: string }) {
     try {
       this.logger.log(`Request login attempt for email: ${data.email}`);
       const result = await this.usersService.requestLogin(data.email, data.password);
-      
+
       return {
         ...result,
         message: result.message || 'OTP đã được gửi'
@@ -74,7 +80,7 @@ export class UsersController {
     try {
       this.logger.log(`OTP verification attempt for email: ${data.email}`);
       const result = await this.usersService.verifyLoginOtp(data.email, data.code);
-      
+
       return {
         ...result,
         message: result?.message || 'Xác thực OTP thành công'
@@ -104,7 +110,7 @@ export class UsersController {
       const createUserDto: CreateUserDto = {
         username: registerDto.username,
         email: registerDto.email,
-        password: registerDto.password, 
+        password: registerDto.password,
         firstName: registerDto.firstName,
         role: Roles.RECEPTION_STAFF,
         lastName: registerDto.lastName,
@@ -112,7 +118,7 @@ export class UsersController {
         isVerified: false,
         isActive: true,
       };
-      
+
       const result = await this.usersService.register(createUserDto);
 
       if (!result) {
@@ -136,7 +142,7 @@ export class UsersController {
   async getAllUsers() {
     try {
       const users = await this.usersService.findAll();
-      
+
       return {
         users,
         count: users.length,
@@ -153,13 +159,13 @@ export class UsersController {
     try {
       this.logger.log(`Get user by email: ${data.email}`);
       const user = await this.usersService.findByEmail(data.email);
-      
+
       if (!user) {
         throw new UserNotFoundException('Không tìm thấy người dùng');
       }
 
       const { passwordHash, ...userWithoutPassword } = user;
-      
+
       return {
         user: userWithoutPassword,
         message: 'Lấy thông tin người dùng thành công'
@@ -172,4 +178,19 @@ export class UsersController {
       handleErrorFromMicroservices(error, 'Failed to get user by email', 'UsersController.getUserByEmail');
     }
   }
+
+  @MessagePattern('user.verify-token')
+  async verifyToken(@Payload() data: { token: string }) {
+    try {
+      const decoded = await this.usersService.verifyToken(data.token);
+      return {
+        userId: decoded.sub,
+        role: decoded.role,
+      };
+    } catch (error) {
+      this.logger.error(`Token verification failed: ${(error as Error).message}`);
+      throw new InvalidTokenException();
+    }
+  }
+
 }

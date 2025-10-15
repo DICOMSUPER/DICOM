@@ -1,5 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { 
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import {
   PatientEncounter,
   CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
@@ -12,7 +12,7 @@ import {
 export const patientEncounterApi = createApi({
   reducerPath: 'patientEncounterApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:2001/api/encounters',
+    baseUrl: '/api/encounters',
     prepareHeaders: (headers) => {
       const token = localStorage.getItem('token');
       if (token) {
@@ -24,24 +24,33 @@ export const patientEncounterApi = createApi({
   tagTypes: ['PatientEncounter'],
   endpoints: (builder) => ({
     // Get all encounters with filters
-    getPatientEncounters: builder.query<PatientEncounter[], EncounterSearchFilters>({
+    getPatientEncounters: builder.query<
+      PatientEncounter[],
+      EncounterSearchFilters
+    >({
       query: (filters) => ({
-        url: '',
+        url: "",
+        method: "GET",
         params: filters,
       }),
-      providesTags: ['PatientEncounter'],
+      providesTags: ["PatientEncounter"],
     }),
 
     // Get encounters with pagination
     getPatientEncountersPaginated: builder.query<
       PaginatedResponse<PatientEncounter>,
-      { page: number; limit: number; filters: Omit<EncounterSearchFilters, 'limit' | 'offset'> }
+      {
+        page: number;
+        limit: number;
+        filters: Omit<EncounterSearchFilters, "limit" | "offset">;
+      }
     >({
       query: ({ page, limit, filters }) => ({
-        url: '/paginated',
+        url: "/paginated",
         params: { page, limit, ...filters },
+        method: "GET",
       }),
-      providesTags: ['PatientEncounter'],
+      providesTags: ["PatientEncounter"],
     }),
 
     // Get encounter by ID
@@ -52,49 +61,67 @@ export const patientEncounterApi = createApi({
 
     // Get encounters by patient
     getPatientEncountersByPatientId: builder.query<PatientEncounter[], string>({
-      query: (patientId) => `/patient/${patientId}`,
+      query: (patientId) => ({
+        url: `/patient/${patientId}`,
+        method: "GET",
+      }),
       providesTags: (result, error, patientId) => [
-        { type: 'PatientEncounter', id: `patient-${patientId}` },
+        { type: "PatientEncounter", id: `patient-${patientId}` },
       ],
     }),
 
     // Get encounters by physician
-    getPatientEncountersByPhysicianId: builder.query<PatientEncounter[], string>({
-      query: (physicianId) => `/physician/${physicianId}`,
+    getPatientEncountersByPhysicianId: builder.query<
+      PatientEncounter[],
+      string
+    >({
+      query: (physicianId) => ({
+        url: `/physician/${physicianId}`,
+        method: "GET",
+      }),
       providesTags: (result, error, physicianId) => [
-        { type: 'PatientEncounter', id: `physician-${physicianId}` },
+        { type: "PatientEncounter", id: `physician-${physicianId}` },
       ],
     }),
 
     // Get encounter stats
     getPatientEncounterStats: builder.query<EncounterStats, void>({
-      query: () => '/stats',
-      providesTags: ['PatientEncounter'],
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      providesTags: ["PatientEncounter"],
     }),
 
     // Create encounter
-    createPatientEncounter: builder.mutation<PatientEncounter, CreatePatientEncounterDto>({
+    createPatientEncounter: builder.mutation<
+      PatientEncounter,
+      CreatePatientEncounterDto
+    >({
       query: (data) => ({
-        url: '',
-        method: 'POST',
+        url: "",
+        method: "POST",
         body: data,
       }),
       invalidatesTags: (result, error, { patientId }) => [
-        { type: 'PatientEncounter', id: `patient-${patientId}` },
-        'PatientEncounter',
+        { type: "PatientEncounter", id: `patient-${patientId}` },
+        "PatientEncounter",
       ],
     }),
 
     // Update encounter
-    updatePatientEncounter: builder.mutation<PatientEncounter, { id: string; data: UpdatePatientEncounterDto }>({
+    updatePatientEncounter: builder.mutation<
+      PatientEncounter,
+      { id: string; data: UpdatePatientEncounterDto }
+    >({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: 'PATCH',
+        method: "PATCH",
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'PatientEncounter', id },
-        'PatientEncounter',
+        { type: "PatientEncounter", id },
+        "PatientEncounter",
       ],
     }),
 
@@ -102,9 +129,9 @@ export const patientEncounterApi = createApi({
     deletePatientEncounter: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['PatientEncounter'],
+      invalidatesTags: ["PatientEncounter"],
     }),
   }),
 });

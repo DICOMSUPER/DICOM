@@ -42,6 +42,7 @@
     "dicomweb-client": "^0.11.2",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "lodash.merge": "^4.6.2",
     "lucide-react": "^0.542.0",
     "next": "15.5.2",

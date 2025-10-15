@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { BaseEntity } from '@backend/database';
 
 import { Gender } from '@backend/shared-enums';
@@ -14,7 +20,7 @@ export class Patient extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'patient_id' })
   id!: string;
 
-  @Column({ name: 'patient_code', length: 20, unique: true })
+  @Column({ name: 'patient_code', length: 40, unique: true })
   patientCode!: string;
 
   @Column({ name: 'first_name', length: 50 })
@@ -48,9 +54,9 @@ export class Patient extends BaseEntity {
   createdBy?: string;
 
   // Relations
-  @OneToMany(() => PatientCondition, condition => condition.patient)
+  @OneToMany(() => PatientCondition, (condition) => condition.patient)
   conditions!: PatientCondition[];
 
-  @OneToMany(() => PatientEncounter, encounter => encounter.patient)
+  @OneToMany(() => PatientEncounter, (encounter) => encounter.patient)
   encounters!: PatientEncounter[];
 }

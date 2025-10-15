@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { WeeklySchedulePatternsService } from './weekly-schedule-patterns.service';
-import { CreateWeeklySchedulePatternDto } from './dto/create-weekly-schedule-pattern.dto';
-import { UpdateWeeklySchedulePatternDto } from './dto/update-weekly-schedule-pattern.dto';
+import { CreateWeeklySchedulePatternDto, UpdateWeeklySchedulePatternDto } from '@backend/shared-domain';
 
 @Controller('weekly-schedule-patterns')
 export class WeeklySchedulePatternsController {

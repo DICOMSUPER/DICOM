@@ -1,9 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
-
+import { User } from '@backend/shared-domain';
+import { Room } from '@backend/shared-domain';
 import { AssignmentType } from '@backend/shared-enums';
-import { User } from '../../users/entities/user.entity';
-import { Room } from '../../rooms/entities/room.entity';
-
 
 
 @Entity('room_assignments')

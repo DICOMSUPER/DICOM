@@ -4,26 +4,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
-  useGetAllEncountersQuery,
-  useDeleteEncounterMutation
-} from "@/store/patientApi";
-import { 
-  PatientEncounter, 
-  EncounterSearchFilters 
+
+import {
+  useGetPatientEncountersQuery,
+  useDeletePatientEncounterMutation,
+} from "@/store/patientEncounterApi";
+import {
+  PatientEncounter,
+  EncounterSearchFilters,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { EncounterType } from "@/enums/patient-workflow.enum";
-import { 
-  Stethoscope, 
-  Search, 
-  Filter, 
+import {
+  Stethoscope,
+  Search,
+  Filter,
   Calendar,
   User,
   Clock,
@@ -31,7 +37,7 @@ import {
   Edit,
   Trash2,
   Eye,
-  Plus
+  Plus,
 } from "lucide-react";
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
@@ -50,13 +56,19 @@ export default function EncountersPage() {
     assignedPhysicianId: undefined,
     limit: 20,
     offset: 0,
-    sortBy: 'encounterDate',
-    sortOrder: 'desc'
+    sortBy: "encounterDate",
+    sortOrder: "desc",
   });
 
   // API hooks
-  const { data: encounters, isLoading, error, refetch } = useGetAllEncountersQuery(filters);
-  const [deleteEncounter, { isLoading: isDeleting }] = useDeleteEncounterMutation();
+  const {
+    data: encounters,
+    isLoading,
+    error,
+    refetch,
+  } = useGetPatientEncountersQuery(filters);
+  const [deleteEncounter, { isLoading: isDeleting }] =
+    useDeletePatientEncounterMutation();
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -71,20 +83,23 @@ export default function EncountersPage() {
     refetch();
   };
 
-  const handleFilterChange = (key: keyof EncounterSearchFilters, value: any) => {
-    setFilters(prev => ({
+  const handleFilterChange = (
+    key: keyof EncounterSearchFilters,
+    value: any
+  ) => {
+    setFilters((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
   const handleDeleteEncounter = async (encounter: any) => {
-    if (confirm('Are you sure you want to delete this encounter?')) {
+    if (confirm("Are you sure you want to delete this encounter?")) {
       try {
         await deleteEncounter(encounter.id).unwrap();
         refetch();
       } catch (error) {
-        console.error('Error deleting encounter:', error);
+        console.error("Error deleting encounter:", error);
       }
     }
   };
@@ -98,47 +113,52 @@ export default function EncountersPage() {
   };
 
   const handleCreateEncounter = () => {
-    router.push('/reception/patients');
+    router.push("/reception/patients");
   };
 
-  const filteredEncounters = encounters?.filter(encounter => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      encounter.patient?.firstName?.toLowerCase().includes(searchLower) ||
-      encounter.patient?.lastName?.toLowerCase().includes(searchLower) ||
-      encounter.patient?.patientCode?.toLowerCase().includes(searchLower) ||
-      encounter.chiefComplaint?.toLowerCase().includes(searchLower) ||
-      encounter.encounterType?.toLowerCase().includes(searchLower)
-    );
-  }) || [];
+  const filteredEncounters =
+    encounters?.filter((encounter) => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        encounter.patient?.firstName?.toLowerCase().includes(searchLower) ||
+        encounter.patient?.lastName?.toLowerCase().includes(searchLower) ||
+        encounter.patient?.patientCode?.toLowerCase().includes(searchLower) ||
+        encounter.chiefComplaint?.toLowerCase().includes(searchLower) ||
+        encounter.encounterType?.toLowerCase().includes(searchLower)
+      );
+    }) || [];
 
   // Calculate stats
-  const scheduledCount = filteredEncounters.filter(e => e.status === 'scheduled').length;
-  const inProgressCount = filteredEncounters.filter(e => e.status === 'in-progress' || e.status === 'active').length;
-  const completedCount = filteredEncounters.filter(e => e.status === 'completed' || e.status === 'finished').length;
+  const scheduledCount = filteredEncounters.filter(
+    (e) => e.status === "scheduled"
+  ).length;
+  const inProgressCount = filteredEncounters.filter(
+    (e) => e.status === "in-progress" || e.status === "active"
+  ).length;
+  const completedCount = filteredEncounters.filter(
+    (e) => e.status === "completed" || e.status === "finished"
+  ).length;
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Header with Quick Actions and Refresh */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Encounter Management</h1>
-            <p className="text-foreground">Search and manage patient encounters</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Encounter Management
+            </h1>
+            <p className="text-foreground">
+              Search and manage patient encounters
+            </p>
           </div>
           <div className="flex items-center gap-4">
-            <RefreshButton 
-              onRefresh={() => refetch()} 
-              loading={isLoading}
-            />
-            <Button onClick={handleCreateEncounter} className="flex items-center gap-2">
+            <RefreshButton onRefresh={() => refetch()} loading={isLoading} />
+            <Button
+              onClick={handleCreateEncounter}
+              className="flex items-center gap-2"
+            >
               <Plus className="h-4 w-4" />
               Create New Encounter
             </Button>
@@ -148,7 +168,9 @@ export default function EncountersPage() {
         {/* Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">An error occurred while loading encounters</p>
+            <p className="text-sm text-red-600">
+              An error occurred while loading encounters
+            </p>
           </div>
         )}
 

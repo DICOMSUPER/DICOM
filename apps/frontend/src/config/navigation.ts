@@ -14,7 +14,8 @@ import {
   Activity,
   BookOpen,
   Monitor,
-  Cog
+  Cog,
+  Timer
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -48,6 +49,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Schedule Management",
       icon: Clock,
       description: "Manage staff schedules and assignments"
+    },
+    {
+      href: "/admin/working-hours",
+      label: "Working Hours",
+      icon: Timer,
+      description: "Configure clinic working hours and break times"
     },
     {
       href: "/admin/settings",
@@ -130,6 +137,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Assignments",
       icon: UserCheck,
       description: "Patient assignments"
+    },
+    {
+      href: "/reception/schedule",
+      label: "Schedule",
+      icon: Clock,
+      description: "View your work schedule"
     }
   ],
 
@@ -166,7 +179,7 @@ export const roleNavigation: RoleNavigation = {
       href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "Appointment schedule"
+      description: "View your clinical schedule"
     },
     {
       href: "/physicians/settings",

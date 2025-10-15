@@ -4,38 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Bell,
-  User
+  User,
+  Menu
 } from "lucide-react";
 
 interface AppHeaderProps {
   notificationCount?: number;
   onNotificationClick?: () => void;
   onLogout?: () => void;
+  onMenuClick?: () => void;
 }
 
 export function AppHeader({
   notificationCount = 0,
   onNotificationClick,
-  onLogout
+  onLogout,
+  onMenuClick
 }: AppHeaderProps) {
 
   return (
-    <header className="border-b border-border bg-card">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Branding */}
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">D</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-display font-bold text-foreground">DICOM System</h1>
-              <p className="text-sm text-slate-500">Medical Management Platform</p>
-            </div>
+    <header className="h-16 border-b border-border bg-card">
+        <div className="h-full flex items-center justify-between px-4">
+          {/* Left: mobile menu only (branding moved to sidebar) */}
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="p-2"
+              onClick={onMenuClick ?? (() => window.dispatchEvent(new Event('workspace:toggleSidebar')))}
+              aria-label="Toggle menu"
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
           </div>
 
+
           {/* Right Side - Notifications + User */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 px-4 py-2">
             {/* Notifications */}
             <div className="relative">
               <Button 
@@ -66,7 +71,6 @@ export function AppHeader({
             </Button>
           </div>
         </div>
-      </div>
     </header>
   );
 }

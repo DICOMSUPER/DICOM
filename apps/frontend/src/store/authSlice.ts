@@ -1,10 +1,11 @@
 // store/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {Roles} from "../enums/user.enum";
 
 interface User {
   id: string;
   email: string;
-  role: "admin" | "staff" | "user";
+  role: Roles;
 }
 
 interface AuthState {
@@ -23,9 +24,8 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{  token: string }>
     ) => {
-      state.user = action.payload.user;
       state.token = action.payload.token;
     },
     logout: (state) => {

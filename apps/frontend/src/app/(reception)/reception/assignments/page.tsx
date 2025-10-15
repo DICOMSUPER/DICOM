@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { AppHeader } from "@/components/app-header";
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 import { ReceptionTableTabs } from "@/components/reception/reception-table-tabs";
@@ -12,11 +11,11 @@ import { AssignmentsTable } from "@/components/reception/assignments-table";
 import { TabsContent } from "@/components/ui/tabs";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Clock, Users, CheckCircle } from "lucide-react";
-import { 
-  useGetAllEncountersQuery,
-  useGetEncounterStatsQuery,
-} from "@/store/patientApi";
 
+import {
+  useGetPatientEncountersQuery,
+  useGetPatientEncounterStatsQuery,
+} from "@/store/patientEncounterApi";
 export default function AssignmentsPage() {
   const [notificationCount] = useState(3);
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,96 +24,115 @@ export default function AssignmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch real data
-  const { data: encounters, isLoading: encountersLoading, error: encountersError, refetch: refetchEncounters } =
-    useGetAllEncountersQuery({
-      searchTerm: searchTerm || undefined,
-      priority: priorityFilter !== 'all' ? priorityFilter : undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined,
-    });
-  const { data: encounterStats, isLoading: statsLoading, refetch: refetchStats } =
-    useGetEncounterStatsQuery(undefined);
+  const {
+    data: encounters,
+    isLoading: encountersLoading,
+    error: encountersError,
+    refetch: refetchEncounters,
+  } = useGetPatientEncountersQuery({
+    searchTerm: searchTerm || undefined,
+    priority: priorityFilter !== "all" ? priorityFilter : undefined,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+  });
+  const {
+    data: encounterStats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetPatientEncounterStatsQuery(undefined);
 
   // Handle errors
   useEffect(() => {
     if (encountersError) {
-      setError('Failed to load assignment data. Please try again.');
+      setError("Failed to load assignment data. Please try again.");
     } else {
       setError(null);
     }
   }, [encountersError]);
 
   // Process real data from API
-  const activeAssignments = encounters?.filter(encounter => 
-    encounter.status === 'active' || encounter.status === 'in-progress'
-  ).map(encounter => ({
-    id: encounter.id,
-    patient: {
-      firstName: encounter.patient?.firstName || 'Unknown',
-      lastName: encounter.patient?.lastName || 'Patient',
-      patientCode: encounter.patient?.patientCode || 'N/A',
-      phoneNumber: encounter.patient?.phoneNumber || 'N/A'
-    },
-    physician: {
-      firstName: encounter.assignedPhysicianId ? 'Dr. ' : 'Unassigned',
-      lastName: encounter.assignedPhysicianId || '',
-      specialty: encounter.physicianSpecialty || 'General'
-    },
-    room: {
-      name: encounter.roomId || 'Unassigned',
-      floor: encounter.roomFloor || 'N/A'
-    },
-    priority: encounter.priority || 'normal',
-    assignmentDate: new Date(encounter.encounterDate),
-    status: encounter.status || 'active'
-  })) || [];
+  const activeAssignments =
+    encounters
+      ?.filter(
+        (encounter) =>
+          encounter.status === "active" || encounter.status === "in-progress"
+      )
+      .map((encounter) => ({
+        id: encounter.id,
+        patient: {
+          firstName: encounter.patient?.firstName || "Unknown",
+          lastName: encounter.patient?.lastName || "Patient",
+          patientCode: encounter.patient?.patientCode || "N/A",
+          phoneNumber: encounter.patient?.phoneNumber || "N/A",
+        },
+        physician: {
+          firstName: encounter.assignedPhysicianId ? "Dr. " : "Unassigned",
+          lastName: encounter.assignedPhysicianId || "",
+          specialty: encounter.physicianSpecialty || "General",
+        },
+        room: {
+          name: encounter.roomId || "Unassigned",
+          floor: encounter.roomFloor || "N/A",
+        },
+        priority: encounter.priority || "normal",
+        assignmentDate: new Date(encounter.encounterDate),
+        status: encounter.status || "active",
+      })) || [];
 
-  const pendingAssignments = encounters?.filter(encounter => 
-    encounter.status === 'pending' || encounter.status === 'waiting'
-  ).map(encounter => ({
-    id: encounter.id,
-    patient: {
-      firstName: encounter.patient?.firstName || 'Unknown',
-      lastName: encounter.patient?.lastName || 'Patient',
-      patientCode: encounter.patient?.patientCode || 'N/A',
-      phoneNumber: encounter.patient?.phoneNumber || 'N/A'
-    },
-    physician: {
-      firstName: encounter.assignedPhysicianId ? 'Dr. ' : 'Unassigned',
-      lastName: encounter.assignedPhysicianId || '',
-      specialty: encounter.physicianSpecialty || 'General'
-    },
-    room: {
-      name: encounter.roomId || 'Unassigned',
-      floor: encounter.roomFloor || 'N/A'
-    },
-    priority: encounter.priority || 'normal',
-    assignmentDate: new Date(encounter.encounterDate),
-    status: encounter.status || 'pending'
-  })) || [];
+  const pendingAssignments =
+    encounters
+      ?.filter(
+        (encounter) =>
+          encounter.status === "pending" || encounter.status === "waiting"
+      )
+      .map((encounter) => ({
+        id: encounter.id,
+        patient: {
+          firstName: encounter.patient?.firstName || "Unknown",
+          lastName: encounter.patient?.lastName || "Patient",
+          patientCode: encounter.patient?.patientCode || "N/A",
+          phoneNumber: encounter.patient?.phoneNumber || "N/A",
+        },
+        physician: {
+          firstName: encounter.assignedPhysicianId ? "Dr. " : "Unassigned",
+          lastName: encounter.assignedPhysicianId || "",
+          specialty: encounter.physicianSpecialty || "General",
+        },
+        room: {
+          name: encounter.roomId || "Unassigned",
+          floor: encounter.roomFloor || "N/A",
+        },
+        priority: encounter.priority || "normal",
+        assignmentDate: new Date(encounter.encounterDate),
+        status: encounter.status || "pending",
+      })) || [];
 
-  const completedAssignments = encounters?.filter(encounter => 
-    encounter.status === 'completed' || encounter.status === 'finished'
-  ).map(encounter => ({
-    id: encounter.id,
-    patient: {
-      firstName: encounter.patient?.firstName || 'Unknown',
-      lastName: encounter.patient?.lastName || 'Patient',
-      patientCode: encounter.patient?.patientCode || 'N/A',
-      phoneNumber: encounter.patient?.phoneNumber || 'N/A'
-    },
-    physician: {
-      firstName: encounter.assignedPhysicianId ? 'Dr. ' : 'Unassigned',
-      lastName: encounter.assignedPhysicianId || '',
-      specialty: encounter.physicianSpecialty || 'General'
-    },
-    room: {
-      name: encounter.roomId || 'Unassigned',
-      floor: encounter.roomFloor || 'N/A'
-    },
-    priority: encounter.priority || 'normal',
-    assignmentDate: new Date(encounter.encounterDate),
-    status: encounter.status || 'completed'
-  })) || [];
+  const completedAssignments =
+    encounters
+      ?.filter(
+        (encounter) =>
+          encounter.status === "completed" || encounter.status === "finished"
+      )
+      .map((encounter) => ({
+        id: encounter.id,
+        patient: {
+          firstName: encounter.patient?.firstName || "Unknown",
+          lastName: encounter.patient?.lastName || "Patient",
+          patientCode: encounter.patient?.patientCode || "N/A",
+          phoneNumber: encounter.patient?.phoneNumber || "N/A",
+        },
+        physician: {
+          firstName: encounter.assignedPhysicianId ? "Dr. " : "Unassigned",
+          lastName: encounter.assignedPhysicianId || "",
+          specialty: encounter.physicianSpecialty || "General",
+        },
+        room: {
+          name: encounter.roomId || "Unassigned",
+          floor: encounter.roomFloor || "N/A",
+        },
+        priority: encounter.priority || "normal",
+        assignmentDate: new Date(encounter.encounterDate),
+        status: encounter.status || "completed",
+      })) || [];
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -141,38 +159,36 @@ export default function AssignmentsPage() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchEncounters(),
-      refetchStats()
-    ]);
+    await Promise.all([refetchEncounters(), refetchStats()]);
   };
 
   const tabs = [
     { value: "active", label: "Active", count: activeAssignments.length },
     { value: "pending", label: "Pending", count: pendingAssignments.length },
-    { value: "completed", label: "Completed", count: completedAssignments.length },
+    {
+      value: "completed",
+      label: "Completed",
+      count: completedAssignments.length,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-      />
-
       {/* Workspace Layout */}
       <WorkspaceLayout sidebar={<SidebarNav />}>
         {/* Header with Quick Actions and Refresh */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Assignment Management</h1>
-            <p className="text-foreground">Manage patient-physician assignments and room allocations</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              Assignment Management
+            </h1>
+            <p className="text-foreground">
+              Manage patient-physician assignments and room allocations
+            </p>
           </div>
           <div className="flex items-center gap-4">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
+            <RefreshButton
+              onRefresh={handleRefresh}
               loading={encountersLoading || statsLoading}
             />
             <QuickActionsBar />
@@ -186,16 +202,20 @@ export default function AssignmentsPage() {
           </div>
         )}
 
-          {/* Stats Cards */}
+        {/* Stats Cards */}
         <AssignmentsStatsCards
           activeCount={activeAssignments.length}
           pendingCount={pendingAssignments.length}
           completedCount={completedAssignments.length}
-          totalCount={activeAssignments.length + pendingAssignments.length + completedAssignments.length}
+          totalCount={
+            activeAssignments.length +
+            pendingAssignments.length +
+            completedAssignments.length
+          }
           isLoading={statsLoading}
         />
 
-          {/* Filters */}
+        {/* Filters */}
         <ReceptionFilters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -207,7 +227,7 @@ export default function AssignmentsPage() {
 
         {/* Assignment Tables */}
         <ReceptionTableTabs tabs={tabs} defaultTab="active">
-            <TabsContent value="active">
+          <TabsContent value="active">
             <AssignmentsTable
               assignments={activeAssignments}
               isLoading={encountersLoading}
@@ -219,9 +239,9 @@ export default function AssignmentsPage() {
               onRemoveAssignment={handleRemoveAssignment}
               onMarkComplete={handleMarkComplete}
             />
-            </TabsContent>
+          </TabsContent>
 
-            <TabsContent value="pending">
+          <TabsContent value="pending">
             <AssignmentsTable
               assignments={pendingAssignments}
               isLoading={encountersLoading}
@@ -232,9 +252,9 @@ export default function AssignmentsPage() {
               onEditAssignment={handleEditAssignment}
               onRemoveAssignment={handleRemoveAssignment}
             />
-            </TabsContent>
+          </TabsContent>
 
-            <TabsContent value="completed">
+          <TabsContent value="completed">
             <AssignmentsTable
               assignments={completedAssignments}
               isLoading={encountersLoading}
@@ -244,7 +264,7 @@ export default function AssignmentsPage() {
               onViewDetails={handleViewDetails}
               onEditAssignment={handleEditAssignment}
             />
-            </TabsContent>
+          </TabsContent>
         </ReceptionTableTabs>
       </WorkspaceLayout>
     </div>

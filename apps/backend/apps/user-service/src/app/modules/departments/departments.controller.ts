@@ -1,8 +1,8 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DepartmentsService } from './departments.service';
-import { CreateDepartmentDto } from './dto/create-department.dto';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
+import { CreateDepartmentDto } from '@backend/shared-domain';
+import { UpdateDepartmentDto } from '@backend/shared-domain';
 import {
   DepartmentAlreadyExistsException,
   DepartmentCreationFailedException,

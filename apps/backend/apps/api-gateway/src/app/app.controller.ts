@@ -7,9 +7,7 @@ import { firstValueFrom } from 'rxjs';
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    // @Inject(process.env.AUTH_SERVICE_NAME || 'AuthService')
-    // private readonly authService: ClientProxy,
-    @Inject(process.env.USER_SERVICE_NAME || 'UserService')
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy
   ) {}
 
@@ -17,12 +15,6 @@ export class AppController {
   getData() {
     return this.appService.getData();
   }
-
-  //test auth service
-  // @Get('auth-check')
-  // async authCheck() {
-  //   return await firstValueFrom(this.authService.send('auth.check-health', {}));
-  // }
 
   //test user service
   @Get('user-check')

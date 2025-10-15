@@ -4,4 +4,7 @@ export * from './imaging-service';
 export * from './notifications';
 export * from './systems';
 export * from './patients';
-export * from './user-service';
+export * from './schedule';
+export * from './rooms';
+export * from './department';
+export * from './working-hour';

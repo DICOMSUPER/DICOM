@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { User } from '@backend/shared-domain';
 
 @Entity('qualifications')
 export class Qualification {

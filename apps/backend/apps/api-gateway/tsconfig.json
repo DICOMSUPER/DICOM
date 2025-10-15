@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared-decorators"
+    },
+    {
+      "path": "../../libs/shared-enums"
+    },
+    {
       "path": "../../libs/shared-interceptor"
     },
     {
@@ -23,6 +29,9 @@
     },
     {
       "path": "../../libs/shared-utils"
+    },
+    {
+      "path": "../../libs/shared-guards"
     },
     {
       "path": "./tsconfig.app.json"
