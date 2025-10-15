@@ -1,6 +1,12 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto } from '@backend/shared-domain';
-import { QueueAssignmentRepository, QueueAssignment } from '@backend/shared-domain';
+import {
+  CreateQueueAssignmentDto,
+  UpdateQueueAssignmentDto,
+} from '@backend/shared-domain';
+import {
+  QueueAssignmentRepository,
+  QueueAssignment,
+} from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
@@ -12,15 +18,28 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 @Injectable()
 export class QueueAssignmentService {
   constructor(
-    @Inject() private readonly queueRepository: QueueAssignmentRepository,
+    @Inject() private readonly queueRepository: QueueAssignmentRepository
   ) {}
 
   create = async (
     createQueueAssignmentDto: CreateQueueAssignmentDto
   ): Promise<QueueAssignment> => {
     // Check if encounter already has an active assignment
-    const existingAssignment = await this.queueRepository.findByEncounterId(createQueueAssignmentDto.encounterId);
-    if (existingAssignment && existingAssignment.status === QueueStatus.WAITING) {
+    if (!createQueueAssignmentDto.encounterId) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'EncounterId is required',
+        PATIENT_SERVICE
+      );
+    }
+
+    const existingAssignment = await this.queueRepository.findByEncounterId(
+      createQueueAssignmentDto.encounterId
+    );
+    if (
+      existingAssignment &&
+      existingAssignment.status === QueueStatus.WAITING
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Encounter already has an active queue assignment',
@@ -29,13 +48,17 @@ export class QueueAssignmentService {
     }
 
     // Get next queue number for today
-    const queueNumber = await this.queueRepository.getNextQueueNumber(new Date());
-    
+    const queueNumber = await this.queueRepository.getNextQueueNumber(
+      new Date()
+    );
+
     // Generate unique validation token
     const validationToken = this.generateValidationToken();
-    
+
     // Calculate estimated wait time based on current queue
-    const estimatedWaitTime = await this.calculateEstimatedWaitTime(createQueueAssignmentDto.priority);
+    const estimatedWaitTime = await this.calculateEstimatedWaitTime(
+      createQueueAssignmentDto.priority
+    );
 
     const assignmentData = {
       ...createQueueAssignmentDto,
@@ -80,7 +103,7 @@ export class QueueAssignmentService {
     const assignment = await this.findOne(id);
     return await this.queueRepository.update(id, {
       ...updateQueueAssignmentDto,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   };
 
@@ -91,8 +114,17 @@ export class QueueAssignmentService {
 
   complete = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status !== QueueStatus.WAITING && assignment.status !== QueueStatus.IN_PROGRESS) {
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
+    if (
+      assignment.status !== QueueStatus.WAITING &&
+      assignment.status !== QueueStatus.IN_PROGRESS
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Only waiting or in-progress assignments can be completed',
@@ -105,8 +137,19 @@ export class QueueAssignmentService {
 
   expire = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
-    
-    if (assignment.status === QueueStatus.COMPLETED || assignment.status === QueueStatus.EXPIRED) {
+
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Queue Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
+
+    if (
+      assignment.status === QueueStatus.COMPLETED ||
+      assignment.status === QueueStatus.EXPIRED
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Assignment is already completed or expired',
@@ -129,11 +172,14 @@ export class QueueAssignmentService {
     return await this.queueRepository.findByPhysician(physicianId);
   };
 
-  callNextPatient = async (roomId?: string, calledBy?: string): Promise<QueueAssignment | null> => {
+  callNextPatient = async (
+    roomId?: string,
+    calledBy?: string
+  ): Promise<QueueAssignment | null> => {
     const filters: any = {
       status: QueueStatus.WAITING,
       limit: 1,
-      offset: 0
+      offset: 0,
     };
 
     if (roomId) {
@@ -151,36 +197,40 @@ export class QueueAssignmentService {
     }
 
     const nextAssignment = assignments[0];
-    
+
     // Update assignment to IN_PROGRESS and mark as called
     return await this.queueRepository.update(nextAssignment.id, {
       status: QueueStatus.IN_PROGRESS,
       calledAt: new Date(),
       calledBy: calledBy,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
   };
 
-  validateToken = async (validationToken: string): Promise<QueueAssignment | null> => {
-    const assignment = await this.queueRepository.findByValidationToken(validationToken);
-    if (!assignment) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Invalid validation token',
-        PATIENT_SERVICE
-      );
-    }
-    
-    if (assignment.status === QueueStatus.EXPIRED) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Queue assignment has expired',
-        PATIENT_SERVICE
-      );
-    }
+  // validateToken = async (
+  //   validationToken: string
+  // ): Promise<QueueAssignment | null> => {
+  //   const assignment = await this.queueRepository.findByValidationToken(
+  //     validationToken
+  //   );
+  //   if (!assignment) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.NOT_FOUND,
+  //       'Invalid validation token',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
 
-    return assignment;
-  };
+  //   if (assignment.status === QueueStatus.EXPIRED) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.BAD_REQUEST,
+  //       'Queue assignment has expired',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
+
+  //   return assignment;
+  // };
 
   getEstimatedWaitTime = async (queueId: string) => {
     const assignment = await this.queueRepository.findById(queueId);
@@ -196,18 +246,19 @@ export class QueueAssignmentService {
       queueId,
       estimatedWaitTime: assignment.estimatedWaitTime,
       currentPosition: await this.getCurrentPosition(queueId),
-      averageWaitTime: await this.getAverageWaitTime()
+      averageWaitTime: await this.getAverageWaitTime(),
     };
   };
 
   autoExpireAssignments = async () => {
-    const expiredAssignments = await this.queueRepository.findExpiredAssignments();
+    const expiredAssignments =
+      await this.queueRepository.findExpiredAssignments();
     const expiredCount = expiredAssignments.length;
 
     for (const assignment of expiredAssignments) {
       await this.queueRepository.update(assignment.id, {
         status: QueueStatus.EXPIRED,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
     }
 
@@ -229,9 +280,11 @@ export class QueueAssignmentService {
   /**
    * Calculate estimated wait time based on current queue
    */
-  private async calculateEstimatedWaitTime(priority?: QueuePriorityLevel): Promise<number> {
+  private async calculateEstimatedWaitTime(
+    priority?: QueuePriorityLevel
+  ): Promise<number> {
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING
+      where: { status: QueueStatus.WAITING },
     });
     const waitingCount = waitingAssignments.length;
 
@@ -263,11 +316,11 @@ export class QueueAssignmentService {
     if (!assignment) return 0;
 
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING
+      where: { status: QueueStatus.WAITING },
     });
-    
-    const waitingBefore = waitingAssignments.filter(a => 
-      a.assignmentDate < assignment.assignmentDate
+
+    const waitingBefore = waitingAssignments.filter(
+      (a) => a.assignmentDate < assignment.assignmentDate
     ).length;
 
     return waitingBefore + 1;
@@ -278,14 +331,16 @@ export class QueueAssignmentService {
    */
   private async getAverageWaitTime(): Promise<number> {
     const completedAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.COMPLETED,
-      limit: 10
+      where: { status: QueueStatus.COMPLETED },
+      take: 10,
     });
 
     if (completedAssignments.length === 0) return 15; // Default 15 minutes
 
     const totalWaitTime = completedAssignments.reduce((sum, assignment) => {
-      const waitTime = (assignment.updatedAt.getTime() - assignment.assignmentDate.getTime()) / (1000 * 60);
+      const waitTime =
+        (assignment.updatedAt.getTime() - assignment.assignmentDate.getTime()) /
+        (1000 * 60);
       return sum + waitTime;
     }, 0);
 

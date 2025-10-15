@@ -5,19 +5,11 @@ import {
   UpdatePatientConditionDto,
   PatientConditionSearchFilters,
 } from "@/interfaces/patient/patient-condition.interface";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const patientConditionApi = createApi({
   reducerPath: "patientConditionApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/patient-conditions",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: axiosBaseQuery("/patient-conditions"),
   tagTypes: ["PatientCondition"],
   endpoints: (builder) => ({
     // Patient Condition endpoints
@@ -26,6 +18,7 @@ export const patientConditionApi = createApi({
       PatientConditionSearchFilters
     >({
       query: (filters) => ({
+        method: "GET",
         url: "",
         params: filters,
       }),
@@ -33,12 +26,12 @@ export const patientConditionApi = createApi({
     }),
 
     getConditionById: builder.query<PatientCondition, string>({
-      query: (id) => `/${id}`,
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "PatientCondition", id }],
     }),
 
     getConditionsByPatientId: builder.query<PatientCondition[], string>({
-      query: (patientId) => `/patient/${patientId}`,
+      query: (patientId) => ({ url: `/patient/${patientId}`, method: "GET" }),
       providesTags: (result, error, patientId) => [
         { type: "PatientCondition", id: "LIST" },
         ...(result || []).map(({ id }) => ({

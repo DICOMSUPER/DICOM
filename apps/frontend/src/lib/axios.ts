@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
-  withCredentials: true,
+  withCredentials: true, //has cookies, use cookies
 });
 
 // Request Interceptor
@@ -25,6 +25,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log("Unauthorized, redirecting to login...");
       if (typeof window !== "undefined") {
+        console.log("Undefined");
         window.location.href = "/login";
       }
     }

@@ -3,6 +3,7 @@ export enum Roles {
   PHYSICIAN = "physician",
   IMAGING_TECHNICIAN = "imaging_technician",
   SYSTEM_ADMIN = "system_admin",
+  RADIOLOGIST = "radiologist",
 }
 
 export enum Gender {

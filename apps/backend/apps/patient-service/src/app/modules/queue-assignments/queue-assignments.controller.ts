@@ -1,10 +1,10 @@
-import {
-  Controller,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
-import { CreateQueueAssignmentDto, UpdateQueueAssignmentDto } from '@backend/shared-domain';
+import {
+  CreateQueueAssignmentDto,
+  UpdateQueueAssignmentDto,
+} from '@backend/shared-domain';
 import { QueueAssignment } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -20,7 +20,9 @@ const moduleName = 'QueueAssignment';
 @Controller('queue-assignments')
 export class QueueAssignmentController {
   private logger = new Logger(PATIENT_SERVICE);
-  constructor(private readonly queueAssignmentService: QueueAssignmentService) {}
+  constructor(
+    private readonly queueAssignmentService: QueueAssignmentService
+  ) {}
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -41,7 +43,9 @@ export class QueueAssignmentController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<QueueAssignment>> {
@@ -69,9 +73,7 @@ export class QueueAssignmentController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
   async getStats() {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`
-    );
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.queueAssignmentService.getStats();
     } catch (error) {
@@ -83,8 +85,12 @@ export class QueueAssignmentController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
-  async findOne(@Payload() data: { id: string }): Promise<QueueAssignment | null> {
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+  )
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<QueueAssignment | null> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -113,7 +119,10 @@ export class QueueAssignmentController {
     );
     try {
       const { id, updateQueueAssignmentDto } = data;
-      return await this.queueAssignmentService.update(id, updateQueueAssignmentDto);
+      return await this.queueAssignmentService.update(
+        id,
+        updateQueueAssignmentDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -124,10 +133,10 @@ export class QueueAssignmentController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Complete`)
-  async complete(@Payload() data: { id: string }): Promise<QueueAssignment | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Complete`
-    );
+  async complete(
+    @Payload() data: { id: string }
+  ): Promise<QueueAssignment | null> {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Complete`);
     try {
       const { id } = data;
       return await this.queueAssignmentService.complete(id);
@@ -141,10 +150,10 @@ export class QueueAssignmentController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Expire`)
-  async expire(@Payload() data: { id: string }): Promise<QueueAssignment | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Expire`
-    );
+  async expire(
+    @Payload() data: { id: string }
+  ): Promise<QueueAssignment | null> {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Expire`);
     try {
       const { id } = data;
       return await this.queueAssignmentService.expire(id);
@@ -175,13 +184,16 @@ export class QueueAssignmentController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.CallNext`)
-  async callNextPatient(@Payload() data: { roomId?: string; calledBy?: string }): Promise<QueueAssignment | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.CallNext`
-    );
+  async callNextPatient(
+    @Payload() data: { roomId?: string; calledBy?: string }
+  ): Promise<QueueAssignment | null> {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.CallNext`);
     try {
       const { roomId, calledBy } = data;
-      return await this.queueAssignmentService.callNextPatient(roomId, calledBy);
+      return await this.queueAssignmentService.callNextPatient(
+        roomId,
+        calledBy
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -191,22 +203,22 @@ export class QueueAssignmentController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.ValidateToken`)
-  async validateToken(@Payload() data: { token: string }): Promise<QueueAssignment | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.ValidateToken`
-    );
-    try {
-      const { token } = data;
-      return await this.queueAssignmentService.validateToken(token);
-    } catch (error) {
-      throw handleErrorFromMicroservices(
-        error,
-        'Failed to validate queue token',
-        PATIENT_SERVICE
-      );
-    }
-  }
+  // @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.ValidateToken`)
+  // async validateToken(@Payload() data: { token: string }): Promise<QueueAssignment | null> {
+  //   this.logger.log(
+  //     `Using pattern: ${PATIENT_SERVICE}.${moduleName}.ValidateToken`
+  //   );
+  //   try {
+  //     const { token } = data;
+  //     return await this.queueAssignmentService.validateToken(token);
+  //   } catch (error) {
+  //     throw handleErrorFromMicroservices(
+  //       error,
+  //       'Failed to validate queue token',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
+  // }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetEstimatedWaitTime`)
   async getEstimatedWaitTime(@Payload() data: { id: string }) {
@@ -225,6 +237,7 @@ export class QueueAssignmentController {
     }
   }
 
+  //cron job ?
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.AutoExpire`)
   async autoExpireAssignments() {
     this.logger.log(
