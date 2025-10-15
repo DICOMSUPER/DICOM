@@ -1,7 +1,7 @@
 // store/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {Roles} from "../enums/user.enum";
-
+import { Roles } from "../enums/user.enum";
+import Cookies from "js-cookie";
 interface User {
   id: string;
   email: string;
@@ -9,7 +9,7 @@ interface User {
 }
 
 interface AuthState {
-  user: User | null;
+  user: Partial<User> | User | null;
   token: string | null;
 }
 
@@ -24,16 +24,17 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{  token: string }>
+      action: PayloadAction<{ token: string; userInfo: Partial<User> }>
     ) => {
       state.token = action.payload.token;
+      state.user = action.payload.userInfo;
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
+
+      Cookies.remove("accessToken");
+      Cookies.remove("user");
     },
   },
 });

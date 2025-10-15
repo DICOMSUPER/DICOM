@@ -2,19 +2,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
+import { Roles } from "@/enums/user.enum";
+import api from "@/lib/axios";
 
 const ROLE_ROUTES: Record<string, string[]> = {
-  admin: ["/admin", "/system-admin"],
-  "imaging-technicians": ["/imaging-technicians"],
-  reception: ["/reception"],
-  physicians: ["/physicians"],
+  [Roles.SYSTEM_ADMIN]: [/^\/system-admin/, /^\/admin/],
+  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
+  [Roles.RECEPTION_STAFF]: [/^\/reception/],
+  [Roles.PHYSICIAN]: [/^\/physicians/],
 };
 
 function findExpectedRolesForPath(path: string): string[] {
   const roles: string[] = [];
   for (const [role, prefixes] of Object.entries(ROLE_ROUTES)) {
     for (const p of prefixes) {
-      if (path === p || path.startsWith(p + "/") || path.startsWith(p + ":") || path.startsWith(p)) {
+      if (
+        path === p ||
+        path.startsWith(p + "/") ||
+        path.startsWith(p + ":") ||
+        path.startsWith(p)
+      ) {
         roles.push(role);
         break;
       }
@@ -23,7 +30,7 @@ function findExpectedRolesForPath(path: string): string[] {
   return roles;
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Nếu path không phải route cần bảo vệ -> cho qua luôn
@@ -31,8 +38,10 @@ export function middleware(req: NextRequest) {
   if (expectedRoles.length === 0) return NextResponse.next();
 
   // 1) Kiểm tra token tồn tại
-  const token = req.cookies.get("token")?.value;
+  const token = req.cookies.get("accessToken")?.value;
+
   if (!token) {
+    console.log("Token not found in middleware");
     // Nếu là request tới trang (frontend) -> redirect về login
     // Nếu muốn API trả 401: detect bằng prefix /api và trả response JSON 401
     return NextResponse.redirect(new URL("/login", req.url));
@@ -40,10 +49,13 @@ export function middleware(req: NextRequest) {
 
   // 2) Verify token và check role
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    //dùng backend verify => không cần set secret ở frontend
+    let decoded: any = await api.get("/user/me");
+    decoded = decoded.data.data;
 
     // Nếu token hợp lệ nhưng không có role -> redirect login
     if (!decoded || !decoded.role) {
+      console.log("!decoded hoac decoded k co role");
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
@@ -57,9 +69,11 @@ export function middleware(req: NextRequest) {
   } catch (err: any) {
     // Nếu token expired, bạn có thể redirect login với query để show message
     if (err.name === "TokenExpiredError") {
+      console.log("Token expired");
       return NextResponse.redirect(new URL("/login?expired=1", req.url));
     }
     // Các lỗi verify khác -> redirect login
+    console.log("OTher error");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }

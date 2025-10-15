@@ -1,55 +1,62 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Stethoscope, Shield, Monitor } from 'lucide-react';
+import React, { useState } from "react";
+import { Eye, EyeOff, Stethoscope, Shield, Monitor } from "lucide-react";
 
 interface LoginFormProps {
-  onLogin: (email: string, password: string, rememberMe: boolean) => void;
+  onLogin: (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ) => Promise<void> | void;
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [errors, setErrors] = useState({ email: "", password: "" });
 
   const validateForm = () => {
-    const newErrors = { email: '', password: '' };
-    
+    const newErrors = { email: "", password: "" };
+
     if (!email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
-    
+
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     setErrors(newErrors);
     return !newErrors.email && !newErrors.password;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
-    // Simulate login process
-    setTimeout(() => {
-      onLogin(email, password, rememberMe);
+    try {
+      await onLogin(email, password, rememberMe);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="w-full max-w-md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Email Address
           </label>
           <input
@@ -58,7 +65,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-              errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              errors.email ? "border-red-300 bg-red-50" : "border-gray-300"
             }`}
             placeholder="doctor@hospital.com"
           />
@@ -68,17 +75,20 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Password
           </label>
           <div className="relative">
             <input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                errors.password ? "border-red-300 bg-red-50" : "border-gray-300"
               }`}
               placeholder="Enter your password"
             />
@@ -104,12 +114,18 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+            <label
+              htmlFor="remember-me"
+              className="ml-2 block text-sm text-gray-700"
+            >
               Remember me
             </label>
           </div>
 
-          <a href="#" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+          <a
+            href="#"
+            className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+          >
             Forgot password?
           </a>
         </div>
@@ -125,7 +141,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               Signing In...
             </div>
           ) : (
-            'Sign In'
+            "Sign In"
           )}
         </button>
       </form>
