@@ -7,7 +7,7 @@ export interface Department  extends BaseEntity {
   departmentCode: string;
   description: string;
   isActive: boolean;
-  createdAt: string;
+  createdAt: Date;
 }
 
 export interface RoomPagination {

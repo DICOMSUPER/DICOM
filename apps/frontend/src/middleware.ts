@@ -7,6 +7,7 @@ const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
   [Roles.PHYSICIAN]: [/^\/physicians/],
+  [Roles.RADIOLOGIST]: [/^\/radiologists/],
 };
 
 function getAllowedRolesForPath(path: string): Roles[] {
