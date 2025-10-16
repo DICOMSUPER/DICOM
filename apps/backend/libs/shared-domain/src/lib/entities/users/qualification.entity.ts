@@ -1,8 +1,9 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { User } from './user.entity';
 
 @Entity('qualifications')
-export class Qualification {
+export class Qualification extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 

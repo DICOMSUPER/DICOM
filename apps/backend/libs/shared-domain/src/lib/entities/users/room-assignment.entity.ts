@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { User } from '@backend/shared-domain';
 import { Room } from '@backend/shared-domain';
 import { AssignmentType } from '@backend/shared-enums';
@@ -7,7 +8,7 @@ import { AssignmentType } from '@backend/shared-enums';
 @Entity('room_assignments')
 @Index(['userId', 'roomId'])
 @Index(['assignmentDate'])
-export class RoomAssignment {
+export class RoomAssignment extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'assignment_id' })
   id!: string;
 
@@ -42,10 +43,4 @@ export class RoomAssignment {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }

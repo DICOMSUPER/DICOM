@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, } from 'typeorm';
 import { RoomType } from '@backend/shared-enums';
+import { BaseEntity } from '@backend/database';
 import { RoomAssignment } from './room-assignment.entity';
 import { Department } from './department.entity';
 
@@ -10,7 +11,7 @@ export enum RoomStatus {
 }
 
 @Entity('rooms')
-export class Room {
+export class Room extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'room_id' })
   id!: string;
 
@@ -75,21 +76,6 @@ export class Room {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
-
-  @Column({
-    name: 'created_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createdAt!: Date;
-
-  @Column({
-    name: 'updated_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt!: Date;
 
   @OneToMany(() => RoomAssignment, (assignment) => assignment.room)
   assignments!: RoomAssignment[];
