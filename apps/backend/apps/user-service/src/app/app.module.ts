@@ -7,7 +7,6 @@ import { QualificationsModule } from './modules/qualifications/qualifications.mo
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from './modules/schedule/schedule.module';
-import { LeaveRequestsModule } from './modules/leave-requests/leave-requests.module';
 import { RoomAssignmentsModule } from './modules/room-assignments/room-assignments.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.module';
@@ -30,7 +29,7 @@ import { WorkingHoursModule } from './modules/working-hours/working-hours.module
     UsersModule,
     QualificationsModule,
     ScheduleModule,
-    LeaveRequestsModule,
+ 
     RoomAssignmentsModule,
     RoomsModule,
     ShiftTemplatesModule,

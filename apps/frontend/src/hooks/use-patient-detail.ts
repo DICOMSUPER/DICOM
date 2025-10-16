@@ -41,10 +41,10 @@ export function usePatientDetail(patientId: string) {
     const fetchPatientData = async () => {
       setLoading(true);
       
-      // Simulate network delay
+    
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // In a real app, you would fetch data based on patientId
+     
       setPatient(mockPatientDetail);
       setSummary(mockPatientSummary);
       setAppointments(mockAppointments);

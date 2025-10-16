@@ -18,7 +18,7 @@ import {
   TokenGenerationFailedException,
   DatabaseException,
   ValidationException,
-  InvalidTokenException
+  InvalidTokenException,
 } from '@backend/shared-exception';
 
 @Injectable()
@@ -28,8 +28,8 @@ export class UsersService {
     private jwtService: JwtService,
     private otpService: OtpService,
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) { }
+    private userRepository: Repository<User>
+  ) {}
 
   async findByEmail(email: string): Promise<User | null> {
     try {
@@ -54,7 +54,9 @@ export class UsersService {
 
       const user = await this.findByEmail(email);
       if (!user) {
-        throw new UserNotFoundException('Không tìm thấy người dùng với email này');
+        throw new UserNotFoundException(
+          'Không tìm thấy người dùng với email này'
+        );
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -65,9 +67,11 @@ export class UsersService {
       const { passwordHash, ...result } = user;
       return result;
     } catch (error) {
-      if (error instanceof ValidationException ||
+      if (
+        error instanceof ValidationException ||
         error instanceof UserNotFoundException ||
-        error instanceof InvalidCredentialsException) {
+        error instanceof InvalidCredentialsException
+      ) {
         throw error;
       }
       throw new DatabaseException('Lỗi khi xác thực người dùng');
@@ -77,29 +81,45 @@ export class UsersService {
   private generateTokens(user: any): TokenResponseDto {
     try {
       if (!user || !user.email || !user.id) {
-        throw new ValidationException('Thông tin người dùng không hợp lệ để tạo token');
+        throw new ValidationException(
+          'Thông tin người dùng không hợp lệ để tạo token'
+        );
       }
 
       const payload = { email: user.email, sub: user.id, role: user.role };
 
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
-      const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      const jwtRefreshSecret =
+        this.configService.get<string>('JWT_REFRESH_SECRET');
+      console.log(jwtSecret);
+      console.log(jwtRefreshSecret);
+      
+      
 
       if (!jwtSecret || !jwtRefreshSecret) {
-        throw new TokenGenerationFailedException('Cấu hình JWT secret không hợp lệ');
+        throw new TokenGenerationFailedException(
+          'Cấu hình JWT secret không hợp lệ'
+        );
       }
 
       const accessToken = this.jwtService.sign(payload, {
         secret: jwtSecret,
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       });
+      console.log(accessToken);
+      
+      
 
       const refreshToken = this.jwtService.sign(payload, {
         secret: jwtRefreshSecret,
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
       });
 
-      const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
+      console.log(refreshToken);
+      
+
+      const expiresIn =
+        this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const expiresInMs = this.parseExpiresIn(expiresIn);
       const expiresAt = new Date(Date.now() + expiresInMs).toISOString();
 
@@ -109,7 +129,12 @@ export class UsersService {
         expiresAt,
       };
     } catch (error) {
-      if (error instanceof ValidationException || error instanceof TokenGenerationFailedException) {
+      console.log("ERROR",error);
+      
+      if (
+        error instanceof ValidationException ||
+        error instanceof TokenGenerationFailedException
+      ) {
         throw error;
       }
       throw new TokenGenerationFailedException('Không thể tạo token');
@@ -207,10 +232,13 @@ export class UsersService {
 }
 
 
-  async requestLogin(email: string, password: string): Promise<{
+  async requestLogin(
+    email: string,
+    password: string
+  ): Promise<{
     success: boolean;
     message: string;
-    requireOtp?: boolean
+    requireOtp?: boolean;
   }> {
     try {
       const user = await this.validateUser(email, password);
@@ -224,12 +252,14 @@ export class UsersService {
       return {
         success: true,
         message: 'Mã OTP đã được gửi đến email của bạn',
-        requireOtp: true
+        requireOtp: true,
       };
     } catch (error: any) {
-      if (error instanceof InvalidCredentialsException ||
+      if (
+        error instanceof InvalidCredentialsException ||
         error instanceof ValidationException ||
-        error instanceof UserNotFoundException) {
+        error instanceof UserNotFoundException
+      ) {
         throw error;
       }
 
@@ -241,7 +271,10 @@ export class UsersService {
     }
   }
 
-  async verifyLoginOtp(email: string, otpCode: string): Promise<{
+  async verifyLoginOtp(
+    email: string,
+    otpCode: string
+  ): Promise<{
     tokenResponse?: TokenResponseDto;
     cookieOptions?: {
       name: string;
@@ -252,7 +285,7 @@ export class UsersService {
         sameSite: 'strict' | 'lax' | 'none';
         maxAge: number;
         path: string;
-      }
+      };
     };
     success: boolean;
     message: string;
@@ -262,10 +295,15 @@ export class UsersService {
         throw new ValidationException('Email và mã OTP là bắt buộc');
       }
 
-      const isOtpValid = await this.otpService.verifyOtp({ email, code: otpCode });
+      const isOtpValid = await this.otpService.verifyOtp({
+        email,
+        code: otpCode,
+      });
 
       if (!isOtpValid) {
-        throw new OtpVerificationFailedException('Mã OTP không hợp lệ hoặc đã hết hạn');
+        throw new OtpVerificationFailedException(
+          'Mã OTP không hợp lệ hoặc đã hết hạn'
+        );
       }
 
       const user = await this.findByEmail(email);
@@ -276,7 +314,8 @@ export class UsersService {
       const { passwordHash, ...userWithoutPassword } = user;
       const tokenResponse = this.generateTokens(userWithoutPassword);
 
-      const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
+      const expiresIn =
+        this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const maxAge = this.parseExpiresIn(expiresIn);
 
       return {
@@ -284,7 +323,7 @@ export class UsersService {
         message: 'Đăng nhập thành công',
         tokenResponse,
         cookieOptions: {
-          name: 'access_token',
+          name: 'accessToken',
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
@@ -292,14 +331,16 @@ export class UsersService {
             sameSite: 'strict',
             maxAge: maxAge,
             path: '/',
-          }
-        }
+          },
+        },
       };
     } catch (error) {
-      if (error instanceof ValidationException ||
+      if (
+        error instanceof ValidationException ||
         error instanceof OtpVerificationFailedException ||
         error instanceof UserNotFoundException ||
-        error instanceof TokenGenerationFailedException) {
+        error instanceof TokenGenerationFailedException
+      ) {
         throw error;
       }
 
@@ -307,7 +348,10 @@ export class UsersService {
     }
   }
 
-  async login(email: string, password: string): Promise<{
+  async login(
+    email: string,
+    password: string
+  ): Promise<{
     tokenResponse: TokenResponseDto;
     cookieOptions: {
       name: string;
@@ -318,8 +362,8 @@ export class UsersService {
         sameSite: 'strict' | 'lax' | 'none';
         maxAge: number;
         path: string;
-      }
-    }
+      };
+    };
   } | null> {
     try {
       const user = await this.validateUser(email, password);
@@ -329,13 +373,14 @@ export class UsersService {
       }
 
       const tokenResponse = this.generateTokens(user);
-      const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
+      const expiresIn =
+        this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const maxAge = this.parseExpiresIn(expiresIn);
 
       return {
         tokenResponse,
         cookieOptions: {
-          name: 'access_token',
+          name: 'accessToken',
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
@@ -343,21 +388,25 @@ export class UsersService {
             sameSite: 'strict',
             maxAge: maxAge,
             path: '/',
-          }
-        }
+          },
+        },
       };
     } catch (error) {
-      if (error instanceof InvalidCredentialsException ||
+      if (
+        error instanceof InvalidCredentialsException ||
         error instanceof ValidationException ||
         error instanceof UserNotFoundException ||
-        error instanceof TokenGenerationFailedException) {
+        error instanceof TokenGenerationFailedException
+      ) {
         throw error;
       }
 
       throw new DatabaseException('Lỗi trong quá trình đăng nhập');
     }
   }
-  async register(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'> | null> {
+  async register(
+    createUserDto: CreateUserDto
+  ): Promise<Omit<User, 'passwordHash'> | null> {
     try {
       // Validation
       if (!createUserDto.password) {
@@ -384,7 +433,7 @@ export class UsersService {
 
       // Check existing username
       const existingUserByUsername = await this.userRepository.findOne({
-        where: { username: createUserDto.username }
+        where: { username: createUserDto.username },
       });
       if (existingUserByUsername) {
         throw new UserAlreadyExistsException('Tên đăng nhập đã được sử dụng');
@@ -393,7 +442,7 @@ export class UsersService {
       // Check existing employeeId if provided
       if (createUserDto.employeeId) {
         const existingUserByEmployeeId = await this.userRepository.findOne({
-          where: { employeeId: createUserDto.employeeId }
+          where: { employeeId: createUserDto.employeeId },
         });
         if (existingUserByEmployeeId) {
           throw new UserAlreadyExistsException('Mã nhân viên đã được sử dụng');
@@ -415,7 +464,8 @@ export class UsersService {
         isVerified: createUserDto.isVerified || false,
         role: createUserDto.role,
         departmentId: createUserDto.departmentId,
-        isActive: createUserDto.isActive !== undefined ? createUserDto.isActive : true,
+        isActive:
+          createUserDto.isActive !== undefined ? createUserDto.isActive : true,
         createdBy: createUserDto.createdBy,
       });
 
@@ -423,8 +473,10 @@ export class UsersService {
       const { passwordHash: _, ...userWithoutPassword } = savedUser;
       return userWithoutPassword;
     } catch (error: any) {
-      if (error instanceof ValidationException ||
-        error instanceof UserAlreadyExistsException) {
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserAlreadyExistsException
+      ) {
         throw error;
       }
       if (error?.code === '23505' || error?.message?.includes('duplicate')) {
@@ -445,13 +497,13 @@ export class UsersService {
     }
   }
 
-
-
   async verifyToken(token: string): Promise<any> {
     try {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
       if (!jwtSecret) {
-        throw new TokenGenerationFailedException('JWT_SECRET không được cấu hình');
+        throw new TokenGenerationFailedException(
+          'JWT_SECRET không được cấu hình'
+        );
       }
 
       // Xác minh và decode token
@@ -462,14 +514,26 @@ export class UsersService {
     }
   }
 
-
-
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id, isActive: true },
+      });
+      if (!user) {
+        throw new UserNotFoundException('Không tìm thấy người dùng');
+      }
+      const { passwordHash, ...userWithoutPassword } = user;
+      if (userWithoutPassword) {
+        return userWithoutPassword;
+      }
+      throw new UserNotFoundException('Người dùng đã bị xóa');
+    } catch (error) {
+      throw new DatabaseException('Lỗi khi lấy người dùng');
+    }
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

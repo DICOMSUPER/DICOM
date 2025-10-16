@@ -48,15 +48,15 @@ export interface BaseEntity {
 
 export interface Patient extends BaseEntity {
   patientCode: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: Date;
-  gender: Gender;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: Date;
+  gender?: Gender;
   phoneNumber?: string;
   address?: string;
   bloodType?: BloodType;
   insuranceNumber?: string;
-  isActive: boolean;
+  isActive?: boolean;
   createdBy?: string;
   encountersCount?: number;
   diagnosesCount?: number;
@@ -71,7 +71,7 @@ export interface PatientEncounter extends BaseEntity {
   encounterType: EncounterType;
   chiefComplaint?: string;
   symptoms?: string;
-  vitalSigns?: VitalSignsCollection;
+  vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
   notes?: string;
   status?: string;
@@ -79,13 +79,7 @@ export interface PatientEncounter extends BaseEntity {
   roomId?: string;
   roomFloor?: string;
   physicianSpecialty?: string;
-  patient?: {
-    id: string;
-    patientCode: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber?: string;
-  };
+  patient?: Patient;
   diagnosesCount?: number;
 }
 
@@ -166,23 +160,39 @@ export interface UpdatePatientDto {
   conditions?: CreatePatientConditionDto[];
 }
 
+export interface VitalSignsSimplified {
+  bpSystolic?: number;        // Blood Pressure Systolic (mmHg)
+  bpDiastolic?: number;       // Blood Pressure Diastolic (mmHg)
+  heartRate?: number;         // Heart Rate (bpm)
+  respiratoryRate?: number;   // Respiratory Rate (breaths/min)
+  temperature?: number;       // Body Temperature (°C or °F)
+  oxygenSaturation?: number;  // Oxygen Saturation (%)
+  weight?: number;            // Weight (kg or lbs)
+  height?: number;            // Height (cm or inches)
+  bmi?: number;               // Body Mass Index
+  glucose?: number;           // Blood Glucose (mg/dL)
+  painScale?: number;         // Pain Scale (0-10)
+}
+
 export interface CreatePatientEncounterDto {
   patientId: string;
   encounterDate: string;
   encounterType: EncounterType;
   chiefComplaint?: string;
   symptoms?: string;
-  vitalSigns?: VitalSignsCollection;
+  vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
   notes?: string;
 }
+
+
 
 export interface UpdatePatientEncounterDto {
   encounterDate?: string;
   encounterType?: EncounterType;
   chiefComplaint?: string;
   symptoms?: string;
-  vitalSigns?: VitalSignsCollection;
+  vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
   notes?: string;
 }
@@ -419,15 +429,16 @@ export interface VitalSignsFormProps {
   errors: Record<string, string>;
 }
 
-/**
- * API Response interfaces
- */
+
 
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
   errors?: string[];
+  statusCode?: number;
+  path?: string;
+  timestamp?: string;
 }
 
 export interface ApiError {

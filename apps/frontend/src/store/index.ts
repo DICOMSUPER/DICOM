@@ -15,6 +15,7 @@ export const store = configureStore({
     auth: authReducer,
     patient: patientReducer,
     // [authApi.reducerPath]: authApi.reducer,
+
     [patientApi.reducerPath]: patientApi.reducer,
     [patientEncounterApi.reducerPath]: patientEncounterApi.reducer,
     [queueAssignmentApi.reducerPath]: queueAssignmentApi.reducer,

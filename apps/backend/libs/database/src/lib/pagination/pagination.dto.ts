@@ -1,12 +1,10 @@
+import { Type } from 'class-transformer';
 import {
-  IsIn,
   IsInt,
 
   IsOptional,
-  IsString,
-  Min,
+  Min
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class PaginationDto {
   @IsOptional()
@@ -21,21 +19,21 @@ export class PaginationDto {
   @Type(() => Number)
   limit?: number = 10;
 
-  @IsOptional()
-  @IsString()
-  searchField?: string;
+  // @IsOptional()
+  // @IsString()
+  // searchField?: string;
 
-  @IsOptional()
-  @IsString()
-  search?: string;
+  // @IsOptional()
+  // @IsString()
+  // search?: string;
 
-  @IsOptional()
-  @IsString()
-  @IsIn(['name', 'price', 'createdAt'])
-  sortField?: string = 'createdAt';
+  // @IsOptional()
+  // @IsString()
+  // @IsIn(['name', 'price', 'createdAt'])
+  // sortField?: string = 'createdAt';
 
-  @IsOptional()
-  @IsString()
-  @IsIn(['asc', 'desc'])
-  order?: string = 'desc';
+  // @IsOptional()
+  // @IsString()
+  // @IsIn(['asc', 'desc'])
+  // order?: string = 'desc';
 }

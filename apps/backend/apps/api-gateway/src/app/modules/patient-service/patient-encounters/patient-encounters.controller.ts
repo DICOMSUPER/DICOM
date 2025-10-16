@@ -1,27 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, Inject, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Logger,
+  BadRequestException,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
-import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
+import {
+  CreatePatientEncounterDto,
+  UpdatePatientEncounterDto,
+} from '@backend/shared-domain';
 import type { EncounterSearchFilters } from '@backend/shared-domain';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 
 @Controller('encounters')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientEncounterController {
   private readonly logger = new Logger('PatientEncounterController');
 
   constructor(
-    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService') 
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
     private readonly patientService: ClientProxy
   ) {}
-
-
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createPatientEncounterDto: CreatePatientEncounterDto) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.Create', createPatientEncounterDto)
+        this.patientService.send(
+          'PatientService.Encounter.Create',
+          createPatientEncounterDto
+        )
       );
     } catch (error) {
       this.logger.error('Error creating encounter:', error);
@@ -37,16 +61,19 @@ export class PatientEncounterController {
   ) {
     try {
       // Validate pagination parameters
-      const validatedParams = ValidationUtils.validatePaginationParams(page, limit);
-      
+      const validatedParams = ValidationUtils.validatePaginationParams(
+        page,
+        limit
+      );
+
       const paginationDto = {
         page: validatedParams.page || 1,
         limit: validatedParams.limit || 10,
-        ...filters
+        ...filters,
       };
       return await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindMany', {
-          paginationDto
+          paginationDto,
         })
       );
     } catch (error) {
@@ -54,7 +81,6 @@ export class PatientEncounterController {
       throw error;
     }
   }
-
 
   @Get('stats')
   async getStats() {
@@ -75,9 +101,11 @@ export class PatientEncounterController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.FindOne', { id })
+        this.patientService.send('PatientService.PatientEncounter.FindOne', {
+          id,
+        })
       );
     } catch (error) {
       this.logger.error('Error fetching encounter:', error);
@@ -95,9 +123,12 @@ export class PatientEncounterController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.Update', { id, updatePatientEncounterDto })
+        this.patientService.send('PatientService.Encounter.Update', {
+          id,
+          updatePatientEncounterDto,
+        })
       );
     } catch (error) {
       this.logger.error('Error updating encounter:', error);
@@ -113,7 +144,7 @@ export class PatientEncounterController {
       if (!ValidationUtils.isValidUUID(id)) {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
-      
+
       return await firstValueFrom(
         this.patientService.send('PatientService.Encounter.Delete', { id })
       );

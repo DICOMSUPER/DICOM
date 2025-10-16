@@ -1,8 +1,10 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-
+import { Roles } from '@backend/shared-enums';
+import { Public } from '@backend/shared-decorators';
+import { Role } from '@backend/shared-decorators';
 @Controller()
 export class AppController {
   constructor(
@@ -20,5 +22,11 @@ export class AppController {
   @Get('user-check')
   async userCheck() {
     return await firstValueFrom(this.userService.send('user.check-health', {}));
+  }
+
+  @Get('test-role1')
+  @Role(Roles.RECEPTION_STAFF)
+  async getByReceiption() {
+    return true;
   }
 }

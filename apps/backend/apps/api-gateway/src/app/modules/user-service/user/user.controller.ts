@@ -22,7 +22,8 @@ import {
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
-
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { AuthGuard } from '@backend/shared-guards';
 class LoginDto {
   email!: string;
   password!: string;
