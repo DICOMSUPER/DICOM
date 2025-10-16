@@ -12,7 +12,7 @@ import { NotificationsModule } from './modules/system-service/notifications/noti
 import { APP_GUARD } from '@nestjs/core';
 
 import { UserServiceModule } from './modules/user-service/user-service.module';
-import { RoomAssignmentsModule } from './modules/user/room-assignment/room-assignment.module';
+import { RoomAssignmentsModule } from './modules/user-service/room-assignment/room-assignment.module';
 import { AuthGuard } from '@backend/shared-guards';
 import { RoleGuard } from '@backend/shared-guards';
 dotenv.config();

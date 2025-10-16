@@ -1,27 +1,23 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Inject, 
-  Logger, 
-  UseInterceptors, 
-  UseGuards, 
-  Res, 
-  Delete, 
-  Put 
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
+import { handleError } from '@backend/shared-utils';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Logger,
+  Param,
+  Post,
+  Put,
+  UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
-import { handleError } from '@backend/shared-utils';
-import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 
 
-import { CreateRoomDto } from '@backend/shared-domain';
-import { UpdateRoomDto } from '@backend/shared-domain';
+import { CreateRoomDto, UpdateRoomDto } from '@backend/shared-domain';
 
 
 @ApiTags('Room Management')

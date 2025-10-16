@@ -11,8 +11,6 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 
 export default function QueuePage() {
-
-
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
   const [filters, setFilters] = useState<QueueFilters>({
@@ -42,19 +40,19 @@ export default function QueuePage() {
   });
 
   const apiFilters = prepareApiFilters(filters, pagination, {
-  dateFields: ["assignmentDateFrom", "assignmentDateTo"],
-});
-  
+    dateFields: ["assignmentDateFrom", "assignmentDateTo"],
+  });
+
   const { data, isLoading, isFetching, error } =
     useGetQueueAssignmentsInRoomQuery(
       { userId, filters: apiFilters },
       {
-        skip: !userId, 
+        skip: !userId,
       }
     );
 
-  useEffect(()=>{
-    if(data){
+  useEffect(() => {
+    if (data) {
       setPaginationMeta({
         total: data.data.total || 0,
         page: data.data.page || 1,
@@ -62,10 +60,9 @@ export default function QueuePage() {
         totalPages: data.data.totalPages || 0,
         hasNextPage: data.data.hasNextPage || false,
         hasPreviousPage: data.data.hasPreviousPage || false,
-      })
+      });
     }
-  },[data, pagination.page])
-
+  }, [data, pagination.page]);
 
   const router = useRouter();
 
@@ -90,10 +87,10 @@ export default function QueuePage() {
 
   const handleFiltersChange = (newFilters: QueueFilters) => {
     setFilters(newFilters);
-    setPagination({ ...pagination, page: 1 }); 
+    setPagination({ ...pagination, page: 1 });
   };
 
-    const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
@@ -107,17 +104,17 @@ export default function QueuePage() {
 
   const handleReset = () => {
     setFilters({
-      encounterId: "",  
+      encounterId: "",
       status: "all",
       priority: "all",
       roomId: "",
       createdBy: "",
       patientId: "",
       assignmentDateFrom: "",
-      assignmentDateTo: "", 
+      assignmentDateTo: "",
       queueNumber: undefined,
     });
-     setPagination((prev) => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   return (

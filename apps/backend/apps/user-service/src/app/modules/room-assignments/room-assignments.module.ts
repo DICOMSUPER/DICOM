@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomAssignmentsService } from './room-assignments.service';
 import { RoomAssignmentsController } from './room-assignments.controller';
 
-import { User, Department, Qualification, RoomAssignment, Room } from '@backend/shared-domain';
+import { User, Department, RoomAssignment, Room } from '@backend/shared-domain';
 
 
 @Module({
@@ -12,7 +12,6 @@ import { User, Department, Qualification, RoomAssignment, Room } from '@backend/
         RoomAssignment,
         User,
         Department,
-        Qualification,
         Room
       ]),
     ],

@@ -12,4 +12,5 @@ export enum RoomType {
   MRI = 'MRI',
   ULTRASOUND = 'ULTRASOUND',
   RESPIRATORY = 'RESPIRATORY',
+  GENERAL = 'GENERAL',
 }
