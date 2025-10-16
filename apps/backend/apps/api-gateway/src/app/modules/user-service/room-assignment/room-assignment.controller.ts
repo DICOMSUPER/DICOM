@@ -4,13 +4,13 @@ import {
   CreateRoomAssignmentDto,
   QueryRoomAssignmentDto, UpdateRoomAssignmentDto
 } from '@backend/shared-domain';
-import { RequestLoggingInterceptor, TransformInterceptor } from 'libs/shared-interceptor/src';
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 
 @Controller('room-assignments')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class RoomAssignmentsController {
   constructor(
-    @Inject(process.env.USER_SERVICE_NAME || 'UserService')
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy
   ) {}
 
