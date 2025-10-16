@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ShiftTemplate, Department, Room, User, EmployeeSchedule } from '@backend/shared-domain';
+import { ShiftTemplate, Department, Room, User } from '@backend/shared-domain';
 import { ShiftType, Roles } from '@backend/shared-enums';
 import * as bcrypt from 'bcrypt';
 
@@ -18,8 +18,6 @@ export class SeedingService {
     private readonly roomRepository: Repository<Room>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(EmployeeSchedule)
-    private readonly employeeScheduleRepository: Repository<EmployeeSchedule>,
   ) {}
 
   async runSeeding(): Promise<void> {
@@ -30,7 +28,6 @@ export class SeedingService {
       await this.seedUsers();
       await this.seedRooms();
       await this.seedShiftTemplates();
-      await this.seedEmployeeSchedules();
       
       this.logger.log('✅ User Service database seeding completed successfully!');
     } catch (error: any) {
@@ -185,11 +182,23 @@ export class SeedingService {
   async seedRooms(): Promise<void> {
     this.logger.log('🏥 Seeding rooms...');
     
+    // Get first department ID
+    const departments = await this.departmentRepository.find({
+      order: { createdAt: 'ASC' },
+      take: 1
+    });
+    const firstDepartment = departments[0];
+    
+    if (!firstDepartment) {
+      this.logger.warn('⚠️ No departments found, skipping room seeding');
+      return;
+    }
+    
     const rooms = [
       {
         roomCode: 'P101',
         roomType: 'CT',
-        department: 'Khoa Nội',
+        department: firstDepartment.id,
         floor: 1,
         capacity: 2,
         pricePerDay: 500000,
@@ -209,7 +218,7 @@ export class SeedingService {
       {
         roomCode: 'P102',
         roomType: 'WC',
-        department: 'Khoa Nội',
+        department: firstDepartment.id,
         floor: 1,
         capacity: 1,
         pricePerDay: 800000,
@@ -229,7 +238,7 @@ export class SeedingService {
       {
         roomCode: 'P201',
         roomType: 'CT',
-        department: 'Khoa Ngoại',
+        department: firstDepartment.id,
         floor: 2,
         capacity: 2,
         pricePerDay: 500000,
@@ -249,7 +258,7 @@ export class SeedingService {
       {
         roomCode: 'ICU001',
         roomType: 'WC',
-        department: 'Khoa Cấp Cứu',
+        department: firstDepartment.id,
         floor: 3,
         capacity: 1,
         pricePerDay: 1500000,
@@ -276,7 +285,7 @@ export class SeedingService {
       if (!existing) {
         const newRoom = this.roomRepository.create(room as any);
         await this.roomRepository.save(newRoom);
-        this.logger.log(`✅ Created room: ${room.roomCode}`);
+        this.logger.log(`✅ Created room: ${room.roomCode} in department: ${firstDepartment.departmentName}`);
       } else {
         this.logger.log(`⚠️ Room already exists: ${room.roomCode}`);
       }
@@ -424,163 +433,10 @@ export class SeedingService {
     }
   }
 
-  async seedEmployeeSchedules(): Promise<void> {
-    this.logger.log('📅 Seeding employee schedules...');
-
-    // Get all required data
-    const users = await this.userRepository.find({
-      where: { isActive: true }
-    });
-    const rooms = await this.roomRepository.find({
-      where: { isActive: true }
-    });
-    const shiftTemplates = await this.shiftTemplateRepository.find({
-      where: { is_active: true }
-    });
-
-    if (users.length === 0 || rooms.length === 0 || shiftTemplates.length === 0) {
-      this.logger.warn('⚠️ Missing required data for schedule seeding');
-      return;
-    }
-
-    // Filter users by role
-    const physicians = users.filter(u => u.role === Roles.PHYSICIAN);
-    const receptionStaff = users.filter(u => u.role === Roles.RECEPTION_STAFF);
-    const imagingTechs = users.filter(u => u.role === Roles.IMAGING_TECHNICIAN);
-
-    // Get shift templates by type
-    const morningShift = shiftTemplates.find(s => s.shift_type === ShiftType.MORNING && s.shift_name === 'Ca Sáng');
-    const afternoonShift = shiftTemplates.find(s => s.shift_type === ShiftType.AFTERNOON && s.shift_name === 'Ca Chiều');
-    const fullDayShift = shiftTemplates.find(s => s.shift_type === ShiftType.FULL_DAY);
-    const nightShift = shiftTemplates.find(s => s.shift_type === ShiftType.NIGHT);
-
-    const today = new Date();
-
-    let schedulesCreated = 0;
-
-    // Helper function to format date as YYYY-MM-DD
-    const formatDate = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    // Create schedules for the past 7 days and next 14 days
-    for (let dayOffset = -7; dayOffset <= 14; dayOffset++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + dayOffset);
-      const workDate = formatDate(date);
-
-      // Schedule for Physicians (mostly full day shifts)
-      for (const physician of physicians) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
-        const shift = dayOffset % 3 === 0 ? morningShift : dayOffset % 3 === 1 ? afternoonShift : fullDayShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: physician.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca làm việc` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-          };
-
-          const existing = await this.employeeScheduleRepository.findOne({
-            where: {
-              employee_id: physician.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
-            schedulesCreated++;
-          }
-        }
-      }
-
-      // Schedule for Reception Staff (morning and afternoon shifts)
-      for (const staff of receptionStaff) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
-        const shift = dayOffset % 2 === 0 ? morningShift : afternoonShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: staff.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca tiếp tân` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.8 ? Math.floor(Math.random() * 2) + 1 : 0,
-          };
-
-          const existing = await this.employeeScheduleRepository.findOne({
-            where: {
-              employee_id: staff.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
-            schedulesCreated++;
-          }
-        }
-      }
-
-      // Schedule for Imaging Technicians (varied shifts including night)
-      for (const tech of imagingTechs) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
-        const shiftIndex = dayOffset % 4;
-        const shift = shiftIndex === 0 ? morningShift : shiftIndex === 1 ? afternoonShift : shiftIndex === 2 ? fullDayShift : nightShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: tech.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca kỹ thuật viên` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-          };
-
-          const existing = await this.employeeScheduleRepository.findOne({
-            where: {
-              employee_id: tech.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
-            schedulesCreated++;
-          }
-        }
-      }
-    }
-
-    this.logger.log(`✅ Created ${schedulesCreated} employee schedules (past 7 days + next 14 days)`);
-  }
-
   async clearAllData(): Promise<void> {
     this.logger.log('🗑️ Clearing all User Service data...');
     
     try {
-      await this.employeeScheduleRepository.delete({});
       await this.shiftTemplateRepository.delete({});
       await this.roomRepository.delete({});
       await this.userRepository.delete({});
