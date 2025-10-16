@@ -1,7 +1,7 @@
 // store/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Roles } from "../enums/user.enum";
-import Cookies from "js-cookie";
+
 interface User {
   id: string;
   email: string;
@@ -33,8 +33,6 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
 
-      Cookies.remove("accessToken");
-      Cookies.remove("user");
     },
   },
 });
