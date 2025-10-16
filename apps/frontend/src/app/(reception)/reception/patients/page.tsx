@@ -47,33 +47,38 @@ export default function ReceptionPage() {
   }, [patientsError]);
 
   // Process real data from API
-  const filteredPatients = Array.isArray(patients?.data)
-    ? ((patients as any)?.data as any[])
-        .filter((patient) => {
-          if (!searchTerm) return true;
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            patient.firstName?.toLowerCase().includes(searchLower) ||
-            patient.lastName?.toLowerCase().includes(searchLower) ||
-            patient.patientCode?.toLowerCase().includes(searchLower) ||
-            patient.phoneNumber?.toLowerCase().includes(searchLower)
-          );
-        })
-        .map((patient) => ({
-          id: patient.id,
-          firstName: patient.firstName || "Unknown",
-          lastName: patient.lastName || "Patient",
-          patientCode: patient.patientCode || "N/A",
-          dateOfBirth: patient.dateOfBirth || new Date(),
-          gender: patient.gender || "Unknown",
-          phoneNumber: patient.phoneNumber,
-          address: patient.address,
-          bloodType: patient.bloodType,
-          isActive: patient.isActive ?? true,
-          priority: "normal",
-          lastVisit: undefined,
-        }))
+  // Handle both direct array response and wrapped response
+  const patientsArray = Array.isArray(patients)
+    ? patients
+    : Array.isArray((patients as any)?.data)
+    ? (patients as any).data
     : [];
+
+  const filteredPatients = patientsArray
+    .filter((patient) => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        patient.firstName?.toLowerCase().includes(searchLower) ||
+        patient.lastName?.toLowerCase().includes(searchLower) ||
+        patient.patientCode?.toLowerCase().includes(searchLower) ||
+        patient.phoneNumber?.toLowerCase().includes(searchLower)
+      );
+    })
+    .map((patient) => ({
+      id: patient.id,
+      firstName: patient.firstName || "Unknown",
+      lastName: patient.lastName || "Patient",
+      patientCode: patient.patientCode || "N/A",
+      dateOfBirth: patient.dateOfBirth || new Date(),
+      gender: patient.gender || "Unknown",
+      phoneNumber: patient.phoneNumber,
+      address: patient.address,
+      bloodType: patient.bloodType,
+      isActive: patient.isActive ?? true,
+      priority: "normal",
+      lastVisit: undefined,
+    }));
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
