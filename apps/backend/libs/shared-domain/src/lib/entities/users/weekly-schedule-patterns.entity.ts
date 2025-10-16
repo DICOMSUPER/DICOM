@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { ShiftTemplate } from './shift-templates.entity';
 import { DayOfWeek } from '@backend/shared-enums';
 import { User } from './user.entity';
@@ -6,7 +7,7 @@ import { User } from './user.entity';
 @Entity('weekly_schedule_patterns')
 @Index(['userId', 'dayOfWeek'])
 @Index(['effectiveFrom'])
-export class WeeklySchedulePattern {
+export class WeeklySchedulePattern extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'pattern_id' })
   id!: string;
 
@@ -48,10 +49,4 @@ export class WeeklySchedulePattern {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 }
