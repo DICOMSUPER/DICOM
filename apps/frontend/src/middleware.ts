@@ -11,58 +11,73 @@ const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.PHYSICIAN]: [/^\/physicians/],
 };
 
-function getAllowedRolesForPath(path: string): Roles[] {
-  return Object.entries(ROLE_ROUTES)
-    .filter(([_, regexList]) => regexList.some((r) => r.test(path)))
-    .map(([role]) => role as Roles);
+function findExpectedRolesForPath(path: string): string[] {
+  const roles: string[] = [];
+  for (const [role, prefixes] of Object.entries(ROLE_ROUTES)) {
+    for (const p of prefixes) {
+      if (p.test(path)) {
+        roles.push(role);
+        break;
+      }
+    }
+  }
+  return roles;
 }
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const allowedRoles = getAllowedRolesForPath(pathname);
+export async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
 
-  // Nếu route không yêu cầu role → cho qua
-  if (allowedRoles.length === 0) return NextResponse.next();
+  // Nếu path không phải route cần bảo vệ -> cho qua luôn
+  const expectedRoles = findExpectedRolesForPath(path);
+  if (expectedRoles.length === 0) return NextResponse.next();
 
+  // 1) Kiểm tra token tồn tại
   const token = req.cookies.get("accessToken")?.value;
-  console.log("🔐 Checking accessToken for path:", token);
+
   if (!token) {
-    console.warn("❌ No accessToken found in cookies");
+    console.log("Token not found in middleware");
+    // Nếu là request tới trang (frontend) -> redirect về login
+    // Nếu muốn API trả 401: detect bằng prefix /api và trả response JSON 401
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
+  // 2) Verify token và check role
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      role?: Roles;
-    };
-    console.log("✅ Token decoded:", decoded);
-    if (!decoded.role) {
-      console.warn("❌ Token has no role field");
+    //dùng backend verify => không cần set secret ở frontend
+    let decoded: any = await api.get("/user/me");
+    decoded = decoded.data.data;
+
+    // Nếu token hợp lệ nhưng không có role -> redirect login
+    if (!decoded || !decoded.role) {
+      console.log("!decoded hoac decoded k co role");
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    if (!allowedRoles.includes(decoded.role)) {
-      console.warn(`⚠️ Role ${decoded.role} not allowed for ${pathname}`);
-      // return NextResponse.redirect(new URL("/403", req.url));
+    // Nếu route cần role cụ thể mà role trong token không nằm trong expectedRoles -> 403
+    if (!expectedRoles.includes(decoded.role)) {
+      return NextResponse.redirect(new URL("/403", req.url));
     }
 
+    // Ok: token hợp lệ và role đúng -> cho qua
     return NextResponse.next();
   } catch (err: any) {
-    console.error("❌ Invalid token:", err.message);
-    const redirectUrl = new URL("/login", req.url);
-    if (err.name === "TokenExpiredError")
-      redirectUrl.searchParams.set("expired", "1");
-    return NextResponse.redirect(redirectUrl);
+    // Nếu token expired, bạn có thể redirect login với query để show message
+    if (err.name === "TokenExpiredError") {
+      console.log("Token expired");
+      return NextResponse.redirect(new URL("/login?expired=1", req.url));
+    }
+    // Các lỗi verify khác -> redirect login
+    console.log("OTher error");
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
   matcher: [
-    "/login",
+    "/admin/:path*",
     "/system-admin/:path*",
     "/imaging-technicians/:path*",
-    "/reception/:path*",
     "/physicians/:path*",
+    "/reception/:path*",
   ],
-  runtime: "nodejs",
 };

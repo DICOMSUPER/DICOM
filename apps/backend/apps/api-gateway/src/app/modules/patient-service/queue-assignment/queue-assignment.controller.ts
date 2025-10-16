@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Logger,
   Param,
@@ -16,6 +18,7 @@ import {
   UpdateQueueAssignmentDto,
 } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
+import { Public } from '@backend/shared-decorators';
 
 @Controller('queue-assignment')
 export class QueueAssignmentController {
@@ -25,7 +28,13 @@ export class QueueAssignmentController {
     private readonly patientService: ClientProxy
   ) {}
 
+  @Get('health')
+  async checkHealth() {
+    return 'queue-assignment is running';
+  }
+
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async createQueueAssignment(
     @Body() createQueueAssignmentDto: CreateQueueAssignmentDto
   ) {

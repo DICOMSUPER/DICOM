@@ -1,4 +1,4 @@
-import { QueueStatus, QueuePriorityLevel } from '@/enums/patient.enum';
+import { QueueStatus, QueuePriorityLevel } from "@/enums/patient.enum";
 
 export interface QueueAssignment {
   id: string;
@@ -28,13 +28,11 @@ export interface QueueAssignment {
 }
 
 export interface CreateQueueAssignmentDto {
-  visitId: string;
-  queueNumber: number;
+  encounterId?: string;
   roomId?: string;
   priority?: QueuePriorityLevel;
   priorityReason?: string;
-  status?: QueueStatus;
-  createdBy: string;
+  createdBy?: string;
 }
 
 export interface UpdateQueueAssignmentDto {

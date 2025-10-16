@@ -11,7 +11,7 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
-  baseQuery: axiosBaseQuery("/patient-encounters"),
+  baseQuery: axiosBaseQuery("/encounters"),
   tagTypes: ["PatientEncounter"],
   endpoints: (builder) => ({
     // Get all encounters with filters
@@ -95,7 +95,7 @@ export const patientEncounterApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { patientId }) => [
         { type: "PatientEncounter", id: `patient-${patientId}` },
@@ -111,7 +111,7 @@ export const patientEncounterApi = createApi({
       query: ({ id, data }) => ({
         url: `/${id}`,
         method: "PATCH",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "PatientEncounter", id },

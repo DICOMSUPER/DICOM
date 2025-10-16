@@ -6,9 +6,11 @@ export enum QueueStatus {
 }
 
 export enum QueuePriorityLevel {
-  ROUTINE = "routine",
-  URGENT = "urgent",
-  STAT = "stat",
+  ROUTINE = "Routine",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  URGENT = "Urgent",
+  STAT = "Stat",
 }
 export enum VisitType {
   OUTPATIENT = "outpatient",

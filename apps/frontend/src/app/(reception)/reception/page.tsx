@@ -37,16 +37,18 @@ export default function ReceptionDashboard() {
     totalPatientsToday: patientStats?.totalPatients || 0,
   };
 
-  // Transform encounters to queue format for preview
-  const recentQueue =
-    recentEncounters?.map((encounter) => ({
-      id: encounter.id,
-      name: encounter.patient
-        ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
-        : "Unknown Patient",
-      time: new Date(encounter.encounterDate).toLocaleTimeString(),
-      priority: (encounter.priority || "normal") as any,
-    })) || [];
+  // Transform encounters to queue format for preview (normalize to array first)
+  const recentEncountersArray = Array.isArray(recentEncounters)
+    ? recentEncounters
+    : (recentEncounters as any)?.data || [];
+  const recentQueue = recentEncountersArray.map((encounter: any) => ({
+    id: encounter.id,
+    name: encounter.patient
+      ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+      : "Unknown Patient",
+    time: new Date(encounter.encounterDate).toLocaleTimeString(),
+    priority: (encounter.priority || "normal") as any,
+  }));
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");

@@ -5,9 +5,10 @@ import jwt from "jsonwebtoken";
 import { Roles } from "@/enums/user.enum";
 import api from "@/lib/axios";
 
-const ROLE_ROUTES: Record<string, string[]> = {
+const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.SYSTEM_ADMIN]: [/^\/system-admin/, /^\/admin/],
   [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
+  [Roles.RADIOLOGIST]: [/^\/radiologist/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
   [Roles.PHYSICIAN]: [/^\/physicians/],
 };

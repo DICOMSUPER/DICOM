@@ -10,7 +10,7 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const queueAssignmentApi = createApi({
   reducerPath: "queueAssignmentApi",
-  baseQuery: axiosBaseQuery("/queue-assignments"),
+  baseQuery: axiosBaseQuery("/queue-assignment"),
   tagTypes: ["QueueAssignment", "QueueStats"],
   endpoints: (builder) => ({
     // Queue Assignment endpoints
@@ -47,7 +47,7 @@ export const queueAssignmentApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: ["QueueAssignment", "QueueStats"],
     }),
@@ -58,8 +58,8 @@ export const queueAssignmentApi = createApi({
     >({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: "PUT",
-        body: data,
+        method: "PATCH",
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "QueueAssignment", id },
@@ -103,7 +103,7 @@ export const queueAssignmentApi = createApi({
     completeQueueAssignment: builder.mutation<QueueAssignment, string>({
       query: (id) => ({
         url: `/${id}/complete`,
-        method: "PUT",
+        method: "PATCH",
       }),
       invalidatesTags: (result, error, id) => [
         { type: "QueueAssignment", id },
@@ -115,7 +115,7 @@ export const queueAssignmentApi = createApi({
     expireQueueAssignment: builder.mutation<QueueAssignment, string>({
       query: (id) => ({
         url: `/${id}/expire`,
-        method: "PUT",
+        method: "PATCH",
       }),
       invalidatesTags: (result, error, id) => [
         { type: "QueueAssignment", id },

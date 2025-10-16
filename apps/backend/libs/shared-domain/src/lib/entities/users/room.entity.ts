@@ -28,10 +28,21 @@ export class Room {
   @Column({ name: 'capacity', type: 'int', nullable: true })
   capacity?: number;
 
-  @Column({ name: 'price_per_day', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'price_per_day',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   pricePerDay?: number;
 
-  @Column({ name: 'status', type: 'enum', enum: RoomStatus, default: RoomStatus.AVAILABLE })
+  @Column({
+    name: 'status',
+    type: 'enum',
+    enum: RoomStatus,
+    default: RoomStatus.AVAILABLE,
+  })
   status!: RoomStatus;
 
   @Column({ type: 'text', nullable: true })
@@ -67,12 +78,21 @@ export class Room {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'created_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   createdAt!: Date;
 
-  @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    onUpdate: 'CURRENT_TIMESTAMP',
+  })
   updatedAt!: Date;
 
-  @OneToMany(() => RoomAssignment, assignment => assignment.room)
+  @OneToMany(() => RoomAssignment, (assignment) => assignment.room)
   assignments!: RoomAssignment[];
 }
