@@ -9,12 +9,12 @@ interface User {
 }
 
 interface AuthState {
-  user: Partial<User> | User | null;
+
   token: string | null;
 }
 
 const initialState: AuthState = {
-  user: null,
+
   token: null,
 };
 
@@ -26,11 +26,8 @@ const authSlice = createSlice({
       state,
       action: PayloadAction<{ token: string; userInfo: Partial<User> }>
     ) => {
-      state.token = action.payload.token;
-      state.user = action.payload.userInfo;
-    },
+      state.token = action.payload.token;  },
     logout: (state) => {
-      state.user = null;
       state.token = null;
 
     },

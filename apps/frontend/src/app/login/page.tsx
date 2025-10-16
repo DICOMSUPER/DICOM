@@ -37,10 +37,9 @@ export default function LoginPage() {
 
   
 
-      const userRes = await api.get("/user/me");
-      const userInfo = userRes.data.data;
+
       //set user info cookies
-      dispatch(setCredentials({ token, userInfo }));
+      dispatch(setCredentials({ token }));
 
       // Giải mã token để lấy role
       const decoded: any = jwtDecode(token);
