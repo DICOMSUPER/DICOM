@@ -1,20 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { Department } from "@/interfaces/user/department.interface";
 
-// ====== INTERFACES ======
-export interface Department {
-  id: string;
-  name: string;
-  code: string;
-  description?: string;
-  headOfDepartment?: string;
-  phoneNumber?: string;
-  location?: string;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
+// ====== DTOs ======
 export interface CreateDepartmentDto {
   name: string;
   code: string;
@@ -49,21 +37,12 @@ export const departmentApi = createApi({
   tagTypes: ["Department"],
   endpoints: (builder) => ({
     // Get all departments with filters
-    getDepartments: builder.query<
-      { data: Department[]; pagination?: any },
-      DepartmentSearchFilters
-    >({
+    getDepartments: builder.query<Department[], DepartmentSearchFilters>({
       query: (filters) => ({
         url: "",
         method: "GET",
         params: filters,
       }),
-      transformResponse: (response: any) => {
-        // ⚡ Tự động unwrap data nếu backend trả lồng nhau
-        const departments = response?.data?.data?.data ?? response;
-        const pagination = response?.data?.data?.pagination;
-        return { data: departments, pagination };
-      },
       providesTags: ["Department"],
     }),
 
@@ -78,10 +57,10 @@ export const departmentApi = createApi({
 
     // Create department
     createDepartment: builder.mutation<Department, CreateDepartmentDto>({
-      query: (data) => ({
+      query: (body) => ({
         url: "",
         method: "POST",
-        data,
+        body,
       }),
       invalidatesTags: ["Department"],
     }),
@@ -94,7 +73,7 @@ export const departmentApi = createApi({
       query: ({ id, data }) => ({
         url: `/${id}`,
         method: "PATCH",
-        data,
+        body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Department", id },

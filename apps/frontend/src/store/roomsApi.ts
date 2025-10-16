@@ -1,29 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-
-// ====== INTERFACES ======
-export interface Room {
-  id: string;
-  name: string;
-  type: string;
-  capacity: number;
-  status: "available" | "occupied" | "maintenance";
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface CreateRoomDto {
-  name: string;
-  type: string;
-  capacity: number;
-}
-
-export interface UpdateRoomDto {
-  name?: string;
-  type?: string;
-  capacity?: number;
-  status?: "available" | "occupied" | "maintenance";
-}
+import { Room } from "@/interfaces/user/room.interface";
+import { CreateRoomDto } from "@/interfaces/user/room.interface";
+import { UpdateRoomDto } from "@/interfaces/user/room.interface";
 
 export interface RoomSearchFilters {
   type?: string;

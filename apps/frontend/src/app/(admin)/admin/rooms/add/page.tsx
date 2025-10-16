@@ -10,25 +10,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Department, RoomType, ROOM_FACILITIES, ROOM_STATUSES } from '@/types/room';
+import { ROOM_FACILITIES, ROOM_STATUSES } from '@/types/room';
+import { useCreateRoomMutation } from '@/store/roomsApi';
+import { RoomType } from '@/enums/room.enum'
+import { useGetDepartmentsQuery } from '@/store/departmentApi';
+import { Department } from '@/interfaces/user/department.interface';
 
 export default function AddNewRoomPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Tạm thời để dữ liệu dropdown tĩnh
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: '1', name: 'Cardiology' },
-    { id: '2', name: 'Neurology' },
-    { id: '3', name: 'Pediatrics' },
-  ]);
+  const [createRoom] = useCreateRoomMutation();
 
-  const [roomTypes, setRoomTypes] = useState<RoomType[]>([
-    { id: '1', name: 'Single' },
-    { id: '2', name: 'Double' },
-    { id: '3', name: 'ICU' },
-  ]);
+    const { data: departmentsData, isLoading: deptsLoading } = useGetDepartmentsQuery({});
+
+    const departments: Department[] = departmentsData ?? [];
+
+    console.log("check " , departments)
 
   const [formData, setFormData] = useState({
     room_number: '',
@@ -41,6 +40,8 @@ export default function AddNewRoomPage() {
     description: '',
     additional_notes: '',
   });
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+
 
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
 
@@ -84,17 +85,40 @@ export default function AddNewRoomPage() {
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
-
     setSubmitting(true);
 
-    // Giả lập gửi form
-    setTimeout(() => {
-      toast.success('Room created successfully (mock)');
+    try {
+      const payload = {
+        roomCode: formData.room_number,
+        roomType: formData.room_type_id,
+        department: formData.department_id,
+        floor: Number(formData.floor),
+        capacity: Number(formData.capacity),
+        pricePerDay: Number(formData.price_per_day),
+        status: formData.status.toUpperCase(),
+        description: formData.description,
+        hasTV: selectedFacilities.includes("TV"),
+        hasAirConditioning: selectedFacilities.includes("Air Conditioning"),
+        hasWiFi: selectedFacilities.includes("Wi-Fi"),
+        hasTelephone: selectedFacilities.includes("Telephone"),
+        hasAttachedBathroom: selectedFacilities.includes("Attached Bathroom"),
+        isWheelchairAccessible: selectedFacilities.includes("Wheelchair Accessible"),
+        hasOxygenSupply: selectedFacilities.includes("Oxygen Supply"),
+        hasNurseCallButton: selectedFacilities.includes("Nurse Call Button"),
+        notes: formData.additional_notes,
+        isActive: true,
+      };
+
+      await createRoom(payload).unwrap();
+      toast.success("Room created successfully!");
+      router.push("/rooms");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to create room");
+    } finally {
       setSubmitting(false);
-      router.push('/rooms'); // hoặc router.back();
-    }, 1000);
+    }
   };
 
   const handleCancel = () => {
@@ -153,9 +177,9 @@ export default function AddNewRoomPage() {
                       <SelectValue placeholder="Select room type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roomTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
+                      {Object.values(RoomType).map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -174,7 +198,7 @@ export default function AddNewRoomPage() {
                     <SelectContent>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
-                          {dept.name}
+                          {dept.departmentName}
                         </SelectItem>
                       ))}
                     </SelectContent>

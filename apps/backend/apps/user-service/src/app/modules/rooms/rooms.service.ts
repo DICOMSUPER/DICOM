@@ -95,6 +95,7 @@ export class RoomsService {
 
       const qb = this.roomRepository
         .createQueryBuilder('room')
+        .leftJoinAndSelect('room.department', 'department')
         .orderBy('room.createdAt', 'DESC')
         .skip(skip)
         .take(limit);
