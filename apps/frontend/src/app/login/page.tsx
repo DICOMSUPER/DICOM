@@ -10,7 +10,6 @@ import { setCredentials } from "../../store/authSlice";
 import { useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-import Cookies from "js-cookie";
 import api from "@/lib/axios";
 
 export default function LoginPage() {
@@ -19,7 +18,7 @@ export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const handleLogin = async (
+  const handleLogin = async ( 
     email: string,
     password: string,
     rememberMe: boolean
@@ -36,19 +35,11 @@ export default function LoginPage() {
       // Lưu token
       const token = data.data.tokenResponse.accessToken;
 
-      //Set token cookie
-      Cookies.set("accessToken", token, {
-        expires: rememberMe ? 7 : undefined,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-      });
+  
 
       const userRes = await api.get("/user/me");
       const userInfo = userRes.data.data;
       //set user info cookies
-      Cookies.set("user", JSON.stringify(userInfo));
-
       dispatch(setCredentials({ token, userInfo }));
 
       // Giải mã token để lấy role
