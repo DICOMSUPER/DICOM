@@ -6,10 +6,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PriorityLevel } from "@/enums/patient.enum";
+import { EncounterType } from "@/enums/patient-workflow.enum";
+import { QueuePriorityLevel } from "@/enums/patient.enum";
+import {
+  useCreatePatientEncounterMutation,
+  useDeletePatientEncounterMutation,
+} from "@/store/patientEncounterApi";
+import {
+  useCreateQueueAssignmentMutation,
+  useDeleteQueueAssignmentMutation,
+} from "@/store/queueAssignmentApi";
 import { Stethoscope, CheckCircle } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
-
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import Cookies from "js-cookie";
 // const departments = [
 //   "Cardiology",
 //   "Neurology",
@@ -29,41 +39,41 @@ type Doctor = {
 
 const doctors: Doctor[] = [
   {
-    id: "doc-1",
+    id: "7b45486b-98e6-41ad-b6df-e044481baf01",
     name: "Dr. Smith (Cardiology)",
-    roomId: "room-101",
+    roomId: "a796b684-bdfa-4c32-a123-ab5b5b2ed99c",
     roomNumber: "101",
     currentQueueNumber: 4,
     maxQueueNumber: 20,
   },
   {
-    id: "doc-2",
+    id: "e3ca2304-9fdb-46fe-a467-329ede72b27c",
     name: "Dr. Johnson (Neurology)",
-    roomId: "room-202",
+    roomId: "122da68d-5879-463a-88de-62908ee78274",
     roomNumber: "202",
     currentQueueNumber: 2,
     maxQueueNumber: 15,
   },
   {
-    id: "doc-3",
+    id: "a7bbf0be-d824-405c-a183-22ddfc6113f1",
     name: "Dr. Brown (Orthopedics)",
-    roomId: "room-303",
+    roomId: "0b27c6eb-f829-46d3-80e4-0d65b7f43e9c",
     roomNumber: "303",
     currentQueueNumber: 7,
     maxQueueNumber: 25,
   },
   {
-    id: "doc-4",
+    id: "693503cf-256e-4423-81af-4f3d0bcb6c61",
     name: "Dr. Wilson (Emergency)",
-    roomId: "room-ER1",
+    roomId: "cf6cff21-63c9-4be1-bf35-9e3ea034deae",
     roomNumber: "ER-1",
     currentQueueNumber: 1,
     maxQueueNumber: 10,
   },
   {
-    id: "doc-5",
+    id: "fc6dd564-eaa0-4075-87b6-24cc3e44ed26",
     name: "Dr. Davis (General Medicine)",
-    roomId: "room-404",
+    roomId: "94bd3a86-ca08-4ea0-aa25-451dfa6bc0c9",
     roomNumber: "404",
     currentQueueNumber: 5,
     maxQueueNumber: 30,
@@ -74,20 +84,26 @@ export function PatientForward({ patientId }: { patientId: string }) {
   const [encounterInfo, setEncounterInfo] = useState({
     patientId: patientId,
     encounterDate: "",
+    encounterType: EncounterType.INPATIENT,
     assignedPhysicianId: "",
     notes: "",
   });
 
   const [queueInfo, setQueueInfo] = useState({
     encounterId: "",
-    priority: PriorityLevel.ROUTINE,
+    priority: QueuePriorityLevel.ROUTINE,
     roomId: "",
     priorityReason: "",
     createdBy: "",
   });
 
-  const onChaneEncounterInfo = (
-    field: "patientId" | "encounterDate " | "assignedPhysicianId" | "notes",
+  const onChangeEncounterInfo = (
+    field:
+      | "patientId"
+      | "encounterDate "
+      | "assignedPhysicianId"
+      | "notes"
+      | "encounterType",
     value: string
   ) => {
     setEncounterInfo({ ...encounterInfo, [field]: value });
@@ -100,16 +116,45 @@ export function PatientForward({ patientId }: { patientId: string }) {
       | "roomId"
       | "priorityReason"
       | "createdBy",
-    value: string | PriorityLevel
+    value: string | QueuePriorityLevel
   ) => {
     setQueueInfo({ ...queueInfo, [field]: value });
   };
-
+  const [createEncounter] = useCreatePatientEncounterMutation();
+  const [createQueueAssignment] = useCreateQueueAssignmentMutation();
+  const [deleteEncounter] = useDeletePatientEncounterMutation();
+  const [deleteQueueAssignment] = useDeleteQueueAssignmentMutation();
   const onSubmit = async () => {
-    //create encounter
-    //create queue assignment
+    let encounter;
+    let queue;
+    try {
+      const encounterData = {
+        ...encounterInfo,
+        encounterDate: new Date().toISOString(),
+      };
+      encounter = await createEncounter(encounterData).unwrap();
+
+      if (encounter) {
+        const userRaw = Cookies.get("user");
+        const user = userRaw ? JSON.parse(userRaw) : null;
+        if (!user) throw new Error("User session not found");
+
+        const queueData = {
+          ...queueInfo,
+          encounterId: encounter?.id,
+          createdBy: user.id,
+        };
+
+        queue = await createQueueAssignment(queueData).unwrap();
+      }
+    } catch (err: any) {
+      if (encounter && encounter.id) await deleteEncounter(encounter.id);
+      if (queue && queue.id) await deleteQueueAssignment(queue.id);
+      window.alert("Internal server error");
+    }
   };
-  const PriorityLevelArray = [...Object.values(PriorityLevel)];
+  const PriorityLevelArray = [...Object.values(QueuePriorityLevel)];
+  const EncounterTypeArray = [...Object.values(EncounterType)];
   return (
     <Card className="border-border">
       <CardHeader className="pb-4">
@@ -206,6 +251,37 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
+              Encounter Type
+            </label>
+            <div className="flex items-center space-x-2 max-w-[30vw] overflow-x-auto whitespace-nowrap snap-x snap-mandatory pb-1">
+              {EncounterTypeArray &&
+                EncounterTypeArray.map((type) => (
+                  <Button
+                    key={type}
+                    type="button"
+                    aria-pressed={encounterInfo.encounterType === type}
+                    size="sm"
+                    className={`shrink-0 snap-start ${
+                      encounterInfo.encounterType === type
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border bg-background text-foreground hover:bg-muted"
+                    }`}
+                    variant={
+                      encounterInfo.encounterType === type
+                        ? "default"
+                        : "outline"
+                    }
+                    onClick={() => {
+                      onChangeEncounterInfo("encounterType", type);
+                    }}
+                  >
+                    {type}
+                  </Button>
+                ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
               Priority Level
             </label>
             <div className="flex items-center space-x-2 max-w-[30vw] overflow-x-auto whitespace-nowrap snap-x snap-mandatory pb-1">
@@ -240,7 +316,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
             </label>
             <textarea
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                onChaneEncounterInfo("notes", e.target.value);
+                onChangeEncounterInfo("notes", e.target.value);
               }}
               className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               rows={3}

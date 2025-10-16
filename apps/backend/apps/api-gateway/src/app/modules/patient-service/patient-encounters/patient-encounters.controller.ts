@@ -86,7 +86,7 @@ export class PatientEncounterController {
   async getStats() {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.GetStats', {})
+        this.patientService.send('PatientService.PatientEncounter.GetStats', {})
       );
     } catch (error) {
       this.logger.error('Error fetching encounter stats:', error);
@@ -146,7 +146,9 @@ export class PatientEncounterController {
       }
 
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.Delete', { id })
+        this.patientService.send('PatientService.PatientEncounter.Delete', {
+          id,
+        })
       );
     } catch (error) {
       this.logger.error('Error deleting encounter:', error);
