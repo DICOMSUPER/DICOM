@@ -2,16 +2,8 @@
 
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface EmployeeSchedule {
-  schedule_id: string;
-  work_date: string;
-  actual_start_time?: string;
-  actual_end_time?: string;
-  employee: { firstName: string; lastName: string };
-  room?: { roomCode: string };
-  schedule_status: string;
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface DayViewProps {
   selectedDate: Date;
@@ -19,9 +11,40 @@ interface DayViewProps {
   schedules: EmployeeSchedule[];
   getScheduleForTimeSlot: (date: Date, hour: number) => EmployeeSchedule | undefined;
   getStatusColor: (status: string) => string;
+  isLoading?: boolean;
+  onScheduleClick?: (schedule: EmployeeSchedule) => void;
 }
 
-export function DayView({ selectedDate, timeSlots, schedules, getScheduleForTimeSlot, getStatusColor }: DayViewProps) {
+export function DayView({ selectedDate, timeSlots, schedules, getScheduleForTimeSlot, getStatusColor, isLoading = false, onScheduleClick }: DayViewProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-0">
+        {timeSlots.map((slot) => (
+          <div key={slot.hour} className="grid grid-cols-12 gap-4 h-20">
+            <div className="col-span-2 text-sm font-medium my-auto text-gray-700">{slot.time}</div>
+            <div className="col-span-10 h-full flex items-center justify-center border-t border-gray-200">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 shadow-sm relative w-full m-2 my-auto">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 rounded-l-lg"></div>
+                <div className="ml-2 flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <div className="flex items-center space-x-1">
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-1" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-0">
       {timeSlots.map((slot) => {
@@ -31,7 +54,10 @@ export function DayView({ selectedDate, timeSlots, schedules, getScheduleForTime
             <div className="col-span-2 text-sm font-medium my-auto text-gray-700">{slot.time}</div>
             <div className="col-span-10 h-full flex items-center justify-center border-t border-gray-200">
               {schedule ? (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm relative w-full m-2 my-auto">
+                <div 
+                  className="bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-sm relative w-full m-2 my-auto cursor-pointer hover:bg-blue-100 transition-colors"
+                  onClick={() => onScheduleClick?.(schedule)}
+                >
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
                   <div className="ml-2 flex items-center justify-between gap-4">
                     <div>
@@ -51,7 +77,7 @@ export function DayView({ selectedDate, timeSlots, schedules, getScheduleForTime
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-gray-500 italic m-2 w-full">No schedules</div>
+                <div className="text-sm text-center text-gray-500 italic m-2 w-full">No schedules</div>
               )}
             </div>
           </div>

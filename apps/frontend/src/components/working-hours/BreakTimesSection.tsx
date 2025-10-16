@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
-import { useGetBreakTimesQuery, useCreateBreakTimeMutation, useUpdateBreakTimeMutation, useDeleteBreakTimeMutation } from "@/lib/api/schedule-api";
-import { BreakTime, BreakTimeFormData } from "@/lib/api/schedule-api";
+import { useGetBreakTimesQuery, useCreateBreakTimeMutation, useUpdateBreakTimeMutation, useDeleteBreakTimeMutation } from "@/store/scheduleApi";
+import { BreakTime, BreakTimeFormData } from "@/store/scheduleApi";
 import { toast } from "sonner";
 
 interface BreakTimeData {

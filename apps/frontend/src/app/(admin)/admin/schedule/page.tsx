@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Clock, User } from "lucide-react";
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -201,11 +200,11 @@ export default function ScheduleManagementPage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Weekly Schedule
           </h2>
-          <div className="flex space-x-2">
+          <div className="flex justify-end space-x-2">
             <Button variant="outline" size="sm" className="text-xs xl:text-sm">
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Week</span>
@@ -240,7 +239,7 @@ export default function ScheduleManagementPage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Monthly Schedule
           </h2>
@@ -283,9 +282,7 @@ export default function ScheduleManagementPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Workspace Layout with header on the right of sidebar */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="space-y-6">
         {/* Page Header */}
         <div className="pb-4 border-b border-gray-200">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -369,7 +366,6 @@ export default function ScheduleManagementPage() {
             )}
           </div>
         </div>
-      </WorkspaceLayout>
     </div>
   );
 }

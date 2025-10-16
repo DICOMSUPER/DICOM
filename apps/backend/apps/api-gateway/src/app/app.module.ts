@@ -15,6 +15,7 @@ import { UserServiceModule } from './modules/user-service/user-service.module';
 import { RoomAssignmentsModule } from './modules/user-service/room-assignment/room-assignment.module';
 import { AuthGuard } from '@backend/shared-guards';
 import { RoleGuard } from '@backend/shared-guards';
+import { SeedingModule } from './modules/seeding/seeding.module';
 dotenv.config();
 
 @Module({
@@ -32,6 +33,7 @@ dotenv.config();
     NotificationsModule,
     PatientServiceModule,
     RoomAssignmentsModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [

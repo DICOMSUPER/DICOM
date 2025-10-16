@@ -10,7 +10,6 @@ export class Department  {
   @Column({ name: 'head_department_id', nullable: true })
   headDepartmentId!: string;
 
-
   @Column({ name: 'department_name', length: 100, nullable: false })
   departmentName!: string;
 
@@ -31,7 +30,7 @@ export class Department  {
   @JoinColumn({ name: 'head_department_id' })
   headDepartment!: User;
   
-   @OneToMany(() => Room, room => room.department)
+  @OneToMany(() => Room, room => room.department)
   rooms!: Room[];
 
   @OneToMany(() => User, user => user.department)

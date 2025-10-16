@@ -69,6 +69,16 @@ export class EmployeeScheduleController {
     }
   }
 
+  @Get('me')
+  @MessagePattern('UserService.EmployeeSchedule.FindByCurrentUser')
+  async findByCurrentUser(@Payload() data: { userId: string; limit?: number; start_date?: string; end_date?: string }) {
+    try {
+      return await this.employeeScheduleService.findByCurrentUser(data.userId, data.limit, data.start_date, data.end_date);
+    } catch (error) {
+      throw handleErrorFromMicroservices(error, 'Failed to fetch current user schedules', 'EmployeeScheduleController');
+    }
+  }
+
   @Get('date-range')
   @MessagePattern('UserService.EmployeeSchedule.FindByDateRange')
   async findByDateRange(@Payload() data: { startDate: string; endDate: string; employeeId?: string }) {

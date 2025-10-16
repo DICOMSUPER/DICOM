@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,8 +140,7 @@ export default function EncountersPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="space-y-6">
         {/* Header with Quick Actions and Refresh */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -204,7 +202,6 @@ export default function EncountersPage() {
           onEditEncounter={handleEditEncounter}
           onDeleteEncounter={handleDeleteEncounter}
         />
-      </WorkspaceLayout>
     </div>
   );
 }
