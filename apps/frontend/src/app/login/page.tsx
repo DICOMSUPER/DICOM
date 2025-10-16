@@ -9,6 +9,7 @@ import { CheckCircle, Monitor, Users, FileText } from "lucide-react";
 import { setCredentials } from "../../store/authSlice";
 import { useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 
 export default function LoginPage() {
@@ -19,6 +20,8 @@ export default function LoginPage() {
 
    const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
     try {
+      console.log("🔵 Attempting login with:", { email, password: "***" });
+      
       const res = await fetch("http://localhost:5000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -26,9 +29,17 @@ export default function LoginPage() {
         credentials: "include",
       });
 
+      console.log("🔵 Response status:", res.status, res.statusText);
+
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.message || "Login failed");
+        try {
+          const err = await res.json();
+          console.log("🔴 Error response:", err);
+          toast.error(err.message || `Login failed (${res.status})`);
+        } catch (parseError) {
+          console.log("🔴 Parse error:", parseError);
+          toast.error(`Login failed (${res.status}): ${res.statusText}`);
+        }
         return;
       }
 
@@ -36,38 +47,55 @@ export default function LoginPage() {
 
       // Lưu token
       const token = data.data.tokenResponse.accessToken;
-      dispatch(setCredentials({ token }));
-
-      // Giải mã token để lấy role
+      
+      // Giải mã token để lấy user info và role
       const decoded: any = jwtDecode(token);
       console.log("🧩 Token payload:", decoded);
 
       const role = decoded.role;
       if (!role) {
-        alert("Không tìm thấy role trong token");
+        toast.error("Không tìm thấy role trong token");
         return;
       }
 
-      // Điều hướng theo role
-      switch (role) {
-        case "SYSTEM_ADMIN":
-          router.push("/system-admin");
-          break;
-        case "IMAGING_TECHNICIAN":
-          router.push("/imaging-technicians");
-          break;
-        case "RECEPTION_STAFF":
-          router.push("/reception");
-          break;
-        case "PHYSICIAN":
-          router.push("/physicians");
-          break;
-        default:
-          router.push("/dashboard");
-      }
+      // Dispatch credentials with user info
+      dispatch(setCredentials({ 
+        token,
+        user: {
+          id: decoded.userId || decoded.sub,
+          email: decoded.email || email,
+          role: role
+        }
+      }));
+
+      // Show success toast
+      toast.success("Login successful! Redirecting...");
+
+      setTimeout(() => {
+        switch (role) {
+          case "system_admin":
+            router.push("/system-admin");
+            break;
+          case "imaging_technician":
+            router.push("/imaging-technicians");
+            break;
+          case "reception_staff":
+            router.push("/reception");
+            break;
+          case "physician":
+            router.push("/physicians");
+            break;
+          case "radiologist":
+            router.push("/radiologist");
+            break;
+          default:
+            router.push("/dashboard");
+        }
+      }, 1000);
+      setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      alert("Unable to connect to server");
+      toast.error("Unable to connect to server");
     }
   };
 
