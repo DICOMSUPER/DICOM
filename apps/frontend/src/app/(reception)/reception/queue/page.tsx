@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 import { ReceptionTableTabs } from "@/components/reception/reception-table-tabs";
@@ -160,9 +159,7 @@ export default function QueuePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="space-y-6">
         {/* Header with Quick Actions and Refresh */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -256,7 +253,6 @@ export default function QueuePage() {
             />
           </TabsContent>
         </ReceptionTableTabs>
-      </WorkspaceLayout>
     </div>
   );
 }

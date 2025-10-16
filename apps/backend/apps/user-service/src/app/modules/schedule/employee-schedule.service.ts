@@ -139,6 +139,32 @@ export class EmployeeScheduleService {
     }
   }
 
+  async findByCurrentUser(
+    userId: string,
+    limit?: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<EmployeeSchedule[]> {
+    try {
+      // If date range is provided, use date range filter
+      if (startDate && endDate) {
+        return await this.employeeScheduleRepository.findByDateRange(
+          startDate,
+          endDate,
+          userId
+        );
+      }
+      
+      // Otherwise, just get schedules by employee ID with optional limit
+      return await this.employeeScheduleRepository.findByEmployeeId(
+        userId,
+        limit
+      );
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch current user schedules');
+    }
+  }
+
   async findByDateRange(
     startDate: string,
     endDate: string,

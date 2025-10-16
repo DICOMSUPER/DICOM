@@ -25,13 +25,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
-interface AdminLayoutProps {
+interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Admin");
+  const [currentRole, setCurrentRole] = useState("Dashboard");
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");

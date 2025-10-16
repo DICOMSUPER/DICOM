@@ -120,6 +120,10 @@ export class EmployeeScheduleRepository {
       query.andWhere('schedule.schedule_status = :scheduleStatus', { scheduleStatus: filters.scheduleStatus });
     }
 
+    if (filters.role) {
+      query.andWhere('employee.role = :role', { role: filters.role });
+    }
+
     if (filters.limit) {
       query.limit(filters.limit);
     }

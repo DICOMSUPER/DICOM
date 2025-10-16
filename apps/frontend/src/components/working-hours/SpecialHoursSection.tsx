@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, Clock } from "lucide-react";
-import { useGetSpecialHoursQuery, useCreateSpecialHoursMutation, useUpdateSpecialHoursMutation, useDeleteSpecialHoursMutation } from "@/lib/api/schedule-api";
-import { SpecialHours, SpecialHoursFormData } from "@/lib/api/schedule-api";
+import { useGetSpecialHoursQuery, useCreateSpecialHoursMutation, useUpdateSpecialHoursMutation, useDeleteSpecialHoursMutation } from "@/store/scheduleApi";
+import { SpecialHours, SpecialHoursFormData } from "@/store/scheduleApi";
 import { toast } from "sonner";
 
 interface SpecialHoursData {

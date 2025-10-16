@@ -1,12 +1,11 @@
 "use client";
 
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
-import {
-  AdminStats,
-  AdminQuickActions,
-  AdminSystemStatus,
-  AdminRecentActivity
+// WorkspaceLayout and SidebarNav moved to layout.tsx
+import { 
+  AdminStats, 
+  AdminQuickActions, 
+  AdminSystemStatus, 
+  AdminRecentActivity 
 } from "@/components/admin";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -63,9 +62,8 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-        Dashboard Header
+    <div className="space-y-6">
+        {/* Dashboard Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Admin Dashboard

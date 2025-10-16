@@ -1,60 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Clock, User } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
+import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { 
+  useGetMySchedulesByDateRangeQuery,
+  useGetMySchedulesByDateQuery,
+  useGetScheduleStatsQuery,
+  useGetShiftTemplatesQuery,
+  useGetAvailableRoomsQuery,
+  useCreateEmployeeScheduleMutation,
+  useUpdateEmployeeScheduleMutation,
+  useDeleteEmployeeScheduleMutation,
+  useUpdateScheduleStatusMutation,
+} from "@/store/employeeScheduleApi";
+import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
-// Backend interfaces based on actual entities
-interface Employee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  avatar?: string;
-}
-
-interface Room {
-  id: string;
-  roomCode: string;
-  roomType: string;
-  description: string;
-}
-
-interface ShiftTemplate {
-  id: string;
-  shiftName: string;
-  shiftType: string;
-  startTime: string;
-  endTime: string;
-}
-
-interface EmployeeSchedule {
-  schedule_id: string;
-  employee_id: string;
-  room_id?: string;
-  shift_template_id?: string;
-  work_date: string;
-  actual_start_time?: string;
-  actual_end_time?: string;
-  schedule_status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
-  notes?: string;
-  overtime_hours: number;
-  created_by?: string;
-  employee: Employee;
-  room?: Room;
-  shift_template?: ShiftTemplate;
-}
+// Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
 
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },
@@ -69,92 +44,78 @@ const timeSlots = [
   { time: "5:00 PM", hour: 17 },
 ];
 
-const mockSchedules: EmployeeSchedule[] = [
-  {
-    schedule_id: "1",
-    employee_id: "1",
-    room_id: "1",
-    work_date: "2025-09-30",
-    actual_start_time: "08:00",
-    actual_end_time: "12:00",
-    schedule_status: "confirmed",
-    notes: "Morning clinic - General consultations",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Dr. Sarah",
-      lastName: "Johnson",
-      role: "physician",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "1",
-      roomCode: "CLINIC-01",
-      roomType: "Clinic",
-      description: "General Practice Room 1",
-    }
-  },
-  {
-    schedule_id: "2",
-    employee_id: "1",
-    room_id: "2",
-    work_date: "2025-09-30",
-    actual_start_time: "14:00",
-    actual_end_time: "18:00",
-    schedule_status: "confirmed",
-    notes: "Afternoon clinic - Follow-up appointments",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Dr. Sarah",
-      lastName: "Johnson",
-      role: "physician",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "2",
-      roomCode: "CLINIC-02",
-      roomType: "Clinic",
-      description: "General Practice Room 2",
-    }
-  },
-  {
-    schedule_id: "3",
-    employee_id: "1",
-    room_id: "3",
-    work_date: "2025-10-01",
-    actual_start_time: "09:00",
-    actual_end_time: "13:00",
-    schedule_status: "scheduled",
-    notes: "Specialist consultation - Cardiology",
-    overtime_hours: 0,
-    employee: {
-      id: "1",
-      firstName: "Dr. Sarah",
-      lastName: "Johnson",
-      role: "physician",
-      avatar: "/avatars/sarah-johnson.jpg"
-    },
-    room: {
-      id: "3",
-      roomCode: "CARDIO-01",
-      roomType: "Cardiology",
-      description: "Cardiology Consultation Room",
-    }
-  }
-];
+// Mock data removed - using API instead
 
-const mockEmployees: Employee[] = [
+// Mock employees for now - will be replaced with API call
+const mockEmployees = [
   { id: "1", firstName: "Dr. Sarah", lastName: "Johnson", role: "physician" },
   { id: "2", firstName: "Dr. Michael", lastName: "Chen", role: "physician" },
   { id: "3", firstName: "Dr. Emily", lastName: "Wilson", role: "physician" },
 ];
 
 export default function PhysicianSchedulePage() {
-  const [selectedDate, setSelectedDate] = useState(new Date("2025-09-30"));
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
-  const [schedules, setSchedules] = useState<EmployeeSchedule[]>(mockSchedules);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [notificationCount] = useState(3);
+  const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // API calls - using /me endpoint to get current user's schedules
+  const { 
+    data: schedules = [], 
+    isLoading: schedulesLoading, 
+    error: schedulesError,
+    refetch: refetchSchedules 
+  } = useGetMySchedulesByDateQuery({
+    date: format(selectedDate, "yyyy-MM-dd")
+  });
+
+  const { 
+    data: weekSchedules = [], 
+    isLoading: weekLoading,
+    refetch: refetchWeekSchedules
+  } = useGetMySchedulesByDateRangeQuery({
+    startDate: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
+    endDate: format(endOfWeek(selectedDate), "yyyy-MM-dd")
+  });
+
+  const { 
+    data: monthSchedules = [], 
+    isLoading: monthLoading,
+    refetch: refetchMonthSchedules
+  } = useGetMySchedulesByDateRangeQuery({
+    startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
+    endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
+  });
+
+  const { data: stats } = useGetScheduleStatsQuery({ role: "physician" });
+  const { data: shiftTemplates = [] } = useGetShiftTemplatesQuery();
+  const { data: rooms = [] } = useGetAvailableRoomsQuery({ date: format(selectedDate, "yyyy-MM-dd") });
+
+  // Mutations
+  const [createSchedule] = useCreateEmployeeScheduleMutation();
+  const [updateSchedule] = useUpdateEmployeeScheduleMutation();
+  const [deleteSchedule] = useDeleteEmployeeScheduleMutation();
+  const [updateStatus] = useUpdateScheduleStatusMutation();
+
+  // Get current schedules based on view mode
+  const getCurrentSchedules = (): EmployeeSchedule[] => {
+    switch (viewMode) {
+      case "day":
+        return Array.isArray(schedules) ? schedules : [];
+      case "week":
+        return Array.isArray(weekSchedules) ? weekSchedules : [];
+      case "month":
+        return Array.isArray(monthSchedules) ? monthSchedules : [];
+      case "list":
+        return Array.isArray(schedules) ? schedules : [];
+      default:
+        return Array.isArray(schedules) ? schedules : [];
+    }
+  };
+
+  const currentSchedules = getCurrentSchedules();
+  const isLoading = schedulesLoading || weekLoading || monthLoading;
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -166,12 +127,12 @@ export default function PhysicianSchedulePage() {
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.filter((schedule) => schedule.work_date === dateStr);
+    return currentSchedules.filter((schedule) => schedule.work_date === dateStr);
   };
 
   const getScheduleForTimeSlot = (date: Date, hour: number) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.find(
+    return currentSchedules.find(
       (schedule) =>
         schedule.work_date === dateStr &&
         schedule.actual_start_time &&
@@ -204,13 +165,59 @@ export default function PhysicianSchedulePage() {
     }
   };
 
+  const navigateWeek = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedDate(subWeeks(selectedDate, 1));
+    } else {
+      setSelectedDate(addWeeks(selectedDate, 1));
+    }
+  };
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedDate(subMonths(selectedDate, 1));
+    } else {
+      setSelectedDate(addMonths(selectedDate, 1));
+    }
+  };
+
+  const handleScheduleClick = (schedule: EmployeeSchedule) => {
+    setSelectedSchedule(schedule);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSchedule(null);
+  };
+
+  const handleRefresh = () => {
+    // Refetch based on current view mode
+    switch (viewMode) {
+      case "day":
+      case "list":
+        refetchSchedules();
+        break;
+      case "week":
+        refetchWeekSchedules();
+        break;
+      case "month":
+        refetchMonthSchedules();
+        break;
+      default:
+        refetchSchedules();
+    }
+  };
+
   const renderDayView = () => (
     <DayView
       selectedDate={selectedDate}
       timeSlots={timeSlots}
-      schedules={schedules}
+      schedules={currentSchedules}
       getScheduleForTimeSlot={getScheduleForTimeSlot}
       getStatusColor={getStatusColor}
+      isLoading={isLoading}
+      onScheduleClick={handleScheduleClick}
     />
   );
 
@@ -225,17 +232,17 @@ export default function PhysicianSchedulePage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Weekly Schedule
           </h2>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("prev")}>
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Week</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("next")}>
               <span className="hidden xl:inline">Next Week</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
@@ -247,7 +254,7 @@ export default function PhysicianSchedulePage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={schedules} selectedDate={selectedDate} />
+        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
       </div>
     );
   };
@@ -264,17 +271,17 @@ export default function PhysicianSchedulePage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Monthly Schedule
           </h2>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("prev")}>
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Month</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("next")}>
               <span className="hidden xl:inline">Next Month</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
@@ -286,7 +293,7 @@ export default function PhysicianSchedulePage() {
           {format(selectedDate, "MMMM yyyy")}
         </div>
 
-        <MonthView calendarDays={calendarDays} schedules={schedules} selectedDate={selectedDate} />
+        <MonthView calendarDays={calendarDays} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
       </div>
     );
   };
@@ -302,7 +309,7 @@ export default function PhysicianSchedulePage() {
           </div>
         </div>
 
-      <ListView schedules={schedules} getStatusColor={getStatusColor} />
+      <ListView schedules={currentSchedules} getStatusColor={getStatusColor} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
     </div>
   );
 
@@ -320,6 +327,13 @@ export default function PhysicianSchedulePage() {
             </p>
           </div>
           <div className="flex items-center justify-end space-x-2">
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={isLoading}
+              variant="outline"
+              size="sm"
+              showText={false}
+            />
             <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -360,37 +374,76 @@ export default function PhysicianSchedulePage() {
             </Tabs>
           </div>
 
-          {viewMode === "day" && (
-            <div>
-              <div className="mb-4 xl:mb-6">
-                <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
-                <p className="text-xs xl:text-sm text-gray-600">
-                  Your schedule for {format(selectedDate, "MMMM d, yyyy")}
+          {/* Error State */}
+          {schedulesError && !isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center max-w-md mx-auto">
+                <div className="flex justify-center mb-4">
+                  <div className="p-3 bg-red-50 rounded-full">
+                    <AlertCircle className="h-8 w-8 text-red-500" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load schedules</h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  We couldn't load your schedule data. Please check your connection and try again.
                 </p>
+                <Button 
+                  onClick={() => handleRefresh()} 
+                  variant="outline" 
+                  size="sm"
+                  className="inline-flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Try Again
+                </Button>
               </div>
-              {renderDayView()}
             </div>
           )}
 
-          {viewMode === "week" && (
-            <div>
-              {renderWeekView()}
-            </div>
-          )}
+          {/* Content - Skeleton loading is handled within each view component */}
+          {!schedulesError && (
+            <>
+              {viewMode === "day" && (
+                <div>
+                  <div className="mb-4 xl:mb-6">
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                    <p className="text-xs xl:text-sm text-gray-600">
+                      Your schedule for {format(selectedDate, "MMMM d, yyyy")}
+                    </p>
+                  </div>
+                  {renderDayView()}
+                </div>
+              )}
 
-          {viewMode === "month" && (
-            <div>
-              {renderMonthView()}
-            </div>
-          )}
+              {viewMode === "week" && (
+                <div>
+                  {renderWeekView()}
+                </div>
+              )}
 
-          {viewMode === "list" && (
-            <div>
-              {renderListView()}
-            </div>
+              {viewMode === "month" && (
+                <div>
+                  {renderMonthView()}
+                </div>
+              )}
+
+              {viewMode === "list" && (
+                <div>
+                  {renderListView()}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+      
+      {/* Schedule Detail Modal */}
+      <ScheduleDetailModal
+        schedule={selectedSchedule}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        getStatusColor={getStatusColor}
+      />
     </div>
   );
 }

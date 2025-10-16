@@ -30,9 +30,35 @@ const authSlice = createSlice({
     logout: (state) => {
       state.token = null;
 
+      Cookies.remove("accessToken");
+      Cookies.remove("user");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
+    },
+    loadTokenFromStorage: (state) => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        const user = localStorage.getItem("user");
+        
+        if (token) {
+          state.token = token;
+          Cookies.set("accessToken", token);
+        }
+        
+        if (user) {
+          try {
+            const userData = JSON.parse(user);
+            state.user = userData;
+            Cookies.set("user", user);
+          } catch (error) {
+            console.error("Failed to parse user data from localStorage:", error);
+          }
+        }
+      }
     },
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, loadTokenFromStorage } = authSlice.actions;
 export default authSlice.reducer;

@@ -2,6 +2,7 @@ import { BaseEntity } from "../base.interface";
 import { ClinicalStatus, ConditionVerificationStatus } from "@/enums/patient-workflow.enum";
 
 export interface PatientCondition extends BaseEntity {
+  id: string;
   patientId: string;
   code: string;
   codeSystem?: string;

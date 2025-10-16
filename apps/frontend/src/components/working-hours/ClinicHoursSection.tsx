@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useGetWorkingHoursQuery, useCreateWorkingHoursMutation, useUpdateWorkingHoursMutation } from "@/lib/api/schedule-api";
-import { WorkingHours, WorkingHoursFormData } from "@/lib/api/schedule-api";
+import { useGetWorkingHoursQuery, useCreateWorkingHoursMutation, useUpdateWorkingHoursMutation } from "@/store/scheduleApi";
+import { WorkingHours, WorkingHoursFormData } from "@/store/scheduleApi";
 import { toast } from "sonner";
 
 interface ClinicHours {

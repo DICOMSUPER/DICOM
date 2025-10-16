@@ -14,6 +14,7 @@ import { WeeklySchedulePatternsModule } from './modules/weekly-schedule-patterns
 import { ScheduleReplacementsModule } from './modules/schedule-replacements/schedule-replacements.module';
 import { OtpsModule } from './modules/otps/otps.module';
 import { WorkingHoursModule } from './modules/working-hours/working-hours.module';
+import { SeedingModule } from './modules/seeding/seeding.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { WorkingHoursModule } from './modules/working-hours/working-hours.module
     ScheduleReplacementsModule,
     OtpsModule,
     WorkingHoursModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

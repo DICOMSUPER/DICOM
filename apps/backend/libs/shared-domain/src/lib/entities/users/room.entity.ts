@@ -20,7 +20,6 @@ export class Room {
   @Column({ name: 'room_type', type: 'enum', enum: RoomType, nullable: true })
   roomType?: RoomType;
 
-
   @Column({ name: 'floor', type: 'int', nullable: true })
   floor?: number;
 
@@ -96,9 +95,9 @@ export class Room {
   assignments!: RoomAssignment[];
 
   @ManyToOne(() => Department, (department) => department.rooms, {
-    nullable: false
-    ,
+    nullable: false,
   })
+
   @JoinColumn({ name: 'department_id' })
   department?: Department;
 }
