@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
+
 import { Roles } from "@/enums/user.enum";
 
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
-  [Roles.SYSTEM_ADMIN]: [/^\/system-admin/, /^\/admin/],
+  [Roles.SYSTEM_ADMIN]: [/^\/admin/],
   [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
   [Roles.RADIOLOGIST]: [/^\/radiologist/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
@@ -63,7 +63,7 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/login",
-    "/system-admin/:path*",
+    "/admin/:path*",
     "/imaging-technicians/:path*",
     "/reception/:path*",
     "/physicians/:path*",
