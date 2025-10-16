@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -51,7 +52,7 @@ export class UserController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy
-  ) { }
+  ) {}
 
   @Public()
   @Post('login')
@@ -217,18 +218,23 @@ export class UserController {
   @Get('users')
   @Role(Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách người dùng thành công' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách người dùng thành công',
+  })
   async getAllUsers(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('role') role?: string,
+    @Query('role') role?: string
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(`📋 Fetching users - Page: ${pageNum}, Limit: ${limitNum}`);
+      this.logger.log(
+        `📋 Fetching users - Page: ${pageNum}, Limit: ${limitNum}`
+      );
 
       const result = await firstValueFrom(
         this.userClient.send('user.get-all-users', {
@@ -236,10 +242,14 @@ export class UserController {
           limit: limitNum,
           search,
           role,
-        }),
+        })
       );
 
-      this.logger.log(`✅ Retrieved ${result.data?.length || 0} users (Total: ${result.total || 0})`);
+      this.logger.log(
+        `✅ Retrieved ${result.data?.length || 0} users (Total: ${
+          result.total || 0
+        })`
+      );
 
       return {
         data: result.data,
@@ -252,4 +262,20 @@ export class UserController {
     }
   }
 
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get user info by token' })
+  @ApiResponse({ status: 200, description: 'User info retrieved successfully' })
+  async getUserInfoByToken(@Req() req: IAuthenticatedRequest) {
+    try {
+      const userId = req['userInfo'].userId;
+      const result = await firstValueFrom(
+        this.userClient.send('UserService.Users.findOne', { userId })
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get user info by token`, error);
+      throw handleError(error);
+    }
+  }
 }
