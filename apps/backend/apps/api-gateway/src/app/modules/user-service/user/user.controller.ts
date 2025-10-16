@@ -8,6 +8,7 @@ import {
   Res,
   UseInterceptors,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -21,7 +22,8 @@ import {
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
-
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { AuthGuard } from '@backend/shared-guards';
 class LoginDto {
   email!: string;
   password!: string;
@@ -233,6 +235,23 @@ export class UserController {
       };
     } catch (error) {
       this.logger.error(`❌ Failed to fetch users`, error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get user info by token' })
+  @ApiResponse({ status: 200, description: 'User info retrieved successfully' })
+  async getUserInfoByToken(@Req() req: IAuthenticatedRequest) {
+    try {
+      const userId = req['userInfo'].userId;
+      const result = await firstValueFrom(
+        this.userClient.send('UserService.Users.findOne', { userId })
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get user info by token`, error);
       throw handleError(error);
     }
   }

@@ -38,6 +38,15 @@ export class QueueAssignmentService {
   create = async (
     createQueueAssignmentDto: CreateQueueAssignmentDto
   ): Promise<QueueAssignment> => {
+    // Check if encounter already has an active assignment
+    if (!createQueueAssignmentDto.encounterId) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'EncounterId is required',
+        PATIENT_SERVICE
+      );
+    }
+
     const existingAssignment = await this.queueRepository.findByEncounterId(
       createQueueAssignmentDto.encounterId
     );
@@ -119,7 +128,13 @@ export class QueueAssignmentService {
 
   complete = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
-
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
     if (
       assignment.status !== QueueStatus.WAITING &&
       assignment.status !== QueueStatus.IN_PROGRESS
@@ -136,6 +151,14 @@ export class QueueAssignmentService {
 
   expire = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
+
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Queue Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
 
     if (
       assignment.status === QueueStatus.COMPLETED ||
@@ -198,30 +221,30 @@ export class QueueAssignmentService {
     });
   };
 
-  validateToken = async (
-    validationToken: string
-  ): Promise<QueueAssignment | null> => {
-    const assignment = await this.queueRepository.findByValidationToken(
-      validationToken
-    );
-    if (!assignment) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Invalid validation token',
-        PATIENT_SERVICE
-      );
-    }
+  // validateToken = async (
+  //   validationToken: string
+  // ): Promise<QueueAssignment | null> => {
+  //   const assignment = await this.queueRepository.findByValidationToken(
+  //     validationToken
+  //   );
+  //   if (!assignment) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.NOT_FOUND,
+  //       'Invalid validation token',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
 
-    if (assignment.status === QueueStatus.EXPIRED) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Queue assignment has expired',
-        PATIENT_SERVICE
-      );
-    }
+  //   if (assignment.status === QueueStatus.EXPIRED) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.BAD_REQUEST,
+  //       'Queue assignment has expired',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
 
-    return assignment;
-  };
+  //   return assignment;
+  // };
 
   getEstimatedWaitTime = async (queueId: string) => {
     const assignment = await this.queueRepository.findById(queueId);
@@ -275,7 +298,7 @@ export class QueueAssignmentService {
     priority?: QueuePriorityLevel
   ): Promise<number> {
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING,
+      where: { status: QueueStatus.WAITING },
     });
     const waitingCount = waitingAssignments.length;
 
@@ -307,7 +330,7 @@ export class QueueAssignmentService {
     if (!assignment) return 0;
 
     const waitingAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.WAITING,
+      where: { status: QueueStatus.WAITING },
     });
 
     const waitingBefore = waitingAssignments.filter(
@@ -322,8 +345,8 @@ export class QueueAssignmentService {
    */
   private async getAverageWaitTime(): Promise<number> {
     const completedAssignments = await this.queueRepository.findAll({
-      status: QueueStatus.COMPLETED,
-      limit: 10,
+      where: { status: QueueStatus.COMPLETED },
+      take: 10,
     });
 
     if (completedAssignments.length === 0) return 15; // Default 15 minutes

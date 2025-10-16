@@ -7,58 +7,36 @@ import {
   QueueStats,
 } from "@/interfaces/patient/queue-assignment.interface";
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
-import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
 import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const queueAssignmentApi = createApi({
   reducerPath: "queueAssignmentApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:2001/api/queue-assignments",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: axiosBaseQuery("/queue-assignments"),
   tagTypes: ["QueueAssignment", "QueueStats"],
   endpoints: (builder) => ({
     // Queue Assignment endpoints
     getQueueAssignments: builder.query<
       QueueAssignment[],
-      QueueFilters
+      QueueAssignmentSearchFilters
     >({
       query: (filters) => ({
         url: "",
+        method: "GET",
         params: filters,
-      }),
-      providesTags: ["QueueAssignment"],
-    }),
-    //
-    getQueueAssignmentsInRoom: builder.query<
-      ApiResponse<PaginatedResponse<QueueAssignment>>,
-      { userId: string; filters?: QueueAssignmentSearchFilters  }
-    >({
-      query: ({ userId, filters }) => ({
-        url: "/in-room",
-        params: {
-          userId,
-          ...filters,
-        },
-        
       }),
       providesTags: ["QueueAssignment"],
     }),
 
     getQueueAssignmentById: builder.query<QueueAssignment, string>({
-      query: (id) => `/${id}`,
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "QueueAssignment", id }],
     }),
 
     getQueueAssignmentsByVisitId: builder.query<QueueAssignment[], string>({
       query: (visitId) => ({
         url: "",
+        method: "GET",
         params: { visitId },
       }),
       providesTags: ["QueueAssignment"],
@@ -102,13 +80,13 @@ export const queueAssignmentApi = createApi({
 
     // Queue Stats
     getQueueStats: builder.query<QueueStats, void>({
-      query: () => "/stats",
+      query: () => ({ url: "/stats", method: "GET" }),
       providesTags: ["QueueStats"],
     }),
 
     // Utility endpoints
     getNextQueueNumber: builder.query<{ nextNumber: number }, void>({
-      query: () => "/next-number",
+      query: () => ({ url: "/next-number", method: "GET" }),
     }),
 
     // Convenience mutations
@@ -147,12 +125,26 @@ export const queueAssignmentApi = createApi({
         "QueueStats",
       ],
     }),
+    getQueueAssignmentsInRoom: builder.query<
+      ApiResponse<PaginatedResponse<QueueAssignment>>,
+      { userId: string; filters?: QueueAssignmentSearchFilters }
+    >({
+      query: ({ userId, filters }) => ({
+        url: "/in-room",
+        method:"GET",
+        params: {
+          userId,
+          ...filters,
+        },
+      }),
+      providesTags: ["QueueAssignment"],
+    }),
   }),
 });
 
 export const {
   useGetQueueAssignmentsInRoomQuery,
-  // 
+  //
   useGetQueueAssignmentsQuery,
   useGetQueueAssignmentByIdQuery,
   useGetQueueAssignmentsByVisitIdQuery,

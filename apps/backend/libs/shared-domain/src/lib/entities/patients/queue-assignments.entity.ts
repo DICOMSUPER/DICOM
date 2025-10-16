@@ -48,13 +48,8 @@ export class QueueAssignment extends BaseEntity {
   @Column({ name: 'priority_reason', type: 'text', nullable: true })
   priorityReason?: string;
 
-  @Column({
-    name: 'validation_token',
-    type: 'varchar',
-    length: 12,
-    unique: true,
-  })
-  validationToken!: string;
+  // @Column({ name: 'validation_token', type: 'varchar', length: 12, unique: true })
+  // validationToken!: string;
 
   @Column({ name: 'estimated_wait_time', type: 'int', nullable: true })
   estimatedWaitTime?: number; // in minutes

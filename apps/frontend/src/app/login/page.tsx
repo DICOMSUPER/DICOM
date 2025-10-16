@@ -1,14 +1,17 @@
-"use client"
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { LoginForm } from '../../components/loginPage/LoginForm';
-import { Header } from '../../components/loginPage/Header';
-import { SecurityBadge } from '../../components/loginPage/SecurityBadge';
-import { Background } from '../../components/loginPage/Background';
-import { CheckCircle, Monitor, Users, FileText } from 'lucide-react';
-import { setCredentials } from '../../store/authSlice';
-import { useDispatch } from 'react-redux';
-import  {jwtDecode} from "jwt-decode";
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { LoginForm } from "../../components/loginPage/LoginForm";
+import { Header } from "../../components/loginPage/Header";
+import { SecurityBadge } from "../../components/loginPage/SecurityBadge";
+import { Background } from "../../components/loginPage/Background";
+import { CheckCircle, Monitor, Users, FileText } from "lucide-react";
+import { setCredentials } from "../../store/authSlice";
+import { useDispatch } from "react-redux";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import Cookies from "js-cookie";
+import api from "@/lib/axios";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,26 +19,37 @@ export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
+  const handleLogin = async (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ) => {
     try {
-      const res = await fetch("http://localhost:5000/api/user/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
+      const res = await axios.post(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+        }/user/login`,
+        { email, password }
+      );
 
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.message || "Login failed");
-        return;
-      }
-
-      const data = await res.json();
-
+      const data = res.data;
       // Lưu token
       const token = data.data.tokenResponse.accessToken;
-      dispatch(setCredentials({ token }));
+
+      //Set token cookie
+      Cookies.set("accessToken", token, {
+        expires: rememberMe ? 7 : undefined,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+      });
+
+      const userRes = await api.get("/user/me");
+      const userInfo = userRes.data.data;
+      //set user info cookies
+      Cookies.set("user", JSON.stringify(userInfo));
+
+      dispatch(setCredentials({ token, userInfo }));
 
       // Giải mã token để lấy role
       const decoded: any = jwtDecode(token);
@@ -49,24 +63,29 @@ export default function LoginPage() {
 
       // Điều hướng theo role
       switch (role) {
-        case "SYSTEM_ADMIN":
-          router.push("/system-admin");
+        case "system_admin":
+          router.push("/admin");
           break;
-        case "IMAGING_TECHNICIAN":
+        case "imaging_technician":
           router.push("/imaging-technicians");
           break;
-        case "RECEPTION_STAFF":
+        case "reception_staff":
           router.push("/reception");
           break;
-        case "PHYSICIAN":
-          router.push("/physicians");
+        case "physician":
+          router.push("/physicians/dashboard");
+          break;
+        case "radiologist":
+          router.push("/radiologist");
           break;
         default:
           router.push("/dashboard");
       }
+      setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
       alert("Unable to connect to server");
+      setIsLoggedIn(false);
     }
   };
 
@@ -88,10 +107,14 @@ export default function LoginPage() {
                   <div className="bg-blue-600 p-2 rounded-lg">
                     <Monitor size={24} className="text-white" />
                   </div>
-                  <h1 className="text-xl font-bold text-gray-900">DICOM System</h1>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    DICOM System
+                  </h1>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+                  <span className="text-sm text-gray-600">
+                    Welcome, {user.email}
+                  </span>
                   <button
                     onClick={handleLogout}
                     className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
@@ -106,8 +129,12 @@ export default function LoginPage() {
           {/* Dashboard */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h2>
-              <p className="text-gray-600">Medical imaging and diagnostic tools</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Dashboard
+              </h2>
+              <p className="text-gray-600">
+                Medical imaging and diagnostic tools
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -140,7 +167,9 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">System Status</p>
-                    <p className="text-lg font-semibold text-green-600">Operational</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      Operational
+                    </p>
                   </div>
                   <div className="bg-green-100 p-3 rounded-full">
                     <CheckCircle size={24} className="text-green-600" />
@@ -151,7 +180,9 @@ export default function LoginPage() {
 
             {/* Quick Actions */}
             <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Quick Actions
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <button className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors cursor-pointer">
                   View Studies
@@ -196,9 +227,12 @@ export default function LoginPage() {
         <div className="relative z-10 text-center text-white">
           <div className="mb-8">
             <Monitor size={80} className="mx-auto mb-4 opacity-90" />
-            <h2 className="text-3xl font-bold mb-4">Advanced Medical Imaging</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              Advanced Medical Imaging
+            </h2>
             <p className="text-xl opacity-90 max-w-md">
-              Professional DICOM imaging system for healthcare providers worldwide
+              Professional DICOM imaging system for healthcare providers
+              worldwide
             </p>
           </div>
 

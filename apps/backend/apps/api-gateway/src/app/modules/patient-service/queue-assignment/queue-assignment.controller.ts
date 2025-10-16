@@ -1,4 +1,4 @@
-import { CreateQueueAssignmentDto, FilterQueueAssignmentDto } from '@backend/shared-domain';
+import { CreateQueueAssignmentDto, FilterQueueAssignmentDto,  UpdateQueueAssignmentDto } from '@backend/shared-domain';
 import { ValidationUtils } from '@backend/shared-utils';
 import {
   BadRequestException,
@@ -17,6 +17,8 @@ import {
   UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+
+
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -29,7 +31,6 @@ import {
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class QueueAssignmentController {
   private readonly logger = new Logger('QueueAssignmentController');
-
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
     private readonly patientService: ClientProxy
@@ -90,79 +91,67 @@ export class QueueAssignmentController {
   }
 
   @Get()
-  async findAll(
-    @Query() searchDto: any,
+  async findMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('q') searchTerm?: string
+    @Query('search') search?: string,
+    @Query('searchField') searchField?: string,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
     try {
-      const validatedParams = ValidationUtils.validatePaginationParams(
-        page,
-        limit
-      );
-      if (
-        searchTerm !== undefined &&
-        (!searchTerm || searchTerm.trim().length === 0)
-      ) {
-        throw new BadRequestException('Search term cannot be empty');
-      }
-
       const paginationDto = {
-        ...validatedParams,
-        search: searchTerm,
-        ...searchDto,
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        search,
+        searchField,
+        sortField,
+        order,
       };
+
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.FindMany', {
           paginationDto,
         })
       );
     } catch (error) {
-      this.logger.error('Error finding all queue assignments:', error);
+      this.logger.error('Error find many queue assigment: ', error);
       throw error;
     }
   }
 
   @Get('stats')
-  async getQueueAssignmentStats() {
+  async getStats() {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.GetStats', {})
       );
     } catch (error) {
-      this.logger.error('Error getting queue assignment stats:', error);
+      this.logger.error('Error get stats queue assigment: ', error);
       throw error;
     }
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async FindOne(@Param('id') id: string) {
     try {
-      // Validate UUID format
-      if (!ValidationUtils.isValidUUID(id)) {
-        throw new BadRequestException(`Invalid UUID format: ${id}`);
-      }
-
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.FindOne', {
           id,
         })
       );
     } catch (error) {
-      this.logger.error('Error finding queue assignment by ID:', error);
+      this.logger.error('Error finding one queue assignment: ', error);
       throw error;
     }
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateQueueAssignmentDto: any) {
+  async updateOne(
+    @Param('id') id: string,
+    @Body() updateQueueAssignmentDto: UpdateQueueAssignmentDto
+  ) {
     try {
-      // Validate UUID format
-      if (!ValidationUtils.isValidUUID(id)) {
-        throw new BadRequestException(`Invalid UUID format: ${id}`);
-      }
-
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.Update', {
           id,
@@ -170,19 +159,42 @@ export class QueueAssignmentController {
         })
       );
     } catch (error) {
-      this.logger.error('Error updating queue assignment:', error);
+      this.logger.error('Error updating queue assignment: ', error);
+      throw error;
+    }
+  }
+
+  @Patch(':id/complete')
+  async completeQueue(@Param('id') id: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.QueueAssignment.Complete', {
+          id,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error completing queue assignment: ', error);
+      throw error;
+    }
+  }
+
+  @Patch(':id/expire')
+  async expireQueue(@Param('id') id: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.QueueAssignment.Expire', {
+          id,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error expiring queue assignment: ', error);
       throw error;
     }
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async deleteQueue(@Param('id') id: string) {
     try {
-      // Validate UUID format
-      if (!ValidationUtils.isValidUUID(id)) {
-        throw new BadRequestException(`Invalid UUID format: ${id}`);
-      }
-
       return await firstValueFrom(
         this.patientService.send('PatientService.QueueAssignment.Delete', {
           id,
@@ -194,21 +206,48 @@ export class QueueAssignmentController {
     }
   }
 
-  @Post(':id/restore')
-  async restore(@Param('id') id: string) {
+  @Patch('next')
+  async callNext(@Body() roomId: string, calledBy: string) {
     try {
-      // Validate UUID format
-      if (!ValidationUtils.isValidUUID(id)) {
-        throw new BadRequestException(`Invalid UUID format: ${id}`);
-      }
-
       return await firstValueFrom(
-        this.patientService.send('PatientService.QueueAssignment.Restore', {
-          id,
+        this.patientService.send('PatientService.QueueAssignment.CallNext', {
+          roomId,
+          calledBy,
         })
       );
     } catch (error) {
-      this.logger.error('Error restoring queue assignment:', error);
+      this.logger.error('Error calling next queue assignment:', error);
+      throw error;
+    }
+  }
+
+  @Get(':id/estimate')
+  async getEstimateTime(@Param('id') id: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send(
+          'PatientService.QueueAssignment.GetEstimatedWaitTime',
+          { id }
+        )
+      );
+    } catch (error) {
+      this.logger.error('Error geting estimating time:', error);
+      throw error;
+    }
+  }
+
+  //cron job?
+  @Patch('expired')
+  async handledExpiredAssignment() {
+    try {
+      return await firstValueFrom(
+        this.patientService.send(
+          'PatientService.QueueAssignment.AutoExpire',
+          {}
+        )
+      );
+    } catch (error) {
+      this.logger.error('Error geting estimating time:', error);
       throw error;
     }
   }

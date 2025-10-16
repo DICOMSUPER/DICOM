@@ -10,6 +10,9 @@
       "path": "../../libs/shared-enums"
     },
     {
+      "path": "../../libs/shared-interfaces"
+    },
+    {
       "path": "../../libs/shared-decorators"
     },
     {
@@ -23,6 +26,12 @@
     },
     {
       "path": "../../libs/shared-guards"
+    },
+    {
+      "path": "../../libs/shared-decorators"
+    },
+    {
+      "path": "../../libs/shared-enums"
     },
     {
       "path": "./tsconfig.app.json"
