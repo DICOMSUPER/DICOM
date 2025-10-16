@@ -9,7 +9,9 @@ import {
   UseInterceptors, 
   Patch,
   Delete,
-  Query
+  Query,
+  Req,
+  UseGuards
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -18,9 +20,10 @@ import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { 
   CreateEmployeeScheduleDto, 
-  UpdateEmployeeScheduleDto,
-  EmployeeScheduleSearchFilters 
+  UpdateEmployeeScheduleDto
 } from '@backend/shared-domain';
+import { AuthGuard } from '@backend/shared-guards';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @ApiTags('Employee Schedule Management')
 @Controller('employee-schedules')
@@ -31,6 +34,40 @@ export class EmployeeSchedulesController {
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
   ) {}
+
+  // 👤 Lấy lịch làm việc của user hiện tại
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get schedules for the current authenticated user' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limit results' })
+  @ApiQuery({ name: 'start_date', required: false, description: 'Filter from date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'end_date', required: false, description: 'Filter to date (YYYY-MM-DD)' })
+  @ApiResponse({ status: 200, description: 'Lấy lịch làm việc của user hiện tại thành công' })
+  async getMySchedules(
+    @Req() req: IAuthenticatedRequest,
+    @Query('limit') limit?: number,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string
+  ) {
+    try {
+      const userId = req['userInfo'].userId;
+      this.logger.log(`👤 Fetching schedules for current user: ${userId}`);
+      
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.EmployeeSchedule.FindByCurrentUser', { 
+          userId, 
+          limit,
+          start_date: startDate,
+          end_date: endDate
+        })
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get schedules for current user`, error);
+      throw handleError(error);
+    }
+  }
 
   // 🩺 Kiểm tra tình trạng service
   @Get('health')

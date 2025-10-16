@@ -1,7 +1,6 @@
 "use client";
 
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { DashboardStats } from "@/components/reception/dashboard-stats";
 import { UrgentNotifications } from "@/components/reception/urgent-notifications";
 import { QueuePreview } from "@/components/reception/queue-preview";
@@ -61,24 +60,21 @@ export default function ReceptionDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Reception Dashboard
-          </h1>
-          <p className="text-foreground">
-            Welcome back! Here&apos;s what&apos;s happening today.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Dashboard Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Reception Dashboard
+        </h1>
+        <p className="text-foreground">
+          Welcome back! Here&apos;s what&apos;s happening today.
+        </p>
+      </div>
 
-        {/* Key Stats Summary */}
-        <DashboardStats stats={stats} />
+      {/* Key Stats Summary */}
+      <DashboardStats stats={stats} />
 
-        <QueuePreview patients={recentQueue} onViewAll={handleGoToPatients} />
-      </WorkspaceLayout>
+      <QueuePreview patients={recentQueue} onViewAll={handleGoToPatients} />
     </div>
   );
 }

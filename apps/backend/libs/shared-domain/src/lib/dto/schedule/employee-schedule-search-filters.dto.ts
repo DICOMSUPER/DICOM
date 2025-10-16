@@ -23,6 +23,10 @@ export class EmployeeScheduleSearchFilters {
   scheduleStatus?: ScheduleStatus;
 
   @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
   @IsNumber()
   limit?: number;
 

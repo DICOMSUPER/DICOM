@@ -24,6 +24,10 @@ export const employeeScheduleApi = createApi({
         method: "GET",
         params: filters,
       }),
+      transformResponse: (response: any) => {
+        // Handle both array and paginated response
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
       providesTags: ["EmployeeSchedule"],
     }),
 
@@ -61,6 +65,54 @@ export const employeeScheduleApi = createApi({
       ],
     }),
 
+    // Get schedules for current user
+    getMySchedules: builder.query<EmployeeSchedule[], { limit?: number }>({
+      query: ({ limit }) => ({
+        url: "/me",
+        method: "GET",
+        params: limit ? { limit } : undefined,
+      }),
+      transformResponse: (response: any) => {
+        // Handle wrapped response from backend
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
+      providesTags: ["EmployeeSchedule"],
+    }),
+
+    // Get current user's schedules by date
+    getMySchedulesByDate: builder.query<
+      EmployeeSchedule[],
+      { date: string }
+    >({
+      query: ({ date }) => ({
+        url: "/me",
+        method: "GET",
+        params: { start_date: date, end_date: date },
+      }),
+      transformResponse: (response: any) => {
+        // Handle wrapped response from backend
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
+      providesTags: ["EmployeeSchedule"],
+    }),
+
+    // Get current user's schedules by date range
+    getMySchedulesByDateRange: builder.query<
+      EmployeeSchedule[],
+      { startDate: string; endDate: string }
+    >({
+      query: ({ startDate, endDate }) => ({
+        url: "/me",
+        method: "GET",
+        params: { start_date: startDate, end_date: endDate },
+      }),
+      transformResponse: (response: any) => {
+        // Handle wrapped response from backend
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
+      providesTags: ["EmployeeSchedule"],
+    }),
+
     // Get schedules by room
     getSchedulesByRoom: builder.query<EmployeeSchedule[], string>({
       query: (roomId) => ({
@@ -78,10 +130,14 @@ export const employeeScheduleApi = createApi({
       { startDate: string; endDate: string; filters?: Partial<EmployeeScheduleSearchFilters> }
     >({
       query: ({ startDate, endDate, filters }) => ({
-        url: "/date-range",
+        url: "",
         method: "GET",
-        params: { start_date: startDate, end_date: endDate, ...filters },
+        params: { workDateFrom: startDate, workDateTo: endDate, ...filters },
       }),
+      transformResponse: (response: any) => {
+        // Handle both array and paginated response
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
       providesTags: ["EmployeeSchedule"],
     }),
 
@@ -91,10 +147,14 @@ export const employeeScheduleApi = createApi({
       { date: string; filters?: Partial<EmployeeScheduleSearchFilters> }
     >({
       query: ({ date, filters }) => ({
-        url: "/date",
+        url: "",
         method: "GET",
-        params: { work_date: date, ...filters },
+        params: { workDateFrom: date, workDateTo: date, ...filters },
       }),
+      transformResponse: (response: any) => {
+        // Handle both array and paginated response
+        return Array.isArray(response) ? response : (response?.data || []);
+      },
       providesTags: ["EmployeeSchedule"],
     }),
 
@@ -208,6 +268,9 @@ export const {
   useGetEmployeeSchedulesPaginatedQuery,
   useGetEmployeeScheduleByIdQuery,
   useGetSchedulesByEmployeeQuery,
+  useGetMySchedulesQuery,
+  useGetMySchedulesByDateQuery,
+  useGetMySchedulesByDateRangeQuery,
   useGetSchedulesByRoomQuery,
   useGetSchedulesByDateRangeQuery,
   useGetSchedulesByDateQuery,

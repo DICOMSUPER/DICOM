@@ -1,7 +1,6 @@
 "use client";
 
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { 
   AdminStats, 
   AdminQuickActions, 
@@ -60,9 +59,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="space-y-6">
         {/* Dashboard Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -94,7 +91,6 @@ export default function AdminDashboardPage() {
 
         {/* Recent Activity */}
         <AdminRecentActivity />
-      </WorkspaceLayout>
     </div>
   );
 }

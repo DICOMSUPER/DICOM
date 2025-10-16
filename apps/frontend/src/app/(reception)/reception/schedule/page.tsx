@@ -1,45 +1,48 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addDays, subDays, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
+import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { 
-  useGetSchedulesByDateRangeQuery,
-  useGetSchedulesByDateQuery,
+  useGetMySchedulesByDateRangeQuery,
+  useGetMySchedulesByDateQuery,
   useGetScheduleStatsQuery,
-  useGetActiveShiftTemplatesQuery,
-  useGetRoomsByTypeQuery,
+  useGetShiftTemplatesQuery,
+  useGetAvailableRoomsQuery,
   useCreateEmployeeScheduleMutation,
   useUpdateEmployeeScheduleMutation,
   useDeleteEmployeeScheduleMutation,
   useUpdateScheduleStatusMutation,
-} from "@/store/scheduleApi";
+} from "@/store/employeeScheduleApi";
 import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
-// Time slots for UI
+// Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
 
 const timeSlots = [
+  { time: "8:00 AM", hour: 8 },
   { time: "9:00 AM", hour: 9 },
   { time: "10:00 AM", hour: 10 },
   { time: "11:00 AM", hour: 11 },
   { time: "12:00 PM", hour: 12 },
-  { time: "13:00 1 PM", hour: 13 },
-  { time: "14:00 2 PM", hour: 14 },
-  { time: "15:00 3 PM", hour: 15 },
-  { time: "16:00 4 PM", hour: 16 },
+  { time: "1:00 PM", hour: 13 },
+  { time: "2:00 PM", hour: 14 },
+  { time: "3:00 PM", hour: 15 },
+  { time: "4:00 PM", hour: 16 },
+  { time: "5:00 PM", hour: 17 },
 ];
 
 // Mock employees for now - will be replaced with API call
@@ -53,39 +56,40 @@ export default function ReceptionSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [notificationCount] = useState(3);
+  const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // API calls
+  // API calls - using /me endpoint to get current user's schedules
   const { 
     data: schedules = [], 
     isLoading: schedulesLoading, 
     error: schedulesError,
     refetch: refetchSchedules 
-  } = useGetSchedulesByDateQuery({
-    date: format(selectedDate, "yyyy-MM-dd"),
-    filters: { role: "reception_staff" }
+  } = useGetMySchedulesByDateQuery({
+    date: format(selectedDate, "yyyy-MM-dd")
   });
 
   const { 
     data: weekSchedules = [], 
-    isLoading: weekLoading 
-  } = useGetSchedulesByDateRangeQuery({
-    start_date: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
-    end_date: format(endOfWeek(selectedDate), "yyyy-MM-dd"),
-    employee_id: undefined, // Get all reception staff
+    isLoading: weekLoading,
+    refetch: refetchWeekSchedules
+  } = useGetMySchedulesByDateRangeQuery({
+    startDate: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
+    endDate: format(endOfWeek(selectedDate), "yyyy-MM-dd")
   });
 
   const { 
     data: monthSchedules = [], 
-    isLoading: monthLoading 
-  } = useGetSchedulesByDateRangeQuery({
-    start_date: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
-    end_date: format(endOfMonth(selectedDate), "yyyy-MM-dd"),
-    employee_id: undefined,
+    isLoading: monthLoading,
+    refetch: refetchMonthSchedules
+  } = useGetMySchedulesByDateRangeQuery({
+    startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
+    endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
   });
 
-  const { data: stats } = useGetScheduleStatsQuery({ employee_id: undefined });
-  const { data: shiftTemplates = [] } = useGetActiveShiftTemplatesQuery();
-  const { data: rooms = [] } = useGetRoomsByTypeQuery("Reception");
+  const { data: stats } = useGetScheduleStatsQuery({ role: "reception_staff" });
+  const { data: shiftTemplates = [] } = useGetShiftTemplatesQuery();
+  const { data: rooms = [] } = useGetAvailableRoomsQuery({ date: format(selectedDate, "yyyy-MM-dd") });
 
   // Mutations
   const [createSchedule] = useCreateEmployeeScheduleMutation();
@@ -97,15 +101,15 @@ export default function ReceptionSchedulePage() {
   const getCurrentSchedules = (): EmployeeSchedule[] => {
     switch (viewMode) {
       case "day":
-        return schedules;
+        return Array.isArray(schedules) ? schedules : [];
       case "week":
-        return weekSchedules;
+        return Array.isArray(weekSchedules) ? weekSchedules : [];
       case "month":
-        return monthSchedules;
+        return Array.isArray(monthSchedules) ? monthSchedules : [];
       case "list":
-        return schedules;
+        return Array.isArray(schedules) ? schedules : [];
       default:
-        return schedules;
+        return Array.isArray(schedules) ? schedules : [];
     }
   };
 
@@ -160,6 +164,50 @@ export default function ReceptionSchedulePage() {
     }
   };
 
+  const navigateWeek = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedDate(subWeeks(selectedDate, 1));
+    } else {
+      setSelectedDate(addWeeks(selectedDate, 1));
+    }
+  };
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedDate(subMonths(selectedDate, 1));
+    } else {
+      setSelectedDate(addMonths(selectedDate, 1));
+    }
+  };
+
+  const handleScheduleClick = (schedule: EmployeeSchedule) => {
+    setSelectedSchedule(schedule);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSchedule(null);
+  };
+
+  const handleRefresh = () => {
+    // Refetch based on current view mode
+    switch (viewMode) {
+      case "day":
+      case "list":
+        refetchSchedules();
+        break;
+      case "week":
+        refetchWeekSchedules();
+        break;
+      case "month":
+        refetchMonthSchedules();
+        break;
+      default:
+        refetchSchedules();
+    }
+  };
+
   const renderDayView = () => (
     <DayView
       selectedDate={selectedDate}
@@ -167,6 +215,8 @@ export default function ReceptionSchedulePage() {
       schedules={currentSchedules}
       getScheduleForTimeSlot={getScheduleForTimeSlot}
       getStatusColor={getStatusColor}
+      isLoading={isLoading}
+      onScheduleClick={handleScheduleClick}
     />
   );
 
@@ -181,17 +231,17 @@ export default function ReceptionSchedulePage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Weekly Schedule
           </h2>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("prev")}>
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Week</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("next")}>
               <span className="hidden xl:inline">Next Week</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
@@ -203,7 +253,7 @@ export default function ReceptionSchedulePage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={currentSchedules} selectedDate={selectedDate} />
+        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
       </div>
     );
   };
@@ -220,17 +270,17 @@ export default function ReceptionSchedulePage() {
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-4 gap-2">
+        <div className="grid grid-cols-1 xl:grid-cols-2 xl:items-center justify-between mb-1 gap-2">
           <h2 className="text-lg xl:text-xl font-semibold text-gray-900">
             Monthly Schedule
           </h2>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("prev")}>
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Month</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm">
+            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("next")}>
               <span className="hidden xl:inline">Next Month</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
@@ -242,7 +292,7 @@ export default function ReceptionSchedulePage() {
           {format(selectedDate, "MMMM yyyy")}
         </div>
 
-        <MonthView calendarDays={calendarDays} schedules={currentSchedules} selectedDate={selectedDate} />
+        <MonthView calendarDays={calendarDays} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
       </div>
     );
   };
@@ -258,14 +308,12 @@ export default function ReceptionSchedulePage() {
           </div>
         </div>
 
-      <ListView schedules={currentSchedules} getStatusColor={getStatusColor} />
+      <ListView schedules={currentSchedules} getStatusColor={getStatusColor} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Workspace Layout with header on the right of sidebar */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="space-y-6">
         {/* Page Header */}
         <div className="pb-4 border-b border-gray-200">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -278,6 +326,10 @@ export default function ReceptionSchedulePage() {
               </p>
             </div>
             <div className="flex items-center justify-end space-x-2">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isLoading}
+              />
               <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -318,28 +370,34 @@ export default function ReceptionSchedulePage() {
               </Tabs>
             </div>
 
-            {/* Loading State */}
-            {isLoading && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading schedules...</span>
-              </div>
-            )}
-
             {/* Error State */}
-            {schedulesError && (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <p className="text-red-600 mb-2">Failed to load schedules</p>
-                  <Button onClick={() => refetchSchedules()} variant="outline" size="sm">
+            {schedulesError && !isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center max-w-md mx-auto">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-3 bg-red-50 rounded-full">
+                      <AlertCircle className="h-8 w-8 text-red-500" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load schedules</h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    We couldn't load your schedule data. Please check your connection and try again.
+                  </p>
+                  <Button 
+                    onClick={() => handleRefresh()} 
+                    variant="outline" 
+                    size="sm"
+                    className="inline-flex items-center gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
                     Try Again
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Content */}
-            {!isLoading && !schedulesError && (
+            {/* Content - Skeleton loading is handled within each view component */}
+            {!schedulesError && (
               <>
                 {viewMode === "day" && (
                   <div>
@@ -374,7 +432,14 @@ export default function ReceptionSchedulePage() {
             )}
           </div>
         </div>
-      </WorkspaceLayout>
+        
+        {/* Schedule Detail Modal */}
+        <ScheduleDetailModal
+          schedule={selectedSchedule}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          getStatusColor={getStatusColor}
+        />
     </div>
   );
 }

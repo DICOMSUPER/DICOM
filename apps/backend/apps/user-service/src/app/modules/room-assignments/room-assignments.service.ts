@@ -2,9 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoomAssignmentDto, UpdateRoomAssignmentDto, QueryRoomAssignmentDto } from '@backend/shared-domain';
-import { User } from '../users/entities/user.entity';
-import { Room } from '../rooms/entities/room.entity';
-import { RoomAssignment } from './entities/room-assignments.entity';
+import { User } from '@backend/shared-domain';
+import { Room } from '@backend/shared-domain';
+import { RoomAssignment } from '@backend/shared-domain';
 
 @Injectable()
 export class RoomAssignmentsService {

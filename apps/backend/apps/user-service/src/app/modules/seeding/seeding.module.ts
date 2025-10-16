@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SeedingService } from './seeding.service';
 import { SeedingController } from './seeding.controller';
-import { ShiftTemplate, Department, Room, User } from '@backend/shared-domain';
+import { ShiftTemplate, Department, Room, User, EmployeeSchedule } from '@backend/shared-domain';
 
 @Module({
   imports: [
@@ -11,6 +11,7 @@ import { ShiftTemplate, Department, Room, User } from '@backend/shared-domain';
       Department,
       Room,
       User,
+      EmployeeSchedule,
     ]),
   ],
   controllers: [SeedingController],

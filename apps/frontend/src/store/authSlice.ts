@@ -28,6 +28,12 @@ const authSlice = createSlice({
     ) => {
       state.token = action.payload.token;
       state.user = action.payload.userInfo;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("user", JSON.stringify(action.payload.userInfo));
+        Cookies.set("accessToken", action.payload.token);
+        Cookies.set("user", JSON.stringify(action.payload.userInfo));
+      }
     },
     logout: (state) => {
       state.user = null;
@@ -35,9 +41,33 @@ const authSlice = createSlice({
 
       Cookies.remove("accessToken");
       Cookies.remove("user");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
+    },
+    loadTokenFromStorage: (state) => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        const user = localStorage.getItem("user");
+        
+        if (token) {
+          state.token = token;
+          Cookies.set("accessToken", token);
+        }
+        
+        if (user) {
+          try {
+            const userData = JSON.parse(user);
+            state.user = userData;
+            Cookies.set("user", user);
+          } catch (error) {
+            console.error("Failed to parse user data from localStorage:", error);
+          }
+        }
+      }
     },
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, loadTokenFromStorage } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,27 +1,71 @@
 "use client";
 
-import { Clock, User } from "lucide-react";
+import { Clock, User, CalendarOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface EmployeeSchedule {
-  schedule_id: string;
-  actual_start_time?: string;
-  actual_end_time?: string;
-  employee: { firstName: string; lastName: string };
-  room?: { roomCode: string };
-  schedule_status: string;
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface ListViewProps {
   schedules: EmployeeSchedule[];
   getStatusColor: (status: string) => string;
+  isLoading?: boolean;
+  onScheduleClick?: (schedule: EmployeeSchedule) => void;
 }
 
-export function ListView({ schedules, getStatusColor }: ListViewProps) {
+export function ListView({ schedules, getStatusColor, isLoading = false, onScheduleClick }: ListViewProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 lg:p-4 shadow-sm relative">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 rounded-l-lg"></div>
+            <div className="ml-2 flex items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <div>
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <div className="flex items-center space-x-1">
+                    <Skeleton className="h-3 w-3" />
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-1" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 ml-4">
+                <Skeleton className="w-6 h-6 md:w-8 md:h-8 rounded-full" />
+                <Skeleton className="h-3 w-24 hidden md:block" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Empty state
+  if (schedules.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="p-4 bg-gray-100 rounded-full mb-4">
+          <CalendarOff className="h-12 w-12 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Schedules Found</h3>
+        <p className="text-sm text-gray-600 text-center max-w-md">
+          There are no schedules available for the selected date. Check back later or select a different date.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {schedules.map((schedule) => (
-        <div key={schedule.schedule_id} className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4 shadow-sm relative">
+        <div 
+          key={schedule.schedule_id} 
+          className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4 shadow-sm relative cursor-pointer hover:bg-blue-100 transition-colors"
+          onClick={() => onScheduleClick?.(schedule)}
+        >
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
           <div className="ml-2 flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">

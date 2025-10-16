@@ -7,8 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { WorkspaceLayout } from "@/components/workspace-layout";
-import { SidebarNav } from "@/components/sidebar-nav";
+// WorkspaceLayout and SidebarNav moved to layout.tsx
 import {
   Users,
   FileText,
@@ -45,8 +44,7 @@ export default function Dashboard() {
         onLogout={handleLogout}
       />
 
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+      {/* Content */}
         {/* System Overview Stats */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="border-border">
@@ -331,7 +329,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </section>
-      </WorkspaceLayout>
     </div>
   );
 }
