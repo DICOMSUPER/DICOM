@@ -6,6 +6,8 @@ import {
   QueueAssignmentSearchFilters,
   QueueStats,
 } from "@/interfaces/patient/queue-assignment.interface";
+import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const queueAssignmentApi = createApi({
@@ -123,10 +125,26 @@ export const queueAssignmentApi = createApi({
         "QueueStats",
       ],
     }),
+    getQueueAssignmentsInRoom: builder.query<
+      ApiResponse<PaginatedResponse<QueueAssignment>>,
+      { userId: string; filters?: QueueAssignmentSearchFilters }
+    >({
+      query: ({ userId, filters }) => ({
+        url: "/in-room",
+        method:"GET",
+        params: {
+          userId,
+          ...filters,
+        },
+      }),
+      providesTags: ["QueueAssignment"],
+    }),
   }),
 });
 
 export const {
+  useGetQueueAssignmentsInRoomQuery,
+  //
   useGetQueueAssignmentsQuery,
   useGetQueueAssignmentByIdQuery,
   useGetQueueAssignmentsByVisitIdQuery,

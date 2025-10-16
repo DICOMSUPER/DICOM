@@ -7,10 +7,10 @@
       "path": "../../libs/shared-interfaces"
     },
     {
-      "path": "../../libs/shared-interceptor"
+      "path": "../../libs/shared-client"
     },
     {
-      "path": "../../libs/shared-client"
+      "path": "../../libs/shared-interceptor"
     },
     {
       "path": "../../libs/shared-domain"

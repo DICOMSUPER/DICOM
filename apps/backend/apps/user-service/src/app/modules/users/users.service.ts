@@ -91,6 +91,10 @@ export class UsersService {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
       const jwtRefreshSecret =
         this.configService.get<string>('JWT_REFRESH_SECRET');
+      console.log(jwtSecret);
+      console.log(jwtRefreshSecret);
+      
+      
 
       if (!jwtSecret || !jwtRefreshSecret) {
         throw new TokenGenerationFailedException(
@@ -102,11 +106,17 @@ export class UsersService {
         secret: jwtSecret,
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       });
+      console.log(accessToken);
+      
+      
 
       const refreshToken = this.jwtService.sign(payload, {
         secret: jwtRefreshSecret,
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
       });
+
+      console.log(refreshToken);
+      
 
       const expiresIn =
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
@@ -119,6 +129,8 @@ export class UsersService {
         expiresAt,
       };
     } catch (error) {
+      console.log("ERROR",error);
+      
       if (
         error instanceof ValidationException ||
         error instanceof TokenGenerationFailedException
@@ -155,32 +167,70 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<Omit<User, 'passwordHash'>[]> {
-    try {
-      const users = await this.userRepository.find({
-        select: [
-          'id',
-          'username',
-          'email',
-          'firstName',
-          'lastName',
-          'phone',
-          'employeeId',
-          'isVerified',
-          'role',
-          'departmentId',
-          'isActive',
-          'createdAt',
-          'updatedAt',
-          'createdBy',
-        ],
-      });
+  async findAll(query: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isActive?: boolean;
+}) {
+  try {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
 
-      return users;
-    } catch (error) {
-      throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.username',
+        'user.email',
+        'user.firstName',
+        'user.lastName',
+        'user.phone',
+        'user.employeeId',
+        'user.isVerified',
+        'user.role',
+        'user.departmentId',
+        'user.isActive',
+        'user.createdAt',
+        'user.updatedAt',
+        'user.createdBy',
+      ])
+      .orderBy('user.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (query.search) {
+      qb.andWhere(
+        '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+        { search: `%${query.search}%` },
+      );
     }
+
+    if (query.isActive !== undefined) {
+      qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data: {
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+        count: data.length,
+      },
+      message: 'Lấy danh sách người dùng thành công',
+    };
+  } catch (error) {
+    throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
   }
+}
+
 
   async requestLogin(
     email: string,

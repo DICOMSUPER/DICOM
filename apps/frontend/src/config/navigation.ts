@@ -97,6 +97,12 @@ export const roleNavigation: RoleNavigation = {
       label: "System Monitoring",
       icon: Monitor,
       description: "Monitor system performance"
+    },
+    {
+      href: "/admin/rooms",
+      label: "Rooms Management",
+      icon: Monitor,
+      description: "Manage clinic rooms and resources"
     }
   ],
 

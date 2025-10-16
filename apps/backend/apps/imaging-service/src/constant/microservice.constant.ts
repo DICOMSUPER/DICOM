@@ -1,4 +1,5 @@
 export const IMAGING_SERVICE = 'ImagingService';
+export const USER_SERVICE = 'UserService';
 
 export const MESSAGE_PATTERNS = {
   CREATE: `Create`,

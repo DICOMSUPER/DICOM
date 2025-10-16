@@ -12,6 +12,7 @@ import {
   Inject,
   Logger,
   BadRequestException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -21,8 +22,13 @@ import {
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
 import type { EncounterSearchFilters } from '@backend/shared-domain';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 
 @Controller('encounters')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientEncounterController {
   private readonly logger = new Logger('PatientEncounterController');
 
@@ -36,9 +42,10 @@ export class PatientEncounterController {
   async create(@Body() createPatientEncounterDto: CreatePatientEncounterDto) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.Create', {
-          createPatientEncounterDto,
-        })
+        this.patientService.send(
+          'PatientService.Encounter.Create',
+          createPatientEncounterDto
+        )
       );
     } catch (error) {
       this.logger.error('Error creating encounter:', error);
@@ -65,7 +72,7 @@ export class PatientEncounterController {
         ...filters,
       };
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.FindMany', {
+        this.patientService.send('PatientService.Encounter.FindMany', {
           paginationDto,
         })
       );
@@ -118,7 +125,7 @@ export class PatientEncounterController {
       }
 
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.Update', {
+        this.patientService.send('PatientService.Encounter.Update', {
           id,
           updatePatientEncounterDto,
         })

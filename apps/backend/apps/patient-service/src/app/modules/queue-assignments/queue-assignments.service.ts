@@ -1,24 +1,38 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   CreateQueueAssignmentDto,
   UpdateQueueAssignmentDto,
-} from '@backend/shared-domain';
-import {
-  QueueAssignmentRepository,
+  FilterQueueAssignmentDto,
   QueueAssignment,
+  QueueAssignmentRepository,
 } from '@backend/shared-domain';
+
+import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+import { PaginationService } from '@backend/database';
+import { ClientProxy } from '@nestjs/microservices';
+
+import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class QueueAssignmentService {
   constructor(
-    @Inject() private readonly queueRepository: QueueAssignmentRepository
+    private readonly queueRepository: QueueAssignmentRepository,
+    private readonly paginationService: PaginationService,
+    @Inject(process.env.USER_SERVICE_NAME || 'UserService')
+    private readonly userService: ClientProxy
   ) {}
 
   create = async (
@@ -345,5 +359,73 @@ export class QueueAssignmentService {
     }, 0);
 
     return Math.round(totalWaitTime / completedAssignments.length);
+  }
+
+  // Get all queue assignments in a specific room
+  async getAllInRoom(
+    filterQueue: FilterQueueAssignmentDto,
+    userId: string
+  ): Promise<PaginatedResponseDto<QueueAssignment>> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      assignmentDateFrom,
+      assignmentDateTo,
+    } = filterQueue;
+    const whereConditions: any = {};
+
+    // get room assigned to the user
+    const roomAssignments = await firstValueFrom(
+      this.userService.send('room_assignment.findByUserId', { userId })
+    );
+
+    console.log('roomAssignments', roomAssignments);
+    if (!roomAssignments) {
+      throw new NotFoundException(`No room assigned to user ID ${userId}`);
+    }
+
+    // Filter by status if provided
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    // Filter by priority if provided
+    if (priority) {
+      whereConditions.priority = priority;
+    }
+
+    // Filter by date range if provided
+    if (assignmentDateFrom || assignmentDateTo) {
+      whereConditions.assignmentDate = {};
+      if (assignmentDateFrom) {
+        whereConditions.assignmentDate.gte = new Date(assignmentDateFrom);
+      }
+      if (assignmentDateTo) {
+        const endDate = new Date(assignmentDateTo);
+        endDate.setHours(23, 59, 59, 999); // End of day
+        whereConditions.assignmentDate.lte = endDate;
+      }
+    }
+
+    // Use PaginationService to paginate
+    return await this.paginationService.paginate(
+      QueueAssignment,
+      { page, limit },
+      {
+        where: { ...whereConditions, roomId: roomAssignments[0].roomId },
+        order: {
+          assignmentDate: 'DESC',
+          queueNumber: 'ASC',
+        },
+        relations: {
+          encounter: {
+            patient: true,
+          },
+        },
+        // select: ['id', 'queueNumber', 'status', 'priority', 'assignmentDate'] // Optional: specific fields
+      }
+    );
   }
 }

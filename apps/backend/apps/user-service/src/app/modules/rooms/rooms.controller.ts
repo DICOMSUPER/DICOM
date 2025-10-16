@@ -17,7 +17,7 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class RoomsController {
   private readonly logger = new Logger('RoomsController');
 
-  constructor(private readonly roomsService: RoomsService) {}
+  constructor(private readonly roomsService: RoomsService) { }
 
   // Kiểm tra tình trạng service
   @MessagePattern('room.check-health')
@@ -59,19 +59,15 @@ export class RoomsController {
 
   // Lấy toàn bộ danh sách phòng
   @MessagePattern('room.get-all')
-  async findAll() {
+  async findAll(
+    @Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean },
+  ) {
     try {
-      this.logger.log('Fetching all rooms...');
-      const rooms = await this.roomsService.findAll();
-
-      return {
-        rooms,
-        count: rooms.length,
-        message: 'Lấy danh sách phòng thành công',
-      };
-    } catch (error: unknown) {
+      const result = await this.roomsService.findAll(query || {});
+      return result;
+    } catch (error) {
       this.logger.error(`Get all rooms error: ${(error as Error).message}`);
-      handleErrorFromMicroservices(error, 'Failed to get all rooms', 'RoomsController.findAll');
+      handleErrorFromMicroservices(error, 'Failed to get rooms', 'RoomsController.findAll');
     }
   }
 

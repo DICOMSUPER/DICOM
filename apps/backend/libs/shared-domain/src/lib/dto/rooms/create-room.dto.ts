@@ -7,6 +7,7 @@ import {
   IsNumber,
   Length,
   Min,
+  IsUUID,
 } from 'class-validator';
 import { RoomType } from '@backend/shared-enums';
 import { RoomStatus } from '../../entities/users/room.entity';
@@ -31,12 +32,11 @@ export class CreateRoomDto {
   roomType?: RoomType;
 
   @ApiProperty({
-    description: 'Tên khoa hoặc bộ phận mà phòng thuộc về',
-    example: 'Cardiology Department',
+    description: 'ID của khoa hoặc bộ phận mà phòng thuộc về',
+    example: 'b9b05e9d-558a-44b8-92ed-452bff9d72cf',
     required: false,
   })
-  @IsOptional()
-  @IsString()
+  @IsUUID()
   department?: string;
 
   @ApiProperty({

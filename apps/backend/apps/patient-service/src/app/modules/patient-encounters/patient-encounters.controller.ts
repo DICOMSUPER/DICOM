@@ -16,7 +16,7 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 
-const moduleName = 'PatientEncounter';
+const moduleName = 'Encounter';
 @Controller('patient-encounters')
 export class PatientEncounterController {
   private logger = new Logger(PATIENT_SERVICE);
@@ -26,13 +26,13 @@ export class PatientEncounterController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: { createPatientEncounterDto: CreatePatientEncounterDto }
+    @Payload() createPatientEncounterDto: CreatePatientEncounterDto
   ): Promise<PatientEncounter> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      const { createPatientEncounterDto } = data;
+      console.log('create encounter dto', createPatientEncounterDto);
 
       return await this.patientEncounterService.create(
         createPatientEncounterDto
@@ -110,7 +110,7 @@ export class PatientEncounterController {
       );
     }
   }
-
+  // PatientService.Encounter.Create
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
   async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(

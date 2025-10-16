@@ -8,28 +8,19 @@ import {
   Logger, 
   UseInterceptors, 
   Delete, 
-  Put 
+  Put, 
+  Query
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
-
-
-class CreateDepartmentDto {
-  departmentCode!: string;
-  departmentName!: string;
-  description?: string;
-  isActive?: boolean;
-}
-
-class UpdateDepartmentDto {
-  departmentName?: string;
-  description?: string;
-  isActive?: boolean;
-}
+import { Public } from '@backend/shared-decorators';
+import { Role } from '@backend/shared-decorators';
+import { CreateDepartmentDto } from '@backend/shared-domain';
+import { UpdateDepartmentDto } from '@backend/shared-domain';
 
 @ApiTags('Department Management')
 @Controller('departments')
@@ -58,25 +49,47 @@ export class DepartmentsController {
   }
 
   // 🏢 Lấy toàn bộ danh sách phòng ban
+ @Public()
   @Get()
-
-  @ApiOperation({ summary: 'Get all departments' })
+  @ApiOperation({ summary: 'Get all departments with pagination' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by name or code' })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
-  async getAllDepartments() {
+  async getAllDepartments(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: boolean,
+  ) {
     try {
-      this.logger.log('📋 Fetching all departments...');
+      const pageNum = page ? Number(page) : 1;
+      const limitNum = limit ? Number(limit) : 10;
+
+      this.logger.log(`📋 Fetching departments - Page: ${pageNum}, Limit: ${limitNum}`);
+      
       const result = await firstValueFrom(
-        this.departmentClient.send('department.get-all', {})
+        this.departmentClient.send('department.get-all', {
+          page: pageNum,
+          limit: limitNum,
+          search,
+          isActive
+        })
       );
-      this.logger.log(`✅ Retrieved ${result.count || 0} departments`);
+      
+      this.logger.log(`✅ Retrieved ${result.data?.length || 0} departments (Total: ${result.total || 0})`);
       return result;
     } catch (error) {
       this.logger.error('❌ Failed to fetch departments', error);
       throw handleError(error);
     }
   }
+  
+  
 
   // 🆕 Tạo phòng ban mới
+  @Role(Roles.SYSTEM_ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create a new department' })
   @ApiBody({ type: CreateDepartmentDto })
@@ -98,6 +111,7 @@ export class DepartmentsController {
   }
 
   // 🔍 Lấy chi tiết 1 phòng ban theo ID
+  @Role(Roles.SYSTEM_ADMIN)
   @Get(':id')
   @ApiOperation({ summary: 'Get department by ID' })
   @ApiParam({ name: 'id', description: 'Department ID' })
@@ -116,6 +130,7 @@ export class DepartmentsController {
   }
 
   // ✏️ Cập nhật thông tin phòng ban
+  @Role(Roles.SYSTEM_ADMIN)
   @Put(':id')
   @ApiOperation({ summary: 'Update department details' })
   @ApiParam({ name: 'id', description: 'Department ID' })
@@ -141,6 +156,7 @@ export class DepartmentsController {
   }
 
   // 🗑️ Xóa phòng ban
+  @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete department' })
   @ApiParam({ name: 'id', description: 'Department ID' })
@@ -159,6 +175,7 @@ export class DepartmentsController {
   }
 
   // 🔢 Lấy phòng ban theo mã code
+  @Role(Roles.SYSTEM_ADMIN)
   @Get('code/:code')
   @ApiOperation({ summary: 'Get department by code' })
   @ApiParam({ name: 'code', description: 'Department Code' })
@@ -177,6 +194,7 @@ export class DepartmentsController {
   }
 
   // 🟢 Lấy các phòng ban đang hoạt động
+  @Role(Roles.SYSTEM_ADMIN)
   @Get('active')
   @ApiOperation({ summary: 'Get active departments' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban hoạt động thành công' })

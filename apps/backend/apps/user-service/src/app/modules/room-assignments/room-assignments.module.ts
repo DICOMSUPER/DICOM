@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoomAssignmentsService } from './room-assignments.service';
 import { RoomAssignmentsController } from './room-assignments.controller';
-import { RoomAssignment } from './entities/room-assignment.entity';
-import { User, Department, Qualification } from '@backend/shared-domain';
-import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { User, Department, RoomAssignment, Room } from '@backend/shared-domain';
+
 
 @Module({
    imports: [
@@ -11,10 +12,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         RoomAssignment,
         User,
         Department,
-        Qualification,
+        Room
       ]),
     ],
   controllers: [RoomAssignmentsController],
   providers: [RoomAssignmentsService],
+  exports: [RoomAssignmentsService],
 })
 export class RoomAssignmentsModule {}

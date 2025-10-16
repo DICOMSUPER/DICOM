@@ -1,51 +1,51 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { BaseEntity } from '@backend/database';
-import { Room } from './room.entity';
-import { User } from './user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { User } from '@backend/shared-domain';
+import { Room } from '@backend/shared-domain';
+import { AssignmentType } from '@backend/shared-enums';
+
 
 @Entity('room_assignments')
-@Index(['room_id', 'assigned_from', 'assigned_to'])
-@Index(['employee_id', 'assigned_from', 'assigned_to'])
-@Index(['is_active'])
-export class RoomAssignment extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  assignment_id!: string;
+@Index(['userId', 'roomId'])
+@Index(['assignmentDate'])
+export class RoomAssignment {
+  @PrimaryGeneratedColumn('uuid', { name: 'assignment_id' })
+  id!: string;
 
-  @Column({ type: 'uuid', nullable: false })
-  room_id!: string;
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId!: string;
 
-  @Column({ type: 'uuid', nullable: false })
-  employee_id!: string;
+  @ManyToOne(() => User, user => user.roomAssignments)
+  @JoinColumn({ name: 'user_id' })
+  user!: User;
 
-  @Column({ type: 'date', nullable: false })
-  assigned_from!: string;
+  @Column({ name: 'room_id', type: 'uuid' })
+  roomId!: string;
 
-  @Column({ type: 'date', nullable: true })
-  assigned_to?: string;
-
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  role_in_room?: string;
-
-  @Column({ type: 'boolean', default: false })
-  is_primary!: boolean;
-
-  @Column({ type: 'boolean', default: true })
-  is_active!: boolean;
-
-  @Column({ type: 'uuid', nullable: true })
-  created_by?: string;
-
-  // Relations
-  @ManyToOne(() => Room)
+  @ManyToOne(() => Room, room => room.assignments)
   @JoinColumn({ name: 'room_id' })
   room!: Room;
 
-  // Relations
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'employee_id' })
-  employee!: User;
+  @Column({ name: 'assignment_type', type: 'enum', enum: AssignmentType })
+  assignmentType!: AssignmentType;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  creator!: User;
+  @Column({ name: 'assignment_date', type: 'date' })
+  assignmentDate!: Date;
+
+  @Column({ name: 'start_time', type: 'time', nullable: true })
+  startTime?: string;
+
+  @Column({ name: 'end_time', type: 'time', nullable: true })
+  endTime?: string;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }

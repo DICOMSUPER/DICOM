@@ -1,31 +1,25 @@
 import { QueueStatus, QueuePriorityLevel } from "@/enums/patient.enum";
 
-export interface QueueAssignment {
-  id: string;
-  visitId: string;
+import { BaseEntity, PatientEncounter } from "./patient-workflow.interface";
+import { QueryParams } from '../pagination/pagination.interface';
+
+export interface QueueAssignment extends BaseEntity {
+  encounterId: string;
   queueNumber: number;
   assignmentDate: Date;
   assignmentExpiresDate: Date;
   status: QueueStatus;
   priority: QueuePriorityLevel;
+  estimatedWaitTime:number
   roomId?: string;
   priorityReason?: string;
+  calledBy?: string;
+  calledAt?: string;
   createdBy?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  visit?: {
-    id: string;
-    patientId: string;
-    encounterType: string;
-    chiefComplaint?: string;
-    patient?: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      patientCode: string;
-    };
-  };
+  encounter: PatientEncounter;
 }
+
+
 
 export interface CreateQueueAssignmentDto {
   encounterId?: string;
@@ -42,14 +36,16 @@ export interface UpdateQueueAssignmentDto {
   status?: QueueStatus;
 }
 
-export interface QueueAssignmentSearchFilters {
-  visitId?: string;
-  status?: QueueStatus;
-  priority?: QueuePriorityLevel;
+export interface QueueAssignmentSearchFilters extends QueryParams{
+  encounterId?: string;
+  status?: QueueStatus | "all";
+  priority?: QueuePriorityLevel | "all";
   roomId?: string;
   createdBy?: string;
-  limit?: number;
-  offset?: number;
+  patientId?: string;
+  assignmentDateFrom?: string;
+  assignmentDateTo?: string;
+  queueNumber?: number;
 }
 
 export interface QueueStats {

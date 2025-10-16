@@ -2,11 +2,11 @@
 
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { 
-  AdminStats, 
-  AdminQuickActions, 
-  AdminSystemStatus, 
-  AdminRecentActivity 
+import {
+  AdminStats,
+  AdminQuickActions,
+  AdminSystemStatus,
+  AdminRecentActivity
 } from "@/components/admin";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,6 +54,9 @@ export default function AdminDashboardPage() {
       case 'monitoring':
         router.push('/admin/monitoring');
         break;
+      case 'rooms':
+        router.push('/admin/rooms');
+        break;
       default:
         console.log(`Unknown action: ${action}`);
     }
@@ -62,8 +65,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {/* Dashboard Header */}
+        Dashboard Header
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Admin Dashboard
@@ -94,7 +96,6 @@ export default function AdminDashboardPage() {
 
         {/* Recent Activity */}
         <AdminRecentActivity />
-      </WorkspaceLayout>
     </div>
   );
 }

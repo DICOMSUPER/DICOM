@@ -38,7 +38,7 @@ export class DatabaseModule {
             // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             synchronize: configService.get<boolean>(
               `${prefixUpper}_DB_SYNC`,
-              false
+              true
             ),
             logging: configService.get<boolean>(
               `${prefixUpper}_DB_LOGGING`,

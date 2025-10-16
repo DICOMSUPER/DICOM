@@ -25,10 +25,10 @@
       "path": "../../libs/shared-interfaces/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-interceptor/tsconfig.lib.json"
+      "path": "../../libs/shared-client/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-client/tsconfig.lib.json"
+      "path": "../../libs/shared-interceptor/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-domain/tsconfig.lib.json"

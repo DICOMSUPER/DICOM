@@ -1,12 +1,12 @@
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsIn,
   IsInt,
   IsOptional,
   IsString,
-  Min,
+  Min
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class RepositoryPaginationDto {
   @IsOptional()

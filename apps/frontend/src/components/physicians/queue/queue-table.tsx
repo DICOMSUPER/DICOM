@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   createColumnHelper,
   flexRender,
@@ -8,15 +8,15 @@ import {
   getSortedRowModel,
   SortingState,
   useReactTable,
-} from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -24,7 +24,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   MoreHorizontal,
   Edit,
@@ -34,10 +34,15 @@ import {
   Clock,
   ArrowUpDown,
   Eye,
-} from 'lucide-react';
-import { PriorityLevel, QueueStatus } from '@/enums/patient.enum';
-import { QueueAssignment } from '@/interfaces/patient/queue.interface';
-import { formatDate, formatTime } from '@/lib/formatTimeDate';
+} from "lucide-react";
+import {
+  QueuePriorityLevel,
+  QueueStatus,
+} from "@/enums/patient.enum";
+
+import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
+import Pagination, { PaginationMeta } from "@/components/common/PaginationV1";
 
 interface QueueTableProps {
   queueItems: QueueAssignment[];
@@ -45,6 +50,8 @@ interface QueueTableProps {
   onEdit: (id: string) => void;
   onCancel: (id: string) => void;
   onViewDetails: (id: string) => void;
+  pagination: PaginationMeta;
+  onPageChange: (page: number) => void;
 }
 
 const columnHelper = createColumnHelper<QueueAssignment>();
@@ -55,130 +62,119 @@ export function QueueTable({
   onEdit,
   onCancel,
   onViewDetails,
+  pagination,
+  onPageChange,
 }: QueueTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const getStatusBadge = (status: QueueStatus) => {
     switch (status) {
       case QueueStatus.WAITING:
-        return (
-          <span className="text-blue-600 font-medium">Waiting</span>
-        );
+        return <span className="text-blue-600 font-medium">Waiting</span>;
       case QueueStatus.COMPLETED:
-        return (
-          <span className="text-green-600 font-medium">Completed</span>
-        );
+        return <span className="text-green-600 font-medium">Completed</span>;
       default:
         return <span className="text-gray-700 font-medium">{status}</span>;
     }
   };
 
-const getPriorityLevel = (level: PriorityLevel) => {
-  switch (level) {
-    case PriorityLevel.ROUTINE:
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded-full" />
-          <span className="text-xs text-gray-700">Routine</span>
-        </div>
-      );
-    case PriorityLevel.MEDIUM:
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full" />
-          <span className="text-xs text-gray-700">Medium</span>
-        </div>
-      );
-    case PriorityLevel.HIGH:
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-          <span className="text-xs text-gray-700">High</span>
-        </div>
-      );
-    case PriorityLevel.URGENT:
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded-full" />
-          <span className="text-xs text-gray-700">Urgent</span>
-        </div>
-      );
-    default:
-      return (
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-400 rounded-full" />
-          <span className="text-xs text-gray-700">Unknown</span>
-        </div>
-      );
-  }
-};
+  const getPriorityLevel = (level: QueuePriorityLevel) => {
+    switch (level) {
+      case QueuePriorityLevel.ROUTINE:
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full" />
+            <span className="text-xs text-gray-700">Routine</span>
+          </div>
+        );
+      case QueuePriorityLevel.URGENT:
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full" />
+            <span className="text-xs text-gray-700">Urgent</span>
+          </div>
+        );
+      case QueuePriorityLevel.STAT:
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+            <span className="text-xs text-gray-700">Stat</span>
+          </div>
+        );
 
-
-
+      default:
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-gray-400 rounded-full" />
+            <span className="text-xs text-gray-700">Unknown</span>
+          </div>
+        );
+    }
+  };
 
   const columns = [
-
-    columnHelper.accessor('queue_number', {
+    columnHelper.accessor("queueNumber", {
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
         >
-            Queue Number
+          Queue Number
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="font-medium text-gray-900">
-          {row.original.queue_number}
+        <div className="font-medium text-center text-gray-900">
+          {row.original.queueNumber}
         </div>
       ),
     }),
 
     columnHelper.display({
-      id: 'patient',
-      header: 'Name',
+      id: "patient",
+        header: () => (
+    <div className="text-center w-full">Name</div>
+  ),
       cell: ({ row }) => {
-        const patient = row.original.visit.patient;
+        const patient = row.original.encounter.patient;
         return (
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-500" />
+            <div className="flex items-center gap-2">  
               <span className="font-medium text-gray-900">
-                {patient.first_name} {patient.last_name}
+                {patient?.firstName} {patient?.lastName}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>{patient.gender === 'Male' ? '♂' : '♀'}</span>
-              <span>{patient.insurance_number}</span>
-            </div>
+            {/* <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>{patient.gender === "Male" ? "♂" : "♀"}</span>
+              <span>{patient.insuranceNumber}</span>
+            </div> */}
           </div>
         );
       },
     }),
 
     columnHelper.display({
-      id: 'phone',
-      header: 'Phone',
+      id: "phone",
+      header: () => (<div className="text-center w-full">Phone</div>),
       cell: ({ row }) => {
-        const phone = row.original.visit.patient.phone;
+        const phone = row.original.encounter.patient?.phoneNumber;
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="w-3 h-3" />
-              <span>{phone ?? '—'}</span>
+              <span>{phone ?? "—"}</span>
             </div>
           </div>
         );
       },
     }),
 
-    columnHelper.accessor('assigned_at', {
+    columnHelper.accessor("assignmentDate", {
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
         >
           Date
@@ -188,30 +184,30 @@ const getPriorityLevel = (level: PriorityLevel) => {
       cell: ({ row }) => (
         <div className="space-y-1">
           <span className="font-medium text-gray-900">
-            {formatDate(row.original.assigned_at)}
+            {formatDate(row.original.assignmentDate)}
           </span>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Clock className="w-3 h-3" />
-            <span>{formatTime(row.original.assigned_at)}</span>
+            <span>{formatTime(row.original.assignmentDate)}</span>
           </div>
         </div>
       ),
     }),
 
-    columnHelper.accessor('visit.visit_type', {
-      header: 'Visit Type',
+    columnHelper.accessor("encounter.encounterType", {
+      header: "Encounter Type",
       cell: ({ row }) => (
         <Badge variant="outline" className="bg-gray-50">
-          {row.original.visit.visit_type}
+          {row.original.encounter.encounterType}
         </Badge>
       ),
     }),
 
-    columnHelper.accessor('priority_level', {
+    columnHelper.accessor("priority", {
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
         >
           Priority Level
@@ -220,20 +216,20 @@ const getPriorityLevel = (level: PriorityLevel) => {
       ),
       cell: ({ row }) => (
         <div className="flex text-center items-center gap-2">
-          {getPriorityLevel(row?.original?.priority_level as PriorityLevel)}
+          {getPriorityLevel(row?.original?.priority)}
         </div>
       ),
     }),
 
     columnHelper.display({
-      id: 'queue_status',
-      header: 'Status',
+      id: "queue_status",
+      header:() => (<div className="text-center w-full">Status</div>),
       cell: ({ row }) => getStatusBadge(row.original.status),
     }),
 
     columnHelper.display({
-      id: 'actions',
-      header: 'Action',
+      id: "actions",
+      header: () => (<div className="text-center w-full">Actions</div>),
       cell: ({ row }) => {
         const queueItem = row.original;
         return (
@@ -243,7 +239,7 @@ const getPriorityLevel = (level: PriorityLevel) => {
                 variant="outline"
                 size="sm"
                 className="border-purple-200 text-purple-700 hover:bg-purple-50"
-                onClick={() => onStartServing(queueItem.queue_id)}
+                onClick={() => onStartServing(queueItem.id)}
               >
                 Start Serving
               </Button>
@@ -256,15 +252,15 @@ const getPriorityLevel = (level: PriorityLevel) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onViewDetails(queueItem.queue_id)}>
+                <DropdownMenuItem onClick={() => onViewDetails(queueItem.encounterId)}>
                   <Eye className="mr-2 h-4 w-4" />
                   View
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(queueItem.queue_id)}>
+                <DropdownMenuItem onClick={() => onEdit(queueItem.id)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onCancel(queueItem.queue_id)}>
+                <DropdownMenuItem onClick={() => onCancel(queueItem.id)}>
                   <X className="mr-2 h-4 w-4" />
                   Cancel
                 </DropdownMenuItem>
@@ -285,55 +281,77 @@ const getPriorityLevel = (level: PriorityLevel) => {
     state: {
       sorting,
     },
+     manualPagination: true,
+     pageCount: pagination.totalPages,
   });
 
-  if (queueItems.length === 0) {
+  // ✅ Empty state
+  if (queueItems.length === 0 ) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-500 text-lg">No queue items found</p>
-        <p className="text-gray-400 text-sm mt-2">
-          Try adjusting your search or filters
-        </p>
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <User className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-lg font-medium">No queue items found</p>
+          <p className="text-gray-400 text-sm mt-2">
+            Try adjusting your search or filters
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="bg-gray-50">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-6 py-4">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+    <div className="mb-16 space-y-4">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="bg-gray-50">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-6 py-4">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
+      <Pagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        // onLimitChange={onLimitChange}
+        // itemName="appointments"
+        // limitOptions={[5, 10, 20, 50]}
+        showInfo={true}
+        // showLimitSelector={true}
+      />
     </div>
   );
 }
