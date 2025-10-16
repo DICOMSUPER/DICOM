@@ -53,6 +53,9 @@ export default function AdminDashboardPage() {
       case 'monitoring':
         router.push('/admin/monitoring');
         break;
+      case 'rooms':
+        router.push('/admin/rooms');
+        break;
       default:
         console.log(`Unknown action: ${action}`);
     }

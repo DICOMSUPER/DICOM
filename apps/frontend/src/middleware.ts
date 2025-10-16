@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
 import { Roles } from "./enums/user.enum";
 
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
-  [Roles.SYSTEM_ADMIN]: [/^\/system-admin/, /^\/admin/],
+  [Roles.SYSTEM_ADMIN]: [/^\/admin/],
   [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
-  [Roles.RADIOLOGIST]: [/^\/radiologist/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
   [Roles.PHYSICIAN]: [/^\/physicians/],
+  [Roles.RADIOLOGIST]: [/^\/radiologists/],
 };
 
 function getAllowedRolesForPath(path: string): Roles[] {
@@ -21,45 +20,37 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const allowedRoles = getAllowedRolesForPath(pathname);
 
-  // Nếu route không yêu cầu role → cho qua
   if (allowedRoles.length === 0) return NextResponse.next();
 
-  const token = req.cookies.get("accessToken")?.value;
-  console.log("🔐 Checking accessToken for path:", token);
+  const token = req.cookies.get("access_token")?.value;
+
   if (!token) {
-    console.warn("❌ No accessToken found in cookies");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      role?: Roles;
-    };
-    console.log("✅ Token decoded:", decoded);
-    if (!decoded.role) {
-      console.warn("❌ Token has no role field");
+    const [, payloadBase64] = token.split(".");
+    const decoded = JSON.parse(Buffer.from(payloadBase64, "base64").toString());
+
+    const role = decoded?.role;
+    if (!role) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    if (!allowedRoles.includes(decoded.role)) {
-      console.warn(`⚠️ Role ${decoded.role} not allowed for ${pathname}`);
-      // return NextResponse.redirect(new URL("/403", req.url));
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.redirect(new URL("/403", req.url));
     }
 
     return NextResponse.next();
-  } catch (err: any) {
-    console.error("❌ Invalid token:", err.message);
-    const redirectUrl = new URL("/login", req.url);
-    if (err.name === "TokenExpiredError")
-      redirectUrl.searchParams.set("expired", "1");
-    return NextResponse.redirect(redirectUrl);
+  } catch (err) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
 export const config = {
   matcher: [
     "/login",
-    "/system-admin/:path*",
+    "/admin/:path*",
     "/imaging-technicians/:path*",
     "/reception/:path*",
     "/physicians/:path*",

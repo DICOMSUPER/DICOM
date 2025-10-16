@@ -24,10 +24,10 @@ export class RoomAssignmentsService {
       throw new NotFoundException(`User with ID ${createRoomAssignmentDto.userId} not found`);
     }
 
-    // const room = await this.roomRepository.findOne({ where: { id: createRoomAssignmentDto.roomId } });
-    // if (!room) {
-    //   throw new NotFoundException(`Room with ID ${createRoomAssignmentDto.roomId} not found`);
-    // }
+    const room = await this.roomRepository.findOne({ where: { id: createRoomAssignmentDto.roomId } });
+    if (!room) {
+      throw new NotFoundException(`Room with ID ${createRoomAssignmentDto.roomId} not found`);
+    }
 
     if (createRoomAssignmentDto.startTime && createRoomAssignmentDto.endTime) {
       if (createRoomAssignmentDto.startTime >= createRoomAssignmentDto.endTime) {
@@ -36,6 +36,8 @@ export class RoomAssignmentsService {
     }
 
     const roomAssignment = this.roomAssignmentsRepository.create(createRoomAssignmentDto);
+    console.log("room assignment created:", roomAssignment);
+    
     return this.roomAssignmentsRepository.save(roomAssignment);
   }
 

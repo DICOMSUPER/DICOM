@@ -20,7 +20,7 @@ export class Patient extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'patient_id' })
   id!: string;
 
-  @Column({ name: 'patient_code', length: 40, unique: true })
+  @Column({ name: 'patient_code', length: 40, unique: true, nullable: true })
   patientCode!: string;
 
   @Column({ name: 'first_name', length: 50 })

@@ -23,7 +23,16 @@ export const axiosBaseQuery =
         data,
         params,
       });
-      return { data: result.data };
+
+      const resData = result.data;
+
+      const unwrapped =
+        resData?.data?.data?.data ?? 
+        resData?.data?.data ??       
+        resData?.data ??          
+        resData;                    
+
+      return { data: unwrapped };
     } catch (axiosError) {
       const err = axiosError as AxiosError;
       return {

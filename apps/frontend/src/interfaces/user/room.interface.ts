@@ -1,14 +1,62 @@
 import { RoomType } from "@/enums/patient.enum";
 import { BaseEntity } from "../base.interface";
+import { Department } from "./department.interface";
 
 
 export interface Room {
-  room_id: string;
-  room_code: string;
-  room_type?: RoomType;
-  description?: string;
-  is_active?: boolean;
+  id: string;
+  roomCode: string;
+  roomType: string;
+  floor: number;
+  capacity: number;
+  pricePerDay: string;
+  status: string;
+  description: string;
+  hasTV: boolean;
+  hasAirConditioning: boolean;
+  hasWiFi: boolean;
+  hasTelephone: boolean;
+  hasAttachedBathroom: boolean;
+  isWheelchairAccessible: boolean;
+  hasOxygenSupply: boolean;
+  hasNurseCallButton: boolean;
+  notes: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  department: Department;
 }
+
+export interface RoomPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+} 
+
+export interface CreateRoomDto {
+  roomCode: string;
+  roomType: string;
+  department: string;
+  floor: number;
+  capacity: number;
+  pricePerDay: number;
+  status: string;
+  description: string;
+  hasTV: boolean;
+  hasAirConditioning: boolean;
+  hasWiFi: boolean;
+  hasTelephone: boolean;
+  hasAttachedBathroom: boolean;
+  isWheelchairAccessible: boolean;
+  hasOxygenSupply: boolean;
+  hasNurseCallButton: boolean;
+  notes: string;
+  isActive: boolean;
+}
+
+export interface UpdateRoomDto extends Partial<CreateRoomDto> {} 
+
 export interface RoomAssignment extends BaseEntity {
   assignment_id: string;
   room_id: string;

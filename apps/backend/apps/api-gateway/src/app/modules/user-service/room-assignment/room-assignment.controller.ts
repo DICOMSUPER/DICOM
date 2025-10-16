@@ -1,11 +1,13 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { 
   CreateRoomAssignmentDto,
   QueryRoomAssignmentDto, UpdateRoomAssignmentDto
 } from '@backend/shared-domain';
+import { RequestLoggingInterceptor, TransformInterceptor } from 'libs/shared-interceptor/src';
 
 @Controller('room-assignments')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class RoomAssignmentsController {
   constructor(
     @Inject(process.env.USER_SERVICE_NAME || 'UserService')
@@ -15,6 +17,8 @@ export class RoomAssignmentsController {
   // create room assignment
   @Post()
   async create(@Body() createRoomAssignmentDto: CreateRoomAssignmentDto) {
+    console.log("room assignment", createRoomAssignmentDto);
+    
     return this.userService.send('room_assignment.create', createRoomAssignmentDto);
   }
 

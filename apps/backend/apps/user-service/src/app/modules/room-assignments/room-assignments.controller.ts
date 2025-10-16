@@ -10,6 +10,8 @@ export class RoomAssignmentsController {
 
   @MessagePattern('room_assignment.create')
   async create(@Payload() createRoomAssignmentDto: CreateRoomAssignmentDto) {
+    console.log("create room assignment 1", createRoomAssignmentDto);
+    
     return this.roomAssignmentsService.create(createRoomAssignmentDto);
   }
 

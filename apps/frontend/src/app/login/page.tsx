@@ -53,8 +53,6 @@ export default function LoginPage() {
 
       // Giải mã token để lấy role
       const decoded: any = jwtDecode(token);
-      console.log("🧩 Token payload:", decoded);
-
       const role = decoded.role;
       if (!role) {
         alert("Không tìm thấy role trong token");
@@ -63,7 +61,7 @@ export default function LoginPage() {
 
       // Điều hướng theo role
       switch (role) {
-        case "system_admin":
+        case "SYSTEM_ADMIN":
           router.push("/admin");
           break;
         case "imaging_technician":

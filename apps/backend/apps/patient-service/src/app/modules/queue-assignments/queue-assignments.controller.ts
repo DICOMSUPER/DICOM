@@ -26,13 +26,13 @@ export class QueueAssignmentController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: { createQueueAssignmentDto: CreateQueueAssignmentDto }
+    @Payload() createQueueAssignmentDto: CreateQueueAssignmentDto
   ): Promise<QueueAssignment> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      const { createQueueAssignmentDto } = data;
+      // const { createQueueAssignmentDto } = data;
       return await this.queueAssignmentService.create(createQueueAssignmentDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
