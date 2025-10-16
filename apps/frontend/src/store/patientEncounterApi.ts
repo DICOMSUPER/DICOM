@@ -6,13 +6,22 @@ import {
   EncounterSearchFilters,
   PaginatedResponse,
   EncounterStats,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+  ApiResponse
+} from '@/interfaces/patient/patient-workflow.interface';
 
 export const patientEncounterApi = createApi({
-  reducerPath: "patientEncounterApi",
-  baseQuery: axiosBaseQuery("/patient-encounters"),
-  tagTypes: ["PatientEncounter"],
+  reducerPath: 'patientEncounterApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: '/api/encounters',
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers.set('authorization', `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
+  tagTypes: ['PatientEncounter'],
   endpoints: (builder) => ({
     // Get all encounters with filters
     getPatientEncounters: builder.query<
@@ -45,12 +54,9 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<PatientEncounter, string>({
-      query: (id) => ({
-        url: `/${id}`,
-        method: "GET",
-      }),
-      providesTags: (result, error, id) => [{ type: "PatientEncounter", id }],
+    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
+      query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: 'PatientEncounter', id }],
     }),
 
     // Get encounters by patient

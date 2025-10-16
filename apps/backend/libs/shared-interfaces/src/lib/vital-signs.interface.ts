@@ -48,6 +48,20 @@ export interface VitalSignValidationResult {
   warnings: string[];
 }
 
+export interface VitalSignsSimplified {
+  bpSystolic?: number;        // Blood Pressure Systolic (mmHg)
+  bpDiastolic?: number;       // Blood Pressure Diastolic (mmHg)
+  heartRate?: number;         // Heart Rate (bpm)
+  respiratoryRate?: number;   // Respiratory Rate (breaths/min)
+  temperature?: number;       // Body Temperature (°C or °F)
+  oxygenSaturation?: number;  // Oxygen Saturation (%)
+  weight?: number;            // Weight (kg or lbs)
+  height?: number;            // Height (cm or inches)
+  bmi?: number;               // Body Mass Index
+  glucose?: number;           // Blood Glucose (mg/dL)
+  painScale?: number;         // Pain Scale (0-10)
+}
+
 /**
  * Clinical ranges for common vital signs
  * Used for validation and clinical decision support

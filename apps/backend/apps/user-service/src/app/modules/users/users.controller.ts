@@ -11,7 +11,7 @@ import {
   RegistrationFailedException,
   InvalidTokenException,
   ValidationException,
-  TokenGenerationFailedException
+  TokenGenerationFailedException,
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';
@@ -20,14 +20,14 @@ import { Roles } from '@backend/shared-enums';
 export class UsersController {
   private readonly logger = new Logger('UsersController');
 
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @MessagePattern('user.check-health')
   async checkHealth() {
     return {
       service: 'UserService',
       status: 'running',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -43,35 +43,47 @@ export class UsersController {
 
       return {
         ...result,
-        message: 'Đăng nhập thành công'
+        message: 'Đăng nhập thành công',
       };
     } catch (error: unknown) {
       this.logger.error(`Login error: ${(error as Error).message}`);
       if (error instanceof InvalidCredentialsException) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Login failed', 'UsersController.login');
+      handleErrorFromMicroservices(
+        error,
+        'Login failed',
+        'UsersController.login'
+      );
     }
   }
-
-
 
   @MessagePattern('user.request-login')
   async requestLogin(@Payload() data: { email: string; password: string }) {
     try {
       this.logger.log(`Request login attempt for email: ${data.email}`);
-      const result = await this.usersService.requestLogin(data.email, data.password);
+      const result = await this.usersService.requestLogin(
+        data.email,
+        data.password
+      );
 
       return {
         ...result,
-        message: result.message || 'OTP đã được gửi'
+        message: result.message || 'OTP đã được gửi',
       };
     } catch (error: unknown) {
       this.logger.error(`Request login error: ${(error as Error).message}`);
-      if (error instanceof UserNotFoundException || error instanceof InvalidCredentialsException) {
+      if (
+        error instanceof UserNotFoundException ||
+        error instanceof InvalidCredentialsException
+      ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Request login failed', 'UsersController.requestLogin');
+      handleErrorFromMicroservices(
+        error,
+        'Request login failed',
+        'UsersController.requestLogin'
+      );
     }
   }
 
@@ -79,31 +91,44 @@ export class UsersController {
   async verifyOtp(@Payload() data: { email: string; code: string }) {
     try {
       this.logger.log(`OTP verification attempt for email: ${data.email}`);
-      const result = await this.usersService.verifyLoginOtp(data.email, data.code);
+      const result = await this.usersService.verifyLoginOtp(
+        data.email,
+        data.code
+      );
 
       return {
         ...result,
-        message: result?.message || 'Xác thực OTP thành công'
+        message: result?.message || 'Xác thực OTP thành công',
       };
     } catch (error: unknown) {
       this.logger.error(`OTP verification error: ${(error as Error).message}`);
-      if (error instanceof OtpVerificationFailedException || error instanceof UserNotFoundException) {
+      if (
+        error instanceof OtpVerificationFailedException ||
+        error instanceof UserNotFoundException
+      ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'OTP verification failed', 'UsersController.verifyOtp');
+      handleErrorFromMicroservices(
+        error,
+        'OTP verification failed',
+        'UsersController.verifyOtp'
+      );
     }
   }
 
   @MessagePattern('user.register')
-  async register(@Payload() registerDto: {
-    username: string;
-    email: string;
-    password: string;
-    role: Roles;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-  }) {
+  async register(
+    @Payload()
+    registerDto: {
+      username: string;
+      email: string;
+      password: string;
+      role: Roles;
+      firstName: string;
+      lastName: string;
+      phone?: string;
+    }
+  ) {
     try {
       this.logger.log(`Registration attempt for email: ${registerDto.email}`);
 
@@ -127,14 +152,21 @@ export class UsersController {
 
       return {
         user: result,
-        message: 'Đăng ký thành công'
+        message: 'Đăng ký thành công',
       };
     } catch (error: unknown) {
       this.logger.error(`Registration error: ${(error as Error).message}`);
-      if (error instanceof UserAlreadyExistsException || error instanceof RegistrationFailedException) {
+      if (
+        error instanceof UserAlreadyExistsException ||
+        error instanceof RegistrationFailedException
+      ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Registration failed', 'UsersController.register');
+      handleErrorFromMicroservices(
+        error,
+        'Registration failed',
+        'UsersController.register'
+      );
     }
   }
 
@@ -146,11 +178,15 @@ export class UsersController {
       return {
         users,
         count: users.length,
-        message: 'Lấy danh sách người dùng thành công'
+        message: 'Lấy danh sách người dùng thành công',
       };
     } catch (error: unknown) {
       this.logger.error(`Get all users error: ${(error as Error).message}`);
-      handleErrorFromMicroservices(error, 'Failed to get all users', 'UsersController.getAllUsers');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get all users',
+        'UsersController.getAllUsers'
+      );
     }
   }
 
@@ -168,14 +204,18 @@ export class UsersController {
 
       return {
         user: userWithoutPassword,
-        message: 'Lấy thông tin người dùng thành công'
+        message: 'Lấy thông tin người dùng thành công',
       };
     } catch (error: unknown) {
       this.logger.error(`Get user by email error: ${(error as Error).message}`);
       if (error instanceof UserNotFoundException) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Failed to get user by email', 'UsersController.getUserByEmail');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get user by email',
+        'UsersController.getUserByEmail'
+      );
     }
   }
 
@@ -188,9 +228,29 @@ export class UsersController {
         role: decoded.role,
       };
     } catch (error) {
-      this.logger.error(`Token verification failed: ${(error as Error).message}`);
+      console.log(error);
+      this.logger.error(
+        `Token verification failed: ${(error as Error).message}`
+      );
       throw new InvalidTokenException();
     }
   }
 
+  @MessagePattern('UserService.Users.findOne')
+  async getUserInfoByToken(@Payload() data: { userId: string }) {
+    try {
+      const user = await this.usersService.findOne(data.userId);
+      return user;
+    } catch (error) {
+      this.logger.error(`Get user info error: ${(error as Error).message}`);
+      if (error instanceof UserNotFoundException) {
+        throw error;
+      }
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get user info',
+        'UsersController.getUserInfoByToken'
+      );
+    }
+  }
 }

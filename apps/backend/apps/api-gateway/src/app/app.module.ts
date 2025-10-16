@@ -10,8 +10,11 @@ import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analys
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthGuard, RoleGuard } from '@backend/shared-guards';
+
 import { UserServiceModule } from './modules/user-service/user-service.module';
+import { RoomAssignmentsModule } from './modules/user/room-assignment/room-assignment.module';
+import { AuthGuard } from '@backend/shared-guards';
+import { RoleGuard } from '@backend/shared-guards';
 import { SeedingModule } from './modules/seeding/seeding.module';
 dotenv.config();
 
@@ -29,6 +32,7 @@ dotenv.config();
     AuditLogModule,
     NotificationsModule,
     PatientServiceModule,
+    RoomAssignmentsModule,
     SeedingModule,
   ],
   controllers: [AppController],
@@ -36,7 +40,7 @@ dotenv.config();
     AppService,
     {
       provide: APP_GUARD,
-      useClass:   AuthGuard, 
+      useClass: AuthGuard,
     },
     {
       provide: APP_GUARD,

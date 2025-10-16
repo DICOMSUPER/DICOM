@@ -1,126 +1,150 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {
   QueueAssignment,
   CreateQueueAssignmentDto,
   UpdateQueueAssignmentDto,
   QueueAssignmentSearchFilters,
-  QueueStats
-} from '@/interfaces/patient/queue-assignment.interface';
+  QueueStats,
+} from "@/interfaces/patient/queue-assignment.interface";
+import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const queueAssignmentApi = createApi({
-  reducerPath: 'queueAssignmentApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api/queue-assignments',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['QueueAssignment', 'QueueStats'],
+  reducerPath: "queueAssignmentApi",
+  baseQuery: axiosBaseQuery("/queue-assignments"),
+  tagTypes: ["QueueAssignment", "QueueStats"],
   endpoints: (builder) => ({
     // Queue Assignment endpoints
-    getQueueAssignments: builder.query<QueueAssignment[], QueueAssignmentSearchFilters>({
+    getQueueAssignments: builder.query<
+      QueueAssignment[],
+      QueueAssignmentSearchFilters
+    >({
       query: (filters) => ({
-        url: '',
+        url: "",
+        method: "GET",
         params: filters,
       }),
-      providesTags: ['QueueAssignment'],
+      providesTags: ["QueueAssignment"],
     }),
 
     getQueueAssignmentById: builder.query<QueueAssignment, string>({
-      query: (id) => `/${id}`,
-      providesTags: (result, error, id) => [{ type: 'QueueAssignment', id }],
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
+      providesTags: (result, error, id) => [{ type: "QueueAssignment", id }],
     }),
 
     getQueueAssignmentsByVisitId: builder.query<QueueAssignment[], string>({
       query: (visitId) => ({
-        url: '',
+        url: "",
+        method: "GET",
         params: { visitId },
       }),
-      providesTags: ['QueueAssignment'],
+      providesTags: ["QueueAssignment"],
     }),
 
-    createQueueAssignment: builder.mutation<QueueAssignment, CreateQueueAssignmentDto>({
+    createQueueAssignment: builder.mutation<
+      QueueAssignment,
+      CreateQueueAssignmentDto
+    >({
       query: (data) => ({
-        url: '',
-        method: 'POST',
+        url: "",
+        method: "POST",
         body: data,
       }),
-      invalidatesTags: ['QueueAssignment', 'QueueStats'],
+      invalidatesTags: ["QueueAssignment", "QueueStats"],
     }),
 
-    updateQueueAssignment: builder.mutation<QueueAssignment, { id: string; data: UpdateQueueAssignmentDto }>({
+    updateQueueAssignment: builder.mutation<
+      QueueAssignment,
+      { id: string; data: UpdateQueueAssignmentDto }
+    >({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'QueueAssignment', id },
-        'QueueAssignment',
-        'QueueStats'
+        { type: "QueueAssignment", id },
+        "QueueAssignment",
+        "QueueStats",
       ],
     }),
 
     deleteQueueAssignment: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['QueueAssignment', 'QueueStats'],
+      invalidatesTags: ["QueueAssignment", "QueueStats"],
     }),
 
     // Queue Stats
     getQueueStats: builder.query<QueueStats, void>({
-      query: () => '/stats',
-      providesTags: ['QueueStats'],
+      query: () => ({ url: "/stats", method: "GET" }),
+      providesTags: ["QueueStats"],
     }),
 
     // Utility endpoints
     getNextQueueNumber: builder.query<{ nextNumber: number }, void>({
-      query: () => '/next-number',
+      query: () => ({ url: "/next-number", method: "GET" }),
     }),
 
     // Convenience mutations
-    assignPatientToQueue: builder.mutation<QueueAssignment, { visitId: string; priority?: string; roomId?: string }>({
-      query: ({ visitId, priority = 'routine', roomId }) => ({
-        url: '/assign',
-        method: 'POST',
+    assignPatientToQueue: builder.mutation<
+      QueueAssignment,
+      { visitId: string; priority?: string; roomId?: string }
+    >({
+      query: ({ visitId, priority = "routine", roomId }) => ({
+        url: "/assign",
+        method: "POST",
         body: { visitId, priority, roomId },
       }),
-      invalidatesTags: ['QueueAssignment', 'QueueStats'],
+      invalidatesTags: ["QueueAssignment", "QueueStats"],
     }),
 
     completeQueueAssignment: builder.mutation<QueueAssignment, string>({
       query: (id) => ({
         url: `/${id}/complete`,
-        method: 'PUT',
+        method: "PUT",
       }),
       invalidatesTags: (result, error, id) => [
-        { type: 'QueueAssignment', id },
-        'QueueAssignment',
-        'QueueStats'
+        { type: "QueueAssignment", id },
+        "QueueAssignment",
+        "QueueStats",
       ],
     }),
 
     expireQueueAssignment: builder.mutation<QueueAssignment, string>({
       query: (id) => ({
         url: `/${id}/expire`,
-        method: 'PUT',
+        method: "PUT",
       }),
       invalidatesTags: (result, error, id) => [
-        { type: 'QueueAssignment', id },
-        'QueueAssignment',
-        'QueueStats'
+        { type: "QueueAssignment", id },
+        "QueueAssignment",
+        "QueueStats",
       ],
+    }),
+    getQueueAssignmentsInRoom: builder.query<
+      ApiResponse<PaginatedResponse<QueueAssignment>>,
+      { userId: string; filters?: QueueAssignmentSearchFilters }
+    >({
+      query: ({ userId, filters }) => ({
+        url: "/in-room",
+        method:"GET",
+        params: {
+          userId,
+          ...filters,
+        },
+      }),
+      providesTags: ["QueueAssignment"],
     }),
   }),
 });
 
 export const {
+  useGetQueueAssignmentsInRoomQuery,
+  //
   useGetQueueAssignmentsQuery,
   useGetQueueAssignmentByIdQuery,
   useGetQueueAssignmentsByVisitIdQuery,

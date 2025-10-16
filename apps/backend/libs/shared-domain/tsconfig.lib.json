@@ -19,7 +19,7 @@
     "src/lib/entities/systems/ai-analysis.entity.ts",
     "src/lib/entities/systems/notification.entity.ts",
     "src/lib/entities/systems/system-log.entity.ts"
-  ],
+, "../../apps/user-service/src/app/modules/room-assignments/entities/room-assignment.entity.ts"  ],
   "references": [
     {
       "path": "../../entities/tsconfig.lib.json"

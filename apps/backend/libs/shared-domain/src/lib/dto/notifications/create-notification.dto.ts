@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsDateString } from 'class-validator';
-import { NotificationType, NotificationPriority } from '@backend/shared-enums';
+import { NotificationPriority, NotificationType } from '@backend/shared-enums';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()

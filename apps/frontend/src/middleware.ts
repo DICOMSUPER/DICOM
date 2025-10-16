@@ -6,6 +6,7 @@ import { Roles } from "./enums/user.enum";
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.SYSTEM_ADMIN]: [/^\/system-admin/, /^\/admin/],
   [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
+  [Roles.RADIOLOGIST]: [/^\/radiologist/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
   [Roles.PHYSICIAN]: [/^\/physicians/],
 };
@@ -23,15 +24,17 @@ export function middleware(req: NextRequest) {
   // Nếu route không yêu cầu role → cho qua
   if (allowedRoles.length === 0) return NextResponse.next();
 
-  const token = req.cookies.get("access_token")?.value;
-  console.log("🔐 Checking access_token for path:", token);
+  const token = req.cookies.get("accessToken")?.value;
+  console.log("🔐 Checking accessToken for path:", token);
   if (!token) {
-    console.warn("❌ No access_token found in cookies");
+    console.warn("❌ No accessToken found in cookies");
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { role?: Roles };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      role?: Roles;
+    };
     console.log("✅ Token decoded:", decoded);
     if (!decoded.role) {
       console.warn("❌ Token has no role field");
@@ -40,18 +43,18 @@ export function middleware(req: NextRequest) {
 
     if (!allowedRoles.includes(decoded.role)) {
       console.warn(`⚠️ Role ${decoded.role} not allowed for ${pathname}`);
-      return NextResponse.redirect(new URL("/403", req.url));
+      // return NextResponse.redirect(new URL("/403", req.url));
     }
 
     return NextResponse.next();
   } catch (err: any) {
     console.error("❌ Invalid token:", err.message);
     const redirectUrl = new URL("/login", req.url);
-    if (err.name === "TokenExpiredError") redirectUrl.searchParams.set("expired", "1");
+    if (err.name === "TokenExpiredError")
+      redirectUrl.searchParams.set("expired", "1");
     return NextResponse.redirect(redirectUrl);
   }
 }
-
 
 export const config = {
   matcher: [
@@ -63,4 +66,3 @@ export const config = {
   ],
   runtime: "nodejs",
 };
-

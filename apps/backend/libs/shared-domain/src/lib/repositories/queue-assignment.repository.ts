@@ -3,6 +3,7 @@ import { Between, EntityManager } from 'typeorm';
 import { BaseRepository } from '@backend/database';
 import { QueueAssignment } from '../entities/patients/queue-assignments.entity';
 import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+import { FilterQueueAssignmentDto } from '../dto';
 
 export interface QueueAssignmentSearchFilters {
   status?: QueueStatus;
@@ -258,5 +259,51 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       .orderBy('queue.priority', 'DESC')
       .addOrderBy('queue.assignmentDate', 'ASC')
       .getMany();
+  }
+
+  // Find all queue assignments with filters
+  async findAllQueue(filters: FilterQueueAssignmentDto = {}): Promise<QueueAssignment[]> {
+    const queryBuilder = this.getRepository()
+      .createQueryBuilder('queue')
+      .leftJoinAndSelect('queue.encounter', 'encounter')
+      .leftJoinAndSelect('encounter.patient', 'patient')
+      .where('1=1');
+
+    if (filters.status) {
+      queryBuilder.andWhere('queue.status = :status', { status: filters.status });
+    }
+
+    if (filters.priority) {
+      queryBuilder.andWhere('queue.priority = :priority', { priority: filters.priority });
+    }
+
+    if (filters.roomId) {
+      queryBuilder.andWhere('queue.roomId = :roomId', { roomId: filters.roomId });
+    }
+
+    if (filters.assignmentDateFrom) {
+      queryBuilder.andWhere('queue.assignmentDate >= :assignmentDateFrom', {
+        assignmentDateFrom: filters.assignmentDateFrom
+      });
+    }
+
+    if (filters.assignmentDateTo) {
+      queryBuilder.andWhere('queue.assignmentDate <= :assignmentDateTo', {
+        assignmentDateTo: filters.assignmentDateTo
+      });
+    }
+
+    if (filters.limit) {
+      queryBuilder.limit(filters.limit);
+    }
+
+    if (filters.offset) {
+      queryBuilder.offset(filters.offset);
+    }
+
+    queryBuilder.orderBy('queue.priority', 'DESC')
+      .addOrderBy('queue.assignmentDate', 'ASC');
+
+    return await queryBuilder.getMany();
   }
 }

@@ -286,7 +286,7 @@ export default function PatientDetail() {
           </div>
 
           {/* Patient Forwarding */}
-          <PatientForward />
+          {patient && patient.id && <PatientForward patientId={patient?.id} />}
         </div>
       </WorkspaceLayout>
     </div>

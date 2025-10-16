@@ -8,4 +8,8 @@ export enum AssignmentType {
 export enum RoomType {
   CT = 'CT',
   WC = 'WC',
+  XRAY = 'X-RAY',
+  MRI = 'MRI',
+  ULTRASOUND = 'ULTRASOUND',
+  RESPIRATORY = 'RESPIRATORY',
 }
