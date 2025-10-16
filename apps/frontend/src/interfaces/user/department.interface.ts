@@ -1,10 +1,18 @@
 import { BaseEntity } from "../base.interface";
 
-export interface Department extends BaseEntity {
-  department_id: string;
-  head_department_id?: string;
-  department_name: string;
-  department_code: string;
-  description?: string;
-  is_active?: boolean;
+export interface Department  extends BaseEntity {
+  id: string;
+  headDepartmentId: string;
+  departmentName: string;
+  departmentCode: string;
+  description: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface RoomPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }

@@ -16,7 +16,7 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class DepartmentsController {
   private readonly logger = new Logger('DepartmentsController');
 
-  constructor(private readonly service: DepartmentsService) {}
+  constructor(private readonly service: DepartmentsService) { }
 
   @MessagePattern('department.check-health')
   checkHealth() {
@@ -45,10 +45,10 @@ export class DepartmentsController {
   }
 
   @MessagePattern('department.get-all')
-  async findAll() {
+  async findAll(@Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
     try {
-      const departments = await this.service.findAll();
-      return { departments, count: departments.length };
+      const result = await this.service.findAll(query || {});
+      return result;
     } catch (error) {
       handleErrorFromMicroservices(
         error,
@@ -57,6 +57,8 @@ export class DepartmentsController {
       );
     }
   }
+
+
 
   @MessagePattern('department.get-by-id')
   async findOne(@Payload() data: { id: string }) {

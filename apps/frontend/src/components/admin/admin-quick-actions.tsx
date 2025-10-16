@@ -2,14 +2,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Users, 
-  Calendar, 
-  Settings, 
-  BarChart3, 
-  Shield, 
-  Database, 
-  BookOpen, 
+import {
+  Users,
+  Calendar,
+  Settings,
+  BarChart3,
+  Shield,
+  Database,
+  BookOpen,
   Monitor,
   Cog
 } from "lucide-react";
@@ -73,6 +73,12 @@ export function AdminQuickActions({ onActionClick }: AdminQuickActionsProps) {
       label: 'System Monitoring',
       icon: Monitor,
       description: 'Monitor system performance'
+    },
+    {
+      id: 'rooms',
+      label: 'Room Management',
+      icon: Monitor,
+      description: 'Manage rooms and equipment'
     }
   ];
 

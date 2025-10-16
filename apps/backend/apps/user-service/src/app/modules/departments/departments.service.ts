@@ -17,7 +17,7 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
-  ) {}
+  ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
     try {
@@ -33,17 +33,53 @@ export class DepartmentsService {
 
       const department = this.departmentRepository.create(createDepartmentDto);
       return await this.departmentRepository.save(department);
-    } catch (error : any) {
+    } catch (error: any) {
       if (error instanceof DepartmentAlreadyExistsException) throw error;
       throw new DepartmentCreationFailedException(error.message);
     }
   }
 
-  async findAll(): Promise<Department[]> {
-    return await this.departmentRepository.find({
-      relations: ['headDepartment', 'users'],
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const qb = this.departmentRepository
+      .createQueryBuilder('department')
+      .leftJoinAndSelect('department.headDepartment', 'headDepartment')
+      .leftJoinAndSelect('department.rooms', 'rooms')
+      .orderBy('department.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (query.search) {
+      qb.andWhere(
+        '(department.departmentName ILIKE :search OR department.departmentCode ILIKE :search)',
+        { search: `%${query.search}%` },
+      );
+    }
+
+    if (query.isActive !== undefined) {
+      qb.andWhere('department.isActive = :isActive', { isActive: query.isActive });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+      count: data.length,
+    };
   }
 
   async findOne(id: string): Promise<Department> {
@@ -80,7 +116,7 @@ export class DepartmentsService {
 
       Object.assign(department, updateDepartmentDto);
       return await this.departmentRepository.save(department);
-    } catch (error : any) {
+    } catch (error: any) {
       if (
         error instanceof DepartmentNotFoundException ||
         error instanceof DepartmentAlreadyExistsException
@@ -94,7 +130,7 @@ export class DepartmentsService {
     try {
       const department = await this.findOne(id);
       await this.departmentRepository.remove(department);
-    } catch (error :any) {
+    } catch (error: any) {
       if (error instanceof DepartmentNotFoundException) throw error;
       throw new DepartmentDeletionFailedException(error.message);
     }

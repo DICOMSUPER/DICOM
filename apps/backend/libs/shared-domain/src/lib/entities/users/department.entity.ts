@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
+import { Room } from './room.entity';
 
 @Entity('departments')
 export class Department  {
@@ -29,6 +30,9 @@ export class Department  {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'head_department_id' })
   headDepartment!: User;
+  
+   @OneToMany(() => Room, room => room.department)
+  rooms!: Room[];
 
   @OneToMany(() => User, user => user.department)
   users!: User[];

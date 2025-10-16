@@ -171,22 +171,15 @@ export class UsersController {
   }
 
   @MessagePattern('user.get-all-users')
-  async getAllUsers() {
+  async getAllUsers(
+    @Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean },
+  ) {
     try {
-      const users = await this.usersService.findAll();
-
-      return {
-        users,
-        count: users.length,
-        message: 'Lấy danh sách người dùng thành công',
-      };
-    } catch (error: unknown) {
+      const result = await this.usersService.findAll(query || {});
+      return result;
+    } catch (error) {
       this.logger.error(`Get all users error: ${(error as Error).message}`);
-      handleErrorFromMicroservices(
-        error,
-        'Failed to get all users',
-        'UsersController.getAllUsers'
-      );
+      handleErrorFromMicroservices(error, 'Failed to get users', 'UsersController.getAllUsers');
     }
   }
 
