@@ -55,7 +55,7 @@ export class EmployeeScheduleService {
   }
 
   async findMany(
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & EmployeeScheduleSearchFilters
   ): Promise<PaginatedResponseDto<EmployeeSchedule>> {
     try {
       const result = await this.employeeScheduleRepository.findWithPagination(
@@ -112,11 +112,14 @@ export class EmployeeScheduleService {
     }
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
     try {
       const schedule = await this.findOne(id);
       await this.employeeScheduleRepository.remove(schedule);
-      return true;
+      return {
+        success: true,
+        message: 'Employee schedule deleted successfully'
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

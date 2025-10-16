@@ -59,16 +59,6 @@ export class EmployeeScheduleController {
     }
   }
 
-  @Get('employee/:employeeId')
-  @MessagePattern('UserService.EmployeeSchedule.FindByEmployeeId')
-  async findByEmployeeId(@Payload() data: { employeeId: string; limit?: number }) {
-    try {
-      return await this.employeeScheduleService.findByEmployeeId(data.employeeId, data.limit);
-    } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch employee schedules', 'EmployeeScheduleController');
-    }
-  }
-
   @Get('me')
   @MessagePattern('UserService.EmployeeSchedule.FindByCurrentUser')
   async findByCurrentUser(@Payload() data: { userId: string; limit?: number; start_date?: string; end_date?: string }) {
@@ -76,26 +66,6 @@ export class EmployeeScheduleController {
       return await this.employeeScheduleService.findByCurrentUser(data.userId, data.limit, data.start_date, data.end_date);
     } catch (error) {
       throw handleErrorFromMicroservices(error, 'Failed to fetch current user schedules', 'EmployeeScheduleController');
-    }
-  }
-
-  @Get('date-range')
-  @MessagePattern('UserService.EmployeeSchedule.FindByDateRange')
-  async findByDateRange(@Payload() data: { startDate: string; endDate: string; employeeId?: string }) {
-    try {
-      return await this.employeeScheduleService.findByDateRange(data.startDate, data.endDate, data.employeeId);
-    } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch schedules by date range', 'EmployeeScheduleController');
-    }
-  }
-
-  @Get('room/:roomId/date/:workDate')
-  @MessagePattern('UserService.EmployeeSchedule.FindByRoomAndDate')
-  async findByRoomAndDate(@Payload() data: { roomId: string; workDate: string }) {
-    try {
-      return await this.employeeScheduleService.findByRoomAndDate(data.roomId, data.workDate);
-    } catch (error) {
-      throw handleErrorFromMicroservices(error, 'Failed to fetch room schedules', 'EmployeeScheduleController');
     }
   }
 

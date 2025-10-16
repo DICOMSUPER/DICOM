@@ -54,17 +54,6 @@ export const employeeScheduleApi = createApi({
       providesTags: (result, error, id) => [{ type: "EmployeeSchedule", id }],
     }),
 
-    // Get schedules by employee
-    getSchedulesByEmployee: builder.query<EmployeeSchedule[], string>({
-      query: (employeeId) => ({
-        url: `/employee/${employeeId}`,
-        method: "GET",
-      }),
-      providesTags: (result, error, employeeId) => [
-        { type: "EmployeeSchedule", id: `employee-${employeeId}` },
-      ],
-    }),
-
     // Get schedules for current user
     getMySchedules: builder.query<EmployeeSchedule[], { limit?: number }>({
       query: ({ limit }) => ({
@@ -111,17 +100,6 @@ export const employeeScheduleApi = createApi({
         return Array.isArray(response) ? response : (response?.data || []);
       },
       providesTags: ["EmployeeSchedule"],
-    }),
-
-    // Get schedules by room
-    getSchedulesByRoom: builder.query<EmployeeSchedule[], string>({
-      query: (roomId) => ({
-        url: `/room/${roomId}`,
-        method: "GET",
-      }),
-      providesTags: (result, error, roomId) => [
-        { type: "EmployeeSchedule", id: `room-${roomId}` },
-      ],
     }),
 
     // Get schedules by date range
@@ -267,11 +245,9 @@ export const {
   useGetEmployeeSchedulesQuery,
   useGetEmployeeSchedulesPaginatedQuery,
   useGetEmployeeScheduleByIdQuery,
-  useGetSchedulesByEmployeeQuery,
   useGetMySchedulesQuery,
   useGetMySchedulesByDateQuery,
   useGetMySchedulesByDateRangeQuery,
-  useGetSchedulesByRoomQuery,
   useGetSchedulesByDateRangeQuery,
   useGetSchedulesByDateQuery,
   useGetScheduleStatsQuery,
