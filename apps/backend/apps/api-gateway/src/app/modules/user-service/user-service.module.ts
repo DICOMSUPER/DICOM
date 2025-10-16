@@ -14,7 +14,7 @@ import { EmployeeSchedulesModule } from './employee-schedules/employee-schedules
     UserModule,
     RoomsModule,
     DepartmentModule,
-    RoomAssignmentsModule
+    RoomAssignmentsModule,
     EmployeeSchedulesModule,
   ],
   exports: [UserServiceClientModule, UserModule, RoomsModule, DepartmentModule, EmployeeSchedulesModule],
