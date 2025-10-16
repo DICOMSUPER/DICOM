@@ -32,9 +32,13 @@ export function middleware(req: NextRequest) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      role?: Roles;
-    };
+    const [, payloadBase64] = token.split(".");
+    const decoded = JSON.parse(Buffer.from(payloadBase64, "base64").toString());
+
+    const role = decoded?.role;
+    if (!role) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
     console.log("✅ Token decoded:", decoded);
     if (!decoded.role) {
       console.warn("❌ Token has no role field");

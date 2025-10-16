@@ -1,4 +1,8 @@
-import { CreateQueueAssignmentDto, FilterQueueAssignmentDto,  UpdateQueueAssignmentDto } from '@backend/shared-domain';
+import {
+  CreateQueueAssignmentDto,
+  FilterQueueAssignmentDto,
+  UpdateQueueAssignmentDto,
+} from '@backend/shared-domain';
 import { ValidationUtils } from '@backend/shared-utils';
 import {
   BadRequestException,
@@ -8,24 +12,25 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  HttpCode,
+  HttpStatus,
   Inject,
   Logger,
   Param,
   Patch,
   Post,
   Query,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-
 import { firstValueFrom } from 'rxjs';
+import { Public } from '@backend/shared-decorators';
 
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
-
 
 @Controller('queue-assignments')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -35,6 +40,11 @@ export class QueueAssignmentController {
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
     private readonly patientService: ClientProxy
   ) {}
+
+  @Get('health')
+  async checkHealth() {
+    return 'queue-assignment is running';
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -66,7 +76,7 @@ export class QueueAssignmentController {
       );
       // const userId = req.sub;
       // console.log('user id', userId);
-        
+
       // console.log('user from request:', req.user);
 
       console.log('validatedParams', validatedParams);

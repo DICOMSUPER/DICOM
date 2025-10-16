@@ -6,22 +6,13 @@ import {
   EncounterSearchFilters,
   PaginatedResponse,
   EncounterStats,
-  ApiResponse
-} from '@/interfaces/patient/patient-workflow.interface';
+} from "@/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const patientEncounterApi = createApi({
-  reducerPath: 'patientEncounterApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api/encounters',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['PatientEncounter'],
+  reducerPath: "patientEncounterApi",
+  baseQuery: axiosBaseQuery("/encounters"),
+  tagTypes: ["PatientEncounter"],
   endpoints: (builder) => ({
     // Get all encounters with filters
     getPatientEncounters: builder.query<
@@ -54,9 +45,12 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
-      query: (id) => `/${id}`,
-      providesTags: (result, error, id) => [{ type: 'PatientEncounter', id }],
+    getPatientEncounterById: builder.query<PatientEncounter, string>({
+      query: (id) => ({
+        url: `/${id}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "PatientEncounter", id }],
     }),
 
     // Get encounters by patient
@@ -101,7 +95,7 @@ export const patientEncounterApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { patientId }) => [
         { type: "PatientEncounter", id: `patient-${patientId}` },
@@ -117,7 +111,7 @@ export const patientEncounterApi = createApi({
       query: ({ id, data }) => ({
         url: `/${id}`,
         method: "PATCH",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "PatientEncounter", id },

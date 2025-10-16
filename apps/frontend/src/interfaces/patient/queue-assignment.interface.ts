@@ -1,4 +1,4 @@
-import { QueueStatus, QueuePriorityLevel } from '@/enums/patient.enum';
+import { QueueStatus, QueuePriorityLevel } from "@/enums/patient.enum";
 
 import { BaseEntity, PatientEncounter } from "./patient-workflow.interface";
 import { QueryParams } from '../pagination/pagination.interface';
@@ -22,13 +22,11 @@ export interface QueueAssignment extends BaseEntity {
 
 
 export interface CreateQueueAssignmentDto {
-  visitId: string;
-  queueNumber: number;
+  encounterId?: string;
   roomId?: string;
   priority?: QueuePriorityLevel;
   priorityReason?: string;
-  status?: QueueStatus;
-  createdBy: string;
+  createdBy?: string;
 }
 
 export interface UpdateQueueAssignmentDto {

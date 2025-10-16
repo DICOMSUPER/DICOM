@@ -1,10 +1,10 @@
-import {
-  Controller,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PatientEncounterService } from './patient-encounters.service';
-import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
+import {
+  CreatePatientEncounterDto,
+  UpdatePatientEncounterDto,
+} from '@backend/shared-domain';
 import { PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -16,12 +16,13 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 
-
 const moduleName = 'Encounter';
 @Controller('patient-encounters')
 export class PatientEncounterController {
   private logger = new Logger(PATIENT_SERVICE);
-  constructor(private readonly patientEncounterService: PatientEncounterService) {}
+  constructor(
+    private readonly patientEncounterService: PatientEncounterService
+  ) {}
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -31,9 +32,11 @@ export class PatientEncounterController {
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      console.log("create encounter dto", createPatientEncounterDto);
+      console.log('create encounter dto', createPatientEncounterDto);
 
-      return await this.patientEncounterService.create(createPatientEncounterDto);
+      return await this.patientEncounterService.create(
+        createPatientEncounterDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -43,7 +46,9 @@ export class PatientEncounterController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+  )
   async findAll(): Promise<PatientEncounter[]> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
@@ -59,9 +64,12 @@ export class PatientEncounterController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
-  
-  async findOne(@Payload() data: { id: string }): Promise<PatientEncounter | null> {
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+  )
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<PatientEncounter | null> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -90,7 +98,10 @@ export class PatientEncounterController {
     );
     try {
       const { id, updatePatientEncounterDto } = data;
-      return await this.patientEncounterService.update(id, updatePatientEncounterDto);
+      return await this.patientEncounterService.update(
+        id,
+        updatePatientEncounterDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -99,7 +110,7 @@ export class PatientEncounterController {
       );
     }
   }
-// PatientService.Encounter.Create
+  // PatientService.Encounter.Create
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
   async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
@@ -117,7 +128,9 @@ export class PatientEncounterController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<PatientEncounter>> {
@@ -145,9 +158,7 @@ export class PatientEncounterController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
   async getEncounterStats(): Promise<any> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`
-    );
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.patientEncounterService.getEncounterStats();
     } catch (error) {
@@ -158,5 +169,4 @@ export class PatientEncounterController {
       );
     }
   }
-
 }
