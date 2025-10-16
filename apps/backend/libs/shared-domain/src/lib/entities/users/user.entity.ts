@@ -1,11 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Roles } from '@backend/shared-enums';
+import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
 import { Qualification } from './qualification.entity';
 import { RoomAssignment } from './room-assignment.entity';
 
 @Entity('users')
-export class User {
+export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'user_id' })
   id!: string;
 
@@ -41,12 +42,6 @@ export class User {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt!: Date;
 
   @Column({ name: 'created_by', nullable: true })
   createdBy!: string;
