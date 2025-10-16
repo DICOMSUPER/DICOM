@@ -91,6 +91,10 @@ export class UsersService {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
       const jwtRefreshSecret =
         this.configService.get<string>('JWT_REFRESH_SECRET');
+      console.log(jwtSecret);
+      console.log(jwtRefreshSecret);
+      
+      
 
       if (!jwtSecret || !jwtRefreshSecret) {
         throw new TokenGenerationFailedException(
@@ -102,11 +106,17 @@ export class UsersService {
         secret: jwtSecret,
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       });
+      console.log(accessToken);
+      
+      
 
       const refreshToken = this.jwtService.sign(payload, {
         secret: jwtRefreshSecret,
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
       });
+
+      console.log(refreshToken);
+      
 
       const expiresIn =
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
@@ -119,6 +129,8 @@ export class UsersService {
         expiresAt,
       };
     } catch (error) {
+      console.log("ERROR",error);
+      
       if (
         error instanceof ValidationException ||
         error instanceof TokenGenerationFailedException

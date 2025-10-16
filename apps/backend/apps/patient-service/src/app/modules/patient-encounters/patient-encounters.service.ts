@@ -1,11 +1,10 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { CreatePatientEncounterDto, UpdatePatientEncounterDto } from '@backend/shared-domain';
-import { PatientEncounterRepository, EncounterWithDetails, PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { CreatePatientEncounterDto, PatientEncounter, PatientEncounterRepository, UpdatePatientEncounterDto } from '@backend/shared-domain';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
