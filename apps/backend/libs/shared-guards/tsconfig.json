@@ -4,6 +4,15 @@
   "include": [],
   "references": [
     {
+      "path": "../shared-enums"
+    },
+    {
+      "path": "../shared-interfaces"
+    },
+    {
+      "path": "../shared-decorators"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

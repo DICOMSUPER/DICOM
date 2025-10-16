@@ -1,11 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomAssignmentsService } from './room-assignments.service';
-import {
-  CreateRoomAssignmentDto,
-  UpdateRoomAssignmentDto,
-  QueryRoomAssignmentDto,
-} from '@backend/shared-domain';
+import { CreateRoomAssignmentDto, QueryRoomAssignmentDto, UpdateRoomAssignmentDto, } from '@backend/shared-domain';
 
 @Controller()
 export class RoomAssignmentsController {
