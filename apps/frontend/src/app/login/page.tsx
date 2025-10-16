@@ -9,9 +9,7 @@ import { CheckCircle, Monitor, Users, FileText } from "lucide-react";
 import { setCredentials } from "../../store/authSlice";
 import { useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
-import Cookies from "js-cookie";
-import api from "@/lib/axios";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,40 +17,31 @@ export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const handleLogin = async (
-    email: string,
-    password: string,
-    rememberMe: boolean
-  ) => {
+   const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
     try {
-      const res = await axios.post(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
-        }/user/login`,
-        { email, password }
-      );
-
-      const data = res.data;
-      // Lưu token
-      const token = data.data.tokenResponse.accessToken;
-
-      //Set token cookie
-      Cookies.set("accessToken", token, {
-        expires: rememberMe ? 7 : undefined,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
+      const res = await fetch("http://localhost:5000/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
-      const userRes = await api.get("/user/me");
-      const userInfo = userRes.data.data;
-      //set user info cookies
-      Cookies.set("user", JSON.stringify(userInfo));
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || "Login failed");
+        return;
+      }
 
-      dispatch(setCredentials({ token, userInfo }));
+      const data = await res.json();
+
+      // Lưu token
+      const token = data.data.tokenResponse.accessToken;
+      dispatch(setCredentials({ token }));
 
       // Giải mã token để lấy role
       const decoded: any = jwtDecode(token);
+      console.log("🧩 Token payload:", decoded);
+
       const role = decoded.role;
       if (!role) {
         alert("Không tìm thấy role trong token");
@@ -62,28 +51,23 @@ export default function LoginPage() {
       // Điều hướng theo role
       switch (role) {
         case "SYSTEM_ADMIN":
-          router.push("/admin");
+          router.push("/system-admin");
           break;
-        case "imaging_technician":
+        case "IMAGING_TECHNICIAN":
           router.push("/imaging-technicians");
           break;
-        case "reception_staff":
+        case "RECEPTION_STAFF":
           router.push("/reception");
           break;
-        case "physician":
-          router.push("/physicians/dashboard");
-          break;
-        case "radiologist":
-          router.push("/radiologist");
+        case "PHYSICIAN":
+          router.push("/physicians");
           break;
         default:
           router.push("/dashboard");
       }
-      setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
       alert("Unable to connect to server");
-      setIsLoggedIn(false);
     }
   };
 

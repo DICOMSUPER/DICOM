@@ -9,12 +9,12 @@ interface User {
 }
 
 interface AuthState {
-  user: Partial<User> | User | null;
+
   token: string | null;
 }
 
 const initialState: AuthState = {
-  user: null,
+
   token: null,
 };
 
@@ -24,19 +24,10 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ token: string; userInfo: Partial<User> }>
+      action: PayloadAction<{ token: string }>
     ) => {
-      state.token = action.payload.token;
-      state.user = action.payload.userInfo;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", action.payload.token);
-        localStorage.setItem("user", JSON.stringify(action.payload.userInfo));
-        Cookies.set("accessToken", action.payload.token);
-        Cookies.set("user", JSON.stringify(action.payload.userInfo));
-      }
-    },
+      state.token = action.payload.token;  },
     logout: (state) => {
-      state.user = null;
       state.token = null;
 
       Cookies.remove("accessToken");
