@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
+import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 // WorkspaceLayout and SidebarNav moved to layout.tsx
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
@@ -20,13 +16,6 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { 
   useGetMySchedulesByDateRangeQuery,
   useGetMySchedulesByDateQuery,
-  useGetScheduleStatsQuery,
-  useGetShiftTemplatesQuery,
-  useGetAvailableRoomsQuery,
-  useCreateEmployeeScheduleMutation,
-  useUpdateEmployeeScheduleMutation,
-  useDeleteEmployeeScheduleMutation,
-  useUpdateScheduleStatusMutation,
 } from "@/store/employeeScheduleApi";
 import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
@@ -45,17 +34,9 @@ const timeSlots = [
   { time: "5:00 PM", hour: 17 },
 ];
 
-// Mock employees for now - will be replaced with API call
-const mockEmployees = [
-  { id: "1", firstName: "Sarah", lastName: "Johnson", role: "reception_staff" },
-  { id: "2", firstName: "John", lastName: "Smith", role: "reception_staff" },
-  { id: "3", firstName: "Mike", lastName: "Wilson", role: "reception_staff" },
-];
-
 export default function ReceptionSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
-  const [notificationCount] = useState(3);
   const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -63,6 +44,7 @@ export default function ReceptionSchedulePage() {
   const { 
     data: schedules = [], 
     isLoading: schedulesLoading, 
+    isFetching: schedulesFetching,
     error: schedulesError,
     refetch: refetchSchedules 
   } = useGetMySchedulesByDateQuery({
@@ -72,6 +54,7 @@ export default function ReceptionSchedulePage() {
   const { 
     data: weekSchedules = [], 
     isLoading: weekLoading,
+    isFetching: weekFetching,
     refetch: refetchWeekSchedules
   } = useGetMySchedulesByDateRangeQuery({
     startDate: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
@@ -81,21 +64,13 @@ export default function ReceptionSchedulePage() {
   const { 
     data: monthSchedules = [], 
     isLoading: monthLoading,
+    isFetching: monthFetching,
     refetch: refetchMonthSchedules
   } = useGetMySchedulesByDateRangeQuery({
     startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
     endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
   });
 
-  const { data: stats } = useGetScheduleStatsQuery({ role: "reception_staff" });
-  const { data: shiftTemplates = [] } = useGetShiftTemplatesQuery();
-  const { data: rooms = [] } = useGetAvailableRoomsQuery({ date: format(selectedDate, "yyyy-MM-dd") });
-
-  // Mutations
-  const [createSchedule] = useCreateEmployeeScheduleMutation();
-  const [updateSchedule] = useUpdateEmployeeScheduleMutation();
-  const [deleteSchedule] = useDeleteEmployeeScheduleMutation();
-  const [updateStatus] = useUpdateScheduleStatusMutation();
 
   // Get current schedules based on view mode
   const getCurrentSchedules = (): EmployeeSchedule[] => {
@@ -114,15 +89,23 @@ export default function ReceptionSchedulePage() {
   };
 
   const currentSchedules = getCurrentSchedules();
-  const isLoading = schedulesLoading || weekLoading || monthLoading;
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
+  
+  // Compute loading state based on current view mode
+  const getLoadingState = (): boolean => {
+    switch (viewMode) {
+      case "day":
+      case "list":
+        return schedulesLoading || schedulesFetching;
+      case "week":
+        return weekLoading || weekFetching;
+      case "month":
+        return monthLoading || monthFetching;
+      default:
+        return schedulesLoading || schedulesFetching;
+    }
   };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
+  
+  const isLoading = getLoadingState();
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");

@@ -180,37 +180,6 @@ export const scheduleApi = createApi({
       providesTags: (result: any, error: any, id: string) => [{ type: 'EmployeeSchedule', id }],
     }),
 
-    getSchedulesByEmployee: builder.query<EmployeeSchedule[], { employee_id: string; limit?: number }>({
-      query: ({ employee_id, limit }: { employee_id: string; limit?: number }) => ({
-        url: `/employee-schedules/employee/${employee_id}`,
-        method: 'GET',
-        params: { limit },
-      }),
-      providesTags: ['EmployeeSchedule'],
-    }),
-
-    getSchedulesByDateRange: builder.query<EmployeeSchedule[], {
-      start_date: string;
-      end_date: string;
-      employee_id?: string;
-    }>({
-      query: ({ start_date, end_date, employee_id }: { start_date: string; end_date: string; employee_id?: string }) => ({
-        url: '/employee-schedules/date-range',
-        method: 'GET',
-        params: { start_date, end_date, employee_id },
-      }),
-      providesTags: ['EmployeeSchedule'],
-    }),
-
-    getSchedulesByRoomAndDate: builder.query<EmployeeSchedule[], { room_id: string; work_date: string }>({
-      query: ({ room_id, work_date }: { room_id: string; work_date: string }) => ({
-        url: '/employee-schedules/room-date',
-        method: 'GET',
-        params: { room_id, work_date },
-      }),
-      providesTags: ['EmployeeSchedule'],
-    }),
-
     createEmployeeSchedule: builder.mutation<EmployeeSchedule, ScheduleFormData>({
       query: (schedule: ScheduleFormData) => ({
         url: '/employee-schedules',
@@ -660,9 +629,6 @@ export const scheduleApi = createApi({
 export const {
   useGetEmployeeSchedulesQuery,
   useGetEmployeeScheduleByIdQuery,
-  useGetSchedulesByEmployeeQuery,
-  useGetSchedulesByDateRangeQuery,
-  useGetSchedulesByRoomAndDateQuery,
   useCreateEmployeeScheduleMutation,
   useUpdateEmployeeScheduleMutation,
   useDeleteEmployeeScheduleMutation,

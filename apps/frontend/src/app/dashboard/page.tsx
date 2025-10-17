@@ -22,17 +22,28 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import { AppHeader } from "@/components/app-header";
+import { logout } from "@/store/authSlice";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const [notificationCount] = useState(3);
+  const router = useRouter();
+  const dispatch = useDispatch();
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
   };
 
   const handleLogout = () => {
-    console.log("Logout clicked");
+    dispatch(logout());
+    toast.success("Logged out successfully");
+    // Small delay to show toast before redirect
+    setTimeout(() => {
+      router.push("/login");
+    }, 500);
   };
 
   return (

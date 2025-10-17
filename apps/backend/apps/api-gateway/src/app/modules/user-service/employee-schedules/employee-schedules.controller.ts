@@ -110,15 +110,105 @@ export class EmployeeSchedulesController {
           paginationDto: {
             page: query.page || 1,
             limit: query.limit || 10,
-            ...query
+            employeeId: query.employee_id,
+            roomId: query.room_id,
+            workDateFrom: query.work_date_from,
+            workDateTo: query.work_date_to,
+            scheduleStatus: query.schedule_status,
+            search: query.search,
+            sortField: query.sort_field,
+            order: query.order
           }
         })
       );
 
-      this.logger.log(`✅ Retrieved ${result.count || 0} schedules`);
+      this.logger.log(`✅ Retrieved ${result.total || 0} schedules`);
       return result;
     } catch (error) {
       this.logger.error('❌ Failed to fetch schedules', error);
+      throw handleError(error);
+    }
+  }
+
+  // 🏠 Lấy danh sách phòng available
+  @Get('available-rooms')
+  @ApiOperation({ summary: 'Get available rooms for scheduling' })
+  @ApiQuery({ name: 'date', required: true, description: 'Date to check availability (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'time', required: false, description: 'Time to check availability (HH:MM)' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng available thành công' })
+  async getAvailableRooms(@Query('date') date: string, @Query('time') time?: string) {
+    try {
+      this.logger.log(`🏠 Fetching available rooms for ${date}${time ? ' at ' + time : ''}`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send('room.find-all', { 
+          page: 1, 
+          limit: 100, 
+          isActive: true 
+        })
+      );
+      return result.data || result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get available rooms`, error);
+      throw handleError(error);
+    }
+  }
+
+  // 👥 Lấy danh sách employees available
+  @Get('available-employees')
+  @ApiOperation({ summary: 'Get available employees for scheduling' })
+  @ApiQuery({ name: 'date', required: true, description: 'Date to check availability (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'time', required: false, description: 'Time to check availability (HH:MM)' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách employees available thành công' })
+  async getAvailableEmployees(@Query('date') date: string, @Query('time') time?: string) {
+    try {
+      this.logger.log(`👥 Fetching available employees for ${date}${time ? ' at ' + time : ''}`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.Users.findAll', { 
+          page: 1, 
+          limit: 100, 
+          isActive: true 
+        })
+      );
+      return result.data || result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get available employees`, error);
+      throw handleError(error);
+    }
+  }
+
+  // 📊 Lấy stats
+  @Get('stats')
+  @ApiOperation({ summary: 'Get schedule statistics' })
+  @ApiQuery({ name: 'employeeId', required: false, description: 'Filter by employee ID' })
+  @ApiResponse({ status: 200, description: 'Lấy schedule stats thành công' })
+  async getStats(@Query('employeeId') employeeId?: string) {
+    try {
+      this.logger.log(`📊 Fetching schedule stats${employeeId ? ' for employee: ' + employeeId : ''}`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.EmployeeSchedule.GetStats', { employeeId })
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get schedule stats`, error);
+      throw handleError(error);
+    }
+  }
+
+  // 📋 Lấy shift templates
+  @Get('shift-templates')
+  @ApiOperation({ summary: 'Get shift templates' })
+  @ApiResponse({ status: 200, description: 'Lấy shift templates thành công' })
+  async getShiftTemplates() {
+    try {
+      this.logger.log(`📋 Fetching shift templates`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.ShiftTemplate.FindMany', { 
+          paginationDto: { page: 1, limit: 100 } 
+        })
+      );
+      return result.data || result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get shift templates`, error);
       throw handleError(error);
     }
   }
@@ -145,7 +235,7 @@ export class EmployeeSchedulesController {
     }
   }
 
-  // 🔍 Lấy chi tiết 1 lịch làm việc
+  // 🔍 Lấy chi tiết 1 lịch làm việc - MUST BE LAST to avoid catching other routes
   @Get(':id')
   @ApiOperation({ summary: 'Get employee schedule by ID' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
@@ -208,81 +298,6 @@ export class EmployeeSchedulesController {
     }
   }
 
-  // 👤 Lấy lịch làm việc theo nhân viên
-  @Get('employee/:employeeId')
-  @ApiOperation({ summary: 'Get schedules by employee ID' })
-  @ApiParam({ name: 'employeeId', description: 'Employee ID' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Limit results' })
-  @ApiResponse({ status: 200, description: 'Lấy lịch làm việc theo nhân viên thành công' })
-  async getSchedulesByEmployee(@Param('employeeId') employeeId: string, @Query('limit') limit?: number) {
-    try {
-      this.logger.log(`👤 Fetching schedules for employee: ${employeeId}`);
-      const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindByEmployee', { employeeId, limit })
-      );
-
-      return result;
-    } catch (error) {
-      this.logger.error(`❌ Failed to get schedules for employee: ${employeeId}`, error);
-      throw handleError(error);
-    }
-  }
-
-  // 📅 Lấy lịch làm việc theo khoảng thời gian
-  @Get('date-range/range')
-  @ApiOperation({ summary: 'Get schedules by date range' })
-  @ApiQuery({ name: 'start_date', description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'end_date', description: 'End date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'employee_id', required: false, description: 'Filter by employee ID' })
-  @ApiResponse({ status: 200, description: 'Lấy lịch làm việc theo khoảng thời gian thành công' })
-  async getSchedulesByDateRange(
-    @Query('start_date') startDate: string,
-    @Query('end_date') endDate: string,
-    @Query('employee_id') employeeId?: string
-  ) {
-    try {
-      this.logger.log(`📅 Fetching schedules from ${startDate} to ${endDate}`);
-      const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindByDateRange', { 
-          start_date: startDate, 
-          end_date: endDate, 
-          employee_id: employeeId 
-        })
-      );
-
-      return result;
-    } catch (error) {
-      this.logger.error(`❌ Failed to get schedules by date range`, error);
-      throw handleError(error);
-    }
-  }
-
-  // 🏥 Lấy lịch làm việc theo phòng và ngày
-  @Get('room-date/room')
-  @ApiOperation({ summary: 'Get schedules by room and date' })
-  @ApiQuery({ name: 'room_id', description: 'Room ID' })
-  @ApiQuery({ name: 'work_date', description: 'Work date (YYYY-MM-DD)' })
-  @ApiResponse({ status: 200, description: 'Lấy lịch làm việc theo phòng và ngày thành công' })
-  async getSchedulesByRoomAndDate(
-    @Query('room_id') roomId: string,
-    @Query('work_date') workDate: string
-  ) {
-    try {
-      this.logger.log(`🏥 Fetching schedules for room ${roomId} on ${workDate}`);
-      const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindByRoomAndDate', { 
-          room_id: roomId, 
-          work_date: workDate 
-        })
-      );
-
-      return result;
-    } catch (error) {
-      this.logger.error(`❌ Failed to get schedules by room and date`, error);
-      throw handleError(error);
-    }
-  }
-
   // 📦 Tạo nhiều lịch làm việc cùng lúc
   @Post('bulk')
   @ApiOperation({ summary: 'Create multiple employee schedules' })
@@ -333,7 +348,7 @@ export class EmployeeSchedulesController {
   async deleteBulkSchedules(@Body() data: { ids: string[] }) {
     try {
       this.logger.log(`🗑️ Deleting ${data.ids.length} schedules in bulk`);
-      const result = await firstValueFrom(
+      await firstValueFrom(
         this.userServiceClient.send('UserService.EmployeeSchedule.DeleteBulk', data)
       );
 

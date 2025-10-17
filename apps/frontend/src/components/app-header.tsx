@@ -2,11 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Bell,
   User,
-  Menu
+  Menu,
+  LogOut
 } from "lucide-react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 
 interface AppHeaderProps {
   notificationCount?: number;
@@ -21,6 +32,7 @@ export function AppHeader({
   onLogout,
   onMenuClick
 }: AppHeaderProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
 
   return (
     <header className="h-16 border-b border-border bg-card">
@@ -59,16 +71,53 @@ export function AppHeader({
               </Button>
             </div>
 
-            {/* User */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-border"
-              onClick={onLogout}
-            >
-              <User className="w-4 h-4 mr-2" />
-              User
-            </Button>
+            {/* User Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-border"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  {user?.email?.split("@")[0] || "User"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 border-border p-2">
+                <DropdownMenuLabel className="p-0">
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors ease-in-out duration-200">
+                    {/* Avatar */}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg">
+                      {user?.email?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    {/* User Info */}
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-semibold leading-none">
+                        {user?.email?.split("@")[0] || "User"}
+                      </p>
+                      <p className="text-xs leading-none text-foreground">
+                        {user?.email || "No email"}
+                      </p>
+                      {user?.role && (
+                        <p className="text-xs leading-none text-foreground capitalize">
+                          {user.role.replace(/_/g, " ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuItem 
+                  onClick={onLogout}
+                  className="group cursor-pointer text-red-600 focus:text-white focus:bg-red-600 p-3 rounded-md ease-in-out duration-200"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-medium">Logout</span>
+                    <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
     </header>
