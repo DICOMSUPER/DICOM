@@ -11,9 +11,6 @@
   },
   "include": [
     "src/**/*.ts",
-    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/update-room-assignment.dto.ts",
-    "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/create-room-assignment.dto.ts",
-    "src/app/modules/room-assignments/entities/room-assignment.entity.ts"
   ],
   "exclude": [
     "out-tsc",

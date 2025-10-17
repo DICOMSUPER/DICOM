@@ -3,7 +3,6 @@ import { Roles } from '@backend/shared-enums';
 import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
 import { Qualification } from './qualification.entity';
-import { RoomAssignment } from './room-assignment.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -58,6 +57,4 @@ export class User extends BaseEntity {
   @OneToMany(() => Qualification, qualification => qualification.employee)
   qualifications!: Qualification[];
 
-  @OneToMany(() => RoomAssignment, roomAssignment => roomAssignment.employee)
-  roomAssignments!: RoomAssignment[];
 }
