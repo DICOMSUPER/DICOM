@@ -5,13 +5,10 @@ import {
 } from '@backend/shared-domain';
 import { ValidationUtils } from '@backend/shared-utils';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   HttpCode,
   HttpStatus,
   Inject,
@@ -20,12 +17,11 @@ import {
   Patch,
   Post,
   Query,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 import { firstValueFrom } from 'rxjs';
-import { Public } from '@backend/shared-decorators';
 
 import {
   RequestLoggingInterceptor,

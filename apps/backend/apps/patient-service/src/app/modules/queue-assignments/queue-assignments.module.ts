@@ -4,7 +4,10 @@ import { QueueAssignmentController } from './queue-assignments.controller';
 // import { QueueCronService } from './queue-cron.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { QueueAssignment, QueueAssignmentRepository } from '@backend/shared-domain';
+import {
+  QueueAssignment,
+  QueueAssignmentRepository,
+} from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
@@ -13,7 +16,7 @@ import { getClient } from '@backend/shared-utils';
 @Module({
   imports: [
     TypeOrmModule.forFeature([QueueAssignment]),
-ClientsModule.register([
+    ClientsModule.register([
       getClient(
         process.env.USER_SERVICE_NAME || 'UserService',
         Number(process.env.USER_SERVICE_TRANSPORT || Transport.TCP),
@@ -27,11 +30,11 @@ ClientsModule.register([
     QueueAssignmentService,
     {
       provide: QueueAssignmentRepository,
-      useFactory: (entityManager: EntityManager) => 
+      useFactory: (entityManager: EntityManager) =>
         new QueueAssignmentRepository(entityManager),
       inject: [EntityManager],
     },
-    PaginationService
+    PaginationService,
   ],
   exports: [QueueAssignmentService, QueueAssignmentRepository],
 })

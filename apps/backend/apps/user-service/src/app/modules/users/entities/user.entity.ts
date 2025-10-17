@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Roles } from '@backend/shared-enums';
 import { Department } from '@backend/shared-domain';
 import { Qualification } from '../../qualifications/entities/qualification.entity';
-import { RoomAssignment } from '@backend/shared-domain';
+
 
 @Entity('users')
 export class User {
@@ -63,6 +63,5 @@ export class User {
   @OneToMany(() => Qualification, qualification => qualification.employee)
   qualifications!: Qualification[];
 
-  @OneToMany(() => RoomAssignment, roomAssignment => roomAssignment.employee)
-  roomAssignments!: RoomAssignment[];
+
 }

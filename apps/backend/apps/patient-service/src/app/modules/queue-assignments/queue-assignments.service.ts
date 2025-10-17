@@ -376,15 +376,15 @@ export class QueueAssignmentService {
     } = filterQueue;
     const whereConditions: any = {};
 
-    // get room assigned to the user
-    const roomAssignments = await firstValueFrom(
-      this.userService.send('room_assignment.findByUserId', { userId })
-    );
+    // // get room assigned to the user
+    // const roomAssignments = await firstValueFrom(
+    //   this.userService.send('room_assignment.findByUserId', { userId })
+    // );
 
-    console.log('roomAssignments', roomAssignments);
-    if (!roomAssignments) {
-      throw new NotFoundException(`No room assigned to user ID ${userId}`);
-    }
+    // console.log('roomAssignments', roomAssignments);
+    // if (!roomAssignments) {
+    //   throw new NotFoundException(`No room assigned to user ID ${userId}`);
+    // }
 
     // Filter by status if provided
     if (status) {
@@ -414,7 +414,7 @@ export class QueueAssignmentService {
       QueueAssignment,
       { page, limit },
       {
-        where: { ...whereConditions, roomId: roomAssignments[0].roomId },
+        where: { ...whereConditions, },
         order: {
           assignmentDate: 'DESC',
           queueNumber: 'ASC',

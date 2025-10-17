@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { RoomType } from '@backend/shared-enums';
 import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
@@ -42,6 +48,8 @@ export class Room extends BaseEntity {
     default: RoomStatus.AVAILABLE,
   })
   status!: RoomStatus;
+  @Column({ name: 'department_id', type: 'uuid', nullable: false })
+  departmentId!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -76,13 +84,9 @@ export class Room extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-
-
   @ManyToOne(() => Department, (department) => department.rooms, {
     nullable: false,
   })
   @JoinColumn({ name: 'department_id' })
   department?: Department;
 }
-
-
