@@ -32,7 +32,7 @@ export const axiosBaseQuery =
         resData?.data ??          
         resData;                    
 
-      return { data: unwrapped };
+      return { data: resData };
     } catch (axiosError) {
       const err = axiosError as AxiosError;
       return {

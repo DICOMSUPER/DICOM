@@ -34,6 +34,9 @@
       "path": "../../libs/shared-enums/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared-interfaces/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared-domain/tsconfig.lib.json"
     },
     {

@@ -7,6 +7,9 @@
       "path": "../../libs/shared-enums"
     },
     {
+      "path": "../../libs/shared-interfaces"
+    },
+    {
       "path": "../../libs/shared-domain"
     },
     {

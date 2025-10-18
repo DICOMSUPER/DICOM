@@ -103,7 +103,7 @@ export class PatientEncounterController {
       }
 
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.FindOne', {
+        this.patientService.send('PatientService.Encounter.FindOne', {
           id,
         })
       );
@@ -146,7 +146,7 @@ export class PatientEncounterController {
       }
 
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.Delete', {
+        this.patientService.send('PatientService.Encounter.Delete', {
           id,
         })
       );

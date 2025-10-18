@@ -51,6 +51,8 @@ export default function QueuePage() {
       }
     );
 
+    console.log("Queue assignments in room:", data);
+
   useEffect(() => {
     if (data) {
       setPaginationMeta({

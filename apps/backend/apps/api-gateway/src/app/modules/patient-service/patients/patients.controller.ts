@@ -12,14 +12,18 @@ import {
   Inject,
   Logger,
   BadRequestException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
 import { Role } from '@backend/shared-decorators';
 import { Roles as RoleEnum } from '@backend/shared-enums';
+import { RequestLoggingInterceptor } from '@backend/shared-interceptor';
+import { TransformInterceptor } from '@backend/shared-interceptor';
 
 @Controller('patients')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientServiceController {
   private readonly logger = new Logger('PatientServiceController');
 
@@ -99,6 +103,20 @@ export class PatientServiceController {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.FindByCode', {
+          patientCode,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error finding patient by code:', error);
+      throw error;
+    }
+  }
+
+  @Get('overview/:patientCode')
+  async getPatientOverview(@Param('patientCode') patientCode: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.GetPatientOverview', {
           patientCode,
         })
       );

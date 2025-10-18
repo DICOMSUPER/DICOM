@@ -17,7 +17,7 @@ import {
 } from '../../../constant/microservice.constant';
 
 const moduleName = 'Encounter';
-@Controller('patient-encounters')
+@Controller('encounters')
 export class PatientEncounterController {
   private logger = new Logger(PATIENT_SERVICE);
   constructor(

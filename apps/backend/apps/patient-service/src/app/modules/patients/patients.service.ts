@@ -5,6 +5,7 @@ import {
   Patient,
   PatientStatsDto,
   PatientRepository,
+  PatientCondition,
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -13,6 +14,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 import { v4 as uuidv4 } from 'uuid';
+import { VitalSignsSimplified } from '@backend/shared-interfaces';
 
 @Injectable()
 export class PatientService {
@@ -90,6 +92,29 @@ export class PatientService {
       );
     }
     return patient;
+  };
+
+  getOverview = async (
+    patientCode: string
+  ): Promise<{
+    recentVitalSigns: VitalSignsSimplified;
+    recentConditions: PatientCondition[];
+  } | null> => {
+    const patient = await this.patientRepository.findByPatientCode(patientCode);
+
+    if (!patient) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Failed to find patient by code',
+        PATIENT_SERVICE
+      );
+    }
+    const patientOverview = {
+      recentVitalSigns: patient?.encounters[0].vitalSigns as VitalSignsSimplified,
+      recentConditions: patient?.conditions.slice(0, 3) || [],
+    };
+
+    return patientOverview;
   };
 
   getPatientStats = async (): Promise<PatientStatsDto> => {

@@ -6,7 +6,7 @@ import {
   QueueAssignmentRepository,
 } from '@backend/shared-domain';
 
-import { QueueStatus, QueuePriorityLevel } from '@backend/shared-enums';
+import { QueueStatus, QueuePriorityLevel, Roles } from '@backend/shared-enums';
 import { PaginationService } from '@backend/database';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -373,22 +373,36 @@ export class QueueAssignmentService {
       priority,
       assignmentDateFrom,
       assignmentDateTo,
+      queueNumber
     } = filterQueue;
     const whereConditions: any = {};
 
-    // // get room assigned to the user
-    // const roomAssignments = await firstValueFrom(
-    //   this.userService.send('room_assignment.findByUserId', { userId })
-    // );
+    // get user by user id
+    const user = await firstValueFrom(
+      this.userService.send('UserService.Users.findOne', { userId })
+    );
+    console.log('queue physician', user);
 
-    // console.log('roomAssignments', roomAssignments);
-    // if (!roomAssignments) {
-    //   throw new NotFoundException(`No room assigned to user ID ${userId}`);
-    // }
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    // if not role physician or nurse, throw error
+    if (user.role !== Roles.PHYSICIAN) {
+      throw new NotFoundException(
+        `User with ID ${userId} is not authorized to view room assignments`
+      );
+    }
+
+    whereConditions.encounter = {
+      assignedPhysicianId: userId,
+    };
 
     // Filter by status if provided
     if (status) {
       whereConditions.status = status;
+    }
+    if (queueNumber) {
+      whereConditions.queueNumber = queueNumber;
     }
 
     // Filter by priority if provided
@@ -414,7 +428,7 @@ export class QueueAssignmentService {
       QueueAssignment,
       { page, limit },
       {
-        where: { ...whereConditions, },
+        where: whereConditions,
         order: {
           assignmentDate: 'DESC',
           queueNumber: 'ASC',
@@ -424,7 +438,6 @@ export class QueueAssignmentService {
             patient: true,
           },
         },
-        // select: ['id', 'queueNumber', 'status', 'priority', 'assignmentDate'] // Optional: specific fields
       }
     );
   }

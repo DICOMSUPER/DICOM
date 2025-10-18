@@ -70,7 +70,7 @@ export class QueueAssignmentController {
         filterQueue?.page,
         filterQueue?.limit
       );
-      // const userId = req.sub;
+      // const userId      = req.sub;
       // console.log('user id', userId);
 
       // console.log('user from request:', req.user);
