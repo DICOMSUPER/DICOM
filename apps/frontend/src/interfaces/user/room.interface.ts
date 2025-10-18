@@ -57,14 +57,3 @@ export interface CreateRoomDto {
 
 export interface UpdateRoomDto extends Partial<CreateRoomDto> {} 
 
-export interface RoomAssignment extends BaseEntity {
-  assignment_id: string;
-  room_id: string;
-  employee_id: string;
-  assigned_from: Date;
-  assigned_to?: Date;
-  role_in_room?: string;
-  is_primary?: boolean;
-  is_active?: boolean;
-  created_by?: string;
-}

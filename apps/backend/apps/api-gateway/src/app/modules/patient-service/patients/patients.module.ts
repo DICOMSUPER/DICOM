@@ -14,7 +14,6 @@ import { SharedInterceptorModule } from '@backend/shared-interceptor';
         Number(process.env.PATIENT_SERVICE_PORT || 5004)
       ),
     ]),
-   
   ],
   controllers: [PatientServiceController],
 })

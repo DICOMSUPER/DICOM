@@ -2,16 +2,14 @@ import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { EmployeeSchedule, User } from '@backend/shared-domain';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { OtpsModule  } from '../otps/otps.module';
+import { OtpsModule } from '../otps/otps.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      User
-    ]),
+    TypeOrmModule.forFeature([User, EmployeeSchedule]),
     ConfigModule,
     OtpsModule,
     JwtModule.registerAsync({
@@ -30,4 +28,4 @@ import { OtpsModule  } from '../otps/otps.module';
   providers: [UsersService],
   exports: [UsersService],
 })
-export class UsersModule { }
+export class UsersModule {}

@@ -2,12 +2,11 @@ import { Module } from '@nestjs/common';
 import { OtpsController } from './otps.controller';
 import { OtpService } from './otps.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Otp } from './entities/otp.entity';
+import { Otp } from '@backend/shared-domain';
 import { User, Department, Qualification } from '@backend/shared-domain';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Otp, User, Department, Qualification]),
-],
+  imports: [TypeOrmModule.forFeature([Otp, User, Department, Qualification])],
   controllers: [OtpsController],
   providers: [OtpService],
   exports: [OtpService],

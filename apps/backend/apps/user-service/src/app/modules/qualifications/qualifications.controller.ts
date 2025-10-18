@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { QualificationsService } from './qualifications.service';
-import { CreateQualificationDto } from './dto/create-qualification.dto';
-import { UpdateQualificationDto } from './dto/update-qualification.dto';
+import { CreateQualificationDto } from '@backend/shared-domain';
+import { UpdateQualificationDto } from '@backend/shared-domain';
 
 @Controller('qualifications')
 export class QualificationsController {
@@ -23,7 +31,10 @@ export class QualificationsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQualificationDto: UpdateQualificationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateQualificationDto: UpdateQualificationDto
+  ) {
     return this.qualificationsService.update(+id, updateQualificationDto);
   }
 

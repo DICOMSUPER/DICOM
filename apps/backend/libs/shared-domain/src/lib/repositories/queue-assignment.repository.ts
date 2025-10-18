@@ -31,17 +31,40 @@ export interface QueueStats {
 
 @Injectable()
 export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
-  constructor(
-    entityManager: EntityManager,
-  ) {
+  constructor(entityManager: EntityManager) {
     super(QueueAssignment, entityManager);
   }
 
+  async getNextQueueNumberForPhysician(
+    date: Date,
+    physicianId: string
+  ): Promise<number> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const lastAssignment = await this.getRepository()
+      .createQueryBuilder('queue')
+      .leftJoin('queue.encounter', 'encounter')
+      .where('encounter.assignedPhysicianId = :physicianId', { physicianId })
+      .andWhere('queue.assignmentDate BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
+      .orderBy('queue.queueNumber', 'DESC')
+      .getOne();
+
+    return lastAssignment ? lastAssignment.queueNumber + 1 : 1;
+  }
 
   /**
    * Find all queue assignments with optional filters
    */
-  async findAllWithFilters(filters: QueueAssignmentSearchFilters = {}): Promise<QueueAssignment[]> {
+  async findAllWithFilters(
+    filters: QueueAssignmentSearchFilters = {}
+  ): Promise<QueueAssignment[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('queue')
       .leftJoinAndSelect('queue.encounter', 'encounter')
@@ -49,30 +72,38 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       .where('1=1');
 
     if (filters.status) {
-      queryBuilder.andWhere('queue.status = :status', { status: filters.status });
+      queryBuilder.andWhere('queue.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.priority) {
-      queryBuilder.andWhere('queue.priority = :priority', { priority: filters.priority });
+      queryBuilder.andWhere('queue.priority = :priority', {
+        priority: filters.priority,
+      });
     }
 
     if (filters.roomId) {
-      queryBuilder.andWhere('queue.roomId = :roomId', { roomId: filters.roomId });
+      queryBuilder.andWhere('queue.roomId = :roomId', {
+        roomId: filters.roomId,
+      });
     }
 
     if (filters.createdBy) {
-      queryBuilder.andWhere('queue.createdBy = :createdBy', { createdBy: filters.createdBy });
+      queryBuilder.andWhere('queue.createdBy = :createdBy', {
+        createdBy: filters.createdBy,
+      });
     }
 
     if (filters.assignmentDateFrom) {
       queryBuilder.andWhere('queue.assignmentDate >= :assignmentDateFrom', {
-        assignmentDateFrom: filters.assignmentDateFrom
+        assignmentDateFrom: filters.assignmentDateFrom,
       });
     }
 
     if (filters.assignmentDateTo) {
       queryBuilder.andWhere('queue.assignmentDate <= :assignmentDateTo', {
-        assignmentDateTo: filters.assignmentDateTo
+        assignmentDateTo: filters.assignmentDateTo,
       });
     }
 
@@ -84,7 +115,8 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       queryBuilder.offset(filters.offset);
     }
 
-    queryBuilder.orderBy('queue.priority', 'DESC')
+    queryBuilder
+      .orderBy('queue.priority', 'DESC')
       .addOrderBy('queue.assignmentDate', 'ASC');
 
     return await queryBuilder.getMany();
@@ -94,20 +126,22 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
    * Find queue assignment by ID with relations
    */
   async findByIdWithRelations(id: string): Promise<QueueAssignment | null> {
-    return await this.findOne(
-      { where: { id } },
-      ['encounter', 'encounter.patient']
-    );
+    return await this.findOne({ where: { id } }, [
+      'encounter',
+      'encounter.patient',
+    ]);
   }
 
   /**
    * Find queue assignment by encounter ID
    */
-  async findByEncounterId(encounterId: string): Promise<QueueAssignment | null> {
-    return await this.findOne(
-      { where: { encounter: { id: encounterId } } },
-      ['encounter', 'encounter.patient']
-    );
+  async findByEncounterId(
+    encounterId: string
+  ): Promise<QueueAssignment | null> {
+    return await this.findOne({ where: { encounter: { id: encounterId } } }, [
+      'encounter',
+      'encounter.patient',
+    ]);
   }
 
   /**
@@ -122,9 +156,9 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
    * Complete queue assignment
    */
   async complete(id: string): Promise<QueueAssignment | null> {
-    await this.getRepository().update(id, { 
+    await this.getRepository().update(id, {
       status: QueueStatus.COMPLETED,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
     return await this.findByIdWithRelations(id);
   }
@@ -133,9 +167,9 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
    * Expire queue assignment
    */
   async expire(id: string): Promise<QueueAssignment | null> {
-    await this.getRepository().update(id, { 
+    await this.getRepository().update(id, {
       status: QueueStatus.EXPIRED,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
     return await this.findByIdWithRelations(id);
   }
@@ -146,15 +180,15 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   async getNextQueueNumber(date: Date): Promise<number> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
     const lastAssignment = await this.getRepository().findOne({
       where: {
-        assignmentDate: Between(startOfDay, endOfDay)
+        assignmentDate: Between(startOfDay, endOfDay),
       },
-      order: { queueNumber: 'DESC' }
+      order: { queueNumber: 'DESC' },
     });
 
     return lastAssignment ? lastAssignment.queueNumber + 1 : 1;
@@ -179,8 +213,8 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       {
         where: {
           status: QueueStatus.WAITING,
-          assignmentExpiresDate: { $lt: now } as any
-        }
+          assignmentExpiresDate: { $lt: now } as any,
+        },
       },
       ['encounter', 'encounter.patient']
     );
@@ -193,31 +227,31 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
     const total = await this.getRepository().count();
 
     const waiting = await this.getRepository().count({
-      where: { status: QueueStatus.WAITING }
+      where: { status: QueueStatus.WAITING },
     });
 
     const inProgress = await this.getRepository().count({
-      where: { status: QueueStatus.IN_PROGRESS }
+      where: { status: QueueStatus.IN_PROGRESS },
     });
 
     const completed = await this.getRepository().count({
-      where: { status: QueueStatus.COMPLETED }
+      where: { status: QueueStatus.COMPLETED },
     });
 
     const expired = await this.getRepository().count({
-      where: { status: QueueStatus.EXPIRED }
+      where: { status: QueueStatus.EXPIRED },
     });
 
     const routine = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.ROUTINE }
+      where: { priority: QueuePriorityLevel.ROUTINE },
     });
 
     const urgent = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.URGENT }
+      where: { priority: QueuePriorityLevel.URGENT },
     });
 
     const stat = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.STAT }
+      where: { priority: QueuePriorityLevel.STAT },
     });
 
     return {
@@ -229,8 +263,8 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       byPriority: {
         routine,
         urgent,
-        stat
-      }
+        stat,
+      },
     };
   }
 
@@ -241,7 +275,7 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
     return await this.findAll(
       {
         where: { roomId },
-        order: { queueNumber: 'ASC' }
+        order: { queueNumber: 'ASC' },
       },
       ['encounter', 'encounter.patient']
     );
@@ -262,7 +296,9 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   }
 
   // Find all queue assignments with filters
-  async findAllQueue(filters: FilterQueueAssignmentDto = {}): Promise<QueueAssignment[]> {
+  async findAllQueue(
+    filters: FilterQueueAssignmentDto = {}
+  ): Promise<QueueAssignment[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('queue')
       .leftJoinAndSelect('queue.encounter', 'encounter')
@@ -270,26 +306,32 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       .where('1=1');
 
     if (filters.status) {
-      queryBuilder.andWhere('queue.status = :status', { status: filters.status });
+      queryBuilder.andWhere('queue.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.priority) {
-      queryBuilder.andWhere('queue.priority = :priority', { priority: filters.priority });
+      queryBuilder.andWhere('queue.priority = :priority', {
+        priority: filters.priority,
+      });
     }
 
     if (filters.roomId) {
-      queryBuilder.andWhere('queue.roomId = :roomId', { roomId: filters.roomId });
+      queryBuilder.andWhere('queue.roomId = :roomId', {
+        roomId: filters.roomId,
+      });
     }
 
     if (filters.assignmentDateFrom) {
       queryBuilder.andWhere('queue.assignmentDate >= :assignmentDateFrom', {
-        assignmentDateFrom: filters.assignmentDateFrom
+        assignmentDateFrom: filters.assignmentDateFrom,
       });
     }
 
     if (filters.assignmentDateTo) {
       queryBuilder.andWhere('queue.assignmentDate <= :assignmentDateTo', {
-        assignmentDateTo: filters.assignmentDateTo
+        assignmentDateTo: filters.assignmentDateTo,
       });
     }
 
@@ -301,7 +343,8 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       queryBuilder.offset(filters.offset);
     }
 
-    queryBuilder.orderBy('queue.priority', 'DESC')
+    queryBuilder
+      .orderBy('queue.priority', 'DESC')
       .addOrderBy('queue.assignmentDate', 'ASC');
 
     return await queryBuilder.getMany();

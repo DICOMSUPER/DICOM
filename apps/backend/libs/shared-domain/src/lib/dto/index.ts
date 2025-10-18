@@ -8,5 +8,3 @@ export * from './schedule';
 export * from './rooms';
 export * from './department';
 export * from './working-hour';
-
-export * from './user-service';

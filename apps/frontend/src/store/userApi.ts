@@ -1,22 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
-
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  employeeId?: string;
-  isVerified: boolean;
-  role?: string;
-  departmentId?: string;
-  isActive: boolean;
-  createdBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { User } from "@/interfaces/user/user.interface";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -39,21 +23,33 @@ export interface UserFilters {
 
 export const userApi = createApi({
   reducerPath: 'userApi',
-  baseQuery: axiosBaseQuery(''),
+  baseQuery: axiosBaseQuery('/user'),
   tagTypes: ['User'],
   endpoints: (builder) => ({
     getAllUsers: builder.query<PaginatedResponse<User>, UserFilters>({
       query: (params) => ({
-        url: '/user/users',
+        url: '/users',
         method: 'GET',
         params,
       }),
       providesTags: ['User'],
     }),
 
+    getUsersByRoom: builder.query<
+      User[],
+      { roomId: string; role: string; search?: string }
+    >({
+      query: ({ roomId, role, search }) => ({
+        url: `/${roomId}/room`,
+        method: "GET",
+        params: { role, search },
+      }),
+      providesTags: ["User"],
+    }),
+
     getUserById: builder.query<User, string>({
       query: (id) => ({
-        url: `/user/${id}`,
+        url: `/${id}`,
         method: 'GET',
       }),
       providesTags: (result, error, id) => [{ type: 'User', id }],
@@ -61,7 +57,7 @@ export const userApi = createApi({
 
     createUser: builder.mutation<User, Partial<User>>({
       query: (data) => ({
-        url: '/user/register',
+        url: '/register',
         method: 'POST',
         data,
       }),
@@ -70,7 +66,7 @@ export const userApi = createApi({
 
     updateUser: builder.mutation<User, { id: string; updates: Partial<User> }>({
       query: ({ id, updates }) => ({
-        url: `/user/${id}`,
+        url: `/${id}`,
         method: 'PATCH',
         data: updates,
       }),
@@ -82,7 +78,7 @@ export const userApi = createApi({
 
     deleteUser: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/user/${id}`,
+        url: `/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['User'],
@@ -92,9 +88,11 @@ export const userApi = createApi({
 
 export const {
   useGetAllUsersQuery,
+  useGetUsersByRoomQuery,
   useGetUserByIdQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
 } = userApi;
 
+export default userApi;

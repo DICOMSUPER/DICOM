@@ -1,9 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { BaseEntity } from '@backend/database';
-import { User } from './user.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '@backend/shared-domain';
 
 @Entity('qualifications')
-export class Qualification extends BaseEntity {
+export class Qualification {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
@@ -25,8 +30,7 @@ export class Qualification extends BaseEntity {
   @Column({ name: 'emp_id' })
   empId!: string;
 
-  
-  @ManyToOne(() => User, user => user.qualifications)
+  @ManyToOne(() => User, (user) => user.qualifications)
   @JoinColumn({ name: 'emp_id' })
   employee!: User;
 }

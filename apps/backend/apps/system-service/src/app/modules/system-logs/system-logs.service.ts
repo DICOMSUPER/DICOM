@@ -3,7 +3,7 @@ import { SystemLog } from '@backend/shared-domain';
 import { RedisService } from '@backend/redis';
 import { createCacheKey } from '@backend/shared-utils';
 import { PaginatedResponseDto, PaginationService } from '@backend/database';
-import { FilterSystemLogDto } from '../../../../../../libs/shared-domain/src/lib/dto/systems/filter-system-log.dto';
+import { FilterSystemLogDto } from '@backend/shared-domain';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateSystemLogDto } from '@backend/shared-domain';

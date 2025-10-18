@@ -12,7 +12,7 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const queueAssignmentApi = createApi({
   reducerPath: "queueAssignmentApi",
-  baseQuery: axiosBaseQuery("/queue-assignment"),
+  baseQuery: axiosBaseQuery("/queue-assignments"),
   tagTypes: ["QueueAssignment", "QueueStats"],
   endpoints: (builder) => ({
     // Queue Assignment endpoints
@@ -131,7 +131,7 @@ export const queueAssignmentApi = createApi({
     >({
       query: ({ userId, filters }) => ({
         url: "/in-room",
-        method:"GET",
+        method: "GET",
         params: {
           userId,
           ...filters,

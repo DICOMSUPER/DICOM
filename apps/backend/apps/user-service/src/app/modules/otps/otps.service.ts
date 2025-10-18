@@ -2,12 +2,12 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Otp } from './entities/otp.entity';
+import { Otp } from '@backend/shared-domain';
 import { ConfigService } from '@nestjs/config';
 import * as pug from 'pug';
 import * as path from 'path';
 import { LessThan } from 'typeorm';
-import { CreateOtpDTO } from './dtos/create-otp.dto';
+import { CreateOtpDTO } from '@backend/shared-domain';
 import { sendMail } from '@backend/shared-utils';
 import { RpcException } from '@nestjs/microservices';
 
@@ -17,8 +17,8 @@ export class OtpService {
   constructor(
     @InjectRepository(Otp)
     private otpRepo: Repository<Otp>,
-    private configService: ConfigService,
-  ) { }
+    private configService: ConfigService
+  ) {}
 
   async generateOtp(email: string): Promise<string> {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -33,14 +33,25 @@ export class OtpService {
   }
   async sendOtpEmail(to: string, code: string): Promise<void> {
     try {
-      const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL') || 'naminh24032003@gmail.com';
+      const fromEmail =
+        this.configService.get<string>('MAIL_FROM_EMAIL') ||
+        'naminh24032003@gmail.com';
       const fromEmailPassword =
-        this.configService.get<string>('MAIL_FROM_PASSWORD') || 'fhuw ewhz veht bzdu';
-      const smtpHost = this.configService.get<string>('MAIL_SMTP_HOST') || 'smtp.gmail.com';
+        this.configService.get<string>('MAIL_FROM_PASSWORD') ||
+        'fhuw ewhz veht bzdu';
+      const smtpHost =
+        this.configService.get<string>('MAIL_SMTP_HOST') || 'smtp.gmail.com';
       const smtpPort = this.configService.get<number>('MAIL_SMTP_PORT') || 465;
 
       // Đường dẫn chính xác tới file Pug
-      const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
+      const viewsPath = path.join(
+        __dirname,
+        'app',
+        'modules',
+        'otps',
+        'views',
+        'otp.pug'
+      );
 
       // Render nội dung HTML từ pug
       const html = pug.renderFile(viewsPath, {
@@ -82,7 +93,6 @@ export class OtpService {
   //     },
   //   });
 
-
   //   const viewsPath = path.join(__dirname, 'app', 'modules', 'otps', 'views', 'otp.pug');
 
   //   const html = pug.renderFile(viewsPath, {
@@ -99,13 +109,12 @@ export class OtpService {
   //   });
   // }
 
-
   async verifyOtp(createOtpDto: CreateOtpDTO): Promise<boolean> {
     const { email, code } = createOtpDto;
 
     const otp = await this.otpRepo.findOne({
       where: { email, otpCode: code },
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
 
     if (!otp) {
@@ -149,5 +158,4 @@ export class OtpService {
       </html>
     `;
   }
-
 }
