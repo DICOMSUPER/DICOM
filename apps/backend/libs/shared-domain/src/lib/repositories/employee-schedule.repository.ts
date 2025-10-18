@@ -187,16 +187,19 @@ export class EmployeeScheduleRepository {
     }
 
     const total = await query.getCount();
+    const scheduled = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'scheduled' }).getCount();
     const confirmed = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'confirmed' }).getCount();
     const completed = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'completed' }).getCount();
     const cancelled = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'cancelled' }).getCount();
+    const noShow = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'no_show' }).getCount();
 
     return {
       total,
+      scheduled,
       confirmed,
       completed,
       cancelled,
-      pending: total - confirmed - completed - cancelled
+      no_show: noShow,
     };
   }
 

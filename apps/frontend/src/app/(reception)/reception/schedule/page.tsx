@@ -40,72 +40,44 @@ export default function ReceptionSchedulePage() {
   const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // API calls - using /me endpoint to get current user's schedules
+  // Fetch schedules for entire month (single query)
   const { 
-    data: schedules = [], 
+    data: allSchedules = [], 
     isLoading: schedulesLoading, 
     isFetching: schedulesFetching,
     error: schedulesError,
     refetch: refetchSchedules 
-  } = useGetMySchedulesByDateQuery({
-    date: format(selectedDate, "yyyy-MM-dd")
-  });
-
-  const { 
-    data: weekSchedules = [], 
-    isLoading: weekLoading,
-    isFetching: weekFetching,
-    refetch: refetchWeekSchedules
-  } = useGetMySchedulesByDateRangeQuery({
-    startDate: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
-    endDate: format(endOfWeek(selectedDate), "yyyy-MM-dd")
-  });
-
-  const { 
-    data: monthSchedules = [], 
-    isLoading: monthLoading,
-    isFetching: monthFetching,
-    refetch: refetchMonthSchedules
   } = useGetMySchedulesByDateRangeQuery({
     startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
     endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
   });
 
-
-  // Get current schedules based on view mode
-  const getCurrentSchedules = (): EmployeeSchedule[] => {
+  // Filter schedules based on current view mode and selected date
+  const getFilteredSchedules = (): EmployeeSchedule[] => {
+    const scheduleArray = Array.isArray(allSchedules) ? allSchedules : [];
+    
     switch (viewMode) {
-      case "day":
-        return Array.isArray(schedules) ? schedules : [];
-      case "week":
-        return Array.isArray(weekSchedules) ? weekSchedules : [];
+      case "day": {
+        const dayStr = format(selectedDate, "yyyy-MM-dd");
+        return scheduleArray.filter((s) => s.work_date === dayStr);
+      }
+      case "week": {
+        const weekStart = format(startOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
+        const weekEnd = format(endOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
+        return scheduleArray.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+      }
       case "month":
-        return Array.isArray(monthSchedules) ? monthSchedules : [];
-      case "list":
-        return Array.isArray(schedules) ? schedules : [];
+      case "list": {
+        // Return all schedules for the month
+        return scheduleArray;
+      }
       default:
-        return Array.isArray(schedules) ? schedules : [];
+        return scheduleArray;
     }
   };
 
-  const currentSchedules = getCurrentSchedules();
-  
-  // Compute loading state based on current view mode
-  const getLoadingState = (): boolean => {
-    switch (viewMode) {
-      case "day":
-      case "list":
-        return schedulesLoading || schedulesFetching;
-      case "week":
-        return weekLoading || weekFetching;
-      case "month":
-        return monthLoading || monthFetching;
-      default:
-        return schedulesLoading || schedulesFetching;
-    }
-  };
-  
-  const isLoading = getLoadingState();
+  const currentSchedules = getFilteredSchedules();
+  const isLoading = schedulesLoading || schedulesFetching;
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
@@ -174,21 +146,8 @@ export default function ReceptionSchedulePage() {
   };
 
   const handleRefresh = () => {
-    // Refetch based on current view mode
-    switch (viewMode) {
-      case "day":
-      case "list":
-        refetchSchedules();
-        break;
-      case "week":
-        refetchWeekSchedules();
-        break;
-      case "month":
-        refetchMonthSchedules();
-        break;
-      default:
-        refetchSchedules();
-    }
+    // Refetch schedules for the entire month
+    refetchSchedules();
   };
 
   const renderDayView = () => (

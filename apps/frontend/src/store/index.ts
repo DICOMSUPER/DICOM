@@ -9,6 +9,7 @@ import authReducer from "./authSlice";
 import patientReducer from "./patientSlice";
 import { departmentApi } from "./departmentApi";
 import { roomApi } from "./roomsApi";
+import { userApi } from "./userApi";
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     [departmentApi.reducerPath]: departmentApi.reducer,
     [roomApi.reducerPath]: roomApi.reducer,
     [employeeScheduleApi.reducerPath]: employeeScheduleApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -33,6 +35,7 @@ export const store = configureStore({
       .concat(departmentApi.middleware)
       .concat(roomApi.middleware)
       .concat(employeeScheduleApi.middleware)
+      .concat(userApi.middleware)
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -74,7 +74,7 @@ export default function LoginPage() {
       setTimeout(() => {
         switch (role) {
           case "system_admin":
-            router.push("/system-admin");
+            router.push("/admin");
             break;
           case "imaging_technician":
             router.push("/imaging-technicians");

@@ -73,6 +73,9 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
                 <h4 className="font-semibold text-gray-900 text-sm lg:text-base">
                   {schedule.employee.firstName} {schedule.employee.lastName}
                 </h4>
+                <div className="text-xs text-gray-500 mb-1">
+                  {schedule.employee.role?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "N/A"}
+                </div>
                 <div className="flex items-center space-x-1 text-xs lg:text-sm text-gray-600">
                   <Clock className="h-3 w-3" />
                   <span>{schedule.actual_start_time} - {schedule.actual_end_time}</span>

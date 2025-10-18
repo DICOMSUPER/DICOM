@@ -71,7 +71,7 @@ const ToolButtonListDefault = React.forwardRef<HTMLDivElement, ToolButtonListDef
         </TooltipTrigger>
         <TooltipContent side="bottom">
           {tooltip && <div>{tooltip}</div>}
-          {disabledText && disabled && <div className="text-muted-foreground">{disabledText}</div>}
+          {disabledText && disabled && <div className="text-foreground">{disabledText}</div>}
         </TooltipContent>
       </Tooltip>
     );
@@ -173,7 +173,7 @@ const ToolButtonListItem = React.forwardRef<
       </TooltipTrigger>
       <TooltipContent side="bottom">
         {defaultTooltip && <div>{defaultTooltip}</div>}
-        {disabledText && disabled && <div className="text-muted-foreground">{disabledText}</div>}
+        {disabledText && disabled && <div className="text-foreground">{disabledText}</div>}
       </TooltipContent>
     </Tooltip>
   );

@@ -34,9 +34,9 @@ export function UrgentNotifications({ alerts }: UrgentNotificationsProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-medium">{alert.title}</p>
-                  <p className="text-sm text-muted-foreground">{alert.message}</p>
+                  <p className="text-sm text-foreground">{alert.message}</p>
                 </div>
-                <span className="text-xs text-muted-foreground">{alert.timestamp}</span>
+                <span className="text-xs text-foreground">{alert.timestamp}</span>
               </div>
             </AlertDescription>
           </Alert>

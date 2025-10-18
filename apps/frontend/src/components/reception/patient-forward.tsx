@@ -219,13 +219,13 @@ export function PatientForward({ patientId }: { patientId: string }) {
                     </div>
                     <div className="flex justify-between items-end text-sm">
                       <div>
-                        <span className="text-muted-foreground">Current: </span>
+                        <span className="text-foreground">Current: </span>
                         <span className="font-semibold text-foreground">
                           {doctor.currentQueueNumber}
                         </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Max: </span>
+                        <span className="text-foreground">Max: </span>
                         <span className="font-semibold text-foreground">
                           {doctor.maxQueueNumber}
                         </span>
