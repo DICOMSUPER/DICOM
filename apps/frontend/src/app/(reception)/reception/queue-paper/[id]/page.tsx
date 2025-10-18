@@ -3,16 +3,17 @@
 import React from "react";
 import { useGetQueueAssignmentByIdQuery } from "@/store/queueAssignmentApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { useGetRoomByIdQuery } from "@/store/roomsApi";
 
 export default function QueueAssignmentPaper({
   params,
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { doctor?: string };
+  searchParams?: { doctor?: string };
 }) {
   const { id } = params;
-  const { doctor } = searchParams;
+  const { doctor } = searchParams || {};
 
   const queueId = typeof id === "string" ? id : String(id);
   const doctorId = typeof doctor === "string" ? doctor : String(doctor || "");
@@ -23,6 +24,12 @@ export default function QueueAssignmentPaper({
     doctorId,
     {
       skip: !doctorId,
+    }
+  );
+  const { data: roomData, isLoading: isLoadingRoom } = useGetRoomByIdQuery(
+    queueData?.roomId as string,
+    {
+      skip: !queueData?.roomId,
     }
   );
 
@@ -49,7 +56,7 @@ export default function QueueAssignmentPaper({
     });
   };
 
-  if (isLoadingQueue || isLoadingDoctor) {
+  if (isLoadingQueue || isLoadingDoctor || isLoadingRoom) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-xl font-bold">Loading...</div>
@@ -269,6 +276,33 @@ export default function QueueAssignmentPaper({
                 <div className="text-xs font-bold mb-1">Physician Name</div>
                 <div className="text-sm">
                   Dr. {doctorData.lastName} {doctorData.firstName}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Room Information */}
+          {roomData && (
+            <div className="mb-6 pb-4 border-b border-black">
+              <h2 className="text-sm font-bold uppercase border-b border-black pb-1 mb-4">
+                Room Information
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-bold mb-1">Room Code</div>
+                  <div className="text-sm font-mono">
+                    {roomData?.room.roomCode}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold mb-1">Room Type</div>
+                  <div className="text-sm capitalize">
+                    {roomData?.room.roomType}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold mb-1">Floor</div>
+                  <div className="text-sm">Floor {roomData?.room.floor}</div>
                 </div>
               </div>
             </div>

@@ -1,6 +1,3 @@
-export * from './room-assignment/create-room-assignment.dto';
-export * from './room-assignment/update-room-assignment.dto';
-export * from './room-assignment/query-room-assignment.dto';
 export * from './otp/create-otp.dto';
 export * from './qualification/create-qualification.dto';
 export * from './qualification/update-qualification.dto';

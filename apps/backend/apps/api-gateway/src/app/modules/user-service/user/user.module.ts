@@ -5,13 +5,11 @@ import {
   PatientServiceClientModule,
   UserServiceClientModule,
 } from '@backend/shared-client';
-import { RoomAssignmentsModule } from '../room-assignment/room-assignment.module';
 
 @Module({
   imports: [
     UserServiceClientModule,
     SharedInterceptorModule,
-    RoomAssignmentsModule,
     PatientServiceClientModule,
   ],
   controllers: [UserController],

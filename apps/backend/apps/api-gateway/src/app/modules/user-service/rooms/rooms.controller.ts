@@ -153,7 +153,7 @@ export class RoomsController {
     );
   }
 
-  @Role(Roles.SYSTEM_ADMIN)
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id')
   @ApiOperation({ summary: 'Get room by ID' })
   @ApiParam({ name: 'id', description: 'Room ID' })

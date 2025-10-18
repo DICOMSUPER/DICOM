@@ -9,9 +9,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Roles } from '@backend/shared-enums';
-import { Department, EmployeeSchedule } from '@backend/shared-domain';
+import { Department } from '@backend/shared-domain';
 import { Qualification } from '@backend/shared-domain';
-import { BaseEntity } from '@backend/database';
 
 @Entity('users')
 export class User {
@@ -71,12 +70,4 @@ export class User {
 
   @OneToMany(() => Qualification, (qualification) => qualification.employee)
   qualifications!: Qualification[];
-
-  // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
-  // roomAssignments!: RoomAssignment[];
-  @OneToMany(
-    () => EmployeeSchedule,
-    (employeeSchedule) => employeeSchedule.employee
-  )
-  employeeSchedules!: EmployeeSchedule[];
 }
