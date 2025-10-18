@@ -17,8 +17,8 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     UserModule,
     RoomsModule,
     DepartmentModule,
-
     EmployeeSchedulesModule,
+    ShiftTemplatesModule,
     PatientServiceClientModule,
   ],
   exports: [
@@ -29,6 +29,5 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     EmployeeSchedulesModule,
     ShiftTemplatesModule,
   ],
-  exports: [UserServiceClientModule, UserModule, RoomsModule, DepartmentModule, EmployeeSchedulesModule, ShiftTemplatesModule],
 })
 export class UserServiceModule {}
