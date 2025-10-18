@@ -9,19 +9,28 @@ import {
   UseInterceptors,
   Delete,
   Put,
-  Query
+  Query,
+  Search,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { handleError } from '@backend/shared-utils';
-import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 import { CreateRoomDto } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
-
 
 @ApiTags('Room Management')
 @Controller('rooms')
@@ -30,8 +39,8 @@ export class RoomsController {
   private readonly logger = new Logger('RoomsController');
 
   constructor(
-    @Inject('USER_SERVICE') private readonly roomClient: ClientProxy,
-  ) { }
+    @Inject('USER_SERVICE') private readonly roomClient: ClientProxy
+  ) {}
 
   // 🩺 Kiểm tra tình trạng service
 
@@ -61,13 +70,15 @@ export class RoomsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('status') status?: string,
+    @Query('status') status?: string
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(`📋 Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`);
+      this.logger.log(
+        `📋 Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
+      );
 
       const result = await firstValueFrom(
         this.roomClient.send('room.get-all', {
@@ -75,10 +86,14 @@ export class RoomsController {
           limit: limitNum,
           search,
           status,
-        }),
+        })
       );
 
-      this.logger.log(`✅ Retrieved ${result.data?.length || 0} rooms (Total: ${result.total || 0})`);
+      this.logger.log(
+        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${
+          result.total || 0
+        })`
+      );
 
       return {
         data: result.data,
@@ -90,7 +105,6 @@ export class RoomsController {
       throw handleError(error);
     }
   }
-
 
   @Role(Roles.SYSTEM_ADMIN)
   @Post()
@@ -109,12 +123,37 @@ export class RoomsController {
         message: result.message || 'Tạo phòng thành công',
       };
     } catch (error) {
-      this.logger.error(`❌ Room creation failed for: ${createRoomDto.roomCode}`, error);
+      this.logger.error(
+        `❌ Room creation failed for: ${createRoomDto.roomCode}`,
+        error
+      );
       throw handleError(error);
     }
   }
 
-  @Role(Roles.SYSTEM_ADMIN)
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
+  @Get(':id/department')
+  @ApiOperation({ summary: 'Get rooms by departmentID' })
+  @ApiParam({ name: 'id', description: 'department ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo department thành công',
+  })
+  async getRoomByDepartmentId(
+    @Param('id') id: string,
+    @Query('search') search?: string,
+    @Query('applyScheduleFilter') applyScheduleFilter?: boolean
+  ) {
+    return await firstValueFrom(
+      this.roomClient.send('UserService.Room.GetRoomByDepartmentId', {
+        id,
+        applyScheduleFilter,
+        search: search || '',
+      })
+    );
+  }
+
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id')
   @ApiOperation({ summary: 'Get room by ID' })
   @ApiParam({ name: 'id', description: 'Room ID' })
@@ -133,14 +172,16 @@ export class RoomsController {
     }
   }
 
-
   @Role(Roles.SYSTEM_ADMIN)
   @Put(':id')
   @ApiOperation({ summary: 'Update room details' })
   @ApiParam({ name: 'id', description: 'Room ID' })
   @ApiBody({ type: UpdateRoomDto })
   @ApiResponse({ status: 200, description: 'Cập nhật phòng thành công' })
-  async updateRoom(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
+  async updateRoom(
+    @Param('id') id: string,
+    @Body() updateRoomDto: UpdateRoomDto
+  ) {
     try {
       this.logger.log(`🛠️ Updating room ID: ${id}`);
       const result = await firstValueFrom(
@@ -156,7 +197,6 @@ export class RoomsController {
       throw handleError(error);
     }
   }
-
 
   @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')

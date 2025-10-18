@@ -10,7 +10,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.module';
 import { WeeklySchedulePatternsModule } from './modules/weekly-schedule-patterns/weekly-schedule-patterns.module';
-import { ScheduleReplacementsModule } from './modules/schedule-replacements/schedule-replacements.module';
+
 import { OtpsModule } from './modules/otps/otps.module';
 import { WorkingHoursModule } from './modules/working-hours/working-hours.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
@@ -29,10 +29,9 @@ import { SeedingModule } from './modules/seeding/seeding.module';
     UsersModule,
     QualificationsModule,
     ScheduleModule,
-     RoomsModule,
+    RoomsModule,
     ShiftTemplatesModule,
     WeeklySchedulePatternsModule,
-    ScheduleReplacementsModule,
     OtpsModule,
     WorkingHoursModule,
     SeedingModule,

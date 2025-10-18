@@ -5,6 +5,7 @@ import { QueueAssignmentController } from './queue-assignments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import {
+  PatientEncounterRepository,
   QueueAssignment,
   QueueAssignmentRepository,
 } from '@backend/shared-domain';
@@ -35,6 +36,7 @@ import { getClient } from '@backend/shared-utils';
       inject: [EntityManager],
     },
     PaginationService,
+    PatientEncounterRepository,
   ],
   exports: [QueueAssignmentService, QueueAssignmentRepository],
 })
