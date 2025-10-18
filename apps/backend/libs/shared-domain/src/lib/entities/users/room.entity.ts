@@ -1,8 +1,16 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { RoomType } from '@backend/shared-enums';
 import { BaseEntity } from '@backend/database';
 import { RoomAssignment } from './room-assignment.entity';
 import { Department } from './department.entity';
+import { EmployeeSchedule } from './employee-schedules.entity';
 
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
@@ -83,9 +91,9 @@ export class Room extends BaseEntity {
   @ManyToOne(() => Department, (department) => department.rooms, {
     nullable: false,
   })
-
   @JoinColumn({ name: 'department_id' })
   department?: Department;
+
+  @OneToMany(() => EmployeeSchedule, (schedule) => schedule.room)
+  schedules!: EmployeeSchedule[];
 }
-
-

@@ -43,8 +43,9 @@ export class QueueAssignmentController {
     }
   }
 
-
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY_IN_ROOM}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY_IN_ROOM}`
+  )
   findByRoom(
     @Payload() data: { filterQueue: RepositoryPaginationDto; userId: string }
   ) {
@@ -54,7 +55,9 @@ export class QueueAssignmentController {
     );
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<QueueAssignment>> {
@@ -258,6 +261,23 @@ export class QueueAssignmentController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to auto-expire queue assignments',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatus`)
+  async getMaxWaitingAndCurrentInProgressByPhysicians(
+    @Payload() data: { userIds: string[] }
+  ) {
+    try {
+      return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysicians(
+        data.userIds
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get queue status',
         PATIENT_SERVICE
       );
     }

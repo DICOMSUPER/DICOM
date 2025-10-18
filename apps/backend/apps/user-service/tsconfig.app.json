@@ -14,7 +14,7 @@
     "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/update-room-assignment.dto.ts",
     "../../libs/shared-domain/src/lib/dto/user-service/room-assignment/create-room-assignment.dto.ts",
     "src/app/modules/room-assignments/entities/room-assignment.entity.ts"
-  ],
+, "../../libs/shared-domain/src/lib/dto/user-service/qualification/update-qualification.dto.ts", "../../libs/shared-domain/src/lib/dto/user-service/qualification/create-qualification.dto.ts", "../../libs/shared-domain/src/lib/dto/user-service/user/token-response.dto.ts", "../../libs/shared-domain/src/lib/dto/user-service/user/update-user.dto.ts", "../../libs/shared-domain/src/lib/dto/user-service/user/create-user.dto.ts"  ],
   "exclude": [
     "out-tsc",
     "dist",

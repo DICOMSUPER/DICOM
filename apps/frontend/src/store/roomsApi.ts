@@ -27,6 +27,21 @@ export const roomApi = createApi({
       providesTags: ["Room"],
     }),
 
+    // Get rooms by departmentID
+    getRoomsByDepartmentId: builder.query<
+      Room[],
+      { id: string; search?: string; applyScheduleFilter?: boolean }
+    >({
+      query: ({ id, search, applyScheduleFilter }) => ({
+        url: `/${id}/department`,
+        method: "GET",
+        params: {
+          search: search || "",
+          applyScheduleFilter: applyScheduleFilter || false,
+        },
+      }),
+    }),
+
     // Get room by ID
     getRoomById: builder.query<Room, string>({
       query: (id) => ({
@@ -61,7 +76,7 @@ export const roomApi = createApi({
 
     // Delete room
     deleteRoom: builder.mutation<void, string>({
-      query: (id) => ({
+      query: (id: string) => ({
         url: `/${id}`,
         method: "DELETE",
       }),
@@ -73,6 +88,7 @@ export const roomApi = createApi({
 // ====== AUTO-GENERATED HOOKS ======
 export const {
   useGetRoomsQuery,
+  useGetRoomsByDepartmentIdQuery,
   useGetRoomByIdQuery,
   useCreateRoomMutation,
   useUpdateRoomMutation,
