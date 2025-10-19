@@ -15,6 +15,11 @@ import { UserServiceModule } from './modules/user-service/user-service.module';
 import { AuthGuard } from '@backend/shared-guards';
 import { RoleGuard } from '@backend/shared-guards';
 import { SeedingModule } from './modules/seeding/seeding.module';
+import { 
+  UserServiceClientModule,
+  PatientServiceClientModule,
+  ImagingServiceClientModule 
+} from '@backend/shared-client';
 dotenv.config();
 
 @Module({
@@ -24,6 +29,12 @@ dotenv.config();
       envFilePath: ['.env', '.env.local'],
     }),
 
+    // Client Modules for Microservices Communication
+    UserServiceClientModule,
+    PatientServiceClientModule,
+    ImagingServiceClientModule,
+
+    // Feature Modules
     UserServiceModule,
     ImagingServiceModule,
     SystemLogsModule,

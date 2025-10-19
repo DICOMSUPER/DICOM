@@ -256,4 +256,32 @@ export class UsersController {
       );
     }
   }
+
+  @MessagePattern('UserService.Users.GetIdsByRole')
+  async getUserIdsByRole(
+    @Payload() data: { role: Roles; take?: number }
+  ): Promise<{ success: boolean; data: string[]; count: number }> {
+    this.logger.log(`Getting user IDs for role: ${data.role}, take: ${data.take || 10}`);
+    try {
+      const { role, take = 10 } = data;
+      const users = await this.usersService.findByRole(role, take);
+      
+      const userIds = users.map(u => u.id);
+      
+      this.logger.log(`Returning ${userIds.length} user IDs for role: ${role}`);
+      
+      return {
+        success: true,
+        data: userIds,
+        count: userIds.length,
+      };
+    } catch (error) {
+      this.logger.error(`Get user IDs by role error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to get user IDs for role: ${data.role}`,
+        'UsersController.getUserIdsByRole'
+      );
+    }
+  }
 }

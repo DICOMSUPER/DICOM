@@ -535,6 +535,27 @@ export class UsersService {
     }
   }
 
+  async findByRole(role: Roles, take: number = 10): Promise<User[]> {
+    try {
+      if (!role) {
+        throw new ValidationException('Role is required');
+      }
+
+      const users = await this.userRepository.find({
+        where: { role, isActive: true },
+        take,
+        order: { createdAt: 'ASC' },
+      });
+
+      return users;
+    } catch (error) {
+      if (error instanceof ValidationException) {
+        throw error;
+      }
+      throw new DatabaseException(`Error finding users by role: ${role}`);
+    }
+  }
+
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }

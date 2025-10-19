@@ -202,4 +202,35 @@ export class RoomsController {
       );
     }
   }
+
+  @MessagePattern('UserService.Rooms.GetIds')
+  async getRoomIds(
+    @Payload() data: { take?: number; isActive?: boolean }
+  ): Promise<{ success: boolean; data: string[]; count: number }> {
+    this.logger.log(`Getting room IDs, take: ${data.take || 10}, isActive: ${data.isActive !== false}`);
+    try {
+      const { take = 10, isActive = true } = data;
+      const result = await this.roomsService.findAll({ 
+        limit: take,
+        isActive 
+      });
+      
+      const roomIds = result.data.map(r => r.id);
+      
+      this.logger.log(`Returning ${roomIds.length} room IDs`);
+      
+      return {
+        success: true,
+        data: roomIds,
+        count: roomIds.length,
+      };
+    } catch (error) {
+      this.logger.error(`Get room IDs error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get room IDs',
+        'RoomsController.getRoomIds'
+      );
+    }
+  }
 }
