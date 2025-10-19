@@ -1,86 +1,94 @@
 import { RpcException } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
 
+// ─────────────────────────────────────────────
+// EMPLOYEE SCHEDULE EXCEPTIONS
+// ─────────────────────────────────────────────
 
 export class EmployeeScheduleNotFoundException extends RpcException {
-  constructor(message: string = 'Employee schedule not found') {
+  constructor(scheduleId?: string) {
     super({
       statusCode: HttpStatus.NOT_FOUND,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_NOT_FOUND',
+      message: `Employee schedule${scheduleId ? ` '${scheduleId}'` : ''} not found`,
+      errorCode: 'EMPLOYEE_SCHEDULE_NOT_FOUND',
+      details: { scheduleId },
     });
   }
 }
 
-
 export class EmployeeScheduleAlreadyExistsException extends RpcException {
-  constructor(message: string = 'Employee schedule already exists') {
+  constructor(employeeId?: string, date?: string) {
     super({
       statusCode: HttpStatus.CONFLICT,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_ALREADY_EXISTS',
+      message: `Employee schedule for employee${employeeId ? ` '${employeeId}'` : ''} already exists on ${date || 'this date'}`,
+      errorCode: 'EMPLOYEE_SCHEDULE_ALREADY_EXISTS',
+      details: { employeeId, date },
     });
   }
 }
 
 export class InvalidEmployeeScheduleDataException extends RpcException {
-  constructor(message: string = 'Invalid employee schedule data') {
+  constructor(details?: any) {
     super({
       statusCode: HttpStatus.BAD_REQUEST,
-      message,
-      error: 'INVALID_EMPLOYEE_SCHEDULE_DATA',
+      message: 'Invalid employee schedule data',
+      errorCode: 'INVALID_EMPLOYEE_SCHEDULE_DATA',
+      details,
     });
   }
 }
 
 export class EmployeeScheduleForbiddenException extends RpcException {
-  constructor(message: string = 'Access forbidden to employee schedule') {
+  constructor(employeeId?: string) {
     super({
       statusCode: HttpStatus.FORBIDDEN,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_FORBIDDEN',
+      message: `Access forbidden to employee schedule${employeeId ? ` '${employeeId}'` : ''}`,
+      errorCode: 'EMPLOYEE_SCHEDULE_FORBIDDEN',
+      details: { employeeId },
     });
   }
 }
-
 
 export class EmployeeScheduleInternalErrorException extends RpcException {
-  constructor(message: string = 'Internal server error while processing employee schedule') {
+  constructor(details?: any) {
     super({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_INTERNAL_ERROR',
+      message: 'Internal server error while processing employee schedule',
+      errorCode: 'EMPLOYEE_SCHEDULE_INTERNAL_ERROR',
+      details,
     });
   }
 }
 
-
 export class EmployeeScheduleCreationFailedException extends RpcException {
-  constructor(message: string = 'Failed to create employee schedule') {
+  constructor(details?: any) {
     super({
       statusCode: HttpStatus.BAD_REQUEST,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_CREATION_FAILED',
+      message: 'Failed to create employee schedule',
+      errorCode: 'EMPLOYEE_SCHEDULE_CREATION_FAILED',
+      details,
     });
   }
 }
 
 export class EmployeeScheduleUpdateFailedException extends RpcException {
-  constructor(message: string = 'Failed to update employee schedule') {
+  constructor(scheduleId?: string, details?: any) {
     super({
       statusCode: HttpStatus.BAD_REQUEST,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_UPDATE_FAILED',
+      message: `Failed to update employee schedule${scheduleId ? ` '${scheduleId}'` : ''}`,
+      errorCode: 'EMPLOYEE_SCHEDULE_UPDATE_FAILED',
+      details: { scheduleId, ...details },
     });
   }
 }
 
 export class EmployeeScheduleDeletionFailedException extends RpcException {
-  constructor(message: string = 'Failed to delete employee schedule') {
+  constructor(scheduleId?: string, details?: any) {
     super({
-      statusCode: HttpStatus.BAD_REQUEST,
-      message,
-      error: 'EMPLOYEE_SCHEDULE_DELETION_FAILED',
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to delete employee schedule${scheduleId ? ` '${scheduleId}'` : ''}`,
+      errorCode: 'EMPLOYEE_SCHEDULE_DELETION_FAILED',
+      details: { scheduleId, ...details },
     });
   }
 }
