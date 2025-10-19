@@ -17,7 +17,7 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 
-const relation = ['study', 'instances'];
+const relation = ['study', 'study.modality', 'instances'];
 @Injectable()
 export class DicomSeriesService {
   constructor(

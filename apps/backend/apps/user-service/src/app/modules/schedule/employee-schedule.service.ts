@@ -10,38 +10,58 @@ import {
   EmployeeScheduleSearchFilters,
 } from '@backend/shared-domain';
 import { EmployeeSchedule } from '@backend/shared-domain';
-import { ScheduleStatus } from '@backend/shared-enums';
+import { Roles, ScheduleStatus } from '@backend/shared-enums';
 import {
   RepositoryPaginationDto,
   PaginatedResponseDto,
 } from '@backend/database';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import moment from 'moment';
 @Injectable()
 export class EmployeeScheduleService {
   constructor(
-    private readonly employeeScheduleRepository: EmployeeScheduleRepository
+    private readonly employeeScheduleRepository: EmployeeScheduleRepository,
+    @InjectRepository(EmployeeSchedule)
+    private readonly scheduleRepository: Repository<EmployeeSchedule>
   ) {}
 
   async create(
     createDto: CreateEmployeeScheduleDto
   ): Promise<EmployeeSchedule> {
     try {
-      // Check for schedule conflicts
-      const existingSchedule =
-        await this.employeeScheduleRepository.findByEmployeeId(
-          createDto.employee_id
+      // Check for schedule conflicts with time overlap
+      if (createDto.actual_start_time && createDto.actual_end_time) {
+        const conflictCheck = await this.checkConflict(
+          createDto.employee_id,
+          createDto.work_date,
+          createDto.actual_start_time,
+          createDto.actual_end_time
         );
 
-      const conflictExists = existingSchedule.some(
-        (schedule) =>
-          schedule.work_date === createDto.work_date &&
-          schedule.schedule_status !== ScheduleStatus.CANCELLED
-      );
+        if (conflictCheck.hasConflict) {
+          throw new BadRequestException(
+            `Employee already has a schedule on ${createDto.work_date} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+          );
+        }
+      } else {
+        // If no specific time, just check if employee has any schedule on that date
+        const existingSchedule =
+          await this.employeeScheduleRepository.findByEmployeeId(
+            createDto.employee_id
+          );
 
-      if (conflictExists) {
-        throw new BadRequestException(
-          'Employee already has a schedule for this date'
+        const conflictExists = existingSchedule.some(
+          (schedule) =>
+            schedule.work_date === createDto.work_date &&
+            schedule.schedule_status !== ScheduleStatus.CANCELLED
         );
+
+        if (conflictExists) {
+          throw new BadRequestException(
+            'Employee already has a schedule for this date'
+          );
+        }
       }
 
       const schedule = this.employeeScheduleRepository.create(createDto);
@@ -55,7 +75,7 @@ export class EmployeeScheduleService {
   }
 
   async findMany(
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & EmployeeScheduleSearchFilters
   ): Promise<PaginatedResponseDto<EmployeeSchedule>> {
     try {
       const result = await this.employeeScheduleRepository.findWithPagination(
@@ -102,21 +122,51 @@ export class EmployeeScheduleService {
     try {
       const schedule = await this.findOne(id);
 
+      // If updating time or date, check for conflicts
+      if (
+        (updateDto.work_date || updateDto.actual_start_time || updateDto.actual_end_time) &&
+        updateDto.employee_id !== undefined
+      ) {
+        const checkDate = updateDto.work_date || schedule.work_date;
+        const checkStartTime = updateDto.actual_start_time || schedule.actual_start_time;
+        const checkEndTime = updateDto.actual_end_time || schedule.actual_end_time;
+        const checkEmployeeId = updateDto.employee_id || schedule.employee_id;
+
+        if (checkStartTime && checkEndTime) {
+          const conflictCheck = await this.checkConflict(
+            checkEmployeeId,
+            checkDate,
+            checkStartTime,
+            checkEndTime,
+            id // Exclude current schedule from conflict check
+          );
+
+          if (conflictCheck.hasConflict) {
+            throw new BadRequestException(
+              `Schedule conflict detected on ${checkDate} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+            );
+          }
+        }
+      }
+
       Object.assign(schedule, updateDto);
       return await this.employeeScheduleRepository.save(schedule);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException('Failed to update employee schedule');
     }
   }
 
-  async remove(id: string): Promise<boolean> {
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
     try {
       const schedule = await this.findOne(id);
       await this.employeeScheduleRepository.remove(schedule);
-      return true;
+      return {
+        success: true,
+        message: 'Employee schedule deleted successfully',
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -154,7 +204,7 @@ export class EmployeeScheduleService {
           userId
         );
       }
-      
+
       // Otherwise, just get schedules by employee ID with optional limit
       return await this.employeeScheduleRepository.findByEmployeeId(
         userId,
@@ -417,6 +467,63 @@ export class EmployeeScheduleService {
       throw new BadRequestException(
         'Failed to validate schedules against working hours'
       );
+    }
+  }
+
+  async getOverlappingSchedules(
+    roomId: string,
+    role: Roles,
+    search?: string
+  ): Promise<EmployeeSchedule[]> {
+    try {
+      // Use server current time (right now)
+      const now = moment();
+      const currentDate = now.format('YYYY-MM-DD');
+      const yesterdayDate = now.clone().subtract(1, 'day').format('YYYY-MM-DD');
+      const currentTime = now.format('HH:mm:ss');
+
+      // Added NULL checks and role filter on the joined employee
+      const qb = this.scheduleRepository
+        .createQueryBuilder('schedules')
+        .where('schedules.room_id = :roomId', { roomId })
+        .andWhere('employee.role = :role', { role }) // Filter by passed role
+        .andWhere(
+          `(schedules.work_date = :currentDate
+            AND schedules.actual_start_time IS NOT NULL
+            AND schedules.actual_end_time IS NOT NULL
+            AND (
+              (schedules.actual_start_time > schedules.actual_end_time 
+                AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
+              ) 
+              OR 
+              (schedules.actual_start_time <= schedules.actual_end_time 
+                AND schedules.actual_start_time < :currentTime 
+                AND schedules.actual_end_time > :currentTime
+              )
+            )
+           )
+           OR 
+           (schedules.work_date = :yesterdayDate
+            AND schedules.actual_start_time IS NOT NULL
+            AND schedules.actual_end_time IS NOT NULL
+            AND schedules.actual_start_time > schedules.actual_end_time
+            AND :currentTime < schedules.actual_end_time
+           )`,
+          { currentDate, yesterdayDate, currentTime }
+        )
+        .leftJoinAndSelect('schedules.employee', 'employee')
+        .leftJoinAndSelect('schedules.room', 'room') // Optional
+        .leftJoinAndSelect('schedules.shift_template', 'shift_template'); // Optional
+
+      if (search) {
+        qb.andWhere(
+          '(employee.username ILIKE :search OR employee.email ILIKE :search OR employee.firstName ILIKE :search OR employee.lastName ILIKE :search)',
+          { search: `%${search}%` }
+        );
+      }
+      return await qb.getMany();
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch overlapping schedules');
     }
   }
 }

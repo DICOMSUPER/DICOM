@@ -9,6 +9,7 @@ import { DiagnosesReportModule } from './modules/diagnoses-reports/diagnoses-rep
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm/dist';
+import { SeedingModule } from './modules/seeding/seeding.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { TypeOrmModule } from '@nestjs/typeorm/dist';
       defaultDbName: 'dicom_patient_service',
     }),
     TypeOrmModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

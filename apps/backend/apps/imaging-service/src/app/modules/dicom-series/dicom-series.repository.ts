@@ -69,7 +69,18 @@ export class DicomSeriesRepository extends BaseRepository<DicomSeries> {
 
     //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        // Handle nested relations (e.g., 'study.modality')
+        if (r.includes('.')) {
+          const parts = r.split('.');
+          const parentAlias = parts[0];
+          const childRelation = parts[1];
+          query.leftJoinAndSelect(`${parentAlias}.${childRelation}`, `${parentAlias}_${childRelation}`);
+        } else {
+          // Handle direct relations
+          query.leftJoinAndSelect(`entity.${r}`, r);
+        }
+      });
     }
 
     // Sorting

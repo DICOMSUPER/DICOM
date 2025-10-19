@@ -33,7 +33,7 @@ export const scheduleFormSchema = z.object({
   work_date: z.string().min(1, "Work date is required"),
   actual_start_time: z.string().optional(),
   actual_end_time: z.string().optional(),
-  schedule_status: z.enum(['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled']).optional(),
+  schedule_status: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled', 'no_show']).optional(),
   notes: z.string().optional(),
   overtime_hours: z.number().min(0).optional(),
   created_by: z.string().uuid("Invalid created by ID").optional(),
@@ -91,7 +91,7 @@ export const scheduleSearchSchema = z.object({
   roomId: z.string().uuid("Invalid room ID").optional(),
   workDateFrom: z.string().optional(),
   workDateTo: z.string().optional(),
-  scheduleStatus: z.enum(['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled']).optional(),
+  scheduleStatus: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled', 'no_show']).optional(),
   limit: z.number().min(1).max(100).optional(),
   offset: z.number().min(0).optional(),
 });

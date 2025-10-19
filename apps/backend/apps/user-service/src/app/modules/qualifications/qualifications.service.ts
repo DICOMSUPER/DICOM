@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateQualificationDto } from './dto/create-qualification.dto';
-import { UpdateQualificationDto } from './dto/update-qualification.dto';
+import { CreateQualificationDto } from '@backend/shared-domain';
+import { UpdateQualificationDto } from '@backend/shared-domain';
 
 @Injectable()
 export class QualificationsService {

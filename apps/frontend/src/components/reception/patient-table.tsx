@@ -121,10 +121,10 @@ export function PatientTable({
                     {patient.phoneNumber}
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">No phone</span>
+                  <span className="text-foreground">No phone</span>
                 )}
                 {patient.address && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                  <div className="flex items-center gap-1 text-sm text-foreground mt-1">
                     <MapPin className="w-3 h-3" />
                     {patient.address}
                   </div>

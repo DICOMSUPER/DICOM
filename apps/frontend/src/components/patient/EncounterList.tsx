@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { 
   Stethoscope, 
   Calendar, 
@@ -79,17 +80,11 @@ export function EncounterList({
 
   if (encounters.length === 0) {
     return (
-      <Card className="border-border">
-        <CardContent className="p-6">
-          <div className="text-center py-8">
-            <Stethoscope className="h-12 w-12 text-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Encounters Found</h3>
-            <p className="text-foreground">
-              No patient encounters match your current filters.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={<Stethoscope className="h-12 w-12 text-foreground" />}
+        title="No Encounters Found"
+        description="No patient encounters match your current filters. Try adjusting your search criteria."
+      />
     );
   }
 
@@ -139,7 +134,7 @@ export function EncounterList({
               {/* Chief Complaint */}
               {encounter.chiefComplaint && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Chief Complaint</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-1">Chief Complaint</h4>
                   <p className="text-sm">{encounter.chiefComplaint}</p>
                 </div>
               )}
@@ -147,7 +142,7 @@ export function EncounterList({
               {/* Symptoms */}
               {encounter.symptoms && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Symptoms</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-1">Symptoms</h4>
                   <p className="text-sm">{encounter.symptoms}</p>
                 </div>
               )}
@@ -155,14 +150,14 @@ export function EncounterList({
               {/* Notes */}
               {encounter.notes && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Notes</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-1">Notes</h4>
                   <p className="text-sm">{encounter.notes}</p>
                 </div>
               )}
 
               {/* Patient Info */}
               {encounter.patient && (
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-foreground">
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4" />
                     ID: {encounter.patient.patientCode}
@@ -179,7 +174,7 @@ export function EncounterList({
               {/* Assigned Physician */}
               {encounter.assignedPhysicianId && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Assigned Physician</h4>
+                  <h4 className="text-sm font-medium text-foreground mb-1">Assigned Physician</h4>
                   <p className="text-sm">{encounter.assignedPhysicianId}</p>
                 </div>
               )}

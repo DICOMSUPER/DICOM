@@ -11,14 +11,13 @@ import { RpcException } from '@nestjs/microservices';
 import { IS_PUBLIC_KEY } from '@backend/shared-decorators';
 import { Reflector } from '@nestjs/core';
 
-
 const logger = new Logger('AuthGuard');
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     @Inject('USER_SERVICE') private readonly authClient: ClientProxy
-  ) { }
+  ) {}
 
   canActivate(
     context: ExecutionContext

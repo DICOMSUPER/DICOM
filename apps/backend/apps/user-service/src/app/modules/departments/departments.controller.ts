@@ -16,11 +16,15 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class DepartmentsController {
   private readonly logger = new Logger('DepartmentsController');
 
-  constructor(private readonly service: DepartmentsService) { }
+  constructor(private readonly service: DepartmentsService) {}
 
   @MessagePattern('department.check-health')
   checkHealth() {
-    return { service: 'DepartmentService', status: 'running', time: new Date() };
+    return {
+      service: 'DepartmentService',
+      status: 'running',
+      time: new Date(),
+    };
   }
 
   @MessagePattern('department.create')
@@ -39,13 +43,21 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to create department',
-        'DepartmentsController.create',
+        'DepartmentsController.create'
       );
     }
   }
 
   @MessagePattern('department.get-all')
-  async findAll(@Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean }) {
+  async findAll(
+    @Payload()
+    query?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isActive?: boolean;
+    }
+  ) {
     try {
       const result = await this.service.findAll(query || {});
       return result;
@@ -53,12 +65,10 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to get departments',
-        'DepartmentsController.findAll',
+        'DepartmentsController.findAll'
       );
     }
   }
-
-
 
   @MessagePattern('department.get-by-id')
   async findOne(@Payload() data: { id: string }) {
@@ -70,13 +80,15 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to get department',
-        'DepartmentsController.findOne',
+        'DepartmentsController.findOne'
       );
     }
   }
 
   @MessagePattern('department.update')
-  async update(@Payload() data: { id: string; updateDto: UpdateDepartmentDto }) {
+  async update(
+    @Payload() data: { id: string; updateDto: UpdateDepartmentDto }
+  ) {
     try {
       const department = await this.service.update(data.id, data.updateDto);
       return { department, message: 'Cập nhật phòng ban thành công' };
@@ -90,7 +102,7 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to update department',
-        'DepartmentsController.update',
+        'DepartmentsController.update'
       );
     }
   }
@@ -109,7 +121,7 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to delete department',
-        'DepartmentsController.remove',
+        'DepartmentsController.remove'
       );
     }
   }
@@ -124,7 +136,7 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to get department by code',
-        'DepartmentsController.findByCode',
+        'DepartmentsController.findByCode'
       );
     }
   }
@@ -138,7 +150,7 @@ export class DepartmentsController {
       handleErrorFromMicroservices(
         error,
         'Failed to get active departments',
-        'DepartmentsController.findActive',
+        'DepartmentsController.findActive'
       );
     }
   }

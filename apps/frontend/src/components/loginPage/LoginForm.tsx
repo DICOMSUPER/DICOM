@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, Stethoscope, Shield, Monitor } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 interface LoginFormProps {
   onLogin: (
@@ -9,49 +11,44 @@ interface LoginFormProps {
   ) => Promise<void> | void;
 }
 
+// Validation schema
+const validationSchema = Yup.object({
+  email: Yup.string()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+  rememberMe: Yup.boolean(),
+});
+
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({ email: "", password: "" });
 
-  const validateForm = () => {
-    const newErrors = { email: "", password: "" };
-
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return !newErrors.email && !newErrors.password;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-    try {
-      await onLogin(email, password, rememberMe);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+    validationSchema,
+    onSubmit: async (values: { email: string; password: string; rememberMe: boolean }) => {
+      setIsLoading(true);
+      try {
+        await onLogin(values.email, values.password, values.rememberMe);
+        // Keep loading state true on success - component will unmount on navigation
+        // This prevents the button from flickering back to "Sign In" during page transition
+      } catch (error) {
+        // Only reset loading state on error so user can retry
+        setIsLoading(false);
+      }
+    },
+  });
 
   return (
     <div className="w-full max-w-md">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={formik.handleSubmit} className="space-y-6" autoComplete="on">
         <div>
           <label
             htmlFor="email"
@@ -61,16 +58,19 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           </label>
           <input
             id="email"
+            name="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            value={formik.values.email}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-              errors.email ? "border-red-300 bg-red-50" : "border-gray-300"
+              formik.touched.email && formik.errors.email ? "border-red-300 bg-red-50" : "border-gray-300"
             }`}
             placeholder="doctor@hospital.com"
           />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          {formik.touched.email && formik.errors.email && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.email}</p>
           )}
         </div>
 
@@ -84,11 +84,14 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="relative">
             <input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                errors.password ? "border-red-300 bg-red-50" : "border-gray-300"
+                formik.touched.password && formik.errors.password ? "border-red-300 bg-red-50" : "border-gray-300"
               }`}
               placeholder="Enter your password"
             />
@@ -100,8 +103,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          {formik.touched.password && formik.errors.password && (
+            <p className="mt-1 text-sm text-red-600">{formik.errors.password}</p>
           )}
         </div>
 
@@ -109,9 +112,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="flex items-center">
             <input
               id="remember-me"
+              name="rememberMe"
               type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
+              checked={formik.values.rememberMe}
+              onChange={formik.handleChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label

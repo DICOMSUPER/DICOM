@@ -1,10 +1,17 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Roles } from '@backend/shared-enums';
-import { Department } from './department.entity';
-import { Qualification } from './qualification.entity';
-import { RoomAssignment } from './room-assignment.entity';
-import { WeeklySchedulePattern } from './weekly-schedule-patterns.entity';
-import { DigitalSignature } from './digital-signature.entity';
+import { Department, EmployeeSchedule } from '@backend/shared-domain';
+import { Qualification } from '@backend/shared-domain';
+import { BaseEntity } from '@backend/database';
 
 @Entity('users')
 export class User {
@@ -54,7 +61,7 @@ export class User {
   createdBy!: string;
 
   // Relations
-  @ManyToOne(() => Department, department => department.users)
+  @ManyToOne(() => Department, (department) => department.users)
   @JoinColumn({ name: 'department_id' })
   department!: Department;
 
@@ -62,16 +69,17 @@ export class User {
   @JoinColumn({ name: 'created_by' })
   creator!: User;
 
-  @OneToMany(() => Qualification, qualification => qualification.employee)
+  @OneToMany(() => Qualification, (qualification) => qualification.employee)
   qualifications!: Qualification[];
 
   @OneToMany(() => WeeklySchedulePattern, pattern => pattern.user)
   weeklySchedulePatterns!: WeeklySchedulePattern[];
 
-  @OneToMany(() => RoomAssignment, roomAssignment => roomAssignment.employee)
-  roomAssignments!: RoomAssignment[];
-
-
-  @OneToMany(() => DigitalSignature, (sig) => sig.user)
-  digitalSignatures!: DigitalSignature[];
+  // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
+  // roomAssignments!: RoomAssignment[];
+  @OneToMany(
+    () => EmployeeSchedule,
+    (employeeSchedule) => employeeSchedule.employee
+  )
+  employeeSchedules!: EmployeeSchedule[];
 }

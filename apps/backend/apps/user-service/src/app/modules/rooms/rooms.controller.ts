@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, Search } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from '@backend/shared-domain';
@@ -17,7 +17,7 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class RoomsController {
   private readonly logger = new Logger('RoomsController');
 
-  constructor(private readonly roomsService: RoomsService) { }
+  constructor(private readonly roomsService: RoomsService) {}
 
   // Kiểm tra tình trạng service
   @MessagePattern('room.check-health')
@@ -53,21 +53,35 @@ export class RoomsController {
       ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Room creation failed', 'RoomsController.create');
+      handleErrorFromMicroservices(
+        error,
+        'Room creation failed',
+        'RoomsController.create'
+      );
     }
   }
 
   // Lấy toàn bộ danh sách phòng
   @MessagePattern('room.get-all')
   async findAll(
-    @Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean },
+    @Payload()
+    query?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isActive?: boolean;
+    }
   ) {
     try {
       const result = await this.roomsService.findAll(query || {});
       return result;
     } catch (error) {
       this.logger.error(`Get all rooms error: ${(error as Error).message}`);
-      handleErrorFromMicroservices(error, 'Failed to get rooms', 'RoomsController.findAll');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get rooms',
+        'RoomsController.findAll'
+      );
     }
   }
 
@@ -79,7 +93,9 @@ export class RoomsController {
       const room = await this.roomsService.findOne(data.id);
 
       if (!room) {
-        throw new RoomNotFoundException(`Không tìm thấy phòng với ID ${data.id}`);
+        throw new RoomNotFoundException(
+          `Không tìm thấy phòng với ID ${data.id}`
+        );
       }
 
       return {
@@ -89,7 +105,11 @@ export class RoomsController {
     } catch (error: unknown) {
       this.logger.error(`Get room by ID error: ${(error as Error).message}`);
       if (error instanceof RoomNotFoundException) throw error;
-      handleErrorFromMicroservices(error, 'Failed to get room by ID', 'RoomsController.findOne');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get room by ID',
+        'RoomsController.findOne'
+      );
     }
   }
 
@@ -101,7 +121,9 @@ export class RoomsController {
 
       const room = await this.roomsService.update(data.id, data.updateRoomDto);
       if (!room) {
-        throw new RoomNotFoundException(`Không tìm thấy phòng với ID ${data.id}`);
+        throw new RoomNotFoundException(
+          `Không tìm thấy phòng với ID ${data.id}`
+        );
       }
 
       return {
@@ -117,7 +139,11 @@ export class RoomsController {
       ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Failed to update room', 'RoomsController.update');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to update room',
+        'RoomsController.update'
+      );
     }
   }
 
@@ -137,10 +163,76 @@ export class RoomsController {
       };
     } catch (error: unknown) {
       this.logger.error(`Delete room error: ${(error as Error).message}`);
-      if (error instanceof RoomNotFoundException || error instanceof RoomDeletionFailedException) {
+      if (
+        error instanceof RoomNotFoundException ||
+        error instanceof RoomDeletionFailedException
+      ) {
         throw error;
       }
-      handleErrorFromMicroservices(error, 'Failed to delete room', 'RoomsController.remove');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to delete room',
+        'RoomsController.remove'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Room.GetRoomByDepartmentId')
+  async getRoomByDepartmentId(
+    @Payload()
+    data: {
+      id: string;
+      applyScheduleFilter: boolean;
+      search?: string;
+    }
+  ) {
+    this.logger.log('Using pattern: UserService.Room.GetRoomByDepartmentId');
+    try {
+      const { id, search, applyScheduleFilter } = data;
+      return await this.roomsService.getRoomByDepartmentId(
+        id,
+        applyScheduleFilter || false,
+        search || ''
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed tto get room by departmentId',
+        'UserService'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Rooms.GetIds')
+  async getRoomIds(
+    @Payload() data: { take?: number; isActive?: boolean }
+  ): Promise<{ success: boolean; data: string[]; count: number }> {
+    this.logger.log(`Getting room IDs, take: ${data.take || 10}, isActive: ${data.isActive !== false}`);
+    try {
+      const { take = 10, isActive = true } = data;
+      const result = await this.roomsService.findAll({ 
+        limit: take,
+        isActive 
+      });
+      
+      // Ensure result.data is an array
+      const rooms = Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []);
+      const roomIds = rooms.map(r => r.id);
+      
+      this.logger.log(`Returning ${roomIds.length} room IDs`);
+      
+      return {
+        success: true,
+        data: roomIds,
+        count: roomIds.length,
+      };
+    } catch (error) {
+      this.logger.error(`Get room IDs error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get room IDs',
+        'RoomsController.getRoomIds'
+      );
     }
   }
 }

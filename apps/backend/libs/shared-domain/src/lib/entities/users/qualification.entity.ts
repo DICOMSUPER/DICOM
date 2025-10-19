@@ -1,5 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from './user.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { User } from '@backend/shared-domain';
 
 @Entity('qualifications')
 export class Qualification {
@@ -24,8 +30,7 @@ export class Qualification {
   @Column({ name: 'emp_id' })
   empId!: string;
 
-  
-  @ManyToOne(() => User, user => user.qualifications)
+  @ManyToOne(() => User, (user) => user.qualifications)
   @JoinColumn({ name: 'emp_id' })
   employee!: User;
 }

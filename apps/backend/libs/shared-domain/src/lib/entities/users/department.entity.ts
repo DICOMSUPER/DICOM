@@ -1,9 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { BaseEntity } from '@backend/database';
 import { User } from './user.entity';
 import { Room } from './room.entity';
 
 @Entity('departments')
-export class Department  {
+export class Department extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'department_id' })
   id!: string;
 
@@ -21,9 +22,6 @@ export class Department  {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
 
   // Relations
   @ManyToOne(() => User)

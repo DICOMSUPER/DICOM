@@ -46,33 +46,38 @@ export default function ReceptionPage() {
   }, [patientsError]);
 
   // Process real data from API
-  const filteredPatients = Array.isArray(patients?.data)
-    ? ((patients as any)?.data as any[])
-        .filter((patient) => {
-          if (!searchTerm) return true;
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            patient.firstName?.toLowerCase().includes(searchLower) ||
-            patient.lastName?.toLowerCase().includes(searchLower) ||
-            patient.patientCode?.toLowerCase().includes(searchLower) ||
-            patient.phoneNumber?.toLowerCase().includes(searchLower)
-          );
-        })
-        .map((patient) => ({
-          id: patient.id,
-          firstName: patient.firstName || "Unknown",
-          lastName: patient.lastName || "Patient",
-          patientCode: patient.patientCode || "N/A",
-          dateOfBirth: patient.dateOfBirth || new Date(),
-          gender: patient.gender || "Unknown",
-          phoneNumber: patient.phoneNumber,
-          address: patient.address,
-          bloodType: patient.bloodType,
-          isActive: patient.isActive ?? true,
-          priority: "normal",
-          lastVisit: undefined,
-        }))
+  // Handle both direct array response and wrapped response
+  const patientsArray = Array.isArray(patients)
+    ? patients
+    : Array.isArray((patients as any)?.data)
+    ? (patients as any).data
     : [];
+
+  const filteredPatients = patientsArray
+    .filter((patient) => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        patient.firstName?.toLowerCase().includes(searchLower) ||
+        patient.lastName?.toLowerCase().includes(searchLower) ||
+        patient.patientCode?.toLowerCase().includes(searchLower) ||
+        patient.phoneNumber?.toLowerCase().includes(searchLower)
+      );
+    })
+    .map((patient) => ({
+      id: patient.id,
+      firstName: patient.firstName || "Unknown",
+      lastName: patient.lastName || "Patient",
+      patientCode: patient.patientCode || "N/A",
+      dateOfBirth: patient.dateOfBirth || new Date(),
+      gender: patient.gender || "Unknown",
+      phoneNumber: patient.phoneNumber,
+      address: patient.address,
+      bloodType: patient.bloodType,
+      isActive: patient.isActive ?? true,
+      priority: "normal",
+      lastVisit: undefined,
+    }));
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -108,62 +113,62 @@ export default function ReceptionPage() {
 
   return (
     <div className="space-y-6">
-        {/* Header with Quick Actions and Refresh */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Patient Management
-            </h1>
-            <p className="text-foreground">Search and manage patient records</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <RefreshButton
-              onRefresh={handleRefresh}
-              loading={patientsLoading || statsLoading}
-            />
-            <QuickActionsBar />
-          </div>
+      {/* Header with Quick Actions and Refresh */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Patient Management
+          </h1>
+          <p className="text-foreground">Search and manage patient records</p>
         </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <PatientStatsCards
-          totalCount={patientStats?.totalPatients || 0}
-          activeCount={patientStats?.activePatients || 0}
-          newThisMonthCount={patientStats?.newPatientsThisMonth || 0}
-          inactiveCount={patientStats?.inactivePatients || 0}
-          isLoading={statsLoading}
-        />
-
-        {/* Filters */}
-        <ReceptionFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          priorityFilter={priorityFilter}
-          onPriorityChange={setPriorityFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-        />
-
-        {/* Patient Table */}
-        {!patientsLoading && (
-          <PatientTable
-            patients={filteredPatients as any}
-            isLoading={patientsLoading}
-            emptyStateIcon={<Users className="h-12 w-12" />}
-            emptyStateTitle="No patients found"
-            emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
-            onViewDetails={handleViewDetails}
-            onEditPatient={handleEditPatient}
-            onDeletePatient={handleDeletePatient}
+        <div className="flex items-center gap-4">
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={patientsLoading || statsLoading}
           />
-        )}
+          <QuickActionsBar />
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      <PatientStatsCards
+        totalCount={patientStats?.totalPatients || 0}
+        activeCount={patientStats?.activePatients || 0}
+        newThisMonthCount={patientStats?.newPatientsThisMonth || 0}
+        inactiveCount={patientStats?.inactivePatients || 0}
+        isLoading={statsLoading}
+      />
+
+      {/* Filters */}
+      <ReceptionFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
+
+      {/* Patient Table */}
+      {!patientsLoading && (
+        <PatientTable
+          patients={filteredPatients as any}
+          isLoading={patientsLoading}
+          emptyStateIcon={<Users className="h-12 w-12" />}
+          emptyStateTitle="No patients found"
+          emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
+          onViewDetails={handleViewDetails}
+          onEditPatient={handleEditPatient}
+          onDeletePatient={handleDeletePatient}
+        />
+      )}
     </div>
   );
 }

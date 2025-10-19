@@ -25,8 +25,14 @@ import {
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { MouseBindings, Events } from "@cornerstonejs/tools/enums";
+import { imagingApi } from "@/services/imagingApi";
 
-const ViewPortMain = () => {
+interface ViewPortMainProps {
+  selectedSeries?: any;
+  selectedStudy?: any;
+}
+
+const ViewPortMain = ({ selectedSeries, selectedStudy }: ViewPortMainProps) => {
   const elementRef = useRef<HTMLDivElement>(null);
   const running = useRef(false);
   const [activeTool, setActiveTool] = useState("WindowLevel");
@@ -42,11 +48,51 @@ const ViewPortMain = () => {
         await csToolsInit();
         dicomImageLoaderInit({ maxWebWorkers: 1 });
 
-        const imageIds = [
-          "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=0",
-          "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=1",
-          "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=2",
-        ];
+        let imageIds: string[] = [];
+
+        // Load instances from selected series
+        if (selectedSeries) {
+          try {
+            console.log('🔍 Loading instances for series:', selectedSeries.id);
+            const instancesResponse = await imagingApi.getInstancesByReferenceId(
+              selectedSeries.id, 
+              'series', 
+              { page: 1, limit: 100 }
+            );
+            
+            console.log('📊 Found instances:', instancesResponse.data.length);
+            
+            if (instancesResponse.data.length > 0) {
+              // Use filePath from instances (should be Cloudinary URLs)
+              imageIds = instancesResponse.data
+                .filter(instance => instance.filePath) // Filter out instances without filePath
+                .map(instance => {
+                  // Check if filePath is already a full URL
+                  const path = instance.filePath.startsWith('http') 
+                    ? instance.filePath 
+                    : `${instance.filePath}/${instance.fileName}`;
+                  return `wadouri:${path}`;
+                });
+              
+              console.log('✅ Loaded', imageIds.length, 'DICOM images from Cloudinary');
+              console.log('📋 Image URLs:', imageIds.slice(0, 3)); // Log first 3 URLs for debugging
+            } else {
+              console.warn('⚠️ No instances found for series:', selectedSeries.seriesDescription);
+            }
+          } catch (error) {
+            console.error('❌ Failed to load series instances:', error);
+          }
+        } else {
+          console.warn('⚠️ No series selected, cannot load DICOM images');
+        }
+
+        // If no images loaded, use fallback demo image
+        if (imageIds.length === 0) {
+          console.warn('⚠️ No DICOM images available, using fallback demo image');
+          imageIds = [
+            "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM",
+          ];
+        }
 
         addTool(ZoomTool);
         addTool(WindowLevelTool);
@@ -106,24 +152,28 @@ const ViewPortMain = () => {
         });
 
         toolGroup?.addViewport(viewportId, renderingEngineId);
-        const segmentationId = "MY_SEGMENTATION_ID";
+        const segmentationId = `MY_SEGMENTATION_ID_${Date.now()}`;
         const segmentationImages =
           await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
         const segmentationImagesIds = segmentationImages.map(
           (image) => image.imageId
         );
 
-        segmentation.addSegmentations([
-          {
-            segmentationId,
-            representation: {
-              type: ToolEnums.SegmentationRepresentations.Labelmap,
-              data: {
-                imageIds: segmentationImagesIds,
+        // Check if segmentation already exists before adding
+        const existingSegmentation = segmentation.state.getSegmentation(segmentationId);
+        if (!existingSegmentation) {
+          segmentation.addSegmentations([
+            {
+              segmentationId,
+              representation: {
+                type: ToolEnums.SegmentationRepresentations.Labelmap,
+                data: {
+                  imageIds: segmentationImagesIds,
+                },
               },
             },
-          },
-        ]);
+          ]);
+        }
 
         await segmentation.addLabelmapRepresentationToViewportMap({
           [viewportId]: [{ segmentationId }],
@@ -176,6 +226,7 @@ const ViewPortMain = () => {
             console.log("Labelmap representation data:", labelmapData);
 
             // Lấy imageIds và load image của slice đầu tiên bị modify
+            // @ts-ignore - Labelmap structure varies
             const imageIds = labelmapData.imageIds;
             if (!imageIds || imageIds.length === 0) {
               console.warn("No imageIds in labelmap");
@@ -208,7 +259,7 @@ const ViewPortMain = () => {
     };
 
     setup();
-  }, []);
+  }, [selectedSeries, selectedStudy]);
 
   const handleToolChange = (toolName: string) => {
     setActiveTool(toolName);

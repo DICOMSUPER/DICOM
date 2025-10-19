@@ -1,7 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { RoomType } from '@backend/shared-enums';
-import { RoomAssignment } from './room-assignment.entity';
+import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
+import { EmployeeSchedule } from './employee-schedules.entity';
 
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
@@ -10,7 +18,7 @@ export enum RoomStatus {
 }
 
 @Entity('rooms')
-export class Room {
+export class Room extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'room_id' })
   id!: string;
 
@@ -42,6 +50,8 @@ export class Room {
     default: RoomStatus.AVAILABLE,
   })
   status!: RoomStatus;
+  @Column({ name: 'department_id', type: 'uuid', nullable: false })
+  departmentId!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -76,30 +86,12 @@ export class Room {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @Column({
-    name: 'created_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createdAt!: Date;
-
-  @Column({
-    name: 'updated_at',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt!: Date;
-
-  @OneToMany(() => RoomAssignment, (assignment) => assignment.room)
-  assignments!: RoomAssignment[];
-
   @ManyToOne(() => Department, (department) => department.rooms, {
     nullable: false,
   })
-
   @JoinColumn({ name: 'department_id' })
   department?: Department;
+
+  @OneToMany(() => EmployeeSchedule, (schedule) => schedule.room)
+  schedules!: EmployeeSchedule[];
 }
-
-

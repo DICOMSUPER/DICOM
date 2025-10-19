@@ -1,14 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
+import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
@@ -19,13 +15,6 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { 
   useGetMySchedulesByDateRangeQuery,
   useGetMySchedulesByDateQuery,
-  useGetScheduleStatsQuery,
-  useGetShiftTemplatesQuery,
-  useGetAvailableRoomsQuery,
-  useCreateEmployeeScheduleMutation,
-  useUpdateEmployeeScheduleMutation,
-  useDeleteEmployeeScheduleMutation,
-  useUpdateScheduleStatusMutation,
 } from "@/store/employeeScheduleApi";
 import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
@@ -44,86 +33,50 @@ const timeSlots = [
   { time: "5:00 PM", hour: 17 },
 ];
 
-// Mock data removed - using API instead
-
-// Mock employees for now - will be replaced with API call
-const mockEmployees = [
-  { id: "1", firstName: "Dr. Sarah", lastName: "Johnson", role: "physician" },
-  { id: "2", firstName: "Dr. Michael", lastName: "Chen", role: "physician" },
-  { id: "3", firstName: "Dr. Emily", lastName: "Wilson", role: "physician" },
-];
-
 export default function PhysicianSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
-  const [notificationCount] = useState(3);
   const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // API calls - using /me endpoint to get current user's schedules
+  // Fetch schedules for entire month (single query)
   const { 
-    data: schedules = [], 
+    data: allSchedules = [], 
     isLoading: schedulesLoading, 
+    isFetching: schedulesFetching,
     error: schedulesError,
     refetch: refetchSchedules 
-  } = useGetMySchedulesByDateQuery({
-    date: format(selectedDate, "yyyy-MM-dd")
-  });
-
-  const { 
-    data: weekSchedules = [], 
-    isLoading: weekLoading,
-    refetch: refetchWeekSchedules
-  } = useGetMySchedulesByDateRangeQuery({
-    startDate: format(startOfWeek(selectedDate), "yyyy-MM-dd"),
-    endDate: format(endOfWeek(selectedDate), "yyyy-MM-dd")
-  });
-
-  const { 
-    data: monthSchedules = [], 
-    isLoading: monthLoading,
-    refetch: refetchMonthSchedules
   } = useGetMySchedulesByDateRangeQuery({
     startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
     endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
   });
 
-  const { data: stats } = useGetScheduleStatsQuery({ role: "physician" });
-  const { data: shiftTemplates = [] } = useGetShiftTemplatesQuery();
-  const { data: rooms = [] } = useGetAvailableRoomsQuery({ date: format(selectedDate, "yyyy-MM-dd") });
-
-  // Mutations
-  const [createSchedule] = useCreateEmployeeScheduleMutation();
-  const [updateSchedule] = useUpdateEmployeeScheduleMutation();
-  const [deleteSchedule] = useDeleteEmployeeScheduleMutation();
-  const [updateStatus] = useUpdateScheduleStatusMutation();
-
-  // Get current schedules based on view mode
-  const getCurrentSchedules = (): EmployeeSchedule[] => {
+  // Filter schedules based on current view mode and selected date
+  const getFilteredSchedules = (): EmployeeSchedule[] => {
+    const scheduleArray = Array.isArray(allSchedules) ? allSchedules : [];
+    
     switch (viewMode) {
-      case "day":
-        return Array.isArray(schedules) ? schedules : [];
-      case "week":
-        return Array.isArray(weekSchedules) ? weekSchedules : [];
+      case "day": {
+        const dayStr = format(selectedDate, "yyyy-MM-dd");
+        return scheduleArray.filter((s) => s.work_date === dayStr);
+      }
+      case "week": {
+        const weekStart = format(startOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
+        const weekEnd = format(endOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
+        return scheduleArray.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+      }
       case "month":
-        return Array.isArray(monthSchedules) ? monthSchedules : [];
-      case "list":
-        return Array.isArray(schedules) ? schedules : [];
+      case "list": {
+        // Return all schedules for the month
+        return scheduleArray;
+      }
       default:
-        return Array.isArray(schedules) ? schedules : [];
+        return scheduleArray;
     }
   };
 
-  const currentSchedules = getCurrentSchedules();
-  const isLoading = schedulesLoading || weekLoading || monthLoading;
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
+  const currentSchedules = getFilteredSchedules();
+  const isLoading = schedulesLoading || schedulesFetching;
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
@@ -192,21 +145,8 @@ export default function PhysicianSchedulePage() {
   };
 
   const handleRefresh = () => {
-    // Refetch based on current view mode
-    switch (viewMode) {
-      case "day":
-      case "list":
-        refetchSchedules();
-        break;
-      case "week":
-        refetchWeekSchedules();
-        break;
-      case "month":
-        refetchMonthSchedules();
-        break;
-      default:
-        refetchSchedules();
-    }
+    // Refetch schedules for the entire month
+    refetchSchedules();
   };
 
   const renderDayView = () => (

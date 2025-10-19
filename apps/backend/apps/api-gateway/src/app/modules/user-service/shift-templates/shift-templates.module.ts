@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
-import { RoomAssignmentsController } from './room-assignment.controller';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
 import { UserServiceClientModule } from '@backend/shared-client';
+import { ShiftTemplatesController } from './shift-templates.controller';
 
 @Module({
   imports: [
     UserServiceClientModule,
     SharedInterceptorModule
-  
   ],
-  controllers: [RoomAssignmentsController],
+  controllers: [ShiftTemplatesController],
+  exports: [UserServiceClientModule],
 })
-export class RoomAssignmentsModule {}
+export class ShiftTemplatesModule {}
+

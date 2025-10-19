@@ -10,6 +10,7 @@ import {
   UseGuards,
   Query,
   Req,
+  Param,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -25,6 +26,8 @@ import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { AuthGuard } from '@backend/shared-guards';
+// removed unused import
+import { EmployeeSchedule, User } from '@backend/shared-domain';
 class LoginDto {
   email!: string;
   password!: string;
@@ -51,7 +54,8 @@ export class UserController {
   private readonly logger = new Logger('UserController');
 
   constructor(
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    @Inject('PATIENT_SERVICE') private readonly _patientService: ClientProxy
   ) {}
 
   @Public()
@@ -270,11 +274,68 @@ export class UserController {
     try {
       const userId = req['userInfo'].userId;
       const result = await firstValueFrom(
-        this.userClient.send('UserService.Users.findOne', { userId })
+        this.userClient.send('UserService.Users.findOne', { id: userId })
       );
       return result;
     } catch (error) {
       this.logger.error(`❌ Failed to get user info by token`, error);
+      throw handleError(error);
+    }
+  }
+
+  @Get(':id/room')
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
+  async getUserByRoomIdAndSchedule(
+    @Param('id') id: string,
+    @Query('role') role: Roles,
+    @Query('search') search: string
+  ) {
+    //Get schedule for current time
+    try {
+      const scheduleArray = await firstValueFrom(
+        this.userClient.send(
+          'UserService.EmployeeSchedule.GetOverlappingSchedule',
+          { id, role, search }
+        )
+      );
+      //map user from schedule
+      const userArray = scheduleArray.map((schedule: EmployeeSchedule) => {
+        return schedule.employee;
+      });
+
+      //get queue order to map over
+      const userIds = userArray.map((user: User) => {
+        return user.id;
+      });
+
+      const queueStats = await firstValueFrom(
+        this._patientService.send(
+          'PatientService.QueueAssignment.GetQueueStatus',
+          { userIds }
+        )
+      );
+      // Join them based on id
+      const combined = userArray.map((user: any) => ({
+        ...user,
+        queueStats: queueStats[user.id] || null, // Fallback to null if no stats for this user
+      }));
+
+      return combined;
+    } catch (error) {
+      this.logger.error(` Failed to get user with queue info`, error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('/:id')
+  async getUserById(@Param('id') id: string) {
+    try {
+      const result = await firstValueFrom(
+        this.userClient.send('UserService.Users.findOne', { id })
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(` Failed to get user by id`, error);
       throw handleError(error);
     }
   }
