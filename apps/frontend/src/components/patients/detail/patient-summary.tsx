@@ -87,44 +87,14 @@ const transformVitalSigns = (vitalSigns: VitalSignsSimplified): VitalSignDisplay
       status: getVitalStatus(vitalSigns.temperature, 'temperature'),
 
     },
-    {
-      label: 'Respiratory Rate',
-      value: vitalSigns.respiratoryRate,
-      unit: '/min',
-      icon: <Wind className="h-5 w-5" />,
-      status: getVitalStatus(vitalSigns.respiratoryRate, 'respiratoryRate'),
+    // {
+    //   label: 'Respiratory Rate',
+    //   value: vitalSigns.respiratoryRate,
+    //   unit: '/min',
+    //   icon: <Wind className="h-5 w-5" />,
+    //   status: getVitalStatus(vitalSigns.respiratoryRate, 'respiratoryRate'),
 
-    },
-    {
-      label: 'O₂ Saturation',
-      value: vitalSigns.oxygenSaturation,
-      unit: '%',
-      icon: <Droplet className="h-5 w-5" />,
-      status: getVitalStatus(vitalSigns.oxygenSaturation, 'oxygenSaturation'),
-
-    },
-    {
-      label: 'Weight',
-      value: vitalSigns.weight,
-      unit: 'kg',
-      icon: <Weight className="h-5 w-5" />,
-      status: 'normal' as const,
-    },
-        {
-      label: 'Height',
-      value: vitalSigns.height,
-      unit: 'cm',
-      icon: <Ruler className="h-5 w-5" />,
-      status: 'normal' as const,
-    },
-        {
-      label: 'Weight',
-      value: vitalSigns.bpDiastolic,
-      unit: 'kg',
-      icon: <Weight className="h-5 w-5" />,
-      status: 'normal' as const,
-    },
-
+    // },
   ];
   
   return vitals.filter(vital => vital.value !== undefined);
@@ -275,7 +245,7 @@ export function PatientSummaryTab({ overview }: PatientSummaryProps) {
   return (
     <div className="space-y-6 border border-gray-200 rounded-lg p-6 bg-white">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Patient Summary</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Patient Overview</h2>
         <p className="text-gray-600 text-sm">Overview of patient's health status and recent activities.</p>
       </div>
 

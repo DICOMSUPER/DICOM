@@ -4,6 +4,7 @@ import { PatientEncounterService } from './patient-encounters.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { PatientEncounter, PatientEncounterRepository, Patient, DiagnosesReport } from '@backend/shared-domain';
+import { PaginationService } from '@backend/database';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PatientEncounter, PatientEncounterRepository, Patient, DiagnosesReport 
         new PatientEncounterRepository(entityManager),
       inject: [EntityManager],
     },
+    PaginationService
   ],
   exports: [PatientEncounterService, PatientEncounterRepository],
 })

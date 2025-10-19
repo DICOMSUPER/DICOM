@@ -26,6 +26,8 @@ import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
+import { RepositoryPaginationDto } from '@backend/database';
+
 
 @Controller('encounters')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -152,6 +154,28 @@ export class PatientEncounterController {
       );
     } catch (error) {
       this.logger.error('Error deleting encounter:', error);
+      throw error;
+    }
+  }
+
+  @Get('patient/:patientId')
+  async findByPatientId(
+    @Param('patientId') patientId: string,
+    @Query() pagination: RepositoryPaginationDto
+  ) {
+    try {
+      if (!ValidationUtils.isValidUUID(patientId)) {
+        throw new BadRequestException(`Invalid UUID format: ${patientId}`);
+      }
+
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.FindByPatientId', {
+          patientId,
+          pagination,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error fetching encounters by patient ID:', error);
       throw error;
     }
   }

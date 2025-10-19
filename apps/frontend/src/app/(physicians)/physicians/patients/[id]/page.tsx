@@ -1,17 +1,14 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { usePatientDetail } from "@/hooks/use-patient-detail";
-import { PatientHeader } from "@/components/patients/detail/patient-header";
 import { PatientProfileCard } from "@/components/patients/detail/patient-profile-card";
 import { PatientSummaryTab } from "@/components/patients/detail/patient-summary";
-import { MedicationsTab } from "@/components/patients/detail/medication-tab";
-import { LabResultsTab } from "@/components/patients/detail/lab-result-tab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { EncounterHistoryTab } from "@/components/patients/detail/visit-history";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MedicalHistoryTab } from "@/components/patients/detail/medical-history-tab";
 import { useGetPatientByCodeQuery, useGetPatientOverviewQuery } from "@/store/patientApi";
-import { use } from "react";
-import { PatientOverview } from "@/interfaces/patient/patient-workflow.interface";
+import { useGetPatientEncountersByPatientIdQuery } from "@/store/patientEncounterApi";
+import { use, useState } from "react";
 
 interface PatientDetailPageProps {
   params: Promise<{
@@ -20,18 +17,8 @@ interface PatientDetailPageProps {
 }
 
 export default function PatientDetailPage({ params }: PatientDetailPageProps) {
-  //  const {
-  //   patient,
-  //   summary,
-  //   medications,
-  //   labResults,
-  //   procedures,
-  //   diagnoses,
-  //   visits,
-  //   immunizations,
-  //   loading
-  // } = usePatientDetail(params.id);
   const resolvedParams = use(params);
+   const [activeTab, setActiveTab] = useState("overview");
 
   const { data: patientData, isLoading } = useGetPatientByCodeQuery(
     resolvedParams.id
@@ -42,6 +29,32 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   console.log(patientData?.data);
   console.log(patientOverview?.data);
   
+    const { data: encountersData, isLoading: isLoadingEncounters } = useGetPatientEncountersByPatientIdQuery(
+    {
+      patientId: patientData?.data.id as string,
+      pagination: {
+        page: 1,
+        limit: 10,
+      }
+    },
+    {
+      skip: activeTab !== "results", 
+    }
+  );
+
+  // Conditionally fetch conditions only when tab is active
+  // const { data: conditionsData, isLoading: isLoadingConditions } = useGetPatientConditionsByPatientIdQuery(
+  //   {
+  //     patientId: resolvedParams.id,
+  //     pagination: {
+  //       page: 1,
+  //       limit: 10,
+  //     }
+  //   },
+  //   {
+  //     skip: activeTab !== "medical-history", // Only fetch when medical-history tab is active
+  //   }
+  // );
   
 
   if (isLoading) {
@@ -86,11 +99,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   return (
     <div className="min-h-screen ">
       <div className="max-w-7xl">
-        {/* <PatientHeader 
-          title="Patient Details" 
-          subtitle="View and manage patient information." 
-        /> */}
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">
@@ -99,11 +107,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
                 {/* display recent vital sign and conditions (first three) */}
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="results">Visit History</TabsTrigger>
+                <TabsTrigger value="results">Encounter History</TabsTrigger>
                 <TabsTrigger value="medical-history">
                   Condition
                 </TabsTrigger>
@@ -112,7 +120,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 {patientOverview?.data && <PatientSummaryTab overview={patientOverview.data} />}
               </TabsContent>
               <TabsContent value="results" className="space-y-6">
-                {/* <LabResultsTab labResults={labResults} /> */}
+                {isLoadingEncounters ? (
+                  <Skeleton className="h-96 w-full" />
+                ) : (
+                  <EncounterHistoryTab encounterHistory={encountersData?.data?.data || []} />
+                )}
               </TabsContent>
 
               <TabsContent value="medical-history" className="space-y-6">

@@ -35,6 +35,12 @@ export class QueueAssignmentService {
     private readonly userService: ClientProxy
   ) {}
 
+  private getEndOfDay(date: Date = new Date()): Date {
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    return endOfDay;
+  }
+
   create = async (
     createQueueAssignmentDto: CreateQueueAssignmentDto
   ): Promise<QueueAssignment> => {
@@ -66,9 +72,6 @@ export class QueueAssignmentService {
       new Date()
     );
 
-    // Generate unique validation token
-    const validationToken = this.generateValidationToken();
-
     // Calculate estimated wait time based on current queue
     const estimatedWaitTime = await this.calculateEstimatedWaitTime(
       createQueueAssignmentDto.priority
@@ -77,10 +80,9 @@ export class QueueAssignmentService {
     const assignmentData = {
       ...createQueueAssignmentDto,
       queueNumber,
-      validationToken,
       estimatedWaitTime,
       assignmentDate: new Date(),
-      assignmentExpiresDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+      assignmentExpiresDate: this.getEndOfDay(),
       status: QueueStatus.WAITING,
       priority: createQueueAssignmentDto.priority || QueuePriorityLevel.ROUTINE,
     };
@@ -114,7 +116,7 @@ export class QueueAssignmentService {
     id: string,
     updateQueueAssignmentDto: UpdateQueueAssignmentDto
   ): Promise<QueueAssignment | null> => {
-    const assignment = await this.findOne(id);
+    // const assignment = await this.findOne(id);
     return await this.queueRepository.update(id, {
       ...updateQueueAssignmentDto,
       updatedAt: new Date(),
@@ -187,17 +189,37 @@ export class QueueAssignmentService {
   };
 
   callNextPatient = async (
-    roomId?: string,
+    userId?: string,
     calledBy?: string
   ): Promise<QueueAssignment | null> => {
+    const user = await firstValueFrom(
+      this.userService.send('UserService.Users.findOne', { userId })
+    );
+
+    if (!user) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        `User with ID ${userId} not found`,
+        PATIENT_SERVICE
+      );
+    }
+
+    if (user.role !== Roles.PHYSICIAN) {
+      throw ThrowMicroserviceException(
+        HttpStatus.FORBIDDEN,
+        `User with ID ${userId} is not authorized to call patients`,
+        PATIENT_SERVICE
+      );
+    }
+    //
     const filters: any = {
       status: QueueStatus.WAITING,
       limit: 1,
       offset: 0,
     };
 
-    if (roomId) {
-      filters.roomId = roomId;
+    if (userId) {
+      filters.userId = userId;
     }
 
     // Get next patient by priority and assignment time
@@ -212,7 +234,6 @@ export class QueueAssignmentService {
 
     const nextAssignment = assignments[0];
 
-    // Update assignment to IN_PROGRESS and mark as called
     return await this.queueRepository.update(nextAssignment.id, {
       status: QueueStatus.IN_PROGRESS,
       calledAt: new Date(),
@@ -220,31 +241,6 @@ export class QueueAssignmentService {
       updatedAt: new Date(),
     });
   };
-
-  // validateToken = async (
-  //   validationToken: string
-  // ): Promise<QueueAssignment | null> => {
-  //   const assignment = await this.queueRepository.findByValidationToken(
-  //     validationToken
-  //   );
-  //   if (!assignment) {
-  //     throw ThrowMicroserviceException(
-  //       HttpStatus.NOT_FOUND,
-  //       'Invalid validation token',
-  //       PATIENT_SERVICE
-  //     );
-  //   }
-
-  //   if (assignment.status === QueueStatus.EXPIRED) {
-  //     throw ThrowMicroserviceException(
-  //       HttpStatus.BAD_REQUEST,
-  //       'Queue assignment has expired',
-  //       PATIENT_SERVICE
-  //     );
-  //   }
-
-  //   return assignment;
-  // };
 
   getEstimatedWaitTime = async (queueId: string) => {
     const assignment = await this.queueRepository.findById(queueId);
@@ -278,18 +274,6 @@ export class QueueAssignmentService {
 
     return { expiredCount, assignments: expiredAssignments };
   };
-
-  /**
-   * Generate unique validation token
-   */
-  private generateValidationToken(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  }
 
   /**
    * Calculate estimated wait time based on current queue
@@ -373,11 +357,10 @@ export class QueueAssignmentService {
       priority,
       assignmentDateFrom,
       assignmentDateTo,
-      queueNumber
+      queueNumber,
     } = filterQueue;
     const whereConditions: any = {};
 
-    // get user by user id
     const user = await firstValueFrom(
       this.userService.send('UserService.Users.findOne', { userId })
     );
@@ -386,7 +369,7 @@ export class QueueAssignmentService {
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
-    // if not role physician or nurse, throw error
+
     if (user.role !== Roles.PHYSICIAN) {
       throw new NotFoundException(
         `User with ID ${userId} is not authorized to view room assignments`
@@ -397,7 +380,6 @@ export class QueueAssignmentService {
       assignedPhysicianId: userId,
     };
 
-    // Filter by status if provided
     if (status) {
       whereConditions.status = status;
     }
@@ -410,29 +392,35 @@ export class QueueAssignmentService {
       whereConditions.priority = priority;
     }
 
-    // Filter by date range if provided
-    if (assignmentDateFrom || assignmentDateTo) {
-      whereConditions.assignmentDate = {};
-      if (assignmentDateFrom) {
-        whereConditions.assignmentDate.gte = new Date(assignmentDateFrom);
-      }
-      if (assignmentDateTo) {
-        const endDate = new Date(assignmentDateTo);
-        endDate.setHours(23, 59, 59, 999); // End of day
-        whereConditions.assignmentDate.lte = endDate;
-      }
-    }
+    // tam thoi
+    // if (!assignmentDateFrom && !assignmentDateTo) {
+    //   const startOfDay = new Date();
+    //   startOfDay.setHours(0, 0, 0, 0);
 
-    // Use PaginationService to paginate
-    return await this.paginationService.paginate(
+    //   const endOfDay = this.getEndOfDay();
+
+    //   whereConditions.assignmentDate = {
+    //     gte: startOfDay,
+    //     lte: endOfDay,
+    //   };
+    // } else {
+    //   whereConditions.assignmentDate = {};
+    //   if (assignmentDateFrom) {
+    //     whereConditions.assignmentDate.gte = new Date(assignmentDateFrom);
+    //   }
+    //   if (assignmentDateTo) {
+    //     const endDate = new Date(assignmentDateTo);
+    //     endDate.setHours(23, 59, 59, 999); // End of day
+    //     whereConditions.assignmentDate.lte = endDate;
+    //   }
+    // }
+
+    // ✅ Get data without sorting first
+    const result = await this.paginationService.paginate(
       QueueAssignment,
       { page, limit },
       {
-        where: whereConditions,
-        order: {
-          assignmentDate: 'DESC',
-          queueNumber: 'ASC',
-        },
+        where: { ...whereConditions },
         relations: {
           encounter: {
             patient: true,
@@ -440,5 +428,93 @@ export class QueueAssignmentService {
         },
       }
     );
+
+    // ✅ Custom sort: Active statuses first, then completed/expired
+    if (result.data && result.data.length > 0) {
+      result.data.sort((a, b) => {
+        // Define status priority (lower number = higher priority)
+        const getStatusPriority = (status: QueueStatus) => {
+          switch (status) {
+            case QueueStatus.IN_PROGRESS:
+              return 0;
+            case QueueStatus.WAITING:
+              return 1;
+            case QueueStatus.COMPLETED:
+              return 2; // Lower priority
+            case QueueStatus.EXPIRED:
+              return 3; // Lowest priority
+            default:
+              return 4;
+          }
+        };
+
+        const statusPriorityA = getStatusPriority(a.status);
+        const statusPriorityB = getStatusPriority(b.status);
+        if (statusPriorityA !== statusPriorityB) {
+          return statusPriorityA - statusPriorityB;
+        }
+
+        const getPriorityValue = (priority: QueuePriorityLevel) => {
+          switch (priority) {
+            case QueuePriorityLevel.STAT:
+              return 0;
+            case QueuePriorityLevel.URGENT:
+              return 1;
+            case QueuePriorityLevel.ROUTINE:
+              return 2;
+            default:
+              return 3;
+          }
+        };
+        if (
+          a.status === QueueStatus.WAITING &&
+          b.status === QueueStatus.WAITING
+        ) {
+          if (!a.skippedAt && b.skippedAt) return -1;
+          if (a.skippedAt && !b.skippedAt) return 1;
+          if (a.skippedAt && b.skippedAt) {
+            return a.skippedAt.getTime() - b.skippedAt.getTime();
+          }
+        }
+
+        const priorityA = getPriorityValue(a.priority);
+        const priorityB = getPriorityValue(b.priority);
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+
+        // Finally, sort by queue number
+        return a.queueNumber - b.queueNumber;
+      });
+    }
+
+    return result;
   }
+
+  skipQueueAssignment = async (id: string): Promise<QueueAssignment | null> => {
+    const assignment = await this.findOne(id);
+
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Queue Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
+
+    if (assignment.status !== QueueStatus.WAITING) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Only waiting assignments can be skipped',
+        PATIENT_SERVICE
+      );
+    }
+
+    return await this.queueRepository.update(id, {
+      skippedAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
 }

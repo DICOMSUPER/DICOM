@@ -1,19 +1,17 @@
+import { BaseEntity } from '@backend/database';
+import { DicomStudyStatus } from '@backend/shared-enums';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
 import { ImagingModality } from './imaging-modality.entity';
-import { DicomStudyStatus } from '@backend/shared-enums';
 import { ImagingOrder } from './imaging-order.entity';
-import { BaseEntity } from '@backend/database';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])

@@ -242,6 +242,18 @@ export class QueueAssignmentController {
     }
   }
 
+  @Patch(':id/skip')
+  async skipQueue(@Param('id') id: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.QueueAssignment.Skip', { id })
+      );
+    } catch (error) {
+      this.logger.error('Error skipping queue assignment:', error);
+      throw error;
+    }
+  }
+
   //cron job?
   @Patch('expired')
   async handledExpiredAssignment() {

@@ -1,10 +1,8 @@
 import { BaseEntity } from '@backend/entities';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 
 @Entity('imaging_modalities')
@@ -17,9 +15,10 @@ export class ImagingModality extends BaseEntity {
 
   @Column({ name: 'modality_name', length: 50 })
   modalityName!: string;
-
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Column({ name: 'image', length: 50 })
+  image!: string;
+  @Column({ name: 'description', length: 50 })
+  description!: string;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;

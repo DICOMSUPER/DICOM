@@ -1,8 +1,14 @@
 import {
   PaginatedResponseDto,
+  PaginationService,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreatePatientEncounterDto, PatientEncounter, PatientEncounterRepository, UpdatePatientEncounterDto } from '@backend/shared-domain';
+import {
+  CreatePatientEncounterDto,
+  PatientEncounter,
+  PatientEncounterRepository,
+  UpdatePatientEncounterDto,
+} from '@backend/shared-domain';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
@@ -10,7 +16,8 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 @Injectable()
 export class PatientEncounterService {
   constructor(
-    @Inject() private readonly encounterRepository: PatientEncounterRepository
+    @Inject() private readonly encounterRepository: PatientEncounterRepository,
+    private readonly paginationService: PaginationService
   ) {}
 
   create = async (
@@ -44,8 +51,6 @@ export class PatientEncounterService {
     return await this.encounterRepository.paginate(paginationDto);
   };
 
-
-
   update = async (
     id: string,
     updatePatientEncounterDto: UpdatePatientEncounterDto
@@ -63,5 +68,22 @@ export class PatientEncounterService {
     return await this.encounterRepository.getEncounterStats();
   };
 
+  findByPatientId = async (
+    patientId: string,
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<PatientEncounter>> => {
+    const whereConditions = { patient: { id: patientId } };
+    const { page, limit } = paginationDto;
 
+    return await this.paginationService.paginate(
+      PatientEncounter,
+      { page, limit },
+      {
+        where: whereConditions,
+        order: {
+          createdAt: 'DESC',
+        },
+      }
+    );
+  };
 }

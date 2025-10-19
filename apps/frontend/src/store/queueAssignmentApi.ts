@@ -69,6 +69,18 @@ export const queueAssignmentApi = createApi({
         "QueueStats",
       ],
     }),
+    // skip queue assignment
+    skipQueueAssignment: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${id}/skip`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "QueueAssignment", id },
+        "QueueAssignment",
+        "QueueStats",
+      ],
+    }),
 
     deleteQueueAssignment: builder.mutation<void, string>({
       query: (id) => ({
@@ -151,6 +163,7 @@ export const {
   useCreateQueueAssignmentMutation,
   useUpdateQueueAssignmentMutation,
   useDeleteQueueAssignmentMutation,
+  useSkipQueueAssignmentMutation,
   useGetQueueStatsQuery,
   useGetNextQueueNumberQuery,
   useAssignPatientToQueueMutation,

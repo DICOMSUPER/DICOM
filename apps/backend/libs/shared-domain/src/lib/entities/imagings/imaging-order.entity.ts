@@ -1,24 +1,18 @@
+import { BaseEntity } from '@backend/entities';
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-  ManyToMany,
-  JoinTable,
-} from 'typeorm';
-import {
-  OrderType,
-  OrderPriority,
   OrderStatus,
+  OrderType,
   Urgency,
 } from '@backend/shared-enums';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn
+} from 'typeorm';
 import { ImagingModality } from './imaging-modality.entity';
-import { BaseEntity } from '@backend/entities';
 @Entity('imaging_orders')
 @Index(['patientId'])
 export class ImagingOrder extends BaseEntity {
@@ -55,14 +49,6 @@ export class ImagingOrder extends BaseEntity {
 
   @Column({ name: 'order_type', type: 'enum', enum: OrderType })
   orderType!: OrderType;
-
-  @Column({
-    name: 'urgency',
-    type: 'enum',
-    enum: Urgency,
-    default: Urgency.ROUTINE,
-  })
-  urgency!: Urgency;
 
   @Column({
     name: 'order_status',

@@ -1,14 +1,22 @@
 "use client";
 import { QueueFiltersSection } from "@/components/physicians/queue/queue-filters";
 import { QueueTable } from "@/components/physicians/queue/queue-table";
+import { QueueStatus } from "@/enums/patient.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
-import { QueueAssignmentSearchFilters } from "@/interfaces/patient/queue-assignment.interface";
-import { useGetQueueAssignmentsInRoomQuery } from "@/store/queueAssignmentApi";
+import { formatDate } from "@/lib/formatTimeDate";
+import {
+  useGetQueueAssignmentsInRoomQuery,
+  useSkipQueueAssignmentMutation,
+  useUpdateQueueAssignmentMutation,
+} from "@/store/queueAssignmentApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
+import { CheckCircle, Clock, Hash, Users } from "lucide-react";
+
 import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function QueuePage() {
   const userId =
@@ -50,8 +58,10 @@ export default function QueuePage() {
         skip: !userId,
       }
     );
-
-    console.log("Queue assignments in room:", data);
+  const [updateQueueAssignment, { isLoading: isUpdating }] =
+    useUpdateQueueAssignmentMutation();
+  const [skipQueueAssignment, { isLoading: isSkipping }] =
+    useSkipQueueAssignmentMutation();
 
   useEffect(() => {
     if (data) {
@@ -72,19 +82,86 @@ export default function QueuePage() {
     router.push(`/physicians/clinic-visit/${id}`);
   };
 
-  const handleStartServing = (id: string) => {
-    console.log("Start serving:", id);
-    // TODO: Implement start serving functionality
+  const handleStartServing = async (id: string) => {
+    try {
+      const queueItem = data?.data.data.find((item) => item.id === id);
+
+      if (!queueItem) {
+        toast.error("Queue item not found");
+        return;
+      }
+
+      // Check if there's already a queue in progress
+      const inProgressQueue = data?.data.data.find(
+        (item) => item.status === QueueStatus.IN_PROGRESS
+      );
+
+      if (inProgressQueue && inProgressQueue.id !== id) {
+        toast.error(
+          `Please complete queue #${inProgressQueue.queueNumber} before starting a new one`
+        );
+        return;
+      }
+
+      // Update queue status to IN_PROGRESS
+      await updateQueueAssignment({
+        id,
+        data: {
+          status: QueueStatus.IN_PROGRESS,
+        },
+      }).unwrap();
+
+      toast.success(
+        `Started serving Queue #${queueItem.queueNumber} - ${queueItem.encounter?.patient?.firstName} ${queueItem.encounter?.patient?.lastName}`
+      );
+
+      // Optional: Navigate to patient details or encounter page
+      // router.push(`/physicians/clinic-visit/${id}`);
+    } catch (error) {
+      console.error("Failed to start serving:", error);
+      toast.error("Failed to start serving. Please try again.");
+    }
   };
 
-  const handleEdit = (id: string) => {
-    console.log("Edit queue item:", id);
-    // TODO: Implement edit functionality
+  const handleComplete = async (id: string) => {
+    try {
+      const queueItem = data?.data.data.find((item) => item.id === id);
+
+      if (!queueItem) {
+        toast.error("Queue item not found");
+        return;
+      }
+
+      await updateQueueAssignment({
+        id,
+        data: {
+          status: QueueStatus.COMPLETED,
+        },
+      }).unwrap();
+
+      toast.success(`Completed Queue #${queueItem.queueNumber}`);
+    } catch (error) {
+      console.error("Failed to complete queue:", error);
+      toast.error("Failed to complete queue. Please try again.");
+    }
   };
 
-  const handleCancel = (id: string) => {
-    console.log("Cancel queue item:", id);
-    // TODO: Implement cancel functionality
+  const handleSkip = async (id: string) => {
+    try {
+      const queueItem = data?.data.data.find((item) => item.id === id);
+
+      if (!queueItem) {
+        toast.error("Queue item not found");
+        return;
+      }
+
+      await skipQueueAssignment(id).unwrap();
+
+      toast.success(`Skipped Queue #${queueItem.queueNumber}`);
+    } catch (error) {
+      console.error("Failed to complete queue:", error);
+      toast.error("Failed to complete queue. Please try again.");
+    }
   };
 
   const handleFiltersChange = (newFilters: QueueFilters) => {
@@ -127,7 +204,42 @@ export default function QueuePage() {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
               Clinic Visit
             </h1>
-            <div className="text-sm text-gray-500">General • Nov 23, 2022</div>
+            <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Date */}
+              <div className="text-sm text-gray-500">
+                Today:{" "}
+                <span className="font-medium text-gray-700">
+                  {formatDate(new Date())}
+                </span>
+              </div>
+
+              {/* Stats */}
+              <div className="flex flex-wrap gap-3 sm:gap-4">
+                {/* Total Visited */}
+                <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
+                  <Users size={16} />
+                  <span className="text-sm font-semibold">Visited: 500</span>
+                </div>
+
+                {/* Waiting */}
+                <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
+                  <Clock size={16} />
+                  <span className="text-sm font-semibold">Waiting: 300</span>
+                </div>
+
+                {/* Completed */}
+                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
+                  <CheckCircle size={16} />
+                  <span className="text-sm font-semibold">Completed: 200</span>
+                </div>
+
+                {/* Current Token */}
+                <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg shadow-sm hover:bg-purple-200 transition">
+                  <Hash size={16} />
+                  <span className="text-sm font-semibold">Current: 001</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -140,11 +252,12 @@ export default function QueuePage() {
         <QueueTable
           queueItems={data?.data.data || []}
           onStartServing={handleStartServing}
-          onEdit={handleEdit}
-          onCancel={handleCancel}
+          onComplete={handleComplete}
+          onSkip={handleSkip}
           onViewDetails={handleViewDetails}
           pagination={paginationMeta}
           onPageChange={handlePageChange}
+          isUpdating={isUpdating}
         />
       </div>
     </div>
