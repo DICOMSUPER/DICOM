@@ -3,6 +3,8 @@ import { Roles } from '@backend/shared-enums';
 import { Department } from './department.entity';
 import { Qualification } from './qualification.entity';
 import { RoomAssignment } from './room-assignment.entity';
+import { WeeklySchedulePattern } from './weekly-schedule-patterns.entity';
+import { DigitalSignature } from './digital-signature.entity';
 
 @Entity('users')
 export class User {
@@ -63,6 +65,13 @@ export class User {
   @OneToMany(() => Qualification, qualification => qualification.employee)
   qualifications!: Qualification[];
 
+  @OneToMany(() => WeeklySchedulePattern, pattern => pattern.user)
+  weeklySchedulePatterns!: WeeklySchedulePattern[];
+
   @OneToMany(() => RoomAssignment, roomAssignment => roomAssignment.employee)
   roomAssignments!: RoomAssignment[];
+
+
+  @OneToMany(() => DigitalSignature, (sig) => sig.user)
+  digitalSignatures!: DigitalSignature[];
 }

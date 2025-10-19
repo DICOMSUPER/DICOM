@@ -6,6 +6,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { DepartmentModule } from './department/department.module';
 import { RoomAssignmentsModule } from './room-assignment/room-assignment.module';
 import { EmployeeSchedulesModule } from './employee-schedules/employee-schedules.module';
+import { WeeklySchedulePatternsModule } from './weekly-schedule-patterns/weekly-schedule-patterns.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { EmployeeSchedulesModule } from './employee-schedules/employee-schedules
     DepartmentModule,
     RoomAssignmentsModule,
     EmployeeSchedulesModule,
+    WeeklySchedulePatternsModule
   ],
-  exports: [UserServiceClientModule, UserModule, RoomsModule, DepartmentModule, EmployeeSchedulesModule],
+  exports: [UserServiceClientModule, UserModule, RoomsModule, DepartmentModule, EmployeeSchedulesModule,WeeklySchedulePatternsModule],
 })
 export class UserServiceModule {}

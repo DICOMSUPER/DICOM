@@ -36,7 +36,7 @@ export enum DayOfWeek {
   THURSDAY = 4,
   FRIDAY = 5,
   SATURDAY = 6,
-  SUNDAY = 0,
+  SUNDAY = 7,
 }
 export enum ReplacementStatus {
   REQUESTED = 'requested',

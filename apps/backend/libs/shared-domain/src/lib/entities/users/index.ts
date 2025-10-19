@@ -11,3 +11,4 @@ export * from './weekly-schedule-patterns.entity';
 export * from './working-hours.entity';
 export * from './break-times.entity';
 export * from './special-hours.entity';
+export * from './digital-signature.entity';
