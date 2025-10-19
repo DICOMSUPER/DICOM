@@ -207,11 +207,11 @@ export function ScheduleForm({
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
               <UserIcon className="w-4 h-4" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-foreground">
               {usersLoading ? "Loading employees..." : "No employees found"}
             </p>
             {users.length === 0 && !usersLoading && (
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-foreground mt-2">
                 Please check if the users API is working correctly
               </p>
             )}
@@ -252,7 +252,7 @@ export function ScheduleForm({
                       {user.firstName} {user.lastName}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground ml-8">
+                  <div className="flex items-center gap-2 text-xs text-foreground ml-8">
                     <span className="flex-1 min-w-0">{user.email}</span>
                     <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs whitespace-nowrap">
                       {user.role?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "N/A"}

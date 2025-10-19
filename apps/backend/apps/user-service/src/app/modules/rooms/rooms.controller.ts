@@ -215,7 +215,9 @@ export class RoomsController {
         isActive 
       });
       
-      const roomIds = result.data.map(r => r.id);
+      // Ensure result.data is an array
+      const rooms = Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []);
+      const roomIds = rooms.map(r => r.id);
       
       this.logger.log(`Returning ${roomIds.length} room IDs`);
       
