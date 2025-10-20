@@ -10,12 +10,37 @@ import { ImagingModalitiesModule } from './modules/imaging-modalities/imaging-mo
 import { ImagingOrdersModule } from './modules/imaging-orders/imaging-orders.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm/dist';
+import { DicomInstancesService } from './modules/dicom-instances/dicom-instances.service';
+import { DicomInstancesRepository } from './modules/dicom-instances/dicom-instances.repository';
+import { DicomSeriesService } from './modules/dicom-series/dicom-series.service';
+import { DicomSeriesRepository } from './modules/dicom-series/dicom-series.repository';
+import { DicomStudiesRepository } from './modules/dicom-studies/dicom-studies.repository';
+import { DicomStudiesService } from './modules/dicom-studies/dicom-studies.service';
+import { ImagingModalitiesService } from './modules/imaging-modalities/imaging-modalities.service';
+import { ImagingModalityRepository } from './modules/imaging-modalities/imaging-modalities.repository';
+import { ImagingOrderRepository } from './modules/imaging-orders/imaging-orders.repository';
+import { ImagingOrdersService } from './modules/imaging-orders/imaging-orders.service';
+import { BackendEntitiesModule } from '@backend/entities';
+import {
+  DicomInstance,
+  DicomSeries,
+  DicomStudy,
+  ImagingModality,
+  ImagingOrder,
+} from '@backend/shared-domain';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
+    BackendEntitiesModule.forFeature([
+      DicomInstance,
+      DicomSeries,
+      DicomStudy,
+      ImagingModality,
+      ImagingOrder,
+    ]),
     DicomInstancesModule,
     DicomSeriesModule,
     DatabaseModule.forService({
@@ -29,6 +54,18 @@ import { TypeOrmModule } from '@nestjs/typeorm/dist';
     ImagingOrdersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    DicomInstancesService,
+    DicomInstancesRepository,
+    DicomSeriesService,
+    DicomSeriesRepository,
+    DicomStudiesRepository,
+    DicomStudiesService,
+    ImagingModalitiesService,
+    ImagingModalityRepository,
+    ImagingOrderRepository,
+    ImagingOrdersService,
+  ],
 })
 export class AppModule {}
