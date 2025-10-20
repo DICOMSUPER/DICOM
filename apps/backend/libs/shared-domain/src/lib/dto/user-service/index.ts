@@ -4,3 +4,5 @@ export * from './qualification/update-qualification.dto';
 export * from './user/create-user.dto';
 export * from './user/token-response.dto';
 export * from './user/update-user.dto';
+export * from './weekly-schedule-pattern/create-weekly-schedule-pattern.dto';
+export * from './weekly-schedule-pattern/update-weekly-schedule-pattern.dto';

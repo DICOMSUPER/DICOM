@@ -7,8 +7,6 @@ import {
 import { UpdateDicomSeriesDto } from '@backend/shared-domain';
 import { DicomSeriesRepository } from './dicom-series.repository';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
-import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -17,7 +15,16 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 
+import {
+  DicomSeriesNotFoundException,
+  DicomSeriesStudyNotFoundException,
+  DicomSeriesInvalidModeException,
+  DicomSeriesInternalException,
+  DicomSeriesStudyProcessException,
+} from '@backend/shared-exception';
+
 const relation = ['study', 'study.modality', 'instances'];
+
 @Injectable()
 export class DicomSeriesService {
   constructor(
@@ -49,11 +56,7 @@ export class DicomSeriesService {
     entityManager?: EntityManager
   ): Promise<void> => {
     if (!['add', 'subtract'].includes(mode)) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to update number of series for study: invalid mode',
-        IMAGING_SERVICE
-      );
+      throw new DicomSeriesInvalidModeException({ mode });
     }
 
     const study = await this.dicomStudiesRepository.findOne(
@@ -63,23 +66,20 @@ export class DicomSeriesService {
     );
 
     if (!study) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to update number of series for study: study not found',
-        IMAGING_SERVICE
-      );
+      throw new DicomSeriesStudyNotFoundException({ studyId: id });
     }
+
     const newTotal =
       mode === 'add'
         ? study.numberOfSeries + quantity
         : study.numberOfSeries - quantity;
 
     if (newTotal < 0) {
-      throw ThrowMicroserviceException(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Internal Server Error',
-        IMAGING_SERVICE
-      );
+      throw new DicomSeriesInternalException({
+        message: 'Negative number of series not allowed',
+        currentTotal: study.numberOfSeries,
+        quantity,
+      });
     }
 
     await this.dicomStudiesRepository.update(
@@ -99,11 +99,7 @@ export class DicomSeriesService {
       entityManager
     );
     if (!series) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Dicom series not found',
-        IMAGING_SERVICE
-      );
+      throw new DicomSeriesNotFoundException({ seriesId: id });
     }
     return series;
   };
@@ -119,11 +115,7 @@ export class DicomSeriesService {
     );
 
     if (!study) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to process dicom series: study not found',
-        IMAGING_SERVICE
-      );
+      throw new DicomSeriesStudyProcessException({ studyId: id });
     }
 
     return study;
@@ -132,17 +124,13 @@ export class DicomSeriesService {
   create = async (
     createDicomSeriesDto: CreateDicomSeriesDto
   ): Promise<DicomSeries> => {
-    //check study before creating series
     await this.checkDicomStudy(createDicomSeriesDto.studyId);
-
-    //update total series in the study
     await this.updateDicomStudyNumberOfSeries(
       createDicomSeriesDto.studyId,
       1,
       'add'
     );
 
-    //get latest seriesNumber
     const seriesNumber = await this.getLastestDicomSeriesNumber(
       createDicomSeriesDto.studyId
     );
@@ -159,7 +147,6 @@ export class DicomSeriesService {
   };
 
   findOne = async (id: string): Promise<DicomSeries | null> => {
-    //check dicom series
     await this.checkDicomSeries(id);
 
     return await this.dicomSeriesRepository.findOne(
@@ -189,7 +176,6 @@ export class DicomSeriesService {
             transactionalEntityManager
           );
 
-          // Update old study counts
           await this.updateDicomStudyNumberOfSeries(
             series.studyId,
             1,
@@ -197,7 +183,6 @@ export class DicomSeriesService {
             transactionalEntityManager
           );
 
-          // Update new study counts
           await this.updateDicomStudyNumberOfSeries(
             newStudy.id,
             1,
@@ -205,7 +190,6 @@ export class DicomSeriesService {
             transactionalEntityManager
           );
 
-          // Set series number based on new study's count
           updateData = {
             ...updateDicomSeriesDto,
             seriesNumber: await this.getLastestDicomSeriesNumber(newStudy.id),
@@ -222,12 +206,8 @@ export class DicomSeriesService {
   };
 
   remove = async (id: string): Promise<boolean> => {
-    //check dicom series
     const series = await this.checkDicomSeries(id);
-
-    //update number of series in instance
     await this.updateDicomStudyNumberOfSeries(series.studyId, 1, 'subtract');
-
     return await this.dicomSeriesRepository.softDelete(id, 'isDeleted');
   };
 
