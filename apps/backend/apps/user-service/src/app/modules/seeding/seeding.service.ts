@@ -449,10 +449,19 @@ export class SeedingService {
       where: { is_active: true }
     });
 
+    this.logger.log(`📊 Found ${users.length} users, ${rooms.length} rooms, ${shiftTemplates.length} shift templates`);
+
     if (users.length === 0 || rooms.length === 0 || shiftTemplates.length === 0) {
       this.logger.warn('⚠️ Missing required data for schedule seeding');
+      this.logger.warn(`Users: ${users.length}, Rooms: ${rooms.length}, ShiftTemplates: ${shiftTemplates.length}`);
       return;
     }
+
+    // Log room details for debugging
+    this.logger.log('🏥 Available rooms:');
+    rooms.forEach(room => {
+      this.logger.log(`  - ${room.roomCode} (ID: ${room.id})`);
+    });
 
     // Filter users by role
     const physicians = users.filter(u => u.role === Roles.PHYSICIAN);
@@ -501,6 +510,8 @@ export class SeedingService {
             overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
           };
 
+          this.logger.log(`📅 Creating schedule for ${physician.firstName} ${physician.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
+
           const existing = await this.employeeScheduleRepository.findOne({
             where: {
               employee_id: physician.id,
@@ -510,8 +521,11 @@ export class SeedingService {
 
           if (!existing) {
             const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
+            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            this.logger.log(`✅ Saved physician schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
+          } else {
+            this.logger.log(`⚠️ Schedule already exists for ${physician.firstName} on ${workDate}`);
           }
         }
       }
@@ -534,6 +548,8 @@ export class SeedingService {
             overtime_hours: dayOffset < -3 && Math.random() > 0.8 ? Math.floor(Math.random() * 2) + 1 : 0,
           };
 
+          this.logger.log(`📅 Creating schedule for ${staff.firstName} ${staff.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
+
           const existing = await this.employeeScheduleRepository.findOne({
             where: {
               employee_id: staff.id,
@@ -543,8 +559,11 @@ export class SeedingService {
 
           if (!existing) {
             const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
+            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            this.logger.log(`✅ Saved reception schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
+          } else {
+            this.logger.log(`⚠️ Schedule already exists for ${staff.firstName} on ${workDate}`);
           }
         }
       }
@@ -568,6 +587,8 @@ export class SeedingService {
             overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
           };
 
+          this.logger.log(`📅 Creating schedule for ${tech.firstName} ${tech.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
+
           const existing = await this.employeeScheduleRepository.findOne({
             where: {
               employee_id: tech.id,
@@ -577,14 +598,28 @@ export class SeedingService {
 
           if (!existing) {
             const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            await this.employeeScheduleRepository.save(newSchedule);
+            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            this.logger.log(`✅ Saved imaging tech schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
+          } else {
+            this.logger.log(`⚠️ Schedule already exists for ${tech.firstName} on ${workDate}`);
           }
         }
       }
     }
 
     this.logger.log(`✅ Created ${schedulesCreated} employee schedules (past 7 days + next 14 days)`);
+    
+    // Verify the seeding by checking a few schedules
+    const sampleSchedules = await this.employeeScheduleRepository.find({
+      take: 5,
+      relations: ['room', 'employee', 'shift_template']
+    });
+    
+    this.logger.log('🔍 Sample schedules created:');
+    sampleSchedules.forEach(schedule => {
+      this.logger.log(`  - ${schedule.employee?.firstName} ${schedule.employee?.lastName} on ${schedule.work_date} in room ${schedule.room?.roomCode || 'NULL'} (room_id: ${schedule.room_id})`);
+    });
   }
 
   async clearAllData(): Promise<void> {

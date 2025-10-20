@@ -1,122 +1,138 @@
 import { RpcException } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
 
+// ─────────────────────────────────────────────
+// ROOM EXCEPTIONS
+// ─────────────────────────────────────────────
+
 export class RoomNotFoundException extends RpcException {
-  constructor(message: string = 'Room not found') {
+  constructor(roomId?: string) {
     super({
-      message,
       statusCode: HttpStatus.NOT_FOUND,
-      error: 'ROOM_NOT_FOUND'
+      message: `Room${roomId ? ` '${roomId}'` : ''} not found`,
+      errorCode: 'ROOM_NOT_FOUND',
+      details: { roomId },
     });
   }
 }
 
 export class RoomAlreadyExistsException extends RpcException {
-  constructor(message: string = 'Room already exists') {
+  constructor(field: string = 'name', value?: string) {
     super({
-      message,
       statusCode: HttpStatus.CONFLICT,
-      error: 'ROOM_ALREADY_EXISTS'
+      message: `Room with ${field}${value ? ` '${value}'` : ''} already exists`,
+      errorCode: 'ROOM_ALREADY_EXISTS',
+      details: { field, value },
     });
   }
 }
 
 export class RoomCreationFailedException extends RpcException {
-  constructor(message: string = 'Failed to create room') {
+  constructor(details?: any) {
     super({
-      message,
       statusCode: HttpStatus.BAD_REQUEST,
-      error: 'ROOM_CREATION_FAILED'
+      message: 'Failed to create room',
+      errorCode: 'ROOM_CREATION_FAILED',
+      details,
     });
   }
 }
 
 export class RoomUpdateFailedException extends RpcException {
-  constructor(message: string = 'Failed to update room') {
+  constructor(roomId?: string, details?: any) {
     super({
-      message,
       statusCode: HttpStatus.BAD_REQUEST,
-      error: 'ROOM_UPDATE_FAILED'
+      message: `Failed to update room${roomId ? ` '${roomId}'` : ''}`,
+      errorCode: 'ROOM_UPDATE_FAILED',
+      details: { roomId, ...details },
     });
   }
 }
 
 export class RoomDeletionFailedException extends RpcException {
-  constructor(message: string = 'Failed to delete room') {
+  constructor(roomId?: string, details?: any) {
     super({
-      message,
-      statusCode: HttpStatus.BAD_REQUEST,
-      error: 'ROOM_DELETION_FAILED'
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to delete room${roomId ? ` '${roomId}'` : ''}`,
+      errorCode: 'ROOM_DELETION_FAILED',
+      details: { roomId, ...details },
     });
   }
 }
 
 export class RoomAccessDeniedException extends RpcException {
-  constructor(message: string = 'Access to room denied') {
+  constructor(roomId?: string) {
     super({
-      message,
       statusCode: HttpStatus.FORBIDDEN,
-      error: 'ROOM_ACCESS_DENIED'
+      message: `Access to room${roomId ? ` '${roomId}'` : ''} denied`,
+      errorCode: 'ROOM_ACCESS_DENIED',
+      details: { roomId },
     });
   }
 }
 
 export class RoomNotAvailableException extends RpcException {
-  constructor(message: string = 'Room is not available') {
+  constructor(roomId?: string) {
     super({
-      message,
       statusCode: HttpStatus.CONFLICT,
-      error: 'ROOM_NOT_AVAILABLE'
+      message: `Room${roomId ? ` '${roomId}'` : ''} is not available`,
+      errorCode: 'ROOM_NOT_AVAILABLE',
+      details: { roomId },
     });
   }
 }
 
 export class RoomCapacityExceededException extends RpcException {
-  constructor(message: string = 'Room capacity exceeded') {
+  constructor(maxCapacity: number, actual: number) {
     super({
-      message,
       statusCode: HttpStatus.BAD_REQUEST,
-      error: 'ROOM_CAPACITY_EXCEEDED'
+      message: `Room capacity exceeded. Max: ${maxCapacity}, Current: ${actual}`,
+      errorCode: 'ROOM_CAPACITY_EXCEEDED',
+      details: { maxCapacity, actual },
     });
   }
 }
 
 export class InvalidRoomDataException extends RpcException {
-  constructor(message: string = 'Invalid room data provided') {
+  constructor(details?: any) {
     super({
-      message,
       statusCode: HttpStatus.BAD_REQUEST,
-      error: 'INVALID_ROOM_DATA'
+      message: 'Invalid room data provided',
+      errorCode: 'INVALID_ROOM_DATA',
+      details,
     });
   }
 }
 
 export class RoomBookingConflictException extends RpcException {
-  constructor(message: string = 'Room booking conflict') {
+  constructor(roomId?: string, timeSlot?: any) {
     super({
-      message,
       statusCode: HttpStatus.CONFLICT,
-      error: 'ROOM_BOOKING_CONFLICT'
+      message: `Room${roomId ? ` '${roomId}'` : ''} booking conflict`,
+      errorCode: 'ROOM_BOOKING_CONFLICT',
+      details: { roomId, timeSlot },
     });
   }
 }
 
 export class RoomMaintenanceException extends RpcException {
-  constructor(message: string = 'Room is under maintenance') {
+  constructor(roomId?: string) {
     super({
-      message,
       statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-      error: 'ROOM_UNDER_MAINTENANCE'
+      message: `Room${roomId ? ` '${roomId}'` : ''} is under maintenance`,
+      errorCode: 'ROOM_UNDER_MAINTENANCE',
+      details: { roomId },
     });
   }
 }
 
 export class RoomValidationException extends RpcException {
-  constructor(message: string = 'Room validation failed') {
+  constructor(details?: any) {
     super({
-      message,
       statusCode: HttpStatus.BAD_REQUEST,
-      error: 'ROOM_VALIDATION_FAILED'
+      message: 'Room validation failed',
+      errorCode: 'ROOM_VALIDATION_FAILED',
+      details,
     });
   }
 }

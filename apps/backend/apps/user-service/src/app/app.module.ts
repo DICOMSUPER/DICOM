@@ -10,7 +10,7 @@ import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.module';
 import { WeeklySchedulePatternsModule } from './modules/weekly-schedule-patterns/weekly-schedule-patterns.module';
-
+import { DigitalSignatureModule } from './modules/digital-signature/digital-signature.module';
 import { OtpsModule } from './modules/otps/otps.module';
 import { WorkingHoursModule } from './modules/working-hours/working-hours.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
@@ -35,8 +35,9 @@ import { SeedingModule } from './modules/seeding/seeding.module';
     OtpsModule,
     WorkingHoursModule,
     SeedingModule,
+    DigitalSignatureModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

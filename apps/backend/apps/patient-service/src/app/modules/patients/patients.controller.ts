@@ -194,4 +194,35 @@ export class PatientController {
       );
     }
   }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetIds`)
+  async getPatientIds(
+    @Payload() data: { take?: number; skip?: number }
+  ): Promise<{ success: boolean; data: string[]; count: number }> {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetIds`);
+    try {
+      const { take = 10, skip = 0 } = data;
+      const patients = await this.patientService.findAll();
+      
+      const selectedPatients = patients
+        .filter(p => p.isActive)
+        .slice(skip, skip + take);
+      
+      const patientIds = selectedPatients.map(p => p.id);
+      
+      this.logger.log(`Returning ${patientIds.length} patient IDs`);
+      
+      return {
+        success: true,
+        data: patientIds,
+        count: patientIds.length,
+      };
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get patient IDs',
+        PATIENT_SERVICE
+      );
+    }
+  }
 }

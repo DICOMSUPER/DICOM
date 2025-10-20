@@ -274,7 +274,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
             {/* Handle loading state */}
             {isLoadingPhysicians && (
-              <div className="text-muted-foreground text-sm">
+              <div className="text-foreground text-sm">
                 Loading physicians...
               </div>
             )}
@@ -282,7 +282,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
             {/* Handle empty state */}
             {!isLoadingPhysicians &&
               (!physicians?.length || physicians.length === 0) && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-foreground text-sm">
                   No physicians available in this room.
                 </div>
               )}
@@ -327,7 +327,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
                       <div className="flex justify-between items-end text-sm">
                         <div>
-                          <span className="text-muted-foreground">
+                          <span className="text-foreground">
                             Current:{" "}
                           </span>
                           <span className="font-semibold text-foreground">
@@ -335,7 +335,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
                           </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Max: </span>
+                          <span className="text-foreground">Max: </span>
                           <span className="font-semibold text-foreground">
                             {maxQueue}
                           </span>

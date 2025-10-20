@@ -30,22 +30,38 @@ export class EmployeeScheduleService {
     createDto: CreateEmployeeScheduleDto
   ): Promise<EmployeeSchedule> {
     try {
-      // Check for schedule conflicts
-      const existingSchedule =
-        await this.employeeScheduleRepository.findByEmployeeId(
-          createDto.employee_id
+      // Check for schedule conflicts with time overlap
+      if (createDto.actual_start_time && createDto.actual_end_time) {
+        const conflictCheck = await this.checkConflict(
+          createDto.employee_id,
+          createDto.work_date,
+          createDto.actual_start_time,
+          createDto.actual_end_time
         );
 
-      const conflictExists = existingSchedule.some(
-        (schedule) =>
-          schedule.work_date === createDto.work_date &&
-          schedule.schedule_status !== ScheduleStatus.CANCELLED
-      );
+        if (conflictCheck.hasConflict) {
+          throw new BadRequestException(
+            `Employee already has a schedule on ${createDto.work_date} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+          );
+        }
+      } else {
+        // If no specific time, just check if employee has any schedule on that date
+        const existingSchedule =
+          await this.employeeScheduleRepository.findByEmployeeId(
+            createDto.employee_id
+          );
 
-      if (conflictExists) {
-        throw new BadRequestException(
-          'Employee already has a schedule for this date'
+        const conflictExists = existingSchedule.some(
+          (schedule) =>
+            schedule.work_date === createDto.work_date &&
+            schedule.schedule_status !== ScheduleStatus.CANCELLED
         );
+
+        if (conflictExists) {
+          throw new BadRequestException(
+            'Employee already has a schedule for this date'
+          );
+        }
       }
 
       const schedule = this.employeeScheduleRepository.create(createDto);
@@ -106,10 +122,37 @@ export class EmployeeScheduleService {
     try {
       const schedule = await this.findOne(id);
 
+      // If updating time or date, check for conflicts
+      if (
+        (updateDto.work_date || updateDto.actual_start_time || updateDto.actual_end_time) &&
+        updateDto.employee_id !== undefined
+      ) {
+        const checkDate = updateDto.work_date || schedule.work_date;
+        const checkStartTime = updateDto.actual_start_time || schedule.actual_start_time;
+        const checkEndTime = updateDto.actual_end_time || schedule.actual_end_time;
+        const checkEmployeeId = updateDto.employee_id || schedule.employee_id;
+
+        if (checkStartTime && checkEndTime) {
+          const conflictCheck = await this.checkConflict(
+            checkEmployeeId,
+            checkDate,
+            checkStartTime,
+            checkEndTime,
+            id // Exclude current schedule from conflict check
+          );
+
+          if (conflictCheck.hasConflict) {
+            throw new BadRequestException(
+              `Schedule conflict detected on ${checkDate} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+            );
+          }
+        }
+      }
+
       Object.assign(schedule, updateDto);
       return await this.employeeScheduleRepository.save(schedule);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException('Failed to update employee schedule');

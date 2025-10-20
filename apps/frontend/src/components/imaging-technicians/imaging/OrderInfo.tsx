@@ -10,7 +10,7 @@ export default function OrderInfo({ order }: { order: any }) {
     };
     return `px-3 py-1 rounded-full text-xs font-semibold border ${
       colors[normalized] ||
-      "bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)]"
+      "bg-[var(--muted)] text-[var(--foreground)] border-[var(--border)]"
     }`;
   };
 

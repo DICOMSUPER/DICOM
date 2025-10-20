@@ -33,7 +33,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
     };
     return `px-3 py-1 rounded-full text-xs font-semibold border ${
       colors[normalized] ||
-      "bg-[var(--muted)] text-[var(--muted-foreground)] border-[var(--border)]"
+      "bg-[var(--muted)] text-[var(--foreground)] border-[var(--border)]"
     }`;
   };
 
@@ -46,7 +46,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
       CANCELLED: "bg-[var(--destructive)]/10 text-[var(--destructive)]",
     };
     return `px-2 py-1 rounded-full text-xs font-medium ${
-      colors[normalized] || "bg-[var(--muted)] text-[var(--muted-foreground)]"
+      colors[normalized] || "bg-[var(--muted)] text-[var(--foreground)]"
     }`;
   };
 
@@ -74,7 +74,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
                   {getStatusLabel(order.order_status)}
                 </span>
               </div>
-              <div className="text-sm text-[var(--muted-foreground)] mt-1">
+              <div className="text-sm text-[var(--foreground)] mt-1">
                 MRN: {mrn} • DOB: {dob}
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="font-medium text-[var(--muted-foreground)]">
+              <span className="font-medium text-[var(--foreground)]">
                 Modality:
               </span>
               <div className="text-[var(--foreground)] flex items-center mt-1">
@@ -91,7 +91,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
               </div>
             </div>
             <div>
-              <span className="font-medium text-[var(--muted-foreground)]">
+              <span className="font-medium text-[var(--foreground)]">
                 Body Part:
               </span>
               <div className="text-[var(--foreground)] mt-1">
@@ -99,7 +99,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
               </div>
             </div>
             <div>
-              <span className="font-medium text-[var(--muted-foreground)]">
+              <span className="font-medium text-[var(--foreground)]">
                 Scheduled:
               </span>
               <div className="text-[var(--foreground)] flex items-center mt-1">
@@ -108,7 +108,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
               </div>
             </div>
             <div>
-              <span className="font-medium text-[var(--muted-foreground)]">
+              <span className="font-medium text-[var(--foreground)]">
                 Room:
               </span>
               <div className="text-[var(--foreground)] flex items-center mt-1">
@@ -119,7 +119,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
           </div>
 
           <div>
-            <span className="font-medium text-[var(--muted-foreground)]">
+            <span className="font-medium text-[var(--foreground)]">
               Clinical Indication:
             </span>
             <div className="text-[var(--foreground)] mt-1">
@@ -128,7 +128,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
           </div>
 
           <div>
-            <span className="font-medium text-[var(--muted-foreground)]">
+            <span className="font-medium text-[var(--foreground)]">
               Ordering Physician:
             </span>
             <div className="text-[var(--foreground)] mt-1">{physician}</div>
@@ -136,7 +136,7 @@ export default function ImagingOrderCard({ order }: { order: any }) {
 
           {order.special_instructions && (
             <div>
-              <span className="font-medium text-[var(--muted-foreground)]">
+              <span className="font-medium text-[var(--foreground)]">
                 Special Instructions:
               </span>
               <div className="text-[var(--foreground)] mt-1 p-2 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded">

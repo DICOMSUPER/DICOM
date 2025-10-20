@@ -9,7 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Roles } from '@backend/shared-enums';
-import { Department, EmployeeSchedule } from '@backend/shared-domain';
+import { Department, DigitalSignature, EmployeeSchedule, WeeklySchedulePattern } from '@backend/shared-domain';
 import { Qualification } from '@backend/shared-domain';
 import { BaseEntity } from '@backend/database';
 
@@ -72,6 +72,9 @@ export class User {
   @OneToMany(() => Qualification, (qualification) => qualification.employee)
   qualifications!: Qualification[];
 
+  @OneToMany(() => WeeklySchedulePattern, pattern => pattern.user)
+  weeklySchedulePatterns!: WeeklySchedulePattern[];
+
   // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
   // roomAssignments!: RoomAssignment[];
   @OneToMany(
@@ -79,4 +82,7 @@ export class User {
     (employeeSchedule) => employeeSchedule.employee
   )
   employeeSchedules!: EmployeeSchedule[];
+  
+   @OneToMany(() => DigitalSignature, (sig) => sig.user)
+  digitalSignatures!: DigitalSignature[];
 }

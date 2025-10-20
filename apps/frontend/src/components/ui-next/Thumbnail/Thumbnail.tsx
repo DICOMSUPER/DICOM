@@ -195,8 +195,8 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
           </Tooltip>
 
           <div className="flex h-[12px] items-center gap-[7px] overflow-hidden">
-            <div className="text-muted-foreground pl-1 text-[11px]">S:{seriesNumber}</div>
-            <div className="text-muted-foreground text-[11px]">
+            <div className="text-foreground pl-1 text-[11px]">S:{seriesNumber}</div>
+            <div className="text-foreground text-[11px]">
               <div className="flex items-center gap-[4px]">
 
                   <Rows2 className="w-3" />
@@ -241,8 +241,8 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
             </div>
 
             <div className="flex h-[12px] items-center gap-[7px] overflow-hidden">
-              <div className="text-muted-foreground text-[12px]">S:{seriesNumber}</div>
-              <div className="text-muted-foreground text-[12px]">
+              <div className="text-foreground text-[12px]">S:{seriesNumber}</div>
+              <div className="text-foreground text-[12px]">
                 <div className="flex items-center gap-[4px]">
 
                    <Layers className="w-3" />

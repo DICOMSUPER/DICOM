@@ -159,7 +159,7 @@ export function AdminRecentActivity({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                  <p className="text-xs text-foreground">{activity.timestamp}</p>
                 </div>
                 {getActivityBadge(activity.type)}
               </div>

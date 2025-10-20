@@ -28,6 +28,8 @@ import {
   ImagingModality,
   ImagingOrder,
 } from '@backend/shared-domain';
+import { SeedingModule } from './modules/seeding/seeding.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -52,6 +54,7 @@ import {
     ImageAnnotationsModule,
     ImagingModalitiesModule,
     ImagingOrdersModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [
