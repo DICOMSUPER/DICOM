@@ -1,8 +1,7 @@
 import { BaseEntity } from '@backend/entities';
 import {
   OrderStatus,
-  OrderType,
-  Urgency,
+  OrderType
 } from '@backend/shared-enums';
 import {
   Column,

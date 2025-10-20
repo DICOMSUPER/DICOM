@@ -180,4 +180,20 @@ export class RoomsService {
       throw new RoomDeletionFailedException('Không thể xóa phòng');
     }
   }
+
+  async findByDepartmentId(departmentId: string): Promise<Room[]> {
+    try {
+      this.logger.log(`Finding rooms for department ID: ${departmentId}`);
+
+      const rooms = await this.roomRepository.find({
+        where: { department: { id: departmentId } },
+      });
+
+      this.logger.log(`Found ${rooms.length} rooms for department ID: ${departmentId}`);
+      return rooms;
+    } catch (error: unknown) {
+      this.logger.error(`Find rooms by department error: ${(error as Error).message}`);
+      throw new DatabaseException('Lỗi khi lấy phòng theo khoa');
+    }
+  } 
 }
