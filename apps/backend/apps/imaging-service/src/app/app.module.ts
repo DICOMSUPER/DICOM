@@ -10,6 +10,8 @@ import { ImagingModalitiesModule } from './modules/imaging-modalities/imaging-mo
 import { ImagingOrdersModule } from './modules/imaging-orders/imaging-orders.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm/dist';
+import { SeedingModule } from './modules/seeding/seeding.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +29,7 @@ import { TypeOrmModule } from '@nestjs/typeorm/dist';
     ImageAnnotationsModule,
     ImagingModalitiesModule,
     ImagingOrdersModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

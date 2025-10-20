@@ -129,7 +129,7 @@ export function VitalSignsDisplay({
           return (
             <div key={vital.key} className="flex items-center justify-between p-3 border rounded-lg">
               <div className="flex items-center gap-3">
-                <Icon className="h-5 w-5 text-muted-foreground" />
+                <Icon className="h-5 w-5 text-foreground" />
                 <div>
                   <p className="text-sm font-medium">{vital.label}</p>
                   <p className="text-lg font-semibold">

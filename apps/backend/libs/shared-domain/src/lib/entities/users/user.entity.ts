@@ -1,11 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Roles } from '@backend/shared-enums';
+import { Department, EmployeeSchedule } from '@backend/shared-domain';
+import { Qualification } from '@backend/shared-domain';
 import { BaseEntity } from '@backend/database';
-import { Department } from './department.entity';
-import { Qualification } from './qualification.entity';
 
 @Entity('users')
-export class User extends BaseEntity {
+export class User {
   @PrimaryGeneratedColumn('uuid', { name: 'user_id' })
   id!: string;
 
@@ -42,11 +51,17 @@ export class User extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+
   @Column({ name: 'created_by', nullable: true })
   createdBy!: string;
 
   // Relations
-  @ManyToOne(() => Department, department => department.users)
+  @ManyToOne(() => Department, (department) => department.users)
   @JoinColumn({ name: 'department_id' })
   department!: Department;
 
@@ -54,7 +69,17 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'created_by' })
   creator!: User;
 
-  @OneToMany(() => Qualification, qualification => qualification.employee)
+  @OneToMany(() => Qualification, (qualification) => qualification.employee)
   qualifications!: Qualification[];
 
+  @OneToMany(() => WeeklySchedulePattern, pattern => pattern.user)
+  weeklySchedulePatterns!: WeeklySchedulePattern[];
+
+  // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
+  // roomAssignments!: RoomAssignment[];
+  @OneToMany(
+    () => EmployeeSchedule,
+    (employeeSchedule) => employeeSchedule.employee
+  )
+  employeeSchedules!: EmployeeSchedule[];
 }

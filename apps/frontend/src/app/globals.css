@@ -80,33 +80,54 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* === CUSTOM SCROLLBAR === */
+/* === CUSTOM SCROLLBAR - GLOBAL === */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: rgb(15 23 42 / 1); /* slate-900 - darker */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--neutral);
+  background: rgb(51 65 85 / 1); /* slate-700 - darker */
   border-radius: 4px;
   transition: background 0.2s ease;
+  border: 1px solid rgb(30 41 59 / 1); /* slate-800 border */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: rgb(71 85 105 / 1); /* slate-600 - darker hover */
+  border: 1px solid rgb(51 65 85 / 1); /* slate-700 border on hover */
 }
 
 ::-webkit-scrollbar-corner {
-  background: var(--surface);
+  background: rgb(15 23 42 / 1); /* slate-900 - darker */
 }
 
 /* Firefox */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--neutral) var(--surface);
+  scrollbar-width: auto;
+  scrollbar-color: rgb(51 65 85 / 1) rgb(15 23 42 / 1); /* darker colors */
+}
+
+/* Custom slider for viewer controls */
+.custom-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.custom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
 }

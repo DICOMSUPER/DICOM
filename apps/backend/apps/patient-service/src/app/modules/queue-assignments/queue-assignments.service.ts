@@ -4,6 +4,7 @@ import {
   FilterQueueAssignmentDto,
   QueueAssignment,
   QueueAssignmentRepository,
+  PatientEncounterRepository,
 } from '@backend/shared-domain';
 
 import { QueueStatus, QueuePriorityLevel, Roles } from '@backend/shared-enums';
@@ -25,6 +26,8 @@ import {
 
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class QueueAssignmentService {
@@ -32,7 +35,10 @@ export class QueueAssignmentService {
     private readonly queueRepository: QueueAssignmentRepository,
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'UserService')
-    private readonly userService: ClientProxy
+    private readonly userService: ClientProxy,
+    private readonly encounterRepository: PatientEncounterRepository,
+    @InjectRepository(QueueAssignment)
+    private readonly queueRepository2: Repository<QueueAssignment>
   ) {}
 
   private getEndOfDay(date: Date = new Date()): Date {
@@ -67,10 +73,28 @@ export class QueueAssignmentService {
       );
     }
 
-    // Get next queue number for today
-    const queueNumber = await this.queueRepository.getNextQueueNumber(
-      new Date()
+    // // Get next queue number for today
+    // const queueNumber = await this.queueRepository.getNextQueueNumber(
+    //   new Date()
+    // );
+
+    //get next queue number for physician: 1 get physician Id, get latest queue number + 1, may be optimize later
+    const encounter = await this.encounterRepository.findById(
+      createQueueAssignmentDto.encounterId
     );
+    if (!encounter) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Invalid encounter to create queue',
+        PATIENT_SERVICE
+      );
+    }
+
+    const queueNumber =
+      await this.queueRepository.getNextQueueNumberForPhysician(
+        new Date(),
+        encounter.assignedPhysicianId as string
+      );
 
     // Calculate estimated wait time based on current queue
     const estimatedWaitTime = await this.calculateEstimatedWaitTime(
@@ -95,7 +119,7 @@ export class QueueAssignmentService {
   };
 
   findOne = async (id: string): Promise<QueueAssignment | null> => {
-    const assignment = await this.queueRepository.findById(id);
+    const assignment = await this.queueRepository.findById(id, ['encounter']);
     if (!assignment) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
@@ -517,4 +541,80 @@ export class QueueAssignmentService {
     });
   }
 
+  async getMaxWaitingAndCurrentInProgressByPhysicians(
+    physicianIds: string[]
+  ): Promise<{
+    [physicianId: string]: {
+      maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
+      currentInProgress: {
+        queueNumber: number;
+        entity: QueueAssignment;
+      } | null;
+    };
+  }> {
+    if (!physicianIds.length) {
+      return {};
+    }
+
+    const results: {
+      [physicianId: string]: {
+        maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
+        currentInProgress: {
+          queueNumber: number;
+          entity: QueueAssignment;
+        } | null;
+      };
+    } = physicianIds.reduce((acc, pid) => {
+      acc[pid] = { maxWaiting: null, currentInProgress: null };
+      return acc;
+    }, {});
+
+    // Query 1: Get all waiting assignments, ordered by physician ASC, queueNumber DESC
+    const waitingAssignments = await this.queueRepository2
+      .createQueryBuilder('qa')
+      .innerJoinAndSelect('qa.encounter', 'encounter')
+      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
+        physicianIds,
+      })
+      .andWhere('qa.status = :status', { status: QueueStatus.WAITING })
+      .orderBy('encounter.assignedPhysicianId', 'ASC')
+      .addOrderBy('qa.queueNumber', 'DESC')
+      .getMany();
+
+    // Query 2: Get all in-progress assignments, ordered by physician ASC, queueNumber ASC (smallest/lowest as "current")
+    const inProgressAssignments = await this.queueRepository2
+      .createQueryBuilder('qa')
+      .innerJoinAndSelect('qa.encounter', 'encounter')
+      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
+        physicianIds,
+      })
+      .andWhere('qa.status = :status', { status: QueueStatus.IN_PROGRESS })
+      .orderBy('encounter.assignedPhysicianId', 'ASC')
+      .addOrderBy('qa.queueNumber', 'ASC')
+      .getMany();
+
+    // Process waiting: First per physician group is the max (largest queueNumber) due to ordering
+    for (const qa of waitingAssignments) {
+      const pid = qa.encounter.assignedPhysicianId;
+      if (!results[pid].maxWaiting) {
+        results[pid].maxWaiting = {
+          queueNumber: qa.queueNumber,
+          // entity: qa,
+        };
+      }
+    }
+
+    // Process in-progress: First per physician group is the current (smallest queueNumber) due to ordering
+    for (const qa of inProgressAssignments) {
+      const pid = qa.encounter.assignedPhysicianId;
+      if (!results[pid].currentInProgress) {
+        results[pid].currentInProgress = {
+          queueNumber: qa.queueNumber,
+          // entity: qa,
+        };
+      }
+    }
+
+    return results;
+  }
 }

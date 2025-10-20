@@ -23,7 +23,7 @@ export function Chart({ data, type = "bar", className }: ChartProps) {
           <div key={index} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground">{item.label}</span>
-              <span className="text-muted-foreground">{item.value}</span>
+              <span className="text-foreground">{item.value}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
@@ -131,7 +131,7 @@ export function Chart({ data, type = "bar", className }: ChartProps) {
             <div className="text-lg font-bold text-foreground">
               {data.reduce((sum, d) => sum + d.value, 0)}
             </div>
-            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-xs text-foreground">Total</div>
           </div>
         </div>
       </div>

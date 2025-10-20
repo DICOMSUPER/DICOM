@@ -13,6 +13,8 @@ import {
   InvalidRoomDataException,
   DatabaseException,
 } from '@backend/shared-exception';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { HttpStatus } from '@nestjs/common';
 
 @Injectable()
 export class RoomsService {
@@ -20,47 +22,52 @@ export class RoomsService {
 
   constructor(
     @InjectRepository(Room)
-    private readonly roomRepository: Repository<Room>,
-  ) { }
+    private readonly roomRepository: Repository<Room>
+  ) {}
 
   async create(createRoomDto: CreateRoomDto): Promise<Room> {
-  try {
-    this.logger.log(`Creating room with data: ${JSON.stringify(createRoomDto)}`);
+    try {
+      this.logger.log(
+        `Creating room with data: ${JSON.stringify(createRoomDto)}`
+      );
 
-    if (!createRoomDto.roomCode) {
-      throw new InvalidRoomDataException('Mã phòng (roomCode) không được để trống');
+      if (!createRoomDto.roomCode) {
+        throw new InvalidRoomDataException(
+          'Mã phòng (roomCode) không được để trống'
+        );
+      }
+
+      const existingRoom = await this.roomRepository.findOne({
+        where: { roomCode: createRoomDto.roomCode },
+      });
+      if (existingRoom) {
+        throw new RoomAlreadyExistsException(
+          `Phòng với mã "${createRoomDto.roomCode}" đã tồn tại`
+        );
+      }
+
+      const newRoom = this.roomRepository.create({
+        ...createRoomDto,
+        department: createRoomDto.department
+          ? { id: createRoomDto.department }
+          : undefined,
+      });
+
+      const savedRoom = await this.roomRepository.save(newRoom);
+
+      this.logger.log(`✅ Room created successfully with ID: ${savedRoom.id}`);
+      return savedRoom;
+    } catch (error: unknown) {
+      this.logger.error(`❌ Create room error: ${(error as Error).message}`);
+      if (
+        error instanceof RoomAlreadyExistsException ||
+        error instanceof InvalidRoomDataException
+      ) {
+        throw error;
+      }
+      throw new RoomCreationFailedException('Không thể tạo phòng');
     }
-
-    const existingRoom = await this.roomRepository.findOne({
-      where: { roomCode: createRoomDto.roomCode },
-    });
-    if (existingRoom) {
-      throw new RoomAlreadyExistsException(`Phòng với mã "${createRoomDto.roomCode}" đã tồn tại`);
-    }
-
-    const newRoom = this.roomRepository.create({
-      ...createRoomDto,
-      department: createRoomDto.department
-        ? { id: createRoomDto.department } 
-        : undefined,
-    });
-
-    const savedRoom = await this.roomRepository.save(newRoom);
-
-    this.logger.log(`✅ Room created successfully with ID: ${savedRoom.id}`);
-    return savedRoom;
-  } catch (error: unknown) {
-    this.logger.error(`❌ Create room error: ${(error as Error).message}`);
-    if (
-      error instanceof RoomAlreadyExistsException ||
-      error instanceof InvalidRoomDataException
-    ) {
-      throw error;
-    }
-    throw new RoomCreationFailedException('Không thể tạo phòng');
   }
-}
-
 
   async findOne(id: string): Promise<Room> {
     try {
@@ -101,9 +108,12 @@ export class RoomsService {
         .take(limit);
 
       if (query.search) {
-        qb.andWhere('(room.roomName ILIKE :search OR room.roomCode ILIKE :search)', {
-          search: `%${query.search}%`,
-        });
+        qb.andWhere(
+          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          {
+            search: `%${query.search}%`,
+          }
+        );
       }
 
       if (query.isActive !== undefined) {
@@ -131,10 +141,11 @@ export class RoomsService {
     }
   }
 
-
   async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room> {
     try {
-      this.logger.log(`Updating room ID: ${id} with data: ${JSON.stringify(updateRoomDto)}`);
+      this.logger.log(
+        `Updating room ID: ${id} with data: ${JSON.stringify(updateRoomDto)}`
+      );
 
       const room = await this.findOne(id);
 
@@ -144,7 +155,9 @@ export class RoomsService {
           where: { roomCode: updateRoomDto.roomCode },
         });
         if (existingRoom && existingRoom.id !== id) {
-          throw new RoomAlreadyExistsException(`Phòng với mã "${updateRoomDto.roomCode}" đã tồn tại`);
+          throw new RoomAlreadyExistsException(
+            `Phòng với mã "${updateRoomDto.roomCode}" đã tồn tại`
+          );
         }
       }
 
@@ -181,19 +194,69 @@ export class RoomsService {
     }
   }
 
-  async findByDepartmentId(departmentId: string): Promise<Room[]> {
+  async getRoomByDepartmentId(
+    id: string,
+    applyScheduleFilter: boolean,
+    search?: string
+  ): Promise<Room[]> {
     try {
-      this.logger.log(`Finding rooms for department ID: ${departmentId}`);
+      const qb = this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoinAndSelect('room.department', 'department')
+        .leftJoinAndSelect('room.schedules', 'schedules') // Alias: schedules
+        .where('room.department_id = :id', { id }); // Base where for department
 
-      const rooms = await this.roomRepository.find({
-        where: { department: { id: departmentId } },
-      });
+      // Combine date and time activity filters
+      if (applyScheduleFilter) {
+        const now = new Date();
+        const currentDate = now.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayDate = yesterday.toISOString().split('T')[0];
+        const currentTime = now.toTimeString().split(' ')[0]; // 'HH:MM:SS'
+        qb.andWhere(
+          `(schedules.work_date = :currentDate
+          AND (
+            (schedules.actual_start_time > schedules.actual_end_time 
+              AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
+            ) 
+            OR 
+            (schedules.actual_start_time <= schedules.actual_end_time 
+              AND schedules.actual_start_time < :currentTime 
+              AND schedules.actual_end_time > :currentTime
+            )
+          )
+         )
+         OR 
+         (schedules.work_date = :yesterdayDate
+          AND schedules.actual_start_time > schedules.actual_end_time
+          AND :currentTime < schedules.actual_end_time
+         )`,
+          { currentDate, yesterdayDate, currentTime }
+        );
+      }
 
-      this.logger.log(`Found ${rooms.length} rooms for department ID: ${departmentId}`);
+      // Optional: Filter by active statuses only (adjust based on your enum)
+      // qb.andWhere('schedules.schedule_status IN (:...statuses)', { statuses: ['completed', 'scheduled', 'confirmed'] });
+
+      if (search) {
+        qb.andWhere(
+          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          { search: `%${search}%` }
+        );
+      }
+
+      const rooms = await qb.getMany();
+
       return rooms;
-    } catch (error: unknown) {
-      this.logger.error(`Find rooms by department error: ${(error as Error).message}`);
-      throw new DatabaseException('Lỗi khi lấy phòng theo khoa');
+    } catch (error) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `Failed to get rooms by department_id: ${
+          (error as Error).message || error
+        }`,
+        'UserService'
+      );
     }
-  } 
+  }
 }

@@ -3,7 +3,7 @@ import { QueuePriorityLevel } from '@backend/shared-enums';
 
 export class CreateQueueAssignmentDto {
   @IsUUID()
-  encounterId?: string;
+  encounterId!: string;
 
   @IsOptional()
   @IsEnum(QueuePriorityLevel)

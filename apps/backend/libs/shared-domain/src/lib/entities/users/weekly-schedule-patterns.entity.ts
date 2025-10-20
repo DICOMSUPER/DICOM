@@ -35,16 +35,16 @@ export class WeeklySchedulePattern extends BaseEntity {
   @Column({ name: 'custom_end_time', type: 'time', nullable: true })
   customEndTime?: string;
 
-  @Column({ name: 'is_working_day', default: true })
+  @Column({ name: 'is_working_day', default: true,nullable: true })
   isWorkingDay!: boolean;
 
-  @Column({ name: 'effective_from', type: 'date' })
+  @Column({ name: 'effective_from', type: 'date', nullable: true })
   effectiveFrom!: Date;
 
   @Column({ name: 'effective_until', type: 'date', nullable: true })
   effectiveUntil?: Date;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', default: true, nullable: true })
   isActive!: boolean;
 
   @Column({ type: 'text', nullable: true })

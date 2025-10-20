@@ -143,7 +143,7 @@ export const queueAssignmentApi = createApi({
     >({
       query: ({ userId, filters }) => ({
         url: "/in-room",
-        method:"GET",
+        method: "GET",
         params: {
           userId,
           ...filters,

@@ -1,8 +1,16 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Roles } from '@backend/shared-enums';
 import { Department } from '@backend/shared-domain';
-import { Qualification } from '../../qualifications/entities/qualification.entity';
-
+import { Qualification } from '@backend/shared-domain';
 
 @Entity('users')
 export class User {
@@ -52,7 +60,7 @@ export class User {
   createdBy!: string;
 
   // Relations
-  @ManyToOne(() => Department, department => department.users)
+  @ManyToOne(() => Department, (department) => department.users)
   @JoinColumn({ name: 'department_id' })
   department!: Department;
 
@@ -60,8 +68,6 @@ export class User {
   @JoinColumn({ name: 'created_by' })
   creator!: User;
 
-  @OneToMany(() => Qualification, qualification => qualification.employee)
+  @OneToMany(() => Qualification, (qualification) => qualification.employee)
   qualifications!: Qualification[];
-
-
 }

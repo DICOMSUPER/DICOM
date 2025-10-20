@@ -10,6 +10,7 @@ import {
   Delete,
   Put,
   Query,
+  Search,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -130,7 +131,29 @@ export class RoomsController {
     }
   }
 
-  @Role(Roles.SYSTEM_ADMIN)
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
+  @Get(':id/department')
+  @ApiOperation({ summary: 'Get rooms by departmentID' })
+  @ApiParam({ name: 'id', description: 'department ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo department thành công',
+  })
+  async getRoomByDepartmentId(
+    @Param('id') id: string,
+    @Query('search') search?: string,
+    @Query('applyScheduleFilter') applyScheduleFilter?: boolean
+  ) {
+    return await firstValueFrom(
+      this.roomClient.send('UserService.Room.GetRoomByDepartmentId', {
+        id,
+        applyScheduleFilter,
+        search: search || '',
+      })
+    );
+  }
+
+  @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id')
   @ApiOperation({ summary: 'Get room by ID' })
   @ApiParam({ name: 'id', description: 'Room ID' })

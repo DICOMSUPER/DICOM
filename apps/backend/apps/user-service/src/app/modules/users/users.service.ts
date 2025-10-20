@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto, EmployeeSchedule } from '@backend/shared-domain';
+import { UpdateUserDto } from '@backend/shared-domain';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { TokenResponseDto } from './dto/token-response.dto';
+import { TokenResponseDto } from '@backend/shared-domain';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User } from '@backend/shared-domain';
 import { Repository } from 'typeorm';
 import { OtpService } from '../otps/otps.service';
 import {
@@ -20,6 +20,7 @@ import {
   ValidationException,
   InvalidTokenException,
 } from '@backend/shared-exception';
+import { Roles } from '@backend/shared-enums';
 
 @Injectable()
 export class UsersService {
@@ -28,7 +29,9 @@ export class UsersService {
     private jwtService: JwtService,
     private otpService: OtpService,
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    @InjectRepository(EmployeeSchedule)
+    private employeeScheduleRepository: Repository<EmployeeSchedule>
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -91,10 +94,6 @@ export class UsersService {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
       const jwtRefreshSecret =
         this.configService.get<string>('JWT_REFRESH_SECRET');
-      console.log(jwtSecret);
-      console.log(jwtRefreshSecret);
-      
-      
 
       if (!jwtSecret || !jwtRefreshSecret) {
         throw new TokenGenerationFailedException(
@@ -106,31 +105,25 @@ export class UsersService {
         secret: jwtSecret,
         expiresIn: this.configService.get<string>('JWT_EXPIRES_IN'),
       });
-      console.log(accessToken);
-      
-      
-
       const refreshToken = this.jwtService.sign(payload, {
         secret: jwtRefreshSecret,
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
       });
 
       console.log(refreshToken);
-      
 
       const expiresIn =
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const expiresInMs = this.parseExpiresIn(expiresIn);
       const expiresAt = new Date(Date.now() + expiresInMs).toISOString();
-
       return {
         accessToken,
         refreshToken,
         expiresAt,
       };
     } catch (error) {
-      console.log("ERROR",error);
-      
+      console.log('ERROR', error);
+
       if (
         error instanceof ValidationException ||
         error instanceof TokenGenerationFailedException
@@ -168,69 +161,68 @@ export class UsersService {
   }
 
   async findAll(query: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isActive?: boolean;
-}) {
-  try {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const skip = (page - 1) * limit;
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    try {
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 10;
+      const skip = (page - 1) * limit;
 
-    const qb = this.userRepository
-      .createQueryBuilder('user')
-      .select([
-        'user.id',
-        'user.username',
-        'user.email',
-        'user.firstName',
-        'user.lastName',
-        'user.phone',
-        'user.employeeId',
-        'user.isVerified',
-        'user.role',
-        'user.departmentId',
-        'user.isActive',
-        'user.createdAt',
-        'user.updatedAt',
-        'user.createdBy',
-      ])
-      .orderBy('user.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+      const qb = this.userRepository
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.username',
+          'user.email',
+          'user.firstName',
+          'user.lastName',
+          'user.phone',
+          'user.employeeId',
+          'user.isVerified',
+          'user.role',
+          'user.departmentId',
+          'user.isActive',
+          'user.createdAt',
+          'user.updatedAt',
+          'user.createdBy',
+        ])
+        .orderBy('user.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit);
 
-    if (query.search) {
-      qb.andWhere(
-        '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
-        { search: `%${query.search}%` },
-      );
-    }
+      if (query.search) {
+        qb.andWhere(
+          '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+          { search: `%${query.search}%` }
+        );
+      }
 
-    if (query.isActive !== undefined) {
-      qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
-    }
+      if (query.isActive !== undefined) {
+        qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      }
 
-    const [data, total] = await qb.getManyAndCount();
+      const [data, total] = await qb.getManyAndCount();
 
-    return {
-      data: {
-        data,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
+      return {
+        data: {
+          data,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+          count: data.length,
         },
-        count: data.length,
-      },
-      message: 'Lấy danh sách người dùng thành công',
-    };
-  } catch (error) {
-    throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
+        message: 'Lấy danh sách người dùng thành công',
+      };
+    } catch (error) {
+      throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
+    }
   }
-}
-
 
   async requestLogin(
     email: string,
@@ -508,6 +500,7 @@ export class UsersService {
 
       // Xác minh và decode token
       const decoded = this.jwtService.verify(token, { secret: jwtSecret });
+
       return decoded; // { email, sub: userId, role }
     } catch (error) {
       throw new InvalidTokenException();
@@ -533,6 +526,27 @@ export class UsersService {
       throw new UserNotFoundException('Người dùng đã bị xóa');
     } catch (error) {
       throw new DatabaseException('Lỗi khi lấy người dùng');
+    }
+  }
+
+  async findByRole(role: Roles, take: number = 10): Promise<User[]> {
+    try {
+      if (!role) {
+        throw new ValidationException('Role is required');
+      }
+
+      const users = await this.userRepository.find({
+        where: { role, isActive: true },
+        take,
+        order: { createdAt: 'ASC' },
+      });
+
+      return users;
+    } catch (error) {
+      if (error instanceof ValidationException) {
+        throw error;
+      }
+      throw new DatabaseException(`Error finding users by role: ${role}`);
     }
   }
 

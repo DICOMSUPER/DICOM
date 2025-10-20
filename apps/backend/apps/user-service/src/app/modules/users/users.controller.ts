@@ -1,7 +1,7 @@
 import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto } from '@backend/shared-domain';
 import { RpcException } from '@nestjs/microservices';
 import {
   InvalidCredentialsException,
@@ -172,14 +172,24 @@ export class UsersController {
 
   @MessagePattern('user.get-all-users')
   async getAllUsers(
-    @Payload() query?: { page?: number; limit?: number; search?: string; isActive?: boolean },
+    @Payload()
+    query?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      isActive?: boolean;
+    }
   ) {
     try {
       const result = await this.usersService.findAll(query || {});
       return result;
     } catch (error) {
       this.logger.error(`Get all users error: ${(error as Error).message}`);
-      handleErrorFromMicroservices(error, 'Failed to get users', 'UsersController.getAllUsers');
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get users',
+        'UsersController.getAllUsers'
+      );
     }
   }
 
@@ -230,9 +240,9 @@ export class UsersController {
   }
 
   @MessagePattern('UserService.Users.findOne')
-  async getUserInfoByToken(@Payload() data: { userId: string }) {
+  async getUserInfoByToken(@Payload() data: { id: string }) {
     try {
-      const user = await this.usersService.findOne(data.userId);
+      const user = await this.usersService.findOne(data.id);
       return user;
     } catch (error) {
       this.logger.error(`Get user info error: ${(error as Error).message}`);
@@ -243,6 +253,34 @@ export class UsersController {
         error,
         'Failed to get user info',
         'UsersController.getUserInfoByToken'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Users.GetIdsByRole')
+  async getUserIdsByRole(
+    @Payload() data: { role: Roles; take?: number }
+  ): Promise<{ success: boolean; data: string[]; count: number }> {
+    this.logger.log(`Getting user IDs for role: ${data.role}, take: ${data.take || 10}`);
+    try {
+      const { role, take = 10 } = data;
+      const users = await this.usersService.findByRole(role, take);
+      
+      const userIds = users.map(u => u.id);
+      
+      this.logger.log(`Returning ${userIds.length} user IDs for role: ${role}`);
+      
+      return {
+        success: true,
+        data: userIds,
+        count: userIds.length,
+      };
+    } catch (error) {
+      this.logger.error(`Get user IDs by role error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to get user IDs for role: ${data.role}`,
+        'UsersController.getUserIdsByRole'
       );
     }
   }

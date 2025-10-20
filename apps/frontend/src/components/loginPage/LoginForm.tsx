@@ -37,7 +37,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       setIsLoading(true);
       try {
         await onLogin(values.email, values.password, values.rememberMe);
-      } finally {
+        // Keep loading state true on success - component will unmount on navigation
+        // This prevents the button from flickering back to "Sign In" during page transition
+      } catch (error) {
+        // Only reset loading state on error so user can retry
         setIsLoading(false);
       }
     },

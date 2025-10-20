@@ -32,15 +32,17 @@ export default function LoginPage() {
       console.log("🔵 Response status:", res.status, res.statusText);
 
       if (!res.ok) {
+        let errorMessage = `Login failed (${res.status})`;
         try {
           const err = await res.json();
           console.log("🔴 Error response:", err);
-          toast.error(err.message || `Login failed (${res.status})`);
+          errorMessage = err.message || errorMessage;
         } catch (parseError) {
           console.log("🔴 Parse error:", parseError);
-          toast.error(`Login failed (${res.status}): ${res.statusText}`);
+          errorMessage = `${errorMessage}: ${res.statusText}`;
         }
-        return;
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -55,7 +57,7 @@ export default function LoginPage() {
       const role = decoded.role;
       if (!role) {
         toast.error("Không tìm thấy role trong token");
-        return;
+        throw new Error("Không tìm thấy role trong token");
       }
 
       // Dispatch credentials with user info
@@ -74,7 +76,7 @@ export default function LoginPage() {
       setTimeout(() => {
         switch (role) {
           case "system_admin":
-            router.push("/system-admin");
+            router.push("/admin");
             break;
           case "imaging_technician":
             router.push("/imaging-technicians");
@@ -95,7 +97,13 @@ export default function LoginPage() {
       setIsLoggedIn(true);
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Unable to connect to server");
+      // Only show network error toast if it's a network/fetch error
+      // Login errors already have their own toast messages
+      if (error instanceof TypeError) {
+        toast.error("Unable to connect to server");
+      }
+      // Re-throw the error so LoginForm can reset loading state
+      throw error;
     }
   };
 

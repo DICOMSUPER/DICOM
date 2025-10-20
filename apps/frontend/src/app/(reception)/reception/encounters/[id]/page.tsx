@@ -194,13 +194,13 @@ export default function EncounterDetailPage() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                           Encounter Type
                         </Label>
                         <p className="text-lg">{encounter.encounterType}</p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                           Status
                         </Label>
                         <div className="mt-1">
@@ -216,7 +216,7 @@ export default function EncounterDetailPage() {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                           Date & Time
                         </Label>
                         <p className="text-lg">
@@ -224,7 +224,7 @@ export default function EncounterDetailPage() {
                         </p>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium text-muted-foreground">
+                        <Label className="text-sm font-medium text-foreground">
                           Duration
                         </Label>
                         <p className="text-lg">N/A</p>
@@ -285,7 +285,7 @@ export default function EncounterDetailPage() {
                     {encounter.patient ? (
                       <div className="space-y-2">
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
+                          <Label className="text-sm font-medium text-foreground">
                             Name
                           </Label>
                           <p className="text-lg">
@@ -294,7 +294,7 @@ export default function EncounterDetailPage() {
                           </p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
+                          <Label className="text-sm font-medium text-foreground">
                             Patient ID
                           </Label>
                           <p className="text-lg">
@@ -302,13 +302,13 @@ export default function EncounterDetailPage() {
                           </p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
+                          <Label className="text-sm font-medium text-foreground">
                             Date of Birth
                           </Label>
                           <p className="text-lg">N/A</p>
                         </div>
                         <div>
-                          <Label className="text-sm font-medium text-muted-foreground">
+                          <Label className="text-sm font-medium text-foreground">
                             Gender
                           </Label>
                           <p className="text-lg">N/A</p>

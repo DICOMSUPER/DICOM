@@ -63,7 +63,7 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/login",
-    "/system-admin/:path*",
+    "/admin/:path*",
     "/imaging-technicians/:path*",
     "/reception/:path*",
     "/physicians/:path*",
