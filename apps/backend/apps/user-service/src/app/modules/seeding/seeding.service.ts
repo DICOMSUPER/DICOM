@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ShiftTemplate, Department, Room, User, EmployeeSchedule } from '@backend/shared-domain';
 import { ShiftType, Roles } from '@backend/shared-enums';
 import * as bcrypt from 'bcrypt';
@@ -20,6 +20,7 @@ export class SeedingService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(EmployeeSchedule)
     private readonly employeeScheduleRepository: Repository<EmployeeSchedule>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async runSeeding(): Promise<void> {
@@ -201,7 +202,7 @@ export class SeedingService {
       {
         roomCode: 'P101',
         roomType: 'CT',
-        department: firstDepartment.id,
+        departmentId: firstDepartment.id,
         floor: 1,
         capacity: 2,
         pricePerDay: 500000,
@@ -221,7 +222,7 @@ export class SeedingService {
       {
         roomCode: 'P102',
         roomType: 'WC',
-        department: firstDepartment.id,
+        departmentId: firstDepartment.id,
         floor: 1,
         capacity: 1,
         pricePerDay: 800000,
@@ -241,7 +242,7 @@ export class SeedingService {
       {
         roomCode: 'P201',
         roomType: 'CT',
-        department: firstDepartment.id,
+        departmentId: firstDepartment.id,
         floor: 2,
         capacity: 2,
         pricePerDay: 500000,
@@ -261,7 +262,7 @@ export class SeedingService {
       {
         roomCode: 'ICU001',
         roomType: 'WC',
-        department: firstDepartment.id,
+        departmentId: firstDepartment.id,
         floor: 3,
         capacity: 1,
         pricePerDay: 1500000,
@@ -626,13 +627,23 @@ export class SeedingService {
     this.logger.log('🗑️ Clearing all User Service data...');
     
     try {
-      await this.employeeScheduleRepository.delete({});
-      await this.shiftTemplateRepository.delete({});
-      await this.roomRepository.delete({});
-      await this.userRepository.delete({});
-      await this.departmentRepository.delete({});
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
       
-      this.logger.log('✅ All User Service data cleared successfully!');
+      try {
+        // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
+        await queryRunner.query('TRUNCATE TABLE "schedule_replacements" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "weekly_schedule_patterns" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "employee_schedules" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "shift_templates" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "rooms" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "users" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "departments" CASCADE');
+        
+        this.logger.log('✅ All User Service data cleared successfully!');
+      } finally {
+        await queryRunner.release();
+      }
     } catch (error: any) {
       this.logger.error('❌ Failed to clear User Service data:', error);
       throw error;

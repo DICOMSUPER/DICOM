@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import {
@@ -43,6 +43,7 @@ export class SeedingService {
     private readonly patientServiceClient: ClientProxy,
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ✅ Helper method to get patient IDs from Patient Service
@@ -368,18 +369,9 @@ export class SeedingService {
   async seedDicomStudies(): Promise<void> {
     this.logger.log('🏥 Seeding DICOM studies...');
 
-    const modalities = await this.modalityRepository.find({
-      where: { isActive: true },
-    });
-
     const imagingOrders = await this.imagingOrderRepository.find({
       take: 10,
     });
-
-    if (modalities.length === 0) {
-      this.logger.warn('⚠️ No modalities found, skipping DICOM study seeding');
-      return;
-    }
 
     // ✅ Get IDs from other services via microservice communication
     const patientIds = await this.getPatientIdsFromService(10);
@@ -423,7 +415,6 @@ export class SeedingService {
 
     // Create 15 sample DICOM studies
     for (let i = 0; i < 15; i++) {
-      const modality = modalities[i % modalities.length];
       const patientId = patientIds[i % patientIds.length];
       const physicianId = physicianIds[i % physicianIds.length];
       const technicianId = finalTechnicianIds[i % finalTechnicianIds.length];
@@ -441,13 +432,11 @@ export class SeedingService {
           .substr(2, 9)}`,
         patientId,
         orderId,
-        modalityId: modality.id,
         studyDate,
         studyTime: '14:30:00',
         studyDescription: studyDescriptions[i % studyDescriptions.length],
-        referringPhysician: 'BS. Nguyễn Văn A',
-        performingPhysicianId: physicianId,
-        technicianId,
+        referringPhysicianId: physicianId,
+        performingTechnicianId: technicianId,
         studyStatus: statuses[i % statuses.length],
         numberOfSeries: 0, // Will be updated when series are created
         storagePath: `/dicom/studies/${studyDate.getFullYear()}/${String(
@@ -580,6 +569,18 @@ export class SeedingService {
       return;
     }
 
+    // Common DICOM SOP Class UIDs
+    const sopClassUIDs = [
+      '1.2.840.10008.5.1.4.1.1.2', // CT Image Storage
+      '1.2.840.10008.5.1.4.1.1.4', // MR Image Storage
+      '1.2.840.10008.5.1.4.1.1.1', // CR Image Storage
+      '1.2.840.10008.5.1.4.1.1.1.1', // Digital X-Ray Image Storage
+      '1.2.840.10008.5.1.4.1.1.6.1', // Ultrasound Image Storage
+      '1.2.840.10008.5.1.4.1.1.12.1', // X-Ray Angiographic Image Storage
+      '1.2.840.10008.5.1.4.1.1.20', // Nuclear Medicine Image Storage
+      '1.2.840.10008.5.1.4.1.1.128', // Positron Emission Tomography Image Storage
+    ];
+
     let totalInstancesCreated = 0;
 
     // Create 5-15 instances for each series
@@ -591,10 +592,12 @@ export class SeedingService {
           sopInstanceUid: `${
             singleSeries.seriesInstanceUid
           }.${i + 1}.${Math.random().toString(36).substr(2, 9)}`,
+          sopClassUID: sopClassUIDs[Math.floor(Math.random() * sopClassUIDs.length)],
           seriesId: singleSeries.id,
           instanceNumber: i + 1,
           filePath: `/dicom/instances/${singleSeries.id}`,
           fileName: `IM${String(i + 1).padStart(4, '0')}.dcm`,
+          numberOfFrame: 1,
           imagePosition: { x: 0, y: 0, z: i * 5 },
           imageOrientation: { xx: 1, xy: 0, xz: 0, yx: 0, yy: 1, yz: 0 },
           pixelSpacing: { row: 0.5, column: 0.5 },
@@ -764,14 +767,22 @@ export class SeedingService {
     this.logger.log('🗑️ Clearing all Imaging Service data...');
 
     try {
-      await this.imageAnnotationRepository.delete({});
-      await this.dicomInstanceRepository.delete({});
-      await this.dicomSeriesRepository.delete({});
-      await this.dicomStudyRepository.delete({});
-      await this.imagingOrderRepository.delete({});
-      await this.modalityRepository.delete({});
-
-      this.logger.log('✅ All Imaging Service data cleared successfully!');
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      
+      try {
+        // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
+        await queryRunner.query('TRUNCATE TABLE "image_annotations" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "dicom_instances" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "dicom_series" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "dicom_studies" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "imaging_orders" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "imaging_modalities" CASCADE');
+        
+        this.logger.log('✅ All Imaging Service data cleared successfully!');
+      } finally {
+        await queryRunner.release();
+      }
     } catch (error: any) {
       this.logger.error('❌ Failed to clear Imaging Service data:', error);
       throw error;

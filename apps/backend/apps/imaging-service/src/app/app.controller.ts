@@ -33,6 +33,15 @@ export class AppController {
     return this.appService.getData();
   }
 
+  @MessagePattern(`${IMAGING_SERVICE}.HealthCheck`)
+  async healthCheck(): Promise<{ status: string; message: string; timestamp: string }> {
+    return {
+      status: 'ok',
+      message: 'ImagingService is running',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   checkCloudinaryConfig() {
     if (
       !this.configService.get<string>('CLOUDINARY_NAME') ||

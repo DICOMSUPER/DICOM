@@ -313,7 +313,6 @@ class ImagingApiService {
         description: study.studyDescription || 'N/A',
         date: study.studyDate,
         time: study.studyTime || 'N/A',
-        modality: study.modality?.modalityCode || 'N/A'
       },
       seriesCount: seriesResponse.total,
       instanceCount

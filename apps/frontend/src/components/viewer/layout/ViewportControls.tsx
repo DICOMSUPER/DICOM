@@ -1,5 +1,5 @@
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { DicomStudy } from "@/services/imagingApi";
+import { DicomSeries } from "@/services/imagingApi";
 
 interface ViewportControlsProps {
   isPlaying: boolean;
@@ -7,7 +7,7 @@ interface ViewportControlsProps {
   currentSlice: number;
   maxSlices: number;
   onSliceChange: (slice: number) => void;
-  selectedStudy: DicomStudy | null;
+  selectedSeries: DicomSeries | null;
 }
 
 export default function ViewportControls({
@@ -16,12 +16,14 @@ export default function ViewportControls({
   currentSlice,
   maxSlices,
   onSliceChange,
-  selectedStudy,
+  selectedSeries,
 }: ViewportControlsProps) {
   return (
     <div className="bg-slate-900 border-t border-slate-800 px-4 py-3">
       {/* Playback Controls */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center justify-between gap-4">
+        
+      <div className="flex-1 flex items-center gap-3">
         <button className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-colors">
           <SkipBack size={16} />
         </button>
@@ -48,12 +50,12 @@ export default function ViewportControls({
             className="flex-1 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer custom-slider"
           />
         </div>
+        </div>
 
         {/* Metadata Info */}
-        <div className="flex gap-4 text-xs text-slate-400">
-          <span>Patient ID: {selectedStudy?.patientId || 'N/A'}</span>
-          <span>Study Date: {selectedStudy?.studyDate || 'N/A'}</span>
-          <span>Modality: {selectedStudy?.modality?.modalityCode || 'N/A'}</span>
+        <div className="flex gap-2 text-xs text-slate-400 flex-wrap">
+          <span>Patient ID: {selectedSeries?.study?.patientId || 'N/A'}</span>
+          <span>Study Date: {selectedSeries?.study?.studyDate || 'N/A'}</span>
         </div>
       </div>
     </div>

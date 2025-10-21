@@ -13,6 +13,10 @@ export class AppController {
 
   @MessagePattern('user.check-health')
   async checkHealth() {
-    return { message: 'UserService is running' };
+    return {
+      status: 'ok',
+      message: 'UserService is running',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

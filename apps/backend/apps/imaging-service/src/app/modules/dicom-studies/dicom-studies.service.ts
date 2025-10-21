@@ -20,8 +20,8 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 
-//relation: imagingOrder, modality, series
-const relation = ['imagingOrder', 'modality', 'series'];
+//relation: imagingOrder, series
+const relation = ['imagingOrder', 'series'];
 
 @Injectable()
 export class DicomStudiesService {
