@@ -56,7 +56,7 @@ export const roomApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: ["Room"],
     }),

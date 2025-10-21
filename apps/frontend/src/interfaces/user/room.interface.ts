@@ -1,16 +1,16 @@
 import { RoomType } from "@/enums/patient.enum";
-import { BaseEntity } from "../base.interface";
 import { Department } from "./department.interface";
+import { RoomStatus } from "@/enums/room.enum";
 
 
 export interface Room {
   id: string;
   roomCode: string;
-  roomType: string;
+  roomType: RoomType;
   floor: number;
   capacity: number;
   pricePerDay: string;
-  status: string;
+  status: RoomStatus;
   description: string;
   hasTV: boolean;
   hasAirConditioning: boolean;
@@ -40,7 +40,6 @@ export interface CreateRoomDto {
   department: string;
   floor: number;
   capacity: number;
-  pricePerDay: number;
   status: string;
   description: string;
   hasTV: boolean;
