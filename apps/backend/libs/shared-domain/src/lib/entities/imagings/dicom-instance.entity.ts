@@ -1,14 +1,13 @@
+import { BaseEntity } from '@backend/database';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
-import { BaseEntity } from '@backend/database';
 
 @Entity('dicom_instances')
 @Index('idx_series_id', ['seriesId'])

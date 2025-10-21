@@ -215,23 +215,6 @@ export class QueueAssignmentController {
     }
   }
 
-  // @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.ValidateToken`)
-  // async validateToken(@Payload() data: { token: string }): Promise<QueueAssignment | null> {
-  //   this.logger.log(
-  //     `Using pattern: ${PATIENT_SERVICE}.${moduleName}.ValidateToken`
-  //   );
-  //   try {
-  //     const { token } = data;
-  //     return await this.queueAssignmentService.validateToken(token);
-  //   } catch (error) {
-  //     throw handleErrorFromMicroservices(
-  //       error,
-  //       'Failed to validate queue token',
-  //       PATIENT_SERVICE
-  //     );
-  //   }
-  // }
-
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetEstimatedWaitTime`)
   async getEstimatedWaitTime(@Payload() data: { id: string }) {
     this.logger.log(
@@ -244,6 +227,22 @@ export class QueueAssignmentController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to get estimated wait time for queue: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  // Skip Queue Assignment
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Skip`)
+  async skipAssignment(@Payload() data: { id: string }) {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Skip`);
+    try {
+      const { id } = data;
+      return await this.queueAssignmentService.skipQueueAssignment(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to skip queue assignment with id: ${data.id}`,
         PATIENT_SERVICE
       );
     }

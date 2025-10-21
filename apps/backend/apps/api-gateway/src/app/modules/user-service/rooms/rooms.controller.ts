@@ -218,4 +218,32 @@ export class RoomsController {
       throw handleError(error);
     }
   }
+
+  @Public()
+  @Get('department/:departmentId')
+  @ApiOperation({ summary: 'Get rooms by Department ID' })
+  @ApiParam({ name: 'departmentId', description: 'Department ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo khoa thành công',
+  })
+  async getRoomsByDepartmentId(@Param('departmentId') departmentId: string) {
+    try {
+      this.logger.log(`📋 Fetching rooms for department ID: ${departmentId}`);
+      const result = await firstValueFrom(
+        this.roomClient.send('room.get-by-department-id', { departmentId })
+      );
+
+      return {
+        data: result.data,
+        message: 'Lấy danh sách phòng theo khoa thành công',
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to fetch rooms for department ID: ${departmentId}`,
+        error
+      );
+      throw handleError(error);
+    }
+  }
 }

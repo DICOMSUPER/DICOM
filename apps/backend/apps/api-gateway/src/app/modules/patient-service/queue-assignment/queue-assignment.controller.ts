@@ -70,7 +70,7 @@ export class QueueAssignmentController {
         filterQueue?.page,
         filterQueue?.limit
       );
-      // const userId = req.sub;
+      // const userId      = req.sub;
       // console.log('user id', userId);
 
       // console.log('user from request:', req.user);
@@ -238,6 +238,18 @@ export class QueueAssignmentController {
       );
     } catch (error) {
       this.logger.error('Error geting estimating time:', error);
+      throw error;
+    }
+  }
+
+  @Patch(':id/skip')
+  async skipQueue(@Param('id') id: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.QueueAssignment.Skip', { id })
+      );
+    } catch (error) {
+      this.logger.error('Error skipping queue assignment:', error);
       throw error;
     }
   }

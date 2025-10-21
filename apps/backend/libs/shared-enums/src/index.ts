@@ -5,7 +5,6 @@ export * from './lib/blood-type.enum';
 export * from './lib/imaging.enum';
 export * from './lib/system.enum';
 export * from './lib/schedule.enum';
-export * from './lib/schedule.enums';
 export * from './lib/room.enum';
 export * from './lib/imaging-order.enum';
 export * from './lib/clinical-status.enum'
@@ -15,3 +14,4 @@ export * from './lib/queue-status.enum'
 export * from './lib/queue-priority-level.enum';
 export * from './lib/vital-signs-code.enum';
 export * from './lib/vital-signs-unit.enum';
+export * from './lib/body-part.enum';

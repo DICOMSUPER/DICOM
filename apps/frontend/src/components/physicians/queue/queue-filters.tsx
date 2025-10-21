@@ -135,7 +135,6 @@ export function QueueFiltersSection({
             <SelectItem value="all">All Priority</SelectItem>
             <SelectItem value="Routine">Routine</SelectItem>
             <SelectItem value="Urgent">Urgent</SelectItem>
-            <SelectItem value="Emergency">Emergency</SelectItem>
             <SelectItem value="Stat">STAT</SelectItem>
           </SelectContent>
         </Select>
@@ -146,28 +145,6 @@ export function QueueFiltersSection({
           value={filters.queueNumber || ""}
           onChange={(e) => handleNumberChange(e.target.value)}
           min="0"
-        />
-      </div>
-
-      {/* Row 2: Date Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <Input
-          type="date"
-          placeholder="Date From"
-          value={filters.assignmentDateFrom || ""}
-          onChange={(e) =>
-            handleSelectChange("assignmentDateFrom", e.target.value)
-          }
-          max={filters.assignmentDateTo || undefined}
-        />
-        <Input
-          type="date"
-          placeholder="Date To"
-          value={filters.assignmentDateTo || ""}
-          onChange={(e) =>
-            handleSelectChange("assignmentDateTo", e.target.value)
-          }
-          min={filters.assignmentDateFrom || undefined}
         />
       </div>
 

@@ -1,27 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Logger,
-} from '@nestjs/common';
-import { ImagingModalitiesService } from './imaging-modalities.service';
-import { CreateImagingModalityDto } from '@backend/shared-domain';
-import { UpdateImagingModalityDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
-import { ImagingModality } from '@backend/shared-domain';
-import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { CreateImagingModalityDto, ImagingModality, UpdateImagingModalityDto } from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import {
+  Controller,
+  Logger
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
+import { ImagingModalitiesService } from './imaging-modalities.service';
 const moduleName = 'ImagingModalities';
 @Controller('imaging-modalities')
 export class ImagingModalitiesController {
