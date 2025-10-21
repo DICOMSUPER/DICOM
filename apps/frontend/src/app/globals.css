@@ -145,4 +145,23 @@ body {
   border: none;
 }
 
-/* Custom scrollbar chỉ cho phần bảng (cao hơn global) */
+/* === HORIZONTAL SCROLLBAR UTILITY === */
+.horizontal-scrollbar::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
+
+.horizontal-scrollbar::-webkit-scrollbar-thumb:horizontal {
+  background:  #cccccc; /* blue-500 */
+  border-radius: 4px;
+}
+
+.horizontal-scrollbar::-webkit-scrollbar-track:horizontal {
+  background: #e5e7eb; /* gray-200 */
+  border-radius: 4px;
+}
+
+/* Firefox (affects both axes; no horizontal-only selector available) */
+.horizontal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cccccc #e5e7eb;
+}

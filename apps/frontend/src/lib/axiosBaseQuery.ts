@@ -57,6 +57,8 @@ export const axiosBaseQuery =
 
       console.log('Unwrapped data:', unwrapped);
 
+            // return { data: resData };
+
       return { data: unwrapped };
     } catch (axiosError) {
       const err = axiosError as AxiosError;

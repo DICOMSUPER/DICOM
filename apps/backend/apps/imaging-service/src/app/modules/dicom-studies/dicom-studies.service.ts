@@ -6,7 +6,10 @@ import {
   ImagingOrder,
 } from '@backend/shared-domain';
 import { UpdateDicomStudyDto } from '@backend/shared-domain';
-import { DicomStudiesRepository } from './dicom-studies.repository';
+import {
+  DicomStudiesRepository,
+  findDicomStudyByReferenceIdType,
+} from './dicom-studies.repository';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -134,7 +137,7 @@ export class DicomStudiesService {
     //check dicom study
     const dicomStudy = await this.checkDicomStudy(id);
 
-    //check  imaging order if provided
+    //check  imaging order if provided›
     if (
       updateDicomStudyDto.orderId &&
       dicomStudy.orderId !== updateDicomStudyDto.orderId
@@ -143,8 +146,8 @@ export class DicomStudiesService {
 
     //check imaging modality if provided
     if (
-      updateDicomStudyDto.modalityId &&
-      dicomStudy.modalityId !== updateDicomStudyDto.modalityId
+      updateDicomStudyDto.modalityId 
+      // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
     ) {
       await this.checkImagingModality(updateDicomStudyDto.modalityId);
     }
@@ -160,14 +163,7 @@ export class DicomStudiesService {
 
   findDicomStudiesByReferenceId = async (
     id: string,
-    type:
-      | 'modality'
-      | 'order'
-      | 'patient'
-      | 'performingPhysician'
-      | 'technician'
-      | 'referringPhysician'
-      | 'studyInstanceUid',
+    type: findDicomStudyByReferenceIdType,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<DicomStudy>> => {
     return await this.dicomStudiesRepository.findDicomStudiesByReferenceId(

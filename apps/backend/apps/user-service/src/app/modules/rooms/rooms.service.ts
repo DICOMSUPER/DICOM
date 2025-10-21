@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateRoomDto } from '@backend/shared-domain';
+import { CreateRoomDto, RoomStatus } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
 import { Room } from '@backend/shared-domain';
 import {
@@ -204,7 +204,10 @@ export class RoomsService {
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
         .leftJoinAndSelect('room.schedules', 'schedules') // Alias: schedules
-        .where('room.department_id = :id', { id }); // Base where for department
+        .where('room.department_id = :id', { id }) // Base where for department
+        .andWhere('room.status IN (:...status)', {
+          status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
+        });
 
       // Combine date and time activity filters
       if (applyScheduleFilter) {

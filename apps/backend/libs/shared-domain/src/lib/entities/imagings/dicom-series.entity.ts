@@ -1,16 +1,15 @@
+import { BaseEntity } from '@backend/entities';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
-  Index,
+  PrimaryGeneratedColumn
 } from 'typeorm';
-import { DicomStudy } from './dicom-study.entity';
 import { DicomInstance } from './dicom-instance.entity';
-import { BaseEntity } from '@backend/entities';
+import { DicomStudy } from './dicom-study.entity';
 
 @Entity('dicom_series')
 @Index('idx_study_id', ['studyId'])

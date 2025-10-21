@@ -118,7 +118,7 @@ export default function DiagnosisInput({
                 <tr
                   key={idx}
                   onClick={() => {
-                    setState(sug[0]);
+                    setState(`${sug[0]} - ${sug[1]}`);
                     setShowDropdown(false);
                   }}
                   className="cursor-pointer border-b border-gray-200 hover:bg-gray-100"

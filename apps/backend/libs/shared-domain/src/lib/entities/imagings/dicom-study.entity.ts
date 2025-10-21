@@ -1,24 +1,22 @@
+import { BaseEntity } from '@backend/database';
+import { DicomStudyStatus } from '@backend/shared-enums';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
 import { ImagingModality } from './imaging-modality.entity';
-import { DicomStudyStatus } from '@backend/shared-enums';
 import { ImagingOrder } from './imaging-order.entity';
-import { BaseEntity } from '@backend/database';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])
 @Index('idx_study_date', ['studyDate'])
-@Index('idx_modality_id', ['modalityId'])
+// @Index('idx_modality_id', ['modalityId'])
 @Index('idx_study_instance_uid', ['studyInstanceUid'])
 @Index('idx_patient_study_date', ['patientId', 'studyDate'])
 export class DicomStudy extends BaseEntity {
@@ -31,11 +29,14 @@ export class DicomStudy extends BaseEntity {
   @Column({ name: 'patient_id' })
   patientId!: string;
 
+  @Column({ name: 'patient_code', length: 255, nullable: true })
+  patientCode?: string;
+
   @Column({ name: 'order_id', nullable: true })
   orderId?: string;
 
-  @Column({ name: 'modality_id' })
-  modalityId!: string;
+  // @Column({ name: 'modality_id' })
+  // modalityId!: string;
 
   @Column({ name: 'study_date', type: 'date' })
   studyDate!: Date;
@@ -47,13 +48,13 @@ export class DicomStudy extends BaseEntity {
   studyDescription?: string;
 
   @Column({ name: 'referring_physician', length: 100, nullable: true })
-  referringPhysician?: string;
+  referringPhysicianId?: string;
 
-  @Column({ name: 'performing_physician_id', nullable: true })
-  performingPhysicianId?: string;
+  @Column({ name: 'performing_technician_id', nullable: true })
+  performingTechnicianId?: string;
 
-  @Column({ name: 'technician_id', nullable: true })
-  technicianId?: string;
+  @Column({ name: 'verifying_radiologist_id', nullable: true })
+  verifyingRadiologistId?: string;
 
   @Column({
     name: 'study_status',
@@ -69,16 +70,21 @@ export class DicomStudy extends BaseEntity {
   // @Column({ name: 'number_of_instances', default: 0 })
   // numberOfInstances!: number;
 
-  @Column({ name: 'storage_path', length: 500, nullable: true })
-  storagePath?: string;
+  @Column({
+    name: 'storage_path',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
+  storagePath?: string | null;
 
   // Relations
   @OneToMany(() => DicomSeries, (series) => series.study)
   series!: DicomSeries[];
 
-  @ManyToOne(() => ImagingModality)
-  @JoinColumn({ name: 'modality_id' })
-  modality!: ImagingModality;
+  // @ManyToOne(() => ImagingModality)
+  // @JoinColumn({ name: 'modality_id' })
+  // modality!: ImagingModality;
 
   //   imaging_order
   @ManyToOne(() => ImagingOrder)

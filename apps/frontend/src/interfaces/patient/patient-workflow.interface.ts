@@ -169,9 +169,6 @@ export interface VitalSignsSimplified {
   oxygenSaturation?: number;  // Oxygen Saturation (%)
   weight?: number;            // Weight (kg or lbs)
   height?: number;            // Height (cm or inches)
-  bmi?: number;               // Body Mass Index
-  glucose?: number;           // Blood Glucose (mg/dL)
-  painScale?: number;         // Pain Scale (0-10)
 }
 
 export interface CreatePatientEncounterDto {
@@ -445,4 +442,9 @@ export interface ApiError {
   message: string;
   status: number;
   errors?: string[];
+}
+
+export interface PatientOverview {
+  recentVitalSigns: VitalSignsSimplified;
+  recentConditions: PatientCondition[];
 }

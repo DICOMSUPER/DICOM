@@ -28,6 +28,9 @@
       "path": "../../libs/shared-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/database/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared-interceptor/tsconfig.lib.json"
     },
     {

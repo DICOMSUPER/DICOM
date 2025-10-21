@@ -14,9 +14,3 @@ export enum OrderPriority {
   EMERGENCY = 'emergency',
 }
 
-export enum OrderType {
-  DIAGNOSTIC = 'diagnostic',
-  SCREENING = 'screening',
-  FOLLOW_UP = 'follow_up',
-  PROCEDURE = 'procedure',
-}

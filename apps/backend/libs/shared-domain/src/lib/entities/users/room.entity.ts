@@ -11,6 +11,7 @@ import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
 import { EmployeeSchedule } from './employee-schedules.entity';
 
+
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
   OCCUPIED = 'OCCUPIED',
@@ -94,4 +95,5 @@ export class Room extends BaseEntity {
 
   @OneToMany(() => EmployeeSchedule, (schedule) => schedule.room)
   schedules!: EmployeeSchedule[];
+
 }

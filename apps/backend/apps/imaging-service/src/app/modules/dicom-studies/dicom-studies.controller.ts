@@ -1,26 +1,20 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Logger,
-} from '@nestjs/common';
-import { DicomStudiesService } from './dicom-studies.service';
-import { CreateDicomStudyDto, DicomStudy } from '@backend/shared-domain';
-import { UpdateDicomStudyDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import {
-  MESSAGE_PATTERNS,
-  IMAGING_SERVICE,
-} from '../../../constant/microservice.constant';
-import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { CreateDicomStudyDto, DicomStudy, UpdateDicomStudyDto } from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import {
+  Controller,
+  Logger
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  IMAGING_SERVICE,
+  MESSAGE_PATTERNS,
+} from '../../../constant/microservice.constant';
+import { findDicomStudyByReferenceIdType } from './dicom-studies.repository';
+import { DicomStudiesService } from './dicom-studies.service';
 
 const moduleName = 'DicomStudies';
 @Controller('dicom-studies')
@@ -126,14 +120,7 @@ export class DicomStudiesController {
     @Payload()
     data: {
       id: string;
-      type:
-        | 'modality'
-        | 'order'
-        | 'patient'
-        | 'performingPhysician'
-        | 'technician'
-        | 'referringPhysician'
-        | 'studyInstanceUid';
+      type: findDicomStudyByReferenceIdType;
       paginationDto: RepositoryPaginationDto;
     }
   ): Promise<PaginatedResponseDto<DicomStudy>> {

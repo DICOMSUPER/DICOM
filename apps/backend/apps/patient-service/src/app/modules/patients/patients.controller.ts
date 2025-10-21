@@ -6,6 +6,7 @@ import {
   UpdatePatientDto,
   Patient,
   PatientStatsDto,
+  PatientCondition,
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -16,6 +17,7 @@ import {
   PATIENT_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
+import { VitalSignsSimplified } from '@backend/shared-interfaces';
 
 const moduleName = 'Patient';
 @Controller('patients')
@@ -157,6 +159,28 @@ export class PatientController {
     try {
       const { patientCode } = data;
       return await this.patientService.findPatientByCode(patientCode);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find patient with code: ${data.patientCode}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`)
+  async getPatientOverview(
+    @Payload() data: { patientCode: string }
+  ): Promise<{
+    recentVitalSigns: VitalSignsSimplified;
+    recentConditions: PatientCondition[];
+  } | null> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`
+    );
+    try {
+      const { patientCode } = data;
+      return await this.patientService.getOverview(patientCode);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

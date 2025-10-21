@@ -16,8 +16,12 @@ import {
   PatientStats,
   EncounterStats,
   DiagnosisStats,
+  ApiResponse,
+  VitalSignsSimplified,
+  PatientOverview,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { PatientCondition } from "@/interfaces/user/medical-history.interface";
 
 export const patientApi = createApi({
   reducerPath: "patientApi",
@@ -50,13 +54,23 @@ export const patientApi = createApi({
       providesTags: ["Patient"],
     }),
 
-    getPatientById: builder.query<Patient, string>({
+    getPatientById: builder.query<ApiResponse<Patient>, string>({
       query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "Patient", id }],
     }),
 
-    getPatientByCode: builder.query<Patient, string>({
+    getPatientByCode: builder.query<ApiResponse<Patient>, string>({
       query: (patientCode) => ({ url: `/code/${patientCode}`, method: "GET" }),
+      providesTags: (result, error, patientCode) => [
+        { type: "Patient", id: patientCode },
+      ],
+    }),
+
+    getPatientOverview: builder.query<ApiResponse<PatientOverview>, string>({
+      query: (patientCode) => ({
+        url: `/overview/${patientCode}`,
+        method: "GET",
+      }),
       providesTags: (result, error, patientCode) => [
         { type: "Patient", id: patientCode },
       ],
@@ -124,6 +138,7 @@ export const patientApi = createApi({
 
 export const {
   // Patient hooks
+  useGetPatientOverviewQuery,
   useGetPatientsQuery,
   useGetPatientsPaginatedQuery,
   useGetPatientByIdQuery,
