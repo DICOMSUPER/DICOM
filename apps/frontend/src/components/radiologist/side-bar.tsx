@@ -75,7 +75,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-full bg-gray-200 border-r border-gray-300 overflow-y-auto">
+    <div className="w-full bg-gray-200 border-r border-gray-300 overflow-y-hidden horizontal-scrollbar ">
       <div className="p-3 border-b border-gray-300">
         <h2 className="text-sm font-semibold text-gray-700">Work Tree</h2>
       </div>

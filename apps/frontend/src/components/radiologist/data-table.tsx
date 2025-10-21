@@ -7,7 +7,7 @@ const tableData = [
     mrn: "2108017088",
     patientFirstName: "HOA",
     patientLastName: "NGUYEN",
-    orderStatus: "0/0/1",
+    reportStatus: "0/0/1",
     studyStatus: "Approved",
     genderAge: "F, 72",
     bodyPart: "BRAIN",
@@ -24,7 +24,7 @@ const tableData = [
     mrn: "2108019701",
     patientFirstName: "HOA",
     patientLastName: "NGUYEN",
-    orderStatus: "0/0/1",
+    reportStatus: "0/0/1",
     studyStatus: "Approved",
     genderAge: "F, 69",
     bodyPart: "CHEST",
@@ -41,7 +41,7 @@ const tableData = [
     mrn: "2108017088",
     patientFirstName: "HOA",
     patientLastName: "NGUYEN",
-    orderStatus: "0/0/1",
+    reportStatus: "0/0/1",
     studyStatus: "Approved",
     genderAge: "F, 72",
     bodyPart: "BRAIN",
@@ -56,8 +56,8 @@ const tableData = [
 
 export default function DataTable() {
   return (
-    <div className="flex-1 overflow-auto bg-white">
-      <div className="w-full overflow-x-auto">
+    <div className="flex-1 bg-white">
+      <div className="w-full overflow-x-scroll horizontal-scrollbar">
         <table className="min-w-[1200px] w-full border-collapse text-sm">
           <thead className="bg-gray-100 sticky top-0">
             <tr className="border-b border-gray-300">
@@ -76,11 +76,12 @@ export default function DataTable() {
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Patient Last Name
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
-                Order Status
-              </th>
+
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Study Status
+              </th>
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
+                Report Status
               </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Gender, Age
@@ -132,11 +133,12 @@ export default function DataTable() {
                 <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                   {row.patientLastName}
                 </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.orderStatus}
-                </td>
+
                 <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                   {row.studyStatus}
+                </td>
+                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                  {row.reportStatus}
                 </td>
                 <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                   {row.genderAge}

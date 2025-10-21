@@ -10,6 +10,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { DigitalSignature } from 'libs/shared-domain/src';
+import { DiagnosisStatus, DicomStudyStatus } from '@backend/shared-enums';
 import { firstValueFrom } from 'rxjs';
 
 @Controller('dicom-studies')
@@ -111,5 +113,25 @@ export class DicomStudiesController {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.Delete', { id })
     );
+  }
+
+  @Get('filtered')
+  async getStudyWithFilter(
+    @Query('studyStatus') studyStatus?: DicomStudyStatus,
+    @Query('reportStatus') reportStatus?: DiagnosisStatus,
+    @Query('modalityCode') modalityCode?: string,
+    @Query('modalityDevice') modalityDevice?: string,
+    @Query('mrn') mrn?: string,
+    @Query('patientFirstName') patientFirstName?: string,
+    @Query('patientLastName') patientLastName?: string,
+    @Query('bodyPart') bodyPart?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('studyUID') studyUID?: string
+  ) {
+    //extract all studies with studyUID,endDate,startDate(from study), bodyPart,modalityDevice, modalityCode from order,
+    //get patientId from those studies and find in patient service
+    //get report status & filter from those study if found
+    //get room from user service
   }
 }

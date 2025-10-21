@@ -8,7 +8,7 @@ import DataTable from "@/components/radiologist/data-table";
 export default function Home() {
   return (
     <div className="flex h-screen max-w-[100%] bg-gray-100">
-      <div className="flex-1 min-w-0  max -flex flex-col overflow-hidden">
+      <div className="flex-1 min-w-0  max -flex flex-col">
         <FilterBar />
         <DataTable />
       </div>

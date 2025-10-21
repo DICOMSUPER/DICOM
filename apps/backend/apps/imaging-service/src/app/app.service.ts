@@ -225,7 +225,6 @@ export class AppService {
             patientId: order.patientId,
             patientCode: data.PatientID,
             orderId: order.id,
-            modalityId: order.modalityId,
             studyDate: data.StudyDate,
             studyTime: data.StudyTime,
             studyDescription: data.StudyDescription,
