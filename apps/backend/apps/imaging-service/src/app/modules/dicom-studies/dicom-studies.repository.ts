@@ -10,6 +10,14 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
+export type findDicomStudyByReferenceIdType =
+  | 'modality'
+  | 'order'
+  | 'patient'
+  | 'performingTechnician'
+  | 'verifyingRadiologist'
+  | 'referringPhysician'
+  | 'studyInstanceUid';
 @Injectable()
 export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
   constructor(@InjectEntityManager() entityManager: EntityManager) {
@@ -18,14 +26,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
 
   async findDicomStudiesByReferenceId(
     id: string,
-    type:
-      | 'modality'
-      | 'order'
-      | 'patient'
-      | 'performingPhysician'
-      | 'technician'
-      | 'referringPhysician'
-      | 'studyInstanceUid',
+    type: findDicomStudyByReferenceIdType,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ): Promise<PaginatedResponseDto<DicomStudy>> {
@@ -56,16 +57,16 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
         referenceField = 'patientId';
         break;
 
-      case 'performingPhysician':
-        referenceField = 'performingPhysicianId';
+      case 'verifyingRadiologist':
+        referenceField = 'verifyingRadiologistId';
         break;
 
-      case 'technician':
-        referenceField = 'technicianId';
+      case 'performingTechnician':
+        referenceField = 'performingTechnicianId';
         break;
 
       case 'referringPhysician':
-        referenceField = 'referringPhysician';
+        referenceField = 'referringPhysicianId';
         break;
 
       case 'studyInstanceUid':

@@ -1,8 +1,8 @@
-import { Controller, Logger, UseInterceptors } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from '@backend/shared-domain';
-import { RpcException } from '@nestjs/microservices';
+
 import {
   InvalidCredentialsException,
   UserAlreadyExistsException,
@@ -10,8 +10,7 @@ import {
   OtpVerificationFailedException,
   RegistrationFailedException,
   InvalidTokenException,
-  ValidationException,
-  TokenGenerationFailedException,
+ 
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';

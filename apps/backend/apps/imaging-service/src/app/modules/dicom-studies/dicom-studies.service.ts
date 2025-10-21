@@ -6,7 +6,10 @@ import {
   ImagingOrder,
 } from '@backend/shared-domain';
 import { UpdateDicomStudyDto } from '@backend/shared-domain';
-import { DicomStudiesRepository } from './dicom-studies.repository';
+import {
+  DicomStudiesRepository,
+  findDicomStudyByReferenceIdType,
+} from './dicom-studies.repository';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -160,14 +163,7 @@ export class DicomStudiesService {
 
   findDicomStudiesByReferenceId = async (
     id: string,
-    type:
-      | 'modality'
-      | 'order'
-      | 'patient'
-      | 'performingPhysician'
-      | 'technician'
-      | 'referringPhysician'
-      | 'studyInstanceUid',
+    type: findDicomStudyByReferenceIdType,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<DicomStudy>> => {
     return await this.dicomStudiesRepository.findDicomStudiesByReferenceId(

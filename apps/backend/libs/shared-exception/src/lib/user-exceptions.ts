@@ -1,96 +1,105 @@
 import { RpcException } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
 
+// ─────────────────────────────────────────────
+// USER / AUTH EXCEPTIONS
+// ─────────────────────────────────────────────
+
 export class InvalidCredentialsException extends RpcException {
-    constructor(message: string = 'Invalid credentials') {
-        super({
-            statusCode: HttpStatus.UNAUTHORIZED,
-            message,
-            error: 'INVALID_CREDENTIALS'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.UNAUTHORIZED,
+      message: 'Invalid credentials',
+      errorCode: 'INVALID_CREDENTIALS',
+      details,
+    });
+  }
 }
 
 export class UserAlreadyExistsException extends RpcException {
-    constructor(message: string = 'User already exists') {
-        super({
-            statusCode: HttpStatus.CONFLICT,
-            message,
-            error: 'USER_ALREADY_EXISTS'
-        });
-    }
+  constructor(username?: string) {
+    super({
+      statusCode: HttpStatus.CONFLICT,
+      message: `User${username ? ` '${username}'` : ''} already exists`,
+      errorCode: 'USER_ALREADY_EXISTS',
+      details: { username },
+    });
+  }
 }
 
 export class UserNotFoundException extends RpcException {
-    constructor(message: string = 'User not found') {
-        super({
-            statusCode: HttpStatus.NOT_FOUND,
-            message,
-            error: 'USER_NOT_FOUND'
-        });
-    }
+  constructor(userId?: string) {
+    super({
+      statusCode: HttpStatus.NOT_FOUND,
+      message: `User${userId ? ` '${userId}'` : ''} not found`,
+      errorCode: 'USER_NOT_FOUND',
+      details: { userId },
+    });
+  }
 }
 
 export class OtpVerificationFailedException extends RpcException {
-    constructor(message: string = 'OTP verification failed') {
-        super({
-            statusCode: HttpStatus.BAD_REQUEST,
-            message,
-            error: 'OTP_VERIFICATION_FAILED'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: 'OTP verification failed',
+      errorCode: 'OTP_VERIFICATION_FAILED',
+      details,
+    });
+  }
 }
 
 export class RegistrationFailedException extends RpcException {
-    constructor(message: string = 'Registration failed') {
-        super({
-            statusCode: HttpStatus.BAD_REQUEST,
-            message,
-            error: 'REGISTRATION_FAILED'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: 'Registration failed',
+      errorCode: 'REGISTRATION_FAILED',
+      details,
+    });
+  }
 }
 
-// Thêm 2 exception mới
 export class OtpGenerationFailedException extends RpcException {
-    constructor(message: string = 'Failed to generate OTP') {
-        super({
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-            message,
-            error: 'OTP_GENERATION_FAILED'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Failed to generate OTP',
+      errorCode: 'OTP_GENERATION_FAILED',
+      details,
+    });
+  }
 }
 
 export class TokenGenerationFailedException extends RpcException {
-    constructor(message: string = 'Failed to generate token') {
-        super({
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-            message,
-            error: 'TOKEN_GENERATION_FAILED'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Failed to generate token',
+      errorCode: 'TOKEN_GENERATION_FAILED',
+      details,
+    });
+  }
 }
 
-
-
 export class UnauthorizedException extends RpcException {
-    constructor(message: string = 'Unauthorized access') {
-        super({
-            statusCode: HttpStatus.UNAUTHORIZED,
-            message,
-            error: 'UNAUTHORIZED'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.UNAUTHORIZED,
+      message: 'Unauthorized access',
+      errorCode: 'UNAUTHORIZED',
+      details,
+    });
+  }
 }
 
 export class ForbiddenException extends RpcException {
-    constructor(message: string = 'Access forbidden') {
-        super({
-            statusCode: HttpStatus.FORBIDDEN,
-            message,
-            error: 'FORBIDDEN'
-        });
-    }
+  constructor(details?: any) {
+    super({
+      statusCode: HttpStatus.FORBIDDEN,
+      message: 'Access forbidden',
+      errorCode: 'FORBIDDEN',
+      details,
+    });
+  }
 }
-

@@ -3,8 +3,6 @@ import { CreateDicomInstanceDto } from '@backend/shared-domain';
 import { UpdateDicomInstanceDto } from '@backend/shared-domain';
 import { DicomInstancesRepository } from './dicom-instances.repository';
 import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';
-import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { EntityManager } from 'typeorm';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -14,7 +12,16 @@ import {
 } from '@backend/database';
 import { DicomSeries } from '@backend/shared-domain';
 import { DicomInstance } from '@backend/shared-domain';
+import {
+  DicomInstanceNotFoundException,
+  DicomInstanceSeriesNotFoundException,
+  DicomInstanceInvalidModeException,
+  DicomInstanceSeriesProcessException,
+  DicomInstanceInternalException,
+} from '@backend/shared-exception';
+
 const relation = ['series'];
+
 @Injectable()
 export class DicomInstancesService {
   constructor(
@@ -37,10 +44,8 @@ export class DicomInstancesService {
       em
     );
     if (!series) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to create dicom instance: dicom series not found',
-        IMAGING_SERVICE
+      throw new DicomInstanceSeriesNotFoundException(
+        'Failed to create dicom instance: dicom series not found'
       );
     }
     return series;
@@ -59,11 +64,7 @@ export class DicomInstancesService {
     );
 
     if (!instance) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Dicom instance not found',
-        IMAGING_SERVICE
-      );
+      throw new DicomInstanceNotFoundException();
     }
     return instance;
   };
@@ -96,11 +97,7 @@ export class DicomInstancesService {
     entityManager?: EntityManager
   ): Promise<void> => {
     if (!['add', 'subtract'].includes(mode)) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to update number of series for study: invalid mode',
-        IMAGING_SERVICE
-      );
+      throw new DicomInstanceInvalidModeException();
     }
     const series = await this.dicomSeriesRepository.findOne(
       { where: { id } },
@@ -108,10 +105,8 @@ export class DicomInstancesService {
       entityManager
     );
     if (!series) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Failed to process this dicom series: series not found',
-        IMAGING_SERVICE
+      throw new DicomInstanceSeriesProcessException(
+        'Failed to process this dicom series: series not found'
       );
     }
     const newTotal =
@@ -120,11 +115,7 @@ export class DicomInstancesService {
         : series.numberOfInstances - quantity;
 
     if (newTotal < 0) {
-      throw ThrowMicroserviceException(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Internal Server Error',
-        IMAGING_SERVICE
-      );
+      throw new DicomInstanceInternalException();
     }
 
     await this.dicomSeriesRepository.update(
@@ -139,7 +130,6 @@ export class DicomInstancesService {
   create = async (
     createDicomInstanceDto: CreateDicomInstanceDto
   ): Promise<DicomInstance> => {
-    //check dicom series
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
         const series = await this.checkDicomSeries(
@@ -147,7 +137,6 @@ export class DicomInstancesService {
           transactionalEntityManager
         );
 
-        //update number of instance in series
         await this.updateDicomSeriesNumberOfInstance(
           series.id,
           1,
@@ -159,7 +148,7 @@ export class DicomInstancesService {
           series.id,
           transactionalEntityManager
         );
-        //add instance number into instance
+
         const data = {
           ...createDicomInstanceDto,
           instanceNumber: instanceNumber,
@@ -178,9 +167,7 @@ export class DicomInstancesService {
   };
 
   findOne = async (id: string): Promise<DicomInstance | null> => {
-    //check dicomInstance
     await this.checkDicomInstance(id);
-
     return await this.dicomInstancesRepository.findOne(
       { where: { id } },
       relation
@@ -194,31 +181,27 @@ export class DicomInstancesService {
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
         let updateData: any = updateDicomInstanceDto;
-        //check dicomInstance
         const instance = await this.checkDicomInstance(
           id,
           transactionalEntityManager
         );
 
-        //check dicom series if provided
         if (
           updateDicomInstanceDto.seriesId &&
           updateDicomInstanceDto.seriesId !== instance.seriesId
         ) {
-          //new series available
           await this.checkDicomSeries(
             updateDicomInstanceDto.seriesId,
             transactionalEntityManager
           );
 
-          //update old series number of instance
           await this.updateDicomSeriesNumberOfInstance(
             instance.seriesId,
             1,
             'subtract',
             transactionalEntityManager
           );
-          //update new series number of instance
+
           await this.updateDicomSeriesNumberOfInstance(
             updateDicomInstanceDto.seriesId,
             1,
@@ -226,7 +209,6 @@ export class DicomInstancesService {
             transactionalEntityManager
           );
 
-          //get new series & update instance number for this instance
           const number = await this.getLatestInstanceNumber(
             updateDicomInstanceDto.seriesId,
             transactionalEntityManager
@@ -247,7 +229,6 @@ export class DicomInstancesService {
   };
 
   remove = async (id: string): Promise<boolean> => {
-    //update number of instance in series
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
         const instance = await this.checkDicomInstance(

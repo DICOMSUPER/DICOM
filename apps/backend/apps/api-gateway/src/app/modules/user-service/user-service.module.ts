@@ -9,6 +9,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { DepartmentModule } from './department/department.module';
 import { EmployeeSchedulesModule } from './employee-schedules/employee-schedules.module';
 import { WeeklySchedulePatternsModule } from './weekly-schedule-patterns/weekly-schedule-patterns.module';
+import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
 
 @Module({
   imports: [
@@ -27,8 +28,7 @@ import { WeeklySchedulePatternsModule } from './weekly-schedule-patterns/weekly-
     RoomsModule,
     DepartmentModule,
     EmployeeSchedulesModule,
-    WeeklySchedulePatternsModule
   ],
-  exports: [UserServiceClientModule, UserModule, RoomsModule, DepartmentModule, EmployeeSchedulesModule,WeeklySchedulePatternsModule],
+
 })
 export class UserServiceModule {}

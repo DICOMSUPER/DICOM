@@ -21,6 +21,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { findDicomStudyByReferenceIdType } from './dicom-studies.repository';
 
 const moduleName = 'DicomStudies';
 @Controller('dicom-studies')
@@ -126,14 +127,7 @@ export class DicomStudiesController {
     @Payload()
     data: {
       id: string;
-      type:
-        | 'modality'
-        | 'order'
-        | 'patient'
-        | 'performingPhysician'
-        | 'technician'
-        | 'referringPhysician'
-        | 'studyInstanceUid';
+      type: findDicomStudyByReferenceIdType;
       paginationDto: RepositoryPaginationDto;
     }
   ): Promise<PaginatedResponseDto<DicomStudy>> {
