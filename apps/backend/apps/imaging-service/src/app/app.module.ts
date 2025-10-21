@@ -22,11 +22,14 @@ import { ImagingOrderRepository } from './modules/imaging-orders/imaging-orders.
 import { ImagingOrdersService } from './modules/imaging-orders/imaging-orders.service';
 import { BackendEntitiesModule } from '@backend/entities';
 import {
+  BodyPart,
   DicomInstance,
   DicomSeries,
   DicomStudy,
   ImagingModality,
   ImagingOrder,
+  ModalityMachine,
+  RequestProcedure,
 } from '@backend/shared-domain';
 import { SeedingModule } from './modules/seeding/seeding.module';
 
@@ -42,6 +45,9 @@ import { SeedingModule } from './modules/seeding/seeding.module';
       DicomStudy,
       ImagingModality,
       ImagingOrder,
+      RequestProcedure,
+      ModalityMachine,
+      BodyPart
     ]),
     DicomInstancesModule,
     DicomSeriesModule,

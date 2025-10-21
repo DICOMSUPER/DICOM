@@ -1,10 +1,11 @@
-import { IsString, IsBoolean, IsOptional, IsEnum } from 'class-validator';
+import { OrderStatus, Urgency } from '@backend/shared-enums';
 import {
-  OrderType,
-  OrderPriority,
-  OrderStatus,
-  Urgency,
-} from '@backend/shared-enums';
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 export class CreateImagingOrderDto {
   @IsString()
   orderNumber!: string;
@@ -24,21 +25,13 @@ export class CreateImagingOrderDto {
   @IsString()
   bodyPart!: string;
 
-  //   @IsString()
-  //   @IsOptional()
-  //   procedureCode?: string;
-
-  // @IsString()
-  // @IsOptional()
-  // procedureDescription?: string;
-
-  @IsEnum(OrderType)
-  @IsOptional()
-  orderType!: OrderType;
+  @IsString()
+  @IsUUID()
+  request_procedure_id?: string;
 
   @IsString()
   @IsOptional()
-  urgency!: Urgency;
+  urgency?: Urgency;
 
   @IsEnum(OrderStatus)
   @IsOptional()

@@ -1,10 +1,5 @@
 // types/room.ts
 
-export interface Department {
-  id: string;
-  departmentName: string;
-}
-
 export interface RoomType {
   id: string;
   name: string;

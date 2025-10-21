@@ -15,8 +15,7 @@ export class ImagingModality extends BaseEntity {
 
   @Column({ name: 'modality_name', length: 50 })
   modalityName!: string;
-  @Column({ name: 'image', length: 50 })
-  image!: string;
+
   @Column({ name: 'description', length: 50 })
   description!: string;
 

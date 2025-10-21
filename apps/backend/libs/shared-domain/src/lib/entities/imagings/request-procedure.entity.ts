@@ -1,6 +1,13 @@
 import { BaseEntity } from '@backend/entities';
-import { BodyPart } from '@backend/shared-enums';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ImagingModality } from './imaging-modality.entity';
+import { BodyPart } from './body_part.entity';
 
 @Entity('request_procedure')
 export class RequestProcedure extends BaseEntity {
@@ -10,7 +17,18 @@ export class RequestProcedure extends BaseEntity {
   @Column({ name: 'name', length: 50 })
   name!: string;
 
-  @Column({ name: 'body_part', type: 'enum', enum: BodyPart })
+  @Column({ name: 'modality_id', type: 'uuid' })
+  modalityId!: string;
+
+  @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
+  @JoinColumn({ name: 'modality_id' })
+  modality!: ImagingModality;
+
+  @Column({ name: 'body_part_id', type: 'uuid' })
+  bodyPartId!: string;
+
+  @ManyToOne(() => BodyPart, { nullable: true, eager: true })
+  @JoinColumn({ name: 'body_part_id' })
   bodyPart!: BodyPart;
 
   @Column({ name: 'description', type: 'text', nullable: true })
