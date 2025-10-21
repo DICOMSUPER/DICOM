@@ -19,8 +19,22 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function QueuePage() {
-  const userId =
-    typeof window !== "undefined" ? localStorage.getItem("userId") || "" : "";
+  const [userId, setUserId] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem("user"); 
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.id === "string") {
+        setUserId(parsed.id);
+      }
+    } catch (err) {
+      console.error("Invalid user in localStorage", err);
+    }
+  }, []);
+
   const [filters, setFilters] = useState<QueueFilters>({
     encounterId: "",
     status: "all",
