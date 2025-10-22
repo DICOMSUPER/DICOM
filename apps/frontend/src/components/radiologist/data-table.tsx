@@ -1,5 +1,8 @@
 "use client";
 
+import StudyTab from "./tabs/study-tab";
+import { useTabs } from "./tabs/tab-context";
+
 const tableData = [
   {
     stt: 1,
@@ -55,6 +58,7 @@ const tableData = [
 ];
 
 export default function DataTable() {
+  const { openTab } = useTabs();
   return (
     <div className="flex-1 bg-white">
       <div className="w-full overflow-x-scroll horizontal-scrollbar">
@@ -116,7 +120,7 @@ export default function DataTable() {
             {tableData.map((row, idx) => (
               <tr
                 key={idx}
-                className="border-b border-gray-200 hover:bg-gray-50"
+                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
               >
                 <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                   {row.stt}
@@ -166,7 +170,18 @@ export default function DataTable() {
                 </td>
                 <td className="px-4 py-2 text-gray-600 text-xs">
                   {/* Placeholder for Actions (e.g., buttons) */}
-                  <button className="text-blue-500">View</button>
+                  <button
+                    className="text-blue-500 cursor-pointer"
+                    onClick={() =>
+                      openTab?.(
+                        row.studyUID,
+                        `${row.patientLastName} ${row.patientFirstName}`,
+                        <StudyTab studyUID={row.studyUID} />
+                      )
+                    }
+                  >
+                    View
+                  </button>
                 </td>
               </tr>
             ))}

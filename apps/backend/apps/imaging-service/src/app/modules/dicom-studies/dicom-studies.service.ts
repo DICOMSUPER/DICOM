@@ -13,15 +13,15 @@ import {
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { OrderStatus } from '@backend/shared-enums';
+import { DicomStudyStatus, OrderStatus } from '@backend/shared-enums';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
 
-//relation: imagingOrder, modality, series
-const relation = ['imagingOrder', 'modality', 'series'];
+//relation: imagingOrder, series
+const relation = ['imagingOrder', 'series'];
 
 @Injectable()
 export class DicomStudiesService {
@@ -146,7 +146,7 @@ export class DicomStudiesService {
 
     //check imaging modality if provided
     if (
-      updateDicomStudyDto.modalityId 
+      updateDicomStudyDto.modalityId
       // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
     ) {
       await this.checkImagingModality(updateDicomStudyDto.modalityId);
@@ -180,5 +180,25 @@ export class DicomStudiesService {
       ...paginationDto,
       relation,
     });
+  };
+
+  filter = async (
+    studyUID?: string,
+    startDate?: string,
+    endDate?: string,
+    bodyPart?: string,
+    modalityCode?: string,
+    modalityDevice?: string,
+    studyStatus?: DicomStudyStatus
+  ) => {
+    return await this.dicomStudiesRepository.filter(
+      studyUID,
+      startDate,
+      endDate,
+      bodyPart,
+      modalityCode,
+      modalityDevice,
+      studyStatus
+    );
   };
 }

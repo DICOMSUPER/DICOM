@@ -10,6 +10,7 @@ import { ImagingOrderRepository } from './modules/imaging-orders/imaging-orders.
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../constant/microservice.constant';
 import { DicomStudyStatus } from '@backend/shared-enums';
+import { Patient } from '@backend/shared-domain';
 
 export interface DICOMMetadata {
   // General Image Information
@@ -145,7 +146,8 @@ export class AppService {
     data: DICOMMetadata,
     orderId: string,
     performingTechnicianId: string,
-    filePath: string
+    filePath: string,
+    patient: Patient
   ) => {
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
@@ -181,6 +183,17 @@ export class AppService {
             IMAGING_SERVICE
           );
         }
+
+        console.log(patient.id, order.patientId);
+
+        if (patient.id !== order.patientId) {
+          throw ThrowMicroserviceException(
+            HttpStatus.BAD_REQUEST,
+            `Patient ID mismatch, patientId: ${patient.id} does not match with the patientId in the order( ${order.patientId} )`,
+            IMAGING_SERVICE
+          );
+        }
+
         if (modality.modalityCode !== data.Modality) {
           throw ThrowMicroserviceException(
             HttpStatus.BAD_REQUEST,
@@ -222,7 +235,7 @@ export class AppService {
           createSeries = true;
           study = await this.dicomStudiesRepository.create({
             studyInstanceUid: data.StudyInstanceUID,
-            patientId: order.patientId,
+            patientId: patient.id,
             patientCode: data.PatientID,
             orderId: order.id,
             studyDate: data.StudyDate,

@@ -41,8 +41,8 @@ export class AppController {
       },
       services: {
         userService: await this.checkServiceHealth(this.userServiceClient, 'user.check-health'),
-        patientService: await this.checkServiceHealth(this.patientServiceClient, 'patient.check-health'),
-        imagingService: await this.checkServiceHealth(this.imagingServiceClient, 'imaging.check-health'),
+        patientService: await this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck'),
+        imagingService: await this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck'),
       },
     };
 
@@ -75,7 +75,7 @@ export class AppController {
   async checkPatientServiceHealth() {
     return {
       service: 'PatientService',
-      ...(await this.checkServiceHealth(this.patientServiceClient, 'patient.check-health')),
+      ...(await this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck')),
       timestamp: new Date().toISOString(),
     };
   }
@@ -87,7 +87,7 @@ export class AppController {
   async checkImagingServiceHealth() {
     return {
       service: 'ImagingService',
-      ...(await this.checkServiceHealth(this.imagingServiceClient, 'imaging.check-health')),
+      ...(await this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck')),
       timestamp: new Date().toISOString(),
     };
   }

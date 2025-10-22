@@ -1,17 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "@/components/radiologist/side-bar";
-import FilterBar from "@/components/radiologist/filter-bar";
-import DataTable from "@/components/radiologist/data-table";
+import TabLayout from "@/components/radiologist/tabs/tab-layout";
+import TabProvider from "@/components/radiologist/tabs/tab-context";
 
-export default function Home() {
+export default function Page() {
   return (
-    <div className="flex h-screen max-w-[100%] bg-gray-100">
-      <div className="flex-1 min-w-0  max -flex flex-col">
-        <FilterBar />
-        <DataTable />
-      </div>
-    </div>
+    <TabProvider>
+      <TabLayout />
+    </TabProvider>
   );
 }

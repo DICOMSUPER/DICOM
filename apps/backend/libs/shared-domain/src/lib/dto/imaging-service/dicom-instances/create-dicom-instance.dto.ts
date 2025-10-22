@@ -11,13 +11,22 @@ export class CreateDicomInstanceDto {
   sopInstanceUid!: string;
 
   @IsString()
+  sopClassUID!: string;
+
+  @IsString()
   seriesId!: string;
+
+  @IsInt()
+  instanceNumber!: number;
 
   @IsString()
   filePath!: string;
 
   @IsString()
   fileName!: string;
+
+  @IsInt()
+  numberOfFrame!: number;
 
   @IsJSON()
   @IsOptional()

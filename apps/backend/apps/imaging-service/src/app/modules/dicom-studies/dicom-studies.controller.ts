@@ -2,18 +2,20 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreateDicomStudyDto, DicomStudy, UpdateDicomStudyDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  CreateDicomStudyDto,
+  DicomStudy,
+  UpdateDicomStudyDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 import { findDicomStudyByReferenceIdType } from './dicom-studies.repository';
+import { DicomStudyStatus } from '@backend/shared-enums';
 import { DicomStudiesService } from './dicom-studies.service';
 
 const moduleName = 'DicomStudies';
@@ -173,6 +175,38 @@ export class DicomStudiesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find many dicom studies',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.Filter`)
+  async filterStudy(
+    @Payload()
+    data: {
+      studyUID?: string;
+      startDate?: string;
+      endDate?: string;
+      bodyPart?: string;
+      modalityCode?: string;
+      modalityDevice?: string;
+      studyStatus?: DicomStudyStatus;
+    }
+  ) {
+    try {
+      return await this.dicomStudiesService.filter(
+        data.studyUID,
+        data.startDate,
+        data.endDate,
+        data.bodyPart,
+        data.modalityCode,
+        data.modalityDevice,
+        data.studyStatus
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to filter dicom study',
         IMAGING_SERVICE
       );
     }

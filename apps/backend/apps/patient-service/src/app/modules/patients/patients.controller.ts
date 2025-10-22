@@ -227,15 +227,15 @@ export class PatientController {
     try {
       const { take = 10, skip = 0 } = data;
       const patients = await this.patientService.findAll();
-      
+
       const selectedPatients = patients
-        .filter(p => p.isActive)
+        .filter((p) => p.isActive)
         .slice(skip, skip + take);
-      
-      const patientIds = selectedPatients.map(p => p.id);
-      
+
+      const patientIds = selectedPatients.map((p) => p.id);
+
       this.logger.log(`Returning ${patientIds.length} patient IDs`);
-      
+
       return {
         success: true,
         data: patientIds,
@@ -245,6 +245,31 @@ export class PatientController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to get patient IDs',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  async filterPatient(
+    @Payload()
+    data: {
+      patientIds: string[] | [];
+      patientFirstName?: string;
+      patientLastName?: string;
+      patientCode?: string;
+    }
+  ) {
+    try {
+      return await this.patientService.filter(
+        data.patientIds,
+        data.patientFirstName,
+        data.patientLastName,
+        data.patientCode
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to filter patient',
         PATIENT_SERVICE
       );
     }
