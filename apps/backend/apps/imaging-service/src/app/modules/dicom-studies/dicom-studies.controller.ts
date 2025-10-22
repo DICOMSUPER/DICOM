@@ -22,6 +22,7 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 import { findDicomStudyByReferenceIdType } from './dicom-studies.repository';
+import { DicomStudyStatus } from '@backend/shared-enums';
 
 const moduleName = 'DicomStudies';
 @Controller('dicom-studies')
@@ -180,6 +181,38 @@ export class DicomStudiesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find many dicom studies',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.Filter`)
+  async filterStudy(
+    @Payload()
+    data: {
+      studyUID?: string;
+      startDate?: string;
+      endDate?: string;
+      bodyPart?: string;
+      modalityCode?: string;
+      modalityDevice?: string;
+      studyStatus?: DicomStudyStatus;
+    }
+  ) {
+    try {
+      return await this.dicomStudiesService.filter(
+        data.studyUID,
+        data.startDate,
+        data.endDate,
+        data.bodyPart,
+        data.modalityCode,
+        data.modalityDevice,
+        data.studyStatus
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to filter dicom study',
         IMAGING_SERVICE
       );
     }

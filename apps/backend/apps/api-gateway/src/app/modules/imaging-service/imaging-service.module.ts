@@ -8,23 +8,24 @@ import { DicomSeriesModule } from './dicom-series/dicom-series.module';
 import { DicomInstancesModule } from './dicom-instances/dicom-instances.module';
 import { ImageAnnotationsModule } from './image-annotations/image-annotations.module';
 import { ImagingServiceController } from './imaging-service.controller';
+import {
+  ImagingServiceClientModule,
+  PatientServiceClientModule,
+  UserServiceClientModule,
+} from '@backend/shared-client';
+import { SharedInterceptorModule } from '@backend/shared-interceptor';
 
 @Module({
   imports: [
     ImagingModalitiesModule,
-    ClientsModule.register([
-      getClient(
-        process.env.IMAGE_SERVICE_NAME || 'ImagingService',
-        Number(process.env.IMAGE_SERVICE_TRANSPORT || Transport.TCP),
-        process.env.IMAGE_SERVICE_HOST || 'localhost',
-        Number(process.env.IMAGE_SERVICE_PORT || 5003)
-      ),
-    ]),
+    ImagingServiceClientModule,
+    UserServiceClientModule,
+    PatientServiceClientModule,
     ImagingOrdersModule,
     DicomStudiesModule,
     DicomSeriesModule,
     DicomInstancesModule,
-
+    SharedInterceptorModule,
     ImageAnnotationsModule,
   ],
   exports: [ImagingModalitiesModule, ImagingOrdersModule],

@@ -5,6 +5,7 @@ import {
   Patient,
   PatientStatsDto,
   PatientRepository,
+  DiagnosisReportRepository,
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -13,10 +14,13 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 import { v4 as uuidv4 } from 'uuid';
+import { DiagnosisStatus } from '@backend/shared-enums';
 
 @Injectable()
 export class PatientService {
   constructor(
+    @Inject()
+    private readonly diagnosisReportRepository: DiagnosisReportRepository,
     @Inject() private readonly patientRepository: PatientRepository
   ) {}
 
@@ -47,8 +51,13 @@ export class PatientService {
   };
 
   private generatePatientCode = (): string => {
-    return 'PA' + uuidv4();
+    const timestamp = Date.now().toString(36); // base36 timestamp
+    const rand = Math.floor(Math.random() * 46656)
+      .toString(36)
+      .padStart(3, '0');
+    return (timestamp + rand).toUpperCase().slice(0, 8);
   };
+
   create = async (createPatientDto: CreatePatientDto): Promise<Patient> => {
     const patientCode = this.generatePatientCode();
     this.checkPatientCode(patientCode);
@@ -112,5 +121,19 @@ export class PatientService {
   restore = async (id: string): Promise<Patient | null> => {
     await this.checkPatient(id);
     return await this.patientRepository.restore(id);
+  };
+
+  filter = async (
+    patientIds: string[] | [],
+    patientFirstName?: string,
+    patientLastName?: string,
+    patientCode?: string
+  ): Promise<Patient[]> => {
+    return await this.filter(
+      patientIds,
+      patientFirstName,
+      patientLastName,
+      patientCode
+    );
   };
 }
