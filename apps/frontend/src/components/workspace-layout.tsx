@@ -19,9 +19,17 @@ interface WorkspaceLayoutProps {
   topToolbar?: React.ReactNode;
   noPadding?: boolean;
   noBreadcrumbs?: boolean;
+  sideBarClass?: string;
 }
 
-export function WorkspaceLayout({ children, sidebar, topToolbar, noPadding = false, noBreadcrumbs = false }: WorkspaceLayoutProps) {
+export function WorkspaceLayout({
+  children,
+  sidebar,
+  topToolbar,
+  noPadding = false,
+  noBreadcrumbs = false,
+  sideBarClass,
+}: WorkspaceLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const breadcrumbItems = useBreadcrumb();
   const router = useRouter();
@@ -36,7 +44,9 @@ export function WorkspaceLayout({ children, sidebar, topToolbar, noPadding = fal
       router.push("/login");
     }, 500);
   };
-
+  const sideBarClassName = sideBarClass
+    ? `flex-1 overflow-y-auto ${sideBarClass}`
+    : "flex-1 overflow-y-auto";
   // Auto close/open based on breakpoint
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 1024px)");
@@ -49,13 +59,21 @@ export function WorkspaceLayout({ children, sidebar, topToolbar, noPadding = fal
   // Toggle via custom event from header
   React.useEffect(() => {
     const handler = () => setIsSidebarOpen((v) => !v);
-    window.addEventListener("workspace:toggleSidebar", handler as EventListener);
+    window.addEventListener(
+      "workspace:toggleSidebar",
+      handler as EventListener
+    );
     // Close on ESC
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsSidebarOpen(false); };
-    window.addEventListener('keydown', onKey);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("workspace:toggleSidebar", handler as EventListener);
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(
+        "workspace:toggleSidebar",
+        handler as EventListener
+      );
+      window.removeEventListener("keydown", onKey);
     };
   }, []);
 
@@ -65,20 +83,26 @@ export function WorkspaceLayout({ children, sidebar, topToolbar, noPadding = fal
       <div
         className={
           `border-r border-border bg-card overflow-hidden transition-[width] duration-300 ease-in-out h-screen ` +
-          (isSidebarOpen ? 'w-64' : 'w-0')
+          (isSidebarOpen ? "w-64" : "w-0")
         }
       >
-        <div className={(isSidebarOpen ? 'flex' : 'hidden') + ' lg:flex flex-col h-full'}>
+        <div
+          className={
+            (isSidebarOpen ? "flex" : "hidden") + " lg:flex flex-col h-full"
+          }
+        >
           {/* Sidebar Top Branding */}
           <div className="px-4 py-3 h-16 border-b border-border flex-shrink-0">
-            <h1 className="text-lg font-display font-bold text-foreground">DICOM System</h1>
-            <p className="text-xs text-slate-500">Medical Management Platform</p>
+            <h1 className="text-lg font-display font-bold text-foreground">
+              DICOM System
+            </h1>
+            <p className="text-xs text-slate-500">
+              Medical Management Platform
+            </p>
           </div>
-          
+
           {/* Sidebar Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
-            {sidebar}
-          </div>
+          <div className={sideBarClassName}>{sidebar}</div>
 
           {/* Logout Section - Fixed at Bottom */}
           <div className="border-t border-border bg-card flex-shrink-0">

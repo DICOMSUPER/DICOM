@@ -54,12 +54,14 @@ export class SeedingService {
           .send('PatientService.Patient.GetIds', { take })
           .pipe(timeout(5000))
       );
-      
+
       if (response.success && response.data) {
-        this.logger.log(`📊 Retrieved ${response.count} patient IDs from Patient Service`);
+        this.logger.log(
+          `📊 Retrieved ${response.count} patient IDs from Patient Service`
+        );
         return response.data;
       }
-      
+
       this.logger.warn('⚠️ No patient IDs returned from Patient Service');
       return [];
     } catch (error: any) {
@@ -73,18 +75,46 @@ export class SeedingService {
     try {
       const response = await firstValueFrom(
         this.userServiceClient
-          .send('UserService.Users.GetIdsByRole', { 
-            role: Roles.PHYSICIAN, 
-            take 
+          .send('UserService.Users.GetIdsByRole', {
+            role: Roles.PHYSICIAN,
+            take,
           })
           .pipe(timeout(5000))
       );
-      
+
       if (response.success && response.data) {
-        this.logger.log(`📊 Retrieved ${response.count} physician IDs from User Service`);
+        this.logger.log(
+          `📊 Retrieved ${response.count} physician IDs from User Service`
+        );
         return response.data;
       }
-      
+
+      this.logger.warn('⚠️ No physician IDs returned from User Service');
+      return [];
+    } catch (error: any) {
+      this.logger.error(`❌ Failed to get physician IDs: ${error.message}`);
+      return [];
+    }
+  }
+
+  private async getRadiologistIdsFromService(take = 5): Promise<string[]> {
+    try {
+      const response = await firstValueFrom(
+        this.userServiceClient
+          .send('UserService.Users.GetIdsByRole', {
+            role: Roles.RADIOLOGIST,
+            take,
+          })
+          .pipe(timeout(5000))
+      );
+
+      if (response.success && response.data) {
+        this.logger.log(
+          `📊 Retrieved ${response.count} physician IDs from User Service`
+        );
+        return response.data;
+      }
+
       this.logger.warn('⚠️ No physician IDs returned from User Service');
       return [];
     } catch (error: any) {
@@ -98,18 +128,20 @@ export class SeedingService {
     try {
       const response = await firstValueFrom(
         this.userServiceClient
-          .send('UserService.Users.GetIdsByRole', { 
-            role: Roles.IMAGING_TECHNICIAN, 
-            take 
+          .send('UserService.Users.GetIdsByRole', {
+            role: Roles.IMAGING_TECHNICIAN,
+            take,
           })
           .pipe(timeout(5000))
       );
-      
+
       if (response.success && response.data) {
-        this.logger.log(`📊 Retrieved ${response.count} technician IDs from User Service`);
+        this.logger.log(
+          `📊 Retrieved ${response.count} technician IDs from User Service`
+        );
         return response.data;
       }
-      
+
       this.logger.warn('⚠️ No technician IDs returned from User Service');
       return [];
     } catch (error: any) {
@@ -126,12 +158,14 @@ export class SeedingService {
           .send('UserService.Rooms.GetIds', { take, isActive: true })
           .pipe(timeout(5000))
       );
-      
+
       if (response.success && response.data) {
-        this.logger.log(`📊 Retrieved ${response.count} room IDs from User Service`);
+        this.logger.log(
+          `📊 Retrieved ${response.count} room IDs from User Service`
+        );
         return response.data;
       }
-      
+
       this.logger.warn('⚠️ No room IDs returned from User Service');
       return [];
     } catch (error: any) {
@@ -236,9 +270,7 @@ export class SeedingService {
         await this.modalityRepository.save(newModality);
         this.logger.log(`✅ Created modality: ${modality.modalityName}`);
       } else {
-        this.logger.log(
-          `⚠️ Modality already exists: ${modality.modalityName}`
-        );
+        this.logger.log(`⚠️ Modality already exists: ${modality.modalityName}`);
       }
     }
   }
@@ -252,7 +284,9 @@ export class SeedingService {
     });
 
     if (modalities.length === 0) {
-      this.logger.warn('⚠️ No modalities found, skipping imaging order seeding');
+      this.logger.warn(
+        '⚠️ No modalities found, skipping imaging order seeding'
+      );
       return;
     }
 
@@ -268,7 +302,9 @@ export class SeedingService {
     }
 
     if (physicianIds.length === 0) {
-      this.logger.warn('⚠️ No physicians found, skipping imaging order seeding');
+      this.logger.warn(
+        '⚠️ No physicians found, skipping imaging order seeding'
+      );
       return;
     }
 
@@ -377,7 +413,7 @@ export class SeedingService {
     const patientIds = await this.getPatientIdsFromService(10);
     const physicianIds = await this.getPhysicianIdsFromService(5);
     const technicianIds = await this.getTechnicianIdsFromService(5);
-
+    const radiologistIds = await this.getRadiologistIdsFromService(1);
     // Check if we have required data
     if (patientIds.length === 0) {
       this.logger.warn('⚠️ No patients found, skipping DICOM study seeding');
@@ -390,7 +426,8 @@ export class SeedingService {
     }
 
     // Use physician IDs if no technicians found
-    const finalTechnicianIds = technicianIds.length > 0 ? technicianIds : physicianIds;
+    const finalTechnicianIds =
+      technicianIds.length > 0 ? technicianIds : physicianIds;
     if (technicianIds.length === 0) {
       this.logger.warn('⚠️ No technicians found, using physicians instead');
     }
@@ -418,6 +455,7 @@ export class SeedingService {
       const patientId = patientIds[i % patientIds.length];
       const physicianId = physicianIds[i % physicianIds.length];
       const technicianId = finalTechnicianIds[i % finalTechnicianIds.length];
+      const radiologistId = radiologistIds[i % radiologistIds.length];
       const orderId =
         imagingOrders.length > 0
           ? imagingOrders[i % imagingOrders.length].id
@@ -437,6 +475,7 @@ export class SeedingService {
         studyDescription: studyDescriptions[i % studyDescriptions.length],
         referringPhysicianId: physicianId,
         performingTechnicianId: technicianId,
+        verifyingRadiologistId: radiologistId,
         studyStatus: statuses[i % statuses.length],
         numberOfSeries: 0, // Will be updated when series are created
         storagePath: `/dicom/studies/${studyDate.getFullYear()}/${String(
@@ -451,9 +490,7 @@ export class SeedingService {
       if (!existing) {
         const newStudy = this.dicomStudyRepository.create(study as any);
         await this.dicomStudyRepository.save(newStudy);
-        this.logger.log(
-          `✅ Created DICOM study: ${study.studyDescription}`
-        );
+        this.logger.log(`✅ Created DICOM study: ${study.studyDescription}`);
       } else {
         this.logger.log(
           `⚠️ DICOM study already exists: ${study.studyInstanceUid}`
@@ -485,14 +522,7 @@ export class SeedingService {
       '3D Reconstruction',
     ];
 
-    const bodyParts = [
-      'Đầu',
-      'Ngực',
-      'Bụng',
-      'Chân',
-      'Tay',
-      'Cột sống',
-    ];
+    const bodyParts = ['Đầu', 'Ngực', 'Bụng', 'Chân', 'Tay', 'Cột sống'];
 
     const protocols = [
       'Standard Brain',
@@ -651,7 +681,7 @@ export class SeedingService {
     // ✅ Get annotator IDs (technicians + physicians) from User Service
     const technicianIds = await this.getTechnicianIdsFromService(5);
     const physicianIds = await this.getPhysicianIdsFromService(5);
-    
+
     // Combine both lists
     const annotatorIds = [...technicianIds, ...physicianIds];
 
@@ -660,7 +690,9 @@ export class SeedingService {
       return;
     }
 
-    this.logger.log(`📊 Found ${annotatorIds.length} annotators (${technicianIds.length} technicians + ${physicianIds.length} physicians)`);
+    this.logger.log(
+      `📊 Found ${annotatorIds.length} annotators (${technicianIds.length} technicians + ${physicianIds.length} physicians)`
+    );
 
     const annotationTypes = [
       AnnotationType.TEXT,
@@ -707,10 +739,10 @@ export class SeedingService {
             annotationType === AnnotationType.MEASUREMENT
               ? { type: 'length', points: 2 }
               : annotationType === AnnotationType.CIRCLE
-                ? { radius: Math.random() * 50 + 10 }
-                : annotationType === AnnotationType.RECTANGLE
-                  ? { width: Math.random() * 100, height: Math.random() * 100 }
-                  : { content: 'Annotation data' },
+              ? { radius: Math.random() * 50 + 10 }
+              : annotationType === AnnotationType.RECTANGLE
+              ? { width: Math.random() * 100, height: Math.random() * 100 }
+              : { content: 'Annotation data' },
           coordinates:
             annotationType === AnnotationType.MEASUREMENT
               ? {
@@ -718,10 +750,10 @@ export class SeedingService {
                   end: { x: Math.random() * 512, y: Math.random() * 512 },
                 }
               : annotationType === AnnotationType.CIRCLE
-                ? { center: { x: Math.random() * 512, y: Math.random() * 512 } }
-                : {
-                    topLeft: { x: Math.random() * 512, y: Math.random() * 512 },
-                  },
+              ? { center: { x: Math.random() * 512, y: Math.random() * 512 } }
+              : {
+                  topLeft: { x: Math.random() * 512, y: Math.random() * 512 },
+                },
           measurementValue:
             annotationType === AnnotationType.MEASUREMENT
               ? parseFloat((Math.random() * 50 + 5).toFixed(2))
@@ -737,15 +769,17 @@ export class SeedingService {
           colorCode: colors[annotationCounter % colors.length],
           annotationStatus:
             annotationStatuses[annotationCounter % annotationStatuses.length],
-          annotatorId:
-            annotatorIds[annotationCounter % annotatorIds.length],
+          annotatorId: annotatorIds[annotationCounter % annotatorIds.length],
           annotationDate: new Date(),
           reviewDate:
-            annotationStatuses[annotationCounter % annotationStatuses.length] ===
-            AnnotationStatus.REVIEWED
+            annotationStatuses[
+              annotationCounter % annotationStatuses.length
+            ] === AnnotationStatus.REVIEWED
               ? new Date()
               : undefined,
-          notes: `Annotation ${annotationCounter + 1} for instance ${instance.instanceNumber}`,
+          notes: `Annotation ${annotationCounter + 1} for instance ${
+            instance.instanceNumber
+          }`,
         };
 
         const newAnnotation = this.imageAnnotationRepository.create(
@@ -808,4 +842,3 @@ export class SeedingService {
     }
   }
 }
-

@@ -9,5 +9,6 @@ export const MESSAGE_PATTERNS = {
   DELETE: 'Delete',
   FIND_MANY: 'FindMany',
   FIND_MANY_IN_ROOM: 'FindManyInRoom',
+  GET_PATIENT_OVERVIEW: 'GetPatientOverview',
 
 } as const;

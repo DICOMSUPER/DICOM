@@ -17,7 +17,7 @@ import {
 } from '../../../constant/microservice.constant';
 
 const moduleName = 'Encounter';
-@Controller('patient-encounters')
+@Controller('encounters')
 export class PatientEncounterController {
   private logger = new Logger(PATIENT_SERVICE);
   constructor(
@@ -112,7 +112,7 @@ export class PatientEncounterController {
   }
   // PatientService.Encounter.Create
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string,  }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -165,6 +165,29 @@ export class PatientEncounterController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to get patient encounter stats',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  // get encounters by patient ID
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.FindByPatientId`
+  )
+  async findByPatientId(
+    @Payload() data: { patientId: string; pagination: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<PatientEncounter>> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByPatientId`
+    );
+    try {
+      const { patientId, pagination } = data;
+
+      return await this.patientEncounterService.findByPatientId(patientId, pagination);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find patient encounters for patient ID: ${data.patientId}`,
         PATIENT_SERVICE
       );
     }

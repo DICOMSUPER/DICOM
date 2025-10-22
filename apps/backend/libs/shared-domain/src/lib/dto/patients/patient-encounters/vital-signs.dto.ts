@@ -97,40 +97,4 @@ export class VitalSignsDto {
   @Min(0)
   @Max(300)
   height?: number;
-
-  @ApiPropertyOptional({
-    description: 'Body Mass Index (calculated from weight and height)',
-    example: 23.5,
-    minimum: 0,
-    maximum: 100,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  bmi?: number;
-
-  @ApiPropertyOptional({
-    description: 'Blood Glucose level in mg/dL',
-    example: 95,
-    minimum: 0,
-    maximum: 600,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(600)
-  glucose?: number;
-
-  @ApiPropertyOptional({
-    description: 'Pain Scale (0 = No pain, 10 = Worst pain)',
-    example: 3,
-    minimum: 0,
-    maximum: 10,
-  })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(10)
-  painScale?: number;
 }

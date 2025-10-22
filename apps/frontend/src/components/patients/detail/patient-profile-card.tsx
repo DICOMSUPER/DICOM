@@ -1,85 +1,128 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate } from "@/lib/formatTimeDate";
-import { User } from "lucide-react";
+import { calculateAge, formatDate } from "@/lib/formatTimeDate";
+import { Calendar, MapPin, Phone, Shield, Clock } from "lucide-react";
+
 interface PatientProfileCardProps {
   patient: Patient;
 }
 
 export function PatientProfileCard({ patient }: PatientProfileCardProps) {
+  const initials = `${patient?.firstName?.[0] || ""}${
+    patient?.lastName?.[0] || ""
+  }`.toUpperCase();
+
   return (
-    <Card className="h-fit border-gray-200">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
+    <Card className="h-fit border-0  shadow-lg">
+      <CardHeader className="pb-6 bg-white border-b border-slate-200">
+        <div className="">
+          <CardTitle className="text-xl font-bold text-slate-900">
             Patient Profile
           </CardTitle>
         </div>
-        <p className="text-sm text-gray-600">
-          Patient ID: {patient?.patientCode}
-        </p>
       </CardHeader>
+
       <CardContent className="space-y-6">
-        {/* Patient Basic Info */}
-        <div className="flex flex-col items-center text-center space-y-3">
-          <Avatar className="h-20 w-20">
-            {/* <AvatarImage src={patient.avatar} alt={patient.name} /> */}
-            <AvatarFallback className="bg-blue-100 text-blue-600 text-lg font-semibold">
-              {patient?.firstName} + " " +{" "}
-              {patient?.lastName}
+        {/* Patient Avatar & Primary Info */}
+        <div className="flex flex-col items-center text-center space-y-4">
+          <Avatar className="h-24 w-24 border-4 border-blue-200 shadow-md">
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-2xl font-bold">
+              {initials}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900">
-              {patient?.firstName} {patient?.lastName}
-            </h3>
-            <p className="text-gray-600">
-              {formatDate(patient?.dateOfBirth)} years • {patient?.gender}
-            </p>
-            <div className="flex justify-center mt-2">
-              {/* insurance number */}
-              <span className="text-gray-600">Insurance Number:</span>
-              <span className="font-medium">{patient.insuranceNumber}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Personal Information */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-gray-700">
-            <User className="w-4 h-4 text-blue-500" />
-            <span className="font-medium text-sm">Personal Information</span>
-          </div>
-          <div className="space-y-2 pl-6">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-600">Date of Birth:</span>
-              <span className="font-medium">
-                {formatDate(patient.dateOfBirth)}
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold text-slate-900">
+              {patient?.firstName} {patient?.lastName}
+            </h2>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <span className="text-slate-600">
+                {calculateAge(patient?.dateOfBirth as Date)} years old
+              </span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+              <span className="text-slate-600 font-medium">
+                {patient?.gender}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-600">Phone:</span>
-              <span className="font-medium">{patient.phoneNumber}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              {/* <span className="text-gray-600">Email:</span>
-              <span className="font-medium text-blue-600">{patient.}</span> */}
-            </div>
-            <div className="flex items-start gap-2 text-sm">
-              <span className="text-gray-600">Address:</span>
-              <span className="font-medium">{patient.address}</span>
-            </div>
           </div>
         </div>
 
-        {/* Registration Info */}
-        <div className="pt-4 border-t border-gray-200 text-xs text-gray-500 space-y-1">
-          <div>Registered on: {formatDate(patient.createdAt)}</div>
-          <div>Last Updated: {formatDate(patient.updatedAt)}</div>
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+
+        {/* Contact Information */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+            Contact Information
+          </h3>
+          <div className="space-y-3 bg-white rounded-lg p-4 border border-slate-200">
+            <div className="flex items-start gap-3">
+              <Calendar className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-slate-500 font-semibold">
+                  Date of Birth
+                </p>
+                <p className="text-sm font-medium text-slate-900">
+                  {formatDate(patient.dateOfBirth)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Phone className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-slate-500 font-semibold">
+                  Phone Number
+                </p>
+                <p className="text-sm font-medium text-slate-900">
+                  {patient.phoneNumber}
+                </p>
+                
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <MapPin className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-slate-500 font-semibold">Address</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {patient.address}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Shield className="w-4 h-4 text-emerald-600" />
+              <div className="flex-1">
+                <p className="text-xs text-slate-500 font-semibold">Insurance Number</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {patient.insuranceNumber}
+                </p>
+              </div>
+          </div>
+        </div>
+        </div>
+
+
+
+        {/* Record Metadata */}
+        <div className="bg-slate-100 rounded-lg p-4 space-y-2 border border-slate-200">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3 h-3 text-slate-500" />
+            <p className="text-xs text-slate-600">
+              <span className="font-semibold">Registered:</span>{" "}
+              {formatDate(patient.createdAt)}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-3 h-3 text-slate-500" />
+            <p className="text-xs text-slate-600">
+              <span className="font-semibold">Last Updated:</span>{" "}
+              {formatDate(patient.updatedAt)}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -9,3 +9,8 @@ export enum RoomType {
   CT = 'CT',
   WC = 'WC',
 }
+export enum RoomStatus {
+  AVAILABLE = 'AVAILABLE',
+  OCCUPIED = 'OCCUPIED',
+  MAINTENANCE = 'MAINTENANCE',
+}

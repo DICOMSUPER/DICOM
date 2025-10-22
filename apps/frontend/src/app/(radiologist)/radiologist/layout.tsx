@@ -52,7 +52,12 @@ export default function RadiologistLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<Sidebar />}>{children}</WorkspaceLayout>
+      <WorkspaceLayout
+        sideBarClass="horizontal-scrollbar"
+        sidebar={<Sidebar />}
+      >
+        {children}
+      </WorkspaceLayout>
     </div>
   );
 }

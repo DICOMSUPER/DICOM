@@ -1,26 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Logger,
-} from '@nestjs/common';
-import { ImagingOrdersService } from './imaging-orders.service';
-import { CreateImagingOrderDto, ImagingOrder } from '@backend/shared-domain';
-import { UpdateImagingOrderDto } from '@backend/shared-domain';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { CreateImagingOrderDto, ImagingOrder, UpdateImagingOrderDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import {
+  Controller,
+  Logger
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
+import { ImagingOrdersService } from './imaging-orders.service';
 
 const moduleName = 'ImagingOrders';
 @Controller('imaging-orders')

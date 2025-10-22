@@ -137,7 +137,7 @@ export class DicomStudiesService {
     //check dicom study
     const dicomStudy = await this.checkDicomStudy(id);
 
-    //check  imaging order if provided
+    //check  imaging order if provided›
     if (
       updateDicomStudyDto.orderId &&
       dicomStudy.orderId !== updateDicomStudyDto.orderId
@@ -146,8 +146,8 @@ export class DicomStudiesService {
 
     //check imaging modality if provided
     if (
-      updateDicomStudyDto.modalityId &&
-      dicomStudy.modalityId !== updateDicomStudyDto.modalityId
+      updateDicomStudyDto.modalityId 
+      // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
     ) {
       await this.checkImagingModality(updateDicomStudyDto.modalityId);
     }

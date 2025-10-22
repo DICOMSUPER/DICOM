@@ -1,24 +1,24 @@
 "use client";
-import { PatientProfileCard } from '@/components/patients/detail/patient-profile-card';
-
-import { Skeleton } from '@/components/ui/skeleton';
-import ClinicVisit from '@/components/physicians/queue/clinic-visit';
-import { mockPatientEncounter } from '@/data/mock-queue';
-import { use } from 'react';
-import { useGetPatientEncounterByIdQuery } from '@/store/patientEncounterApi';
+import { Skeleton } from "@/components/ui/skeleton";
+import ClinicVisit from "@/components/physicians/queue/clinic-visit";
+import { use } from "react";
+import { useGetPatientEncounterByIdQuery } from "@/store/patientEncounterApi";
 
 interface ClinicVisitDetailPageProps {
-   params: Promise<{
+  params: Promise<{
     id: string;
   }>;
 }
 
-export default function ClinicVisitDetailPage({ params }: ClinicVisitDetailPageProps) {
-    const resolvedParams = use(params);
+export default function ClinicVisitDetailPage({
+  params,
+}: ClinicVisitDetailPageProps) {
+  const resolvedParams = use(params);
 
   // get patient-encounter by id from api
 
-  const { data: patientEncounter, isLoading: isLoadingEncounter } = useGetPatientEncounterByIdQuery(resolvedParams.id);
+  const { data: patientEncounter, isLoading: isLoadingEncounter } =
+    useGetPatientEncounterByIdQuery(resolvedParams.id);
 
   if (isLoadingEncounter) {
     return (
@@ -44,29 +44,32 @@ export default function ClinicVisitDetailPage({ params }: ClinicVisitDetailPageP
     );
   }
 
-  if (!patientEncounter?.data ||  !patientEncounter.data.patient) {
+  if (!patientEncounter?.data || !patientEncounter.data.patient) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Patient not found</h2>
-          <p className="text-gray-600">The patient you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Patient not found
+          </h2>
+          <p className="text-gray-600">
+            The patient you're looking for doesn't exist.
+          </p>
         </div>
       </div>
     );
   }
-  
 
   return (
     <div className="min-h-screen ">
       <div className="max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
-            <div className="lg:col-span-1">
-              <PatientProfileCard patient={patientEncounter?.data?.patient} />
-          </div>
+          {/* <div className="lg:col-span-1">
+            <PatientProfileCard patient={patientEncounter?.data?.patient} />
+          </div> */}
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <ClinicVisit detail={patientEncounter.data} />
           </div>
         </div>
