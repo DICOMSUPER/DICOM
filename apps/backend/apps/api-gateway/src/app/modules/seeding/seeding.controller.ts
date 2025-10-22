@@ -29,7 +29,8 @@ export class SeedingController {
         this.userServiceClient.send('UserService.Seeding.Run', {})
       );
     } catch (error: any) {
-      errors.userService = error.message || 'User Service not available';
+      console.error('User Service Seeding Error:', error);
+      errors.userService = error.message || error.error || error.toString() || 'User Service not available';
     }
 
     // Seed Patient Service

@@ -1,8 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { Department } from "@/interfaces/user/department.interface";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 
-// ====== DTOs ======
 export interface CreateDepartmentDto {
   name: string;
   code: string;

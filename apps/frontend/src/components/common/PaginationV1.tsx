@@ -82,7 +82,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   //     return pages;
   //   };
 
-  if (pagination.totalPages <= 1 && !showInfo) {
+  if (pagination.totalPages <= 1) {
     return null; 
   }
 

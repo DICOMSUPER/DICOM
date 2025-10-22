@@ -27,8 +27,9 @@ interface VitalSignFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: Partial<VitalSignFormValues> | null;
-  onSubmit?: (values: VitalSignFormValues & { bmi: number }) => void;
+  onSubmit?: (values: VitalSignFormValues) => void;
   mode?: 'create' | 'update';
+  isLoading?: boolean;
 }
 
 export function VitalSignForm({ 
@@ -36,7 +37,8 @@ export function VitalSignForm({
   onOpenChange,
   initialData = null, 
   onSubmit, 
-  mode = 'create' 
+  mode = 'create' ,
+  isLoading = false,
 }: VitalSignFormProps) {
   const form = useForm<VitalSignFormValues>({
     resolver: zodResolver(vitalSignSchema),
@@ -46,14 +48,13 @@ export function VitalSignForm({
       bpSystolic: undefined,
       bpDiastolic: undefined,
       respiratoryRate: undefined,
-      spo2: undefined,
+      oxygenSaturation: undefined,
       weight: undefined,
       height: undefined,
-
     },
   });
 
-  const [submittedData, setSubmittedData] = useState<VitalSignFormValues | null>(null);
+
 
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export function VitalSignForm({
         bpSystolic: undefined,
         bpDiastolic: undefined,
         respiratoryRate: undefined,
-        spo2: undefined,
+        oxygenSaturation: undefined,
         weight: undefined,
         height: undefined,
 
@@ -86,22 +87,15 @@ export function VitalSignForm({
     const filteredValues = Object.fromEntries(
       Object.entries(values).filter(([_, value]) => value !== undefined && value !== null)
     ) as VitalSignFormValues;
-
-    const heightInM = (filteredValues.height || 0) / 100;
-    const bmi = (filteredValues.weight || 0) / (heightInM * heightInM);
     const payload = { 
       ...filteredValues, 
-      bmi: isNaN(bmi) || bmi === Infinity ? 0 : Number(bmi.toFixed(2))
+
     };
-    
-    setSubmittedData(payload);
     console.log(`Form ${mode}d:`, payload);
     
     if (onSubmit) {
       onSubmit(payload);
     }
-    
-    // Close modal after successful submit
     onOpenChange(false);
   }
 
@@ -112,7 +106,7 @@ export function VitalSignForm({
       bpSystolic: undefined,
       bpDiastolic: undefined,
       respiratoryRate: undefined,
-      spo2: undefined,
+      oxygenSaturation: undefined,
       weight: undefined,
       height: undefined,
 
@@ -144,7 +138,7 @@ export function VitalSignForm({
                   ["bpSystolic", "BP Systolic (mmHg)", "120"],
                   ["bpDiastolic", "BP Diastolic (mmHg)", "80"],
                   ["respiratoryRate", "Respiratory Rate (/min)", "16"],
-                  ["spo2", "SpO₂ (%)", "98"],
+                  ["oxygenSaturation", "SpO₂ (%)", "98"],
                   ["weight", "Weight (kg)", "70"],
                   ["height", "Height (cm)", "170"],
 
@@ -161,7 +155,7 @@ export function VitalSignForm({
                         <Input
                           type="number"
                           step="0.1"
-                          placeholder={placeholder}
+                          // placeholder={placeholder}
                           value={inputField.value ?? ""}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -184,26 +178,16 @@ export function VitalSignForm({
                 type="button" 
                 variant="outline" 
                 onClick={handleCancel}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={isLoading}>
                 {isUpdateMode ? 'Update' : 'Save'} Vital Signs
               </Button>
             </DialogFooter>
           </form>
         </Form>
-
-        {submittedData && (
-          <div className="mt-4 p-4 border rounded-md bg-gray-50">
-            <h3 className="font-semibold">
-              {isUpdateMode ? 'Updated' : 'Saved'} Data:
-            </h3>
-            <pre className="text-sm mt-2">
-              {JSON.stringify(submittedData, null, 2)}
-            </pre>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );

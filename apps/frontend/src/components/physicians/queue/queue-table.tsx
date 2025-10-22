@@ -35,10 +35,7 @@ import {
   ArrowUpDown,
   Eye,
 } from "lucide-react";
-import {
-  QueuePriorityLevel,
-  QueueStatus,
-} from "@/enums/patient.enum";
+import { QueuePriorityLevel, QueueStatus } from "@/enums/patient.enum";
 
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
@@ -47,11 +44,12 @@ import Pagination, { PaginationMeta } from "@/components/common/PaginationV1";
 interface QueueTableProps {
   queueItems: QueueAssignment[];
   onStartServing: (id: string) => void;
-  onEdit: (id: string) => void;
-  onCancel: (id: string) => void;
+  onComplete: (id: string) => void;
+  onSkip: (id: string) => void;
   onViewDetails: (id: string) => void;
   pagination: PaginationMeta;
   onPageChange: (page: number) => void;
+  isUpdating: boolean;
 }
 
 const columnHelper = createColumnHelper<QueueAssignment>();
@@ -59,11 +57,12 @@ const columnHelper = createColumnHelper<QueueAssignment>();
 export function QueueTable({
   queueItems,
   onStartServing,
-  onEdit,
-  onCancel,
+  onComplete,
+  onSkip,
   onViewDetails,
   pagination,
   onPageChange,
+  isUpdating,
 }: QueueTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -73,8 +72,25 @@ export function QueueTable({
         return <span className="text-blue-600 font-medium">Waiting</span>;
       case QueueStatus.COMPLETED:
         return <span className="text-green-600 font-medium">Completed</span>;
+      case QueueStatus.IN_PROGRESS:
+        return <span className="text-yellow-600 font-medium">Serving</span>;
       default:
         return <span className="text-gray-700 font-medium">{status}</span>;
+    }
+  };
+
+  const getRowClassName = (priority: QueuePriorityLevel) => {
+    const baseClass = "hover:bg-opacity-80 transition-colors";
+
+    switch (priority) {
+      case QueuePriorityLevel.URGENT:
+        return `bg-yellow-50 hover:bg-yellow-100 ${baseClass}`;
+      case QueuePriorityLevel.STAT:
+        return `bg-red-50 hover:bg-red-100 ${baseClass}`;
+      case QueuePriorityLevel.ROUTINE:
+        return `hover:bg-gray-50 ${baseClass}`;
+      default:
+        return `hover:bg-gray-50 ${baseClass}`;
     }
   };
 
@@ -133,22 +149,16 @@ export function QueueTable({
 
     columnHelper.display({
       id: "patient",
-        header: () => (
-    <div className="text-center w-full">Name</div>
-  ),
+      header: () => <div className="text-center w-full">Name</div>,
       cell: ({ row }) => {
         const patient = row.original.encounter.patient;
         return (
           <div className="space-y-1">
-            <div className="flex items-center gap-2">  
+            <div className="flex items-center gap-2">
               <span className="font-medium text-gray-900">
                 {patient?.firstName} {patient?.lastName}
               </span>
             </div>
-            {/* <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>{patient.gender === "Male" ? "♂" : "♀"}</span>
-              <span>{patient.insuranceNumber}</span>
-            </div> */}
           </div>
         );
       },
@@ -156,7 +166,7 @@ export function QueueTable({
 
     columnHelper.display({
       id: "phone",
-      header: () => (<div className="text-center w-full">Phone</div>),
+      header: () => <div className="text-center w-full">Phone</div>,
       cell: ({ row }) => {
         const phone = row.original.encounter.patient?.phoneNumber;
         return (
@@ -223,25 +233,36 @@ export function QueueTable({
 
     columnHelper.display({
       id: "queue_status",
-      header:() => (<div className="text-center w-full">Status</div>),
+      header: () => <div className="text-center w-full">Status</div>,
       cell: ({ row }) => getStatusBadge(row.original.status),
     }),
 
     columnHelper.display({
       id: "actions",
-      header: () => (<div className="text-center w-full">Actions</div>),
+      header: () => <div className="text-center w-full">Actions</div>,
       cell: ({ row }) => {
         const queueItem = row.original;
         return (
-          <div className="flex items-center gap-2">
+          <div className="flem justify-center items-center gap-2">
             {queueItem.status === QueueStatus.WAITING && (
               <Button
                 variant="outline"
                 size="sm"
                 className="border-purple-200 text-purple-700 hover:bg-purple-50"
                 onClick={() => onStartServing(queueItem.id)}
+                disabled={isUpdating}
               >
                 Start Serving
+              </Button>
+            )}
+            {queueItem.status === QueueStatus.IN_PROGRESS && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-green-200 text-green-700 hover:bg-green-50"
+                onClick={() => onComplete(queueItem.id)}
+              >
+                Complete
               </Button>
             )}
 
@@ -252,18 +273,21 @@ export function QueueTable({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onViewDetails(queueItem.encounterId)}>
+                <DropdownMenuItem
+                  onClick={() => onViewDetails(queueItem.encounterId)}
+                >
                   <Eye className="mr-2 h-4 w-4" />
                   View
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(queueItem.id)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onCancel(queueItem.id)}>
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel
-                </DropdownMenuItem>
+                {(queueItem.status === QueueStatus.WAITING || queueItem.status === QueueStatus.IN_PROGRESS) && (
+                  <DropdownMenuItem
+                    onClick={() => onSkip(queueItem.id)}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Skip
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -281,19 +305,20 @@ export function QueueTable({
     state: {
       sorting,
     },
-     manualPagination: true,
-     pageCount: pagination.totalPages,
+    manualPagination: true,
+    pageCount: pagination.totalPages,
   });
 
-  // ✅ Empty state
-  if (queueItems.length === 0 ) {
+  if (queueItems.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <User className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500 text-lg font-medium">No queue items found</p>
+          <p className="text-gray-500 text-lg font-medium">
+            No queue items found
+          </p>
           <p className="text-gray-400 text-sm mt-2">
             Try adjusting your search or filters
           </p>
@@ -327,7 +352,7 @@ export function QueueTable({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className={getRowClassName(row.original.priority)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-6 py-4">

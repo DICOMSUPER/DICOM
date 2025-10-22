@@ -30,17 +30,12 @@ export class AppController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.HealthCheck`)
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+  async healthCheck(): Promise<{ status: string; message: string; timestamp: string }> {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.HealthCheck`);
-    try {
-      this.checkDatabaseConfig();
-      return await this.appService.healthCheck();
-    } catch (error) {
-      throw ThrowMicroserviceException(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Health check failed',
-        PATIENT_SERVICE
-      );
-    }
+    return {
+      status: 'ok',
+      message: 'PatientService is running',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

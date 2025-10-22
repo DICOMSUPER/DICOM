@@ -1,4 +1,4 @@
-import { 
+import {
   BarChart3,
   Users,
   Clock,
@@ -15,7 +15,7 @@ import {
   BookOpen,
   Monitor,
   Cog,
-  Timer
+  Timer,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -31,79 +31,79 @@ export interface RoleNavigation {
 
 export const roleNavigation: RoleNavigation = {
   // Administrator - Full system access
-  "Administrator": [
+  Administrator: [
     {
       href: "/admin",
       label: "Dashboard",
       icon: BarChart3,
-      description: "System overview and analytics"
+      description: "System overview and analytics",
     },
     {
       href: "/admin/users",
       label: "User Management",
       icon: Users,
-      description: "Manage system users and roles"
+      description: "Manage system users and roles",
     },
     {
       href: "/admin/schedule",
       label: "Schedule Management",
       icon: Clock,
-      description: "Manage staff schedules and assignments"
+      description: "Manage staff schedules and assignments",
     },
     {
       href: "/admin/working-hours",
       label: "Working Hours",
       icon: Timer,
-      description: "Configure clinic working hours and break times"
+      description: "Configure clinic working hours and break times",
     },
     {
       href: "/admin/settings",
       label: "System Settings",
       icon: Settings,
-      description: "Configure system settings"
+      description: "Configure system settings",
     },
     {
       href: "/admin/configurations",
       label: "System Configurations",
       icon: Cog,
-      description: "Advanced system configurations"
+      description: "Advanced system configurations",
     },
     {
       href: "/admin/reports",
       label: "Analytics & Reports",
       icon: FileText,
-      description: "Generate system reports"
+      description: "Generate system reports",
     },
     {
       href: "/admin/security",
       label: "Security & Audit",
       icon: Shield,
-      description: "Monitor security and audit logs"
+      description: "Monitor security and audit logs",
     },
     {
       href: "/admin/database",
       label: "Database Management",
       icon: Database,
-      description: "Manage database and backups"
+      description: "Manage database and backups",
     },
     {
       href: "/admin/docs",
       label: "Documentation",
       icon: BookOpen,
-      description: "System documentation and guides"
+      description: "System documentation and guides",
     },
     {
       href: "/admin/monitoring",
       label: "System Monitoring",
       icon: Monitor,
-      description: "Monitor system performance"
+      description: "Monitor system performance",
     },
     {
       href: "/admin/rooms",
       label: "Rooms Management",
       icon: Monitor,
-      description: "Manage clinic rooms and resources"
-    }
+      description: "Manage clinic rooms and resources",
+    },
   ],
 
   // Reception Staff - Patient registration and queue management
@@ -112,87 +112,94 @@ export const roleNavigation: RoleNavigation = {
       href: "/reception",
       label: "Dashboard",
       icon: BarChart3,
-      description: "Daily overview"
+      description: "Daily overview",
     },
     {
       href: "/reception/patients",
       label: "Patients",
       icon: Users,
-      description: "Patient registration and search"
+      description: "Patient registration and search",
     },
     {
       href: "/reception/registration",
       label: "Register Patient",
       icon: UserCheck,
-      description: "Register new patients"
+      description: "Register new patients",
     },
     {
       href: "/reception/encounters",
       label: "Encounters",
       icon: Search,
-      description: "Search and filter patient encounters"
+      description: "Search and filter patient encounters",
     },
     {
       href: "/reception/queue",
       label: "Queue",
       icon: Clock,
-      description: "Waiting room management"
+      description: "Waiting room management",
     },
     {
       href: "/reception/assignments",
       label: "Assignments",
       icon: UserCheck,
-      description: "Patient assignments"
+      description: "Patient assignments",
     },
     {
       href: "/reception/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "View your work schedule"
-    }
+      description: "View your work schedule",
+    },
   ],
 
   // Physician - Patient care and medical records
-  "Physician": [
+  Physician: [
     {
       href: "/physicians/dashboard",
 
       label: "Dashboard",
       icon: BarChart3,
-      description: "Patient overview"
+      description: "Patient overview",
     },
     {
       href: "/physicians/patients",
       label: "My Patients",
       icon: Users,
-      description: "Assigned patients"
+      description: "Assigned patients",
     },
     {
       href: "/physicians/clinic-visit",
       label: "Clinic Visit",
 
       icon: FileText,
-      description: "Manage patient queue assignments"
+      description: "Manage patient queue assignments",
     },
     {
-      href: "/physicians/prescription",
-      label: "Prescription",
+      href: "/physicians/create-imaging-order",
+      label: "Create Imaging Order",
 
       icon: Stethoscope,
-      description: "Patient diagnoses management"
+      description: "Patient diagnoses management",
+    },
+    {
+      href: "/physicians/diagnoses-reports",
+      label: "Diagnoses Reports",
+
+      icon: Stethoscope,
+      description: "Patient diagnoses management",
     },
     {
       href: "/physicians/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "View your clinical schedule"
+      description: "View your clinical schedule",
     },
     {
       href: "/physicians/settings",
       label: "Settings",
       icon: Settings,
-      description: "Personal settings"
-    }
+      description: "Personal settings",
+    },
   ],
 
   // Image Technician - DICOM and imaging
@@ -201,79 +208,79 @@ export const roleNavigation: RoleNavigation = {
       href: "/imaging-technicians",
       label: "Dashboard",
       icon: BarChart3,
-      description: "Imaging overview"
+      description: "Imaging overview",
     },
     {
       href: "/imaging-technicians/imaging",
       label: "Imaging",
       icon: Camera,
-      description: "DICOM image management"
+      description: "DICOM image management",
     },
     {
       href: "/imaging-technicians/patients",
       label: "Patients",
       icon: Users,
-      description: "Patient imaging records"
+      description: "Patient imaging records",
     },
     {
       href: "/imaging-technicians/queue",
       label: "Imaging Queue",
       icon: Clock,
-      description: "Pending imaging studies"
+      description: "Pending imaging studies",
     },
     {
       href: "/imaging-technicians/equipment",
       label: "Equipment",
       icon: Activity,
-      description: "Imaging equipment status"
+      description: "Imaging equipment status",
     },
     {
       href: "/imaging-technicians/settings",
       label: "Settings",
       icon: Settings,
-      description: "Imaging settings"
-    }
+      description: "Imaging settings",
+    },
   ],
 
   // Nurse - Patient care support
-  "Nurse": [
+  Nurse: [
     {
       href: "/nurses",
       label: "Dashboard",
       icon: BarChart3,
-      description: "Patient care overview"
+      description: "Patient care overview",
     },
     {
       href: "/nurses/patients",
       label: "Patients",
       icon: Users,
-      description: "Patient care management"
+      description: "Patient care management",
     },
     {
       href: "/nurses/vitals",
       label: "Vitals",
       icon: Activity,
-      description: "Patient vital signs"
+      description: "Patient vital signs",
     },
     {
       href: "/nurses/medications",
       label: "Medications",
       icon: Stethoscope,
-      description: "Medication management"
+      description: "Medication management",
     },
     {
       href: "/nurses/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "Care schedule"
+      description: "Care schedule",
     },
     {
       href: "/nurses/settings",
       label: "Settings",
       icon: Settings,
-      description: "Personal settings"
-    }
-  ]
+      description: "Personal settings",
+    },
+  ],
 };
 
 export function getNavigationForRole(role: string): NavigationItem[] {

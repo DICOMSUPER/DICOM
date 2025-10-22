@@ -20,8 +20,8 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 
-//relation: imagingOrder, modality, series
-const relation = ['imagingOrder', 'modality', 'series'];
+//relation: imagingOrder, series
+const relation = ['imagingOrder', 'series'];
 
 @Injectable()
 export class DicomStudiesService {
@@ -137,20 +137,20 @@ export class DicomStudiesService {
     //check dicom study
     const dicomStudy = await this.checkDicomStudy(id);
 
-    //check  imaging order if provided
+    //check  imaging order if provided›
     if (
       updateDicomStudyDto.orderId &&
       dicomStudy.orderId !== updateDicomStudyDto.orderId
     )
       await this.checkImagingOrder(updateDicomStudyDto.orderId);
 
-    // //check imaging modality if provided
-    // if (
-    //   updateDicomStudyDto.modalityId &&
-    //   dicomStudy.modalityId !== updateDicomStudyDto.modalityId
-    // ) {
-    //   await this.checkImagingModality(updateDicomStudyDto.modalityId);
-    // }
+    //check imaging modality if provided
+    if (
+      updateDicomStudyDto.modalityId
+      // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
+    ) {
+      await this.checkImagingModality(updateDicomStudyDto.modalityId);
+    }
 
     return await this.dicomStudiesRepository.update(id, updateDicomStudyDto);
   };

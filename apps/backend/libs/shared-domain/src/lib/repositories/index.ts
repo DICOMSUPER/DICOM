@@ -6,5 +6,4 @@ export * from './patient-condition.repository';
 export * from './employee-schedule.repository';
 export * from './shift-template.repository';
 export * from './working-hours.repository';
-export * from './schedule-replacement.repository';
 export * from './weekly-schedule-pattern.repository';

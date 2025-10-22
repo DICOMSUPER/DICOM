@@ -50,18 +50,8 @@ const MultiViewport = ({ selectedSeries }: ViewportProps) => {
 
   const viewportCount = getViewportCount(state.layout);
 
-  // Sample DICOM image IDs (you would get these from your selected series)
-  const sampleImageIds = [
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=0",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=1",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=2",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=3",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=4",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=5",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=6",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=7",
-    "wadouri:https://res.cloudinary.com/dz2dv8lk4/raw/upload/v1757871975/0002_sb8yxe.DCM?frame=8",
-  ];
+  // No default images - will be populated from selected series
+  const sampleImageIds: string[] = [];
 
   return (
     <div className=" flex flex-col bg-gray-900">

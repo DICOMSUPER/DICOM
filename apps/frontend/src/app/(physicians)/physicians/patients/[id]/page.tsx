@@ -1,35 +1,63 @@
-'use client';
+"use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePatientDetail } from '@/hooks/use-patient-detail';
-import { PatientHeader } from '@/components/patients/detail/patient-header';
-import { PatientProfileCard } from '@/components/patients/detail/patient-profile-card';
-import { PatientSummaryTab } from '@/components/patients/detail/patient-summary';
-import { MedicationsTab } from '@/components/patients/detail/medication-tab';
-import { LabResultsTab } from '@/components/patients/detail/lab-result-tab';
-import { Skeleton } from '@/components/ui/skeleton';
-import { MedicalHistoryTab } from '@/components/patients/detail/medical-history-tab';
+import { PatientProfileCard } from "@/components/patients/detail/patient-profile-card";
+import { PatientSummaryTab } from "@/components/patients/detail/patient-summary";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+import { EncounterHistoryTab } from "@/components/patients/detail/visit-history";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetPatientByCodeQuery, useGetPatientOverviewQuery } from "@/store/patientApi";
+import { useGetPatientEncountersByPatientIdQuery } from "@/store/patientEncounterApi";
+import { use, useState } from "react";
 
 interface PatientDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function PatientDetailPage({ params }: PatientDetailPageProps) {
-   const { 
-    patient, 
-    summary, 
-    medications, 
-    labResults, 
-    procedures,
-    diagnoses,
-    visits,
-    immunizations,
-    loading 
-  } = usePatientDetail(params.id);
+  const resolvedParams = use(params);
+   const [activeTab, setActiveTab] = useState("overview");
 
-  if (loading) {
+  const { data: patientData, isLoading } = useGetPatientByCodeQuery(
+    resolvedParams.id
+  );
+  const { data: patientOverview, isLoading: isLoadingOverview } = useGetPatientOverviewQuery(
+    resolvedParams.id
+  );
+  console.log(patientData?.data);
+  console.log(patientOverview?.data);
+  
+    const { data: encountersData, isLoading: isLoadingEncounters } = useGetPatientEncountersByPatientIdQuery(
+    {
+      patientId: patientData?.data.id as string,
+      pagination: {
+        page: 1,
+        limit: 10,
+      }
+    },
+    {
+      skip: activeTab !== "results", 
+    }
+  );
+
+  // Conditionally fetch conditions only when tab is active
+  // const { data: conditionsData, isLoading: isLoadingConditions } = useGetPatientConditionsByPatientIdQuery(
+  //   {
+  //     patientId: resolvedParams.id,
+  //     pagination: {
+  //       page: 1,
+  //       limit: 10,
+  //     }
+  //   },
+  //   {
+  //     skip: activeTab !== "medical-history", // Only fetch when medical-history tab is active
+  //   }
+  // );
+  
+
+  if (isLoading) {
     return (
       <div className="min-h-screen ">
         <div className="max-w-7xl ">
@@ -53,12 +81,16 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     );
   }
 
-  if (!patient || !summary) {
+  if (!patientData?.data ) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Patient not found</h2>
-          <p className="text-gray-600">The patient you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Patient not found
+          </h2>
+          <p className="text-gray-600">
+            The patient you're looking for doesn't exist.
+          </p>
         </div>
       </div>
     );
@@ -67,51 +99,41 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   return (
     <div className="min-h-screen ">
       <div className="max-w-7xl">
-        {/* <PatientHeader 
-          title="Patient Details" 
-          subtitle="View and manage patient information." 
-        /> */}
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">
-            <PatientProfileCard patient={patient} />
+            <PatientProfileCard patient={patientData?.data} />
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+                {/* display recent vital sign and conditions (first three) */}
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                {/* <TabsTrigger value="appointments">Appointments</TabsTrigger> */}
-                <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
-                <TabsTrigger value="results">Results</TabsTrigger>
-                <TabsTrigger value="medical-history">Medical History</TabsTrigger>
+                <TabsTrigger value="results">Encounter History</TabsTrigger>
+                <TabsTrigger value="medical-history">
+                  Condition
+                </TabsTrigger>
               </TabsList>
-
               <TabsContent value="overview" className="space-y-6">
-                <PatientSummaryTab summary={summary} />
+                {patientOverview?.data && <PatientSummaryTab overview={patientOverview.data} />}
               </TabsContent>
-{/* 
-              <TabsContent value="appointments" className="space-y-6">
-                <AppointmentsTab appointments={appointments} />
-              </TabsContent> */}
-
-              <TabsContent value="prescriptions" className="space-y-6">
-                <MedicationsTab medications={medications} />
-              </TabsContent>
-
               <TabsContent value="results" className="space-y-6">
-                <LabResultsTab labResults={labResults} />
+                {isLoadingEncounters ? (
+                  <Skeleton className="h-96 w-full" />
+                ) : (
+                  <EncounterHistoryTab encounterHistory={encountersData?.data?.data || []} />
+                )}
               </TabsContent>
 
               <TabsContent value="medical-history" className="space-y-6">
-                <MedicalHistoryTab
+                {/* <MedicalHistoryTab
                   procedures={procedures}
                   diagnoses={diagnoses}
                   visits={visits}
                   immunizations={immunizations}
-                />
+                /> */}
               </TabsContent>
             </Tabs>
           </div>

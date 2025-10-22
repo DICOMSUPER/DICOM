@@ -18,7 +18,7 @@ export class QueueAssignment extends BaseEntity {
 
   @Column({ name: 'encounter_id', type: 'uuid', nullable: true })
   encounterId?: string;
-  
+
   @ManyToOne(() => PatientEncounter)
   @JoinColumn({ name: 'encounter_id' })
   encounter!: PatientEncounter;
@@ -48,8 +48,8 @@ export class QueueAssignment extends BaseEntity {
   @Column({ name: 'priority_reason', type: 'text', nullable: true })
   priorityReason?: string;
 
-  // @Column({ name: 'validation_token', type: 'varchar', length: 12, unique: true })
-  // validationToken!: string;
+  @Column({ name: 'skipped_at', type: 'timestamp', nullable: true })
+  skippedAt?: Date;
 
   @Column({ name: 'estimated_wait_time', type: 'int', nullable: true })
   estimatedWaitTime?: number; // in minutes

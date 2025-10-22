@@ -195,16 +195,6 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   }
 
   /**
-   * Find assignment by validation token
-   */
-  // async findByValidationToken(validationToken: string): Promise<QueueAssignment | null> {
-  //   return await this.findOne(
-  //     { where: { validationToken } },
-  //     ['encounter', 'encounter.patient']
-  //   );
-  // }
-
-  /**
    * Find expired assignments
    */
   async findExpiredAssignments(): Promise<QueueAssignment[]> {

@@ -1,24 +1,15 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-  Index,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-  ManyToMany,
-  JoinTable,
-} from 'typeorm';
-import {
-  OrderType,
-  OrderPriority,
-  OrderStatus,
-  Urgency,
-} from '@backend/shared-enums';
-import { ImagingModality } from './imaging-modality.entity';
 import { BaseEntity } from '@backend/entities';
+import { OrderStatus } from '@backend/shared-enums';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ImagingModality } from './imaging-modality.entity';
+import { RequestProcedure } from './request-procedure.entity';
 @Entity('imaging_orders')
 @Index(['patientId'])
 export class ImagingOrder extends BaseEntity {
@@ -31,9 +22,6 @@ export class ImagingOrder extends BaseEntity {
   @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
 
-  //   @Column({ name: 'visit_id', type: 'uuid', nullable: true })
-  //   visitId?: string;
-
   @Column({ name: 'ordering_physician_id', type: 'uuid' })
   orderingPhysicianId!: string;
 
@@ -41,28 +29,15 @@ export class ImagingOrder extends BaseEntity {
   modalityId!: string;
 
   @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
-  @JoinColumn({ name: 'modality_id' }) // Creates/uses the FK column
+  @JoinColumn({ name: 'modality_id' })
   modality!: ImagingModality;
 
-  @Column({ name: 'body_part', length: 100 })
-  bodyPart!: string;
+  @Column({ name: 'procedure_id', type: 'uuid', nullable: true })
+  procedureId?: string;
 
-  //   @Column({ name: 'procedure_code', length: 20, nullable: true })
-  //   procedureCode?: string;
-
-  //   @Column({ name: 'procedure_description', type: 'text' })
-  //   procedureDescription!: string;
-
-  @Column({ name: 'order_type', type: 'enum', enum: OrderType })
-  orderType!: OrderType;
-
-  @Column({
-    name: 'urgency',
-    type: 'enum',
-    enum: Urgency,
-    default: Urgency.ROUTINE,
-  })
-  urgency!: Urgency;
+  @ManyToOne(() => RequestProcedure, { nullable: true, eager: true })
+  @JoinColumn({ name: 'procedure_id' })
+  procedure?: RequestProcedure;
 
   @Column({
     name: 'order_status',
@@ -71,6 +46,9 @@ export class ImagingOrder extends BaseEntity {
     default: OrderStatus.PENDING,
   })
   orderStatus!: OrderStatus;
+
+  @Column({ name: 'body_part', length: 100 })
+  bodyPart!: string;
 
   @Column({ name: 'completed_date', type: 'timestamp', nullable: true })
   completedDate?: Date;

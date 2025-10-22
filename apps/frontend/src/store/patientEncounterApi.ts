@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import {
   PatientEncounter,
   CreatePatientEncounterDto,
@@ -6,6 +6,8 @@ import {
   EncounterSearchFilters,
   PaginatedResponse,
   EncounterStats,
+  ApiResponse,
+  PaginationParams
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
@@ -45,7 +47,7 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<PatientEncounter, string>({
+    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",
@@ -54,12 +56,13 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounters by patient
-    getPatientEncountersByPatientId: builder.query<PatientEncounter[], string>({
-      query: (patientId) => ({
+    getPatientEncountersByPatientId: builder.query<ApiResponse<PaginatedResponse<PatientEncounter>>, {patientId:string; pagination: PaginationParams}>({
+      query: ({patientId, pagination}) => ({
         url: `/patient/${patientId}`,
         method: "GET",
+        params: pagination
       }),
-      providesTags: (result, error, patientId) => [
+      providesTags: (result, error, {patientId}) => [
         { type: "PatientEncounter", id: `patient-${patientId}` },
       ],
     }),
@@ -105,7 +108,7 @@ export const patientEncounterApi = createApi({
 
     // Update encounter
     updatePatientEncounter: builder.mutation<
-      PatientEncounter,
+      ApiResponse<PatientEncounter>,
       { id: string; data: UpdatePatientEncounterDto }
     >({
       query: ({ id, data }) => ({

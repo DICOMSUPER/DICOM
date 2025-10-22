@@ -7,8 +7,6 @@ export enum QueueStatus {
 
 export enum QueuePriorityLevel {
   ROUTINE = "Routine",
-  MEDIUM = "Medium",
-  HIGH = "High",
   URGENT = "Urgent",
   STAT = "Stat",
 }

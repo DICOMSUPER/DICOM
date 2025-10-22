@@ -3,22 +3,29 @@
 
 :root {
   /* === 4 CORE COLORS === */
-  --primary: #475569;    /* slate-600 */
-  --secondary: #64748b;  /* slate-500 */
-  --accent: #94a3b8;     /* slate-400 */
-  --neutral: #cbd5e1;    /* slate-300 */
+  --primary: #475569;
+  /* slate-600 */
+  --secondary: #64748b;
+  /* slate-500 */
+  --accent: #94a3b8;
+  /* slate-400 */
+  --neutral: #cbd5e1;
+  /* slate-300 */
 
   /* === BACKGROUND & TEXT === */
   --background: #ffffff;
-  --foreground: #0f172a;  /* slate-900 */
-  --surface: #f8fafc;     /* slate-50 */
-  --border: #e2e8f0;      /* slate-200 */
+  --foreground: #0f172a;
+  /* slate-900 */
+  --surface: #f8fafc;
+  /* slate-50 */
+  --border: #e2e8f0;
+  /* slate-200 */
 
   /* === TYPOGRAPHY === */
   --font-sans: var(--font-open-sans, 'Open Sans'), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: var(--font-open-sans, 'Open Sans'), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Monaco', 'Cascadia Code', monospace;
-  
+
   /* === SHADCN/UI VARIABLES === */
   --radius: 0.5rem;
   --card: var(--background);
@@ -34,7 +41,7 @@
   --destructive-foreground: #ffffff;
   --input: var(--border);
   --ring: var(--primary);
-} 
+}
 
 /* === DARK THEME === */
 /* Removed automatic dark mode - keeping light theme by default */
@@ -81,36 +88,42 @@ body {
 }
 
 /* === CUSTOM SCROLLBAR - GLOBAL === */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+::-webkit-scrollbar:horizontal {
+  height: 10px;
+  width: 10px;
+
+}
+
+::-webkit-scrollbar:vertical {
+  width: 1px;
+  height: 1px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(15 23 42 / 1); /* slate-900 - darker */
-  border-radius: 4px;
+  background: #c09f9f;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(51 65 85 / 1); /* slate-700 - darker */
+  background: rgba(184, 190, 199, 0.5);
   border-radius: 4px;
-  transition: background 0.2s ease;
-  border: 1px solid rgb(30 41 59 / 1); /* slate-800 border */
+  border: 1px solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(71 85 105 / 1); /* slate-600 - darker hover */
-  border: 1px solid rgb(51 65 85 / 1); /* slate-700 border on hover */
+  background: rgba(184, 190, 199, 0.8);
 }
 
 ::-webkit-scrollbar-corner {
-  background: rgb(15 23 42 / 1); /* slate-900 - darker */
+  background: rgb(75, 94, 133);
+  /* slate-900 - darker */
 }
 
 /* Firefox */
 * {
   scrollbar-width: auto;
-  scrollbar-color: rgb(51 65 85 / 1) rgb(15 23 42 / 1); /* darker colors */
+  scrollbar-color: rgb(238, 238, 238) rgb(247, 247, 248);
+  /* darker colors */
 }
 
 /* Custom slider for viewer controls */

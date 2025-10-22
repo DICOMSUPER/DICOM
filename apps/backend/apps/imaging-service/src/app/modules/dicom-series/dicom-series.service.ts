@@ -23,7 +23,7 @@ import {
   DicomSeriesStudyProcessException,
 } from '@backend/shared-exception';
 
-const relation = ['study', 'study.modality', 'instances'];
+const relation = ['study', 'instances'];
 
 @Injectable()
 export class DicomSeriesService {
