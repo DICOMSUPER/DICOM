@@ -434,8 +434,6 @@ export class SeedingService {
 
     const priorities = [
       QueuePriorityLevel.ROUTINE,
-      QueuePriorityLevel.MEDIUM,
-      QueuePriorityLevel.HIGH,
       QueuePriorityLevel.URGENT,
       QueuePriorityLevel.STAT,
     ];

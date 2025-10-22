@@ -12,7 +12,6 @@ import {
   ImageAnnotation,
 } from '@backend/shared-domain';
 import {
-  OrderType,
   OrderStatus,
   Urgency,
   DicomStudyStatus,
@@ -270,7 +269,9 @@ export class SeedingService {
         await this.modalityRepository.save(newModality);
         this.logger.log(`✅ Created modality: ${modality.modalityName}`);
       } else {
-        this.logger.log(`⚠️ Modality already exists: ${modality.modalityName}`);
+        Object.assign(existing, modality);
+        await this.modalityRepository.save(existing);
+        this.logger.log(`🔄 Updated modality: ${modality.modalityName}`);
       }
     }
   }
@@ -326,13 +327,6 @@ export class SeedingService {
       'Thận',
     ];
 
-    const orderTypes = [
-      OrderType.DIAGNOSTIC,
-      OrderType.SCREENING,
-      OrderType.FOLLOW_UP,
-      OrderType.PROCEDURE,
-    ];
-
     const urgencies = [Urgency.ROUTINE, Urgency.URGENT, Urgency.STAT];
 
     const orderStatuses = [
@@ -368,7 +362,6 @@ export class SeedingService {
         orderingPhysicianId: physicianId,
         modalityId: modality.id,
         bodyPart: bodyParts[i % bodyParts.length],
-        orderType: orderTypes[i % orderTypes.length],
         urgency: urgencies[i % urgencies.length],
         orderStatus: orderStatuses[i % orderStatuses.length],
         clinicalIndication: clinicalIndications[i % clinicalIndications.length],

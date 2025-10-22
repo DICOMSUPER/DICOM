@@ -632,7 +632,6 @@ export class SeedingService {
       
       try {
         // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
-        await queryRunner.query('TRUNCATE TABLE "schedule_replacements" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "weekly_schedule_patterns" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "employee_schedules" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "shift_templates" CASCADE');

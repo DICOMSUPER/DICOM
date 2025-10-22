@@ -5,7 +5,6 @@ export * from './room.entity';
 export * from './shift-templates.entity';
 export * from './employee-schedules.entity';
 export * from './leave-requests.entity';
-export * from './schedule-replacements.entity';
 export * from './weekly-schedule-patterns.entity';
 export * from './working-hours.entity';
 export * from './break-times.entity';
