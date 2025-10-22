@@ -19,6 +19,10 @@ import {
   CobbAngleTool,
   PlanarRotateTool,
   MagnifyTool,
+  HeightTool,
+  ETDRSGridTool,
+  SplineROITool,
+  ReferenceLinesTool,
   annotation,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
@@ -47,12 +51,16 @@ export default function CornerstoneToolManager({
         // Initialize all available tools (only once)
         const initializeTools = () => {
           try {
+            // Navigation tools
             addTool(WindowLevelTool);
             addTool(PanTool);
             addTool(ZoomTool);
             addTool(StackScrollTool);
             addTool(ProbeTool);
+            
+            // Measurement tools
             addTool(LengthTool);
+            addTool(HeightTool);
             addTool(CircleROITool);
             addTool(EllipticalROITool);
             addTool(RectangleROITool);
@@ -60,11 +68,18 @@ export default function CornerstoneToolManager({
             addTool(AngleTool);
             addTool(ArrowAnnotateTool);
             addTool(CobbAngleTool);
+            addTool(SplineROITool);
+            
+            // Advanced tools
             addTool(PlanarRotateTool);
             addTool(MagnifyTool);
+            addTool(ETDRSGridTool);
+            addTool(ReferenceLinesTool);
+            
+            console.log('All tools initialized successfully');
           } catch (error) {
             // Tools might already be added, ignore error
-            console.log('Tools already initialized');
+            console.log('Tools already initialized or some tools failed to initialize:', error);
           }
         };
 
@@ -80,12 +95,16 @@ export default function CornerstoneToolManager({
 
         // Add all tools to the group
         const toolNames = [
+          // Navigation tools
           WindowLevelTool.toolName,
           PanTool.toolName,
           ZoomTool.toolName,
           StackScrollTool.toolName,
           ProbeTool.toolName,
+          
+          // Measurement tools
           LengthTool.toolName,
+          HeightTool.toolName,
           CircleROITool.toolName,
           EllipticalROITool.toolName,
           RectangleROITool.toolName,
@@ -93,8 +112,13 @@ export default function CornerstoneToolManager({
           AngleTool.toolName,
           ArrowAnnotateTool.toolName,
           CobbAngleTool.toolName,
+          SplineROITool.toolName,
+          
+          // Advanced tools
           PlanarRotateTool.toolName,
           MagnifyTool.toolName,
+          ETDRSGridTool.toolName,
+          ReferenceLinesTool.toolName,
         ];
 
         toolNames.forEach(toolName => {
@@ -154,11 +178,15 @@ export default function CornerstoneToolManager({
 
     // Map selected tool names to actual tool names
     const toolMapping: Record<string, string> = {
+      // Navigation tools
       'WindowLevel': WindowLevelTool.toolName,
       'Pan': PanTool.toolName,
       'Zoom': ZoomTool.toolName,
       'Probe': ProbeTool.toolName,
+      
+      // Measurement tools
       'Length': LengthTool.toolName,
+      'Height': HeightTool.toolName,
       'CircleROI': CircleROITool.toolName,
       'EllipticalROI': EllipticalROITool.toolName,
       'RectangleROI': RectangleROITool.toolName,
@@ -166,19 +194,24 @@ export default function CornerstoneToolManager({
       'Angle': AngleTool.toolName,
       'ArrowAnnotate': ArrowAnnotateTool.toolName,
       'CobbAngle': CobbAngleTool.toolName,
+      'SplineROI': SplineROITool.toolName,
+      
+      // Advanced tools
       'Rotate': PlanarRotateTool.toolName,
       'Magnify': MagnifyTool.toolName,
+      'ETDRSGrid': ETDRSGridTool.toolName,
+      'ReferenceLines': ReferenceLinesTool.toolName,
     };
 
     const actualToolName = toolMapping[selectedTool];
     if (actualToolName && toolGroupRef.current?.hasTool(actualToolName)) {
-      // Deactivate all tools first
+      // Set all tools to passive first
       toolGroupRef.current.setToolPassive(WindowLevelTool.toolName);
       toolGroupRef.current.setToolPassive(PanTool.toolName);
       toolGroupRef.current.setToolPassive(ZoomTool.toolName);
-      toolGroupRef.current.setToolPassive(StackScrollTool.toolName);
       toolGroupRef.current.setToolPassive(ProbeTool.toolName);
       toolGroupRef.current.setToolPassive(LengthTool.toolName);
+      toolGroupRef.current.setToolPassive(HeightTool.toolName);
       toolGroupRef.current.setToolPassive(CircleROITool.toolName);
       toolGroupRef.current.setToolPassive(EllipticalROITool.toolName);
       toolGroupRef.current.setToolPassive(RectangleROITool.toolName);
@@ -186,12 +219,20 @@ export default function CornerstoneToolManager({
       toolGroupRef.current.setToolPassive(AngleTool.toolName);
       toolGroupRef.current.setToolPassive(ArrowAnnotateTool.toolName);
       toolGroupRef.current.setToolPassive(CobbAngleTool.toolName);
+      toolGroupRef.current.setToolPassive(SplineROITool.toolName);
       toolGroupRef.current.setToolPassive(PlanarRotateTool.toolName);
       toolGroupRef.current.setToolPassive(MagnifyTool.toolName);
+      toolGroupRef.current.setToolPassive(ETDRSGridTool.toolName);
+      toolGroupRef.current.setToolPassive(ReferenceLinesTool.toolName);
 
       // Activate selected tool
       toolGroupRef.current.setToolActive(actualToolName, {
         bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+
+      // Ensure StackScrollTool remains active for wheel scrolling
+      toolGroupRef.current.setToolActive(StackScrollTool.toolName, {
+        bindings: [{ mouseButton: MouseBindings.Wheel }],
       });
 
       onToolChange?.(actualToolName);

@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { ViewerProvider } from "@/contexts/ViewerContext";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { imagingApi, DicomSeries } from "@/services/imagingApi";
 
 // Layout components
@@ -12,10 +14,12 @@ import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
 import ViewportGrid from "@/components/viewer/viewport/ViewportGrid";
 import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
 
-export default function ViewerPage() {
+// Inner component that uses ViewerContext
+function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get('study');
   const seriesId = searchParams.get('series');
+  const { state, setActiveViewport, setViewportSeries } = useViewer();
   
   // UI State
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -39,16 +43,22 @@ export default function ViewerPage() {
       const targetSeries = loadedSeries.find(s => s.id === seriesId);
       if (targetSeries) {
         setSelectedSeries(targetSeries);
+        // Also set it to the active viewport
+        setViewportSeries(state.activeViewport, targetSeries);
       }
     } else if (loadedSeries.length > 0) {
       // Auto-select first series if no seriesId provided
       setSelectedSeries(loadedSeries[0]);
+      // Also set it to the active viewport
+      setViewportSeries(state.activeViewport, loadedSeries[0]);
     }
-  }, [seriesId]);
+  }, [seriesId, state.activeViewport, setViewportSeries]);
 
   const handleSeriesSelect = (series: any) => {
-    console.log('Selected series:', series);
+    console.log('Selected series:', series, 'for viewport:', state.activeViewport);
     setSelectedSeries(series);
+    // Set the series to the currently active viewport
+    setViewportSeries(state.activeViewport, series);
   };
 
   const handleDeleteStudy = () => {
@@ -72,10 +82,9 @@ export default function ViewerPage() {
   };
 
   return (
-    <ViewerProvider>
-      <div className="h-[100vh] bg-slate-950 flex flex-col">
-        {/* Advanced Header with Toggle */}
-        <div className="flex flex-col h-[5vh]">
+    <div className="h-[100vh] bg-slate-950 flex flex-col">
+          {/* Advanced Header with Toggle */}
+          <div className="flex flex-col h-[5vh]">
           <ViewerHeader
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
@@ -118,6 +127,8 @@ export default function ViewerPage() {
             <ViewerLeftSidebar
               seriesLayout={seriesLayout}
               onSeriesLayoutChange={setSeriesLayout}
+              selectedTool={selectedTool}
+              onToolSelect={setSelectedTool}
             />
           </ResizablePanel>
 
@@ -183,6 +194,15 @@ export default function ViewerPage() {
           </ResizablePanel>
         </div>
       </div>
-    </ViewerProvider>
+  );
+}
+
+export default function ViewerPage() {
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <ViewerProvider>
+        <ViewerPageContent />
+      </ViewerProvider>
+    </DndProvider>
   );
 }

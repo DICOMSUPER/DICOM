@@ -61,20 +61,50 @@ export default function UnifiedToolbar({
   // Measurement tools
   const measurementTools = [
     { id: "Length", icon: Ruler, label: "Length", shortcut: "L" },
+    { id: "Height", icon: Ruler, label: "Height", shortcut: "H" },
     { id: "CircleROI", icon: Circle, label: "Circle ROI", shortcut: "C" },
     { id: "RectangleROI", icon: Square, label: "Rectangle ROI", shortcut: "R" },
     { id: "Bidirectional", icon: ArrowRight, label: "Bidirectional", shortcut: "B" },
     { id: "Angle", icon: RotateCcwIcon, label: "Angle", shortcut: "A" },
     { id: "ArrowAnnotate", icon: ArrowRight, label: "Arrow", shortcut: "Shift+A" },
+    { id: "CobbAngle", icon: RotateCcwIcon, label: "Cobb Angle", shortcut: "Shift+C" },
+    { id: "SplineROI", icon: Circle, label: "Spline ROI", shortcut: "S" },
   ];
 
-  // Advanced tools (only available tools)
+  // Advanced tools
   const advancedTools = [
     { id: "Magnify", icon: Maximize2, label: "Magnify", shortcut: "M" },
+    { id: "ETDRSGrid", icon: GridIcon, label: "ETDRS Grid", shortcut: "E" },
+    { id: "ReferenceLines", icon: GridIcon, label: "Reference Lines", shortcut: "Shift+R" },
   ];
 
   const handleToolSelect = (toolId: string) => {
     onToolSelect(toolId);
+  };
+
+  // Map tool names for display
+  const getToolDisplayName = (toolId: string) => {
+    const toolMapping: Record<string, string> = {
+      'WindowLevel': 'WindowLevel',
+      'Pan': 'Pan', 
+      'Zoom': 'Zoom',
+      'Probe': 'Probe',
+      'Length': 'Length',
+      'Height': 'Height',
+      'CircleROI': 'CircleROI',
+      'EllipticalROI': 'EllipticalROI',
+      'RectangleROI': 'RectangleROI',
+      'Bidirectional': 'Bidirectional',
+      'Angle': 'Angle',
+      'ArrowAnnotate': 'ArrowAnnotate',
+      'CobbAngle': 'CobbAngle',
+      'SplineROI': 'SplineROI',
+      'Rotate': 'PlanarRotate',
+      'Magnify': 'Magnify',
+      'ETDRSGrid': 'ETDRSGrid',
+      'ReferenceLines': 'ReferenceLines',
+    };
+    return toolMapping[toolId] || toolId;
   };
 
   const handleRotate = (direction: 'cw' | 'ccw') => {
@@ -99,7 +129,7 @@ export default function UnifiedToolbar({
                   size="sm"
                   onClick={() => handleToolSelect(tool.id)}
                   className={`h-8 w-8 p-0 transition-all duration-200 rounded-lg ${
-                    selectedTool === tool.id
+                    selectedTool === getToolDisplayName(tool.id)
                       ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                       : "text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                   }`}
@@ -145,12 +175,12 @@ export default function UnifiedToolbar({
                 key={tool.id}
                 onClick={() => handleToolSelect(tool.id)}
                 className={`transition-colors flex items-center gap-2 ${
-                  selectedTool === tool.id
+                  selectedTool === getToolDisplayName(tool.id)
                     ? "bg-teal-600 text-white"
                     : "text-white hover:bg-teal-600 hover:text-white"
                 }`}
               >
-                <tool.icon className="h-4 w-4" />
+                <tool.icon className="h-4 w-4 text-white" />
                 <span>{tool.label}</span>
                 <span className="text-xs text-slate-400 ml-auto">{tool.shortcut}</span>
               </DropdownMenuItem>
@@ -324,7 +354,7 @@ export default function UnifiedToolbar({
                 key={tool.id}
                 onClick={() => handleToolSelect(tool.id)}
                 className={`transition-colors flex items-center gap-2 ${
-                  selectedTool === tool.id
+                  selectedTool === getToolDisplayName(tool.id)
                     ? "bg-teal-600 text-white"
                     : "text-white hover:bg-teal-600 hover:text-white"
                 }`}
