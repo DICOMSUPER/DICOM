@@ -9,6 +9,7 @@ import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { DicomStudyStatus } from '@backend/shared-enums';
 
 export type findDicomStudyByReferenceIdType =
   | 'modality'
@@ -129,5 +130,62 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       hasNextPage,
       hasPreviousPage
     );
+  }
+
+  async filter(
+    studyUID?: string,
+    startDate?: string,
+    endDate?: string,
+    bodyPart?: string,
+    modalityCode?: string,
+    modalityDevice?: string,
+    studyStatus?: DicomStudyStatus
+  ): Promise<DicomStudy[]> {
+    const repository = this.getRepository();
+    const qb = await repository
+      .createQueryBuilder('study')
+      .leftJoinAndSelect('study.imagingOrder', 'order')
+      .leftJoinAndSelect('order.modality', 'modality')
+      .innerJoinAndSelect(
+        'study.series',
+        'series',
+        'series.isDeleted = :notDeleted',
+        { notDeleted: false }
+      )
+      .innerJoinAndSelect(
+        'series.instances',
+        'instance',
+        'instance.isDeleted = :notDeleted',
+        { notDeleted: false }
+      );
+    if (studyUID)
+      qb.andWhere('study.study_instance_uid ILIKE :studyUID', {
+        studyUID: `%${studyUID}%`,
+      });
+    if (startDate)
+      qb.andWhere('study.study_date >= :startDate', {
+        startDate: new Date(startDate),
+      });
+    if (endDate)
+      qb.andWhere('study.study_date <= :endDate', {
+        endDate: { endDate: new Date(endDate) },
+      });
+
+    if (bodyPart)
+      qb.andWhere('order.body_part ILIKE :bodyPart', {
+        bodyPart: `%${bodyPart}%`,
+      });
+
+    if (modalityCode)
+      qb.andWhere('modality.modality_code ILIKE :modalityCode', {
+        modalityCode: `%${modalityCode}%`,
+      });
+
+    if (studyStatus)
+      qb.andWhere('study.study_status = :studyStatus', {
+        studyStatus: studyStatus,
+      });
+
+    return await qb.getMany();
   }
 }

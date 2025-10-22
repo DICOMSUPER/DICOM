@@ -4,8 +4,7 @@
   "license": "MIT",
   "scripts": {
     "start:dev": "nx run-many -t serve --all --inspect=false",
-    "create-nest:service": "nx g @nx/nest:app  --directory=apps",
-    "create-nest:lib": "nx g @nx/nest:lib  --directory=libs"
+    "dev": "nx run-many -t serve --all --inspect=false"
   },
   "private": true,
   "dependencies": {

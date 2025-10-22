@@ -24,7 +24,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import Sidebar from "@/components/radiologist/side-bar";
+
+import { RadiologistWorkspaceLayout } from "@/components/radiologist/radiologist-layout";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -52,12 +53,7 @@ export default function RadiologistLayout({
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout
-        sideBarClass="horizontal-scrollbar"
-        sidebar={<Sidebar />}
-      >
-        {children}
-      </WorkspaceLayout>
+      <RadiologistWorkspaceLayout>{children}</RadiologistWorkspaceLayout>
     </div>
   );
 }
