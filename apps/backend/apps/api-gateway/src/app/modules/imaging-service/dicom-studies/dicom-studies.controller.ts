@@ -8,17 +8,26 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { DigitalSignature } from 'libs/shared-domain/src';
+import { DicomStudy, DigitalSignature } from '@backend/shared-domain';
 import { DiagnosisStatus, DicomStudyStatus } from '@backend/shared-enums';
 import { firstValueFrom } from 'rxjs';
-
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 @Controller('dicom-studies')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DicomStudiesController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
-    private readonly imagingService: ClientProxy
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
+    private readonly imagingService: ClientProxy,
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+    private readonly patientService: ClientProxy,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
   ) {}
 
   @Get()
@@ -79,6 +88,73 @@ export class DicomStudiesController {
     );
   }
 
+  @Get('filter')
+  async getStudyWithFilter(
+    @Query('studyStatus') studyStatus?: DicomStudyStatus,
+    @Query('reportStatus') reportStatus?: DiagnosisStatus,
+    @Query('modalityCode') modalityCode?: string,
+    @Query('modalityDevice') modalityDevice?: string,
+    @Query('mrn') mrn?: string,
+    @Query('patientFirstName') patientFirstName?: string,
+    @Query('patientLastName') patientLastName?: string,
+    @Query('bodyPart') bodyPart?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('studyUID') studyUID?: string
+  ) {
+    //extract all studies with studyUID,endDate,startDate(from study), bodyPart,modalityDevice, modalityCode from order,
+    try {
+      const studies = await firstValueFrom(
+        this.imagingService.send('ImagingService.DicomStudies.Filter', {
+          studyUID,
+          startDate,
+          endDate,
+          bodyPart,
+          modalityCode,
+          modalityDevice,
+          studyStatus,
+        })
+      );
+
+      console.log({ studies: studies });
+      const patientIds = studies.map((study: DicomStudy) => {
+        return study.patientId;
+      });
+      const studyIds = studies.map((study: DicomStudy) => {
+        return study.id;
+      });
+      //get patientId from those studies and find in patient service
+      const patients = await firstValueFrom(
+        this.patientService.send('PatientService.Patient.Filter', {
+          patientIds,
+          patientFirstName,
+          patientLastName,
+          patientCode: mrn,
+        })
+      );
+      console.log({ patients: patients });
+      //get report status & filter from those study if found
+      // const diagnosisReport = await firstValueFrom(
+      //   this.patientService.send('PatientService.DiagnosisReport.Filter', {
+      //     reportStatus,
+      //     studyIds,
+      //   })
+      // );
+
+      // console.log({ diagnosisReport: diagnosisReport });
+
+      //merge all 3
+
+      //get room from order
+
+      //get room from user service
+
+      return true;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   @Get(':id')
   async getDicomStudyById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -113,25 +189,5 @@ export class DicomStudiesController {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.Delete', { id })
     );
-  }
-
-  @Get('filtered')
-  async getStudyWithFilter(
-    @Query('studyStatus') studyStatus?: DicomStudyStatus,
-    @Query('reportStatus') reportStatus?: DiagnosisStatus,
-    @Query('modalityCode') modalityCode?: string,
-    @Query('modalityDevice') modalityDevice?: string,
-    @Query('mrn') mrn?: string,
-    @Query('patientFirstName') patientFirstName?: string,
-    @Query('patientLastName') patientLastName?: string,
-    @Query('bodyPart') bodyPart?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @Query('studyUID') studyUID?: string
-  ) {
-    //extract all studies with studyUID,endDate,startDate(from study), bodyPart,modalityDevice, modalityCode from order,
-    //get patientId from those studies and find in patient service
-    //get report status & filter from those study if found
-    //get room from user service
   }
 }

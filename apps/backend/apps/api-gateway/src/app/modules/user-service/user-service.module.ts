@@ -19,11 +19,13 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     RoomsModule,
     DepartmentModule,
     EmployeeSchedulesModule,
+    WeeklySchedulePatternsModule,
     ShiftTemplatesModule,
     PatientServiceClientModule,
   ],
   exports: [
     UserServiceClientModule,
+    WeeklySchedulePatternsModule,
     UserModule,
     RoomsModule,
     DepartmentModule,

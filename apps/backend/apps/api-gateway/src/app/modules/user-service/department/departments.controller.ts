@@ -9,7 +9,8 @@ import {
   UseInterceptors, 
   Delete, 
   Put, 
-  Query
+  Query,
+  Req
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -18,6 +19,7 @@ import { handleError } from '@backend/shared-utils';
 import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
+import type { Request } from 'express';
 import { Role } from '@backend/shared-decorators';
 import { CreateDepartmentDto } from '@backend/shared-domain';
 import { UpdateDepartmentDto } from '@backend/shared-domain';
@@ -94,11 +96,14 @@ export class DepartmentsController {
   @ApiOperation({ summary: 'Create a new department' })
   @ApiBody({ type: CreateDepartmentDto })
   @ApiResponse({ status: 201, description: 'Tạo phòng ban thành công' })
-  async createDepartment(@Body() createDto: CreateDepartmentDto) {
+  async createDepartment(@Body() createDto: CreateDepartmentDto, @Req() req: Request)  {
     try {
+      const token = req.cookies?.token; 
+       this.logger.log("check token in create department: ", token);
       this.logger.log(`🏗️ Creating department: ${createDto.departmentCode}`);
+      
       const result = await firstValueFrom(
-        this.departmentClient.send('department.create', createDto)
+        this.departmentClient.send('department.create', {...createDto, token})
       );
       return {
         department: result.department,

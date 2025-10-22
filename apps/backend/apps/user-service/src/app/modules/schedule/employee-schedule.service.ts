@@ -124,12 +124,16 @@ export class EmployeeScheduleService {
 
       // If updating time or date, check for conflicts
       if (
-        (updateDto.work_date || updateDto.actual_start_time || updateDto.actual_end_time) &&
+        (updateDto.work_date ||
+          updateDto.actual_start_time ||
+          updateDto.actual_end_time) &&
         updateDto.employee_id !== undefined
       ) {
         const checkDate = updateDto.work_date || schedule.work_date;
-        const checkStartTime = updateDto.actual_start_time || schedule.actual_start_time;
-        const checkEndTime = updateDto.actual_end_time || schedule.actual_end_time;
+        const checkStartTime =
+          updateDto.actual_start_time || schedule.actual_start_time;
+        const checkEndTime =
+          updateDto.actual_end_time || schedule.actual_end_time;
         const checkEmployeeId = updateDto.employee_id || schedule.employee_id;
 
         if (checkStartTime && checkEndTime) {
@@ -152,7 +156,10 @@ export class EmployeeScheduleService {
       Object.assign(schedule, updateDto);
       return await this.employeeScheduleRepository.save(schedule);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update employee schedule');
