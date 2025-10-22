@@ -110,7 +110,7 @@ export class RoomsController {
   @Post()
   @Role(Roles.SYSTEM_ADMIN)
   async createRoom(@Body() createRoomDto: CreateRoomDto, @Req() req: Request) {
-    const token = req.cookies?.token; // hoặc tên cookie của bạn
+    const token = req.cookies?.token; 
     this.logger.log(`🏗️ Creating room: ${createRoomDto.roomCode} with token`);
 
     const result = await firstValueFrom(

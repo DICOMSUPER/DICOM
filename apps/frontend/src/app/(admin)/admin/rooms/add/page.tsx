@@ -28,7 +28,7 @@ export default function AddNewRoomPage() {
 
   const [createRoom] = useCreateRoomMutation();
   const { data: departmentsData } = useGetDepartmentsQuery({});
-  const departments: Department[] = departmentsData ?? [];
+  const departments: Department[] = departmentsData?.data ?? [];
 
   const [formData, setFormData] = useState({
     room_number: '',

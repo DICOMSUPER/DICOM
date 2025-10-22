@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       console.log("🔵 Attempting login with:", { email, password: "***" });
       
-      const res = await fetch("http://localhost:2001/api/user/login", {
+      const res = await fetch("http://localhost:5000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

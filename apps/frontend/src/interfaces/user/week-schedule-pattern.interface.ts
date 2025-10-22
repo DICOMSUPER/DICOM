@@ -1,18 +1,50 @@
 import { BaseEntity } from "../base.interface";
 
 export interface WeeklySchedulePattern extends BaseEntity {
-  pattern_id: string;
-  employee_id: string;
-  room_id?: string;
-  monday_shift_id?: string;
-  tuesday_shift_id?: string;
-  wednesday_shift_id?: string;
-  thursday_shift_id?: string;
-  friday_shift_id?: string;
-  saturday_shift_id?: string;
-  sunday_shift_id?: string;
-  effective_from: Date;
-  effective_to?: Date;
-  is_active?: boolean;
-  created_by?: string;
+  id: string;
+  userId: string;
+  dayOfWeek: number;
+  shiftTemplateId: string;
+  customStartTime: string;
+  customEndTime: string;
+  isWorkingDay: boolean;
+  effectiveFrom: string;
+  effectiveUntil: string;
+  isActive: boolean;
+  notes?: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    role: string;
+    isActive: boolean;
+  };
+  shiftTemplate?: {
+    shift_template_id: string;
+    shift_name: string;
+    shift_type: string;
+    start_time: string;
+    end_time: string;
+    break_start_time?: string;
+    break_end_time?: string;
+    description?: string;
+    is_active: boolean;
+  };
 }
+export interface CreateWeeklySchedulePatternDto {
+  userId: string;
+  dayOfWeek: number;
+  shiftTemplateId: string;
+  customStartTime?: string;
+  customEndTime?: string;
+  isWorkingDay: boolean;
+  effectiveFrom: string;
+  effectiveUntil: string;
+  notes?: string;
+}
+
+export interface UpdateWeeklySchedulePatternDto
+  extends Partial<CreateWeeklySchedulePatternDto> { }

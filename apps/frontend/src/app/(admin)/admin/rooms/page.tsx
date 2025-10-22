@@ -9,17 +9,36 @@ import { useGetRoomsQuery } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { RoomTable } from '@/components/admin/room/RoomTable';
 import { DepartmentTable } from '@/components/admin/room/DepartmentTable';
+import { Pagination } from '@/components/ui/pagination';
 import { Room } from '@/interfaces/user/room.interface';
 import { RoomStatus } from '@/enums/room.enum';
 import { Department } from '@/interfaces/user/department.interface';
+import { check } from 'zod';
 
 export default function Page() {
   const router = useRouter();
-  const { data: roomsData, isLoading: roomsLoading } = useGetRoomsQuery({});
-  const { data: departmentsData, isLoading: deptsLoading } = useGetDepartmentsQuery({});
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const rooms: Room[] = roomsData ?? [];
-  const departments: Department[] = departmentsData ?? [];
+  // ✅ Query rooms với pagination
+  const { data: roomsRes, isLoading: roomsLoading } = useGetRoomsQuery({ page, limit });
+  const { data: departmentsData, isLoading: deptsLoading } = useGetDepartmentsQuery({ page, limit });
+
+  const rooms: Room[] = roomsRes?.data ?? [];
+  const paginationRoom = {
+    total: roomsRes?.total ?? 0,
+    page: roomsRes?.page ?? 1,
+    totalPages: roomsRes?.totalPages ?? 1,
+    limit: roomsRes?.limit ?? 10,
+  };
+  const paginationDepartment = {
+    total: departmentsData?.total ?? 0,
+    page: departmentsData?.page ?? 1,
+    totalPages: departmentsData?.totalPages ?? 1,
+    limit: departmentsData?.limit ?? 10,
+  };
+  const departments: Department[] = departmentsData?.data ?? [];
+  console.log("check depart",departments)
 
   const getStatusRoomBadge = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -34,28 +53,47 @@ export default function Page() {
     }
   };
 
-  const getStatusDepartmentBadge = (isActive: boolean) => {
-    if (isActive) {
-      return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-    } else {
-      return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-    }
-  };
+  const getStatusDepartmentBadge = (isActive: boolean) => (
+    isActive
+      ? <Badge className="bg-green-100 text-green-800">Active</Badge>
+      : <Badge className="bg-red-100 text-red-800">Inactive</Badge>
+  );
 
-
-  // Cấu hình tabs
   const tabs = [
     {
       key: 'departments',
       label: 'All Departments',
-      component: <DepartmentTable departments={departments} getStatusBadge={getStatusDepartmentBadge} />,
+
+      component: (
+        <>
+          <DepartmentTable departments={departments} getStatusBadge={getStatusDepartmentBadge} />
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <Pagination
+              currentPage={paginationDepartment.page}
+              totalPages={paginationDepartment.totalPages}
+              onPageChange={(p) => setPage(p)}
+            />
+          </div>
+        </>
+      ),
       addLabel: 'Add Department',
       addLink: '/admin/departments/add',
     },
     {
       key: 'rooms',
       label: 'All Rooms',
-      component: <RoomTable rooms={rooms} getStatusBadge={getStatusRoomBadge} />,
+      component: (
+        <>
+          <RoomTable rooms={rooms} getStatusBadge={getStatusRoomBadge} />
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <Pagination
+              currentPage={paginationRoom.page}
+              totalPages={paginationRoom.totalPages}
+              onPageChange={(p) => setPage(p)}
+            />
+          </div>
+        </>
+      ),
       addLabel: 'Add Room',
       addLink: '/admin/rooms/add',
     },
@@ -72,7 +110,6 @@ export default function Page() {
   }
 
   const activeTabData = tabs.find((tab) => tab.key === activeTab);
-  const activeTabContent = activeTabData?.component;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -95,8 +132,8 @@ export default function Page() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`pb-2 text-sm font-medium ${activeTab === tab.key
-                  ? 'text-black border-b-2 border-black'
-                  : 'text-gray-500 hover:text-black'
+                ? 'text-black border-b-2 border-black'
+                : 'text-gray-500 hover:text-black'
                 }`}
             >
               {tab.label}
@@ -104,9 +141,9 @@ export default function Page() {
           ))}
         </div>
 
-        {/* Table content theo tab */}
+        {/* Content */}
         <div className="bg-white rounded-lg shadow-sm p-2">
-          {activeTabContent}
+          {activeTabData?.component}
         </div>
       </div>
     </div>
