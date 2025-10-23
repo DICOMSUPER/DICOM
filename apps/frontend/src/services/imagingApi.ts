@@ -67,6 +67,17 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  statusCode: number;
+  message: string;
+  timestamp: string;
+  method: string;
+  path: string;
+  traceId: string;
+}
+
 class ImagingApiService {
   private async request<T>(
     endpoint: string,
@@ -188,7 +199,7 @@ class ImagingApiService {
       sortField?: string;
       order?: 'asc' | 'desc';
     }
-  ): Promise<PaginatedResponse<DicomSeries>> {
+  ): Promise<ApiResponse<PaginatedResponse<DicomSeries>>> {
     const queryParams = new URLSearchParams();
     queryParams.append('type', type);
     
@@ -199,7 +210,7 @@ class ImagingApiService {
     if (params?.sortField) queryParams.append('sortField', params.sortField);
     if (params?.order) queryParams.append('order', params.order);
 
-    return this.request<PaginatedResponse<DicomSeries>>(
+    return this.request<ApiResponse<PaginatedResponse<DicomSeries>>>(
       `/dicom-series/reference/${id}?${queryParams.toString()}`
     );
   }
@@ -243,7 +254,7 @@ class ImagingApiService {
       sortField?: string;
       order?: 'asc' | 'desc';
     }
-  ): Promise<PaginatedResponse<DicomInstance>> {
+  ): Promise<ApiResponse<PaginatedResponse<DicomInstance>>> {
     const queryParams = new URLSearchParams();
     queryParams.append('type', type);
     
@@ -254,7 +265,7 @@ class ImagingApiService {
     if (params?.sortField) queryParams.append('sortField', params.sortField);
     if (params?.order) queryParams.append('order', params.order);
 
-    return this.request<PaginatedResponse<DicomInstance>>(
+    return this.request<ApiResponse<PaginatedResponse<DicomInstance>>>(
       `/dicom-instances/reference/${id}?${queryParams.toString()}`
     );
   }
@@ -277,7 +288,7 @@ class ImagingApiService {
       page: 1,
       limit: 1000
     });
-    return response.data;
+    return response.data.data || [];
   }
 
   // Get study metadata
@@ -293,12 +304,12 @@ class ImagingApiService {
     ]);
 
     const totalInstances = await Promise.all(
-      seriesResponse.data.map(series => 
+      seriesResponse.data.data.map((series: any) => 
         this.getInstancesByReferenceId(series.id, 'series', { page: 1, limit: 1 })
       )
     );
 
-    const instanceCount = totalInstances.reduce((sum, response) => sum + response.total, 0);
+    const instanceCount = totalInstances.reduce((sum: number, response: any) => sum + response.data.total, 0);
 
     return {
       patientInfo: {
@@ -314,7 +325,7 @@ class ImagingApiService {
         date: study.studyDate,
         time: study.studyTime || 'N/A',
       },
-      seriesCount: seriesResponse.total,
+      seriesCount: seriesResponse.data.total,
       instanceCount
     };
   }

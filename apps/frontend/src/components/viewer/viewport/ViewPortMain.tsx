@@ -9,6 +9,7 @@ import {
   imageLoader,
   utilities as csUtilities,
   getRenderingEngine,
+  metaData,
 } from "@cornerstonejs/core";
 import { init as csRenderInit } from "@cornerstonejs/core";
 import {
@@ -22,117 +23,161 @@ import {
   StackScrollTool,
   ProbeTool,
   RectangleROITool,
+  annotation,
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { MouseBindings, Events } from "@cornerstonejs/tools/enums";
 import { imagingApi } from "@/services/imagingApi";
-import { annotation } from "@cornerstonejs/tools";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
-import { metaData } from "@cornerstonejs/core";
-import { loadImage } from "@cornerstonejs/core/loaders/imageLoader";
+import { useViewer } from "@/contexts/ViewerContext";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
   selectedStudy?: any;
   selectedTool?: string;
   onToolChange?: (toolName: string) => void;
+  viewportId?: string;
 }
 
-const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLevel", onToolChange }: ViewPortMainProps) => {
+const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLevel", onToolChange, viewportId }: ViewPortMainProps) => {
+  const viewportIndex = viewportId ? parseInt(viewportId) : 0;
+  
+  if (isNaN(viewportIndex)) {
+    console.error('❌ Invalid viewportIndex:', viewportIndex, 'from viewportId:', viewportId);
+    return null;
+  }
+  const { getViewportId, setViewportId, getRenderingEngineId, setRenderingEngineId } = useViewer();
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const running = useRef(false);
+  const isFirstLoad = useRef(true);
+  const mounted = useRef(true);
   const [activeTool, setActiveTool] = useState("WindowLevel");
   const [currentFrame, setCurrentFrame] = useState(0);
   const [viewport, setViewport] = useState<Types.IStackViewport | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [viewportReady, setViewportReady] = useState(false);
+  const [loadedSeriesId, setLoadedSeriesId] = useState<string | null>(null);
+  const [seriesInstancesCache, setSeriesInstancesCache] = useState<Record<string, any[]>>({});
+  const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
+  const toolManagerRef = useRef<any>(null);
 
-  // Get total frames from DICOM metadata
   const getTotalFrames = async (imageId: string) => {
     try {
-      await loadImage(imageId);
+      await imageLoader.loadImage(imageId);
+      
       const multiFrameModule = metaData.get("multiframeModule", imageId);
-      const numFrames = multiFrameModule?.NumberOfFrames;
-      return numFrames || 1;
+      const numberOfFrames = multiFrameModule?.NumberOfFrames;
+      
+      if (numberOfFrames && typeof numberOfFrames === 'number' && numberOfFrames > 0) {
+        return numberOfFrames;
+      }
+      
+      return 1;
     } catch (error) {
-      console.warn("Failed to get frame count:", error);
       return 1;
     }
   };
 
-  // Navigate to specific frame
+  // Load instances with caching
+  const loadSeriesInstances = async (seriesId: string) => {
+    // Check cache first
+    if (seriesInstancesCache[seriesId]) {
+      console.log('📋 Using cached instances for series:', seriesId, `(${seriesInstancesCache[seriesId].length} instances)`);
+      return seriesInstancesCache[seriesId];
+    }
+
+    console.log('🔄 Loading instances for series:', seriesId);
+    try {
+      const instancesResponse = await imagingApi.getInstancesByReferenceId(
+        seriesId, 
+        'series', 
+        { page: 1, limit: 9999 }
+      );
+
+      const instances = instancesResponse.data?.data || [];
+      
+      // Cache the instances
+      setSeriesInstancesCache(prev => ({
+        ...prev,
+        [seriesId]: instances
+      }));
+
+      console.log('✅ Cached instances for series:', seriesId, `(${instances.length} instances)`);
+      console.log('📊 Cache status:', Object.keys(seriesInstancesCache).length + 1, 'series cached');
+      return instances;
+    } catch (error) {
+      console.error('❌ Failed to load instances for series:', seriesId, error);
+      return [];
+    }
+  };
+  
   const goToFrame = (frameIndex: number) => {
-    if (!viewport) {
-      console.warn('⚠️ No viewport available for frame navigation');
+    if (!viewport || typeof viewport.getImageIds !== 'function') {
+      console.warn('Viewport is not properly initialized');
       return;
     }
 
-    // Get actual number of images in the stack
     const stackData = viewport.getImageIds();
     const maxIndex = stackData.length - 1;
 
-    console.log(`🔍 Current viewport has ${stackData.length} images (indices 0-${maxIndex})`);
-
-    // Ensure frame index is within bounds
     let newFrame = frameIndex;
-    if (newFrame > maxIndex) newFrame = maxIndex;
-    if (newFrame < 0) newFrame = 0;
+    if (newFrame > maxIndex) {
+      newFrame = maxIndex;
+    }
+    if (newFrame < 0) {
+      newFrame = 0;
+    }
 
     try {
-      console.log(`🎬 Navigating to frame ${newFrame + 1}/${maxIndex + 1}`);
+      if (typeof viewport.setImageIdIndex === 'function' && typeof viewport.render === 'function') {
       viewport.setImageIdIndex(newFrame);
       viewport.render();
-      setCurrentFrame(newFrame);
-      console.log(`✅ Now showing frame ${newFrame + 1}`);
+      
+      const validFrame = Math.max(0, newFrame);
+      setCurrentFrame(validFrame);
+      } else {
+        console.error('Viewport methods are not available');
+      }
     } catch (error) {
-      console.error('❌ Error navigating to frame:', newFrame, error);
+      console.error('Error navigating to frame:', newFrame, error);
     }
   };
 
-  // Navigate to next frame
   const nextFrame = useCallback(() => {
-    if (!viewport) return;
+    if (!viewport || typeof viewport.getImageIds !== 'function') {
+      console.warn('Viewport is not properly initialized for nextFrame');
+      return;
+    }
     const stackData = viewport.getImageIds();
     const maxIndex = stackData.length - 1;
     
     let newFrame = currentFrame + 1;
-    if (newFrame > maxIndex) newFrame = 0; // Loop back to start
+    if (newFrame > maxIndex) newFrame = 0;
+    
     goToFrame(newFrame);
   }, [viewport, currentFrame]);
 
-  // Navigate to previous frame
   const prevFrame = useCallback(() => {
-    if (!viewport) return;
+    if (!viewport || typeof viewport.getImageIds !== 'function') {
+      console.warn('Viewport is not properly initialized for prevFrame');
+      return;
+    }
     const stackData = viewport.getImageIds();
     const maxIndex = stackData.length - 1;
     
     let newFrame = currentFrame - 1;
-    if (newFrame < 0) newFrame = maxIndex; // Loop back to end
+    if (newFrame < 0) newFrame = maxIndex;
+    
     goToFrame(newFrame);
   }, [viewport, currentFrame]);
 
-  // Handle mouse wheel scrolling for frame navigation
-  const handleWheel = useCallback((event: WheelEvent) => {
-    if (!viewport) return;
-    const stackData = viewport.getImageIds();
-    if (stackData.length <= 1) return;
-
-    event.preventDefault();
-
-    // Determine scroll direction
-    const delta = event.deltaY;
-
-    if (delta > 0) {
-      // Scrolling down/away - next frame
-      nextFrame();
-    } else if (delta < 0) {
-      // Scrolling up/toward - previous frame
-      prevFrame();
-    }
-  }, [viewport, nextFrame, prevFrame]);
-
-  // Handle keyboard navigation
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!viewport) return;
+    if (!viewport || typeof viewport.getImageIds !== 'function') {
+      console.warn('Viewport is not properly initialized for keyboard navigation');
+      return;
+    }
     const stackData = viewport.getImageIds();
     if (stackData.length <= 1) return;
 
@@ -147,165 +192,218 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         event.preventDefault();
         nextFrame();
         break;
+      case "Delete":
+      case "Backspace":
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent('clearAnnotations'));
+        break;
+      case "r":
+      case "R":
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent('resetView'));
+        break;
     }
   }, [viewport, nextFrame, prevFrame]);
 
   useEffect(() => {
-    // Listen for clear annotations event from context
-    const handleClearAnnotations = () => {
-      try {
-        // Clear all annotations
-        const annotationManager = annotation.state.getAnnotationManager();
-        annotationManager.removeAllAnnotations();
-        
-        // Clear all segmentations
-        segmentation.removeAllSegmentationRepresentations();
-        segmentation.removeAllSegmentations();
-        
-        console.log('✅ Cleared all annotations and segmentations');
-      } catch (error) {
-        console.error('❌ Failed to clear annotations:', error);
-      }
-    };
-
-    // Listen for rotate viewport event
-    const handleRotateViewport = (event: CustomEvent) => {
-      try {
-        const { degrees, viewportId } = event.detail;
-        const renderingEngine = getRenderingEngine('myRenderingEngine');
-        if (renderingEngine) {
-          const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
-          if (viewport) {
-            const currentCamera = viewport.getCamera();
-            const newRotation = (currentCamera.rotation + degrees) % 360;
-            viewport.setCamera({ rotation: newRotation });
-            viewport.render();
-            console.log(`✅ Rotated viewport by ${degrees} degrees`);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error rotating viewport:', error);
-      }
-    };
-
-    // Listen for flip viewport event
-    const handleFlipViewport = (event: CustomEvent) => {
-      try {
-        const { direction, viewportId } = event.detail;
-        const renderingEngine = getRenderingEngine('myRenderingEngine');
-        if (renderingEngine) {
-          const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
-          if (viewport) {
-            const currentCamera = viewport.getCamera();
-            if (direction === 'horizontal') {
-              viewport.setCamera({ flipHorizontal: !currentCamera.flipHorizontal });
-            } else {
-              viewport.setCamera({ flipVertical: !currentCamera.flipVertical });
-            }
-            viewport.render();
-            console.log(`✅ Flipped viewport ${direction}`);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error flipping viewport:', error);
-      }
-    };
-
-    window.addEventListener('clearAnnotations', handleClearAnnotations);
-    window.addEventListener('rotateViewport', handleRotateViewport as EventListener);
-    window.addEventListener('flipViewport', handleFlipViewport as EventListener);
-    
-    return () => {
-      window.removeEventListener('clearAnnotations', handleClearAnnotations);
-      window.removeEventListener('rotateViewport', handleRotateViewport as EventListener);
-      window.removeEventListener('flipViewport', handleFlipViewport as EventListener);
-    };
-  }, []);
-
-  useEffect(() => {
     const setup = async () => {
       if (running.current) {
-        console.log('⏳ Setup already running, skipping...');
         return;
       }
       running.current = true;
+      
+      if (!selectedSeries || !selectedSeries.id) {
+        running.current = false;
+        return;
+      }
+
+      // Clear cache if study changed
+      if (selectedStudy && selectedStudy.id !== currentStudyId) {
+        console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
+        setSeriesInstancesCache({});
+        setCurrentStudyId(selectedStudy.id);
+      }
+      
+      // Only skip if it's the same series AND viewport is already ready AND has data
+      // Allow reload if series changes or viewport is not ready or has no data
+      if (loadedSeriesId === selectedSeries.id && viewportReady && viewport) {
+        // Check if viewport actually has image data
+        const hasImageData = viewport.getImageIds && viewport.getImageIds().length > 0;
+        if (hasImageData) {
+          running.current = false;
+          return;
+        }
+      }
+      
+      // Check if we can reuse existing rendering engine and just update the series
+      const existingRenderingEngineId = getRenderingEngineId(viewportIndex);
+      if (existingRenderingEngineId && loadedSeriesId !== selectedSeries.id) {
+        const existingRenderingEngine = getRenderingEngine(existingRenderingEngineId);
+        if (existingRenderingEngine) {
+          const viewports = existingRenderingEngine.getViewports();
+          const viewportIds = Object.keys(viewports);
+          const actualViewportId = viewportIndex.toString();
+          
+          if (viewportIds.includes(actualViewportId)) {
+            // Reuse existing viewport and just update the series
+            console.log('🔄 Reusing existing viewport for series change:', selectedSeries.id);
+            try {
+              const vp = existingRenderingEngine.getViewport(actualViewportId) as Types.IStackViewport;
+              if (vp) {
+                // Load new series data using cache
+                const instances = await loadSeriesInstances(selectedSeries.id);
+
+                if (instances && instances.length > 0) {
+                  const imageIdsPromises = instances.map(async (instance: any) => {
+                    if (!instance.filePath) return [];
+                    const baseImageId = `wadouri:${instance.filePath}`;
+                    try {
+                      const numberOfFrames = await getTotalFrames(baseImageId);
+                      const validFrames = numberOfFrames && typeof numberOfFrames === 'number' && numberOfFrames > 0 ? numberOfFrames : 1;
+                      return validFrames > 1 
+                        ? Array.from({ length: validFrames }, (_, frameIndex) => 
+                            frameIndex === 0 ? baseImageId : `${baseImageId}?frame=${frameIndex}`
+                          ).filter(id => id !== null)
+                        : [baseImageId];
+                    } catch (error) {
+                      return [baseImageId];
+                    }
+                  });
+
+                  const imageIdsArrays = await Promise.all(imageIdsPromises);
+                  const imageIds = imageIdsArrays.flat().filter((id: string) => id && id.length > 0);
+                  
+                  if (imageIds.length > 0) {
+                    await vp.setStack(imageIds, 0);
+                    vp.resetCamera();
+                    vp.render();
+                    
+                    setViewport(vp);
+                    setViewportReady(true);
+                    setCurrentFrame(0);
+                    setLoadedSeriesId(selectedSeries.id);
+                    console.log('✅ Series updated successfully:', selectedSeries.id);
+                    running.current = false;
+                    return;
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error updating series in existing viewport:', error);
+              // Fall through to full setup
+            }
+          }
+        }
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       try {
-        console.log('🚀 Initializing DICOM viewer for series:', selectedSeries?.id);
-        console.log('📊 Selected series instances count:', selectedSeries?.numberOfInstances);
-        // Init cornerstone
+        setIsLoading(true);
+        setLoadingProgress(0);
         await csRenderInit();
         await csToolsInit();
         dicomImageLoaderInit({ maxWebWorkers: 1 });
-
+        setLoadingProgress(20);
+        
+        if (!selectedSeries) {
+          setIsLoading(false);
+          return;
+        }
+        
         let imageIds: string[] = [];
 
-        // Load instances from selected series
-        if (selectedSeries) {
-          try {
-            console.log('🔍 Loading instances for series:', selectedSeries.id);
-            console.log('📦 Selected series data:', selectedSeries);
-            
-            const instancesResponse = await imagingApi.getInstancesByReferenceId(
-              selectedSeries.id, 
-              'series', 
-              { page: 1, limit: 100 }
-            );
-            
-            console.log('📊 API Response:', instancesResponse);
-            console.log('📊 Found instances:', instancesResponse.data?.length || 0);
-            
-            if (instancesResponse.data && instancesResponse.data.length > 0) {
-              // Use filePath from instances (should be Cloudinary URLs)
-              imageIds = instancesResponse.data
-                .filter(instance => {
-                  const hasPath = !!instance.filePath;
-                  if (!hasPath) console.warn('⚠️ Instance missing filePath:', instance);
-                  return hasPath;
-                })
-                .map(instance => {
-                  // Check if filePath is already a full URL
-                  const path = instance.filePath.startsWith('http') 
-                    ? instance.filePath 
-                    : `${instance.filePath}/${instance.fileName}`;
-                  const wadoUri = `wadouri:${path}`;
-                  console.log('🔗 Image ID:', wadoUri);
-                  return wadoUri;
-                });
+        try {
+          // Load instances using cache
+          const instances = await loadSeriesInstances(selectedSeries.id);
+
+          setLoadingProgress(30);
+          
+          if (instances && instances.length > 0) {
+            const imageIdsPromises = instances.map(async (instance: any) => {
+              if (!instance.filePath) {
+                return [];
+              }
+
+              const baseImageId = `wadouri:${instance.filePath}`;
               
-              console.log('✅ Loaded', imageIds.length, 'DICOM images');
-              console.log('📋 First 3 Image URLs:', imageIds.slice(0, 3));
-            } else {
-              console.warn('⚠️ No instances found for series:', selectedSeries.seriesDescription);
-            }
-          } catch (error) {
-            console.error('❌ Failed to load series instances:', error);
+              try {
+                const numberOfFrames = await getTotalFrames(baseImageId);
+                const validFrames = numberOfFrames && typeof numberOfFrames === 'number' && numberOfFrames > 0 ? numberOfFrames : 1;
+                
+                if (validFrames > 1) {
+                  const frameIds = Array.from(
+                    { length: validFrames },
+                    (_, frameIndex) => {
+                      if (frameIndex < 0 || frameIndex >= validFrames) {
+                        return null;
+                      }
+                      
+                      const imageId = frameIndex === 0 ? baseImageId : `${baseImageId}?frame=${frameIndex}`;
+                      return imageId;
+                    }
+                  ).filter(id => id !== null);
+                  
+                  return frameIds;
+                } else {
+                  return [baseImageId];
+                }
+              } catch (error) {
+                return [baseImageId];
+              }
+            });
+
+            const imageIdsArrays = await Promise.all(imageIdsPromises);
+            
+            imageIds = imageIdsArrays.flat().filter((id: string) => id && id.length > 0);
+            
+            setLoadingProgress(40);
+            
+          } else {
           }
-        } else {
-          console.warn('⚠️ No series selected, cannot load DICOM images');
+          
+        } catch (error) {
+          console.error('Error loading series:', error);
         }
 
-        // If no images loaded, don't initialize viewport
         if (imageIds.length === 0) {
-          console.warn('⚠️ No DICOM images available');
+          setIsLoading(false);
           return;
         }
 
-        // Tools are now managed by CornerstoneToolManager
+        setLoadingProgress(50);
 
-        const renderingEngineId = "myRenderingEngine";
-        const renderingEngine = new RenderingEngine(renderingEngineId);
-
-        if (renderingEngine) {
-          // renderingEngine.destroy();
+        let currentViewportId = getViewportId(viewportIndex);
+        let renderingEngineId = getRenderingEngineId(viewportIndex);
+        
+        if (!currentViewportId) {
+          currentViewportId = viewportId || `viewport-${viewportIndex + 1}`;
+          setViewportId(viewportIndex, currentViewportId);
+        }
+        
+        if (!renderingEngineId) {
+          renderingEngineId = `renderingEngine_${currentViewportId}`;
+          setRenderingEngineId(viewportIndex, renderingEngineId);
+        }
+        
+        let renderingEngine = getRenderingEngine(renderingEngineId);
+        if (!renderingEngine) {
+          renderingEngine = new RenderingEngine(renderingEngineId);
+        } else {
           segmentation.removeAllSegmentationRepresentations();
           segmentation.removeAllSegmentations();
         }
+        
+        if (!renderingEngine) {
+          throw new Error(`Failed to create rendering engine with ID: ${renderingEngineId}`);
+        }
 
-        const viewportId = "CT_VIEWPORT";
+        if (!elementRef.current) {
+          throw new Error(`Element not found for viewport: ${viewportId}`);
+        }
 
         const viewportInput: Types.PublicViewportInput = {
-          viewportId,
+          viewportId: currentViewportId,
           type: Enums.ViewportType.STACK,
           element: elementRef.current as HTMLDivElement,
           defaultOptions: {
@@ -313,26 +411,119 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           },
         };
 
-        renderingEngine.enableElement(viewportInput);
-        const vp = renderingEngine.getViewport(
-          viewportId
-        ) as Types.IStackViewport;
+        try {
+          renderingEngine.enableElement(viewportInput);
+        } catch (error) {
+          throw error;
+        }
         
-        console.log('📸 Setting stack with', imageIds.length, 'images');
-        await vp.setStack(imageIds, 0);
-        console.log('✅ Stack set successfully');
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Store viewport for frame navigation
-        setViewport(vp);
+        const viewports = renderingEngine.getViewports();
+        const viewportIds = Object.keys(viewports);
         
-        // Reset current frame to 0
-        setCurrentFrame(0);
-        console.log(`🎬 Total frames: ${imageIds.length}, Current: 0`);
-        console.log(`🔍 Viewport stack images:`, vp.getImageIds().length);
+        const actualViewportId = viewportIndex.toString();
+        console.log('🔍 Using Cornerstone.js standard viewport ID:', actualViewportId);
+        
+        setViewportId(viewportIndex, actualViewportId);
+        
+        console.log('🔍 Getting viewport with Cornerstone.js ID:', actualViewportId);
+        
+        const vp = renderingEngine.getViewport(actualViewportId) as Types.IStackViewport;
+        
+        if (!vp) {
+          console.error('❌ Failed to create viewport with ID:', actualViewportId);
+          console.error('❌ Rendering engine ID:', renderingEngineId);
+          console.error('❌ Available viewports:', viewportIds);
+          throw new Error(`Failed to create viewport with ID: ${actualViewportId}`);
+        }
+        
+        console.log('✅ Viewport retrieved successfully:', actualViewportId);
+        
+        console.log('✅ Viewport created successfully:', actualViewportId);
 
-        const toolGroupId = "myToolGroup";
-        const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-        toolGroup?.addViewport(viewportId, renderingEngineId);
+        elementRef.current.setAttribute('data-enabled-element', actualViewportId);
+        
+        await vp.setStack(imageIds, 0);
+
+        if (vp && typeof vp.resetCamera === 'function') {
+          try {
+            const imageIds = vp.getImageIds();
+            if (imageIds && imageIds.length > 0) {
+              vp.resetCamera();
+              
+              
+              const viewports = renderingEngine.getViewports();
+              const viewportIds = Object.keys(viewports);
+              if (viewportIds.includes(actualViewportId)) {
+                renderingEngine.renderViewports([actualViewportId]);
+              } else {
+                vp.render();
+              }
+              console.log(`Reset camera for viewport ${viewportId}`);
+            } else {
+              console.warn(`No image data available for viewport ${viewportId}`);
+            }
+          } catch (error) {
+            console.error('Error resetting camera:', error);
+            try {
+              const viewports = renderingEngine.getViewports();
+              const viewportIds = Object.keys(viewports);
+              if (viewportIds.includes(actualViewportId)) {
+                renderingEngine.renderViewports([actualViewportId]);
+              } else {
+                vp.render();
+              }
+            } catch (renderError) {
+              console.error('Error rendering viewport:', renderError);
+            }
+          }
+        } else {
+          console.error('Viewport is not properly initialized or resetCamera method is not available');
+        }
+        
+        setLoadingProgress(60);
+        
+        setViewport(vp);
+        setViewportReady(true);
+        
+        setCurrentFrame(0);
+        console.log(`Total frames: ${imageIds.length}, Current: 0`);
+        
+        if (currentFrame < 0) {
+          console.warn(`⚠️ currentFrame is negative: ${currentFrame}, resetting to 0`);
+          setCurrentFrame(0);
+        }
+
+        const updateFrameIndex = () => {
+          const currentImageIdIndex = vp.getCurrentImageIdIndex();
+          
+          const validIndex = Math.max(0, currentImageIdIndex);
+          setCurrentFrame(validIndex);
+        };
+        
+        elementRef.current?.addEventListener(Enums.Events.IMAGE_RENDERED, updateFrameIndex);
+
+        const toolGroupId = `toolGroup_${actualViewportId}`;
+        let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+        if (!toolGroup) {
+          toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+        }
+        
+        if (!toolGroup) {
+          throw new Error(`Failed to create tool group with ID: ${toolGroupId}`);
+        }
+        
+        try {
+          toolGroup.addViewport(actualViewportId, renderingEngineId);
+          console.log(`Successfully added viewport ${actualViewportId} to tool group ${toolGroupId}`);
+        } catch (error) {
+          console.error(`Error adding viewport to tool group:`, error);
+          throw error;
+        }
+        
+        setLoadingProgress(70);
+
         const segmentationId = `MY_SEGMENTATION_ID_${Date.now()}`;
         const segmentationImages =
           await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
@@ -340,7 +531,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           (image) => image.imageId
         );
 
-        // Check if segmentation already exists before adding
         const existingSegmentation = segmentation.state.getSegmentation(segmentationId);
         if (!existingSegmentation) {
           segmentation.addSegmentations([
@@ -356,107 +546,267 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           ]);
         }
 
-        await segmentation.addLabelmapRepresentationToViewportMap({
-          [viewportId]: [{ segmentationId }],
-        });
+        try {
+          const viewportMap: Record<string, any[]> = {};
+          viewportMap[actualViewportId] = [{ segmentationId }];
+          await segmentation.addLabelmapRepresentationToViewportMap(viewportMap);
+          console.log(`Successfully added segmentation representation to viewport ${actualViewportId}`);
+        } catch (error) {
+          console.error(`Error adding segmentation representation to viewport:`, error);
+        }
+
+        setLoadingProgress(90);
 
         eventTarget.addEventListener(
           Events.ANNOTATION_COMPLETED,
           (evt: any) => {
             const { annotation } = evt.detail;
-            // Annotation completed - tool and data available in annotation object
-            // console.log("Annotation completed:", annotation.metadata.toolName);
           }
         );
 
         eventTarget.addEventListener(
           ToolEnums.Events.SEGMENTATION_DATA_MODIFIED,
           async (evt: any) => {
-            // Segmentation modified - data available in evt.detail
-            // Uncomment for debugging:
-            // const { segmentationId, modifiedSlicesToUse } = evt.detail || {};
-            // console.log("Segmentation modified:", segmentationId, modifiedSlicesToUse);
+            const { segmentationId, modifiedSlicesToUse } = evt.detail || {};
           }
         );
 
         vp.render();
-        console.log('✅ DICOM viewer initialized successfully');
+        setLoadingProgress(100);
+        setIsLoading(false);
+        setLoadedSeriesId(selectedSeries.id);
+        setViewportReady(true);
+        console.log('DICOM viewer initialized successfully');
       } catch (error) {
-        console.error("❌ Error setting up DICOM viewer:", error);
+        console.error("Error setting up DICOM viewer:", error);
+        setIsLoading(false);
+        setLoadingProgress(0);
       } finally {
         running.current = false;
       }
     };
 
-    // Reset running flag when series changes
-    running.current = false;
     setup();
 
-    // Cleanup function
     return () => {
-      console.log('🧹 Cleaning up viewport...');
+      if (isFirstLoad.current) {
+        console.log('🚫 Skipping cleanup on first load');
+        isFirstLoad.current = false;
+        return;
+      }
+      
+      console.log('🧹 Cleaning up viewport:', viewportId, 'viewportIndex:', viewportIndex);
       try {
-        const renderingEngine = getRenderingEngine('myRenderingEngine');
-        if (renderingEngine) {
-          renderingEngine.destroy();
+        if (elementRef.current) {
+          elementRef.current.removeAttribute('data-enabled-element');
         }
+        
+        if (mounted.current) {
+          setViewport(null);
+          setViewportReady(false);
+          setCurrentFrame(0);
+          setLoadingProgress(0);
+          setIsLoading(false);
+          setLoadedSeriesId(null);
+          running.current = false;
+        }
+        
+        console.log('✅ Viewport cleanup completed (rendering engine preserved)');
       } catch (error) {
         console.warn('Cleanup error:', error);
       }
     };
   }, [selectedSeries]);
 
-  // Add event listeners for frame navigation (wheel and keyboard)
+  // Clear cache when study changes
+  useEffect(() => {
+    if (selectedStudy && selectedStudy.id !== currentStudyId) {
+      console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
+      setSeriesInstancesCache({});
+      setCurrentStudyId(selectedStudy.id);
+    }
+  }, [selectedStudy, currentStudyId]);
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+
   useEffect(() => {
     const element = containerRef.current;
     if (!element || !viewport) return;
-
-    element.addEventListener("wheel", handleWheel, { passive: false });
 
     // Make element focusable for keyboard events
     element.setAttribute("tabindex", "0");
     element.addEventListener("keydown", handleKeyDown);
 
-    return () => {
-      element.removeEventListener("wheel", handleWheel);
-      element.removeEventListener("keydown", handleKeyDown);
+    const wheelScrollHandler = (e: WheelEvent) => {
+      e.preventDefault(); // Prevent page scroll
+      
+      if (!viewport || typeof viewport.getImageIds !== 'function') {
+        console.warn('Viewport is not properly initialized for wheel scroll');
+        return;
+      }
+      const stackData = viewport.getImageIds();
+      if (stackData.length <= 1) return;
+
+      // Determine scroll direction
+      const delta = e.deltaY;
+      
+      if (delta > 0) {
+        // Scrolling down - next frame
+        nextFrame();
+      } else if (delta < 0) {
+        // Scrolling up - previous frame
+        prevFrame();
+      }
     };
-  }, [viewport, handleWheel, handleKeyDown]);
+    
+    element.addEventListener("wheel", wheelScrollHandler, { passive: false });
 
-  const handleToolChange = (toolName: string) => {
-    setActiveTool(toolName);
-    const toolGroup = ToolGroupManager.getToolGroup("myToolGroup");
+    // Add custom event listeners for flip and reset
+    const handleRotateViewportLocal = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { viewportId: eventViewportId, degrees } = customEvent.detail || {};
+      
+      // Get the actual viewport ID from context
+      const actualViewportId = getViewportId(viewportIndex);
+      
+      // Check if this event is for our viewport and viewport is ready
+      if (eventViewportId !== actualViewportId || !viewportReady) return;
+      
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.rotateViewport(degrees);
+      }
+    };
 
-    toolGroup?.setToolPassive(WindowLevelTool.toolName);
-    toolGroup?.setToolPassive(ProbeTool.toolName);
-    toolGroup?.setToolPassive(RectangleROITool.toolName);
+    const handleFlipViewportLocal = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { viewportId: eventViewportId, direction } = customEvent.detail || {};
+      
+      // Get the actual viewport ID from context
+      const actualViewportId = getViewportId(viewportIndex);
+      
+      // Check if this event is for our viewport and viewport is ready
+      if (eventViewportId !== actualViewportId || !viewportReady) return;
+      
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.flipViewport(direction);
+      }
+    };
 
-    toolGroup?.setToolActive(toolName, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    });
-  };
+    const handleResetView = () => {
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.resetView();
+      }
+    };
+
+    const handleClearAnnotations = (event?: Event) => {
+      // Check if this is a targeted clear (from context) or local clear
+      let shouldClear = true;
+      if (event) {
+        const customEvent = event as CustomEvent;
+        const { activeViewportId } = customEvent.detail || {};
+        shouldClear = !activeViewportId || activeViewportId === viewportId;
+      }
+      
+      if (!shouldClear) return;
+      
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.clearAnnotations();
+      }
+    };
+
+    // Add invert color map handler
+    const handleInvertColorMap = () => {
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.invertColorMap();
+      }
+    };
+
+
+    window.addEventListener('rotateViewport', handleRotateViewportLocal as EventListener);
+    window.addEventListener('flipViewport', handleFlipViewportLocal as EventListener);
+    window.addEventListener('resetView', handleResetView);
+    window.addEventListener('invertColorMap', handleInvertColorMap);
+    window.addEventListener('clearAnnotations', handleClearAnnotations as EventListener);
+
+    return () => {
+      element.removeEventListener("keydown", handleKeyDown);
+      element.removeEventListener("wheel", wheelScrollHandler);
+      window.removeEventListener('rotateViewport', handleRotateViewportLocal as EventListener);
+      window.removeEventListener('flipViewport', handleFlipViewportLocal as EventListener);
+      window.removeEventListener('resetView', handleResetView);
+      window.removeEventListener('invertColorMap', handleInvertColorMap);
+      window.removeEventListener('clearAnnotations', handleClearAnnotations);
+    };
+  }, [viewport, handleKeyDown, nextFrame, prevFrame, currentFrame]);
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
       {/* Cornerstone Tool Manager */}
       <CornerstoneToolManager
-        toolGroupId="myToolGroup"
-        renderingEngineId="myRenderingEngine"
-        viewportId="CT_VIEWPORT"
+        ref={toolManagerRef}
+        toolGroupId={`toolGroup_${getViewportId(viewportIndex) || viewportId}`}
+        renderingEngineId={getRenderingEngineId(viewportIndex) || `renderingEngine_${viewportId}`}
+        viewportId={getViewportId(viewportIndex) || viewportId || 'default-viewport'}
         selectedTool={selectedTool}
         onToolChange={onToolChange}
+        viewport={viewport}
+        viewportReady={viewportReady}
       />
 
       <div 
         ref={containerRef}
-        className="flex-1 relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        className="flex-1 relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
       >
         {selectedSeries ? (
           <>
-            <div ref={elementRef} className="w-full h-full bg-black" />
+            <div 
+              ref={elementRef} 
+              className="w-full h-full bg-black" 
+              data-viewport-id={viewportId}
+              key={`viewport-element-${viewportId}`}
+            />
+            
+            {/* Loading Progress Bar */}
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
+                <div className="w-80 max-w-md">
+                  <div className="mb-4 text-center">
+                    <div className="text-white text-lg font-medium mb-2">
+                      Loading DICOM Images...
+                    </div>
+                    <div className="text-gray-400 text-sm">
+                      {loadingProgress}% Complete
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${loadingProgress}%` }}
+                    >
+                      <div className="w-full h-full bg-gradient-to-r from-blue-400 to-blue-600 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Overlay navigation buttons for frame navigation */}
-            {viewport && viewport.getImageIds().length > 1 && (
+            {viewport && typeof viewport.getImageIds === 'function' && viewport.getImageIds().length > 1 && !isLoading && (
               <>
                 {/* Left arrow button */}
                 <button
@@ -502,13 +852,13 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
                 {/* Frame indicator overlay */}
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-medium z-50">
-                  {currentFrame + 1} / {viewport?.getImageIds().length || 0}
+                  {Math.max(0, currentFrame) + 1} / {viewport && typeof viewport.getImageIds === 'function' ? viewport.getImageIds().length : 0}
                 </div>
               </>
             )}
 
             {/* Scroll hint */}
-            {viewport && viewport.getImageIds().length > 1 && (
+            {viewport && typeof viewport.getImageIds === 'function' && viewport.getImageIds().length > 1 && !isLoading && (
               <div className="absolute bottom-15 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded opacity-75 z-50">
                 Use scroll wheel or arrow keys to navigate
               </div>

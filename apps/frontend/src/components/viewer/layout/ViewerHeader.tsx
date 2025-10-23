@@ -33,8 +33,6 @@ interface ViewerHeaderProps {
 export default function ViewerHeader({
   selectedTool,
   onToolSelect,
-  autoOpen,
-  onAutoOpenChange,
   onDeleteStudy,
   layout = "1x1",
   onLayoutChange,
@@ -89,7 +87,6 @@ export default function ViewerHeader({
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
 
-          {/* Refresh Data - Medical Style */}
           {onRefresh && (
             <RefreshButton
               onRefresh={onRefresh}
@@ -101,7 +98,6 @@ export default function ViewerHeader({
             />
           )}
 
-          {/* Delete Study - Medical Alert Style */}
           <Button
             onClick={onDeleteStudy}
             size="sm"
@@ -110,19 +106,6 @@ export default function ViewerHeader({
             <Trash2 className="h-4 w-4 mr-2" />
             Xóa Study
           </Button>
-
-          {/* Auto Open with Medical Theme */}
-          <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-teal-700/30 transition-all cursor-pointer">
-            <Checkbox
-              id="autoOpen"
-              checked={autoOpen}
-              onCheckedChange={onAutoOpenChange}
-              className="rounded border-teal-600 data-[state=checked]:bg-teal-600"
-            />
-            <Label htmlFor="autoOpen" className="text-teal-200 text-sm font-medium cursor-pointer">
-              Tự động mở
-            </Label>
-          </div>
 
           {/* Elegant Divider */}
           <div className="h-10 w-px bg-gradient-to-b from-transparent via-teal-700/50 to-transparent" />
