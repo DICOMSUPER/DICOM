@@ -28,6 +28,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
   const [loadingInstances, setLoadingInstances] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
   
 
   const handleSeriesClick = (series: DicomSeries) => {
@@ -40,27 +41,30 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
     return 'CT';
   };
 
-  // Load series when studyId changes
+  // Load series when studyId changes (with caching)
   useEffect(() => {
     const loadSeries = async () => {
-      if (studyId) {
+      if (studyId && studyId !== loadedStudyId) {
         console.log('🔄 Loading series for studyId:', studyId);
         setLoading(true);
         try {
           const seriesResponse = await imagingApi.getSeriesByReferenceId(studyId, 'study', { page: 1, limit: 50 });
-          console.log('✅ Loaded series for study:', studyId, seriesResponse.data);
-          // Pass series data to parent component
-          onSeriesLoaded?.(seriesResponse.data);
+          console.log('✅ Loaded series for study:', studyId, seriesResponse);
+          // Pass series data to parent component - seriesResponse.data.data contains the actual array
+          onSeriesLoaded?.(seriesResponse.data?.data || []);
+          setLoadedStudyId(studyId);
         } catch (error) {
           console.error('❌ Failed to load series:', error);
         } finally {
           setLoading(false);
         }
+      } else if (studyId === loadedStudyId) {
+        console.log('📋 Using cached series for studyId:', studyId);
       }
     };
 
     loadSeries();
-  }, [studyId, onSeriesLoaded]);
+  }, [studyId, onSeriesLoaded, loadedStudyId]);
 
 
   // Toggle series expansion - keep multiple expanded
@@ -100,7 +104,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
 
 
   // Filter series based on search and modality
-  const filteredSeries = series.filter(s => {
+  const filteredSeries = (series || []).filter(s => {
     const matchesSearch = searchQuery === '' || (s.seriesDescription || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesModality = filterModality === 'All' || getSeriesModality(s) === filterModality;
     return matchesSearch && matchesModality;
@@ -132,7 +136,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
                  IMAGE SERIES
                </h2>
                <Badge variant="secondary" className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30">
-                 {series.length} Total
+                 {(series || []).length} Total
                </Badge>
              </div>
           </div>

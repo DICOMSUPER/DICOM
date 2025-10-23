@@ -209,18 +209,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  const setViewportSeries = (viewport: number, series: DicomSeries) => {
+  const setViewportSeries = useCallback((viewport: number, series: DicomSeries) => {
     setState(prev => {
       const newViewportSeries = new Map(prev.viewportSeries);
       newViewportSeries.set(viewport, series);
       return { ...prev, viewportSeries: newViewportSeries };
     });
     console.log('Series assigned to viewport:', viewport, series.seriesDescription);
-  };
+  }, []);
 
-  const getViewportSeries = (viewport: number): DicomSeries | undefined => {
+  const getViewportSeries = useCallback((viewport: number): DicomSeries | undefined => {
     return state.viewportSeries.get(viewport);
-  };
+  }, [state.viewportSeries]);
 
   const clearAnnotations = () => {
     console.log('Clear annotations requested from context');

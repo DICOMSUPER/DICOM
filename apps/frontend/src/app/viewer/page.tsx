@@ -72,7 +72,7 @@ function ViewerPageContent() {
       try {
         // Reload series for the specific study
         const seriesResponse = await imagingApi.getSeriesByReferenceId(studyId, 'study', { page: 1, limit: 50 });
-        setSeries(seriesResponse.data);
+        setSeries(seriesResponse.data?.data || []);
       } catch (error) {
         console.error('Error refreshing series:', error);
       } finally {

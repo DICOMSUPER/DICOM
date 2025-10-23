@@ -84,7 +84,7 @@ export default function ViewportGrid({
     // Update local state with all viewport IDs
     setLocalViewportIds(newViewportIds);
     console.log('📊 ViewportGrid: Total viewport count:', viewportCount, 'IDs created:', Object.keys(newViewportIds).length);
-  }, [viewportCount, getViewportId, setViewportId, seriesLayout]);
+  }, [viewportCount, seriesLayout]); // Removed getViewportId and setViewportId from dependencies
 
   // Generate viewport data dynamically
   const generateViewports = () => {
@@ -147,7 +147,7 @@ export default function ViewportGrid({
           </div>
           
           <ViewPortMain 
-            key={`viewport-main-${viewport.index}-${seriesLayout}`}
+            key={`viewport-main-${viewport.index}`} // Remove seriesLayout from key to prevent remounting
             selectedSeries={viewport.series}
             selectedStudy={selectedStudy}
             selectedTool={selectedTool}

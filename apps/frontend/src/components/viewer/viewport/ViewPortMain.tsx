@@ -59,6 +59,9 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const [isLoading, setIsLoading] = useState(false);
   const [viewportReady, setViewportReady] = useState(false);
   const [loadedSeriesId, setLoadedSeriesId] = useState<string | null>(null);
+  const [seriesInstancesCache, setSeriesInstancesCache] = useState<Record<string, any[]>>({});
+  const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
+  const toolManagerRef = useRef<any>(null);
 
   const getTotalFrames = async (imageId: string) => {
     try {
@@ -74,6 +77,39 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       return 1;
     } catch (error) {
       return 1;
+    }
+  };
+
+  // Load instances with caching
+  const loadSeriesInstances = async (seriesId: string) => {
+    // Check cache first
+    if (seriesInstancesCache[seriesId]) {
+      console.log('📋 Using cached instances for series:', seriesId, `(${seriesInstancesCache[seriesId].length} instances)`);
+      return seriesInstancesCache[seriesId];
+    }
+
+    console.log('🔄 Loading instances for series:', seriesId);
+    try {
+      const instancesResponse = await imagingApi.getInstancesByReferenceId(
+        seriesId, 
+        'series', 
+        { page: 1, limit: 9999 }
+      );
+
+      const instances = instancesResponse.data?.data || [];
+      
+      // Cache the instances
+      setSeriesInstancesCache(prev => ({
+        ...prev,
+        [seriesId]: instances
+      }));
+
+      console.log('✅ Cached instances for series:', seriesId, `(${instances.length} instances)`);
+      console.log('📊 Cache status:', Object.keys(seriesInstancesCache).length + 1, 'series cached');
+      return instances;
+    } catch (error) {
+      console.error('❌ Failed to load instances for series:', seriesId, error);
+      return [];
     }
   };
   
@@ -172,36 +208,90 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   useEffect(() => {
     const setup = async () => {
       if (running.current) {
-        console.log('🚫 Setup already running, skipping');
         return;
       }
       running.current = true;
       
-      console.log('🔄 Starting setup for series:', selectedSeries?.id, 'viewport:', viewportId, 'viewportIndex:', viewportIndex);
-      
       if (!selectedSeries || !selectedSeries.id) {
-        console.warn('No series selected, skipping setup');
         running.current = false;
         return;
       }
-      
-      if (loadedSeriesId === selectedSeries.id && viewportReady) {
-        console.log('Series already loaded, skipping setup');
-        running.current = false;
-        return;
+
+      // Clear cache if study changed
+      if (selectedStudy && selectedStudy.id !== currentStudyId) {
+        console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
+        setSeriesInstancesCache({});
+        setCurrentStudyId(selectedStudy.id);
       }
       
+      // Only skip if it's the same series AND viewport is already ready AND has data
+      // Allow reload if series changes or viewport is not ready or has no data
+      if (loadedSeriesId === selectedSeries.id && viewportReady && viewport) {
+        // Check if viewport actually has image data
+        const hasImageData = viewport.getImageIds && viewport.getImageIds().length > 0;
+        if (hasImageData) {
+          running.current = false;
+          return;
+        }
+      }
+      
+      // Check if we can reuse existing rendering engine and just update the series
       const existingRenderingEngineId = getRenderingEngineId(viewportIndex);
-      if (existingRenderingEngineId) {
+      if (existingRenderingEngineId && loadedSeriesId !== selectedSeries.id) {
         const existingRenderingEngine = getRenderingEngine(existingRenderingEngineId);
         if (existingRenderingEngine) {
-          console.log('🔄 Rendering engine already exists, checking if viewport is ready');
           const viewports = existingRenderingEngine.getViewports();
           const viewportIds = Object.keys(viewports);
-          if (viewportIds.length > 0) {
-            console.log('🔄 Viewport already exists, skipping setup');
-            running.current = false;
-            return;
+          const actualViewportId = viewportIndex.toString();
+          
+          if (viewportIds.includes(actualViewportId)) {
+            // Reuse existing viewport and just update the series
+            console.log('🔄 Reusing existing viewport for series change:', selectedSeries.id);
+            try {
+              const vp = existingRenderingEngine.getViewport(actualViewportId) as Types.IStackViewport;
+              if (vp) {
+                // Load new series data using cache
+                const instances = await loadSeriesInstances(selectedSeries.id);
+
+                if (instances && instances.length > 0) {
+                  const imageIdsPromises = instances.map(async (instance: any) => {
+                    if (!instance.filePath) return [];
+                    const baseImageId = `wadouri:${instance.filePath}`;
+                    try {
+                      const numberOfFrames = await getTotalFrames(baseImageId);
+                      const validFrames = numberOfFrames && typeof numberOfFrames === 'number' && numberOfFrames > 0 ? numberOfFrames : 1;
+                      return validFrames > 1 
+                        ? Array.from({ length: validFrames }, (_, frameIndex) => 
+                            frameIndex === 0 ? baseImageId : `${baseImageId}?frame=${frameIndex}`
+                          ).filter(id => id !== null)
+                        : [baseImageId];
+                    } catch (error) {
+                      return [baseImageId];
+                    }
+                  });
+
+                  const imageIdsArrays = await Promise.all(imageIdsPromises);
+                  const imageIds = imageIdsArrays.flat().filter((id: string) => id && id.length > 0);
+                  
+                  if (imageIds.length > 0) {
+                    await vp.setStack(imageIds, 0);
+                    vp.resetCamera();
+                    vp.render();
+                    
+                    setViewport(vp);
+                    setViewportReady(true);
+                    setCurrentFrame(0);
+                    setLoadedSeriesId(selectedSeries.id);
+                    console.log('✅ Series updated successfully:', selectedSeries.id);
+                    running.current = false;
+                    return;
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error updating series in existing viewport:', error);
+              // Fall through to full setup
+            }
           }
         }
       }
@@ -211,14 +301,12 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       try {
         setIsLoading(true);
         setLoadingProgress(0);
-        console.log('Initializing DICOM viewer for series:', selectedSeries?.id);
         await csRenderInit();
         await csToolsInit();
         dicomImageLoaderInit({ maxWebWorkers: 1 });
         setLoadingProgress(20);
         
         if (!selectedSeries) {
-          console.warn('No series selected, cannot load DICOM images');
           setIsLoading(false);
           return;
         }
@@ -226,18 +314,14 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         let imageIds: string[] = [];
 
         try {
-          const instancesResponse = await imagingApi.getInstancesByReferenceId(
-            selectedSeries.id, 
-            'series', 
-            { page: 1, limit: 9999 }
-          );
+          // Load instances using cache
+          const instances = await loadSeriesInstances(selectedSeries.id);
 
           setLoadingProgress(30);
           
-          if (instancesResponse.data && instancesResponse.data.length > 0) {
-            const imageIdsPromises = instancesResponse.data.map(async (instance: any) => {
+          if (instances && instances.length > 0) {
+            const imageIdsPromises = instances.map(async (instance: any) => {
               if (!instance.filePath) {
-                console.warn('Instance missing filePath:', instance);
                 return [];
               }
 
@@ -292,11 +376,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         let currentViewportId = getViewportId(viewportIndex);
         let renderingEngineId = getRenderingEngineId(viewportIndex);
         
-        console.log('🔍 ViewPortMain: Retrieved from context - viewportId:', currentViewportId, 'renderingEngineId:', renderingEngineId, 'for index:', viewportIndex);
-        
         if (!currentViewportId) {
-          console.error('❌ Viewport ID not found in context for index:', viewportIndex);
-          console.error('❌ This indicates a problem with ViewportGrid ID management');
           currentViewportId = viewportId || `viewport-${viewportIndex + 1}`;
           setViewportId(viewportIndex, currentViewportId);
         }
@@ -308,29 +388,19 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         
         let renderingEngine = getRenderingEngine(renderingEngineId);
         if (!renderingEngine) {
-          console.log('🔧 Creating new rendering engine with ID:', renderingEngineId);
           renderingEngine = new RenderingEngine(renderingEngineId);
-          console.log('✅ Rendering engine created successfully:', renderingEngineId);
         } else {
-          console.log('🔄 Reusing existing rendering engine:', renderingEngineId);
+          segmentation.removeAllSegmentationRepresentations();
+          segmentation.removeAllSegmentations();
         }
         
         if (!renderingEngine) {
-          console.error('❌ Failed to create rendering engine with ID:', renderingEngineId);
           throw new Error(`Failed to create rendering engine with ID: ${renderingEngineId}`);
         }
 
         if (!elementRef.current) {
-          console.error('❌ Element not found for viewport:', viewportId);
           throw new Error(`Element not found for viewport: ${viewportId}`);
         }
-        console.log('✅ Element found for viewport:', viewportId);
-
-        const existingEnabledElement = elementRef.current.getAttribute('data-enabled-element');
-        if (existingEnabledElement && existingEnabledElement !== viewportId) {
-          console.warn(`Element already enabled for different viewport: ${existingEnabledElement}`);
-        }
-        console.log('🔍 Element enabled status:', existingEnabledElement || 'not enabled');
 
         const viewportInput: Types.PublicViewportInput = {
           viewportId: currentViewportId,
@@ -340,19 +410,10 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             orientation: Enums.OrientationAxis.AXIAL,
           },
         };
-        console.log('🔧 Creating viewport input:', {
-          viewportId: currentViewportId,
-          type: 'STACK',
-          element: elementRef.current?.tagName,
-          orientation: 'AXIAL'
-        });
 
-        console.log('🔧 Enabling element with viewport input:', viewportInput);
         try {
           renderingEngine.enableElement(viewportInput);
-          console.log('✅ Element enabled successfully');
         } catch (error) {
-          console.error('❌ Error enabling element:', error);
           throw error;
         }
         
@@ -360,8 +421,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         
         const viewports = renderingEngine.getViewports();
         const viewportIds = Object.keys(viewports);
-        console.log('🔍 Rendering engine viewports after creation:', viewportIds);
-        console.log('🔍 Total viewports in rendering engine:', viewportIds.length);
         
         const actualViewportId = viewportIndex.toString();
         console.log('🔍 Using Cornerstone.js standard viewport ID:', actualViewportId);
@@ -385,35 +444,14 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
         elementRef.current.setAttribute('data-enabled-element', actualViewportId);
         
-        const invalidImageIds = imageIds.filter(id => {
-          if (typeof id !== 'string' || !id) return true;
-          
-          const frameMatch = id.match(/\?frame=(-?\d+)/);
-          if (frameMatch) {
-            const frameIndex = parseInt(frameMatch[1]);
-            if (frameIndex < 0) {
-              return true;
-            }
-          }
-          
-          return false;
-        });
-        
-        if (invalidImageIds.length > 0) {
-          throw new Error(`Found ${invalidImageIds.length} invalid image IDs`);
-        }
-        
         await vp.setStack(imageIds, 0);
-        
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         if (vp && typeof vp.resetCamera === 'function') {
           try {
             const imageIds = vp.getImageIds();
             if (imageIds && imageIds.length > 0) {
               vp.resetCamera();
               
-              await new Promise(resolve => setTimeout(resolve, 100));
               
               const viewports = renderingEngine.getViewports();
               const viewportIds = Object.keys(viewports);
@@ -580,6 +618,15 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
     };
   }, [selectedSeries]);
 
+  // Clear cache when study changes
+  useEffect(() => {
+    if (selectedStudy && selectedStudy.id !== currentStudyId) {
+      console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
+      setSeriesInstancesCache({});
+      setCurrentStudyId(selectedStudy.id);
+    }
+  }, [selectedStudy, currentStudyId]);
+
   useEffect(() => {
     return () => {
       mounted.current = false;
@@ -630,19 +677,10 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       // Check if this event is for our viewport and viewport is ready
       if (eventViewportId !== actualViewportId || !viewportReady) return;
       
-      if (viewport && typeof viewport.getCamera === 'function' && typeof viewport.setCamera === 'function' && typeof viewport.render === 'function') {
-        try {
-        const camera = viewport.getCamera();
-          const { rotation = 0 } = camera;
-        viewport.setCamera({
-          ...camera,
-            rotation: (rotation + degrees) % 360
-        });
-        viewport.render();
-          console.log(`Rotated viewport ${viewportId} by ${degrees} degrees`);
-        } catch (error) {
-          console.error('Error rotating viewport:', error);
-        }
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.rotateViewport(degrees);
       }
     };
 
@@ -656,237 +694,45 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       // Check if this event is for our viewport and viewport is ready
       if (eventViewportId !== actualViewportId || !viewportReady) return;
       
-      if (viewport && typeof viewport.getCamera === 'function' && typeof viewport.setCamera === 'function' && typeof viewport.render === 'function') {
-        try {
-        const camera = viewport.getCamera();
-          const { flipHorizontal = false, flipVertical = false } = camera;
-        
-        if (direction === 'horizontal') {
-          viewport.setCamera({
-            ...camera,
-            flipHorizontal: !flipHorizontal
-          });
-        } else {
-          viewport.setCamera({
-            ...camera,
-            flipVertical: !flipVertical
-          });
-        }
-        viewport.render();
-          console.log(`Flipped viewport ${viewportId} ${direction}`);
-        } catch (error) {
-          console.error('Error flipping viewport:', error);
-        }
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.flipViewport(direction);
       }
     };
 
     const handleResetView = () => {
-      if (viewportReady && viewport && typeof viewport.resetCamera === 'function' && typeof viewport.render === 'function') {
-        try {
-          console.log('Resetting view for viewport:', viewportId);
-        viewport.resetCamera();
-          
-          // Add delay before rendering to prevent VTK errors
-          setTimeout(() => {
-            try {
-        viewport.render();
-              console.log(`Reset view for viewport ${viewportId}`);
-            } catch (renderError) {
-              console.error('Error rendering after reset:', renderError);
-            }
-          }, 100);
-        } catch (error) {
-          console.error('Error resetting view:', error);
-          // Fallback: try alternative reset method
-          try {
-            const currentCamera = viewport.getCamera();
-            console.log('Current camera before reset:', currentCamera);
-            
-            // Reset to default values
-            viewport.setCamera({
-              ...currentCamera,
-              rotation: 0,
-              flipHorizontal: false,
-              flipVertical: false
-            });
-            
-            // Add delay before rendering
-            setTimeout(() => {
-              try {
-                viewport.render();
-                console.log(`Reset view (fallback) for viewport ${viewportId}`);
-              } catch (renderError) {
-                console.error('Error rendering after reset (fallback):', renderError);
-              }
-            }, 100);
-          } catch (fallbackError) {
-            console.error('Fallback reset failed:', fallbackError);
-          }
-        }
-      } else {
-        console.warn('Viewport is not properly initialized for reset view');
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.resetView();
       }
     };
 
     const handleClearAnnotations = (event?: Event) => {
-      if (viewportReady && viewport && typeof viewport.render === 'function') {
-        try {
-          // Check if this is a targeted clear (from context) or local clear
-          let shouldClear = true;
-          if (event) {
-            const customEvent = event as CustomEvent;
-            const { activeViewportId } = customEvent.detail || {};
-            shouldClear = !activeViewportId || activeViewportId === viewportId;
-          }
-          
-          if (!shouldClear) return;
-          
-          console.log(`Clearing annotations and segmentations for viewport ${viewportId}`);
-          
-          // Step 1: Clear all annotations for this viewport
-          const actualViewportId = getViewportId(viewportIndex);
-          const toolGroupId = `toolGroup_${actualViewportId}`;
-          console.log(`Using toolGroupId: ${toolGroupId} for viewport: ${actualViewportId}`);
-          
-          // Method 1: Clear by tool group and viewport
-          const annotations = annotation.state.getAnnotations(toolGroupId, actualViewportId || 'default-viewport');
-          
-          if (annotations && annotations.length > 0) {
-            console.log(`Found ${annotations.length} annotations to clear via tool group`);
-            annotations.forEach(ann => {
-              if (ann.annotationUID) {
-                annotation.state.removeAnnotation(ann.annotationUID);
-              }
-            });
-          }
-          
-          // Method 2: Clear all annotations globally and filter by viewport
-          try {
-            const annotationManager = annotation.state.getAnnotationManager();
-            if (annotationManager) {
-              const allAnnotations = annotationManager.getAnnotations();
-              const viewportAnnotations = allAnnotations.filter((ann: any) => {
-                // Check if annotation belongs to this viewport
-                return ann.metadata && (
-                  ann.metadata.viewportId === viewportId ||
-                  ann.metadata.toolGroupId === toolGroupId ||
-                  ann.metadata.renderingEngineId === `renderingEngine_${viewportId}`
-                );
-              });
-              
-              if (viewportAnnotations.length > 0) {
-                console.log(`Found ${viewportAnnotations.length} additional annotations to clear globally`);
-                viewportAnnotations.forEach((ann: any) => {
-                  if (ann.annotationUID) {
-                    annotationManager.removeAnnotation(ann.annotationUID);
-                  }
-                });
-              }
-            }
-          } catch (error) {
-            console.warn('Error with global annotation clearing:', error);
-          }
-          
-          // Step 2: Clear all segmentations for this viewport
-          try {
-            // Remove all segmentation representations from this viewport
-            const segmentationRepresentations = segmentation.state.getSegmentationRepresentations(actualViewportId || 'default-viewport');
-            
-            if (segmentationRepresentations && segmentationRepresentations.length > 0) {
-              console.log(`Found ${segmentationRepresentations.length} segmentation representations to clear for viewport ${viewportId}`);
-              
-              segmentationRepresentations.forEach(rep => {
-                if (rep.segmentationId) {
-                  try {
-                    console.log(`Removing segmentation ${rep.segmentationId} from viewport ${viewportId}`);
-                    // Remove the representation from the viewport
-                    segmentation.removeSegmentationRepresentation(actualViewportId || 'default-viewport', {
-                      segmentationId: rep.segmentationId,
-                      type: rep.type
-                    });
-                  } catch (error) {
-                    console.warn(`Error removing segmentation ${rep.segmentationId}:`, error);
-                  }
-                }
-              });
-            } else {
-              console.log(`No segmentation representations found for viewport ${viewportId}`);
-            }
-            
-            // Also try to clear any global segmentations that might be associated with this viewport
-            try {
-              // Get all segmentations and try to remove their representations from this viewport
-              const allSegmentations = segmentation.state.getSegmentations();
-              Object.keys(allSegmentations).forEach(segId => {
-                try {
-                  // Try to remove segmentation representation from this specific viewport
-                  segmentation.removeSegmentationRepresentation(actualViewportId || 'default-viewport', {
-                    segmentationId: segId,
-                    type: 'LABELMAP' as any // Default type, will be corrected by the API if needed
-                  });
-                } catch (error) {
-                  // Ignore errors if segmentation doesn't exist for this viewport
-                }
-              });
-            } catch (error) {
-              console.warn('Error clearing global segmentations:', error);
-            }
-          } catch (error) {
-            console.warn('Error clearing segmentations:', error);
-          }
-          
-          // Step 3: Force render the viewport to show the cleared state
-          setTimeout(() => {
-            try {
-              // Force render multiple times to ensure clearing is visible
-            viewport.render();
-              
-              // Also try to render via rendering engine
-              const currentRenderingEngineId = getRenderingEngineId(viewportIndex);
-              if (currentRenderingEngineId && actualViewportId) {
-                const renderingEngine = getRenderingEngine(currentRenderingEngineId);
-                if (renderingEngine) {
-                  renderingEngine.renderViewports([actualViewportId]);
-                }
-              }
-              
-              console.log(`Successfully cleared annotations and segmentations for viewport ${viewportId}`);
-            } catch (renderError) {
-              console.error('Error rendering viewport after clear:', renderError);
-            }
-          }, 100);
-          
-        } catch (error) {
-          console.error('Error clearing annotations and segmentations:', error);
-        }
-      } else {
-        console.warn('Viewport is not properly initialized for clearing annotations');
+      // Check if this is a targeted clear (from context) or local clear
+      let shouldClear = true;
+      if (event) {
+        const customEvent = event as CustomEvent;
+        const { activeViewportId } = customEvent.detail || {};
+        shouldClear = !activeViewportId || activeViewportId === viewportId;
+      }
+      
+      if (!shouldClear) return;
+      
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.clearAnnotations();
       }
     };
 
     // Add invert color map handler
     const handleInvertColorMap = () => {
-      if (viewportReady && viewport && typeof viewport.render === 'function') {
-        try {
-          console.log('Inverting color map for viewport:', viewportId);
-          
-          // For StackViewport, we need to use setProperties for color map inversion
-          if (typeof viewport.setProperties === 'function') {
-            const currentProperties = viewport.getProperties();
-            viewport.setProperties({
-              ...currentProperties,
-              invert: !currentProperties.invert
-            });
-            viewport.render();
-            console.log(`Inverted color map for viewport ${viewportId}`);
-          } else {
-            console.warn('setProperties not available for color map inversion');
-          }
-        } catch (error) {
-          console.error('Error inverting color map:', error);
-        }
-      } else {
-        console.warn('Viewport is not properly initialized for color map inversion');
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.invertColorMap();
       }
     };
 
@@ -908,38 +754,18 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
     };
   }, [viewport, handleKeyDown, nextFrame, prevFrame, currentFrame]);
 
-
-  const handleToolChange = (toolName: string) => {
-    setActiveTool(toolName);
-    const toolGroupId = `toolGroup_${viewportId}`;
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    if (toolGroup) {
-      try {
-        toolGroup.setToolPassive(WindowLevelTool.toolName);
-        toolGroup.setToolPassive(ProbeTool.toolName);
-        toolGroup.setToolPassive(RectangleROITool.toolName);
-
-        toolGroup.setToolActive(toolName, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    });
-      } catch (error) {
-        console.error('Error changing tool:', error);
-      }
-    } else {
-      console.warn(`Tool group not found: ${toolGroupId}`);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-900">
       {/* Cornerstone Tool Manager */}
       <CornerstoneToolManager
+        ref={toolManagerRef}
         toolGroupId={`toolGroup_${getViewportId(viewportIndex) || viewportId}`}
         renderingEngineId={getRenderingEngineId(viewportIndex) || `renderingEngine_${viewportId}`}
         viewportId={getViewportId(viewportIndex) || viewportId || 'default-viewport'}
         selectedTool={selectedTool}
         onToolChange={onToolChange}
+        viewport={viewport}
+        viewportReady={viewportReady}
       />
 
       <div 
