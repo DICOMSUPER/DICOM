@@ -18,6 +18,7 @@ import {
   Target,
   ArrowRight,
   RotateCcw as RotateCcwIcon,
+  Undo,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -71,6 +72,8 @@ const transformTools = [
 const actionTools = [
   { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
   { id: "clear", icon: Trash2, label: "Clear Annotations", action: "clear" },
+  { id: "clear-segmentation", icon: Trash2, label: "Clear Segmentation", action: "clearSegmentation" },
+  { id: "undo-annotation", icon: Undo, label: "Undo Annotation", action: "undoAnnotation" },
   { id: "invert", icon: MousePointer, label: "Invert Colors", action: "invert" },
 ];
 
@@ -78,8 +81,21 @@ const actionTools = [
 // Advanced tools
 const advancedTools = [
   { id: "Magnify", icon: Maximize2, label: "Magnify", shortcut: "M" },
+  { id: "PlanarRotate", icon: RotateCw, label: "Planar Rotate", shortcut: "O" },
+  { id: "TrackballRotate", icon: RotateCw, label: "Trackball Rotate", shortcut: "R" },
+  { id: "OrientationMarker", icon: MousePointer, label: "Orientation Marker", shortcut: "U" },
   { id: "ETDRSGrid", icon: Grid, label: "ETDRS Grid", shortcut: "E" },
   { id: "ReferenceLines", icon: Grid, label: "Reference Lines", shortcut: "Shift+R" },
+  { id: "OverlayGrid", icon: Grid, label: "Overlay Grid", shortcut: "H" },
+];
+
+// Annotation tools
+const annotationTools = [
+  { id: "KeyImage", icon: MousePointer, label: "Key Image", shortcut: "Q" },
+  { id: "Label", icon: MousePointer, label: "Label", shortcut: "N" },
+  { id: "DragProbe", icon: Target, label: "Drag Probe", shortcut: "F" },
+  { id: "PaintFill", icon: MousePointer, label: "Paint Fill", shortcut: "Y" },
+  { id: "Eraser", icon: Trash2, label: "Eraser", shortcut: "Shift+Z" },
 ];
 
 export default function ViewerLeftSidebar({
@@ -88,7 +104,7 @@ export default function ViewerLeftSidebar({
   selectedTool,
   onToolSelect,
 }: ViewerLeftSidebarProps) {
-  const { rotateViewport, flipViewport, resetView, clearAnnotations, invertViewport } = useViewer();
+  const { rotateViewport, flipViewport, resetView, clearAnnotations, undoAnnotation, invertViewport } = useViewer();
 
   // Map tool names for display
   const getToolDisplayName = (toolId: string) => {
@@ -109,8 +125,18 @@ export default function ViewerLeftSidebar({
       'SplineROI': 'SplineROI',
       'Rotate': 'PlanarRotate',
       'Magnify': 'Magnify',
+      'TrackballRotate': 'TrackballRotate',
+      'OrientationMarker': 'OrientationMarker',
       'ETDRSGrid': 'ETDRSGrid',
       'ReferenceLines': 'ReferenceLines',
+      'OverlayGrid': 'OverlayGrid',
+      'KeyImage': 'KeyImage',
+      'Label': 'Label',
+      'DragProbe': 'DragProbe',
+      'PaintFill': 'PaintFill',
+      'Eraser': 'Eraser',
+      'ClearSegmentation': 'ClearSegmentation',
+      'UndoAnnotation': 'UndoAnnotation',
     };
     return toolMapping[toolId] || toolId;
   };
@@ -132,6 +158,14 @@ export default function ViewerLeftSidebar({
         break;
       case 'clear':
         clearAnnotations();
+        break;
+      case 'clearSegmentation':
+        // Clear segmentation action
+        console.log('Clear segmentation action triggered');
+        // This will be handled by the tool manager
+        break;
+      case 'undoAnnotation':
+        undoAnnotation();
         break;
       case 'invert':
         invertViewport();
@@ -258,6 +292,38 @@ export default function ViewerLeftSidebar({
             </div>
           </div>
 
+          {/* Annotation Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {annotationTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
           {/* Action Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Actions</h3>
@@ -318,16 +384,6 @@ export default function ViewerLeftSidebar({
                 </Tooltip>
               ))}
             </div>
-          </div>
-
-          {/* Info Section */}
-          <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-            <h4 className="text-teal-300 text-xs font-semibold mb-2">Hướng dẫn:</h4>
-            <ul className="text-slate-400 text-xs space-y-1">
-              <li>• Kéo thả series vào viewport</li>
-              <li>• Sử dụng tools từ sidebar hoặc toolbar</li>
-              <li>• Scroll để navigate frames</li>
-            </ul>
           </div>
         </div>
       </div>

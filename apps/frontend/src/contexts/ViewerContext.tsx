@@ -20,13 +20,28 @@ export type ToolType =
   | 'ArrowAnnotate'
   | 'SplineROI'
   | 'Magnify'
+  | 'PlanarRotate'
   | 'ETDRSGrid'
   | 'ReferenceLines'
   | 'Reset'
   | 'Invert'
   | 'Rotate'
   | 'FlipH'
-  | 'FlipV';
+  | 'FlipV'
+  // Additional tools
+  | 'TrackballRotate'
+  | 'MIPJumpToClick'
+  | 'SegmentBidirectional'
+  | 'ScaleOverlay'
+  | 'OrientationMarker'
+  | 'OverlayGrid'
+  | 'KeyImage'
+  | 'Label'
+  | 'DragProbe'
+  | 'PaintFill'
+  | 'Eraser'
+  | 'ClearSegmentation'
+  | 'UndoAnnotation';
 
 export type GridLayout = '1x1' | '1x2' | '2x1' | '2x2' | '1x3' | '3x1';
 
@@ -61,6 +76,7 @@ export interface ViewerContextType {
   flipViewport: (direction: 'horizontal' | 'vertical') => void;
   invertViewport: () => void;
   clearAnnotations: () => void;
+  undoAnnotation: () => void;
   setViewportSeries: (viewport: number, series: DicomSeries) => void;
   getViewportSeries: (viewport: number) => DicomSeries | undefined;
   getViewportTransform: (viewport: number) => ViewportTransform;
@@ -232,6 +248,16 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const undoAnnotation = () => {
+    console.log('Undo annotation requested from context');
+    // Dispatch custom event that ViewPortMain will listen to
+    // Include active viewport ID to target specific viewport or fallback to Cornerstone.js standard ID
+    const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
+    window.dispatchEvent(new CustomEvent('undoAnnotation', {
+      detail: { activeViewportId }
+    }));
+  };
+
   const value: ViewerContextType = {
     state,
     setActiveTool,
@@ -242,6 +268,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     flipViewport,
     invertViewport,
     clearAnnotations,
+    undoAnnotation,
     setViewportSeries,
     getViewportSeries,
     getViewportTransform,

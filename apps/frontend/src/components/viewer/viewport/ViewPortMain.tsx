@@ -61,6 +61,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const [loadedSeriesId, setLoadedSeriesId] = useState<string | null>(null);
   const [seriesInstancesCache, setSeriesInstancesCache] = useState<Record<string, any[]>>({});
   const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
+  const [forceRebuild, setForceRebuild] = useState(false);
   const toolManagerRef = useRef<any>(null);
 
   const getTotalFrames = async (imageId: string) => {
@@ -224,10 +225,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         setCurrentStudyId(selectedStudy.id);
       }
       
-      // Only skip if it's the same series AND viewport is already ready AND has data
-      // Allow reload if series changes or viewport is not ready or has no data
-      if (loadedSeriesId === selectedSeries.id && viewportReady && viewport) {
-        // Check if viewport actually has image data
+      if (viewportIndex !== 0 && loadedSeriesId === selectedSeries.id && viewportReady && viewport && !forceRebuild) {
         const hasImageData = viewport.getImageIds && viewport.getImageIds().length > 0;
         if (hasImageData) {
           running.current = false;
@@ -235,8 +233,39 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         }
       }
       
-      // Check if we can reuse existing rendering engine and just update the series
       const existingRenderingEngineId = getRenderingEngineId(viewportIndex);
+      
+      if (forceRebuild && existingRenderingEngineId) {
+        try {
+          const existingRenderingEngine = getRenderingEngine(existingRenderingEngineId);
+          if (existingRenderingEngine) {
+            existingRenderingEngine.destroy();
+            setRenderingEngineId(viewportIndex, '');
+            setViewportId(viewportIndex, '');
+            setViewport(null);
+            setViewportReady(false);
+            setLoadedSeriesId(null);
+          }
+        } catch (error) {
+          console.warn('Error destroying rendering engine for rebuild:', error);
+        }
+      }
+      
+      if (viewportIndex === 0 && existingRenderingEngineId) {
+        try {
+          const existingRenderingEngine = getRenderingEngine(existingRenderingEngineId);
+          if (existingRenderingEngine) {
+            existingRenderingEngine.destroy();
+            setRenderingEngineId(viewportIndex, '');
+            setViewportId(viewportIndex, '');
+            setViewport(null);
+            setViewportReady(false);
+            setLoadedSeriesId(null);
+          }
+        } catch (error) {
+          console.warn('Error destroying rendering engine for viewport 0:', error);
+        }
+      }
       if (existingRenderingEngineId && loadedSeriesId !== selectedSeries.id) {
         const existingRenderingEngine = getRenderingEngine(existingRenderingEngineId);
         if (existingRenderingEngine) {
@@ -245,12 +274,9 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           const actualViewportId = viewportIndex.toString();
           
           if (viewportIds.includes(actualViewportId)) {
-            // Reuse existing viewport and just update the series
-            console.log('🔄 Reusing existing viewport for series change:', selectedSeries.id);
             try {
               const vp = existingRenderingEngine.getViewport(actualViewportId) as Types.IStackViewport;
               if (vp) {
-                // Load new series data using cache
                 const instances = await loadSeriesInstances(selectedSeries.id);
 
                 if (instances && instances.length > 0) {
@@ -276,7 +302,32 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                   if (imageIds.length > 0) {
                     await vp.setStack(imageIds, 0);
                     vp.resetCamera();
-                    vp.render();
+                    
+                    const currentImageIds = vp.getImageIds();
+                    const currentImageIdIndex = vp.getCurrentImageIdIndex();
+                    const element = vp.element;
+                    
+                    try {
+                      await new Promise(resolve => setTimeout(resolve, 50));
+                      
+                      const viewports = existingRenderingEngine.getViewports();
+                      const viewportIds = Object.keys(viewports);
+                      if (viewportIds.includes(actualViewportId)) {
+                        existingRenderingEngine.renderViewports([actualViewportId]);
+                        
+                        setTimeout(() => {
+                          try {
+                            existingRenderingEngine.renderViewports([actualViewportId]);
+                          } catch (error) {
+                          }
+                        }, 100);
+                      } else {
+                        vp.render();
+                      }
+                    } catch (renderError) {
+                      console.error('Error rendering viewport:', renderError);
+                      vp.render();
+                    }
                     
                     setViewport(vp);
                     setViewportReady(true);
@@ -727,6 +778,24 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       }
     };
 
+    const handleUndoAnnotation = (event?: Event) => {
+      // Check if this is a targeted undo (from context) or local undo
+      let shouldUndo = true;
+      if (event) {
+        const customEvent = event as CustomEvent;
+        const { activeViewportId } = customEvent.detail || {};
+        shouldUndo = !activeViewportId || activeViewportId === viewportId;
+      }
+      
+      if (!shouldUndo) return;
+      
+      // Use tool manager handler
+      if (toolManagerRef.current && toolManagerRef.current.getToolHandlers) {
+        const handlers = toolManagerRef.current.getToolHandlers();
+        handlers.undoAnnotation();
+      }
+    };
+
     // Add invert color map handler
     const handleInvertColorMap = () => {
       // Use tool manager handler
@@ -736,12 +805,24 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       }
     };
 
+    // Add refresh handler to force rebuild viewport
+    const handleRefresh = () => {
+      console.log('🔄 Refresh triggered - forcing viewport rebuild');
+      setForceRebuild(true);
+      // Reset the flag after a short delay to allow rebuild
+      setTimeout(() => {
+        setForceRebuild(false);
+      }, 100);
+    };
+
 
     window.addEventListener('rotateViewport', handleRotateViewportLocal as EventListener);
     window.addEventListener('flipViewport', handleFlipViewportLocal as EventListener);
     window.addEventListener('resetView', handleResetView);
     window.addEventListener('invertColorMap', handleInvertColorMap);
     window.addEventListener('clearAnnotations', handleClearAnnotations as EventListener);
+    window.addEventListener('undoAnnotation', handleUndoAnnotation as EventListener);
+    window.addEventListener('refreshViewport', handleRefresh);
 
     return () => {
       element.removeEventListener("keydown", handleKeyDown);
@@ -751,6 +832,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       window.removeEventListener('resetView', handleResetView);
       window.removeEventListener('invertColorMap', handleInvertColorMap);
       window.removeEventListener('clearAnnotations', handleClearAnnotations);
+      window.removeEventListener('undoAnnotation', handleUndoAnnotation);
+      window.removeEventListener('refreshViewport', handleRefresh);
     };
   }, [viewport, handleKeyDown, nextFrame, prevFrame, currentFrame]);
 

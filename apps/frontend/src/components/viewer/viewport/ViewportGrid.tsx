@@ -10,7 +10,6 @@ const ViewPortMain = dynamic(
 
 interface ViewportGridProps {
   seriesLayout: string;
-  series: DicomSeries[];
   selectedSeries: DicomSeries | null;
   selectedStudy: DicomStudy | null;
   selectedTool?: string;
@@ -19,13 +18,12 @@ interface ViewportGridProps {
 
 export default function ViewportGrid({
   seriesLayout,
-  series,
   selectedSeries,
   selectedStudy,
   selectedTool,
   onToolChange,
 }: ViewportGridProps) {
-  const { state, getViewportSeries, setActiveViewport, getViewportId, setViewportId } = useViewer();
+  const { state, getViewportSeries, setActiveViewport, getViewportId, setViewportId, setViewportSeries } = useViewer();
   
   // Local state to track viewport IDs to avoid setState during render
   const [localViewportIds, setLocalViewportIds] = useState<Record<number, string>>({});
@@ -91,7 +89,13 @@ export default function ViewportGrid({
     const viewports = [];
     
     for (let i = 0; i < viewportCount; i++) {
-      const viewportSeries = getViewportSeries(i) || (i === 0 ? selectedSeries : null);
+      // Get series for this viewport - prioritize assigned series over selectedSeries fallback
+      let viewportSeries = getViewportSeries(i);
+      
+      // Remove auto-assignment - let user select manually
+      // if (!viewportSeries && i === 0 && selectedSeries) {
+      //   viewportSeries = selectedSeries;
+      // }
       
       // Use local viewport ID to avoid setState during render
       const viewportId = localViewportIds[i] || i.toString();
@@ -109,6 +113,18 @@ export default function ViewportGrid({
   };
 
   const viewports = generateViewports();
+
+  // Remove auto-update of viewport 0 - let user select manually
+  // useEffect(() => {
+  //   if (viewportCount > 1 && selectedSeries) {
+  //     const viewport0Series = getViewportSeries(0);
+  //     // Only update if viewport 0 doesn't have a series assigned or if it's the same as selectedSeries
+  //     if (!viewport0Series || viewport0Series.id !== selectedSeries.id) {
+  //       setViewportSeries(0, selectedSeries);
+  //       console.log('Updated viewport 0 with selectedSeries:', selectedSeries.seriesDescription);
+  //     }
+  //   }
+  // }, [selectedSeries, viewportCount, getViewportSeries, setViewportSeries]);
 
   return (
     <div className={`flex-1 p-3 gap-3 ${getGridClass()} h-full`}>

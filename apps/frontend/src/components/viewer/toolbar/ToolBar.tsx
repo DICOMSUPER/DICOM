@@ -42,6 +42,16 @@ const ToolBar = () => {
       'Cobb Angle': 'CobbAngle',
       'Arrow Annotate': 'ArrowAnnotate',
       'Magnify': 'Magnify',
+      'PlanarRotate': 'PlanarRotate',
+      'TrackballRotate': 'TrackballRotate',
+      'OrientationMarker': 'OrientationMarker',
+      'KeyImage': 'KeyImage',
+      'Label': 'Label',
+      'DragProbe': 'DragProbe',
+      'PaintFill': 'PaintFill',
+      'Eraser': 'Eraser',
+      'ClearSegmentation': 'ClearSegmentation',
+      'UndoAnnotation': 'UndoAnnotation',
       'Reset': 'Reset',
       'Invert': 'Invert'
     };
@@ -129,6 +139,15 @@ const ToolBar = () => {
               list={shapeToolsMenu}
               onItemSelect={handleToolSelect}
               tooltip="Shape Tools"
+            />
+          </div>
+
+          {/* Annotation Tools Dropdown */}
+          <div>
+            <DropdownTool
+              list={annotationToolsMenu}
+              onItemSelect={handleToolSelect}
+              tooltip="Annotation Tools"
             />
           </div>
 
