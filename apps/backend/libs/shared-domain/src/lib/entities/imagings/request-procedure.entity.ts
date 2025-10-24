@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingModality } from './imaging-modality.entity';
-import { BodyPart } from './body_part.entity';
+import { BodyPart } from './body-part.entity';
 
 @Entity('request_procedure')
 export class RequestProcedure extends BaseEntity {

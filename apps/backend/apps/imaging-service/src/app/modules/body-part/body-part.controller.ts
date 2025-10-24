@@ -2,43 +2,42 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreateImagingOrderDto, ImagingOrder, UpdateImagingOrderDto } from '@backend/shared-domain';
+import { BodyPart, CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
   Controller,
   Logger
 } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
-import { ImagingOrdersService } from './imaging-orders.service';
+import { BodyPartService } from './body-part.service';
 
-const moduleName = 'ImagingOrders';
+const moduleName = 'BodyPart';
 @Controller()
-export class ImagingOrdersController {
+export class BodyPartController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
-
+  constructor(
+    private readonly bodyPartService: BodyPartService
+  ) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() createImagingOrderDto: any 
-  ): Promise<ImagingOrder> {
+    @Payload() createBodyPartDto: CreateBodyPartDto
+  ): Promise<BodyPart> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      // const { createImagingOrderDto } = data;
-      console.log("dto", createImagingOrderDto);
-
-      
-      return await this.imagingOrdersService.create(createImagingOrderDto);
+      return await this.bodyPartService.create(
+        createBodyPartDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to create imaging order',
+        'Failed to create body part',
         IMAGING_SERVICE
       );
     }
@@ -47,16 +46,16 @@ export class ImagingOrdersController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll(): Promise<ImagingOrder[]> {
+  async findAll(): Promise<BodyPart[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
     try {
-      return await this.imagingOrdersService.findAll();
+      return await this.bodyPartService.findAll();
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to find all imaging order',
+        'Failed to find all imaging modality',
         IMAGING_SERVICE
       );
     }
@@ -65,17 +64,19 @@ export class ImagingOrdersController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }): Promise<ImagingOrder | null> {
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<BodyPart | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
     try {
       const { id } = data;
-      return await this.imagingOrdersService.findOne(id);
+      return await this.bodyPartService.findOne(id);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to find imaging order with id: ${data.id}`,
+        `Failed to find imaging modality with id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -86,19 +87,22 @@ export class ImagingOrdersController {
     @Payload()
     data: {
       id: string;
-      updateImagingOrderDto: UpdateImagingOrderDto;
+      updateBodyPartDto: UpdateBodyPartDto;
     }
-  ): Promise<ImagingOrder | null> {
+  ): Promise<BodyPart | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
     try {
-      const { id, updateImagingOrderDto } = data;
-      return await this.imagingOrdersService.update(id, updateImagingOrderDto);
+      const { id, updateBodyPartDto } = data;
+      return await this.bodyPartService.update(
+        id,
+        updateBodyPartDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to update imaging order with id: ${data.id}`,
+        `Failed to update for body part with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -111,46 +115,11 @@ export class ImagingOrdersController {
     );
     try {
       const { id } = data;
-      return await this.imagingOrdersService.remove(id);
+      return await this.bodyPartService.remove(id);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to delete imaging order with id: ${data.id}`,
-        IMAGING_SERVICE
-      );
-    }
-  }
-
-  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`)
-  async findImagingOrderByReferenceId(
-    @Payload()
-    data: {
-      id: string;
-      type: 'physician' | 'room' | 'patient' | 'visit';
-      paginationDto: RepositoryPaginationDto;
-    }
-  ): Promise<PaginatedResponseDto<ImagingOrder>> {
-    this.logger.log(
-      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
-    );
-    try {
-      const { id, type, paginationDto } = data;
-      return await this.imagingOrdersService.findImagingOrderByReferenceId(
-        id,
-        type,
-        {
-          page: paginationDto.page || 1,
-          limit: paginationDto.limit || 5,
-          search: paginationDto.search || '',
-          searchField: paginationDto.searchField || 'orderNumber',
-          sortField: paginationDto.sortField || 'createdAt',
-          order: paginationDto.order || 'asc',
-        }
-      );
-    } catch (error) {
-      throw handleErrorFromMicroservices(
-        error,
-        `Failed to find imaging order by reference with id: ${data.id} for ${data.type}`,
+        `Failed to delete for modality with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -161,13 +130,13 @@ export class ImagingOrdersController {
   )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
-  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+  ): Promise<PaginatedResponseDto<BodyPart>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );
     try {
       const { paginationDto } = data;
-      return await this.imagingOrdersService.findMany({
+      return await this.bodyPartService.findMany({
         page: paginationDto.page || 1,
         limit: paginationDto.limit || 5,
         search: paginationDto.search || '',
@@ -178,7 +147,7 @@ export class ImagingOrdersController {
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to find many imaging order',
+        `Failed to find many modalities`,
         IMAGING_SERVICE
       );
     }

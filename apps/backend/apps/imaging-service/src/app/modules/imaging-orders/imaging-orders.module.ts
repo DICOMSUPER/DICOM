@@ -12,6 +12,7 @@ import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalit
   controllers: [ImagingOrdersController],
   providers: [
     ImagingOrdersService,
+    
     ImagingOrderRepository,
     ImagingModalityRepository,
   ],

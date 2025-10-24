@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
-import { ImagingOrdersController } from './imaging-orders.controller';
+import { RequestProcedureController } from './request-procedure.controller';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
 
 @Module({
@@ -15,8 +14,8 @@ import { SharedInterceptorModule } from '@backend/shared-interceptor';
         Number(process.env.IMAGE_SERVICE_PORT || 5003)
       ),
     ]),
-        SharedInterceptorModule
+    SharedInterceptorModule
   ],
-  controllers: [ImagingOrdersController],
+  controllers: [RequestProcedureController],
 })
-export class ImagingOrdersModule {}
+export class RequestProcedureModule {}

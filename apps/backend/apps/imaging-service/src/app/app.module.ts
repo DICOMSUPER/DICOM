@@ -32,6 +32,10 @@ import {
   RequestProcedure,
 } from '@backend/shared-domain';
 import { SeedingModule } from './modules/seeding/seeding.module';
+import { BodyPartModule } from './modules/body-part/body-part.module';
+import { BodyPartService } from './modules/body-part/body-part.service';
+import { BodyPartRepository } from './modules/body-part/body-part.repository';
+import { RequestProcedureModule } from './modules/request-procedure/request-procedure.module';
 
 @Module({
   imports: [
@@ -61,6 +65,8 @@ import { SeedingModule } from './modules/seeding/seeding.module';
     ImagingModalitiesModule,
     ImagingOrdersModule,
     SeedingModule,
+    BodyPartModule,
+    RequestProcedureModule
   ],
   controllers: [AppController],
   providers: [
@@ -75,6 +81,8 @@ import { SeedingModule } from './modules/seeding/seeding.module';
     ImagingModalityRepository,
     ImagingOrderRepository,
     ImagingOrdersService,
+    BodyPartService,
+    BodyPartRepository
   ],
 })
 export class AppModule {}

@@ -23,7 +23,7 @@ export default function QueuePage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = localStorage.getItem("user"); 
+    const raw = localStorage.getItem("user");
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
@@ -72,6 +72,7 @@ export default function QueuePage() {
         skip: !userId,
       }
     );
+
   const [updateQueueAssignment, { isLoading: isUpdating }] =
     useUpdateQueueAssignmentMutation();
   const [skipQueueAssignment, { isLoading: isSkipping }] =
@@ -80,12 +81,12 @@ export default function QueuePage() {
   useEffect(() => {
     if (data) {
       setPaginationMeta({
-        total: data.data.total || 0,
-        page: data.data.page || 1,
-        limit: data.data.limit || 5,
-        totalPages: data.data.totalPages || 0,
-        hasNextPage: data.data.hasNextPage || false,
-        hasPreviousPage: data.data.hasPreviousPage || false,
+        total: data.total || 0,
+        page: data.page || 1,
+        limit: data.limit || 5,
+        totalPages: data.totalPages || 0,
+        hasNextPage: data.hasNextPage || false,
+        hasPreviousPage: data.hasPreviousPage || false,
       });
     }
   }, [data, pagination.page]);
@@ -98,7 +99,7 @@ export default function QueuePage() {
 
   const handleStartServing = async (id: string) => {
     try {
-      const queueItem = data?.data.data.find((item) => item.id === id);
+      const queueItem = data?.data.find((item) => item.id === id);
 
       if (!queueItem) {
         toast.error("Queue item not found");
@@ -106,7 +107,7 @@ export default function QueuePage() {
       }
 
       // Check if there's already a queue in progress
-      const inProgressQueue = data?.data.data.find(
+      const inProgressQueue = data?.data.find(
         (item) => item.status === QueueStatus.IN_PROGRESS
       );
 
@@ -139,7 +140,7 @@ export default function QueuePage() {
 
   const handleComplete = async (id: string) => {
     try {
-      const queueItem = data?.data.data.find((item) => item.id === id);
+      const queueItem = data?.data.find((item) => item.id === id);
 
       if (!queueItem) {
         toast.error("Queue item not found");
@@ -162,7 +163,7 @@ export default function QueuePage() {
 
   const handleSkip = async (id: string) => {
     try {
-      const queueItem = data?.data.data.find((item) => item.id === id);
+      const queueItem = data?.data.find((item) => item.id === id);
 
       if (!queueItem) {
         toast.error("Queue item not found");
@@ -264,7 +265,7 @@ export default function QueuePage() {
         />
 
         <QueueTable
-          queueItems={data?.data.data || []}
+          queueItems={data?.data || []}
           onStartServing={handleStartServing}
           onComplete={handleComplete}
           onSkip={handleSkip}

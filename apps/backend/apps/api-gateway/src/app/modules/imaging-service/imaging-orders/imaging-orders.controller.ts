@@ -1,3 +1,4 @@
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -8,11 +9,13 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
 @Controller('imaging-orders')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingOrdersController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
@@ -20,11 +23,14 @@ export class ImagingOrdersController {
   ) {}
 
   @Post()
-  async createImagingOrder(@Body() createImagingOrderDto: any) {
+  async createImagingOrder(
+    @Body() createImagingOrderDto: any
+  ) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingOrders.Create', {
-        createImagingOrderDto,
-      })
+      this.imagingService.send(
+        'ImagingService.ImagingOrders.Create',
+        createImagingOrderDto
+      )
     );
   }
 
@@ -52,6 +58,7 @@ export class ImagingOrdersController {
       sortField,
       order,
     };
+
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindMany', {
         paginationDto,

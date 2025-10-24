@@ -1,0 +1,126 @@
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { CreateImagingOrderDto, ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
+
+// export interface ImagingOrder {
+//   id: string;
+//   orderNumber: string;
+//   patientId: string;
+//   orderingPhysicianId: string;
+//   modalityId?: string;
+//   bodyPart?: string;
+//   procedureId?: string;
+//   urgency?: string;
+//   orderStatus?: string;
+//   createdAt?: string;
+//   updatedAt?: string;
+//   // add other fields you need
+// }
+
+export const imagingOrderApi = createApi({
+  reducerPath: "imagingOrderApi",
+  baseQuery: axiosBaseQuery("/imaging-orders"),
+  tagTypes: ["ImagingOrder"],
+  endpoints: (builder) => ({
+    // GET /imaging-orders
+    getAllImagingOrders: builder.query<ImagingOrder[], void>({
+      query: () => ({ url: "", method: "GET" }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
+          : [{ type: "ImagingOrder", id: "LIST" }],
+    }),
+
+    getImagingOrdersPaginated: builder.query<
+      PaginatedResponse<ImagingOrder>,
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        searchField?: string;
+        sortField?: string;
+        order?: string;
+      } | void
+    >({
+      query: (params) => ({ url: "paginated", method: "GET", params }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
+          : [{ type: "ImagingOrder", id: "LIST" }],
+    }),
+
+    findByReferenceId: builder.query<
+      PaginatedResponse<ImagingOrder>,
+      {
+        id: string;
+        type: "physician" | "room" | "patient" | "visit";
+        page?: number;
+        limit?: number;
+        search?: string;
+      }
+    >({
+      query: ({ id, type, page, limit, search }) => ({
+        url: "find-by-reference",
+        method: "GET",
+        params: { id, type, page, limit, search },
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
+          : [{ type: "ImagingOrder", id: "LIST" }],
+    }),
+
+    getImagingOrderById: builder.query<ImagingOrder, string>({
+      query: (id) => ({ url: `${id}`, method: "GET" }),
+      providesTags: (result, error, id) => [{ type: "ImagingOrder", id }],
+    }),
+
+    createImagingOrder: builder.mutation<ImagingOrder, CreateImagingOrderDto>({
+      query: (body) => ({ url: "", method: "POST", data: body }),
+      invalidatesTags: [{ type: "ImagingOrder", id: "LIST" }],
+    }),
+
+    // PATCH /imaging-orders/:id
+    // updateImagingOrder: builder.mutation<ImagingOrder, { id: string; body: UpdateImagingOrderDto }>({
+    //   query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
+    //   invalidatesTags: (result, error, { id }) => [{ type: "ImagingOrder", id }, { type: "ImagingOrder", id: "LIST" }],
+    // }),
+
+    deleteImagingOrder: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `${id}`, method: "DELETE" }),
+      invalidatesTags: (result, error, id) => [
+        { type: "ImagingOrder", id },
+        { type: "ImagingOrder", id: "LIST" },
+      ],
+    }),
+  }),
+});
+
+export const {
+  useGetAllImagingOrdersQuery,
+  useGetImagingOrdersPaginatedQuery,
+  useFindByReferenceIdQuery,
+  useGetImagingOrderByIdQuery,
+  useCreateImagingOrderMutation,
+//   useUpdateImagingOrderMutation,
+  useDeleteImagingOrderMutation,
+} = imagingOrderApi;

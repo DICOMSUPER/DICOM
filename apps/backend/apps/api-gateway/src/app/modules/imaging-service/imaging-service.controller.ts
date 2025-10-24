@@ -1,3 +1,5 @@
+import { Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 import {
   Body,
   Controller,
@@ -8,9 +10,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Role } from '@backend/shared-decorators';
-import { Roles } from '@backend/shared-enums';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { firstValueFrom } from 'rxjs';
 

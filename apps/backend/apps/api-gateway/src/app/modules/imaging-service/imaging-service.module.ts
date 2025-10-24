@@ -8,6 +8,8 @@ import { DicomSeriesModule } from './dicom-series/dicom-series.module';
 import { DicomInstancesModule } from './dicom-instances/dicom-instances.module';
 import { ImageAnnotationsModule } from './image-annotations/image-annotations.module';
 import { ImagingServiceController } from './imaging-service.controller';
+import { BodyPartModule } from './body-part/body-part.module';
+import { RequestProcedureModule } from './request-procedure/request-procedure.module';
 
 @Module({
   imports: [
@@ -24,10 +26,11 @@ import { ImagingServiceController } from './imaging-service.controller';
     DicomStudiesModule,
     DicomSeriesModule,
     DicomInstancesModule,
-
     ImageAnnotationsModule,
+    BodyPartModule,
+    RequestProcedureModule
   ],
-  exports: [ImagingModalitiesModule, ImagingOrdersModule],
+  exports: [ImagingModalitiesModule, ImagingOrdersModule, BodyPartModule, RequestProcedureModule],
   controllers: [ImagingServiceController],
 })
 export class ImagingServiceModule {}

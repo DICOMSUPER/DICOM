@@ -56,7 +56,6 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       case 'patient':
         referenceField = 'patientId';
         break;
-
       case 'verifyingRadiologist':
         referenceField = 'verifyingRadiologistId';
         break;
