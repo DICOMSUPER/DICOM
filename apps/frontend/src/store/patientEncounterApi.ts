@@ -47,7 +47,7 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
+    getPatientEncounterById: builder.query<PatientEncounter, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",
@@ -56,7 +56,7 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounters by patient
-    getPatientEncountersByPatientId: builder.query<ApiResponse<PaginatedResponse<PatientEncounter>>, {patientId:string; pagination: PaginationParams}>({
+    getPatientEncountersByPatientId: builder.query<PaginatedResponse<PatientEncounter>, {patientId:string; pagination: PaginationParams}>({
       query: ({patientId, pagination}) => ({
         url: `/patient/${patientId}`,
         method: "GET",

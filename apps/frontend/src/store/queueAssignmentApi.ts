@@ -138,7 +138,7 @@ export const queueAssignmentApi = createApi({
       ],
     }),
     getQueueAssignmentsInRoom: builder.query<
-      ApiResponse<PaginatedResponse<QueueAssignment>>,
+      PaginatedResponse<QueueAssignment>,
       { userId: string; filters?: QueueAssignmentSearchFilters }
     >({
       query: ({ userId, filters }) => ({

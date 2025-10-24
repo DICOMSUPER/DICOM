@@ -33,11 +33,12 @@ import {
 } from '@backend/shared-domain';
 import { SeedingModule } from './modules/seeding/seeding.module';
 import { ModalityMachinesModule } from './modules/modality-machines/modality-machines.module';
-import { BodyPartsModule } from './modules/body-parts/body-parts.module';
 import { ModalityMachinesService } from './modules/modality-machines/modality-machines.service';
 import { ModalityMachinesRepository } from './modules/modality-machines/modality-machines.repository';
-import { BodyPartsService } from './modules/body-parts/body-parts.service';
-import { BodyPartsRepository } from './modules/body-parts/body-parts.repository';
+import { BodyPartModule } from './modules/body-part/body-part.module';
+import { BodyPartService } from './modules/body-part/body-part.service';
+import { BodyPartRepository } from './modules/body-part/body-part.repository';
+import { RequestProcedureModule } from './modules/request-procedure/request-procedure.module';
 
 @Module({
   imports: [
@@ -67,8 +68,9 @@ import { BodyPartsRepository } from './modules/body-parts/body-parts.repository'
     ImagingModalitiesModule,
     ImagingOrdersModule,
     ModalityMachinesModule,
-    BodyPartsModule,
     SeedingModule,
+    BodyPartModule,
+    RequestProcedureModule,
   ],
   controllers: [AppController],
   providers: [
@@ -85,8 +87,8 @@ import { BodyPartsRepository } from './modules/body-parts/body-parts.repository'
     ImagingOrdersService,
     ModalityMachinesService,
     ModalityMachinesRepository,
-    BodyPartsService,
-    BodyPartsRepository,
+    BodyPartService,
+    BodyPartRepository,
   ],
 })
 export class AppModule {}

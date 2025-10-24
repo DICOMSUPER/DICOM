@@ -2,40 +2,41 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import {
-  CreateBodyPartDto,
-  BodyPart,
-  UpdateBodyPartDto,
-} from '@backend/shared-domain';
+import { CreateRequestProcedureDto, RequestProcedure, UpdateRequestProcedureDto } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import { Controller, Logger } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  Controller,
+  Logger
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
-import { BodyPartsService } from './body-parts.service';
-
-const moduleName = 'BodyParts';
-@Controller('body-parts')
-export class BodyPartsController {
+import { RequestProcedureService } from './request-procedure.service';
+const moduleName = 'RequestProcedure';
+@Controller()
+export class RequestProcedureController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly bodyPartsService: BodyPartsService) {}
+  constructor(
+    private readonly requestProcedureService: RequestProcedureService
+  ) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: { createBodyPartDto: CreateBodyPartDto }
-  ): Promise<BodyPart> {
+    @Payload() createRequestProcedureDto: CreateRequestProcedureDto
+  ): Promise<RequestProcedure> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      const { createBodyPartDto } = data;
-      return await this.bodyPartsService.create(createBodyPartDto);
+      return await this.requestProcedureService.create(
+        createRequestProcedureDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to create body part',
+        'Failed to create request procedure',
         IMAGING_SERVICE
       );
     }
@@ -44,16 +45,18 @@ export class BodyPartsController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll(): Promise<BodyPart[]> {
+  async findAll(
+    @Payload() data: { bodyPartId?: string; modalityId?: string }
+  ): Promise<RequestProcedure[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
     try {
-      return await this.bodyPartsService.findAll();
+      return await this.requestProcedureService.findAll(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to find all body parts',
+        'Failed to find all request procedures',
         IMAGING_SERVICE
       );
     }
@@ -62,17 +65,19 @@ export class BodyPartsController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(@Payload() data: { id: string }): Promise<BodyPart | null> {
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<RequestProcedure | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
     try {
       const { id } = data;
-      return await this.bodyPartsService.findOne(id);
+      return await this.requestProcedureService.findOne(id);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to find body part with id: ${data.id}`,
+        `Failed to find request procedure with id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -80,19 +85,25 @@ export class BodyPartsController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
-    @Payload() data: { id: string; updateBodyPartDto: UpdateBodyPartDto }
-  ): Promise<BodyPart | null> {
+    @Payload()
+    data: {
+      id: string;
+      updateRequestProcedureDto: UpdateRequestProcedureDto;
+    }
+  ): Promise<RequestProcedure | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`
     );
     try {
-      const { id, updateBodyPartDto } = data;
-
-      return await this.bodyPartsService.update(id, updateBodyPartDto);
+      const { id, updateRequestProcedureDto } = data;
+      return await this.requestProcedureService.update(
+        id,
+        updateRequestProcedureDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to update body part with id: ${data.id}`,
+        `Failed to update for request procedure with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -105,11 +116,11 @@ export class BodyPartsController {
     );
     try {
       const { id } = data;
-      return await this.bodyPartsService.remove(id);
+      return await this.requestProcedureService.remove(id);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to delete body part with id: ${data.id}`,
+        `Failed to delete for request procedure with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -120,24 +131,24 @@ export class BodyPartsController {
   )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
-  ): Promise<PaginatedResponseDto<BodyPart>> {
+  ): Promise<PaginatedResponseDto<RequestProcedure>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
     );
     try {
       const { paginationDto } = data;
-      return await this.bodyPartsService.findMany({
-        page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
-        search: paginationDto?.search || '',
-        searchField: paginationDto?.searchField || 'name',
-        sortField: paginationDto?.sortField || 'createdAt',
-        order: paginationDto?.order || 'asc',
+      return await this.requestProcedureService.findMany({
+        page: paginationDto.page || 1,
+        limit: paginationDto.limit || 5,
+        search: paginationDto.search || '',
+        searchField: paginationDto.searchField || 'procedureName',
+        sortField: paginationDto.sortField || 'createdAt',
+        order: paginationDto.order || 'asc',
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to find many body parts',
+        `Failed to find many modalities`,
         IMAGING_SERVICE
       );
     }

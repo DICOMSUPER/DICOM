@@ -16,20 +16,24 @@ import {
 import { ImagingOrdersService } from './imaging-orders.service';
 
 const moduleName = 'ImagingOrders';
-@Controller('imaging-orders')
+@Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
   constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
 
+
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: { createImagingOrderDto: CreateImagingOrderDto }
+    @Payload() createImagingOrderDto: any 
   ): Promise<ImagingOrder> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      const { createImagingOrderDto } = data;
+      // const { createImagingOrderDto } = data;
+      console.log("dto", createImagingOrderDto);
+
+      
       return await this.imagingOrdersService.create(createImagingOrderDto);
     } catch (error) {
       throw handleErrorFromMicroservices(

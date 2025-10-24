@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { ViewerProvider } from "@/contexts/ViewerContext";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { imagingApi, DicomSeries } from "@/services/imagingApi";
 
 // Layout components
@@ -12,17 +14,30 @@ import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
 import ViewportGrid from "@/components/viewer/viewport/ViewportGrid";
 import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
 
-export default function ViewerPage() {
+// Inner component that uses ViewerContext
+function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get('study');
   const seriesId = searchParams.get('series');
+  const { state, setActiveViewport, setViewportSeries } = useViewer();
   
   // UI State
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
-  const [seriesLayout, setSeriesLayout] = useState<string>("1x2");
+  const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
+  
+  // Handle layout change and set active viewport
+  const handleLayoutChange = (layout: string) => {
+    setSeriesLayout(layout);
+    
+    // When switching to 1x1 layout, set viewport 0 as active
+    if (layout === "1x1") {
+      setActiveViewport(0);
+      console.log('Switched to 1x1 layout - set viewport 0 as active');
+    }
+  };
   const [autoOpen, setAutoOpen] = useState(false);
   
   // Data State
@@ -30,25 +45,45 @@ export default function ViewerPage() {
   const [series, setSeries] = useState<DicomSeries[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Ensure viewport 0 is active on page load
+  useEffect(() => {
+    setActiveViewport(0);
+    console.log('Page loaded - set viewport 0 as active');
+  }, []);
+
   // Handle series loaded from sidebar
   const handleSeriesLoaded = useCallback((loadedSeries: DicomSeries[]) => {
     setSeries(loadedSeries);
     
-    // If seriesId is provided, select that series
+    // Ensure viewport 0 is active when loading series
+    setActiveViewport(0);
+    
     if (seriesId) {
       const targetSeries = loadedSeries.find(s => s.id === seriesId);
       if (targetSeries) {
         setSelectedSeries(targetSeries);
+        // Also set it to the active viewport (viewport 0)
+        setViewportSeries(0, targetSeries);
       }
     } else if (loadedSeries.length > 0) {
-      // Auto-select first series if no seriesId provided
-      setSelectedSeries(loadedSeries[0]);
+      // DON'T auto-select any series - let user select manually
+      // setSelectedSeries(loadedSeries[0]);
     }
-  }, [seriesId]);
+  }, [seriesId, setActiveViewport, setViewportSeries]);
 
   const handleSeriesSelect = (series: any) => {
-    console.log('Selected series:', series);
+    console.log('Selected series:', series, 'for viewport:', state.activeViewport);
     setSelectedSeries(series);
+    
+    // Set the series to the currently active viewport
+    setViewportSeries(state.activeViewport, series);
+    
+      // Remove auto-assignment to viewport 0 - let user select manually
+      // const viewport0Series = state.viewportSeries.get(0);
+      // if (!viewport0Series && state.activeViewport !== 0) {
+      //   setViewportSeries(0, series);
+      //   console.log('Set series to viewport 0 for multi-viewport compatibility');
+      // }
   };
 
   const handleDeleteStudy = () => {
@@ -62,7 +97,12 @@ export default function ViewerPage() {
       try {
         // Reload series for the specific study
         const seriesResponse = await imagingApi.getSeriesByReferenceId(studyId, 'study', { page: 1, limit: 50 });
-        setSeries(seriesResponse.data);
+        setSeries(seriesResponse.data?.data || []);
+        
+        // Dispatch refreshViewport event to force viewport rebuild
+        window.dispatchEvent(new CustomEvent('refreshViewport', {
+          detail: { studyId }
+        }));
       } catch (error) {
         console.error('Error refreshing series:', error);
       } finally {
@@ -72,10 +112,9 @@ export default function ViewerPage() {
   };
 
   return (
-    <ViewerProvider>
-      <div className="h-[100vh] bg-slate-950 flex flex-col">
-        {/* Advanced Header with Toggle */}
-        <div className="flex flex-col h-[5vh]">
+    <div className="h-[100vh] bg-slate-950 flex flex-col">
+          {/* Advanced Header with Toggle */}
+          <div className="flex flex-col h-[5vh]">
           <ViewerHeader
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
@@ -83,7 +122,7 @@ export default function ViewerPage() {
             onAutoOpenChange={setAutoOpen}
             onDeleteStudy={handleDeleteStudy}
             layout={seriesLayout}
-            onLayoutChange={setSeriesLayout}
+            onLayoutChange={handleLayoutChange}
             isCollapsed={headerCollapsed}
             onToggleCollapse={() => setHeaderCollapsed(!headerCollapsed)}
             loading={loading}
@@ -117,7 +156,9 @@ export default function ViewerPage() {
           >
             <ViewerLeftSidebar
               seriesLayout={seriesLayout}
-              onSeriesLayoutChange={setSeriesLayout}
+              onSeriesLayoutChange={handleLayoutChange}
+              selectedTool={selectedTool}
+              onToolSelect={setSelectedTool}
             />
           </ResizablePanel>
 
@@ -155,7 +196,6 @@ export default function ViewerPage() {
               <>
                 <ViewportGrid
                   seriesLayout={seriesLayout}
-                  series={series}
                   selectedSeries={selectedSeries}
                   selectedStudy={null}
                   selectedTool={selectedTool}
@@ -183,6 +223,15 @@ export default function ViewerPage() {
           </ResizablePanel>
         </div>
       </div>
-    </ViewerProvider>
+  );
+}
+
+export default function ViewerPage() {
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <ViewerProvider>
+        <ViewerPageContent />
+      </ViewerProvider>
+    </DndProvider>
   );
 }

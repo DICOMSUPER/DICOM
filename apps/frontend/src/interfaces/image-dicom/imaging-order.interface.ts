@@ -1,0 +1,37 @@
+import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { BaseEntity } from "../patient/patient-workflow.interface";
+import { ImagingModality } from "./imaging_modality.interface";
+import { RequestProcedure } from "./request-procedure.interface";
+
+export interface CreateImagingOrderDto {
+  patientId: string;
+  orderingPhysicianId: string;
+  modalityId: string;
+  bodyPart: string;
+  request_procedure_id?: string;
+  orderStatus?: ImagingOrderStatus;
+  clinicalIndication?: string;
+  contrastRequired?: boolean;
+  specialInstructions?: string;
+  roomId: string;
+  notes?: string;
+}
+
+export interface ImagingOrder extends BaseEntity {
+
+  orderNumber: string;
+  patientId: string;
+  orderingPhysicianId: string;
+  modalityId?: string;
+  modality: ImagingModality;
+  procedureId?: string;
+  procedure?: RequestProcedure;
+  orderStatus?: ImagingOrderStatus;
+  bodyPart: string;
+  completedDate?: Date;
+  clinicalIndication?: string;
+  contrastRequired?: boolean;
+  specialInstructions?: string;
+  roomId: string;
+  notes?: string;
+}
