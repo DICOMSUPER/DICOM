@@ -32,6 +32,9 @@ import {
   RequestProcedure,
 } from '@backend/shared-domain';
 import { SeedingModule } from './modules/seeding/seeding.module';
+import { ModalityMachinesModule } from './modules/modality-machines/modality-machines.module';
+import { ModalityMachinesService } from './modules/modality-machines/modality-machines.service';
+import { ModalityMachinesRepository } from './modules/modality-machines/modality-machines.repository';
 import { BodyPartModule } from './modules/body-part/body-part.module';
 import { BodyPartService } from './modules/body-part/body-part.service';
 import { BodyPartRepository } from './modules/body-part/body-part.repository';
@@ -51,7 +54,7 @@ import { RequestProcedureModule } from './modules/request-procedure/request-proc
       ImagingOrder,
       RequestProcedure,
       ModalityMachine,
-      BodyPart
+      BodyPart,
     ]),
     DicomInstancesModule,
     DicomSeriesModule,
@@ -64,9 +67,10 @@ import { RequestProcedureModule } from './modules/request-procedure/request-proc
     ImageAnnotationsModule,
     ImagingModalitiesModule,
     ImagingOrdersModule,
+    ModalityMachinesModule,
     SeedingModule,
     BodyPartModule,
-    RequestProcedureModule
+    RequestProcedureModule,
   ],
   controllers: [AppController],
   providers: [
@@ -81,8 +85,10 @@ import { RequestProcedureModule } from './modules/request-procedure/request-proc
     ImagingModalityRepository,
     ImagingOrderRepository,
     ImagingOrdersService,
+    ModalityMachinesService,
+    ModalityMachinesRepository,
     BodyPartService,
-    BodyPartRepository
+    BodyPartRepository,
   ],
 })
 export class AppModule {}

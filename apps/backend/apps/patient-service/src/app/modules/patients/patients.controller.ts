@@ -168,10 +168,10 @@ export class PatientController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`)
-  async getPatientOverview(
-    @Payload() data: { patientCode: string }
-  ): Promise<{
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`
+  )
+  async getPatientOverview(@Payload() data: { patientCode: string }): Promise<{
     recentVitalSigns: VitalSignsSimplified;
     recentConditions: PatientCondition[];
   } | null> {
@@ -250,6 +250,7 @@ export class PatientController {
     }
   }
 
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
   async filterPatient(
     @Payload()
     data: {

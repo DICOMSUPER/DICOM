@@ -1,5 +1,3 @@
-
-
 export { ImageAnnotation } from './image-annotation.entity';
 export { ImagingOrder } from './imaging-order.entity';
 export { DicomInstance } from './dicom-instance.entity';

@@ -1,4 +1,7 @@
-import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -13,10 +16,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import {
-  TransformInterceptor,
-  RequestLoggingInterceptor,
-} from '@backend/shared-interceptor';
+
 @Controller('imaging-orders')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingOrdersController {
@@ -26,9 +26,7 @@ export class ImagingOrdersController {
   ) {}
 
   @Post()
-  async createImagingOrder(
-    @Body() createImagingOrderDto: any
-  ) {
+  async createImagingOrder(@Body() createImagingOrderDto: any) {
     return await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.Create',

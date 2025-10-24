@@ -1,64 +1,61 @@
 "use client";
 
+import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
 import StudyTab from "./tabs/study-tab";
 import { useTabs } from "./tabs/tab-context";
+import {
+  DicomStudy,
+  DicomStudyFilterQuery,
+} from "@/interfaces/image-dicom/dicom-study.interface";
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
-const tableData = [
-  {
-    stt: 1,
-    studyUID: "7704106",
-    mrn: "2108017088",
-    patientFirstName: "HOA",
-    patientLastName: "NGUYEN",
-    reportStatus: "0/0/1",
-    studyStatus: "Approved",
-    genderAge: "F, 72",
-    bodyPart: "BRAIN",
-    studyDate: "5/7/05",
-    studyTime: "19:28",
-    room: "101",
-    modality: "CT",
-    contrast: "Yes",
-    notes: "CT number 16 day | co t...",
-  },
-  {
-    stt: 2,
-    studyUID: "7712838",
-    mrn: "2108019701",
-    patientFirstName: "HOA",
-    patientLastName: "NGUYEN",
-    reportStatus: "0/0/1",
-    studyStatus: "Approved",
-    genderAge: "F, 69",
-    bodyPart: "CHEST",
-    studyDate: "5/8/75",
-    studyTime: "09:36",
-    room: "102",
-    modality: "CT",
-    contrast: "Yes",
-    notes: "CT chest 16 day |h...",
-  },
-  {
-    stt: 3,
-    studyUID: "7704528",
-    mrn: "2108017088",
-    patientFirstName: "HOA",
-    patientLastName: "NGUYEN",
-    reportStatus: "0/0/1",
-    studyStatus: "Approved",
-    genderAge: "F, 72",
-    bodyPart: "BRAIN",
-    studyDate: "5/6/75",
-    studyTime: "00:05",
-    room: "104",
-    modality: "CT",
-    contrast: "Yes",
-    notes: "CT number 16 day |kho...",
-  },
-];
+// Helper function to calculate age from date of birth
+const calculateAge = (dateOfBirth: string): number => {
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+};
 
-export default function DataTable() {
+// Helper function to format date (e.g., "1993-03-25" to "3/25/93")
+const formatDate = (date: string): string => {
+  const [year, month, day] = date.split("-");
+  return `${parseInt(month)}/${parseInt(day)}/${year.slice(2)}`;
+};
+
+// Helper function to format time (e.g., "13:57:31" to "13:57")
+const formatTime = (time: string): string => {
+  return time.slice(0, 5); // Keep only hours and minutes
+};
+
+export default function DataTable({
+  studies,
+  isLoading,
+  error,
+  refetch,
+}: {
+  studies: DicomStudy[] | [];
+  isLoading: boolean;
+  error: boolean | Error;
+  refetch: () => void;
+}) {
   const { openTab } = useTabs();
+
+  const tableData = studies || [];
+
+  if (isLoading) {
+    return <div className="flex-1 bg-white p-4">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="flex-1 bg-white p-4">Error loading studies</div>;
+  }
+
   return (
     <div className="flex-1 bg-white">
       <div className="w-full overflow-x-scroll horizontal-scrollbar">
@@ -73,14 +70,13 @@ export default function DataTable() {
               </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 MRN
+              </th>{" "}
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
+                Patient Last Name
               </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Patient First Name
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
-                Patient Last Name
-              </th>
-
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Study Status
               </th>
@@ -116,76 +112,97 @@ export default function DataTable() {
               </th>
             </tr>
           </thead>
-          <tbody>
-            {tableData.map((row, idx) => (
-              <tr
-                key={idx}
-                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-              >
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.stt}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.studyUID}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.mrn}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700 font-medium">
-                  {row.patientFirstName}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.patientLastName}
-                </td>
-
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.studyStatus}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.reportStatus}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.genderAge}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.bodyPart}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.studyDate}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.studyTime}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.room}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.modality}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.contrast}
-                </td>
-                <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                  {row.notes}
-                </td>
-                <td className="px-4 py-2 text-gray-600 text-xs">
-                  {/* Placeholder for Actions (e.g., buttons) */}
-                  <button
-                    className="text-blue-500 cursor-pointer"
-                    onClick={() =>
-                      openTab?.(
-                        row.studyUID,
-                        `${row.patientLastName} ${row.patientFirstName}`,
-                        <StudyTab studyUID={row.studyUID} />
-                      )
-                    }
+          {tableData && tableData.length > 0 ? (
+            <tbody>
+              {tableData.map((row: DicomStudy, idx: number) => (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                >
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {idx + 1}
+                  </td>
+                  <td
+                    className="px-4 py-2 border-r border-gray-200 text-gray-700"
+                    title={row.studyInstanceUid}
                   >
-                    View
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+                    {`...${row.studyInstanceUid?.slice(-7)}`}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.patientCode}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.patient?.lastName}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700 font-medium">
+                    {row.patient?.firstName}
+                  </td>
+
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.studyStatus}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.report?.diagnosisStatus || "NA"}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.patient?.dateOfBirth && row.patient?.gender
+                      ? `${row.patient.gender
+                          .charAt(0)
+                          .toUpperCase()}, ${calculateAge(
+                          row.patient?.dateOfBirth as unknown as string
+                        )}`
+                      : "NA"}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.imagingOrder?.bodyPart}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {formatDate(row.studyDate)}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {formatTime(row.studyTime)}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.room?.roomCode}
+                  </td>
+                  <td
+                    className="px-4 py-2 border-r border-gray-200 text-gray-700"
+                    title={row.modalityMachine?.name}
+                  >
+                    {row.imagingOrder?.modality.modalityCode}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.imagingOrder?.contrastRequired ? "Yes" : "No"}
+                  </td>
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                    {row.imagingOrder?.notes}
+                  </td>
+                  <td className="px-4 py-2 text-gray-600 text-xs">
+                    <button
+                      className="text-blue-500 cursor-pointer"
+                      onClick={() =>
+                        openTab?.(
+                          row.studyInstanceUid,
+                          `${row.patient?.lastName} ${
+                            row.patient?.firstName
+                          } - (${row.studyDate.toString()})`,
+                          <StudyTab studyUID={row.studyInstanceUid} />
+                        )
+                      }
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          ) : (
+            <tr>
+              <td colSpan={16} className="px-4 py-8 text-center text-gray-500">
+                No study match
+              </td>
+            </tr>
+          )}
         </table>
       </div>
     </div>

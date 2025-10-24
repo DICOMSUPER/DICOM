@@ -15,6 +15,8 @@ import {
   UserServiceClientModule,
 } from '@backend/shared-client';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
+import { ModalityMachinesModule } from './modality-machines/modality-machines.module';
+import { BodyPartsModule } from './body-parts/body-parts.module';
 
 @Module({
   imports: [
@@ -28,10 +30,18 @@ import { SharedInterceptorModule } from '@backend/shared-interceptor';
     DicomInstancesModule,
     SharedInterceptorModule,
     ImageAnnotationsModule,
+    ModalityMachinesModule,
     BodyPartModule,
-    RequestProcedureModule
+    RequestProcedureModule,
+    BodyPartsModule,
   ],
-  exports: [ImagingModalitiesModule, ImagingOrdersModule, BodyPartModule, RequestProcedureModule],
+  exports: [
+    ImagingModalitiesModule,
+    ImagingOrdersModule,
+    ModalityMachinesModule,
+    BodyPartModule,
+    RequestProcedureModule,
+  ],
   controllers: [ImagingServiceController],
 })
 export class ImagingServiceModule {}

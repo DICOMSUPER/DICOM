@@ -188,8 +188,8 @@ export class DicomStudiesController {
       startDate?: string;
       endDate?: string;
       bodyPart?: string;
-      modalityCode?: string;
-      modalityDevice?: string;
+      modalityId?: string;
+      modalityMachineId?: string;
       studyStatus?: DicomStudyStatus;
     }
   ) {
@@ -199,8 +199,8 @@ export class DicomStudiesController {
         data.startDate,
         data.endDate,
         data.bodyPart,
-        data.modalityCode,
-        data.modalityDevice,
+        data.modalityId,
+        data.modalityMachineId,
         data.studyStatus
       );
     } catch (error) {

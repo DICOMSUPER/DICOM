@@ -148,9 +148,7 @@ export function RadiologistWorkspaceLayout({
         </div>
 
         {/* Main Content Area - Scrollable */}
-        <div className={cn("flex-1 overflow-y-auto", !noPadding && "p-4")}>
-          {children}
-        </div>
+        <div className={cn("flex-1 overflow-y-auto")}>{children}</div>
       </main>
     </div>
   );

@@ -137,13 +137,13 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
   // Transform departments data for react-select
   const departmentOptions =
-    departmentsData?.map((dept) => ({
+    departmentsData?.data.map((dept) => ({
       value: dept.id,
       label: dept.departmentName,
       ...dept,
     })) || [];
 
-  const roomOptions = roomData?.map((room) => ({
+  const roomOptions = roomData?.data.map((room) => ({
     value: room.id,
     label: room.roomCode,
     ...room,
@@ -288,77 +288,77 @@ export function PatientForward({ patientId }: { patientId: string }) {
               )}
 
             {/* Render fetched physicians */}
-            {!isLoadingPhysicians && physicians && physicians?.length > 0 && (
-              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
-                {physicians.map((doctor: User) => {
-                  const isSelected =
-                    encounterInfo.assignedPhysicianId === doctor.id;
+            {!isLoadingPhysicians &&
+              physicians &&
+              physicians?.data.length > 0 && (
+                <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+                  {physicians.data.map((doctor: User) => {
+                    const isSelected =
+                      encounterInfo.assignedPhysicianId === doctor.id;
 
-                  // calculate queue percentage based on queueStats
-                  const currentQueue =
-                    doctor.queueStats?.currentInProgress?.queueNumber || 0;
-                  const maxQueue =
-                    doctor.queueStats?.maxWaiting?.queueNumber || 0;
-                  const queuePercentage =
-                    maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
+                    // calculate queue percentage based on queueStats
+                    const currentQueue =
+                      doctor.queueStats?.currentInProgress?.queueNumber || 0;
+                    const maxQueue =
+                      doctor.queueStats?.maxWaiting?.queueNumber || 0;
+                    const queuePercentage =
+                      maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
 
-                  return (
-                    <button
-                      key={doctor.id}
-                      onClick={() => {
-                        setEncounterInfo({
-                          ...encounterInfo,
-                          assignedPhysicianId: doctor.id,
-                        });
-                      }}
-                      type="button"
-                      aria-pressed={isSelected}
-                      className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                          : "border-border bg-background hover:border-muted"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Dr. {doctor.firstName} {doctor.lastName}
-                        </h3>
-                      </div>
-
-                      <div className="flex justify-between items-end text-sm">
-                        <div>
-                          <span className="text-foreground">
-                            Current:{" "}
-                          </span>
-                          <span className="font-semibold text-foreground">
-                            {currentQueue}
-                          </span>
+                    return (
+                      <button
+                        key={doctor.id}
+                        onClick={() => {
+                          setEncounterInfo({
+                            ...encounterInfo,
+                            assignedPhysicianId: doctor.id,
+                          });
+                        }}
+                        type="button"
+                        aria-pressed={isSelected}
+                        className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                            : "border-border bg-background hover:border-muted"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-lg font-semibold text-foreground">
+                            Dr. {doctor.firstName} {doctor.lastName}
+                          </h3>
                         </div>
-                        <div>
-                          <span className="text-foreground">Max: </span>
-                          <span className="font-semibold text-foreground">
-                            {maxQueue}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="mt-2 w-full bg-muted/60 rounded-full h-1.5">
-                        <div
-                          className={`h-1.5 rounded-full transition-all ${
-                            queuePercentage > 80
-                              ? "bg-red-500"
-                              : queuePercentage > 50
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                          }`}
-                          style={{ width: `${queuePercentage}%` }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        <div className="flex justify-between items-end text-sm">
+                          <div>
+                            <span className="text-foreground">Current: </span>
+                            <span className="font-semibold text-foreground">
+                              {currentQueue}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-foreground">Max: </span>
+                            <span className="font-semibold text-foreground">
+                              {maxQueue}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 w-full bg-muted/60 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${
+                              queuePercentage > 80
+                                ? "bg-red-500"
+                                : queuePercentage > 50
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                            }`}
+                            style={{ width: `${queuePercentage}%` }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
           </div>
 
           <div className="space-y-2">

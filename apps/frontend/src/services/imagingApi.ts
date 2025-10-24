@@ -1,4 +1,7 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export interface ImagingModality {
   id: string;
@@ -17,12 +20,13 @@ export interface DicomStudy {
   studyDate: string;
   studyTime?: string;
   patientId: string;
-  modalityId: string;
-  modality?: ImagingModality;
+  patientCode?: string;
+  modalityMachineId: string;
+  modalityMachine?: ModalityMachine;
   orderId?: string;
-  referringPhysician?: string;
-  performingPhysicianId?: string;
-  technicianId?: string;
+  referringPhysicianId?: string;
+  performingTechnicianId?: string;
+  verifyingRadiologistId?: string;
   studyStatus: string;
   numberOfSeries: number;
   storagePath: string;
@@ -84,9 +88,9 @@ class ImagingApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const defaultHeaders = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     const response = await fetch(url, {
@@ -95,11 +99,13 @@ class ImagingApiService {
         ...defaultHeaders,
         ...options.headers,
       },
-      credentials: 'include',
+      credentials: "include",
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     return response.json();
@@ -112,20 +118,23 @@ class ImagingApiService {
     search?: string;
     searchField?: string;
     sortField?: string;
-    order?: 'asc' | 'desc';
+    order?: "asc" | "desc";
   }): Promise<PaginatedResponse<DicomStudy>> {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/dicom-studies/paginated?${queryString}` : '/dicom-studies/paginated';
-    
+    const endpoint = queryString
+      ? `/dicom-studies/paginated?${queryString}`
+      : "/dicom-studies/paginated";
+
     return this.request<PaginatedResponse<DicomStudy>>(endpoint);
   }
 
@@ -135,25 +144,33 @@ class ImagingApiService {
 
   async getStudiesByReferenceId(
     id: string,
-    type: 'modality' | 'order' | 'patient' | 'performingPhysician' | 'technician' | 'referringPhysician' | 'studyInstanceUid',
+    type:
+      | "modality"
+      | "order"
+      | "patient"
+      | "performingPhysician"
+      | "technician"
+      | "referringPhysician"
+      | "studyInstanceUid",
     params?: {
       page?: number;
       limit?: number;
       search?: string;
       searchField?: string;
       sortField?: string;
-      order?: 'asc' | 'desc';
+      order?: "asc" | "desc";
     }
   ): Promise<PaginatedResponse<DicomStudy>> {
     const queryParams = new URLSearchParams();
-    queryParams.append('type', type);
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+    queryParams.append("type", type);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     return this.request<PaginatedResponse<DicomStudy>>(
       `/dicom-studies/reference/${id}?${queryParams.toString()}`
@@ -167,20 +184,23 @@ class ImagingApiService {
     search?: string;
     searchField?: string;
     sortField?: string;
-    order?: 'asc' | 'desc';
+    order?: "asc" | "desc";
   }): Promise<PaginatedResponse<DicomSeries>> {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/dicom-series/paginated?${queryString}` : '/dicom-series/paginated';
-    
+    const endpoint = queryString
+      ? `/dicom-series/paginated?${queryString}`
+      : "/dicom-series/paginated";
+
     return this.request<PaginatedResponse<DicomSeries>>(endpoint);
   }
 
@@ -190,25 +210,26 @@ class ImagingApiService {
 
   async getSeriesByReferenceId(
     id: string,
-    type: 'study' | 'seriesInstanceUid' | 'order' | 'modality',
+    type: "study" | "seriesInstanceUid" | "order" | "modality",
     params?: {
       page?: number;
       limit?: number;
       search?: string;
       searchField?: string;
       sortField?: string;
-      order?: 'asc' | 'desc';
+      order?: "asc" | "desc";
     }
   ): Promise<ApiResponse<PaginatedResponse<DicomSeries>>> {
     const queryParams = new URLSearchParams();
-    queryParams.append('type', type);
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+    queryParams.append("type", type);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     return this.request<ApiResponse<PaginatedResponse<DicomSeries>>>(
       `/dicom-series/reference/${id}?${queryParams.toString()}`
@@ -222,20 +243,23 @@ class ImagingApiService {
     search?: string;
     searchField?: string;
     sortField?: string;
-    order?: 'asc' | 'desc';
+    order?: "asc" | "desc";
   }): Promise<PaginatedResponse<DicomInstance>> {
     const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/dicom-instances/paginated?${queryString}` : '/dicom-instances/paginated';
-    
+    const endpoint = queryString
+      ? `/dicom-instances/paginated?${queryString}`
+      : "/dicom-instances/paginated";
+
     return this.request<PaginatedResponse<DicomInstance>>(endpoint);
   }
 
@@ -245,25 +269,26 @@ class ImagingApiService {
 
   async getInstancesByReferenceId(
     id: string,
-    type: 'sopInstanceUid' | 'series',
+    type: "sopInstanceUid" | "series",
     params?: {
       page?: number;
       limit?: number;
       search?: string;
       searchField?: string;
       sortField?: string;
-      order?: 'asc' | 'desc';
+      order?: "asc" | "desc";
     }
   ): Promise<ApiResponse<PaginatedResponse<DicomInstance>>> {
     const queryParams = new URLSearchParams();
-    queryParams.append('type', type);
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.searchField) queryParams.append('searchField', params.searchField);
-    if (params?.sortField) queryParams.append('sortField', params.sortField);
-    if (params?.order) queryParams.append('order', params.order);
+    queryParams.append("type", type);
+
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.searchField)
+      queryParams.append("searchField", params.searchField);
+    if (params?.sortField) queryParams.append("sortField", params.sortField);
+    if (params?.order) queryParams.append("order", params.order);
 
     return this.request<ApiResponse<PaginatedResponse<DicomInstance>>>(
       `/dicom-instances/reference/${id}?${queryParams.toString()}`
@@ -284,9 +309,9 @@ class ImagingApiService {
 
   // Get DICOM instances for a specific series
   async getSeriesInstances(seriesId: string): Promise<DicomInstance[]> {
-    const response = await this.getInstancesByReferenceId(seriesId, 'series', {
+    const response = await this.getInstancesByReferenceId(seriesId, "series", {
       page: 1,
-      limit: 1000
+      limit: 1000,
     });
     return response.data.data || [];
   }
@@ -300,33 +325,39 @@ class ImagingApiService {
   }> {
     const [study, seriesResponse] = await Promise.all([
       this.getStudyById(studyId),
-      this.getSeriesByReferenceId(studyId, 'study', { page: 1, limit: 100 })
+      this.getSeriesByReferenceId(studyId, "study", { page: 1, limit: 100 }),
     ]);
 
     const totalInstances = await Promise.all(
-      seriesResponse.data.data.map((series: any) => 
-        this.getInstancesByReferenceId(series.id, 'series', { page: 1, limit: 1 })
+      seriesResponse.data.data.map((series: any) =>
+        this.getInstancesByReferenceId(series.id, "series", {
+          page: 1,
+          limit: 1,
+        })
       )
     );
 
-    const instanceCount = totalInstances.reduce((sum: number, response: any) => sum + response.data.total, 0);
+    const instanceCount = totalInstances.reduce(
+      (sum: number, response: any) => sum + response.data.total,
+      0
+    );
 
     return {
       patientInfo: {
         id: study.patientId,
         // Note: Patient details should be fetched from Patient Service
-        name: 'N/A',
-        birthDate: 'N/A',
-        sex: 'N/A'
+        name: "N/A",
+        birthDate: "N/A",
+        sex: "N/A",
       },
       studyInfo: {
         id: study.id,
-        description: study.studyDescription || 'N/A',
+        description: study.studyDescription || "N/A",
         date: study.studyDate,
-        time: study.studyTime || 'N/A',
+        time: study.studyTime || "N/A",
       },
       seriesCount: seriesResponse.data.total,
-      instanceCount
+      instanceCount,
     };
   }
 }

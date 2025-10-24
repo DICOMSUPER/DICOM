@@ -16,6 +16,8 @@ export * from './imaging-modalities/update-imaging-modality.dto';
 export * from './imaging-orders/create-imaging-order.dto';
 export * from './imaging-orders/update-imaging-order.dto';
 
+export * from './modality-machines/create-modality-machine.dto';
+export * from './modality-machines/update-modality-machine.dto';
 export * from './request-procedure/create-request-procedure.dto';
 export * from './request-procedure/update-request-procedure.dto';
 

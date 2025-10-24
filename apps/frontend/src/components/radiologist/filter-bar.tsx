@@ -14,7 +14,15 @@ const formatDateISO = (date: Date | undefined) => {
   return date.toISOString().split("T")[0];
 };
 
-export default function FilterBar() {
+export default function FilterBar({
+  onRefetch,
+  caseNumber,
+  maxCases,
+}: {
+  onRefetch: () => void;
+  caseNumber: number;
+  maxCases: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -72,7 +80,17 @@ export default function FilterBar() {
   const handleEndDateChange = (date: Date | undefined) => {
     setEndDate(date);
   };
+  const handleToggleAdvance = () => {
+    if (!advancedToggled === false) {
+      setStudyUID("");
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setStudyStatus("All");
+      setReportStatus("All");
+    }
 
+    setAdvancedToggled(!advancedToggled);
+  };
   const studyStatusArray = Object.values(DicomStudyStatus);
   const DiagnosisStatusArray = Object.values(DiagnosisStatus);
 
@@ -90,13 +108,14 @@ export default function FilterBar() {
     };
 
     pushWithParams(params);
+    onRefetch();
   };
 
   return (
     <div className="bg-white border-b border-gray-300 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700">
-          Displaying 3 of 3 cases
+          Displaying {caseNumber} of {maxCases} cases
         </h3>
         <div className="text-sm text-red-600 font-semibold">
           Signed cases: 273
@@ -171,9 +190,7 @@ export default function FilterBar() {
           className={`px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-200 ${
             advancedToggled && "bg-gray-100"
           }`}
-          onClick={() => {
-            setAdvancedToggled(!advancedToggled);
-          }}
+          onClick={handleToggleAdvance}
         >
           Advanced
         </Button>
@@ -200,22 +217,60 @@ export default function FilterBar() {
                 Study Date From
               </Label>
 
-              <DatePickerDropdown
-                date={startDate}
-                onSelect={handleStartDateChange}
-                placeholder="Start Date"
-              />
+              <div className="flex justify-center items-center gap-2">
+                <DatePickerDropdown
+                  date={startDate}
+                  onSelect={handleStartDateChange}
+                  placeholder="Start Date"
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="red"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  className="lucide lucide-ban-icon lucide-ban"
+                  onClick={() => setStartDate(undefined)}
+                  aria-disabled={!!startDate}
+                >
+                  <path d="M4.929 4.929 19.07 19.071" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs font-semibold text-gray-700">
                 Study Date To
-              </Label>
-              <DatePickerDropdown
-                date={endDate}
-                onSelect={handleEndDateChange}
-                placeholder="End Date"
-                disabled={(date) => (startDate ? date < startDate : false)}
-              />
+              </Label>{" "}
+              <div className="flex justify-center items-center gap-2">
+                <DatePickerDropdown
+                  date={endDate}
+                  onSelect={handleEndDateChange}
+                  placeholder="End Date"
+                  disabled={(date) => (startDate ? date < startDate : false)}
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="red"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  className="lucide lucide-ban-icon lucide-ban"
+                  onClick={() => setEndDate(undefined)}
+                  aria-disabled={!!endDate}
+                >
+                  <path d="M4.929 4.929 19.07 19.071" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-xs font-semibold text-gray-700">

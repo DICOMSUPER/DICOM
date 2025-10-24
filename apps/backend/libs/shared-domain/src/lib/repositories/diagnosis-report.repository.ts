@@ -358,14 +358,16 @@ export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
 
   async filter(
     studyIds: string[],
-    reportStatus?: DiagnosisStatus
+    reportStatus?: DiagnosisStatus | string
   ): Promise<DiagnosesReport[]> {
-    const qb = this.getRepository()
-      .createQueryBuilder('report')
-      .andWhere('report.study_id IN :studyIds', { studyIds });
+    const qb = this.getRepository().createQueryBuilder('report');
 
-    reportStatus &&
-      qb.andWhere('report.diagnosis_status ILIKE :reportStatus', {
+    if (studyIds.length > 0) {
+      qb.andWhere('report.studyId IN (:...studyIds)', { studyIds });
+    } else return [];
+
+    if (reportStatus && reportStatus.toLocaleLowerCase() !== 'all')
+      qb.andWhere('report.diagnosisStatus = :reportStatus', {
         reportStatus,
       });
 

@@ -136,8 +136,8 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     startDate?: string,
     endDate?: string,
     bodyPart?: string,
-    modalityCode?: string,
-    modalityDevice?: string,
+    modalityId?: string,
+    modalityMachineId?: string,
     studyStatus?: DicomStudyStatus
   ): Promise<DicomStudy[]> {
     const repository = this.getRepository();
@@ -145,12 +145,14 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       .createQueryBuilder('study')
       .leftJoinAndSelect('study.imagingOrder', 'order')
       .leftJoinAndSelect('order.modality', 'modality')
+      .leftJoinAndSelect('study.modalityMachine', 'modality_machine')
       .innerJoinAndSelect(
         'study.series',
         'series',
         'series.isDeleted = :notDeleted',
         { notDeleted: false }
       )
+
       .innerJoinAndSelect(
         'series.instances',
         'instance',
@@ -167,7 +169,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       });
     if (endDate)
       qb.andWhere('study.study_date <= :endDate', {
-        endDate: { endDate: new Date(endDate) },
+        endDate: new Date(endDate),
       });
 
     if (bodyPart)
@@ -175,12 +177,17 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
         bodyPart: `%${bodyPart}%`,
       });
 
-    if (modalityCode)
-      qb.andWhere('modality.modality_code ILIKE :modalityCode', {
-        modalityCode: `%${modalityCode}%`,
+    if (modalityId)
+      qb.andWhere('modality.modality_id = :modalityId', {
+        modalityId: `${modalityId}`,
       });
 
-    if (studyStatus)
+    if (modalityMachineId)
+      qb.andWhere('modality_machine = :modalityMachineId', {
+        modalityMachineId,
+      });
+
+    if (studyStatus && studyStatus.toLocaleLowerCase() !== 'all')
       qb.andWhere('study.study_status = :studyStatus', {
         studyStatus: studyStatus,
       });
