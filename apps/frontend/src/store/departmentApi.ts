@@ -2,6 +2,8 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { Department } from "@/interfaces/user/department.interface";
 import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { mapApiResponse } from "@/utils/adpater";
+import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 
 export interface CreateDepartmentDto {
   name: string;
@@ -37,12 +39,13 @@ export const departmentApi = createApi({
   tagTypes: ["Department"],
   endpoints: (builder) => ({
     // Get all departments with filters
-    getDepartments: builder.query<Department[], DepartmentSearchFilters>({
+    getDepartments: builder.query<PaginatedResponse<Department>, QueryParams>({
       query: (filters) => ({
         url: "",
         method: "GET",
-        params: filters,
+        params: filters || {},
       }),
+      transformResponse: (response: any) => mapApiResponse<Department>(response),
       providesTags: ["Department"],
     }),
 

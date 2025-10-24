@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:2001/api",
-  withCredentials: true, //has cookies, use cookies
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  withCredentials: true,
 });
 
 // Request Interceptor

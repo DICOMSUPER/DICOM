@@ -9,32 +9,59 @@ export class SeedingController {
   // Microservice Message Patterns for API Gateway
   @MessagePattern('UserService.Seeding.Run')
   async microserviceRunSeeding(@Payload() data: any) {
-    await this.seedingService.runSeeding();
-    return { 
-      success: true,
-      message: 'User Service database seeding completed successfully!',
-      timestamp: new Date().toISOString()
-    };
+    try {
+      await this.seedingService.runSeeding();
+      return { 
+        success: true,
+        message: 'User Service database seeding completed successfully!',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error: any) {
+      throw {
+        statusCode: 500,
+        message: error.message || 'User Service seeding failed',
+        error: error.stack || error.toString(),
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   @MessagePattern('UserService.Seeding.ResetAndSeed')
   async microserviceResetAndSeed(@Payload() data: any) {
-    await this.seedingService.resetAndSeed();
-    return { 
-      success: true,
-      message: 'User Service database reset and seeded successfully!',
-      timestamp: new Date().toISOString()
-    };
+    try {
+      await this.seedingService.resetAndSeed();
+      return { 
+        success: true,
+        message: 'User Service database reset and seeded successfully!',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error: any) {
+      throw {
+        statusCode: 500,
+        message: error.message || 'User Service reset and seed failed',
+        error: error.stack || error.toString(),
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   @MessagePattern('UserService.Seeding.ClearAllData')
   async microserviceClearAllData(@Payload() data: any) {
-    await this.seedingService.clearAllData();
-    return { 
-      success: true,
-      message: 'User Service data cleared successfully!',
-      timestamp: new Date().toISOString()
-    };
+    try {
+      await this.seedingService.clearAllData();
+      return { 
+        success: true,
+        message: 'User Service data cleared successfully!',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error: any) {
+      throw {
+        statusCode: 500,
+        message: error.message || 'User Service clear data failed',
+        error: error.stack || error.toString(),
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   @MessagePattern('UserService.Seeding.SeedDepartments')

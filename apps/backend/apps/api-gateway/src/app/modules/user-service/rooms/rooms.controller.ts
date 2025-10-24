@@ -11,6 +11,7 @@ import {
   Put,
   Query,
   Search,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -20,6 +21,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { firstValueFrom } from 'rxjs';
 import { handleError } from '@backend/shared-utils';
 import {
@@ -40,7 +42,7 @@ export class RoomsController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly roomClient: ClientProxy
-  ) {}
+  ) { }
 
   // 🩺 Kiểm tra tình trạng service
 
@@ -90,8 +92,7 @@ export class RoomsController {
       );
 
       this.logger.log(
-        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${
-          result.total || 0
+        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${result.total || 0
         })`
       );
 
@@ -106,30 +107,22 @@ export class RoomsController {
     }
   }
 
-  @Role(Roles.SYSTEM_ADMIN)
   @Post()
-  @ApiOperation({ summary: 'Create a new room' })
-  @ApiBody({ type: CreateRoomDto })
-  @ApiResponse({ status: 201, description: 'Tạo phòng thành công' })
-  async createRoom(@Body() createRoomDto: CreateRoomDto) {
-    try {
-      this.logger.log(`🏗️ Creating room: ${createRoomDto.roomCode}`);
-      const result = await firstValueFrom(
-        this.roomClient.send('room.create', createRoomDto)
-      );
+  @Role(Roles.SYSTEM_ADMIN)
+  async createRoom(@Body() createRoomDto: CreateRoomDto, @Req() req: Request) {
+    const token = req.cookies?.token; 
+    this.logger.log(`🏗️ Creating room: ${createRoomDto.roomCode} with token`);
 
-      return {
-        room: result.room,
-        message: result.message || 'Tạo phòng thành công',
-      };
-    } catch (error) {
-      this.logger.error(
-        `❌ Room creation failed for: ${createRoomDto.roomCode}`,
-        error
-      );
-      throw handleError(error);
-    }
+    const result = await firstValueFrom(
+      this.roomClient.send('room.create', { ...createRoomDto, token })
+    );
+
+    return {
+      room: result.room,
+      message: result.message || 'Tạo phòng thành công',
+    };
   }
+
 
   @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id/department')

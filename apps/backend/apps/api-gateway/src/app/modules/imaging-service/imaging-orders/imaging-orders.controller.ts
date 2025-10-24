@@ -13,12 +13,15 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 @Controller('imaging-orders')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingOrdersController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
   ) {}
 

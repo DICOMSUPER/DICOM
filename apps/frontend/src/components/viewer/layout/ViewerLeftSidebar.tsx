@@ -2,61 +2,34 @@ import {
   Layout,
   Grid,
   Maximize2,
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
+  Search, 
+  Move, 
+  ScanLine, 
+  Ruler, 
+  Circle, 
+  Square, 
+  RotateCw, 
+  RotateCcw,
+  FlipHorizontal, 
+  FlipVertical,
   RefreshCw,
+  Trash2,
+  MousePointer,
+  Target,
+  ArrowRight,
+  RotateCcw as RotateCcwIcon,
   Undo,
-  Move,
-  ZoomIn,
-  Contrast,
-  RotateCw,
-  FlipHorizontal,
-  Ruler,
-  Circle,
-  Square,
-  Type,
-  Redo,
-  X,
-  Save,
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useViewer } from "@/contexts/ViewerContext";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
   onSeriesLayoutChange: (layout: string) => void;
-  imageLayout: string;
-  onImageLayoutChange: (layout: string) => void;
   selectedTool: string;
   onToolSelect: (toolId: string) => void;
-  isPlaying: boolean;
-  onPlayToggle: () => void;
-  imageLocalizer: boolean;
-  onImageLocalizerChange: (checked: boolean) => void;
-  scrollMode: string;
-  onScrollModeChange: (mode: string) => void;
 }
-
-const tools = [
-  { id: "refresh", icon: RefreshCw, label: "Refresh" },
-  { id: "undo", icon: Undo, label: "Undo" },
-  { id: "move", icon: Move, label: "Pan" },
-  { id: "zoom", icon: ZoomIn, label: "Zoom" },
-  { id: "contrast", icon: Contrast, label: "Window/Level" },
-  { id: "rotate", icon: RotateCw, label: "Rotate" },
-  { id: "flip", icon: FlipHorizontal, label: "Flip" },
-  { id: "ruler", icon: Ruler, label: "Measure" },
-  { id: "circle", icon: Circle, label: "Circle ROI" },
-  { id: "square", icon: Square, label: "Rectangle ROI" },
-  { id: "text", icon: Type, label: "Text" },
-  { id: "redo", icon: Redo, label: "Redo" },
-  { id: "delete", icon: X, label: "Delete" },
-  { id: "save", icon: Save, label: "Save" },
-];
 
 const seriesLayouts = [
   { id: "1x1", icon: Maximize2, label: "1x1" },
@@ -66,185 +39,354 @@ const seriesLayouts = [
   { id: "3x3", icon: Layout, label: "3x3" },
 ];
 
-const imageLayouts = [
-  { id: "1x1", icon: Maximize2, label: "1x1" },
-  { id: "1x2", icon: Grid, label: "1x2" },
-  { id: "2x1", icon: Grid, label: "2x1" },
-  { id: "2x2", icon: Layout, label: "2x2" },
-  { id: "3x3", icon: Layout, label: "3x3" },
+// Basic navigation tools
+const navigationTools = [
+  { id: "WindowLevel", icon: ScanLine, label: "Window/Level", shortcut: "W" },
+  { id: "Pan", icon: Move, label: "Pan", shortcut: "P" },
+  { id: "Zoom", icon: Search, label: "Zoom", shortcut: "Z" },
+  { id: "Probe", icon: Target, label: "Probe", shortcut: "I" },
+];
+
+// Measurement tools
+const measurementTools = [
+  { id: "Length", icon: Ruler, label: "Length", shortcut: "L" },
+  { id: "Height", icon: Ruler, label: "Height", shortcut: "H" },
+  { id: "CircleROI", icon: Circle, label: "Circle ROI", shortcut: "C" },
+  { id: "RectangleROI", icon: Square, label: "Rectangle ROI", shortcut: "R" },
+  { id: "Bidirectional", icon: ArrowRight, label: "Bidirectional", shortcut: "B" },
+  { id: "Angle", icon: RotateCcwIcon, label: "Angle", shortcut: "A" },
+  { id: "ArrowAnnotate", icon: ArrowRight, label: "Arrow", shortcut: "Shift+A" },
+  { id: "CobbAngle", icon: RotateCcwIcon, label: "Cobb Angle", shortcut: "Shift+C" },
+  { id: "SplineROI", icon: Circle, label: "Spline ROI", shortcut: "S" },
+];
+
+// Transform tools
+const transformTools = [
+  { id: "rotate-cw", icon: RotateCw, label: "Rotate Right", action: "rotate" },
+  { id: "rotate-ccw", icon: RotateCcw, label: "Rotate Left", action: "rotate" },
+  { id: "flip-h", icon: FlipHorizontal, label: "Flip Horizontal", action: "flip" },
+  { id: "flip-v", icon: FlipVertical, label: "Flip Vertical", action: "flip" },
+];
+
+// Action tools
+const actionTools = [
+  { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
+  { id: "clear", icon: Trash2, label: "Clear Annotations", action: "clear" },
+  { id: "clear-segmentation", icon: Trash2, label: "Clear Segmentation", action: "clearSegmentation" },
+  { id: "undo-annotation", icon: Undo, label: "Undo Annotation", action: "undoAnnotation" },
+  { id: "invert", icon: MousePointer, label: "Invert Colors", action: "invert" },
+];
+
+
+// Advanced tools
+const advancedTools = [
+  { id: "Magnify", icon: Maximize2, label: "Magnify", shortcut: "M" },
+  { id: "PlanarRotate", icon: RotateCw, label: "Planar Rotate", shortcut: "O" },
+  { id: "TrackballRotate", icon: RotateCw, label: "Trackball Rotate", shortcut: "R" },
+  { id: "OrientationMarker", icon: MousePointer, label: "Orientation Marker", shortcut: "U" },
+  { id: "ETDRSGrid", icon: Grid, label: "ETDRS Grid", shortcut: "E" },
+  { id: "ReferenceLines", icon: Grid, label: "Reference Lines", shortcut: "Shift+R" },
+  { id: "OverlayGrid", icon: Grid, label: "Overlay Grid", shortcut: "H" },
+];
+
+// Annotation tools
+const annotationTools = [
+  { id: "KeyImage", icon: MousePointer, label: "Key Image", shortcut: "Q" },
+  { id: "Label", icon: MousePointer, label: "Label", shortcut: "N" },
+  { id: "DragProbe", icon: Target, label: "Drag Probe", shortcut: "F" },
+  { id: "PaintFill", icon: MousePointer, label: "Paint Fill", shortcut: "Y" },
+  { id: "Eraser", icon: Trash2, label: "Eraser", shortcut: "Shift+Z" },
 ];
 
 export default function ViewerLeftSidebar({
   seriesLayout,
   onSeriesLayoutChange,
-  imageLayout,
-  onImageLayoutChange,
   selectedTool,
   onToolSelect,
-  isPlaying,
-  onPlayToggle,
-  imageLocalizer,
-  onImageLocalizerChange,
-  scrollMode,
-  onScrollModeChange,
 }: ViewerLeftSidebarProps) {
+  const { rotateViewport, flipViewport, resetView, clearAnnotations, undoAnnotation, invertViewport } = useViewer();
+
+  // Map tool names for display
+  const getToolDisplayName = (toolId: string) => {
+    const toolMapping: Record<string, string> = {
+      'WindowLevel': 'WindowLevel',
+      'Pan': 'Pan', 
+      'Zoom': 'Zoom',
+      'Probe': 'Probe',
+      'Length': 'Length',
+      'Height': 'Height',
+      'CircleROI': 'CircleROI',
+      'EllipticalROI': 'EllipticalROI',
+      'RectangleROI': 'RectangleROI',
+      'Bidirectional': 'Bidirectional',
+      'Angle': 'Angle',
+      'ArrowAnnotate': 'ArrowAnnotate',
+      'CobbAngle': 'CobbAngle',
+      'SplineROI': 'SplineROI',
+      'Rotate': 'PlanarRotate',
+      'Magnify': 'Magnify',
+      'TrackballRotate': 'TrackballRotate',
+      'OrientationMarker': 'OrientationMarker',
+      'ETDRSGrid': 'ETDRSGrid',
+      'ReferenceLines': 'ReferenceLines',
+      'OverlayGrid': 'OverlayGrid',
+      'KeyImage': 'KeyImage',
+      'Label': 'Label',
+      'DragProbe': 'DragProbe',
+      'PaintFill': 'PaintFill',
+      'Eraser': 'Eraser',
+      'ClearSegmentation': 'ClearSegmentation',
+      'UndoAnnotation': 'UndoAnnotation',
+    };
+    return toolMapping[toolId] || toolId;
+  };
+
+  const handleToolSelect = (toolId: string) => {
+    onToolSelect(toolId);
+  };
+
+  const handleTransformAction = (action: string, toolId: string) => {
+    switch (action) {
+      case 'rotate':
+        rotateViewport(toolId === 'rotate-cw' ? 90 : -90);
+        break;
+      case 'flip':
+        flipViewport(toolId === 'flip-h' ? 'horizontal' : 'vertical');
+        break;
+      case 'reset':
+        resetView();
+        break;
+      case 'clear':
+        clearAnnotations();
+        break;
+      case 'clearSegmentation':
+        // Clear segmentation action
+        console.log('Clear segmentation action triggered');
+        // This will be handled by the tool manager
+        break;
+      case 'undoAnnotation':
+        undoAnnotation();
+        break;
+      case 'invert':
+        invertViewport();
+        break;
+    }
+  };
   return (
-    <div className="h-full border-r border-slate-800 flex flex-col">
-      <div className="flex-1 overflow-y-auto p-4">
-        {/* Layout Section */}
-        <div className="mb-6">
-        <h3 className="text-white font-semibold mb-3">Layout</h3>
-        
-        {/* Series Layout */}
-        <div className="mb-4">
-          <label className="block text-slate-300 text-sm mb-2">Series Layout:</label>
-          <div className="flex gap-2">
-            {seriesLayouts.map((layout) => (
-              <button
-                key={layout.id}
-                onClick={() => onSeriesLayoutChange(layout.id)}
-                className={`p-2 rounded-lg transition-colors ${
-                  seriesLayout === layout.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                }`}
-                title={layout.label}
-              >
-                <layout.icon size={16} />
-              </button>
-            ))}
+    <TooltipProvider>
+      <div className="h-full border-r border-slate-800 flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          
+          {/* Viewport Layout Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Viewport Layout</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Chọn số lượng viewport hiển thị
+            </p>
+            
+            <div className="grid grid-cols-2 gap-2">
+              {seriesLayouts.map((layout) => (
+                <button
+                  key={layout.id}
+                  onClick={() => onSeriesLayoutChange(layout.id)}
+                  className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-semibold flex items-center justify-center gap-2 ${
+                    seriesLayout === layout.id
+                      ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                  }`}
+                  title={layout.label}
+                >
+                  <layout.icon size={16} />
+                  {layout.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Navigation Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {navigationTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Measurement Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Measurement Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {measurementTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Transform Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Transform Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {transformTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleTransformAction(tool.action, tool.id)}
+                      className="h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    {tool.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Annotation Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {annotationTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Actions</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {actionTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleTransformAction(tool.action, tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        tool.id === 'clear'
+                          ? "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    {tool.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+
+          {/* Advanced Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Advanced Tools</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {advancedTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* Image Layout */}
-        <div className="mb-4">
-          <label className="block text-slate-300 text-sm mb-2">Image Layout:</label>
-          <div className="flex gap-2">
-            {imageLayouts.map((layout) => (
-              <button
-                key={layout.id}
-                onClick={() => onImageLayoutChange(layout.id)}
-                className={`p-2 rounded-lg transition-colors ${
-                  imageLayout === layout.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                }`}
-                title={layout.label}
-              >
-                <layout.icon size={16} />
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
-
-      {/* Image Tools Section */}
-      <div className="mb-6">
-        <h3 className="text-white font-semibold mb-3">Image Tools</h3>
-        <div className="flex gap-2 flex-wrap">
-          {tools.map((tool) => (
-            <button
-              key={tool.id}
-              onClick={() => onToolSelect(tool.id)}
-              className={`p-2 rounded-lg transition-colors ${
-                selectedTool === tool.id
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-              }`}
-              title={tool.label}
-            >
-              <tool.icon size={16} />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Image Play Section */}
-      <div className="mb-6">
-        <h3 className="text-white font-semibold mb-3">Image Play</h3>
-        <div className="flex items-center gap-2 mb-3">
-          <button className="p-2 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white rounded-lg transition-colors">
-            <SkipBack size={16} />
-          </button>
-          <button 
-            onClick={onPlayToggle}
-            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <button className="p-2 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white rounded-lg transition-colors">
-            <SkipForward size={16} />
-          </button>
-          <span className="text-slate-300 text-sm ml-2">10 FPS</span>
-        </div>
-      </div>
-
-      {/* Options */}
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="imageLocalizer"
-            checked={imageLocalizer}
-            onCheckedChange={onImageLocalizerChange}
-          />
-          <Label htmlFor="imageLocalizer" className="text-slate-300 text-sm">
-            Image Localizer
-          </Label>
-        </div>
-
-        <div>
-          <Label className="block text-slate-300 text-sm mb-2">Series Compare:</Label>
-          <Select defaultValue="All">
-            <SelectTrigger className="w-full bg-slate-800 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="All" className="text-white hover:bg-slate-700">All</SelectItem>
-              <SelectItem value="CT" className="text-white hover:bg-slate-700">CT</SelectItem>
-              <SelectItem value="MRI" className="text-white hover:bg-slate-700">MRI</SelectItem>
-              <SelectItem value="X-Ray" className="text-white hover:bg-slate-700">X-Ray</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className="block text-slate-300 text-sm mb-2">Scroll Options:</Label>
-          <RadioGroup value={scrollMode} onValueChange={onScrollModeChange} className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="index" id="index" />
-              <Label htmlFor="index" className="text-slate-300 text-sm">
-                Scroll by Index
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="position" id="position" />
-              <Label htmlFor="position" className="text-slate-300 text-sm">
-                Scroll by Position
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="manual" id="manual" />
-              <Label htmlFor="manual" className="text-slate-300 text-sm">
-                Manual
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="zoom" id="zoom" />
-              <Label htmlFor="zoom" className="text-slate-300 text-sm">
-                Zoom/Pan/Rotate
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="ww" id="ww" />
-              <Label htmlFor="ww" className="text-slate-300 text-sm">
-                WW WL
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-        </div>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }
-

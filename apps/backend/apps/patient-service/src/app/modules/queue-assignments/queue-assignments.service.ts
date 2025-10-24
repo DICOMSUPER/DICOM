@@ -539,7 +539,7 @@ export class QueueAssignmentService {
       skippedAt: new Date(),
       updatedAt: new Date(),
     });
-  }
+  };
 
   async getMaxWaitingAndCurrentInProgressByPhysicians(
     physicianIds: string[]

@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import {
@@ -42,6 +42,7 @@ export class SeedingService {
     // ✅ Inject microservice client instead of cross-database repositories
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ✅ Helper method to get user IDs by role from User Service
@@ -433,8 +434,6 @@ export class SeedingService {
 
     const priorities = [
       QueuePriorityLevel.ROUTINE,
-      QueuePriorityLevel.MEDIUM,
-      QueuePriorityLevel.HIGH,
       QueuePriorityLevel.URGENT,
       QueuePriorityLevel.STAT,
     ];
@@ -587,13 +586,21 @@ export class SeedingService {
     this.logger.log('🗑️ Clearing all Patient Service data...');
 
     try {
-      await this.diagnosesReportRepository.delete({});
-      await this.queueAssignmentRepository.delete({});
-      await this.patientConditionRepository.delete({});
-      await this.patientEncounterRepository.delete({});
-      await this.patientRepository.delete({});
-
-      this.logger.log('✅ All Patient Service data cleared successfully!');
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      
+      try {
+        // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
+        await queryRunner.query('TRUNCATE TABLE "diagnoses_reports" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "queue_assignments" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "patient_conditions" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "patient_encounters" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "patients" CASCADE');
+        
+        this.logger.log('✅ All Patient Service data cleared successfully!');
+      } finally {
+        await queryRunner.release();
+      }
     } catch (error: any) {
       this.logger.error('❌ Failed to clear Patient Service data:', error);
       throw error;

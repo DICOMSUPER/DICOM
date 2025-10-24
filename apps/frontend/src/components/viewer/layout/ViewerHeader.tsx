@@ -2,32 +2,19 @@
 import { useState } from "react";
 import { 
   Layers, 
-  Search, 
-  Move, 
-  ScanLine, 
-  Camera, 
-  Grid as GridIcon,
-  RotateCw, 
-  RotateCcw,
-  FlipHorizontal, 
-  FlipVertical,
-  RefreshCw,
-  Undo,
-  Redo,
-  Trash2,
   User,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-// import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import DropdownTool from "@/components/viewer/toolbar/tools/DropdownTool";
-import { lengthToolsMenu, shapeToolsMenu } from "@/constants/lengthToolsMenu";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
+import UnifiedToolbar from "@/components/viewer/toolbar/UnifiedToolbar";
 
 interface ViewerHeaderProps {
   selectedTool: string;
@@ -46,8 +33,6 @@ interface ViewerHeaderProps {
 export default function ViewerHeader({
   selectedTool,
   onToolSelect,
-  autoOpen,
-  onAutoOpenChange,
   onDeleteStudy,
   layout = "1x1",
   onLayoutChange,
@@ -56,185 +41,52 @@ export default function ViewerHeader({
   loading = false,
   onRefresh,
 }: ViewerHeaderProps) {
-  const [selectedDropdownTool, setSelectedDropdownTool] = useState<any>(null);
+  const router = useRouter();
 
-  const mainTools = [
-    { id: "zoom", icon: Search, label: "Zoom" },
-    { id: "pan", icon: Move, label: "Pan" },
-    { id: "windowLevel", icon: ScanLine, label: "Window/Level" },
-    { id: "capture", icon: Camera, label: "Capture" },
-  ];
-
-  const handleDropdownToolSelect = (tool: any) => {
-    setSelectedDropdownTool(tool);
-    onToolSelect(tool.item.toLowerCase().replace(/\s+/g, ''));
+  const handleUserProfile = () => {
+    router.push('/profile');
   };
 
   return (
     <TooltipProvider>
-      <div className={`bg-slate-900 border-b border-slate-800 flex items-center px-4 gap-4 overflow-hidden transition-all duration-300 ${
+      <div className={`bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b-2 border-teal-900/40 flex items-center px-5 gap-4 overflow-hidden transition-all duration-300 shadow-xl ${
         isCollapsed ? 'h-0 border-0' : 'h-full'
       }`}>
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-            <Layers className="h-5 w-5 text-white" />
+        {/* Medical Branding */}
+        <div className="flex items-center gap-3 mr-2">
+          <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg border-2 border-teal-400/30 relative">
+            <Layers className="h-6 w-6 text-white" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
           </div>
-          <span className="text-white font-bold text-lg">2D Viewer</span>
+          <div>
+            <span className="text-teal-100 font-bold text-lg tracking-wide">DICOM Viewer</span>
+            <div className="text-teal-400/70 text-[10px] font-semibold tracking-wider">MEDICAL IMAGING</div>
+          </div>
         </div>
 
-        {/* Divider */}
-        <div className="h-8 w-px bg-slate-700" />
+        {/* Elegant Divider */}
+        <div className="h-10 w-px bg-gradient-to-b from-transparent via-teal-700/50 to-transparent" />
 
-        {/* Advanced Tools */}
-        <div className="flex gap-2">
-          {/* Length Tools Dropdown */}
-          <DropdownTool
-            list={lengthToolsMenu}
-            onItemSelect={handleDropdownToolSelect}
-            tooltip="Length Tools"
-          />
+        {/* Unified Toolbar */}
+        <UnifiedToolbar
+          selectedTool={selectedTool}
+          onToolSelect={onToolSelect}
+          layout={layout}
+          onLayoutChange={onLayoutChange}
+          onDeleteStudy={onDeleteStudy}
+          onRefresh={onRefresh}
+          loading={loading}
+        />
 
-          {/* Main Tools */}
-          {mainTools.map((tool) => (
-            <Tooltip key={tool.id}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onToolSelect(tool.id)}
-                  className={`h-10 w-10 p-0 transition-colors ${
-                    selectedTool === tool.id
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                  }`}
-                >
-                  <tool.icon className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
-                {tool.label}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-
-          {/* Shape Tools Dropdown */}
-          <DropdownTool
-            list={shapeToolsMenu}
-            onItemSelect={handleDropdownToolSelect}
-            tooltip="Shape Tools"
-          />
-
-          {/* Layout Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white"
-                  >
-                    <GridIcon className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
-                  Layout: {layout}
-                </TooltipContent>
-              </Tooltip>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-slate-800 border-slate-600">
-              {['1x1', '1x2', '2x1', '2x2', '1x3', '3x1'].map((l) => (
-                <DropdownMenuItem
-                  key={l}
-                  onClick={() => onLayoutChange?.(l)}
-                  className="text-white hover:bg-slate-700"
-                >
-                  {l}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Divider */}
-        <div className="h-8 w-px bg-slate-700" />
-
-        {/* Transform Tools */}
-        <div className="flex gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                <RotateCw className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Rotate Right</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                <RotateCcw className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Rotate Left</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                <FlipHorizontal className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Flip Horizontal</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                <FlipVertical className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Flip Vertical</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                <RefreshCw className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reset View</TooltipContent>
-          </Tooltip>
-        </div>
+        {/* Elegant Divider */}
+        <div className="h-10 w-px bg-gradient-to-b from-transparent via-teal-700/50 to-transparent" />
 
         {/* Spacer */}
         <div className="flex-1" />
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
-          {/* Undo/Redo */}
-          <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                  <Undo className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Undo</TooltipContent>
-            </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
-                  <Redo className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Redo</TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Refresh Data */}
           {onRefresh && (
             <RefreshButton
               onRefresh={onRefresh}
@@ -242,62 +94,53 @@ export default function ViewerHeader({
               showText={true}
               variant="ghost"
               size="sm"
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 h-9"
+              className="bg-teal-900/30 hover:bg-teal-800/50 text-teal-300 h-10 border border-teal-700/30 hover:border-teal-600/50 transition-all"
             />
           )}
 
-          {/* Delete Study */}
           <Button
             onClick={onDeleteStudy}
             size="sm"
-            className="bg-red-600 hover:bg-red-700 text-white h-9"
+            className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white h-10 shadow-lg shadow-red-500/30 border border-red-400/30 transition-all"
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete Study
+            Xóa Study
           </Button>
 
-          {/* Auto Open */}
-          <div className="flex items-center gap-2 text-slate-300 text-sm cursor-pointer">
-            <Checkbox
-              id="autoOpen"
-              checked={autoOpen}
-              onCheckedChange={onAutoOpenChange}
-              className="rounded"
-            />
-            <Label htmlFor="autoOpen" className="text-slate-300 text-sm">
-              Tự động mở
-            </Label>
-          </div>
+          {/* Elegant Divider */}
+          <div className="h-10 w-px bg-gradient-to-b from-transparent via-teal-700/50 to-transparent" />
 
-          {/* Divider */}
-          <div className="h-8 w-px bg-slate-700" />
-
-          {/* User */}
+          {/* User - Medical Profile */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleUserProfile}
+                className="h-10 w-10 p-0 text-slate-400 hover:bg-teal-900/30 hover:text-teal-300 transition-all rounded-lg border border-transparent hover:border-teal-700/30"
+              >
                 <User className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>User Profile</TooltipContent>
+            <TooltipContent className="bg-slate-800 border-teal-700">Hồ sơ người dùng</TooltipContent>
           </Tooltip>
 
-          {/* Divider */}
-          <div className="h-8 w-px bg-slate-700" />
+          {/* Elegant Divider */}
+          <div className="h-10 w-px bg-gradient-to-b from-transparent via-teal-700/50 to-transparent" />
 
-          {/* Toggle Header Button */}
+          {/* Toggle Header Button with Medical Style */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onToggleCollapse}
-                className="h-10 w-10 p-0 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="h-10 w-10 p-0 text-slate-400 hover:bg-teal-900/30 hover:text-teal-300 transition-all rounded-lg border border-transparent hover:border-teal-700/30"
               >
                 {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{isCollapsed ? 'Show Header' : 'Hide Header'}</TooltipContent>
+            <TooltipContent className="bg-slate-800 border-teal-700">{isCollapsed ? 'Hiện header' : 'Ẩn header'}</TooltipContent>
           </Tooltip>
         </div>
       </div>

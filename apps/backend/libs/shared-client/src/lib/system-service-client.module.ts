@@ -5,7 +5,12 @@ import { getClient } from '@backend/shared-utils';
 @Module({
   imports: [
     ClientsModule.register([
-      getClient('SYSTEM_SERVICE', Transport.TCP, 'localhost', 5005),
+      getClient(
+        process.env.SYSTEM_SERVICE_NAME || 'SYSTEM_SERVICE',
+        Number(process.env.SYSTEM_SERVICE_TRANSPORT) || Transport.TCP,
+        process.env.SYSTEM_SERVICE_HOST || 'localhost',
+        Number(process.env.SYSTEM_SERVICE_PORT) || 5005
+      ),
     ]),
   ],
   exports: [ClientsModule],

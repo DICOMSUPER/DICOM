@@ -11,6 +11,7 @@ import { DicomStudiesService } from './modules/dicom-studies/dicom-studies.servi
 import { DicomSeriesService } from './modules/dicom-series/dicom-series.service';
 import { DicomInstancesService } from './modules/dicom-instances/dicom-instances.service';
 import { ImagingModalitiesService } from './modules/imaging-modalities/imaging-modalities.service';
+import { Patient } from '@backend/shared-domain';
 
 interface FileForTransmission {
   originalname: string;
@@ -31,6 +32,15 @@ export class AppController {
   @Get()
   getData() {
     return this.appService.getData();
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.HealthCheck`)
+  async healthCheck(): Promise<{ status: string; message: string; timestamp: string }> {
+    return {
+      status: 'ok',
+      message: 'ImagingService is running',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   checkCloudinaryConfig() {
@@ -69,9 +79,10 @@ export class AppController {
       file: FileForTransmission;
       orderId: string;
       performingTechnicianId: string;
+      patient: Patient;
     }
   ) {
-    const { orderId, performingTechnicianId } = data;
+    const { orderId, performingTechnicianId, patient } = data;
     this.checkCloudinaryConfig();
     const cloudinaryConfig = {
       cloud_name: this.configService.get<string>('CLOUDINARY_NAME') as string,
@@ -97,7 +108,7 @@ export class AppController {
     const metaData = await this.appService.extractMetadataFromFileBuffer(
       Buffer.from(data.file.buffer, 'base64')
     );
-    console.log(metaData);
+
     const filePath = await uploadFileToCloudinary(
       cloudinaryConfig,
       reconstructedFile,
@@ -107,7 +118,8 @@ export class AppController {
       metaData,
       orderId,
       performingTechnicianId,
-      filePath as string
+      filePath as string,
+      patient
     );
   }
 }

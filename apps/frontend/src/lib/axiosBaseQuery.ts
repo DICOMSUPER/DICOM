@@ -49,17 +49,10 @@ export const axiosBaseQuery =
       }
 
       // Otherwise, try to unwrap nested data
-      const unwrapped =
-        resData?.data?.data?.data ?? 
-        resData?.data?.data ??       
-        resData?.data ??          
-        resData;                    
+ 
+      // return { data: resData };
 
-      console.log('Unwrapped data:', unwrapped);
-
-            // return { data: resData };
-
-      return { data: unwrapped };
+      return { data: resData };
     } catch (axiosError) {
       const err = axiosError as AxiosError;
       return {

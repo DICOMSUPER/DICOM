@@ -2,7 +2,7 @@
 import cors from 'cors';
 import * as express from 'express';
 import * as qs from 'qs';
-
+import cookieParser from 'cookie-parser';
 
 
 
@@ -44,7 +44,7 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     }),
   );
-
+  app.use(cookieParser());
   // ✅ Express setup
   app.use(express.json());
   expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
@@ -53,7 +53,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: false, 
+      whitelist: false,
       forbidNonWhitelisted: false,
     }),
   );
@@ -62,7 +62,7 @@ async function bootstrap() {
   // ✅ Prefix cho toàn bộ route
   app.setGlobalPrefix('api');
 
-  
+
   // ✅ Register RoleGuard TRƯỚC khi init
 
 

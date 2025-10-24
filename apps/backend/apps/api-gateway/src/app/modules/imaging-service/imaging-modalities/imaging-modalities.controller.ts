@@ -8,13 +8,19 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 @Controller('imaging-modalities')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingModalitiesController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
   ) {}
 
