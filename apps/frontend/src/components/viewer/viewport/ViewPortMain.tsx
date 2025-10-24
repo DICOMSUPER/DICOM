@@ -24,6 +24,11 @@ import {
   ProbeTool,
   RectangleROITool,
   annotation,
+  // Segmentation tools
+  BrushTool,
+  CircleScissorsTool,
+  RectangleScissorsTool,
+  SphereScissorsTool,
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { MouseBindings, Events } from "@cornerstonejs/tools/enums";

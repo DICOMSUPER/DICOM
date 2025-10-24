@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layers, User, Undo, Redo, Grid, RotateCw, FlipHorizontal, FlipVertical, RotateCcw, RefreshCw } from "lucide-react";
+import { Layers, User, Undo, Redo, Grid, RotateCw, FlipHorizontal, FlipVertical, RotateCcw, RefreshCw, Paintbrush } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DropdownTool, { DropdownToolItemsProps } from "./tools/DropdownTool";
+import SegmentationControls from "./SegmentationControls";
 import {
   Tooltip,
   TooltipContent,
@@ -15,6 +16,7 @@ import {
   lengthToolsMenu,
   mainTools,
   shapeToolsMenu,
+  segmentationToolsMenu,
 } from "@/constants/lengthToolsMenu";
 import { useViewer, ToolType, GridLayout } from "@/contexts/ViewerContext";
 import {
@@ -27,6 +29,7 @@ import {
 const ToolBar = () => {
   const { state, setActiveTool, setLayout, resetView, rotateViewport, flipViewport, invertViewport } = useViewer();
   const [selectedTool, setSelectedTool] = useState<DropdownToolItemsProps | null>(null);
+  const [showSegmentationPanel, setShowSegmentationPanel] = useState(false);
 
   const handleToolSelect = (tool: DropdownToolItemsProps) => {
     setSelectedTool(tool);
@@ -53,7 +56,12 @@ const ToolBar = () => {
       'ClearSegmentation': 'ClearSegmentation',
       'UndoAnnotation': 'UndoAnnotation',
       'Reset': 'Reset',
-      'Invert': 'Invert'
+      'Invert': 'Invert',
+      // Segmentation tools
+      'Brush': 'Brush',
+      'CircleScissors': 'CircleScissors',
+      'RectangleScissors': 'RectangleScissors',
+      'SphereScissors': 'SphereScissors'
     };
     
     const mappedTool = toolMap[tool.item];
@@ -150,6 +158,30 @@ const ToolBar = () => {
               tooltip="Annotation Tools"
             />
           </div>
+
+          {/* Segmentation Tools Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSegmentationPanel(!showSegmentationPanel)}
+                className={`h-12 w-12 p-0 hover:bg-slate-700/50 transition-colors ${
+                  showSegmentationPanel 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-white hover:text-blue-300'
+                }`}
+              >
+                <Paintbrush className="h-6 w-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              className="bg-slate-800 border-slate-600 text-white"
+            >
+              Segmentation Tools
+            </TooltipContent>
+          </Tooltip>
 
           {/* Layout Selector */}
           <DropdownMenu>
@@ -370,6 +402,18 @@ const ToolBar = () => {
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* Segmentation Controls Panel */}
+        {showSegmentationPanel && (
+          <div className="absolute top-20 left-4 z-50 shadow-2xl">
+            <SegmentationControls
+              onToolSelect={(toolName) => {
+                handleToolSelect({ item: toolName, icon: Paintbrush });
+              }}
+              activeTool={state.activeTool}
+            />
+          </div>
+        )}
 
         {/* Selected Tool Display (Optional) */}
         {selectedTool && (

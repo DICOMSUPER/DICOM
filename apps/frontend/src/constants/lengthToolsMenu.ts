@@ -15,7 +15,10 @@ import {
     Square,
     Trash2,
     Undo,
-    Zap
+    Zap,
+    Paintbrush,
+    CircleDot,
+    Globe
 } from 'lucide-react';
 
 export const lengthToolsMenu = [
@@ -55,6 +58,15 @@ export const annotationToolsMenu = [
   { item: 'Freehand', icon: Pen },
   { item: 'Spline ROI', icon: Spline },
   { item: 'Livewire tool', icon: Zap },
+];
+
+export const segmentationToolsMenu = [
+  { item: 'Brush', icon: Paintbrush },
+  { item: 'CircleScissors', icon: CircleDot },
+  { item: 'RectangleScissors', icon: Square },
+  { item: 'SphereScissors', icon: Globe },
+  { item: 'Eraser', icon: Trash2 },
+  { item: 'ClearSegmentation', icon: Trash2 },
 ];
 
 export const mainTools = [

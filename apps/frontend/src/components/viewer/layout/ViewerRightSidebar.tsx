@@ -140,71 +140,71 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
                </Badge>
              </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === 'grid'
+                          ? 'text-teal-300 bg-teal-900/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Grid3X3 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>Grid view</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === 'list'
+                          ? 'text-teal-300 bg-teal-900/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <List className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>List view</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className={`h-6 w-6 p-0 transition-all ${
-                      viewMode === 'grid'
-                        ? 'text-teal-300 bg-teal-900/40'
-                        : 'text-slate-400 hover:text-white'
+                    onClick={() => setShowFilter(!showFilter)}
+                    className={`h-8 w-8 p-0 transition-all rounded-lg ${
+                      showFilter 
+                        ? 'text-teal-300 bg-teal-900/40 border border-teal-700/50' 
+                        : 'text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent'
                     }`}
                   >
-                    <Grid3X3 className="h-3.5 w-3.5" />
+                    <Filter className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-slate-700 border-slate-600">
-                  <p>Grid view</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className={`h-6 w-6 p-0 transition-all ${
-                      viewMode === 'list'
-                        ? 'text-teal-300 bg-teal-900/40'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="bg-slate-700 border-slate-600">
-                  <p>List view</p>
-                </TooltipContent>
+                 <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
+                   Filter Series
+                 </TooltipContent>
               </Tooltip>
             </div>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowFilter(!showFilter)}
-                  className={`h-8 w-8 p-0 transition-all rounded-lg ${
-                    showFilter 
-                      ? 'text-teal-300 bg-teal-900/40 border border-teal-700/50' 
-                      : 'text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent'
-                  }`}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-               <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
-                 Filter Series
-               </TooltipContent>
-            </Tooltip>
           </div>
-        </div>
 
         {/* Filter Section */}
         {showFilter && (

@@ -37,6 +37,11 @@ import {
   EraserTool,
   annotation,
   segmentation,
+  // Segmentation tools
+  BrushTool,
+  CircleScissorsTool,
+  RectangleScissorsTool,
+  SphereScissorsTool,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
 
@@ -45,14 +50,15 @@ type NavigationTool = 'WindowLevel' | 'Pan' | 'Zoom' | 'StackScroll' | 'Probe' |
 type MeasurementTool = 'Length' | 'Height' | 'CircleROI' | 'EllipticalROI' | 'RectangleROI' | 'Bidirectional' | 'Angle' | 'ArrowAnnotate' | 'CobbAngle' | 'SplineROI' | 'SegmentBidirectional' | 'ScaleOverlay';
 type AdvancedTool = 'PlanarRotate' | 'Magnify' | 'ETDRSGrid' | 'ReferenceLines' | 'OrientationMarker' | 'OverlayGrid';
 type AnnotationTool = 'KeyImage' | 'Label' | 'DragProbe' | 'PaintFill' | 'Eraser';
+type SegmentationTool = 'Brush' | 'CircleScissors' | 'RectangleScissors' | 'SphereScissors';
 type CustomTool = 'Rotate' | 'Flip' | 'Invert' | 'ClearAnnotations' | 'ClearSegmentation' | 'UndoAnnotation' | 'Reset';
-type ToolType = NavigationTool | MeasurementTool | AdvancedTool | AnnotationTool | CustomTool;
+type ToolType = NavigationTool | MeasurementTool | AdvancedTool | AnnotationTool | SegmentationTool | CustomTool;
 
 // Tool mapping interfaces
 interface ToolMapping {
   toolName: string;
   toolClass: any;
-  category: 'navigation' | 'measurement' | 'advanced' | 'annotation' | 'custom';
+  category: 'navigation' | 'measurement' | 'advanced' | 'annotation' | 'segmentation' | 'custom';
 }
 
 interface ToolBindings {
@@ -118,6 +124,12 @@ const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
   'DragProbe': { toolName: DragProbeTool.toolName, toolClass: DragProbeTool, category: 'annotation' },
   'PaintFill': { toolName: PaintFillTool.toolName, toolClass: PaintFillTool, category: 'annotation' },
   'Eraser': { toolName: EraserTool.toolName, toolClass: EraserTool, category: 'annotation' },
+  
+  // Segmentation tools
+  'Brush': { toolName: BrushTool.toolName, toolClass: BrushTool, category: 'segmentation' },
+  'CircleScissors': { toolName: CircleScissorsTool.toolName, toolClass: CircleScissorsTool, category: 'segmentation' },
+  'RectangleScissors': { toolName: RectangleScissorsTool.toolName, toolClass: RectangleScissorsTool, category: 'segmentation' },
+  'SphereScissors': { toolName: SphereScissorsTool.toolName, toolClass: SphereScissorsTool, category: 'segmentation' },
 };
 
 // Tool bindings configuration
@@ -151,6 +163,12 @@ const TOOL_BINDINGS: Record<string, ToolBindings> = {
   [DragProbeTool.toolName]: { keyboard: 'f' }, // Drag probe
   [PaintFillTool.toolName]: { keyboard: 'y' }, // Paint fill
   [EraserTool.toolName]: { keyboard: 'shift+z' }, // Eraser
+  
+  // Segmentation tools keyboard shortcuts
+  [BrushTool.toolName]: { keyboard: 's' }, // Brush (Segmentation)
+  [CircleScissorsTool.toolName]: { keyboard: 'g' }, // Circle scissors
+  [RectangleScissorsTool.toolName]: { keyboard: 'x' }, // Rectangle scissors
+  [SphereScissorsTool.toolName]: { keyboard: 'shift+s' }, // Sphere scissors
 };
 
 // Helper functions
@@ -168,7 +186,7 @@ const getToolClass = (toolType: ToolType): any | null => {
   return mapping?.toolClass || null;
 };
 
-const getToolsByCategory = (category: 'navigation' | 'measurement' | 'advanced' | 'custom'): ToolType[] => {
+const getToolsByCategory = (category: 'navigation' | 'measurement' | 'advanced' | 'annotation' | 'segmentation' | 'custom'): ToolType[] => {
   return Object.keys(TOOL_MAPPINGS).filter(toolType => 
     TOOL_MAPPINGS[toolType as ToolType].category === category
   ) as ToolType[];

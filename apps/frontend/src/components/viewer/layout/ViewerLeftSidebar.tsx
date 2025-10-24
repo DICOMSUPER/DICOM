@@ -19,6 +19,10 @@ import {
   ArrowRight,
   RotateCcw as RotateCcwIcon,
   Undo,
+  Paintbrush,
+  CircleDot,
+  Globe,
+  Eraser,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -95,7 +99,15 @@ const annotationTools = [
   { id: "Label", icon: MousePointer, label: "Label", shortcut: "N" },
   { id: "DragProbe", icon: Target, label: "Drag Probe", shortcut: "F" },
   { id: "PaintFill", icon: MousePointer, label: "Paint Fill", shortcut: "Y" },
-  { id: "Eraser", icon: Trash2, label: "Eraser", shortcut: "Shift+Z" },
+];
+
+// Segmentation tools
+const segmentationTools = [
+  { id: "Brush", icon: Paintbrush, label: "Brush", shortcut: "S" },
+  { id: "CircleScissors", icon: CircleDot, label: "Circle Scissors", shortcut: "G" },
+  { id: "RectangleScissors", icon: Square, label: "Rectangle Scissors", shortcut: "X" },
+  { id: "SphereScissors", icon: Globe, label: "Sphere Scissors", shortcut: "Shift+S" },
+  { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "Shift+Z" },
 ];
 
 export default function ViewerLeftSidebar({
@@ -137,6 +149,11 @@ export default function ViewerLeftSidebar({
       'Eraser': 'Eraser',
       'ClearSegmentation': 'ClearSegmentation',
       'UndoAnnotation': 'UndoAnnotation',
+      // Segmentation tools
+      'Brush': 'Brush',
+      'CircleScissors': 'CircleScissors',
+      'RectangleScissors': 'RectangleScissors',
+      'SphereScissors': 'SphereScissors',
     };
     return toolMapping[toolId] || toolId;
   };
@@ -181,7 +198,7 @@ export default function ViewerLeftSidebar({
           <div>
             <h3 className="text-white font-semibold mb-3">Viewport Layout</h3>
             <p className="text-slate-400 text-xs mb-3">
-              Chọn số lượng viewport hiển thị
+              Select the number of viewports to display
             </p>
             
             <div className="grid grid-cols-2 gap-2">
@@ -206,6 +223,9 @@ export default function ViewerLeftSidebar({
           {/* Navigation Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Navigation Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Adjust display and navigate images
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {navigationTools.map((tool) => (
                 <Tooltip key={tool.id}>
@@ -238,6 +258,9 @@ export default function ViewerLeftSidebar({
           {/* Measurement Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Measurement Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Measure and analyze regions of interest (ROI)
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {measurementTools.map((tool) => (
                 <Tooltip key={tool.id}>
@@ -270,6 +293,9 @@ export default function ViewerLeftSidebar({
           {/* Transform Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Transform Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Rotate, flip and transform images
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {transformTools.map((tool) => (
                 <Tooltip key={tool.id}>
@@ -295,8 +321,46 @@ export default function ViewerLeftSidebar({
           {/* Annotation Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Add notes and markers to images
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {annotationTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToolSelect(tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                        selectedTool === getToolDisplayName(tool.id)
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      }`}
+                    >
+                      <tool.icon className="h-4 w-4" />
+                      <span className="text-xs">{tool.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    <div className="text-center">
+                      <div>{tool.label}</div>
+                      <div className="text-xs text-slate-400">{tool.shortcut}</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Segmentation Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Segmentation Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Segment and draw masks on images
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {segmentationTools.map((tool) => (
                 <Tooltip key={tool.id}>
                   <TooltipTrigger asChild>
                     <Button
@@ -327,6 +391,9 @@ export default function ViewerLeftSidebar({
           {/* Action Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Actions</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Quick actions: clear, undo and reset
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {actionTools.map((tool) => (
                 <Tooltip key={tool.id}>
@@ -357,6 +424,9 @@ export default function ViewerLeftSidebar({
           {/* Advanced Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Advanced Tools</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Professional and advanced tools
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {advancedTools.map((tool) => (
                 <Tooltip key={tool.id}>
