@@ -26,12 +26,12 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const { data: patientOverview, isLoading: isLoadingOverview } = useGetPatientOverviewQuery(
     resolvedParams.id
   );
-  console.log(patientData?.data);
-  console.log(patientOverview?.data);
+  console.log(patientData);
+  console.log(patientOverview);
   
     const { data: encountersData, isLoading: isLoadingEncounters } = useGetPatientEncountersByPatientIdQuery(
     {
-      patientId: patientData?.data.id as string,
+      patientId: patientData?.id as string,
       pagination: {
         page: 1,
         limit: 10,
@@ -81,7 +81,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     );
   }
 
-  if (!patientData?.data ) {
+  if (!patientData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -102,7 +102,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">
-            <PatientProfileCard patient={patientData?.data} />
+            <PatientProfileCard patient={patientData} />
           </div>
 
           {/* Main Content */}
@@ -123,7 +123,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 {isLoadingEncounters ? (
                   <Skeleton className="h-96 w-full" />
                 ) : (
-                  <EncounterHistoryTab encounterHistory={encountersData?.data?.data || []} />
+                  <EncounterHistoryTab encounterHistory={encountersData?.data || []} />
                 )}
               </TabsContent>
 

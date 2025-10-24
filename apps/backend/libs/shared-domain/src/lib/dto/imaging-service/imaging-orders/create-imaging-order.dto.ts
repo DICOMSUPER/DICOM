@@ -1,4 +1,4 @@
-import { OrderStatus, Urgency } from '@backend/shared-enums';
+import { OrderStatus } from '@backend/shared-enums';
 import {
   IsBoolean,
   IsEnum,
@@ -7,20 +7,17 @@ import {
   IsUUID,
 } from 'class-validator';
 export class CreateImagingOrderDto {
-  @IsString()
-  orderNumber!: string;
 
   @IsString()
   patientId!: string;
 
-  //   @IsString()
-  //   visitId!: string;
-
   @IsString()
+  @IsUUID()
   orderingPhysicianId!: string;
 
   @IsString()
-  modalityId!: string;
+  @IsUUID()
+  modalityId?: string;
 
   @IsString()
   bodyPart!: string;
@@ -28,10 +25,6 @@ export class CreateImagingOrderDto {
   @IsString()
   @IsUUID()
   request_procedure_id?: string;
-
-  @IsString()
-  @IsOptional()
-  urgency?: Urgency;
 
   @IsEnum(OrderStatus)
   @IsOptional()

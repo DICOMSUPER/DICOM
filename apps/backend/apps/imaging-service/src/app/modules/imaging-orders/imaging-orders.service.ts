@@ -13,6 +13,7 @@ import {
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { OrderStatus } from '@backend/shared-enums';
 
 const relation = ['modality'];
 @Injectable()
@@ -35,6 +36,22 @@ export class ImagingOrdersService {
     return order;
   };
 
+
+  private async generateOrderNumber(): Promise<string> {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const maxAttempts = 5;
+    for (let i = 0; i < maxAttempts; i++) {
+      const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const candidate = `ORD-${date}-${suffix}`;
+      const exists = await this.imagingOrderRepository.findOne({
+        where: { orderNumber: candidate },
+      });
+      if (!exists) return candidate;
+    }
+    // fallback using timestamp
+    return `ORD-${date}-${Date.now().toString().slice(-6)}`;
+  }
+
   private checkModality = async (id: string): Promise<ImagingModality> => {
     const modality = await this.imagingModalityRepository.findById(id);
     if (!modality) {
@@ -56,8 +73,13 @@ export class ImagingOrdersService {
   create = async (
     createImagingOrderDto: CreateImagingOrderDto
   ): Promise<ImagingOrder> => {
-    await this.checkModality(createImagingOrderDto.modalityId);
-    return await this.imagingOrderRepository.create(createImagingOrderDto);
+    await this.checkModality(createImagingOrderDto.modalityId as string);
+    return await this.imagingOrderRepository.create({
+      ...createImagingOrderDto,
+      orderStatus: OrderStatus.PENDING,
+      procedureId: createImagingOrderDto.request_procedure_id,
+      orderNumber: (await this.generateOrderNumber()),
+    });
   };
 
   findAll = async (): Promise<ImagingOrder[]> => {

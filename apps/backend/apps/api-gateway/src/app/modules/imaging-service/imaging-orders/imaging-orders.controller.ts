@@ -1,3 +1,4 @@
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -25,11 +26,14 @@ export class ImagingOrdersController {
   ) {}
 
   @Post()
-  async createImagingOrder(@Body() createImagingOrderDto: any) {
+  async createImagingOrder(
+    @Body() createImagingOrderDto: any
+  ) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingOrders.Create', {
-        createImagingOrderDto,
-      })
+      this.imagingService.send(
+        'ImagingService.ImagingOrders.Create',
+        createImagingOrderDto
+      )
     );
   }
 
@@ -57,6 +61,7 @@ export class ImagingOrdersController {
       sortField,
       order,
     };
+
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindMany', {
         paginationDto,
