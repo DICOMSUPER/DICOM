@@ -1,10 +1,10 @@
-import {
-  Controller,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DiagnosesReportService } from './diagnoses-reports.service';
-import { CreateDiagnosesReportDto, UpdateDiagnosesReportDto } from '@backend/shared-domain';
+import {
+  CreateDiagnosesReportDto,
+  UpdateDiagnosesReportDto,
+} from '@backend/shared-domain';
 import { DiagnosesReport } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
@@ -15,12 +15,15 @@ import {
   PATIENT_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
+import { DiagnosisStatus } from '@backend/shared-enums';
 
 const moduleName = 'DiagnosesReport';
 @Controller('diagnoses-reports')
 export class DiagnosesReportController {
   private logger = new Logger(PATIENT_SERVICE);
-  constructor(private readonly diagnosesReportService: DiagnosesReportService) {}
+  constructor(
+    private readonly diagnosesReportService: DiagnosesReportService
+  ) {}
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -41,7 +44,9 @@ export class DiagnosesReportController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+  )
   async findAll(): Promise<DiagnosesReport[]> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
@@ -57,8 +62,12 @@ export class DiagnosesReportController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`)
-  async findOne(@Payload() data: { id: string }): Promise<DiagnosesReport | null> {
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
+  )
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<DiagnosesReport | null> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -87,7 +96,10 @@ export class DiagnosesReportController {
     );
     try {
       const { id, updateDiagnosesReportDto } = data;
-      return await this.diagnosesReportService.update(id, updateDiagnosesReportDto);
+      return await this.diagnosesReportService.update(
+        id,
+        updateDiagnosesReportDto
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -114,7 +126,9 @@ export class DiagnosesReportController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`)
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
+  )
   async findMany(
     @Payload() data: { paginationDto: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<DiagnosesReport>> {
@@ -135,6 +149,27 @@ export class DiagnosesReportController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find many diagnoses reports',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
+  async filterDiagnosisReport(
+    @Payload()
+    data: {
+      studyIds: string[];
+      reportStatus?: DiagnosisStatus | string;
+    }
+  ) {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Filter`);
+    try {
+      const { studyIds, reportStatus } = data;
+      return await this.diagnosesReportService.filter(studyIds, reportStatus);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to filter diagnoses reports',
         PATIENT_SERVICE
       );
     }

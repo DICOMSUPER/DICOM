@@ -21,7 +21,7 @@ import {
 } from '@backend/database';
 
 //relation: imagingOrder, series
-const relation = ['imagingOrder', 'series'];
+const relation = ['imagingOrder', 'series', 'modalityMachine'];
 
 @Injectable()
 export class DicomStudiesService {
@@ -187,8 +187,8 @@ export class DicomStudiesService {
     startDate?: string,
     endDate?: string,
     bodyPart?: string,
-    modalityCode?: string,
-    modalityDevice?: string,
+    modalityId?: string,
+    modalityMachineId?: string,
     studyStatus?: DicomStudyStatus
   ) => {
     return await this.dicomStudiesRepository.filter(
@@ -196,8 +196,8 @@ export class DicomStudiesService {
       startDate,
       endDate,
       bodyPart,
-      modalityCode,
-      modalityDevice,
+      modalityId,
+      modalityMachineId,
       studyStatus
     );
   };

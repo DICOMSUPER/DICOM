@@ -5,6 +5,7 @@ import { PatientEncounterModule } from './patient-encounters/patient-encounters.
 import { QueueAssignmentModule } from './queue-assignment/queue-assignment.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { getClient } from '@backend/shared-utils';
+import { DiagnosisReportsModule } from './diagnosis-reports/diagnosis-reports.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { getClient } from '@backend/shared-utils';
     PatientConditionModule,
     PatientEncounterModule,
     QueueAssignmentModule,
+    DiagnosisReportsModule,
   ],
   exports: [
     PatientModule,

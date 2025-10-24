@@ -14,7 +14,11 @@ export interface FilterParams {
   [key: string]: any;
 }
 
-export interface QueryParams extends PaginationParams, SortParams, SearchParams, FilterParams {}
+export interface QueryParams
+  extends PaginationParams,
+    SortParams,
+    SearchParams,
+    FilterParams {}
 
 export interface PaginationMeta {
   total: number;
@@ -33,4 +37,13 @@ export interface PaginatedResponse<T> {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+}
+
+export interface PaginatedQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  searchField?: string;
+  sortBy?: string;
+  order?: "asc" | "desc";
 }

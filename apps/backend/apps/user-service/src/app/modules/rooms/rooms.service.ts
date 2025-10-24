@@ -262,4 +262,13 @@ export class RoomsService {
       );
     }
   }
+
+  async getRoomByRoomIds(roomIds: string[]): Promise<Room[]> {
+    if (roomIds.length > 0) {
+      return await this.roomRepository
+        .createQueryBuilder('room')
+        .andWhere('room.id IN (:...roomIds)', { roomIds })
+        .getMany();
+    } else return [];
+  }
 }

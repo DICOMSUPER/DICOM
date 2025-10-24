@@ -1,20 +1,51 @@
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
+import { Room } from "../user/room.interface";
+import { DiagnosesReport } from "../patient/diagnosis-report.interface";
+import { DicomSeries } from "./dicom-series.interface";
+import { ImagingOrder } from "./imaging_order.interface";
+import {
+  DiagnosisStatus,
+  Patient,
+} from "../patient/patient-workflow.interface";
+import { ModalityMachine } from "./modality-machine.interface";
+
+export interface DicomStudyFilterQuery {
+  studyStatus?: DicomStudyStatus;
+  reportStatus?: DiagnosisStatus;
+  modalityId?: string;
+  modalityMachineId?: string;
+  mrn?: string;
+  patientFirstName?: string;
+  patientLastName?: string;
+  bodyPart?: string;
+  startDate?: string;
+  endDate?: string;
+  studyUID?: string;
+}
 
 export interface DicomStudy extends BaseEntity {
-  study_id: string;
-  study_instance_uid: string;
-  patient_id: string;
-  order_id?: string;
-  modality_id: string;
-  study_date: Date;
-  study_time: string;
-  study_description?: string;
-  referring_physician?: string;
-  performing_physician_id?: string;
-  technician_id?: string;
-  study_status?: DicomStudyStatus;
-  number_of_series?: number;
-  number_of_instances?: number;
-  storage_path?: string;
+  id: string;
+  studyInstanceUid: string;
+  patientId: string;
+  patientCode: string;
+  orderId?: string;
+  modalityMachineId: string;
+  studyDate: string;
+  studyTime: string;
+  studyDescription?: string;
+  referringPhysicianId?: string;
+  performingTechnicianId?: string;
+  verifyingRadiologistId?: string;
+  studyStatus?: DicomStudyStatus;
+  numberOfSeries?: number;
+  storagePath?: string;
+
+  // Nested objects included for filter API
+  patient?: Patient; // Included for filter API
+  imagingOrder?: ImagingOrder; // Included for filter API
+  modalityMachine?: ModalityMachine;
+  series?: DicomSeries[]; // Included for filter API
+  report?: DiagnosesReport; // Included for filter API
+  room?: Room; // Included for filter API
 }

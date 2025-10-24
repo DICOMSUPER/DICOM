@@ -7,12 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingModality } from './imaging-modality.entity';
-
-export enum MachineStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  MAINTENANCE = 'MAINTENANCE',
-}
+import { MachineStatus } from '@backend/shared-enums';
 
 @Entity('modality_machines')
 export class ModalityMachine extends BaseEntity {
@@ -51,7 +46,7 @@ export class ModalityMachine extends BaseEntity {
   // reference to room entity in user service
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
   roomId?: string;
-  
+
   @Column({
     name: 'status',
     type: 'enum',

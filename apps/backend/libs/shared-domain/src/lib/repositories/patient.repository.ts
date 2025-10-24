@@ -342,7 +342,6 @@ export class PatientRepository extends BaseRepository<Patient> {
     );
     return (result.affected ?? 0) > 0;
   }
-
   async filter(
     patientIds: string[] | [],
     patientFirstName?: string,
@@ -350,24 +349,32 @@ export class PatientRepository extends BaseRepository<Patient> {
     patientCode?: string
   ): Promise<Patient[]> {
     const repository = await this.getRepository();
-    const qb = await repository
-      .createQueryBuilder('patient')
-      .andWhere('patient.id IN (:...patientIds)', { patientIds });
+    const qb = repository.createQueryBuilder('patient');
 
-    patientFirstName &&
+    if (patientIds.length > 0) {
+      qb.andWhere('patient.id IN (:...patientIds)', { patientIds });
+    } else {
+      return [];
+    }
+
+    if (patientFirstName) {
       qb.andWhere('patient.first_name ILIKE :patientFirstName', {
         patientFirstName: `%${patientFirstName}%`,
       });
+    }
 
-    patientLastName &&
+    if (patientLastName) {
       qb.andWhere('patient.last_name ILIKE :patientLastName', {
         patientLastName: `%${patientLastName}%`,
       });
+    }
 
-    patientCode &&
+    if (patientCode) {
       qb.andWhere('patient.patient_code ILIKE :patientCode', {
         patientCode: `%${patientCode}%`,
       });
+    }
+
     return qb.getMany();
   }
 }

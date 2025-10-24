@@ -155,7 +155,7 @@ export class PatientService {
     patientLastName?: string,
     patientCode?: string
   ): Promise<Patient[]> => {
-    return await this.filter(
+    return await this.patientRepository.filter(
       patientIds,
       patientFirstName,
       patientLastName,

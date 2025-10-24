@@ -45,7 +45,12 @@ export class ImagingServiceController {
   )
   async uploadDicomFile(
     @UploadedFile() file: Express.Multer.File,
-    @Body() data: { orderId: string; performingTechnicianId: string }
+    @Body()
+    data: {
+      orderId: string;
+      performingTechnicianId: string;
+      modalityMachineId: string;
+    }
   ) {
     try {
       const user = await firstValueFrom(
@@ -95,6 +100,7 @@ export class ImagingServiceController {
           orderId: data.orderId,
           performingTechnicianId: data.performingTechnicianId,
           patient,
+          modalityMachineId: data.modalityMachineId,
         })
       );
     } catch (error) {
