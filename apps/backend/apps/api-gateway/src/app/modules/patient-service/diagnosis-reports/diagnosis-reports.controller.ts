@@ -31,7 +31,7 @@ export class DiagnosisReportsController {
   private readonly logger = new Logger('DiagnosisReportController');
 
   constructor(
-    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
   ) {}
 

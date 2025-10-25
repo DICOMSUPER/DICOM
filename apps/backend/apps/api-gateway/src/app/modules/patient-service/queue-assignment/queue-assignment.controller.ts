@@ -33,7 +33,7 @@ import {
 export class QueueAssignmentController {
   private readonly logger = new Logger('QueueAssignmentController');
   constructor(
-    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
   ) {}
 

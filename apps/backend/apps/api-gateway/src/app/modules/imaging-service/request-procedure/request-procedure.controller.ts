@@ -1,4 +1,4 @@
-import { CreateRequestProcedureDto, UpdateBodyPartDto, UpdateRequestProcedureDto } from '@backend/shared-domain';
+import { CreateRequestProcedureDto, UpdateRequestProcedureDto } from '@backend/shared-domain';
 import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 import {
   Body,
@@ -19,7 +19,7 @@ import { firstValueFrom } from 'rxjs';
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class RequestProcedureController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
   ) {}
 

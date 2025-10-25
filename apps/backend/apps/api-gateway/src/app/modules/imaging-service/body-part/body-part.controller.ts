@@ -19,7 +19,7 @@ import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class BodyPartController {
   constructor(
-    @Inject(process.env.IMAGE_SERVICE_NAME || 'ImagingService')
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
   ) {}
 

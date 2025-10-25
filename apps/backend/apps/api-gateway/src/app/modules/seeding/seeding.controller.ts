@@ -212,6 +212,36 @@ export class SeedingController {
     return result;
   }
 
+  @Post('imaging/body-parts')
+  @ApiOperation({ summary: 'Seed body parts only' })
+  @ApiResponse({ status: 200, description: 'Body parts seeded successfully' })
+  async seedBodyParts() {
+    const result = await firstValueFrom(
+      this.imagingServiceClient.send('ImagingService.Seeding.SeedBodyParts', {})
+    );
+    return result;
+  }
+
+  @Post('imaging/modality-machines')
+  @ApiOperation({ summary: 'Seed modality machines only' })
+  @ApiResponse({ status: 200, description: 'Modality machines seeded successfully' })
+  async seedModalityMachines() {
+    const result = await firstValueFrom(
+      this.imagingServiceClient.send('ImagingService.Seeding.SeedModalityMachines', {})
+    );
+    return result;
+  }
+
+  @Post('imaging/request-procedures')
+  @ApiOperation({ summary: 'Seed request procedures only' })
+  @ApiResponse({ status: 200, description: 'Request procedures seeded successfully' })
+  async seedRequestProcedures() {
+    const result = await firstValueFrom(
+      this.imagingServiceClient.send('ImagingService.Seeding.SeedRequestProcedures', {})
+    );
+    return result;
+  }
+
   @Post('imaging/orders')
   @ApiOperation({ summary: 'Seed imaging orders only' })
   @ApiResponse({ status: 200, description: 'Imaging orders seeded successfully' })

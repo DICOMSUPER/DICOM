@@ -9,6 +9,9 @@ import {
   DicomSeries,
   DicomInstance,
   ImageAnnotation,
+  ModalityMachine,
+  BodyPart,
+  RequestProcedure,
 } from '@backend/shared-domain';
 import {
   UserServiceClientModule,
@@ -19,6 +22,9 @@ import {
   imports: [
     TypeOrmModule.forFeature([
       ImagingModality,
+      ModalityMachine,
+      BodyPart,
+      RequestProcedure,
       ImagingOrder,
       DicomStudy,
       DicomSeries,
