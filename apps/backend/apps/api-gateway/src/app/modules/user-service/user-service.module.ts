@@ -30,6 +30,7 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     RoomsModule,
     DepartmentModule,
     EmployeeSchedulesModule,
+    ShiftTemplatesModule,
   ],
 
 })
