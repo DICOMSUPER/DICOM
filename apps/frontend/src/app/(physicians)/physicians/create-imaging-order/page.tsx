@@ -3,7 +3,6 @@ import DiagnosisInput from "@/components/common/DiagnosisInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -18,18 +17,17 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { useGetPatientByCodeQuery } from "@/store/patientApi";
+import {
+  useGetPatientByCodeQuery
+} from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
 import {
-  CalendarFold,
   ClipboardList,
-  MapPinHouse,
-  Mars,
-  Plus,
-  Users,
+  Plus
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import PatientSearchInput from "@/components/patients/PatientSearchInput";
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
 import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
@@ -64,7 +62,7 @@ export interface ImagingProcedurePDF {
 }
 
 export default function CreateImagingOrder() {
-  const [patientId, setPatientId] = useState("");
+  const [patientCode, setPatientCode] = useState<string>("");
   // get pdfUrl
   // const [pdfUrl, setPdfURL] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
@@ -150,7 +148,7 @@ export default function CreateImagingOrder() {
   };
 
   const isFormValid = () => {
-    const basicInfoValid = patientId && diagnosis && department && room;
+    const basicInfoValid = patientCode && diagnosis && department && room;
     const proceduresValid = procedures.every(
       (p) =>
         p.modality && p.bodyPart && p.clinicalIndication && p.procedureServiceId
@@ -164,7 +162,7 @@ export default function CreateImagingOrder() {
     try {
       const orderPromises = procedures.map(async (procedure) => {
         const orderDto: CreateImagingOrderDto = {
-          patientId: patientData?.data.id || patientId,
+          patientId: patientCode,
           orderingPhysicianId: userId,
           modalityId: procedure.modality,
           bodyPart: procedure.bodyPartName as string,
@@ -192,8 +190,8 @@ export default function CreateImagingOrder() {
     data: patientData,
     isLoading: isPatientLoading,
     isError: isPatientError,
-  } = useGetPatientByCodeQuery(patientId, {
-    skip: !patientId,
+  } = useGetPatientByCodeQuery(patientCode, {
+    skip: !patientCode,
   });
 
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
@@ -218,7 +216,7 @@ export default function CreateImagingOrder() {
 
   const handleCancel = () => {
     // Reset all form fields
-    setPatientId("");
+    setPatientCode("");
     setDepartment("");
     setDepartmentName("");
     setNotes("");
@@ -251,7 +249,7 @@ export default function CreateImagingOrder() {
       departmentName: departmentName,
       roomName: roomName,
       notes: notes,
-      orderingPhysicianName: `${physicianData?.firstName} ${physicianData?.lastName}`,
+      orderingPhysicianName: `${physicianData?.data.firstName} ${physicianData?.data.lastName}`,
     };
     ImagingOrder({ imagingProcedurePDF });
   };
@@ -291,18 +289,29 @@ export default function CreateImagingOrder() {
                     Patient Code <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex gap-4">
-                    <Input
+                    {/* <Input
                       id="patientId"
                       placeholder="Enter patient ID"
-                      value={patientId}
-                      onChange={(e) => setPatientId(e.target.value)}
+                      value={patientCode}
+                      onChange={(value: string) => setPatientCode(value)}
                       className={`${
-                        !patientId ? "border-slate-300" : "border-teal-300"
+                        !patientCode ? "border-slate-300" : "border-teal-300"
+                      }`}
+                    /> */}
+                    <PatientSearchInput
+                      value={patientCode}
+                      onChange={setPatientCode}
+                      onSelect={(item) => {
+                        setPatientCode(item.value);
+                       
+                      }}
+                      className={`${
+                        !patientCode ? "border-slate-300" : "border-teal-300"
                       }`}
                     />
                   </div>
                   <div>
-                    {isPatientLoading && <div>Loading patient info...</div>}
+                    {/* {isPatientLoading && <div>Loading patient info...</div>}
                     {isPatientError && (
                       <div className="text-red-500">Patient not found</div>
                     )}
@@ -337,7 +346,7 @@ export default function CreateImagingOrder() {
                           </span>
                         </div>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </div>
