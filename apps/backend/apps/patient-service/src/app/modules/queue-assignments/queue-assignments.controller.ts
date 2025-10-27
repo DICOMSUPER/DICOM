@@ -272,7 +272,7 @@ export class QueueAssignmentController {
     @Payload() data: { userIds: string[] }
   ) {
     try {
-      return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysicians(
+      return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
         data.userIds
       );
     } catch (error) {

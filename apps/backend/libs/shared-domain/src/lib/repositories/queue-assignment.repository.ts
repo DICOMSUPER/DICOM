@@ -29,6 +29,15 @@ export interface QueueStats {
   };
 }
 
+export interface QueueInfo {
+  [physicianId: string]: {
+    maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
+    currentInProgress: {
+      queueNumber: number;
+      entity: QueueAssignment;
+    } | null;
+  };
+}
 @Injectable()
 export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   constructor(entityManager: EntityManager) {
@@ -374,5 +383,82 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       .addOrderBy('queue.assignmentDate', 'ASC');
 
     return await queryBuilder.getMany();
+  }
+
+  async getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
+    physicianIds: string[],
+    date: Date = new Date() // Default to current date
+  ): Promise<QueueInfo> {
+    if (!physicianIds.length) {
+      return {};
+    }
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const results: QueueInfo = physicianIds.reduce((acc: QueueInfo, pid) => {
+      acc[pid] = { maxWaiting: null, currentInProgress: null };
+      return acc;
+    }, {});
+
+    const repository = await this.getRepository();
+    // Query 1: Get all waiting assignments, ordered by physician ASC, queueNumber DESC
+    const waitingAssignments = await repository
+      .createQueryBuilder('qa')
+      .innerJoinAndSelect('qa.encounter', 'encounter')
+      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
+        physicianIds,
+      })
+      .andWhere('qa.status = :status', { status: QueueStatus.WAITING })
+      .andWhere('qa.assignmentDate BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
+      .orderBy('encounter.assignedPhysicianId', 'ASC')
+      .addOrderBy('qa.queueNumber', 'DESC')
+      .getMany();
+
+    // Query 2: Get all in-progress assignments, ordered by physician ASC, queueNumber ASC
+    const inProgressAssignments = await repository
+      .createQueryBuilder('qa')
+      .innerJoinAndSelect('qa.encounter', 'encounter')
+      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
+        physicianIds,
+      })
+      .andWhere('qa.status = :status', { status: QueueStatus.IN_PROGRESS })
+      .andWhere('qa.assignmentDate BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
+      .orderBy('encounter.assignedPhysicianId', 'ASC')
+      .addOrderBy('qa.queueNumber', 'ASC')
+      .getMany();
+
+    // Process waiting: First per physician group is the max (largest queueNumber)
+    for (const qa of waitingAssignments) {
+      const pid = qa.encounter.assignedPhysicianId;
+      if (!results[pid].maxWaiting) {
+        results[pid].maxWaiting = {
+          queueNumber: qa.queueNumber,
+          // entity: qa,
+        };
+      }
+    }
+
+    // Process in-progress: First per physician group is the current (smallest queueNumber)
+    for (const qa of inProgressAssignments) {
+      const pid = qa.encounter.assignedPhysicianId;
+      if (!results[pid].currentInProgress) {
+        results[pid].currentInProgress = {
+          queueNumber: qa.queueNumber,
+          // entity: qa,
+        };
+      }
+    }
+
+    return results;
   }
 }

@@ -7,7 +7,7 @@ import {
   PaginatedResponse,
   EncounterStats,
   ApiResponse,
-  PaginationParams
+  PaginationParams,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
@@ -56,13 +56,16 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounters by patient
-    getPatientEncountersByPatientId: builder.query<PaginatedResponse<PatientEncounter>, {patientId:string; pagination: PaginationParams}>({
-      query: ({patientId, pagination}) => ({
+    getPatientEncountersByPatientId: builder.query<
+      PaginatedResponse<PatientEncounter>,
+      { patientId: string; pagination: PaginationParams }
+    >({
+      query: ({ patientId, pagination }) => ({
         url: `/patient/${patientId}`,
         method: "GET",
-        params: pagination
+        params: pagination,
       }),
-      providesTags: (result, error, {patientId}) => [
+      providesTags: (result, error, { patientId }) => [
         { type: "PatientEncounter", id: `patient-${patientId}` },
       ],
     }),
@@ -92,7 +95,7 @@ export const patientEncounterApi = createApi({
 
     // Create encounter
     createPatientEncounter: builder.mutation<
-      PatientEncounter,
+      ApiResponse<PatientEncounter>,
       CreatePatientEncounterDto
     >({
       query: (data) => ({
