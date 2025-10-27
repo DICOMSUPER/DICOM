@@ -4,6 +4,7 @@ import {
 } from '@backend/database';
 import {
   CreateModalityMachineDto,
+  ImagingModality,
   ModalityMachine,
   UpdateModalityMachineDto,
 } from '@backend/shared-domain';
@@ -61,6 +62,28 @@ export class ModalityMachinesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find all modality machines',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  //find by room id
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_BY_ROOM_ID}`
+  )
+  async findByRoomId(
+    @Payload() data: { roomId: string }
+  ): Promise<ImagingModality[]> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_BY_ROOM_ID}`
+    );
+    try {
+      const { roomId } = data;
+      return await this.modalityMachinesService.findByRoomId(roomId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find modality machines by room id: ${data.roomId}`,
         IMAGING_SERVICE
       );
     }

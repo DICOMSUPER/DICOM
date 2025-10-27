@@ -44,7 +44,7 @@ export default function ClinicVisitDetailPage({
     );
   }
 
-  if (!patientEncounter?.data || !patientEncounter.data.patient) {
+  if (!patientEncounter?.data || !patientEncounter?.data.patient) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

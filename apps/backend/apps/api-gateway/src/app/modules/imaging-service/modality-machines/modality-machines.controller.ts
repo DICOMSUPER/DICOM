@@ -75,6 +75,15 @@ export class ModalityMachinesController {
     );
   }
 
+  @Get('room/:roomId')
+  async findByRoomId(@Param('roomId') roomId: string) {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
+        roomId,
+      })
+    );
+  }
+
   @Post()
   async create(@Body() createModalityMachineDto: CreateModalityMachineDto) {
     return await firstValueFrom(

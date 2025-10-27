@@ -82,12 +82,14 @@ export class QueueAssignmentController {
       );
     }
   }
-
+  // PatientService.QueueAssignment.GetStats
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
-  async getStats() {
+  async getStats(@Payload() data: { date?: string; roomId?: string }) {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
-      return await this.queueAssignmentService.getStats();
+      console.log('data', data);
+
+      return await this.queueAssignmentService.getStats(data.date, data.roomId);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

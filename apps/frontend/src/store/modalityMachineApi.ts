@@ -77,6 +77,20 @@ export const modalityMachineApi = createApi({
       ApiResponse<boolean>,
       { id: string }
     >({ query: (id) => ({ url: `/${id}`, method: "DELETE" }) }),
+
+    getModalitiesInRoom: builder.query<GetAll, string>({
+      query: (id) => ({ url: `/room/${id}`, method: "GET" }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "ModalityMachine" as const,
+                id: r.id,
+              })),
+              { type: "ModalityMachine", id: "LIST" },
+            ]
+          : [{ type: "ModalityMachine", id: "LIST" }],
+    }),
   }),
 });
 
@@ -84,6 +98,7 @@ export const {
   useGetAllModalityMachineQuery,
   useGetModalityMachineByIdQuery,
   useGetModalityMachinePaginatedQuery,
+  useGetModalitiesInRoomQuery,
   useCreateModalityMachineMutation,
   useUpdateModalityMachineMutation,
   useDeleteModalityMachineMutation,

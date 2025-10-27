@@ -1,5 +1,4 @@
 "use client";
-
 import DiagnosisInput from "@/components/common/DiagnosisInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetPatientByCodeQuery } from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
 import {
@@ -32,12 +30,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
 import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
 import { useCreateImagingOrderMutation } from "@/store/imagingOderApi";
-import { toast } from "sonner";
-import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
+import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { toast } from "sonner";
 
 export interface ImagingProcedure {
   id: string;
@@ -137,7 +136,7 @@ export default function CreateImagingOrder() {
         if (p.id !== id) return p;
 
         if (field === "bodyPart") {
-          const bp = bodyPartsData?.find((b: any) => b.id === value);
+          const bp = bodyPartsData?.data.find((b: any) => b.id === value);
           return {
             ...p,
             bodyPart: String(value),
@@ -165,7 +164,7 @@ export default function CreateImagingOrder() {
     try {
       const orderPromises = procedures.map(async (procedure) => {
         const orderDto: CreateImagingOrderDto = {
-          patientId: patientData?.id || patientId,
+          patientId: patientData?.data.id || patientId,
           orderingPhysicianId: userId,
           modalityId: procedure.modality,
           bodyPart: procedure.bodyPartName as string,
@@ -198,7 +197,9 @@ export default function CreateImagingOrder() {
   });
 
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
-    useGetDepartmentsQuery({});
+    useGetDepartmentsQuery({ limit: 100 });
+
+  console.log("department data", departmentsData);
 
   const { data: roomsData, isError: isRoomsError } =
     useGetRoomsByDepartmentIdQuery(
@@ -210,7 +211,9 @@ export default function CreateImagingOrder() {
       }
     );
 
-  const { data: imagingModalitiesData } = useGetAllImagingModalityQuery();
+  const { data: imagingModalitiesData } = useGetModalitiesInRoomQuery(room, {
+    skip: !room,
+  });
   const { data: bodyPartsData } = useGetAllBodyPartsQuery();
 
   const handleCancel = () => {
@@ -237,12 +240,12 @@ export default function CreateImagingOrder() {
 
   const handleDownloadPDF = () => {
     const imagingProcedurePDF: ImagingProcedurePDF = {
-      patientCode: patientData?.patientCode || "",
-      patientName: `${patientData?.firstName} ${patientData?.lastName}`,
-      address: patientData?.address || "",
-      gender: patientData?.gender || "",
-      age: calculateAge(patientData?.dateOfBirth as Date),
-      insuranceNumber: patientData?.insuranceNumber || "Nothing",
+      patientCode: patientData?.data.patientCode || "",
+      patientName: `${patientData?.data.firstName} ${patientData?.data.lastName}`,
+      address: patientData?.data.address || "",
+      gender: patientData?.data.gender || "",
+      age: calculateAge(patientData?.data.dateOfBirth as Date),
+      insuranceNumber: patientData?.data.insuranceNumber || "Nothing",
       diagnosis: diagnosis,
       procedures: procedures,
       departmentName: departmentName,
@@ -250,7 +253,7 @@ export default function CreateImagingOrder() {
       notes: notes,
       orderingPhysicianName: `${physicianData?.firstName} ${physicianData?.lastName}`,
     };
-   ImagingOrder({ imagingProcedurePDF });
+    ImagingOrder({ imagingProcedurePDF });
   };
 
   return (
@@ -309,27 +312,27 @@ export default function CreateImagingOrder() {
                           <Users className="w-4 h-4 text-blue-500" />
                           <span className="font-medium w-20">Name:</span>
                           <span>
-                            {patientData?.firstName} {patientData?.lastName}
+                            {patientData?.data.firstName} {patientData?.data.lastName}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <Mars className="w-4 h-4 text-pink-500" />
                           <span className="font-medium w-20">Gender:</span>
-                          <span>{patientData?.gender}</span>
+                          <span>{patientData?.data.gender}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <MapPinHouse className="w-4 h-4 text-emerald-500" />
                           <span className="font-medium w-20">Address:</span>
-                          <span>{patientData?.address}</span>
+                          <span>{patientData?.data.address}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <CalendarFold className="w-4 h-4 text-amber-500" />
                           <span className="font-medium w-20">Age:</span>
                           <span>
-                            {calculateAge(patientData?.dateOfBirth as Date)}{" "}
+                            {calculateAge(patientData?.data.dateOfBirth as Date)}{" "}
                             years
                           </span>
                         </div>
@@ -382,7 +385,7 @@ export default function CreateImagingOrder() {
                     value={department}
                     onValueChange={(value) => {
                       setDepartment(value);
-                      const selected = departmentsData?.find(
+                      const selected = departmentsData?.data.find(
                         (dept: Department) => dept.id === value
                       );
                       setDepartmentName(selected?.departmentName || "");
@@ -396,7 +399,7 @@ export default function CreateImagingOrder() {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departmentsData?.map((dept: Department) => (
+                      {departmentsData?.data.map((dept: Department) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.departmentName}
                         </SelectItem>
@@ -413,7 +416,7 @@ export default function CreateImagingOrder() {
                     value={room}
                     onValueChange={(value) => {
                       setRoom(value);
-                      const selected = roomsData?.find(
+                      const selected = roomsData?.data.find(
                         (r: Room) => r.id === value
                       );
                       setRoomName(selected?.roomCode || "");
@@ -427,7 +430,7 @@ export default function CreateImagingOrder() {
                       <SelectValue placeholder="Select room" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roomsData?.map((room: Room) => (
+                      {roomsData?.data.map((room: Room) => (
                         <SelectItem key={room.id} value={room.id}>
                           {room.roomCode}
                         </SelectItem>
@@ -471,8 +474,8 @@ export default function CreateImagingOrder() {
                     procedure={procedure}
                     index={index}
                     proceduresLength={procedures.length}
-                    imagingModalitiesData={imagingModalitiesData}
-                    bodyPartsData={bodyPartsData}
+                    imagingModalitiesData={imagingModalitiesData?.data}
+                    bodyPartsData={bodyPartsData?.data}
                     updateProcedure={updateProcedure}
                     removeProcedure={removeProcedure}
                   />

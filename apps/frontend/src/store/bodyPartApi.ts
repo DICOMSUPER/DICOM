@@ -2,6 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
 import { PaginatedResponse } from "./scheduleApi";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 
 
@@ -12,11 +13,11 @@ export const bodyPartApi = createApi({
   tagTypes: ["BodyPart"],
   endpoints: (builder) => ({
     // GET /body-part
-    getAllBodyParts: builder.query<BodyPart[], void>({
+    getAllBodyParts: builder.query<ApiResponse<BodyPart[]>, void>({
       query: () => ({ url: "", method: "GET" }),
       providesTags: (result) =>
         result
-          ? [...result.map((r) => ({ type: "BodyPart" as const, id: r.id })), { type: "BodyPart", id: "LIST" }]
+          ? [...result.data.map((r) => ({ type: "BodyPart" as const, id: r.id })), { type: "BodyPart", id: "LIST" }]
           : [{ type: "BodyPart", id: "LIST" }],
     }),
 

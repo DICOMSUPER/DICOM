@@ -5,6 +5,7 @@ import { CreateRoomDto } from "@/interfaces/user/room.interface";
 import { UpdateRoomDto } from "@/interfaces/user/room.interface";
 import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 import { mapApiResponse } from "@/utils/adpater";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 
 export interface RoomSearchFilters {
   type?: string;
@@ -32,7 +33,7 @@ export const roomApi = createApi({
 
     // Get rooms by departmentID
     getRoomsByDepartmentId: builder.query<
-      Room[],
+      ApiResponse<Room[]>,
       { id: string; search?: string; applyScheduleFilter?: boolean }
     >({
       query: ({ id, search, applyScheduleFilter }) => ({

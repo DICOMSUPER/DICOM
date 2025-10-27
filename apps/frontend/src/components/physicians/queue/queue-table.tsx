@@ -6,7 +6,7 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  SortingState,
+  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -27,19 +27,24 @@ import {
 } from "@/components/ui/table";
 import {
   MoreHorizontal,
-  Edit,
   X,
   Phone,
   User,
   Clock,
   ArrowUpDown,
   Eye,
+  AlertCircle,
+  CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { QueuePriorityLevel, QueueStatus } from "@/enums/patient.enum";
 
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
-import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
-import Pagination, { PaginationMeta } from "@/components/common/PaginationV1";
+import type { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
+import Pagination, {
+  type PaginationMeta,
+} from "@/components/common/PaginationV1";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 interface QueueTableProps {
   queueItems: QueueAssignment[];
@@ -50,6 +55,7 @@ interface QueueTableProps {
   pagination: PaginationMeta;
   onPageChange: (page: number) => void;
   isUpdating: boolean;
+  isLoading: boolean;
 }
 
 const columnHelper = createColumnHelper<QueueAssignment>();
@@ -63,34 +69,57 @@ export function QueueTable({
   pagination,
   onPageChange,
   isUpdating,
+  isLoading,
 }: QueueTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const getStatusBadge = (status: QueueStatus) => {
     switch (status) {
       case QueueStatus.WAITING:
-        return <span className="text-blue-600 font-medium">Waiting</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-blue-700">Waiting</span>
+          </div>
+        );
       case QueueStatus.COMPLETED:
-        return <span className="text-green-600 font-medium">Completed</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-700">
+              Completed
+            </span>
+          </div>
+        );
       case QueueStatus.IN_PROGRESS:
-        return <span className="text-yellow-600 font-medium">Serving</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-medium text-amber-700">Serving</span>
+          </div>
+        );
       default:
-        return <span className="text-gray-700 font-medium">{status}</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+            <span className="text-sm font-medium text-slate-600">{status}</span>
+          </div>
+        );
     }
   };
 
   const getRowClassName = (priority: QueuePriorityLevel) => {
-    const baseClass = "hover:bg-opacity-80 transition-colors";
-
+    const baseClass = "transition-all duration-200 hover:shadow-md";
+    
     switch (priority) {
       case QueuePriorityLevel.URGENT:
-        return `bg-yellow-50 hover:bg-yellow-100 ${baseClass}`;
+        return `bg-gradient-to-r from-amber-50 to-transparent hover:from-amber-100 hover:to-transparent border-l-4 border-amber-500 ${baseClass}`;
       case QueuePriorityLevel.STAT:
-        return `bg-red-50 hover:bg-red-100 ${baseClass}`;
+        return `bg-gradient-to-r from-red-50 to-transparent hover:from-red-100 hover:to-transparent border-l-4 border-red-500 ${baseClass}`;
       case QueuePriorityLevel.ROUTINE:
-        return `hover:bg-gray-50 ${baseClass}`;
+        return `hover:bg-slate-50 border-l-4 border-transparent ${baseClass}`;
       default:
-        return `hover:bg-gray-50 ${baseClass}`;
+        return `hover:bg-slate-50 border-l-4 border-transparent ${baseClass}`;
     }
   };
 
@@ -98,31 +127,39 @@ export function QueueTable({
     switch (level) {
       case QueuePriorityLevel.ROUTINE:
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full" />
-            <span className="text-xs text-gray-700">Routine</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full w-fit">
+            <div className="w-2 h-2 bg-blue-500 rounded-full" />
+            <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
+              Routine
+            </span>
           </div>
         );
       case QueuePriorityLevel.URGENT:
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
-            <span className="text-xs text-gray-700">Urgent</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-full w-fit">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+              Urgent
+            </span>
           </div>
         );
       case QueuePriorityLevel.STAT:
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-            <span className="text-xs text-gray-700">Stat</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-full w-fit">
+            <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+            <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">
+              Stat
+            </span>
           </div>
         );
 
       default:
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-400 rounded-full" />
-            <span className="text-xs text-gray-700">Unknown</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full w-fit">
+            <div className="w-2 h-2 bg-slate-400 rounded-full" />
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+              Unknown
+            </span>
           </div>
         );
     }
@@ -134,14 +171,14 @@ export function QueueTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
+          className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Queue Number
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Queue #
+          <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="font-medium text-center text-gray-900">
+        <div className="font-bold text-lg text-slate-900 text-center">
           {row.original.queueNumber}
         </div>
       ),
@@ -149,31 +186,20 @@ export function QueueTable({
 
     columnHelper.display({
       id: "patient",
-      header: () => <div className="text-center w-full">Name</div>,
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Name
+        </div>
+      ),
+
       cell: ({ row }) => {
         const patient = row.original.encounter.patient;
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">
+              <span className="font-semibold text-slate-900">
                 {patient?.firstName} {patient?.lastName}
               </span>
-            </div>
-          </div>
-        );
-      },
-    }),
-
-    columnHelper.display({
-      id: "phone",
-      header: () => <div className="text-center w-full">Phone</div>,
-      cell: ({ row }) => {
-        const phone = row.original.encounter.patient?.phoneNumber;
-        return (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Phone className="w-3 h-3" />
-              <span>{phone ?? "—"}</span>
             </div>
           </div>
         );
@@ -185,19 +211,19 @@ export function QueueTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
+          className="h-auto p-0 text-center font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Date & Time
+          <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1">
-          <span className="font-medium text-gray-900">
+        <div className="space-y-1 text-center">
+          <span className="font-semibold text-slate-900 text-sm">
             {formatDate(row.original.assignmentDate)}
           </span>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Clock className="w-3 h-3" />
+          <div className="flex justify-center items-center gap-4 text-xs text-slate-500">
+            <Clock className="w-3.5 h-3.5" />
             <span>{formatTime(row.original.assignmentDate)}</span>
           </div>
         </div>
@@ -205,9 +231,16 @@ export function QueueTable({
     }),
 
     columnHelper.accessor("encounter.encounterType", {
-      header: "Encounter Type",
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Type
+        </div>
+      ),
       cell: ({ row }) => (
-        <Badge variant="outline" className="bg-gray-50">
+        <Badge
+          variant="outline"
+          className="bg-slate-100 text-slate-700 border-slate-200 font-medium"
+        >
           {row.original.encounter.encounterType}
         </Badge>
       ),
@@ -218,14 +251,14 @@ export function QueueTable({
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-xs text-gray-500 uppercase tracking-wider hover:text-gray-700"
+          className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Priority Level
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Priority
+          <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="flex text-center items-center gap-2">
+        <div className="flex items-center">
           {getPriorityLevel(row?.original?.priority)}
         </div>
       ),
@@ -233,33 +266,41 @@ export function QueueTable({
 
     columnHelper.display({
       id: "queue_status",
-      header: () => <div className="text-center w-full">Status</div>,
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Status
+        </div>
+      ),
       cell: ({ row }) => getStatusBadge(row.original.status),
     }),
 
     columnHelper.display({
       id: "actions",
-      header: () => <div className="text-center w-full">Actions</div>,
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Actions
+        </div>
+      ),
       cell: ({ row }) => {
         const queueItem = row.original;
         return (
-          <div className="flem justify-center items-center gap-2">
+          <div className="flex items-center gap-2">
             {queueItem.status === QueueStatus.WAITING && (
               <Button
                 variant="outline"
                 size="sm"
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-medium text-xs transition-colors bg-transparent"
                 onClick={() => onStartServing(queueItem.id)}
                 disabled={isUpdating}
               >
-                Start Serving
+                Start
               </Button>
             )}
             {queueItem.status === QueueStatus.IN_PROGRESS && (
               <Button
                 variant="outline"
                 size="sm"
-                className="border-green-200 text-green-700 hover:bg-green-50"
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-medium text-xs transition-colors bg-transparent"
                 onClick={() => onComplete(queueItem.id)}
               >
                 Complete
@@ -268,21 +309,26 @@ export function QueueTable({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  className="h-8 w-8 p-0 hover:bg-slate-100 transition-colors"
+                >
+                  <MoreHorizontal className="h-4 w-4 text-slate-600" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() => onViewDetails(queueItem.encounterId)}
+                  className="cursor-pointer"
                 >
                   <Eye className="mr-2 h-4 w-4" />
-                  View
+                  View Details
                 </DropdownMenuItem>
-                {(queueItem.status === QueueStatus.WAITING || queueItem.status === QueueStatus.IN_PROGRESS) && (
+                {(queueItem.status === QueueStatus.WAITING ||
+                  queueItem.status === QueueStatus.IN_PROGRESS) && (
                   <DropdownMenuItem
                     onClick={() => onSkip(queueItem.id)}
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 hover:bg-red-50 cursor-pointer"
                   >
                     <X className="mr-2 h-4 w-4" />
                     Skip
@@ -311,15 +357,15 @@ export function QueueTable({
 
   if (queueItems.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+      <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
         <div className="flex flex-col items-center justify-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <User className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <User className="w-8 h-8 text-slate-400" />
           </div>
-          <p className="text-gray-500 text-lg font-medium">
+          <p className="text-slate-700 text-lg font-semibold">
             No queue items found
           </p>
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters
           </p>
         </div>
@@ -329,14 +375,17 @@ export function QueueTable({
 
   return (
     <div className="mb-16 space-y-4">
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-gradient-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200 hover:bg-slate-50"
+                >
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="bg-gray-50">
+                    <TableHead key={header.id} className="px-6 py-4">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -349,21 +398,25 @@ export function QueueTable({
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className={getRowClassName(row.original.priority)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-6 py-4">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {isLoading ? (
+                <TableSkeleton rows={5} columns={columns.length} />
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className={getRowClassName(row.original.priority)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="px-6 py-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -371,11 +424,7 @@ export function QueueTable({
       <Pagination
         pagination={pagination}
         onPageChange={onPageChange}
-        // onLimitChange={onLimitChange}
-        // itemName="appointments"
-        // limitOptions={[5, 10, 20, 50]}
         showInfo={true}
-        // showLimitSelector={true}
       />
     </div>
   );

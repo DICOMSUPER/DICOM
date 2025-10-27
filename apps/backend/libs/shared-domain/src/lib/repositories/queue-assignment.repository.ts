@@ -213,35 +213,74 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
   /**
    * Get queue statistics
    */
-  async getQueueStats(): Promise<QueueStats> {
-    const total = await this.getRepository().count();
+  async getQueueStats(dateStr?: string, roomId?: string): Promise<QueueStats> {
+    const date = dateStr ? new Date(dateStr) : new Date();
+    date.setHours(0, 0, 0, 0);
+    const startOfDay = date;
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const total = await this.getRepository().count({
+      where: {
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
+    });
 
     const waiting = await this.getRepository().count({
-      where: { status: QueueStatus.WAITING },
+      where: {
+        status: QueueStatus.WAITING,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     const inProgress = await this.getRepository().count({
-      where: { status: QueueStatus.IN_PROGRESS },
+      where: {
+        status: QueueStatus.IN_PROGRESS,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     const completed = await this.getRepository().count({
-      where: { status: QueueStatus.COMPLETED },
+      where: {
+        status: QueueStatus.COMPLETED,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     const expired = await this.getRepository().count({
-      where: { status: QueueStatus.EXPIRED },
+      where: {
+        status: QueueStatus.EXPIRED,
+        ...(roomId ? { roomId } : {}),
+        createdAt: Between(startOfDay, endOfDay),
+      },
     });
 
     const routine = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.ROUTINE },
+      where: {
+        priority: QueuePriorityLevel.ROUTINE,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     const urgent = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.URGENT },
+      where: {
+        priority: QueuePriorityLevel.URGENT,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     const stat = await this.getRepository().count({
-      where: { priority: QueuePriorityLevel.STAT },
+      where: {
+        priority: QueuePriorityLevel.STAT,
+        createdAt: Between(startOfDay, endOfDay),
+        ...(roomId ? { roomId } : {}),
+      },
     });
 
     return {
@@ -258,9 +297,6 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
     };
   }
 
-  /**
-   * Find assignments by room
-   */
   async findByRoom(roomId: string): Promise<QueueAssignment[]> {
     return await this.findAll(
       {
@@ -329,8 +365,8 @@ export class QueueAssignmentRepository extends BaseRepository<QueueAssignment> {
       queryBuilder.limit(filters.limit);
     }
 
-    if (filters.offset) {
-      queryBuilder.offset(filters.offset);
+    if (filters.limit) {
+      queryBuilder.offset(filters.limit);
     }
 
     queryBuilder

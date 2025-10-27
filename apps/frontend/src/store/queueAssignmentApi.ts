@@ -91,11 +91,12 @@ export const queueAssignmentApi = createApi({
     }),
 
     // Queue Stats
-    getQueueStats: builder.query<QueueStats, void>({
-      query: () => ({ url: "/stats", method: "GET" }),
+    getQueueStats: builder.query<QueueStats, { date?: string; roomId?: string }>({
+      query: ({ date, roomId }) => ({ url: "/stats", method: "GET", params: { date, roomId } }),
       providesTags: ["QueueStats"],
     }),
 
+    
     // Utility endpoints
     getNextQueueNumber: builder.query<{ nextNumber: number }, void>({
       query: () => ({ url: "/next-number", method: "GET" }),
@@ -139,13 +140,12 @@ export const queueAssignmentApi = createApi({
     }),
     getQueueAssignmentsInRoom: builder.query<
       PaginatedResponse<QueueAssignment>,
-      { userId: string; filters?: QueueAssignmentSearchFilters }
+      { filters?: QueueAssignmentSearchFilters }
     >({
-      query: ({ userId, filters }) => ({
+      query: ({ filters }) => ({
         url: "/in-room",
         method: "GET",
         params: {
-          userId,
           ...filters,
         },
       }),

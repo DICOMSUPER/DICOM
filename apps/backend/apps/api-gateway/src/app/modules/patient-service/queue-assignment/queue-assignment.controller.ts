@@ -17,12 +17,13 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-
 import { firstValueFrom } from 'rxjs';
-
+import { Public, Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
@@ -59,29 +60,25 @@ export class QueueAssignmentController {
   }
 
   @Get('in-room')
-  // @Role1s(Roles.PHYSICIAN)
+  @Role(Roles.PHYSICIAN)
   async findAllInRoom(
-    @Query('userId') userId: string,
-    // @Req() req: any,
-    @Query() filterQueue?: FilterQueueAssignmentDto
+    @Req() req: any,
+    @Query() filterQueue?: FilterQueueAssignmentDto,
   ) {
     try {
       const validatedParams = ValidationUtils.validatePaginationParams(
         filterQueue?.page,
         filterQueue?.limit
       );
-      // const userId      = req.sub;
-      // console.log('user id', userId);
-
-      // console.log('user from request:', req.user);
 
       console.log('validatedParams', validatedParams);
       const payload = {
         ...filterQueue,
         ...validatedParams,
       };
+      const userId = req['userInfo'].userId;
 
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send(
           'PatientService.QueueAssignment.FindManyInRoom',
           {
@@ -90,6 +87,8 @@ export class QueueAssignmentController {
           }
         )
       );
+
+      return result
     } catch (error) {
       this.logger.error('Error finding all queue assignments:', error);
       throw error;
@@ -126,17 +125,24 @@ export class QueueAssignmentController {
     }
   }
 
+  
   @Get('stats')
-  async getStats() {
+  @Public()
+  async getStats(
+    @Query("date") date?: string,
+    @Query("roomId") roomId?: string
+  ) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.QueueAssignment.GetStats', {})
+        this.patientService.send('PatientService.QueueAssignment.GetStats', { date, roomId })
       );
     } catch (error) {
-      this.logger.error('Error get stats queue assigment: ', error);
+      this.logger.error('Error get stats queue assignment: ', error);
       throw error;
     }
   }
+
+
 
   @Get(':id')
   async FindOne(@Param('id') id: string) {

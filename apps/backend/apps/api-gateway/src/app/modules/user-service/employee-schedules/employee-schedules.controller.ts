@@ -24,6 +24,7 @@ import {
 } from '@backend/shared-domain';
 import { AuthGuard } from '@backend/shared-guards';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { Public } from '@backend/shared-decorators';
 
 @ApiTags('Employee Schedule Management')
 @Controller('employee-schedules')
@@ -35,7 +36,6 @@ export class EmployeeSchedulesController {
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
   ) {}
 
-  // 👤 Lấy lịch làm việc của user hiện tại
   @Get('me')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get schedules for the current authenticated user' })
@@ -218,6 +218,7 @@ export class EmployeeSchedulesController {
   @ApiOperation({ summary: 'Create a new employee schedule' })
   @ApiBody({ type: CreateEmployeeScheduleDto })
   @ApiResponse({ status: 201, description: 'Tạo lịch làm việc thành công' })
+  @Public()
   async createSchedule(@Body() createScheduleDto: CreateEmployeeScheduleDto) {
     try {
       this.logger.log(`🏗️ Creating schedule for employee: ${createScheduleDto.employee_id}`);

@@ -636,7 +636,7 @@ export class SeedingService {
 
     const orderStatuses = [
       OrderStatus.PENDING,
-      OrderStatus.SCHEDULED,
+      // OrderStatus.SCHEDULED,
       OrderStatus.IN_PROGRESS,
       OrderStatus.COMPLETED,
     ];

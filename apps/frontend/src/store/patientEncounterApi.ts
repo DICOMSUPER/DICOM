@@ -47,7 +47,7 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<PatientEncounter, string>({
+    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",

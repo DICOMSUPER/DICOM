@@ -131,7 +131,7 @@ export function ProcedureForm({
 
                 updateProcedure(procedure.id, "procedureServiceId", value);
 
-                const selectedProc = proceduresData?.find(
+                const selectedProc = proceduresData?.data.find(
                   (p: RequestProcedure) => p.id === value
                 );
 
@@ -161,7 +161,7 @@ export function ProcedureForm({
                 />
               </SelectTrigger>
               <SelectContent>
-                {proceduresData?.map((proc: RequestProcedure) => (
+                {proceduresData?.data.map((proc: RequestProcedure) => (
                   <SelectItem key={proc.id} value={proc.id}>
                     {proc.name}
                   </SelectItem>

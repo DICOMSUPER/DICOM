@@ -49,17 +49,13 @@ export interface QueueAssignmentSearchFilters extends QueryParams{
 }
 
 export interface QueueStats {
-  totalWaiting: number;
-  totalCompleted: number;
-  totalExpired: number;
+  total:number
+  waiting: number;
+  completed: number;
+  expired: number;
   byPriority: {
     routine: number;
     urgent: number;
     stat: number;
-  };
-  byStatus: {
-    waiting: number;
-    completed: number;
-    expired: number;
   };
 }
