@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -24,6 +25,8 @@ import {
   TransformInterceptor,
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { userInfo } from 'os';
 @Controller('dicom-studies')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DicomStudiesController {
@@ -96,6 +99,7 @@ export class DicomStudiesController {
 
   @Get('filter')
   async getStudyWithFilter(
+    @Req() request: IAuthenticatedRequest,
     @Query('studyStatus') studyStatus?: DicomStudyStatus,
     @Query('reportStatus') reportStatus?: DiagnosisStatus,
     @Query('modalityId') modalityId?: string,
@@ -109,9 +113,12 @@ export class DicomStudiesController {
     @Query('studyUID') studyUID?: string
   ) {
     try {
+      // console.log(request.userInfo);
+
       //  Filter studies in imaging service
       let studies = await firstValueFrom(
         this.imagingService.send('ImagingService.DicomStudies.Filter', {
+          role: request?.userInfo?.role,
           studyUID,
           startDate,
           endDate,
@@ -150,7 +157,7 @@ export class DicomStudiesController {
         patient: patients.find((p: Patient) => p.id === study.patientId),
       }));
 
-      console.log('Studies after patient filter:', studies.length);
+      // console.log('Studies after patient filter:', studies.length);
 
       //  Get diagnosis reports for all remaining studies
       const studyIds = studies.map((study: DicomStudy) => study.id);
@@ -162,7 +169,7 @@ export class DicomStudiesController {
         })
       );
 
-      console.log('Diagnosis reports found:', diagnosisReports.length);
+      // console.log('Diagnosis reports found:', diagnosisReports.length);
 
       // CRITICAL: Only filter by report if reportStatus was explicitly provided
       // If reportStatus is "All" or undefined/null, include all studies regardless of report existence

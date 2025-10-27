@@ -12,10 +12,12 @@ export enum Urgency {
 }
 
 export enum DicomStudyStatus {
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  VERIFIED = 'verified',
-  REPORTED = 'reported',
+  SCANNED = 'scanned',
+  TECHNICIAN_VERIFIED = 'technician_verified',
+  READING = 'reading',
+  PENDING_APPROVAL = 'pending_approval',
+  APPROVED = 'approved',
+  RESULT_PRINTED = 'result_printed',
 }
 
 export enum AnalysisStatus {

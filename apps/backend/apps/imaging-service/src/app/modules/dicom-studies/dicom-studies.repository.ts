@@ -9,7 +9,8 @@ import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
-import { DicomStudyStatus } from '@backend/shared-enums';
+import { DicomStudyStatus, Roles } from '@backend/shared-enums';
+import { FilterData } from './dicom-studies.controller';
 
 export type findDicomStudyByReferenceIdType =
   | 'modality'
@@ -131,66 +132,57 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     );
   }
 
-  async filter(
-    studyUID?: string,
-    startDate?: string,
-    endDate?: string,
-    bodyPart?: string,
-    modalityId?: string,
-    modalityMachineId?: string,
-    studyStatus?: DicomStudyStatus
-  ): Promise<DicomStudy[]> {
+  async filter(data: FilterData): Promise<DicomStudy[]> {
     const repository = this.getRepository();
     const qb = await repository
       .createQueryBuilder('study')
       .leftJoinAndSelect('study.imagingOrder', 'order')
       .leftJoinAndSelect('order.modality', 'modality')
       .leftJoinAndSelect('study.modalityMachine', 'modality_machine')
-      .innerJoinAndSelect(
-        'study.series',
-        'series',
-        'series.isDeleted = :notDeleted',
-        { notDeleted: false }
-      )
-
-      .innerJoinAndSelect(
-        'series.instances',
-        'instance',
-        'instance.isDeleted = :notDeleted',
-        { notDeleted: false }
-      );
-    if (studyUID)
+      .innerJoinAndSelect('study.series', 'series')
+      .innerJoinAndSelect('series.instances', 'instance')
+      .innerJoinAndSelect('order.procedure', 'procedure')
+      .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
+      .andWhere('study.isDeleted = :notDeleted', { notDeleted: false });
+    if (data.studyUID)
       qb.andWhere('study.study_instance_uid ILIKE :studyUID', {
-        studyUID: `%${studyUID}%`,
+        studyUID: `%${data.studyUID}%`,
       });
-    if (startDate)
+    if (data.startDate)
       qb.andWhere('study.study_date >= :startDate', {
-        startDate: new Date(startDate),
+        startDate: new Date(data.startDate),
       });
-    if (endDate)
+    if (data.endDate)
       qb.andWhere('study.study_date <= :endDate', {
-        endDate: new Date(endDate),
+        endDate: new Date(data.endDate),
       });
 
-    if (bodyPart)
-      qb.andWhere('order.body_part ILIKE :bodyPart', {
-        bodyPart: `%${bodyPart}%`,
+    if (data.bodyPart)
+      qb.andWhere('bodyPart.name ILIKE :bodyPart', {
+        bodyPart: `%${data.bodyPart}%`,
       });
 
-    if (modalityId)
+    if (data.modalityId)
       qb.andWhere('modality.modality_id = :modalityId', {
-        modalityId: `${modalityId}`,
+        modalityId: `${data.modalityId}`,
       });
 
-    if (modalityMachineId)
-      qb.andWhere('modality_machine = :modalityMachineId', {
-        modalityMachineId,
+    if (data.modalityMachineId)
+      qb.andWhere('study.modality_machine_id = :modalityMachineId', {
+        modalityMachineId: data.modalityMachineId,
       });
 
-    if (studyStatus && studyStatus.toLocaleLowerCase() !== 'all')
+    if (data.studyStatus && data.studyStatus.toLocaleLowerCase() !== 'all')
       qb.andWhere('study.study_status = :studyStatus', {
-        studyStatus: studyStatus,
+        studyStatus: data.studyStatus,
       });
+
+    //radiologist can only see technician verified status study
+    if (data.role && data.role === Roles.RADIOLOGIST) {
+      qb.andWhere('study.study_status <> :status', {
+        status: DicomStudyStatus.SCANNED,
+      });
+    }
 
     return await qb.getMany();
   }

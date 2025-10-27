@@ -1,6 +1,7 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { axiosBaseQuery } from '@/lib/axiosBaseQuery';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { User } from "@/interfaces/user/user.interface";
+import { ApiResponse } from "@/services/imagingApi";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -22,21 +23,21 @@ export interface UserFilters {
 }
 
 export const userApi = createApi({
-  reducerPath: 'userApi',
-  baseQuery: axiosBaseQuery('/user'),
-  tagTypes: ['User'],
+  reducerPath: "userApi",
+  baseQuery: axiosBaseQuery("/user"),
+  tagTypes: ["User"],
   endpoints: (builder) => ({
     getAllUsers: builder.query<PaginatedResponse<User>, UserFilters>({
       query: (params) => ({
-        url: '/users',
-        method: 'GET',
+        url: "/users",
+        method: "GET",
         params,
       }),
-      providesTags: ['User'],
+      providesTags: ["User"],
     }),
 
     getUsersByRoom: builder.query<
-      User[],
+      ApiResponse<User[]>,
       { roomId: string; role: string; search?: string }
     >({
       query: ({ roomId, role, search }) => ({
@@ -47,41 +48,41 @@ export const userApi = createApi({
       providesTags: ["User"],
     }),
 
-    getUserById: builder.query<User, string>({
+    getUserById: builder.query<ApiResponse<User>, string>({
       query: (id) => ({
         url: `/${id}`,
-        method: 'GET',
+        method: "GET",
       }),
-      providesTags: (result, error, id) => [{ type: 'User', id }],
+      providesTags: (result, error, id) => [{ type: "User", id }],
     }),
 
     createUser: builder.mutation<User, Partial<User>>({
       query: (data) => ({
-        url: '/register',
-        method: 'POST',
+        url: "/register",
+        method: "POST",
         data,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ["User"],
     }),
 
     updateUser: builder.mutation<User, { id: string; updates: Partial<User> }>({
       query: ({ id, updates }) => ({
         url: `/${id}`,
-        method: 'PATCH',
+        method: "PATCH",
         data: updates,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: 'User', id },
-        'User'
+        { type: "User", id },
+        "User",
       ],
     }),
 
     deleteUser: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ["User"],
     }),
   }),
 });

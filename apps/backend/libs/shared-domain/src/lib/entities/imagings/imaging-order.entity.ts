@@ -47,8 +47,8 @@ export class ImagingOrder extends BaseEntity {
   })
   orderStatus!: OrderStatus;
 
-  @Column({ name: 'body_part', length: 100 })
-  bodyPart!: string;
+  // @Column({ name: 'body_part', length: 100 })
+  // bodyPart!: string;
 
   @Column({ name: 'completed_date', type: 'timestamp', nullable: true })
   completedDate?: Date;

@@ -13,12 +13,13 @@ import {
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { DicomStudyStatus, OrderStatus } from '@backend/shared-enums';
+import { DicomStudyStatus, OrderStatus, Roles } from '@backend/shared-enums';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { FilterData } from './dicom-studies.controller';
 
 //relation: imagingOrder, series
 const relation = ['imagingOrder', 'series', 'modalityMachine'];
@@ -182,23 +183,7 @@ export class DicomStudiesService {
     });
   };
 
-  filter = async (
-    studyUID?: string,
-    startDate?: string,
-    endDate?: string,
-    bodyPart?: string,
-    modalityId?: string,
-    modalityMachineId?: string,
-    studyStatus?: DicomStudyStatus
-  ) => {
-    return await this.dicomStudiesRepository.filter(
-      studyUID,
-      startDate,
-      endDate,
-      bodyPart,
-      modalityId,
-      modalityMachineId,
-      studyStatus
-    );
+  filter = async (data: FilterData) => {
+    return await this.dicomStudiesRepository.filter(data);
   };
 }

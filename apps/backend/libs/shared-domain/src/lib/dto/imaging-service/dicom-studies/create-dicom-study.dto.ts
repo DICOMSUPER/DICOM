@@ -37,7 +37,7 @@ export class CreateDicomStudyDto {
   verifyingRadiologistId?: string;
 
   @IsEnum(DicomStudyStatus)
-  studyStatus?: DicomStudyStatus = DicomStudyStatus.IN_PROGRESS;
+  studyStatus?: DicomStudyStatus = DicomStudyStatus.WAITING_TO_SCAN;
 
   @IsString()
   @IsOptional()

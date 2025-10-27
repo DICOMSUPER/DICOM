@@ -7,7 +7,8 @@ import {
   EmployeeScheduleSearchFilters,
 } from '../dto/schedule';
 import { RepositoryPaginationDto } from '@backend/database';
-
+import { Roles } from '@backend/shared-enums';
+import moment from 'moment';
 @Injectable()
 export class EmployeeScheduleRepository {
   constructor(
@@ -231,11 +232,26 @@ export class EmployeeScheduleRepository {
     }
 
     const total = await query.getCount();
-    const scheduled = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'scheduled' }).getCount();
-    const confirmed = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'confirmed' }).getCount();
-    const completed = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'completed' }).getCount();
-    const cancelled = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'cancelled' }).getCount();
-    const noShow = await query.clone().andWhere('schedule.schedule_status = :status', { status: 'no_show' }).getCount();
+    const scheduled = await query
+      .clone()
+      .andWhere('schedule.schedule_status = :status', { status: 'scheduled' })
+      .getCount();
+    const confirmed = await query
+      .clone()
+      .andWhere('schedule.schedule_status = :status', { status: 'confirmed' })
+      .getCount();
+    const completed = await query
+      .clone()
+      .andWhere('schedule.schedule_status = :status', { status: 'completed' })
+      .getCount();
+    const cancelled = await query
+      .clone()
+      .andWhere('schedule.schedule_status = :status', { status: 'cancelled' })
+      .getCount();
+    const noShow = await query
+      .clone()
+      .andWhere('schedule.schedule_status = :status', { status: 'no_show' })
+      .getCount();
 
     return {
       total,
@@ -254,5 +270,54 @@ export class EmployeeScheduleRepository {
   async removeByIds(ids: string[]): Promise<{ affected: number }> {
     const result = await this.repository.delete({ schedule_id: In(ids) });
     return { affected: result.affected || 0 };
+  }
+
+  async getOverlappingSchedules(roomId: string, role: Roles, search?: string) {
+    // Use server current time (right now)
+    const now = moment();
+    const currentDate = now.format('YYYY-MM-DD');
+    const yesterdayDate = now.clone().subtract(1, 'day').format('YYYY-MM-DD');
+    const currentTime = now.format('HH:mm:ss');
+
+    // Added NULL checks and role filter on the joined employee
+    const qb = this.repository
+      .createQueryBuilder('schedules')
+      .where('schedules.room_id = :roomId', { roomId })
+      .andWhere('employee.role = :role', { role }) // Filter by passed role
+      .andWhere(
+        `(schedules.work_date = :currentDate
+           AND schedules.actual_start_time IS NOT NULL
+           AND schedules.actual_end_time IS NOT NULL
+           AND (
+             (schedules.actual_start_time > schedules.actual_end_time 
+               AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
+             ) 
+             OR 
+             (schedules.actual_start_time <= schedules.actual_end_time 
+               AND schedules.actual_start_time < :currentTime 
+               AND schedules.actual_end_time > :currentTime
+             )
+           )
+          )
+          OR 
+          (schedules.work_date = :yesterdayDate
+           AND schedules.actual_start_time IS NOT NULL
+           AND schedules.actual_end_time IS NOT NULL
+           AND schedules.actual_start_time > schedules.actual_end_time
+           AND :currentTime < schedules.actual_end_time
+          )`,
+        { currentDate, yesterdayDate, currentTime }
+      )
+      .leftJoinAndSelect('schedules.employee', 'employee')
+      .leftJoinAndSelect('schedules.room', 'room') // Optional
+      .leftJoinAndSelect('schedules.shift_template', 'shift_template'); // Optional
+
+    if (search) {
+      qb.andWhere(
+        '(employee.username ILIKE :search OR employee.email ILIKE :search OR employee.firstName ILIKE :search OR employee.lastName ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+    return await qb.getMany();
   }
 }

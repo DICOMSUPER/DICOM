@@ -5,6 +5,7 @@ import {
   QueueAssignment,
   QueueAssignmentRepository,
   PatientEncounterRepository,
+  QueueInfo,
 } from '@backend/shared-domain';
 
 import { QueueStatus, QueuePriorityLevel, Roles } from '@backend/shared-enums';
@@ -27,7 +28,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 
 @Injectable()
 export class QueueAssignmentService {
@@ -36,9 +37,7 @@ export class QueueAssignmentService {
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'UserService')
     private readonly userService: ClientProxy,
-    private readonly encounterRepository: PatientEncounterRepository,
-    @InjectRepository(QueueAssignment)
-    private readonly queueRepository2: Repository<QueueAssignment>
+    private readonly encounterRepository: PatientEncounterRepository
   ) {}
 
   private getEndOfDay(date: Date = new Date()): Date {
@@ -305,8 +304,15 @@ export class QueueAssignmentService {
   private async calculateEstimatedWaitTime(
     priority?: QueuePriorityLevel
   ): Promise<number> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = this.getEndOfDay();
     const waitingAssignments = await this.queueRepository.findAll({
-      where: { status: QueueStatus.WAITING },
+      where: {
+        status: QueueStatus.WAITING,
+        assignmentDate: Between(startOfDay, endOfDay),
+      },
     });
     const waitingCount = waitingAssignments.length;
 
@@ -541,80 +547,11 @@ export class QueueAssignmentService {
     });
   };
 
-  async getMaxWaitingAndCurrentInProgressByPhysicians(
+  async getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
     physicianIds: string[]
-  ): Promise<{
-    [physicianId: string]: {
-      maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
-      currentInProgress: {
-        queueNumber: number;
-        entity: QueueAssignment;
-      } | null;
-    };
-  }> {
-    if (!physicianIds.length) {
-      return {};
-    }
-
-    const results: {
-      [physicianId: string]: {
-        maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
-        currentInProgress: {
-          queueNumber: number;
-          entity: QueueAssignment;
-        } | null;
-      };
-    } = physicianIds.reduce((acc, pid) => {
-      acc[pid] = { maxWaiting: null, currentInProgress: null };
-      return acc;
-    }, {});
-
-    // Query 1: Get all waiting assignments, ordered by physician ASC, queueNumber DESC
-    const waitingAssignments = await this.queueRepository2
-      .createQueryBuilder('qa')
-      .innerJoinAndSelect('qa.encounter', 'encounter')
-      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
-        physicianIds,
-      })
-      .andWhere('qa.status = :status', { status: QueueStatus.WAITING })
-      .orderBy('encounter.assignedPhysicianId', 'ASC')
-      .addOrderBy('qa.queueNumber', 'DESC')
-      .getMany();
-
-    // Query 2: Get all in-progress assignments, ordered by physician ASC, queueNumber ASC (smallest/lowest as "current")
-    const inProgressAssignments = await this.queueRepository2
-      .createQueryBuilder('qa')
-      .innerJoinAndSelect('qa.encounter', 'encounter')
-      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
-        physicianIds,
-      })
-      .andWhere('qa.status = :status', { status: QueueStatus.IN_PROGRESS })
-      .orderBy('encounter.assignedPhysicianId', 'ASC')
-      .addOrderBy('qa.queueNumber', 'ASC')
-      .getMany();
-
-    // Process waiting: First per physician group is the max (largest queueNumber) due to ordering
-    for (const qa of waitingAssignments) {
-      const pid = qa.encounter.assignedPhysicianId;
-      if (!results[pid].maxWaiting) {
-        results[pid].maxWaiting = {
-          queueNumber: qa.queueNumber,
-          // entity: qa,
-        };
-      }
-    }
-
-    // Process in-progress: First per physician group is the current (smallest queueNumber) due to ordering
-    for (const qa of inProgressAssignments) {
-      const pid = qa.encounter.assignedPhysicianId;
-      if (!results[pid].currentInProgress) {
-        results[pid].currentInProgress = {
-          queueNumber: qa.queueNumber,
-          // entity: qa,
-        };
-      }
-    }
-
-    return results;
+  ): Promise<QueueInfo> {
+    return await this.queueRepository.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
+      physicianIds
+    );
   }
 }

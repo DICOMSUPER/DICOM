@@ -64,7 +64,7 @@ export class DicomStudy extends BaseEntity {
     name: 'study_status',
     type: 'enum',
     enum: DicomStudyStatus,
-    default: DicomStudyStatus.IN_PROGRESS,
+    default: DicomStudyStatus.SCANNED,
   })
   studyStatus!: DicomStudyStatus;
 
