@@ -3,8 +3,12 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { Room } from "@/interfaces/user/room.interface";
 import { CreateRoomDto } from "@/interfaces/user/room.interface";
 import { UpdateRoomDto } from "@/interfaces/user/room.interface";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
+import {
+  PaginatedResponse,
+  QueryParams,
+} from "@/interfaces/pagination/pagination.interface";
 import { mapApiResponse } from "@/utils/adpater";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 export interface RoomSearchFilters {
   type?: string;
@@ -20,7 +24,7 @@ export const roomApi = createApi({
   tagTypes: ["Room"],
   endpoints: (builder) => ({
     // Get all rooms with filters
-   getRooms: builder.query<PaginatedResponse<Room>, QueryParams>({
+    getRooms: builder.query<PaginatedResponse<Room>, QueryParams>({
       query: (params) => ({
         url: "",
         method: "GET",
@@ -46,7 +50,7 @@ export const roomApi = createApi({
     }),
 
     // Get room by ID
-    getRoomById: builder.query<Room, string>({
+    getRoomById: builder.query<ApiResponse<Room>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",

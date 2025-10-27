@@ -12,6 +12,7 @@ import { IMAGING_SERVICE } from '../constant/microservice.constant';
 import { DicomStudyStatus } from '@backend/shared-enums';
 import { Patient } from '@backend/shared-domain';
 import { ModalityMachinesRepository } from './modules/modality-machines/modality-machines.repository';
+import { BodyPartRepository } from './modules/body-part/body-part.repository';
 
 export interface DICOMMetadata {
   // General Image Information
@@ -130,7 +131,8 @@ export class AppService {
     @Inject()
     private readonly imagingOrderRepository: ImagingOrderRepository,
     @Inject()
-    private readonly modalityMachineRepository: ModalityMachinesRepository
+    private readonly modalityMachineRepository: ModalityMachinesRepository,
+    @Inject() private readonly bodyPartRepository: BodyPartRepository
   ) {}
   getData(): { message: string } {
     return { message: 'Hello API' };
@@ -161,7 +163,7 @@ export class AppService {
           {
             where: { id: orderId, isDeleted: false },
           },
-          [],
+          ['procedure'],
           transactionalEntityManager
         );
         if (!order) {
@@ -172,6 +174,9 @@ export class AppService {
           );
         }
 
+        const bodyPart = await this.bodyPartRepository.findOne({
+          where: { id: order?.procedure.bodyPartId, isDeleted: false },
+        });
         //check imaging modality
         const modality = await this.imagingModalityRepository.findOne(
           {
@@ -278,7 +283,7 @@ export class AppService {
             studyDescription: data.StudyDescription,
             referringPhysicianId: order.orderingPhysicianId,
             performingTechnicianId: performingTechnicianId,
-            studyStatus: DicomStudyStatus.IN_PROGRESS,
+            studyStatus: DicomStudyStatus.SCANNED,
             numberOfSeries: 0,
             storagePath: null,
           });
@@ -310,7 +315,7 @@ export class AppService {
             studyId: study.id,
             seriesNumber: study.numberOfSeries + 1,
             seriesDescription: '',
-            bodyPartExamined: order.bodyPart,
+            bodyPartExamined: bodyPart?.name,
             seriesDate: data.StudyDate || 'NA',
             seriesTime: data.StudyTime || 'NA',
             protocolName: 'NA',

@@ -167,7 +167,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
         const queueData = {
           ...queueInfo,
           roomId: selectedRoom?.id,
-          encounterId: encounter?.id,
+          encounterId: encounter?.data.id,
           createdBy: user.id,
         };
 
@@ -176,12 +176,13 @@ export function PatientForward({ patientId }: { patientId: string }) {
         toast.success("Forward patient successfully");
 
         router.push(
-          `/reception/queue-paper/${queue.id}?doctor=${encounter.assignedPhysicianId}`
+          `/reception/queue-paper/${queue.data.id}?doctor=${encounter.data.assignedPhysicianId}`
         );
       }
     } catch (err) {
-      if (encounter && encounter.id) await deleteEncounter(encounter.id);
-      if (queue && queue.id) await deleteQueueAssignment(queue.id);
+      if (encounter && encounter.data.id)
+        await deleteEncounter(encounter.data.id);
+      if (queue && queue.data.id) await deleteQueueAssignment(queue.data.id);
       window.alert("Internal server error");
       console.log(err);
     }

@@ -28,10 +28,12 @@ export const queueAssignmentApi = createApi({
       providesTags: ["QueueAssignment"],
     }),
 
-    getQueueAssignmentById: builder.query<QueueAssignment, string>({
-      query: (id) => ({ url: `/${id}`, method: "GET" }),
-      providesTags: (result, error, id) => [{ type: "QueueAssignment", id }],
-    }),
+    getQueueAssignmentById: builder.query<ApiResponse<QueueAssignment>, string>(
+      {
+        query: (id) => ({ url: `/${id}`, method: "GET" }),
+        providesTags: (result, error, id) => [{ type: "QueueAssignment", id }],
+      }
+    ),
 
     getQueueAssignmentsByVisitId: builder.query<QueueAssignment[], string>({
       query: (visitId) => ({

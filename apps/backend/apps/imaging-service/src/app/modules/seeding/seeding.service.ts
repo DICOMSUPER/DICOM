@@ -52,7 +52,7 @@ export class SeedingService {
     private readonly patientServiceClient: ClientProxy,
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
-    private readonly dataSource: DataSource,
+    private readonly dataSource: DataSource
   ) {}
 
   // ✅ Helper method to get patient IDs from Patient Service
@@ -552,7 +552,9 @@ export class SeedingService {
       const modality = modalities.find(
         (m) => m.modalityCode === procedure.modalityCode
       );
-      const bodyPart = bodyParts.find((bp) => bp.name === procedure.bodyPartName);
+      const bodyPart = bodyParts.find(
+        (bp) => bp.name === procedure.bodyPartName
+      );
 
       if (!modality || !bodyPart) {
         this.logger.warn(
@@ -636,7 +638,7 @@ export class SeedingService {
 
     const orderStatuses = [
       OrderStatus.PENDING,
-      OrderStatus.SCHEDULED,
+      OrderStatus.CANCELLED,
       OrderStatus.IN_PROGRESS,
       OrderStatus.COMPLETED,
     ];
@@ -713,7 +715,9 @@ export class SeedingService {
     });
 
     if (modalityMachines.length === 0) {
-      this.logger.warn('⚠️ No modality machines found, skipping DICOM study seeding');
+      this.logger.warn(
+        '⚠️ No modality machines found, skipping DICOM study seeding'
+      );
       return;
     }
 
@@ -752,10 +756,12 @@ export class SeedingService {
     ];
 
     const statuses = [
-      DicomStudyStatus.IN_PROGRESS,
-      DicomStudyStatus.COMPLETED,
-      DicomStudyStatus.VERIFIED,
-      DicomStudyStatus.REPORTED,
+      DicomStudyStatus.WAITING_TO_SCAN,
+      DicomStudyStatus.SCANNED,
+      DicomStudyStatus.READING,
+      DicomStudyStatus.PENDING_APPROVAL,
+      DicomStudyStatus.APPROVED,
+      DicomStudyStatus.RESULT_PRINTED,
     ];
 
     // Create 15 sample DICOM studies
@@ -930,10 +936,11 @@ export class SeedingService {
 
       for (let i = 0; i < numInstances; i++) {
         const instance = {
-          sopInstanceUid: `${
-            singleSeries.seriesInstanceUid
-          }.${i + 1}.${Math.random().toString(36).substr(2, 9)}`,
-          sopClassUID: sopClassUIDs[Math.floor(Math.random() * sopClassUIDs.length)],
+          sopInstanceUid: `${singleSeries.seriesInstanceUid}.${
+            i + 1
+          }.${Math.random().toString(36).substr(2, 9)}`,
+          sopClassUID:
+            sopClassUIDs[Math.floor(Math.random() * sopClassUIDs.length)],
           seriesId: singleSeries.id,
           instanceNumber: i + 1,
           filePath: `/dicom/instances/${singleSeries.id}`,
@@ -1114,7 +1121,7 @@ export class SeedingService {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      
+
       try {
         // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
         await queryRunner.query('TRUNCATE TABLE "image_annotations" CASCADE');
@@ -1126,7 +1133,7 @@ export class SeedingService {
         await queryRunner.query('TRUNCATE TABLE "modality_machines" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "body_part" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "imaging_modalities" CASCADE');
-        
+
         this.logger.log('✅ All Imaging Service data cleared successfully!');
       } finally {
         await queryRunner.release();
