@@ -8,19 +8,6 @@ import {
 } from 'class-validator';
 export class CreateImagingOrderDto {
 
-  @IsString()
-  patientId!: string;
-
-  @IsString()
-  @IsUUID()
-  orderingPhysicianId!: string;
-
-  @IsString()
-  @IsUUID()
-  modalityId?: string;
-
-  @IsString()
-  bodyPart!: string;
 
   @IsString()
   @IsUUID()
@@ -28,7 +15,10 @@ export class CreateImagingOrderDto {
 
   @IsEnum(OrderStatus)
   @IsOptional()
-  orderStatus!: OrderStatus;
+  orderStatus?: OrderStatus;
+
+  @IsUUID()
+  imagingOrderFormId?: string;
 
   @IsString()
   @IsOptional()
@@ -41,9 +31,4 @@ export class CreateImagingOrderDto {
   @IsString()
   specialInstructions?: string;
 
-  @IsString()
-  roomId!: string;
-
-  @IsString()
-  notes?: string;
 }

@@ -36,8 +36,7 @@ export class ImagingOrdersService {
     return order;
   };
 
-
-  private async generateOrderNumber(): Promise<string> {
+  public async generateOrderNumber(): Promise<string> {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const maxAttempts = 5;
     for (let i = 0; i < maxAttempts; i++) {
@@ -73,12 +72,12 @@ export class ImagingOrdersService {
   create = async (
     createImagingOrderDto: CreateImagingOrderDto
   ): Promise<ImagingOrder> => {
-    await this.checkModality(createImagingOrderDto.modalityId as string);
+    // await this.checkModality(createImagingOrderDto.modalityId as string);
     return await this.imagingOrderRepository.create({
       ...createImagingOrderDto,
       orderStatus: OrderStatus.PENDING,
       procedureId: createImagingOrderDto.request_procedure_id,
-      orderNumber: (await this.generateOrderNumber()),
+      orderNumber: await this.generateOrderNumber(),
     });
   };
 
@@ -130,11 +129,11 @@ export class ImagingOrdersService {
     const order = await this.checkImagingOrder(id);
 
     //check availablity when update modality
-    if (
-      updateImagingOrderDto.modalityId &&
-      updateImagingOrderDto.modalityId !== order.modalityId
-    )
-      await this.checkModality(updateImagingOrderDto.modalityId);
+    // if (
+    //   updateImagingOrderDto.modalityId &&
+    //   updateImagingOrderDto.modalityId !== order.modalityId
+    // )
+    //   await this.checkModality(updateImagingOrderDto.modalityId);
 
     return await this.imagingOrderRepository.update(id, updateImagingOrderDto);
   };

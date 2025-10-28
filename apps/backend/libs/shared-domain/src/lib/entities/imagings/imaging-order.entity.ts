@@ -3,34 +3,19 @@ import { OrderStatus } from '@backend/shared-enums';
 import {
   Column,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryGeneratedColumn
 } from 'typeorm';
-import { ImagingModality } from './imaging-modality.entity';
+import { ImagingOrderForm } from './imaging-order-form.entity';
 import { RequestProcedure } from './request-procedure.entity';
 @Entity('imaging_orders')
-@Index(['patientId'])
 export class ImagingOrder extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   id!: string;
 
-  @Column({ name: 'order_number', length: 50, unique: true })
+  @Column({ name: 'order_number',  unique: true })
   orderNumber!: string;
-
-  @Column({ name: 'patient_id', type: 'uuid' })
-  patientId!: string;
-
-  @Column({ name: 'ordering_physician_id', type: 'uuid' })
-  orderingPhysicianId!: string;
-
-  @Column({ name: 'modality_id', type: 'uuid' })
-  modalityId!: string;
-
-  @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
-  @JoinColumn({ name: 'modality_id' })
-  modality!: ImagingModality;
 
   @Column({ name: 'procedure_id', type: 'uuid', nullable: true })
   procedureId?: string;
@@ -47,8 +32,12 @@ export class ImagingOrder extends BaseEntity {
   })
   orderStatus!: OrderStatus;
 
-  // @Column({ name: 'body_part', length: 100 })
-  // bodyPart!: string;
+  @Column({ name: 'order_form_id', type: 'uuid', nullable: true })
+  imagingOrderFormId?: string;
+
+  @ManyToOne(() => ImagingOrderForm, { nullable: true, eager: true })
+  @JoinColumn({ name: 'order_form_id' })
+  imagingOrderForm?: ImagingOrderForm;
 
   @Column({ name: 'completed_date', type: 'timestamp', nullable: true })
   completedDate?: Date;
@@ -62,15 +51,11 @@ export class ImagingOrder extends BaseEntity {
   @Column({ name: 'special_instructions', type: 'text', nullable: true })
   specialInstructions?: string;
 
-  @Column({ name: 'room_id', type: 'uuid', nullable: true })
-  roomId!: string;
+
 
   //   @Column({ name: 'technologist_id', type: 'uuid', nullable: true })
   //   technologistId?: string;
 
   //   @Column({ name: 'radiologist_id', type: 'uuid', nullable: true })
   //   radiologistId?: string;
-
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
 }

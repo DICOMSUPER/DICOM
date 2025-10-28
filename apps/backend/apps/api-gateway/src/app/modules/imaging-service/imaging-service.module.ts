@@ -17,6 +17,7 @@ import { ImagingOrdersModule } from './imaging-orders/imaging-orders.module';
 import { ImagingServiceController } from './imaging-service.controller';
 import { ModalityMachinesModule } from './modality-machines/modality-machines.module';
 import { RequestProcedureModule } from './request-procedure/request-procedure.module';
+import { ImagingOrderFormModule } from './imaging-order-form/imaging-order-form.module';
 
 
 
@@ -36,6 +37,7 @@ import { RequestProcedureModule } from './request-procedure/request-procedure.mo
     BodyPartModule,
     RequestProcedureModule,
     BodyPartsModule,
+    ImagingOrderFormModule,
   ],
   exports: [
     ImagingModalitiesModule,
@@ -43,6 +45,7 @@ import { RequestProcedureModule } from './request-procedure/request-procedure.mo
     ModalityMachinesModule,
     BodyPartModule,
     RequestProcedureModule,
+    ImagingOrderFormModule,
   ],
   controllers: [ImagingServiceController],
 })

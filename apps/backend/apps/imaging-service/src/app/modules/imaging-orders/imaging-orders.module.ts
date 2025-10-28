@@ -11,10 +11,9 @@ import { ImagingOrdersService } from './imaging-orders.service';
   controllers: [ImagingOrdersController],
   providers: [
     ImagingOrdersService,
-
     ImagingOrderRepository,
     ImagingModalityRepository,
   ],
-  exports: [BackendEntitiesModule],
+  exports: [BackendEntitiesModule, ImagingOrdersService, ],
 })
 export class ImagingOrdersModule {}
