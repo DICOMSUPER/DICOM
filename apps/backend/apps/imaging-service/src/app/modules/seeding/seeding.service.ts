@@ -756,7 +756,6 @@ export class SeedingService {
     ];
 
     const statuses = [
-      DicomStudyStatus.WAITING_TO_SCAN,
       DicomStudyStatus.SCANNED,
       DicomStudyStatus.READING,
       DicomStudyStatus.PENDING_APPROVAL,
