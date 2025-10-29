@@ -30,7 +30,7 @@ export class ImagingOrdersService {
     private readonly imagingModalityRepository: ImagingModalityRepository,
     @Inject()
     private readonly imagingOrderFormRepository: ImagingOrderFormRepository
-  ) {}
+  ) { }
 
   private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
     const order = await this.imagingOrderRepository.findOne({ where: { id } });
@@ -197,4 +197,6 @@ export class ImagingOrdersService {
   getRoomStats = async (id: string) => {
     return await this.imagingOrderRepository.getRoomStats(id);
   };
+  
+
 }

@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsTimeZone, IsOptional, IsBoolean, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, MaxLength, MinLength, Matches } from 'class-validator';
 import { ShiftType } from '@backend/shared-enums';
 
 export class CreateShiftTemplateDto {
@@ -11,21 +11,29 @@ export class CreateShiftTemplateDto {
   shift_type!: ShiftType;
 
   @IsString()
-  @IsTimeZone()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, {
+    message: 'start_time must be in HH:MM or HH:MM:SS format'
+  })
   start_time!: string;
 
   @IsString()
-  @IsTimeZone()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, {
+    message: 'end_time must be in HH:MM or HH:MM:SS format'
+  })
   end_time!: string;
 
   @IsOptional()
   @IsString()
-  @IsTimeZone()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, {
+    message: 'break_start_time must be in HH:MM or HH:MM:SS format'
+  })
   break_start_time?: string;
 
   @IsOptional()
   @IsString()
-  @IsTimeZone()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, {
+    message: 'break_end_time must be in HH:MM or HH:MM:SS format'
+  })
   break_end_time?: string;
 
   @IsOptional()

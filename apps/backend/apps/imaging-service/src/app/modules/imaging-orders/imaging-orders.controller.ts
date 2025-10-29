@@ -21,7 +21,8 @@ const moduleName = 'ImagingOrders';
 @Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
+  constructor(private readonly imagingOrdersService: ImagingOrdersService,
+  ) { }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
@@ -207,4 +208,6 @@ export class ImagingOrdersController {
       );
     }
   }
-}
+
+
+  }

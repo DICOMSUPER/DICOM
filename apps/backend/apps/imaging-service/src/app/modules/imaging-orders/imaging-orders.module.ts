@@ -8,7 +8,9 @@ import { ImagingOrdersService } from './imaging-orders.service';
 import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 
 @Module({
-  imports: [BackendEntitiesModule.forFeature([ImagingOrder, ImagingModality])],
+  imports: [
+    BackendEntitiesModule.forFeature([ImagingOrder, ImagingModality]),
+  ],
   controllers: [ImagingOrdersController],
   providers: [
     ImagingOrdersService,

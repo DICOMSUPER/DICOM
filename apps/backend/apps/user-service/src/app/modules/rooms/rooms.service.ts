@@ -15,16 +15,17 @@ import {
 } from '@backend/shared-exception';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus } from '@nestjs/common';
-import { Roles } from '@backend/shared-enums';
+import { RedisService } from '@backend/redis';
+import { RoomType } from '@backend/shared-enums';
 
 @Injectable()
 export class RoomsService {
   private readonly logger = new Logger(RoomsService.name);
-
   constructor(
     @InjectRepository(Room)
-    private readonly roomRepository: Repository<Room>
-  ) {}
+    private readonly roomRepository: Repository<Room>,
+    private readonly redisService: RedisService
+  ) { }
 
   async create(createRoomDto: CreateRoomDto): Promise<Room> {
     try {
@@ -90,6 +91,58 @@ export class RoomsService {
       throw new RoomNotFoundException('Không thể tìm thấy phòng');
     }
   }
+  // async findAll(query: {
+  //   page?: number;
+  //   limit?: number;
+  //   search?: string;
+  //   isActive?: boolean;
+  // }) {
+  //   try {
+  //     const page = query.page ?? 1;
+  //     const limit = query.limit ?? 10;
+  //     const skip = (page - 1) * limit;
+
+  //     const qb = this.roomRepository
+  //       .createQueryBuilder('room')
+  //       .leftJoinAndSelect('room.department', 'department')
+  //       .orderBy('room.createdAt', 'DESC')
+  //       .skip(skip)
+  //       .take(limit);
+
+  //     if (query.search) {
+  //       qb.andWhere(
+  //         '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+  //         {
+  //           search: `%${query.search}%`,
+  //         }
+  //       );
+  //     }
+
+  //     if (query.isActive !== undefined) {
+  //       qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
+  //     }
+
+  //     const [data, total] = await qb.getManyAndCount();
+
+  //     return {
+  //       data: {
+  //         data,
+  //         pagination: {
+  //           page,
+  //           limit,
+  //           total,
+  //           totalPages: Math.ceil(total / limit),
+  //         },
+  //         count: data.length,
+  //       },
+  //       message: 'Lấy danh sách phòng thành công',
+  //     };
+  //   } catch (error: any) {
+  //     this.logger.error(`Find all rooms error: ${error.message}`);
+  //     throw new DatabaseException('Lỗi khi lấy danh sách phòng');
+  //   }
+  // }
+
   async findAll(query: {
     page?: number;
     limit?: number;
@@ -100,7 +153,22 @@ export class RoomsService {
       const page = query.page ?? 1;
       const limit = query.limit ?? 10;
       const skip = (page - 1) * limit;
+      const search = query.search ?? '';
+      const isActive = query.isActive;
 
+      // 🔹 Tạo cache key duy nhất
+      const cacheKey = `rooms:page=${page}:limit=${limit}:search=${search || 'none'}:active=${isActive ?? 'all'}`;
+
+      // 🔹 Kiểm tra cache trước
+      const cachedData = await this.redisService.get<any>(cacheKey);
+      if (cachedData) {
+        this.logger.log(`✅ [CACHE HIT] Dữ liệu lấy từ Redis key: ${cacheKey}`);
+        return cachedData;
+      }
+
+      this.logger.log(`⚙️ [CACHE MISS] Lấy dữ liệu từ DB, key: ${cacheKey}`);
+
+      // 🔹 Query DB
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
@@ -108,22 +176,20 @@ export class RoomsService {
         .skip(skip)
         .take(limit);
 
-      if (query.search) {
+      if (search) {
         qb.andWhere(
           '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
-          {
-            search: `%${query.search}%`,
-          }
+          { search: `%${search}%` },
         );
       }
 
-      if (query.isActive !== undefined) {
-        qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
+      if (isActive !== undefined) {
+        qb.andWhere('room.isActive = :isActive', { isActive });
       }
 
       const [data, total] = await qb.getManyAndCount();
 
-      return {
+      const response = {
         data: {
           data,
           pagination: {
@@ -136,11 +202,17 @@ export class RoomsService {
         },
         message: 'Lấy danh sách phòng thành công',
       };
+
+      // 🔹 Lưu cache với TTL = 60 giây (tùy bạn chỉnh)
+      await this.redisService.set(cacheKey, response, 60 * 1000);
+
+      return response;
     } catch (error: any) {
       this.logger.error(`Find all rooms error: ${error.message}`);
       throw new DatabaseException('Lỗi khi lấy danh sách phòng');
     }
   }
+
 
   async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room> {
     try {
@@ -194,13 +266,12 @@ export class RoomsService {
       throw new RoomDeletionFailedException('Không thể xóa phòng');
     }
   }
-
-  async getRoomByDepartmentId(data: {
-    id: string;
-    applyScheduleFilter: boolean;
-    search?: string;
-    role?: Roles;
-  }): Promise<Room[]> {
+  
+  async getRoomByDepartmentId(
+    id: string,
+    applyScheduleFilter: boolean,
+    search?: string
+  ): Promise<Room[]> {
     try {
       const qb = this.roomRepository
         .createQueryBuilder('room')
@@ -267,20 +338,80 @@ export class RoomsService {
     } catch (error) {
       throw ThrowMicroserviceException(
         HttpStatus.INTERNAL_SERVER_ERROR,
-        `Failed to get rooms by department_id: ${
-          (error as Error).message || error
+        `Failed to get rooms by department_id: ${(error as Error).message || error
         }`,
         'UserService'
       );
     }
   }
+  async filterRooms(query: {
+  status?: RoomStatus;
+  roomType?: RoomType;
+  departmentId?: string;
+  page?: number;
+  limit?: number;
+}) {
+  try {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
 
-  async getRoomByRoomIds(roomIds: string[]): Promise<Room[]> {
-    if (roomIds.length > 0) {
-      return await this.roomRepository
-        .createQueryBuilder('room')
-        .andWhere('room.id IN (:...roomIds)', { roomIds })
-        .getMany();
-    } else return [];
+    const { status, roomType, departmentId } = query;
+
+    // 🔹 Tạo cache key để giảm tải DB
+    const cacheKey = `rooms:filter:status=${status ?? 'all'}:type=${roomType ?? 'all'}:dept=${departmentId ?? 'all'}:page=${page}:limit=${limit}`;
+
+    const cachedData = await this.redisService.get<any>(cacheKey);
+    if (cachedData) {
+      this.logger.log(`✅ [CACHE HIT] Dữ liệu filter lấy từ Redis key: ${cacheKey}`);
+      return cachedData;
+    }
+
+    this.logger.log(`⚙️ [CACHE MISS] Lấy dữ liệu filter từ DB key: ${cacheKey}`);
+
+    const qb = this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoinAndSelect('room.department', 'department')
+      .orderBy('room.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (status) {
+      qb.andWhere('room.status = :status', { status });
+    }
+
+    if (roomType) {
+      qb.andWhere('room.roomType = :roomType', { roomType });
+    }
+
+    if (departmentId) {
+      qb.andWhere('room.departmentId = :departmentId', { departmentId });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+
+    const response = {
+      data: {
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+        count: data.length,
+      },
+      message: 'Lọc danh sách phòng thành công',
+    };
+
+    // 🔹 Lưu cache 60 giây
+    await this.redisService.set(cacheKey, response, 60 * 1000);
+
+    return response;
+  } catch (error: any) {
+    this.logger.error(`Filter rooms error: ${error.message}`);
+    throw new DatabaseException('Lỗi khi lọc danh sách phòng');
   }
+}
+
 }
