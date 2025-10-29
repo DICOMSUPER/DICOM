@@ -11,6 +11,8 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../constant/microservice.constant';
 import { DicomStudyStatus } from '@backend/shared-enums';
 import { Patient } from '@backend/shared-domain';
+import { ModalityMachinesRepository } from './modules/modality-machines/modality-machines.repository';
+import { BodyPartRepository } from './modules/body-part/body-part.repository';
 
 export interface DICOMMetadata {
   // General Image Information
@@ -127,7 +129,10 @@ export class AppService {
     @Inject()
     private readonly imagingModalityRepository: ImagingModalityRepository,
     @Inject()
-    private readonly imagingOrderRepository: ImagingOrderRepository
+    private readonly imagingOrderRepository: ImagingOrderRepository,
+    @Inject()
+    private readonly modalityMachineRepository: ModalityMachinesRepository,
+    @Inject() private readonly bodyPartRepository: BodyPartRepository
   ) {}
   getData(): { message: string } {
     return { message: 'Hello API' };
@@ -147,7 +152,8 @@ export class AppService {
     orderId: string,
     performingTechnicianId: string,
     filePath: string,
-    patient: Patient
+    patient: Patient,
+    modalityMachineId: string
   ) => {
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
@@ -157,7 +163,7 @@ export class AppService {
           {
             where: { id: orderId, isDeleted: false },
           },
-          [],
+          ['procedure'],
           transactionalEntityManager
         );
         if (!order) {
@@ -168,10 +174,13 @@ export class AppService {
           );
         }
 
+        const bodyPart = await this.bodyPartRepository.findOne({
+          where: { id: order?.procedure?.bodyPartId, isDeleted: false },
+        });
         //check imaging modality
         const modality = await this.imagingModalityRepository.findOne(
           {
-            where: { id: order.modalityId, isDeleted: false },
+            where: { id: order?.procedure?.modalityId, isDeleted: false },
           },
           [],
           transactionalEntityManager
@@ -179,12 +188,42 @@ export class AppService {
         if (!modality) {
           throw ThrowMicroserviceException(
             HttpStatus.NOT_FOUND,
-            `Imaging modality not found, modalityId: ${order.modalityId}`,
+            `Imaging modality not found, modalityId: ${order?.procedure?.modalityId}`,
             IMAGING_SERVICE
           );
         }
 
-        console.log(patient.id, order.patientId);
+        if (modality.modalityCode !== data.Modality) {
+          throw ThrowMicroserviceException(
+            HttpStatus.BAD_REQUEST,
+            `Invalid modality from the file's metadata ( ${data.Modality}) and modality from order ( ${modality.modalityCode}), please make sure you selected the correct imaging order`,
+            IMAGING_SERVICE
+          );
+        }
+
+        //check modality machine
+        const machine = await this.modalityMachineRepository.findOne(
+          {
+            where: { id: modalityMachineId, isDeleted: false },
+          },
+          ['modality']
+        );
+
+        if (!machine) {
+          throw ThrowMicroserviceException(
+            HttpStatus.NOT_FOUND,
+            `Modality machine not found, machineId: ${modalityMachineId}`,
+            IMAGING_SERVICE
+          );
+        }
+
+        if (machine.modality.modalityCode !== modality.modalityCode) {
+          throw ThrowMicroserviceException(
+            HttpStatus.BAD_REQUEST,
+            `Invalid modality machine selected, modality code from machine is ${machine.modality.modalityCode} while modality code for this order is ${modality.modalityCode}`,
+            IMAGING_SERVICE
+          );
+        }
 
         if (patient.id !== order.patientId) {
           throw ThrowMicroserviceException(
@@ -240,10 +279,11 @@ export class AppService {
             orderId: order.id,
             studyDate: data.StudyDate,
             studyTime: data.StudyTime,
+            modalityMachineId: modalityMachineId,
             studyDescription: data.StudyDescription,
             referringPhysicianId: order.orderingPhysicianId,
             performingTechnicianId: performingTechnicianId,
-            studyStatus: DicomStudyStatus.IN_PROGRESS,
+            studyStatus: DicomStudyStatus.SCANNED,
             numberOfSeries: 0,
             storagePath: null,
           });
@@ -275,7 +315,7 @@ export class AppService {
             studyId: study.id,
             seriesNumber: study.numberOfSeries + 1,
             seriesDescription: '',
-            bodyPartExamined: order.bodyPart,
+            bodyPartExamined: bodyPart?.name,
             seriesDate: data.StudyDate || 'NA',
             seriesTime: data.StudyTime || 'NA',
             protocolName: 'NA',

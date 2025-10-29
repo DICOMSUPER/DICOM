@@ -17,7 +17,7 @@ export const queueAssignmentApi = createApi({
   endpoints: (builder) => ({
     // Queue Assignment endpoints
     getQueueAssignments: builder.query<
-      QueueAssignment[],
+      ApiResponse<QueueAssignment[]>,
       QueueAssignmentSearchFilters
     >({
       query: (filters) => ({
@@ -28,12 +28,18 @@ export const queueAssignmentApi = createApi({
       providesTags: ["QueueAssignment"],
     }),
 
-    getQueueAssignmentById: builder.query<QueueAssignment, string>({
+    getQueueAssignmentById: builder.query<
+      ApiResponse<ApiResponse<QueueAssignment>>,
+      string
+    >({
       query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "QueueAssignment", id }],
     }),
 
-    getQueueAssignmentsByVisitId: builder.query<QueueAssignment[], string>({
+    getQueueAssignmentsByVisitId: builder.query<
+      ApiResponse<QueueAssignment[]>,
+      string
+    >({
       query: (visitId) => ({
         url: "",
         method: "GET",
@@ -43,7 +49,7 @@ export const queueAssignmentApi = createApi({
     }),
 
     createQueueAssignment: builder.mutation<
-      QueueAssignment,
+      ApiResponse<QueueAssignment>,
       CreateQueueAssignmentDto
     >({
       query: (data) => ({
@@ -55,7 +61,7 @@ export const queueAssignmentApi = createApi({
     }),
 
     updateQueueAssignment: builder.mutation<
-      QueueAssignment,
+      ApiResponse<QueueAssignment>,
       { id: string; data: UpdateQueueAssignmentDto }
     >({
       query: ({ id, data }) => ({
@@ -91,8 +97,15 @@ export const queueAssignmentApi = createApi({
     }),
 
     // Queue Stats
-    getQueueStats: builder.query<QueueStats, void>({
-      query: () => ({ url: "/stats", method: "GET" }),
+    getQueueStats: builder.query<
+      ApiResponse<QueueStats>,
+      { date?: string; roomId?: string }
+    >({
+      query: ({ date, roomId }) => ({
+        url: "/stats",
+        method: "GET",
+        params: { date, roomId },
+      }),
       providesTags: ["QueueStats"],
     }),
 
@@ -138,14 +151,13 @@ export const queueAssignmentApi = createApi({
       ],
     }),
     getQueueAssignmentsInRoom: builder.query<
-      ApiResponse<PaginatedResponse<QueueAssignment>>,
-      { userId: string; filters?: QueueAssignmentSearchFilters }
+      PaginatedResponse<QueueAssignment>,
+      { filters?: QueueAssignmentSearchFilters }
     >({
-      query: ({ userId, filters }) => ({
+      query: ({ filters }) => ({
         url: "/in-room",
         method: "GET",
         params: {
-          userId,
           ...filters,
         },
       }),

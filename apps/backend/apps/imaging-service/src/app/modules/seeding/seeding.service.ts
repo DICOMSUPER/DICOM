@@ -10,6 +10,9 @@ import {
   DicomSeries,
   DicomInstance,
   ImageAnnotation,
+  ModalityMachine,
+  BodyPart,
+  RequestProcedure,
 } from '@backend/shared-domain';
 import {
   OrderStatus,
@@ -18,6 +21,7 @@ import {
   AnnotationType,
   AnnotationStatus,
   Roles,
+  MachineStatus,
 } from '@backend/shared-enums';
 
 @Injectable()
@@ -27,6 +31,12 @@ export class SeedingService {
   constructor(
     @InjectRepository(ImagingModality)
     private readonly modalityRepository: Repository<ImagingModality>,
+    @InjectRepository(ModalityMachine)
+    private readonly modalityMachineRepository: Repository<ModalityMachine>,
+    @InjectRepository(BodyPart)
+    private readonly bodyPartRepository: Repository<BodyPart>,
+    @InjectRepository(RequestProcedure)
+    private readonly requestProcedureRepository: Repository<RequestProcedure>,
     @InjectRepository(ImagingOrder)
     private readonly imagingOrderRepository: Repository<ImagingOrder>,
     @InjectRepository(DicomStudy)
@@ -42,7 +52,7 @@ export class SeedingService {
     private readonly patientServiceClient: ClientProxy,
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
-    private readonly dataSource: DataSource,
+    private readonly dataSource: DataSource
   ) {}
 
   // ✅ Helper method to get patient IDs from Patient Service
@@ -178,6 +188,9 @@ export class SeedingService {
 
     try {
       await this.seedModalities();
+      await this.seedBodyParts();
+      await this.seedModalityMachines();
+      await this.seedRequestProcedures();
       await this.seedImagingOrders();
       await this.seedDicomStudies();
       await this.seedDicomSeries();
@@ -276,6 +289,300 @@ export class SeedingService {
     }
   }
 
+  async seedBodyParts(): Promise<void> {
+    this.logger.log('🫀 Seeding body parts...');
+
+    const bodyParts = [
+      { name: 'Đầu', description: 'Vùng đầu bao gồm sọ não và não bộ' },
+      { name: 'Cổ', description: 'Vùng cổ' },
+      { name: 'Ngực', description: 'Vùng ngực bao gồm tim và phổi' },
+      { name: 'Bụng', description: 'Vùng bụng bao gồm gan, lách, dạ dày' },
+      { name: 'Chậu', description: 'Vùng chậu' },
+      { name: 'Cột sống cổ', description: 'Đốt sống cổ C1-C7' },
+      { name: 'Cột sống ngực', description: 'Đốt sống ngực T1-T12' },
+      { name: 'Cột sống thắt lưng', description: 'Đốt sống thắt lưng L1-L5' },
+      { name: 'Cột sống cùng', description: 'Xương cùng và xương cụt' },
+      { name: 'Vai phải', description: 'Khớp vai bên phải' },
+      { name: 'Vai trái', description: 'Khớp vai bên trái' },
+      { name: 'Tay phải', description: 'Cánh tay và cẳng tay phải' },
+      { name: 'Tay trái', description: 'Cánh tay và cẳng tay trái' },
+      { name: 'Bàn tay phải', description: 'Bàn tay và ngón tay phải' },
+      { name: 'Bàn tay trái', description: 'Bàn tay và ngón tay trái' },
+      { name: 'Chân phải', description: 'Đùi và cẳng chân phải' },
+      { name: 'Chân trái', description: 'Đùi và cẳng chân trái' },
+      { name: 'Bàn chân phải', description: 'Bàn chân và ngón chân phải' },
+      { name: 'Bàn chân trái', description: 'Bàn chân và ngón chân trái' },
+      { name: 'Tim', description: 'Tim và mạch vành' },
+      { name: 'Phổi', description: 'Phổi và phế quản' },
+      { name: 'Gan', description: 'Gan' },
+      { name: 'Thận', description: 'Thận' },
+      { name: 'Tử cung', description: 'Tử cung (nữ)' },
+      { name: 'Tuyến tiền liệt', description: 'Tuyến tiền liệt (nam)' },
+    ];
+
+    for (const bodyPart of bodyParts) {
+      const existing = await this.bodyPartRepository.findOne({
+        where: { name: bodyPart.name },
+      });
+
+      if (!existing) {
+        const newBodyPart = this.bodyPartRepository.create(bodyPart);
+        await this.bodyPartRepository.save(newBodyPart);
+        this.logger.log(`✅ Created body part: ${bodyPart.name}`);
+      } else {
+        Object.assign(existing, bodyPart);
+        await this.bodyPartRepository.save(existing);
+        this.logger.log(`🔄 Updated body part: ${bodyPart.name}`);
+      }
+    }
+  }
+
+  async seedModalityMachines(): Promise<void> {
+    this.logger.log('🏥 Seeding modality machines...');
+
+    const modalities = await this.modalityRepository.find({
+      where: { isActive: true },
+    });
+
+    if (modalities.length === 0) {
+      this.logger.warn('⚠️ No modalities found, skipping machine seeding');
+      return;
+    }
+
+    // Get room IDs from User Service
+    const roomIds = await this.getRoomIdsFromService(10);
+
+    if (roomIds.length === 0) {
+      this.logger.warn('⚠️ No rooms found, skipping machine seeding');
+      return;
+    }
+
+    const machines = [
+      {
+        name: 'CT Scanner Siemens SOMATOM Definition',
+        modalityCode: 'CT',
+        manufacturer: 'Siemens',
+        model: 'SOMATOM Definition',
+        serialNumber: 'CT-001-2023',
+      },
+      {
+        name: 'CT Scanner GE Revolution',
+        modalityCode: 'CT',
+        manufacturer: 'GE Healthcare',
+        model: 'Revolution CT',
+        serialNumber: 'CT-002-2023',
+      },
+      {
+        name: 'MRI Siemens Magnetom Skyra 3T',
+        modalityCode: 'MR',
+        manufacturer: 'Siemens',
+        model: 'Magnetom Skyra',
+        serialNumber: 'MR-001-2023',
+      },
+      {
+        name: 'MRI GE Signa Explorer 1.5T',
+        modalityCode: 'MR',
+        manufacturer: 'GE Healthcare',
+        model: 'Signa Explorer',
+        serialNumber: 'MR-002-2023',
+      },
+      {
+        name: 'X-Ray Canon CXDI-810C',
+        modalityCode: 'DX',
+        manufacturer: 'Canon',
+        model: 'CXDI-810C',
+        serialNumber: 'DX-001-2023',
+      },
+      {
+        name: 'X-Ray Fujifilm FDR D-EVO',
+        modalityCode: 'CR',
+        manufacturer: 'Fujifilm',
+        model: 'FDR D-EVO',
+        serialNumber: 'CR-001-2023',
+      },
+      {
+        name: 'Ultrasound GE Voluson E10',
+        modalityCode: 'US',
+        manufacturer: 'GE Healthcare',
+        model: 'Voluson E10',
+        serialNumber: 'US-001-2023',
+      },
+      {
+        name: 'Ultrasound Philips EPIQ 7',
+        modalityCode: 'US',
+        manufacturer: 'Philips',
+        model: 'EPIQ 7',
+        serialNumber: 'US-002-2023',
+      },
+    ];
+
+    let machineCounter = 0;
+
+    for (const machine of machines) {
+      const modality = modalities.find(
+        (m) => m.modalityCode === machine.modalityCode
+      );
+
+      if (!modality) {
+        this.logger.warn(
+          `⚠️ Modality ${machine.modalityCode} not found, skipping machine: ${machine.name}`
+        );
+        continue;
+      }
+
+      const existing = await this.modalityMachineRepository.findOne({
+        where: { serialNumber: machine.serialNumber },
+      });
+
+      if (!existing) {
+        const newMachine = this.modalityMachineRepository.create({
+          name: machine.name,
+          modalityId: modality.id,
+          manufacturer: machine.manufacturer,
+          model: machine.model,
+          serialNumber: machine.serialNumber,
+          roomId: roomIds[machineCounter % roomIds.length],
+          status: MachineStatus.ACTIVE,
+        });
+        await this.modalityMachineRepository.save(newMachine);
+        this.logger.log(`✅ Created machine: ${machine.name}`);
+        machineCounter++;
+      } else {
+        this.logger.log(`⚠️ Machine already exists: ${machine.name}`);
+      }
+    }
+  }
+
+  async seedRequestProcedures(): Promise<void> {
+    this.logger.log('📋 Seeding request procedures...');
+
+    const modalities = await this.modalityRepository.find({
+      where: { isActive: true },
+    });
+
+    const bodyParts = await this.bodyPartRepository.find();
+
+    if (modalities.length === 0 || bodyParts.length === 0) {
+      this.logger.warn(
+        '⚠️ No modalities or body parts found, skipping procedure seeding'
+      );
+      return;
+    }
+
+    const procedures = [
+      // CT Procedures
+      {
+        name: 'CT Đầu không thuốc',
+        modalityCode: 'CT',
+        bodyPartName: 'Đầu',
+        description: 'Chụp CT não không tiêm thuốc cản quang',
+      },
+      {
+        name: 'CT Đầu có thuốc',
+        modalityCode: 'CT',
+        bodyPartName: 'Đầu',
+        description: 'Chụp CT não có tiêm thuốc cản quang',
+      },
+      {
+        name: 'CT Ngực',
+        modalityCode: 'CT',
+        bodyPartName: 'Ngực',
+        description: 'Chụp CT lồng ngực có thuốc cản quang',
+      },
+      {
+        name: 'CT Bụng - Chậu',
+        modalityCode: 'CT',
+        bodyPartName: 'Bụng',
+        description: 'Chụp CT bụng chậu có thuốc cản quang',
+      },
+      // MRI Procedures
+      {
+        name: 'MRI Não',
+        modalityCode: 'MR',
+        bodyPartName: 'Đầu',
+        description: 'Chụp MRI não có thuốc đối quang',
+      },
+      {
+        name: 'MRI Cột sống thắt lưng',
+        modalityCode: 'MR',
+        bodyPartName: 'Cột sống thắt lưng',
+        description: 'Chụp MRI cột sống thắt lưng',
+      },
+      {
+        name: 'MRI Khớp gối',
+        modalityCode: 'MR',
+        bodyPartName: 'Chân phải',
+        description: 'Chụp MRI khớp gối',
+      },
+      // X-Ray Procedures
+      {
+        name: 'X-Quang Ngực thẳng',
+        modalityCode: 'DX',
+        bodyPartName: 'Ngực',
+        description: 'Chụp X-quang phổi tư thế thẳng',
+      },
+      {
+        name: 'X-Quang Cột sống',
+        modalityCode: 'CR',
+        bodyPartName: 'Cột sống thắt lưng',
+        description: 'Chụp X-quang cột sống 2 tư thế',
+      },
+      // Ultrasound Procedures
+      {
+        name: 'Siêu âm Bụng tổng quát',
+        modalityCode: 'US',
+        bodyPartName: 'Bụng',
+        description: 'Siêu âm gan mật tụy lách thận',
+      },
+      {
+        name: 'Siêu âm Tim',
+        modalityCode: 'US',
+        bodyPartName: 'Tim',
+        description: 'Siêu âm tim qua thành ngực',
+      },
+      {
+        name: 'Siêu âm Thai',
+        modalityCode: 'US',
+        bodyPartName: 'Tử cung',
+        description: 'Siêu âm thai thường quy',
+      },
+    ];
+
+    for (const procedure of procedures) {
+      const modality = modalities.find(
+        (m) => m.modalityCode === procedure.modalityCode
+      );
+      const bodyPart = bodyParts.find(
+        (bp) => bp.name === procedure.bodyPartName
+      );
+
+      if (!modality || !bodyPart) {
+        this.logger.warn(
+          `⚠️ Modality or body part not found for procedure: ${procedure.name}`
+        );
+        continue;
+      }
+
+      const existing = await this.requestProcedureRepository.findOne({
+        where: { name: procedure.name },
+      });
+
+      if (!existing) {
+        const newProcedure = this.requestProcedureRepository.create({
+          name: procedure.name,
+          modalityId: modality.id,
+          bodyPartId: bodyPart.id,
+          description: procedure.description,
+          isActive: true,
+        });
+        await this.requestProcedureRepository.save(newProcedure);
+        this.logger.log(`✅ Created procedure: ${procedure.name}`);
+      } else {
+        this.logger.log(`⚠️ Procedure already exists: ${procedure.name}`);
+      }
+    }
+  }
+
   async seedImagingOrders(): Promise<void> {
     this.logger.log('📋 Seeding imaging orders...');
 
@@ -331,7 +638,8 @@ export class SeedingService {
 
     const orderStatuses = [
       OrderStatus.PENDING,
-      OrderStatus.SCHEDULED,
+      // OrderStatus.SCHEDULED,
+      OrderStatus.CANCELLED,
       OrderStatus.IN_PROGRESS,
       OrderStatus.COMPLETED,
     ];
@@ -357,7 +665,7 @@ export class SeedingService {
       const roomId = roomIds[i % roomIds.length];
 
       const order = {
-        orderNumber: `IMG-${String(orderCounter).padStart(6, '0')}`,
+        orderNumber: orderCounter,
         patientId,
         orderingPhysicianId: physicianId,
         modalityId: modality.id,
@@ -402,6 +710,18 @@ export class SeedingService {
       take: 10,
     });
 
+    // Get modality machines
+    const modalityMachines = await this.modalityMachineRepository.find({
+      where: { status: MachineStatus.ACTIVE },
+    });
+
+    if (modalityMachines.length === 0) {
+      this.logger.warn(
+        '⚠️ No modality machines found, skipping DICOM study seeding'
+      );
+      return;
+    }
+
     // ✅ Get IDs from other services via microservice communication
     const patientIds = await this.getPatientIdsFromService(10);
     const physicianIds = await this.getPhysicianIdsFromService(5);
@@ -437,10 +757,12 @@ export class SeedingService {
     ];
 
     const statuses = [
-      DicomStudyStatus.IN_PROGRESS,
-      DicomStudyStatus.COMPLETED,
-      DicomStudyStatus.VERIFIED,
-      DicomStudyStatus.REPORTED,
+      DicomStudyStatus.TECHNICIAN_VERIFIED,
+      DicomStudyStatus.SCANNED,
+      DicomStudyStatus.READING,
+      DicomStudyStatus.PENDING_APPROVAL,
+      DicomStudyStatus.APPROVED,
+      DicomStudyStatus.RESULT_PRINTED,
     ];
 
     // Create 15 sample DICOM studies
@@ -457,12 +779,15 @@ export class SeedingService {
       const studyDate = new Date();
       studyDate.setDate(studyDate.getDate() - Math.floor(Math.random() * 30));
 
+      const modalityMachine = modalityMachines[i % modalityMachines.length];
+
       const study = {
         studyInstanceUid: `1.2.840.113619.2.${Date.now()}.${i}.${Math.random()
           .toString(36)
           .substr(2, 9)}`,
         patientId,
         orderId,
+        modalityMachineId: modalityMachine.id,
         studyDate,
         studyTime: '14:30:00',
         studyDescription: studyDescriptions[i % studyDescriptions.length],
@@ -612,10 +937,11 @@ export class SeedingService {
 
       for (let i = 0; i < numInstances; i++) {
         const instance = {
-          sopInstanceUid: `${
-            singleSeries.seriesInstanceUid
-          }.${i + 1}.${Math.random().toString(36).substr(2, 9)}`,
-          sopClassUID: sopClassUIDs[Math.floor(Math.random() * sopClassUIDs.length)],
+          sopInstanceUid: `${singleSeries.seriesInstanceUid}.${
+            i + 1
+          }.${Math.random().toString(36).substr(2, 9)}`,
+          sopClassUID:
+            sopClassUIDs[Math.floor(Math.random() * sopClassUIDs.length)],
           seriesId: singleSeries.id,
           instanceNumber: i + 1,
           filePath: `/dicom/instances/${singleSeries.id}`,
@@ -796,7 +1122,7 @@ export class SeedingService {
     try {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      
+
       try {
         // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
         await queryRunner.query('TRUNCATE TABLE "image_annotations" CASCADE');
@@ -804,8 +1130,11 @@ export class SeedingService {
         await queryRunner.query('TRUNCATE TABLE "dicom_series" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "dicom_studies" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "imaging_orders" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "request_procedure" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "modality_machines" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "body_part" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "imaging_modalities" CASCADE');
-        
+
         this.logger.log('✅ All Imaging Service data cleared successfully!');
       } finally {
         await queryRunner.release();

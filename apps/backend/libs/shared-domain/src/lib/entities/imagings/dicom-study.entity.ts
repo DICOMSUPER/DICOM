@@ -7,11 +7,12 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
 import { ImagingModality } from './imaging-modality.entity';
 import { ImagingOrder } from './imaging-order.entity';
+import { ModalityMachine } from './modality-machine.entity';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])
@@ -35,8 +36,11 @@ export class DicomStudy extends BaseEntity {
   @Column({ name: 'order_id', nullable: true })
   orderId?: string;
 
-  // @Column({ name: 'modality_id' })
-  // modalityId!: string;
+  @Column({
+    name: 'modality_machine_id',
+    // nullable: true
+  }) //tempory fix, adjust in db
+  modalityMachineId!: string;
 
   @Column({ name: 'study_date', type: 'date' })
   studyDate!: Date;
@@ -60,7 +64,7 @@ export class DicomStudy extends BaseEntity {
     name: 'study_status',
     type: 'enum',
     enum: DicomStudyStatus,
-    default: DicomStudyStatus.IN_PROGRESS,
+    default: DicomStudyStatus.SCANNED,
   })
   studyStatus!: DicomStudyStatus;
 
@@ -82,9 +86,9 @@ export class DicomStudy extends BaseEntity {
   @OneToMany(() => DicomSeries, (series) => series.study)
   series!: DicomSeries[];
 
-  // @ManyToOne(() => ImagingModality)
-  // @JoinColumn({ name: 'modality_id' })
-  // modality!: ImagingModality;
+  @ManyToOne(() => ModalityMachine)
+  @JoinColumn({ name: 'modality_machine_id' })
+  modalityMachine?: ModalityMachine;
 
   //   imaging_order
   @ManyToOne(() => ImagingOrder)

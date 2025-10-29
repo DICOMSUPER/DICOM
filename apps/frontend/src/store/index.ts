@@ -11,6 +11,11 @@ import { departmentApi } from "./departmentApi";
 import { roomApi } from "./roomsApi";
 import userApi from "./userApi";
 import { imagingModalityApi } from "./imagingModalityApi";
+import { dicomStudyApi } from "./dicomStudyApi";
+import { bodyPartApi } from "./bodyPartApi";
+import { requestProcedureApi } from "./requestProcedureAPi";
+import { imagingOrderApi } from "./imagingOrderApi";
+import { modalityMachineApi } from "./modalityMachineApi";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +31,11 @@ export const store = configureStore({
     [employeeScheduleApi.reducerPath]: employeeScheduleApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [imagingModalityApi.reducerPath]: imagingModalityApi.reducer,
+    [modalityMachineApi.reducerPath]: modalityMachineApi.reducer,
+    [dicomStudyApi.reducerPath]: dicomStudyApi.reducer,
+    [bodyPartApi.reducerPath]: bodyPartApi.reducer,
+    [requestProcedureApi.reducerPath]: requestProcedureApi.reducer,
+    [imagingOrderApi.reducerPath]: imagingOrderApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -38,7 +48,12 @@ export const store = configureStore({
       .concat(roomApi.middleware)
       .concat(employeeScheduleApi.middleware)
       .concat(userApi.middleware)
-      .concat(imagingModalityApi.middleware),
+      .concat(imagingModalityApi.middleware)
+      .concat(modalityMachineApi.middleware)
+      .concat(dicomStudyApi.middleware)
+      .concat(bodyPartApi.middleware)
+      .concat(requestProcedureApi.middleware)
+      .concat(imagingOrderApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

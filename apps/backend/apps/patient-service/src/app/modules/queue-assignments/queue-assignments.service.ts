@@ -5,6 +5,7 @@ import {
   QueueAssignment,
   QueueAssignmentRepository,
   PatientEncounterRepository,
+  QueueInfo,
 } from '@backend/shared-domain';
 
 import { QueueStatus, QueuePriorityLevel, Roles } from '@backend/shared-enums';
@@ -27,7 +28,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 
 @Injectable()
 export class QueueAssignmentService {
@@ -36,9 +37,7 @@ export class QueueAssignmentService {
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'UserService')
     private readonly userService: ClientProxy,
-    private readonly encounterRepository: PatientEncounterRepository,
-    @InjectRepository(QueueAssignment)
-    private readonly queueRepository2: Repository<QueueAssignment>
+    private readonly encounterRepository: PatientEncounterRepository
   ) {}
 
   private getEndOfDay(date: Date = new Date()): Date {
@@ -90,14 +89,14 @@ export class QueueAssignmentService {
       );
     }
 
-    const queueNumber =
-      await this.queueRepository.getNextQueueNumberForPhysician(
-        new Date(),
-        encounter.assignedPhysicianId as string
-      );
+    const queueNumber = await this.queueRepository.getNextQueueNumberForRoom(
+      createQueueAssignmentDto.roomId as string,
+      new Date()
+    );
 
     // Calculate estimated wait time based on current queue
     const estimatedWaitTime = await this.calculateEstimatedWaitTime(
+      createQueueAssignmentDto.roomId as string,
       createQueueAssignmentDto.priority
     );
 
@@ -200,8 +199,8 @@ export class QueueAssignmentService {
     return await this.queueRepository.expire(id);
   };
 
-  getStats = async () => {
-    return await this.queueRepository.getQueueStats();
+  getStats = async (dateStr?: string, roomId?: string) => {
+    return await this.queueRepository.getQueueStats(dateStr, roomId);
   };
 
   findByRoom = async (roomId: string): Promise<QueueAssignment[]> => {
@@ -303,10 +302,19 @@ export class QueueAssignmentService {
    * Calculate estimated wait time based on current queue
    */
   private async calculateEstimatedWaitTime(
+    roomId: string,
     priority?: QueuePriorityLevel
   ): Promise<number> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = this.getEndOfDay();
     const waitingAssignments = await this.queueRepository.findAll({
-      where: { status: QueueStatus.WAITING },
+      where: {
+        status: QueueStatus.WAITING,
+        assignmentDate: Between(startOfDay, endOfDay),
+        roomId: roomId,
+      },
     });
     const waitingCount = waitingAssignments.length;
 
@@ -383,12 +391,12 @@ export class QueueAssignmentService {
       assignmentDateTo,
       queueNumber,
     } = filterQueue;
+
     const whereConditions: any = {};
 
     const user = await firstValueFrom(
       this.userService.send('UserService.Users.findOne', { userId })
     );
-    console.log('queue physician', user);
 
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
@@ -404,42 +412,30 @@ export class QueueAssignmentService {
       assignedPhysicianId: userId,
     };
 
-    if (status) {
-      whereConditions.status = status;
+    if (status) whereConditions.status = status;
+    if (queueNumber) whereConditions.queueNumber = queueNumber;
+    if (priority) whereConditions.priority = priority;
+
+    let fromDate: Date;
+    let toDate: Date;
+
+    if (assignmentDateFrom) {
+      fromDate = new Date(assignmentDateFrom);
+    } else {
+      fromDate = new Date();
+      fromDate.setHours(0, 0, 0, 0);
     }
-    if (queueNumber) {
-      whereConditions.queueNumber = queueNumber;
+
+    if (assignmentDateTo) {
+      toDate = new Date(assignmentDateTo);
+      toDate.setHours(23, 59, 59, 999);
+    } else {
+      toDate = new Date();
+      toDate.setHours(23, 59, 59, 999);
     }
 
-    // Filter by priority if provided
-    if (priority) {
-      whereConditions.priority = priority;
-    }
+    whereConditions.assignmentDate = Between(fromDate, toDate);
 
-    // tam thoi
-    // if (!assignmentDateFrom && !assignmentDateTo) {
-    //   const startOfDay = new Date();
-    //   startOfDay.setHours(0, 0, 0, 0);
-
-    //   const endOfDay = this.getEndOfDay();
-
-    //   whereConditions.assignmentDate = {
-    //     gte: startOfDay,
-    //     lte: endOfDay,
-    //   };
-    // } else {
-    //   whereConditions.assignmentDate = {};
-    //   if (assignmentDateFrom) {
-    //     whereConditions.assignmentDate.gte = new Date(assignmentDateFrom);
-    //   }
-    //   if (assignmentDateTo) {
-    //     const endDate = new Date(assignmentDateTo);
-    //     endDate.setHours(23, 59, 59, 999); // End of day
-    //     whereConditions.assignmentDate.lte = endDate;
-    //   }
-    // }
-
-    // ✅ Get data without sorting first
     const result = await this.paginationService.paginate(
       QueueAssignment,
       { page, limit },
@@ -453,10 +449,8 @@ export class QueueAssignmentService {
       }
     );
 
-    // ✅ Custom sort: Active statuses first, then completed/expired
     if (result.data && result.data.length > 0) {
       result.data.sort((a, b) => {
-        // Define status priority (lower number = higher priority)
         const getStatusPriority = (status: QueueStatus) => {
           switch (status) {
             case QueueStatus.IN_PROGRESS:
@@ -464,9 +458,9 @@ export class QueueAssignmentService {
             case QueueStatus.WAITING:
               return 1;
             case QueueStatus.COMPLETED:
-              return 2; // Lower priority
+              return 2;
             case QueueStatus.EXPIRED:
-              return 3; // Lowest priority
+              return 3;
             default:
               return 4;
           }
@@ -474,9 +468,8 @@ export class QueueAssignmentService {
 
         const statusPriorityA = getStatusPriority(a.status);
         const statusPriorityB = getStatusPriority(b.status);
-        if (statusPriorityA !== statusPriorityB) {
+        if (statusPriorityA !== statusPriorityB)
           return statusPriorityA - statusPriorityB;
-        }
 
         const getPriorityValue = (priority: QueuePriorityLevel) => {
           switch (priority) {
@@ -490,32 +483,27 @@ export class QueueAssignmentService {
               return 3;
           }
         };
+
         if (
           a.status === QueueStatus.WAITING &&
           b.status === QueueStatus.WAITING
         ) {
           if (!a.skippedAt && b.skippedAt) return -1;
           if (a.skippedAt && !b.skippedAt) return 1;
-          if (a.skippedAt && b.skippedAt) {
+          if (a.skippedAt && b.skippedAt)
             return a.skippedAt.getTime() - b.skippedAt.getTime();
-          }
         }
 
         const priorityA = getPriorityValue(a.priority);
         const priorityB = getPriorityValue(b.priority);
+        if (priorityA !== priorityB) return priorityA - priorityB;
 
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-
-        // Finally, sort by queue number
         return a.queueNumber - b.queueNumber;
       });
     }
 
     return result;
   }
-
   skipQueueAssignment = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
 
@@ -541,80 +529,19 @@ export class QueueAssignmentService {
     });
   };
 
-  async getMaxWaitingAndCurrentInProgressByPhysicians(
+  async getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
     physicianIds: string[]
-  ): Promise<{
-    [physicianId: string]: {
-      maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
-      currentInProgress: {
-        queueNumber: number;
-        entity: QueueAssignment;
-      } | null;
-    };
-  }> {
-    if (!physicianIds.length) {
-      return {};
-    }
+  ): Promise<QueueInfo> {
+    return await this.queueRepository.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
+      physicianIds
+    );
+  }
 
-    const results: {
-      [physicianId: string]: {
-        maxWaiting: { queueNumber: number; entity: QueueAssignment } | null;
-        currentInProgress: {
-          queueNumber: number;
-          entity: QueueAssignment;
-        } | null;
-      };
-    } = physicianIds.reduce((acc, pid) => {
-      acc[pid] = { maxWaiting: null, currentInProgress: null };
-      return acc;
-    }, {});
-
-    // Query 1: Get all waiting assignments, ordered by physician ASC, queueNumber DESC
-    const waitingAssignments = await this.queueRepository2
-      .createQueryBuilder('qa')
-      .innerJoinAndSelect('qa.encounter', 'encounter')
-      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
-        physicianIds,
-      })
-      .andWhere('qa.status = :status', { status: QueueStatus.WAITING })
-      .orderBy('encounter.assignedPhysicianId', 'ASC')
-      .addOrderBy('qa.queueNumber', 'DESC')
-      .getMany();
-
-    // Query 2: Get all in-progress assignments, ordered by physician ASC, queueNumber ASC (smallest/lowest as "current")
-    const inProgressAssignments = await this.queueRepository2
-      .createQueryBuilder('qa')
-      .innerJoinAndSelect('qa.encounter', 'encounter')
-      .where('encounter.assignedPhysicianId IN (:...physicianIds)', {
-        physicianIds,
-      })
-      .andWhere('qa.status = :status', { status: QueueStatus.IN_PROGRESS })
-      .orderBy('encounter.assignedPhysicianId', 'ASC')
-      .addOrderBy('qa.queueNumber', 'ASC')
-      .getMany();
-
-    // Process waiting: First per physician group is the max (largest queueNumber) due to ordering
-    for (const qa of waitingAssignments) {
-      const pid = qa.encounter.assignedPhysicianId;
-      if (!results[pid].maxWaiting) {
-        results[pid].maxWaiting = {
-          queueNumber: qa.queueNumber,
-          // entity: qa,
-        };
-      }
-    }
-
-    // Process in-progress: First per physician group is the current (smallest queueNumber) due to ordering
-    for (const qa of inProgressAssignments) {
-      const pid = qa.encounter.assignedPhysicianId;
-      if (!results[pid].currentInProgress) {
-        results[pid].currentInProgress = {
-          queueNumber: qa.queueNumber,
-          // entity: qa,
-        };
-      }
-    }
-
-    return results;
+  async getMaxWaitingAndCurrentInProgressByRoomIds(
+    roomIds: string[]
+  ): Promise<QueueInfo> {
+    return await this.queueRepository.getMaxWaitingAndCurrentInProgressByRoomIds(
+      roomIds
+    );
   }
 }

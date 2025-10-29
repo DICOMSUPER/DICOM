@@ -15,15 +15,11 @@ import {
   RepositoryPaginationDto,
   PaginatedResponseDto,
 } from '@backend/database';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import moment from 'moment';
+
 @Injectable()
 export class EmployeeScheduleService {
   constructor(
-    private readonly employeeScheduleRepository: EmployeeScheduleRepository,
-    @InjectRepository(EmployeeSchedule)
-    private readonly scheduleRepository: Repository<EmployeeSchedule>
+    private readonly employeeScheduleRepository: EmployeeScheduleRepository
   ) {}
 
   async create(
@@ -70,7 +66,7 @@ export class EmployeeScheduleService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Failed to create employee schedule');
+      throw error;
     }
   }
 
@@ -483,52 +479,11 @@ export class EmployeeScheduleService {
     search?: string
   ): Promise<EmployeeSchedule[]> {
     try {
-      // Use server current time (right now)
-      const now = moment();
-      const currentDate = now.format('YYYY-MM-DD');
-      const yesterdayDate = now.clone().subtract(1, 'day').format('YYYY-MM-DD');
-      const currentTime = now.format('HH:mm:ss');
-
-      // Added NULL checks and role filter on the joined employee
-      const qb = this.scheduleRepository
-        .createQueryBuilder('schedules')
-        .where('schedules.room_id = :roomId', { roomId })
-        .andWhere('employee.role = :role', { role }) // Filter by passed role
-        .andWhere(
-          `(schedules.work_date = :currentDate
-            AND schedules.actual_start_time IS NOT NULL
-            AND schedules.actual_end_time IS NOT NULL
-            AND (
-              (schedules.actual_start_time > schedules.actual_end_time 
-                AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
-              ) 
-              OR 
-              (schedules.actual_start_time <= schedules.actual_end_time 
-                AND schedules.actual_start_time < :currentTime 
-                AND schedules.actual_end_time > :currentTime
-              )
-            )
-           )
-           OR 
-           (schedules.work_date = :yesterdayDate
-            AND schedules.actual_start_time IS NOT NULL
-            AND schedules.actual_end_time IS NOT NULL
-            AND schedules.actual_start_time > schedules.actual_end_time
-            AND :currentTime < schedules.actual_end_time
-           )`,
-          { currentDate, yesterdayDate, currentTime }
-        )
-        .leftJoinAndSelect('schedules.employee', 'employee')
-        .leftJoinAndSelect('schedules.room', 'room') // Optional
-        .leftJoinAndSelect('schedules.shift_template', 'shift_template'); // Optional
-
-      if (search) {
-        qb.andWhere(
-          '(employee.username ILIKE :search OR employee.email ILIKE :search OR employee.firstName ILIKE :search OR employee.lastName ILIKE :search)',
-          { search: `%${search}%` }
-        );
-      }
-      return await qb.getMany();
+      return await this.employeeScheduleRepository.getOverlappingSchedules(
+        roomId,
+        role,
+        search
+      );
     } catch (error) {
       throw new BadRequestException('Failed to fetch overlapping schedules');
     }

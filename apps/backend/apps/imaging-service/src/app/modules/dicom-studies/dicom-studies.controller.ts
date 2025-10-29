@@ -15,7 +15,7 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 import { findDicomStudyByReferenceIdType } from './dicom-studies.repository';
-import { DicomStudyStatus } from '@backend/shared-enums';
+import { DicomStudyStatus, Roles } from '@backend/shared-enums';
 import { DicomStudiesService } from './dicom-studies.service';
 
 const moduleName = 'DicomStudies';
@@ -183,26 +183,10 @@ export class DicomStudiesController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.Filter`)
   async filterStudy(
     @Payload()
-    data: {
-      studyUID?: string;
-      startDate?: string;
-      endDate?: string;
-      bodyPart?: string;
-      modalityCode?: string;
-      modalityDevice?: string;
-      studyStatus?: DicomStudyStatus;
-    }
+    data: FilterData
   ) {
     try {
-      return await this.dicomStudiesService.filter(
-        data.studyUID,
-        data.startDate,
-        data.endDate,
-        data.bodyPart,
-        data.modalityCode,
-        data.modalityDevice,
-        data.studyStatus
-      );
+      return await this.dicomStudiesService.filter(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -211,4 +195,14 @@ export class DicomStudiesController {
       );
     }
   }
+}
+export interface FilterData {
+  role?: Roles;
+  studyUID?: string;
+  startDate?: string;
+  endDate?: string;
+  bodyPart?: string;
+  modalityId?: string;
+  modalityMachineId?: string;
+  studyStatus?: DicomStudyStatus;
 }

@@ -1,6 +1,8 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import {
   CreateDiagnosesReportDto,
+  PatientEncounter,
+  PatientEncounterRepository,
   UpdateDiagnosesReportDto,
 } from '@backend/shared-domain';
 import {
@@ -13,13 +15,14 @@ import {
 } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
-import { DiagnosisStatus } from 'libs/shared-enums/src';
+import { DiagnosisStatus } from '@backend/shared-enums';
 
 @Injectable()
 export class DiagnosesReportService {
   constructor(
     @Inject()
-    private readonly diagnosisReportRepository: DiagnosisReportRepository
+    private readonly diagnosisReportRepository: DiagnosisReportRepository,
+    private readonly encounterRepository: PatientEncounterRepository
   ) {}
 
   private checkDiagnosesReport = async (
@@ -36,12 +39,42 @@ export class DiagnosesReportService {
     return report;
   };
 
+  private checkEncounter = async (
+    id: string
+  ): Promise<PatientEncounter | null> => {
+    const encounter = await this.encounterRepository.findById(id, ['patient']);
+
+    if (!encounter) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Encounter not found',
+        PATIENT_SERVICE
+      );
+    }
+
+    return encounter;
+  };
+
   create = async (
     createDiagnosesReportDto: CreateDiagnosesReportDto
   ): Promise<DiagnosesReport> => {
-    return await this.diagnosisReportRepository.create(
-      createDiagnosesReportDto
+    const encounter = await this.checkEncounter(
+      createDiagnosesReportDto.encounterId
     );
+
+    const date = createDiagnosesReportDto.diagnosisDate
+      ? new Date(createDiagnosesReportDto.diagnosisDate)
+      : new Date();
+
+    const formattedDate = date.toISOString().split('T')[0];
+
+    const data = {
+      ...createDiagnosesReportDto,
+      diagnosisName:
+        createDiagnosesReportDto.diagnosisName ??
+        `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,
+    };
+    return await this.diagnosisReportRepository.create(data);
   };
 
   findAll = async (): Promise<DiagnosesReport[]> => {
@@ -82,7 +115,10 @@ export class DiagnosesReportService {
     return await this.diagnosisReportRepository.softDelete(id, 'isDeleted');
   };
 
-  filter = async (studyIds: string[], reportStatus?: DiagnosisStatus) => {
+  filter = async (
+    studyIds: string[],
+    reportStatus?: DiagnosisStatus | string
+  ) => {
     return await this.diagnosisReportRepository.filter(studyIds, reportStatus);
   };
 }

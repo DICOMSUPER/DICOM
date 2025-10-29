@@ -5,7 +5,7 @@ import {
   CreatePatientDto,
   UpdatePatientDto,
   Patient,
-  PatientStatsDto,
+
   PatientCondition,
 } from '@backend/shared-domain';
 import {
@@ -168,10 +168,10 @@ export class PatientController {
     }
   }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`)
-  async getPatientOverview(
-    @Payload() data: { patientCode: string }
-  ): Promise<{
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.GET_PATIENT_OVERVIEW}`
+  )
+  async getPatientOverview(@Payload() data: { patientCode: string }): Promise<{
     recentVitalSigns: VitalSignsSimplified;
     recentConditions: PatientCondition[];
   } | null> {
@@ -191,7 +191,7 @@ export class PatientController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
-  async getPatientStats(): Promise<PatientStatsDto> {
+  async getPatientStats() {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.patientService.getPatientStats();
@@ -250,6 +250,7 @@ export class PatientController {
     }
   }
 
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
   async filterPatient(
     @Payload()
     data: {

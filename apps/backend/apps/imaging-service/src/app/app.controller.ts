@@ -35,7 +35,11 @@ export class AppController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.HealthCheck`)
-  async healthCheck(): Promise<{ status: string; message: string; timestamp: string }> {
+  async healthCheck(): Promise<{
+    status: string;
+    message: string;
+    timestamp: string;
+  }> {
     return {
       status: 'ok',
       message: 'ImagingService is running',
@@ -79,10 +83,12 @@ export class AppController {
       file: FileForTransmission;
       orderId: string;
       performingTechnicianId: string;
+      modalityMachineId: string;
       patient: Patient;
     }
   ) {
-    const { orderId, performingTechnicianId, patient } = data;
+    const { orderId, performingTechnicianId, patient, modalityMachineId } =
+      data;
     this.checkCloudinaryConfig();
     const cloudinaryConfig = {
       cloud_name: this.configService.get<string>('CLOUDINARY_NAME') as string,
@@ -119,7 +125,8 @@ export class AppController {
       orderId,
       performingTechnicianId,
       filePath as string,
-      patient
+      patient,
+      modalityMachineId
     );
   }
 }

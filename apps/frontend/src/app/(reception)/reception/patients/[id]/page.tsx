@@ -46,22 +46,25 @@ export default function PatientDetail() {
 
   // Fetch real patient data
   const {
-    data: patient,
+    data: patientData,
     isLoading: patientLoading,
     error: patientError,
     refetch: refetchPatient,
   } = useGetPatientByIdQuery(patientId);
   const {
-    data: encounters,
+    data: encountersData,
     isLoading: encountersLoading,
     refetch: refetchEncounters,
   } = useGetPatientEncountersByPatientIdQuery(patientId);
   const {
-    data: conditions,
+    data: conditionsData,
     isLoading: conditionsLoading,
     refetch: refetchConditions,
   } = useGetConditionsByPatientIdQuery(patientId);
 
+  const patient = patientData?.data;
+  const encounters = encountersData?.data;
+  const conditions = conditionsData?.data;
   // Encounter mutations
   const [createEncounter, { isLoading: isCreatingEncounter }] =
     useCreatePatientEncounterMutation();

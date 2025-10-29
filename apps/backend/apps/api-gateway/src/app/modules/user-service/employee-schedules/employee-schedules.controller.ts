@@ -1,29 +1,40 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Inject, 
-  Logger, 
-  UseInterceptors, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Inject,
+  Logger,
+  UseInterceptors,
   Patch,
   Delete,
   Query,
   Req,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
-import { TransformInterceptor, RequestLoggingInterceptor } from '@backend/shared-interceptor';
-import { 
-  CreateEmployeeScheduleDto, 
-  UpdateEmployeeScheduleDto
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
+import {
+  CreateEmployeeScheduleDto,
+  UpdateEmployeeScheduleDto,
 } from '@backend/shared-domain';
 import { AuthGuard } from '@backend/shared-guards';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { Public } from '@backend/shared-decorators';
 
 @ApiTags('Employee Schedule Management')
 @Controller('employee-schedules')
@@ -32,17 +43,27 @@ export class EmployeeSchedulesController {
   private readonly logger = new Logger('EmployeeSchedulesController');
 
   constructor(
-    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy
   ) {}
 
-  // 👤 Lấy lịch làm việc của user hiện tại
   @Get('me')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get schedules for the current authenticated user' })
   @ApiQuery({ name: 'limit', required: false, description: 'Limit results' })
-  @ApiQuery({ name: 'start_date', required: false, description: 'Filter from date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'end_date', required: false, description: 'Filter to date (YYYY-MM-DD)' })
-  @ApiResponse({ status: 200, description: 'Lấy lịch làm việc của user hiện tại thành công' })
+  @ApiQuery({
+    name: 'start_date',
+    required: false,
+    description: 'Filter from date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'end_date',
+    required: false,
+    description: 'Filter to date (YYYY-MM-DD)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy lịch làm việc của user hiện tại thành công',
+  })
   async getMySchedules(
     @Req() req: IAuthenticatedRequest,
     @Query('limit') limit?: number,
@@ -52,14 +73,17 @@ export class EmployeeSchedulesController {
     try {
       const userId = req['userInfo'].userId;
       this.logger.log(`👤 Fetching schedules for current user: ${userId}`);
-      
+
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindByCurrentUser', { 
-          userId, 
-          limit,
-          start_date: startDate,
-          end_date: endDate
-        })
+        this.userServiceClient.send(
+          'UserService.EmployeeSchedule.FindByCurrentUser',
+          {
+            userId,
+            limit,
+            start_date: startDate,
+            end_date: endDate,
+          }
+        )
       );
 
       return result;
@@ -90,23 +114,52 @@ export class EmployeeSchedulesController {
 
   // 📋 Lấy danh sách lịch làm việc (có phân trang và filter)
   @Get()
-  @ApiOperation({ summary: 'Get all employee schedules with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all employee schedules with pagination and filters',
+  })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'employee_id', required: false, description: 'Filter by employee ID' })
-  @ApiQuery({ name: 'room_id', required: false, description: 'Filter by room ID' })
-  @ApiQuery({ name: 'work_date_from', required: false, description: 'Filter from date' })
-  @ApiQuery({ name: 'work_date_to', required: false, description: 'Filter to date' })
-  @ApiQuery({ name: 'schedule_status', required: false, description: 'Filter by status' })
+  @ApiQuery({
+    name: 'employee_id',
+    required: false,
+    description: 'Filter by employee ID',
+  })
+  @ApiQuery({
+    name: 'room_id',
+    required: false,
+    description: 'Filter by room ID',
+  })
+  @ApiQuery({
+    name: 'work_date_from',
+    required: false,
+    description: 'Filter from date',
+  })
+  @ApiQuery({
+    name: 'work_date_to',
+    required: false,
+    description: 'Filter to date',
+  })
+  @ApiQuery({
+    name: 'schedule_status',
+    required: false,
+    description: 'Filter by status',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'sort_field', required: false, description: 'Sort field' })
-  @ApiQuery({ name: 'order', required: false, description: 'Sort order (asc/desc)' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách lịch làm việc thành công' })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    description: 'Sort order (asc/desc)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách lịch làm việc thành công',
+  })
   async getAllSchedules(@Query() query: any) {
     try {
       this.logger.log('📋 Fetching employee schedules...');
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindMany', { 
+        this.userServiceClient.send('UserService.EmployeeSchedule.FindMany', {
           paginationDto: {
             page: query.page || 1,
             limit: query.limit || 10,
@@ -117,8 +170,8 @@ export class EmployeeSchedulesController {
             scheduleStatus: query.schedule_status,
             search: query.search,
             sortField: query.sort_field,
-            order: query.order
-          }
+            order: query.order,
+          },
         })
       );
 
@@ -130,20 +183,50 @@ export class EmployeeSchedulesController {
     }
   }
 
+  @Get('/currentSchedule')
+  async getMyCurrentWorkingSchedule(@Req() request: IAuthenticatedRequest) {
+    try {
+      return await firstValueFrom(
+        this.userServiceClient.send(
+          'UserService.EmployeeSchedule.GetCurrentShift',
+          { userId: request.userInfo.userId }
+        )
+      );
+    } catch (error) {
+      this.logger.error('Failed to get current working schedule', error);
+      throw handleError(error);
+    }
+  }
   // 🏠 Lấy danh sách phòng available
   @Get('available-rooms')
   @ApiOperation({ summary: 'Get available rooms for scheduling' })
-  @ApiQuery({ name: 'date', required: true, description: 'Date to check availability (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'time', required: false, description: 'Time to check availability (HH:MM)' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng available thành công' })
-  async getAvailableRooms(@Query('date') date: string, @Query('time') time?: string) {
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    description: 'Date to check availability (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'time',
+    required: false,
+    description: 'Time to check availability (HH:MM)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng available thành công',
+  })
+  async getAvailableRooms(
+    @Query('date') date: string,
+    @Query('time') time?: string
+  ) {
     try {
-      this.logger.log(`🏠 Fetching available rooms for ${date}${time ? ' at ' + time : ''}`);
+      this.logger.log(
+        `🏠 Fetching available rooms for ${date}${time ? ' at ' + time : ''}`
+      );
       const result = await firstValueFrom(
-        this.userServiceClient.send('room.find-all', { 
-          page: 1, 
-          limit: 100, 
-          isActive: true 
+        this.userServiceClient.send('room.find-all', {
+          page: 1,
+          limit: 100,
+          isActive: true,
         })
       );
       return result.data || result;
@@ -156,17 +239,35 @@ export class EmployeeSchedulesController {
   // 👥 Lấy danh sách employees available
   @Get('available-employees')
   @ApiOperation({ summary: 'Get available employees for scheduling' })
-  @ApiQuery({ name: 'date', required: true, description: 'Date to check availability (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'time', required: false, description: 'Time to check availability (HH:MM)' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách employees available thành công' })
-  async getAvailableEmployees(@Query('date') date: string, @Query('time') time?: string) {
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    description: 'Date to check availability (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'time',
+    required: false,
+    description: 'Time to check availability (HH:MM)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách employees available thành công',
+  })
+  async getAvailableEmployees(
+    @Query('date') date: string,
+    @Query('time') time?: string
+  ) {
     try {
-      this.logger.log(`👥 Fetching available employees for ${date}${time ? ' at ' + time : ''}`);
+      this.logger.log(
+        `👥 Fetching available employees for ${date}${
+          time ? ' at ' + time : ''
+        }`
+      );
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.Users.findAll', { 
-          page: 1, 
-          limit: 100, 
-          isActive: true 
+        this.userServiceClient.send('UserService.Users.findAll', {
+          page: 1,
+          limit: 100,
+          isActive: true,
         })
       );
       return result.data || result;
@@ -179,13 +280,23 @@ export class EmployeeSchedulesController {
   // 📊 Lấy stats
   @Get('stats')
   @ApiOperation({ summary: 'Get schedule statistics' })
-  @ApiQuery({ name: 'employeeId', required: false, description: 'Filter by employee ID' })
+  @ApiQuery({
+    name: 'employeeId',
+    required: false,
+    description: 'Filter by employee ID',
+  })
   @ApiResponse({ status: 200, description: 'Lấy schedule stats thành công' })
   async getStats(@Query('employeeId') employeeId?: string) {
     try {
-      this.logger.log(`📊 Fetching schedule stats${employeeId ? ' for employee: ' + employeeId : ''}`);
+      this.logger.log(
+        `📊 Fetching schedule stats${
+          employeeId ? ' for employee: ' + employeeId : ''
+        }`
+      );
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.GetStats', { employeeId })
+        this.userServiceClient.send('UserService.EmployeeSchedule.GetStats', {
+          employeeId,
+        })
       );
       return result;
     } catch (error) {
@@ -202,8 +313,8 @@ export class EmployeeSchedulesController {
     try {
       this.logger.log(`📋 Fetching shift templates`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.ShiftTemplate.FindMany', { 
-          paginationDto: { page: 1, limit: 100 } 
+        this.userServiceClient.send('UserService.ShiftTemplate.FindMany', {
+          paginationDto: { page: 1, limit: 100 },
         })
       );
       return result.data || result;
@@ -218,11 +329,17 @@ export class EmployeeSchedulesController {
   @ApiOperation({ summary: 'Create a new employee schedule' })
   @ApiBody({ type: CreateEmployeeScheduleDto })
   @ApiResponse({ status: 201, description: 'Tạo lịch làm việc thành công' })
+  @Public()
   async createSchedule(@Body() createScheduleDto: CreateEmployeeScheduleDto) {
     try {
-      this.logger.log(`🏗️ Creating schedule for employee: ${createScheduleDto.employee_id}`);
+      this.logger.log(
+        `🏗️ Creating schedule for employee: ${createScheduleDto.employee_id}`
+      );
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.Create', createScheduleDto)
+        this.userServiceClient.send(
+          'UserService.EmployeeSchedule.Create',
+          createScheduleDto
+        )
       );
 
       return {
@@ -230,7 +347,10 @@ export class EmployeeSchedulesController {
         message: 'Tạo lịch làm việc thành công',
       };
     } catch (error) {
-      this.logger.error(`❌ Schedule creation failed for employee: ${createScheduleDto.employee_id}`, error);
+      this.logger.error(
+        `❌ Schedule creation failed for employee: ${createScheduleDto.employee_id}`,
+        error
+      );
       throw handleError(error);
     }
   }
@@ -239,12 +359,17 @@ export class EmployeeSchedulesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get employee schedule by ID' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin lịch làm việc thành công' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin lịch làm việc thành công',
+  })
   async getScheduleById(@Param('id') id: string) {
     try {
       this.logger.log(`🔎 Fetching schedule by ID: ${id}`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.FindOne', { id })
+        this.userServiceClient.send('UserService.EmployeeSchedule.FindOne', {
+          id,
+        })
       );
 
       return result;
@@ -259,12 +384,21 @@ export class EmployeeSchedulesController {
   @ApiOperation({ summary: 'Update employee schedule' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
   @ApiBody({ type: UpdateEmployeeScheduleDto })
-  @ApiResponse({ status: 200, description: 'Cập nhật lịch làm việc thành công' })
-  async updateSchedule(@Param('id') id: string, @Body() updateScheduleDto: UpdateEmployeeScheduleDto) {
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật lịch làm việc thành công',
+  })
+  async updateSchedule(
+    @Param('id') id: string,
+    @Body() updateScheduleDto: UpdateEmployeeScheduleDto
+  ) {
     try {
       this.logger.log(`🛠️ Updating schedule ID: ${id}`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.Update', { id, updateDto: updateScheduleDto })
+        this.userServiceClient.send('UserService.EmployeeSchedule.Update', {
+          id,
+          updateDto: updateScheduleDto,
+        })
       );
 
       return {
@@ -286,7 +420,9 @@ export class EmployeeSchedulesController {
     try {
       this.logger.log(`🗑️ Deleting schedule ID: ${id}`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.Delete', { id })
+        this.userServiceClient.send('UserService.EmployeeSchedule.Delete', {
+          id,
+        })
       );
 
       return {
@@ -302,12 +438,17 @@ export class EmployeeSchedulesController {
   @Post('bulk')
   @ApiOperation({ summary: 'Create multiple employee schedules' })
   @ApiBody({ type: [CreateEmployeeScheduleDto] })
-  @ApiResponse({ status: 201, description: 'Tạo nhiều lịch làm việc thành công' })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo nhiều lịch làm việc thành công',
+  })
   async createBulkSchedules(@Body() schedules: CreateEmployeeScheduleDto[]) {
     try {
       this.logger.log(`📦 Creating ${schedules.length} schedules in bulk`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.CreateBulk', { schedules })
+        this.userServiceClient.send('UserService.EmployeeSchedule.CreateBulk', {
+          schedules,
+        })
       );
 
       return {
@@ -323,12 +464,19 @@ export class EmployeeSchedulesController {
   // 🔄 Cập nhật nhiều lịch làm việc cùng lúc
   @Patch('bulk')
   @ApiOperation({ summary: 'Update multiple employee schedules' })
-  @ApiResponse({ status: 200, description: 'Cập nhật nhiều lịch làm việc thành công' })
-  async updateBulkSchedules(@Body() updates: { id: string; data: UpdateEmployeeScheduleDto }[]) {
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật nhiều lịch làm việc thành công',
+  })
+  async updateBulkSchedules(
+    @Body() updates: { id: string; data: UpdateEmployeeScheduleDto }[]
+  ) {
     try {
       this.logger.log(`🔄 Updating ${updates.length} schedules in bulk`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.UpdateBulk', { updates })
+        this.userServiceClient.send('UserService.EmployeeSchedule.UpdateBulk', {
+          updates,
+        })
       );
 
       return {
@@ -344,12 +492,18 @@ export class EmployeeSchedulesController {
   // 🗑️ Xóa nhiều lịch làm việc cùng lúc
   @Delete('bulk')
   @ApiOperation({ summary: 'Delete multiple employee schedules' })
-  @ApiResponse({ status: 200, description: 'Xóa nhiều lịch làm việc thành công' })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa nhiều lịch làm việc thành công',
+  })
   async deleteBulkSchedules(@Body() data: { ids: string[] }) {
     try {
       this.logger.log(`🗑️ Deleting ${data.ids.length} schedules in bulk`);
       await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeSchedule.DeleteBulk', data)
+        this.userServiceClient.send(
+          'UserService.EmployeeSchedule.DeleteBulk',
+          data
+        )
       );
 
       return {

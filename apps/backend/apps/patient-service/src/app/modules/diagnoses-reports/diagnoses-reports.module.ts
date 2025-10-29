@@ -3,7 +3,13 @@ import { DiagnosesReportService } from './diagnoses-reports.service';
 import { DiagnosesReportController } from './diagnoses-reports.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { DiagnosesReport, DiagnosisReportRepository, PatientEncounter, Patient } from '@backend/shared-domain'; 
+import {
+  DiagnosesReport,
+  DiagnosisReportRepository,
+  PatientEncounter,
+  Patient,
+  PatientEncounterRepository,
+} from '@backend/shared-domain';
 
 @Module({
   imports: [
@@ -14,10 +20,11 @@ import { DiagnosesReport, DiagnosisReportRepository, PatientEncounter, Patient }
     DiagnosesReportService,
     {
       provide: DiagnosisReportRepository,
-      useFactory: (entityManager: EntityManager) => 
+      useFactory: (entityManager: EntityManager) =>
         new DiagnosisReportRepository(entityManager),
       inject: [EntityManager],
     },
+    PatientEncounterRepository,
   ],
   exports: [DiagnosesReportService, DiagnosisReportRepository],
 })

@@ -35,7 +35,7 @@ export class PatientEncounterController {
   private readonly logger = new Logger('PatientEncounterController');
 
   constructor(
-    @Inject(process.env.PATIENT_SERVICE_NAME || 'PatientService')
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
   ) {}
 

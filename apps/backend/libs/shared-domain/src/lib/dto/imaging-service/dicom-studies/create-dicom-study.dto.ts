@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { DicomStudyStatus } from '@backend/shared-enums';
 
 export class CreateDicomStudyDto {
@@ -17,6 +17,9 @@ export class CreateDicomStudyDto {
   @IsDate()
   studyDate!: Date;
 
+  @IsUUID()
+  modalityMachineId!: string;
+
   @IsString()
   studyTime!: string;
 
@@ -34,7 +37,7 @@ export class CreateDicomStudyDto {
   verifyingRadiologistId?: string;
 
   @IsEnum(DicomStudyStatus)
-  studyStatus?: DicomStudyStatus = DicomStudyStatus.IN_PROGRESS;
+  studyStatus?: DicomStudyStatus = DicomStudyStatus.SCANNED;
 
   @IsString()
   @IsOptional()

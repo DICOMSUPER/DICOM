@@ -21,14 +21,18 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import React from "react";
 import Select from "react-select";
+import type { SingleValue } from "react-select";
 import Cookies from "js-cookie";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { Department } from "@/types";
+import { Department } from "@/interfaces/user/department.interface";
 import { Room, User } from "@/store/scheduleApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
 import { useGetUsersByRoomQuery } from "@/store/userApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Roles } from "@/enums/user.enum";
+
+type DepartmentOption = Department & { value: string; label: string };
 
 export function PatientForward({ patientId }: { patientId: string }) {
   const router = useRouter();
@@ -37,7 +41,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
     patientId: patientId,
     encounterDate: "",
     encounterType: EncounterType.INPATIENT,
-    assignedPhysicianId: "",
+    assignedPhysicianId: null,
     notes: "",
   });
 
@@ -99,22 +103,23 @@ export function PatientForward({ patientId }: { patientId: string }) {
       id: selectedDepartment?.id || "",
       search: roomSearch,
       applyScheduleFilter: true,
+      role: Roles.PHYSICIAN,
     },
     {
       skip: !selectedDepartment?.id,
     }
   );
 
-  const {
-    data: physicians,
-    isLoading: isLoadingPhysicians,
-    refetch: refetchPhysicians,
-  } = useGetUsersByRoomQuery(
-    { roomId: selectedRoom?.id || "", role: "physician", search: "" },
-    {
-      skip: !selectedRoom?.id,
-    }
-  );
+  // const {
+  //   data: physicians,
+  //   isLoading: isLoadingPhysicians,
+  //   refetch: refetchPhysicians,
+  // } = useGetUsersByRoomQuery(
+  //   { roomId: selectedRoom?.id || "", role: "physician", search: "" },
+  //   {
+  //     skip: !selectedRoom?.id,
+  //   }
+  // );
 
   const [createEncounter] = useCreatePatientEncounterMutation();
   const [createQueueAssignment] = useCreateQueueAssignmentMutation();
@@ -136,14 +141,14 @@ export function PatientForward({ patientId }: { patientId: string }) {
   ]);
 
   // Transform departments data for react-select
-  const departmentOptions =
-    departmentsData?.map((dept) => ({
+  const departmentOptions: DepartmentOption[] =
+    departmentsData?.data.map((dept) => ({
       value: dept.id,
       label: dept.departmentName,
       ...dept,
     })) || [];
 
-  const roomOptions = roomData?.map((room) => ({
+  const roomOptions = roomData?.data.map((room) => ({
     value: room.id,
     label: room.roomCode,
     ...room,
@@ -166,8 +171,8 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
         const queueData = {
           ...queueInfo,
-          roomId: selectedRoom?.id,
-          encounterId: encounter?.id,
+          roomId: queueInfo.roomId,
+          encounterId: encounter?.data.id,
           createdBy: user.id,
         };
 
@@ -175,13 +180,16 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
         toast.success("Forward patient successfully");
 
-        router.push(
-          `/reception/queue-paper/${queue.id}?doctor=${encounter.assignedPhysicianId}`
-        );
+        router.push(`/reception/queue-paper/${queue.data.id}`);
+
+        // router.push(
+        //   `/reception/queue-paper/${queue.data.id}?doctor=${encounter.data.assignedPhysicianId}`
+        // );
       }
     } catch (err) {
-      if (encounter && encounter.id) await deleteEncounter(encounter.id);
-      if (queue && queue.id) await deleteQueueAssignment(queue.id);
+      if (encounter && encounter.data.id)
+        await deleteEncounter(encounter.data.id);
+      if (queue && queue.data.id) await deleteQueueAssignment(queue.data.id);
       window.alert("Internal server error");
       console.log(err);
     }
@@ -210,14 +218,17 @@ export function PatientForward({ patientId }: { patientId: string }) {
               classNamePrefix="select"
               value={
                 selectedDepartment
-                  ? {
+                  ? ({
                       value: selectedDepartment.id,
                       label: selectedDepartment.departmentName,
-                    }
+                      ...selectedDepartment,
+                    } as DepartmentOption)
                   : null
               }
-              onChange={(selectedOption) => {
-                setSelectedDepartment(selectedOption);
+              onChange={(selectedOption: SingleValue<DepartmentOption>) => {
+                setSelectedDepartment(
+                  selectedOption ? ({ ...selectedOption } as Department) : null
+                );
               }}
               onInputChange={(inputValue) => {
                 setDepartmentSearch(inputValue);
@@ -230,85 +241,40 @@ export function PatientForward({ patientId }: { patientId: string }) {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2 h-[50vh] overflow-y-auto">
             <label className="text-sm font-medium text-foreground">
               Select Room
             </label>
-            <Select
-              className="basic-single"
-              classNamePrefix="select"
-              isDisabled={selectedDepartment === undefined}
-              value={
-                selectedRoom
-                  ? {
-                      value:
-                        selectedDepartment &&
-                        selectedDepartment.id === selectedRoom.department.id
-                          ? selectedRoom.id
-                          : "",
-                      label:
-                        selectedDepartment &&
-                        selectedDepartment.id === selectedRoom.department.id
-                          ? selectedRoom.roomCode
-                          : "",
-                    }
-                  : null
-              }
-              onChange={(selectedOption) => {
-                setSelectedRoom(selectedOption);
-              }}
-              onInputChange={(inputValue) => {
-                setDepartmentSearch(inputValue);
-              }}
-              isLoading={isLoadingRoom}
-              options={roomOptions}
-              placeholder="Search and select room..."
-              isClearable
-              isSearchable
-            />
-          </div>
-          <div className="space-y-2 h-[50vh] overflow-y-auto">
-            <label className="text-sm font-medium text-foreground">
-              Select Physician:
-            </label>
-
-            {/* Handle loading state */}
-            {isLoadingPhysicians && (
-              <div className="text-foreground text-sm">
-                Loading physicians...
-              </div>
+            {isLoadingRoom && (
+              <div className="text-foreground text-sm">Loading rooms...</div>
             )}
 
-            {/* Handle empty state */}
-            {!isLoadingPhysicians &&
-              (!physicians?.length || physicians.length === 0) && (
+            {!isLoadingRoom &&
+              (!roomData?.data.length || roomData.data.length === 0) && (
                 <div className="text-foreground text-sm">
-                  No physicians available in this room.
+                  No room available in this department.
                 </div>
               )}
 
-            {/* Render fetched physicians */}
-            {!isLoadingPhysicians && physicians && physicians?.length > 0 && (
+            {!isLoadingRoom && roomData && roomData.data.length > 0 && (
               <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
-                {physicians.map((doctor: User) => {
-                  const isSelected =
-                    encounterInfo.assignedPhysicianId === doctor.id;
+                {roomData.data.map((room: Room) => {
+                  const isSelected = queueInfo.roomId === room.id;
 
                   // calculate queue percentage based on queueStats
                   const currentQueue =
-                    doctor.queueStats?.currentInProgress?.queueNumber || 0;
+                    room?.queueStats?.currentInProgress?.queueNumber || 0;
                   const maxQueue =
-                    doctor.queueStats?.maxWaiting?.queueNumber || 0;
+                    room?.queueStats?.maxWaiting?.queueNumber || 0;
                   const queuePercentage =
                     maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
-
                   return (
                     <button
-                      key={doctor.id}
+                      key={room.id}
                       onClick={() => {
-                        setEncounterInfo({
-                          ...encounterInfo,
-                          assignedPhysicianId: doctor.id,
+                        setQueueInfo({
+                          ...queueInfo,
+                          roomId: room.id,
                         });
                       }}
                       type="button"
@@ -321,15 +287,13 @@ export function PatientForward({ patientId }: { patientId: string }) {
                     >
                       <div className="flex justify-between items-start mb-3">
                         <h3 className="text-lg font-semibold text-foreground">
-                          Dr. {doctor.firstName} {doctor.lastName}
+                          Room {room.roomCode}
                         </h3>
                       </div>
 
                       <div className="flex justify-between items-end text-sm">
                         <div>
-                          <span className="text-foreground">
-                            Current:{" "}
-                          </span>
+                          <span className="text-foreground">Current: </span>
                           <span className="font-semibold text-foreground">
                             {currentQueue}
                           </span>

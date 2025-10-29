@@ -1,10 +1,14 @@
 export enum OrderStatus {
   PENDING = 'pending',
-  SCHEDULED = 'scheduled',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
-  FAILED = 'failed',
+}
+
+export enum OrderFormStatus {
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 export enum OrderPriority {

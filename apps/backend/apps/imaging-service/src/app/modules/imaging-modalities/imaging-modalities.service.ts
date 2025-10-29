@@ -12,6 +12,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
+const relations = ['modalityMachines'];
 @Injectable()
 export class ImagingModalitiesService {
   constructor(
@@ -27,12 +28,18 @@ export class ImagingModalitiesService {
   };
 
   findAll = async (): Promise<ImagingModality[]> => {
-    return await this.imagingModalityRepository.findAll();
+    return await this.imagingModalityRepository.findAll(
+      {
+        where: { isDeleted: false, isActive: true },
+      },
+      relations
+    );
   };
 
   findOne = async (id: string): Promise<ImagingModality | null> => {
     const modality = await this.imagingModalityRepository.findOne({
       where: { id },
+      relations,
     });
 
     if (!modality) {

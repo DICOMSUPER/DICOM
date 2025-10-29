@@ -3,6 +3,8 @@
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import SegmentationControls from '../toolbar/SegmentationControls';
+import { useViewer } from '@/contexts/ViewerContext';
 
 interface SegmentationsPanelProps {
   isCollapsed: boolean;
@@ -10,6 +12,12 @@ interface SegmentationsPanelProps {
 }
 
 const SegmentationsPanel = ({ isCollapsed, onToggleCollapse }: SegmentationsPanelProps) => {
+  const { setActiveTool, state } = useViewer();
+
+  const handleToolSelect = (toolName: string) => {
+    setActiveTool(toolName as any);
+  };
+
   if (isCollapsed) {
     return (
       <div className="w-12 bg-slate-900 border-l border-slate-700 flex flex-col">
@@ -61,15 +69,11 @@ const SegmentationsPanel = ({ isCollapsed, onToggleCollapse }: SegmentationsPane
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
-
-          
-          {/* Add new segmentation button */}
-          <Button
-            variant="outline"
-            className="w-full mt-4 border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
-          >
-            Add Segmentation
-          </Button>
+          {/* Integrated Segmentation Controls */}
+          <SegmentationControls
+            onToolSelect={handleToolSelect}
+            activeTool={state.activeTool}
+          />
         </div>
       </ScrollArea>
     </div>

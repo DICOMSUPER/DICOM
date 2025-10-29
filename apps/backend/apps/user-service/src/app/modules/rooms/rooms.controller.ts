@@ -1,4 +1,4 @@
-import { Controller, Logger, Search } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from '@backend/shared-domain';
@@ -12,6 +12,7 @@ import {
   InvalidRoomDataException,
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Roles } from '@backend/shared-enums';
 
 @Controller()
 export class RoomsController {
@@ -184,16 +185,12 @@ export class RoomsController {
       id: string;
       applyScheduleFilter: boolean;
       search?: string;
+      role?: Roles;
     }
   ) {
     this.logger.log('Using pattern: UserService.Room.GetRoomByDepartmentId');
     try {
-      const { id, search, applyScheduleFilter } = data;
-      return await this.roomsService.getRoomByDepartmentId(
-        id,
-        applyScheduleFilter || false,
-        search || ''
-      );
+      return await this.roomsService.getRoomByDepartmentId(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -207,20 +204,28 @@ export class RoomsController {
   async getRoomIds(
     @Payload() data: { take?: number; isActive?: boolean }
   ): Promise<{ success: boolean; data: string[]; count: number }> {
-    this.logger.log(`Getting room IDs, take: ${data.take || 10}, isActive: ${data.isActive !== false}`);
+    this.logger.log(
+      `Getting room IDs, take: ${data.take || 10}, isActive: ${
+        data.isActive !== false
+      }`
+    );
     try {
       const { take = 10, isActive = true } = data;
-      const result = await this.roomsService.findAll({ 
+      const result = await this.roomsService.findAll({
         limit: take,
-        isActive 
+        isActive,
       });
-      
+
       // Ensure result.data is an array
-      const rooms = Array.isArray(result.data) ? result.data : (result.data ? [result.data] : []);
-      const roomIds = rooms.map(r => r.id);
-      
+      const rooms = Array.isArray(result.data)
+        ? result.data
+        : result.data
+        ? [result.data]
+        : [];
+      const roomIds = rooms.map((r) => r.id);
+
       this.logger.log(`Returning ${roomIds.length} room IDs`);
-      
+
       return {
         success: true,
         data: roomIds,
@@ -236,6 +241,20 @@ export class RoomsController {
     }
   }
 
-
-
+  @MessagePattern('UserService.Room.GetRoomsByIds')
+  async getRoomByRoomIds(@Payload() data: { ids: string[] }) {
+    try {
+      this.logger.log(`Using pattern: UserService.Room.GetRoomsByIds`);
+      const result = await this.roomsService.getRoomByRoomIds(data.ids);
+      this.logger.log(`Found ${result.length} rooms`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Get rooms by IDs error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get room IDs',
+        'RoomsController.getRoomIds'
+      );
+    }
+  }
 }

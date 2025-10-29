@@ -47,6 +47,36 @@ export class SeedingController {
     };
   }
 
+  @MessagePattern('ImagingService.Seeding.SeedBodyParts')
+  async microserviceSeedBodyParts(@Payload() data: any) {
+    await this.seedingService.seedBodyParts();
+    return {
+      success: true,
+      message: 'Body parts seeded successfully!',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @MessagePattern('ImagingService.Seeding.SeedModalityMachines')
+  async microserviceSeedModalityMachines(@Payload() data: any) {
+    await this.seedingService.seedModalityMachines();
+    return {
+      success: true,
+      message: 'Modality machines seeded successfully!',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @MessagePattern('ImagingService.Seeding.SeedRequestProcedures')
+  async microserviceSeedRequestProcedures(@Payload() data: any) {
+    await this.seedingService.seedRequestProcedures();
+    return {
+      success: true,
+      message: 'Request procedures seeded successfully!',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @MessagePattern('ImagingService.Seeding.SeedImagingOrders')
   async microserviceSeedImagingOrders(@Payload() data: any) {
     await this.seedingService.seedImagingOrders();
@@ -104,6 +134,9 @@ export class SeedingController {
       status: 'healthy',
       seededData: {
         modalities: 'available',
+        bodyParts: 'available',
+        modalityMachines: 'available',
+        requestProcedures: 'available',
         imagingOrders: 'available',
         dicomStudies: 'available',
         dicomSeries: 'available',

@@ -8,16 +8,25 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { DicomStudy, DigitalSignature } from '@backend/shared-domain';
+import {
+  DiagnosesReport,
+  DicomStudy,
+  DigitalSignature,
+  Patient,
+  Room,
+} from '@backend/shared-domain';
 import { DiagnosisStatus, DicomStudyStatus } from '@backend/shared-enums';
 import { firstValueFrom } from 'rxjs';
 import {
   TransformInterceptor,
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { userInfo } from 'os';
 @Controller('dicom-studies')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DicomStudiesController {
@@ -90,10 +99,11 @@ export class DicomStudiesController {
 
   @Get('filter')
   async getStudyWithFilter(
+    @Req() request: IAuthenticatedRequest,
     @Query('studyStatus') studyStatus?: DicomStudyStatus,
     @Query('reportStatus') reportStatus?: DiagnosisStatus,
-    @Query('modalityCode') modalityCode?: string,
-    @Query('modalityDevice') modalityDevice?: string,
+    @Query('modalityId') modalityId?: string,
+    @Query('modalityMachineId') modalityMachineId?: string,
     @Query('mrn') mrn?: string,
     @Query('patientFirstName') patientFirstName?: string,
     @Query('patientLastName') patientLastName?: string,
@@ -102,28 +112,28 @@ export class DicomStudiesController {
     @Query('endDate') endDate?: string,
     @Query('studyUID') studyUID?: string
   ) {
-    //extract all studies with studyUID,endDate,startDate(from study), bodyPart,modalityDevice, modalityCode from order,
     try {
-      const studies = await firstValueFrom(
+      // console.log(request.userInfo);
+
+      //  Filter studies in imaging service
+      let studies = await firstValueFrom(
         this.imagingService.send('ImagingService.DicomStudies.Filter', {
+          role: request?.userInfo?.role,
           studyUID,
           startDate,
           endDate,
           bodyPart,
-          modalityCode,
-          modalityDevice,
+          modalityId,
+          modalityMachineId,
           studyStatus,
         })
       );
 
-      console.log({ studies: studies });
-      const patientIds = studies.map((study: DicomStudy) => {
-        return study.patientId;
-      });
-      const studyIds = studies.map((study: DicomStudy) => {
-        return study.id;
-      });
-      //get patientId from those studies and find in patient service
+      // console.log('Studies after imaging filter:', studies.length);
+
+      //  Filter patients and join with studies
+      const patientIds = studies.map((study: DicomStudy) => study.patientId);
+
       const patients = await firstValueFrom(
         this.patientService.send('PatientService.Patient.Filter', {
           patientIds,
@@ -132,26 +142,86 @@ export class DicomStudiesController {
           patientCode: mrn,
         })
       );
-      console.log({ patients: patients });
-      //get report status & filter from those study if found
-      // const diagnosisReport = await firstValueFrom(
-      //   this.patientService.send('PatientService.DiagnosisReport.Filter', {
-      //     reportStatus,
-      //     studyIds,
-      //   })
-      // );
 
-      // console.log({ diagnosisReport: diagnosisReport });
+      // console.log('Patients found:', patients.length);
 
-      //merge all 3
+      // Only keep studies whose patients match the filter criteria
+      const foundPatientIds = patients.map((patient: Patient) => patient.id);
+      studies = studies.filter((study: DicomStudy) =>
+        foundPatientIds.includes(study.patientId)
+      );
 
-      //get room from order
+      // Join patient data to studies
+      studies = studies.map((study: DicomStudy) => ({
+        ...study,
+        patient: patients.find((p: Patient) => p.id === study.patientId),
+      }));
 
-      //get room from user service
+      // console.log('Studies after patient filter:', studies.length);
 
-      return true;
+      //  Get diagnosis reports for all remaining studies
+      const studyIds = studies.map((study: DicomStudy) => study.id);
+
+      const diagnosisReports = await firstValueFrom(
+        this.patientService.send('PatientService.DiagnosesReport.Filter', {
+          reportStatus,
+          studyIds,
+        })
+      );
+
+      // console.log('Diagnosis reports found:', diagnosisReports.length);
+
+      // CRITICAL: Only filter by report if reportStatus was explicitly provided
+      // If reportStatus is "All" or undefined/null, include all studies regardless of report existence
+      if (reportStatus && reportStatus.toLocaleLowerCase() !== 'all') {
+        // console.log('Filtering via report');
+        const studyIdsFromReport = diagnosisReports.map(
+          (report: DiagnosesReport) => report.studyId
+        );
+
+        studies = studies.filter((study: DicomStudy) =>
+          studyIdsFromReport.includes(study.id)
+        );
+
+        // console.log('Studies after report filter:', studies.length);
+      }
+
+      // Join report data to studies (some studies may not have reports)
+      studies = studies.map((study: DicomStudy) => ({
+        ...study,
+        report: diagnosisReports.find(
+          (report: DiagnosesReport) => report.studyId === study.id
+        ),
+      }));
+
+      // Step 4: Get rooms and join with studies
+      const roomIds = studies
+        .map((study: DicomStudy) => study.imagingOrder?.roomId)
+        .filter((id: string | undefined) => id !== null && id !== undefined);
+
+      if (roomIds.length > 0) {
+        const rooms = await firstValueFrom(
+          this.userService.send('UserService.Room.GetRoomsByIds', {
+            ids: roomIds,
+          })
+        );
+
+        // console.log('Rooms found:', rooms.length);
+
+        // Join room data to studies
+        studies = studies.map((study: DicomStudy) => ({
+          ...study,
+          room: rooms.find(
+            (room: Room) => room.id === study.imagingOrder?.roomId
+          ),
+        }));
+      }
+
+      // console.log('Final studies count:', studies.length);
+      return studies;
     } catch (error) {
-      console.log(error);
+      console.error('Error in getStudyWithFilter:', error);
+      throw error;
     }
   }
 

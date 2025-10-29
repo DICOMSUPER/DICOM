@@ -1,39 +1,56 @@
 "use client";
 
-import React from "react";
+import React, { use } from "react";
 import { useGetQueueAssignmentByIdQuery } from "@/store/queueAssignmentApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
+import { useGetPatientByIdQuery } from "@/store/patientApi";
 
 export default function QueueAssignmentPaper({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams?: { doctor?: string };
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ doctor?: string }>;
 }) {
-  const { id } = params;
-  const { doctor } = searchParams || {};
+  // Unwrap params and searchParams using React.use()
+  const { id } = use(params);
+  const resolvedSearchParams = searchParams ? use(searchParams) : {};
+  const { doctor } = resolvedSearchParams;
 
   const queueId = typeof id === "string" ? id : String(id);
   const doctorId = typeof doctor === "string" ? doctor : String(doctor || "");
 
   const { data: queueData, isLoading: isLoadingQueue } =
     useGetQueueAssignmentByIdQuery(queueId);
+
+  console.log(queueData);
   const { data: doctorData, isLoading: isLoadingDoctor } = useGetUserByIdQuery(
     doctorId,
     {
       skip: !doctorId,
     }
   );
+
   const { data: roomData, isLoading: isLoadingRoom } = useGetRoomByIdQuery(
-    queueData?.roomId as string,
+    queueData?.data.roomId as string,
     {
-      skip: !queueData?.roomId,
+      skip: !queueData?.data?.roomId,
     }
   );
 
-  const formatDate = (dateString) => {
+  console.log(roomData);
+  const { data: patientData, isLoading: isLoadingPatient } =
+    useGetPatientByIdQuery(queueData?.data.encounter?.patientId, {
+      skip: !queueData?.data.encounter?.patientId,
+    });
+
+  let patient;
+  if (!isLoadingPatient && patientData?.data) {
+    patient = patientData.data;
+  }
+
+  const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -46,7 +63,7 @@ export default function QueueAssignmentPaper({
     });
   };
 
-  const formatDateOfBirth = (dateString) => {
+  const formatDateOfBirth = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -72,8 +89,6 @@ export default function QueueAssignmentPaper({
     );
   }
 
-  const patient = queueData.encounter?.patient;
-
   const handlePrint = () => {
     const printContent = document.getElementById("queue-assignment-print");
     if (!printContent) return;
@@ -84,7 +99,7 @@ export default function QueueAssignmentPaper({
     printWindow.document.write(`
       <html>
         <head>
-          <title>Queue Assignment - ${queueData.queueNumber}</title>
+          <title>Queue Assignment - ${queueData.data.queueNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; }
@@ -155,7 +170,7 @@ export default function QueueAssignmentPaper({
         <div className="border-b-2 border-black py-8 text-center">
           <div className="text-sm font-bold mb-2">QUEUE NUMBER</div>
           <div className="text-7xl font-bold">
-            {String(queueData.queueNumber).padStart(3, "0")}
+            {String(queueData.data.queueNumber).padStart(3, "0")}
           </div>
         </div>
 
@@ -216,35 +231,35 @@ export default function QueueAssignmentPaper({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-xs font-bold mb-1">Queue Number</div>
-                <div className="text-sm">{queueData.queueNumber}</div>
+                <div className="text-sm">{queueData.data.queueNumber}</div>
               </div>
               <div>
                 <div className="text-xs font-bold mb-1">Priority</div>
-                <div className="text-sm">{queueData.priority}</div>
+                <div className="text-sm">{queueData.data.priority}</div>
               </div>
               <div>
                 <div className="text-xs font-bold mb-1">Assignment Date</div>
                 <div className="text-sm">
-                  {formatDate(queueData.assignmentDate)}
+                  {formatDate(queueData.data.assignmentDate)}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-bold mb-1">Expires Date</div>
                 <div className="text-sm">
-                  {formatDate(queueData.assignmentExpiresDate)}
+                  {formatDate(queueData.data.assignmentExpiresDate)}
                 </div>
               </div>
             </div>
             <div className="border-2 border-black p-4 text-center mt-4">
               <div className="text-3xl font-bold">
-                ~{queueData.estimatedWaitTime} minutes
+                ~{queueData.data.estimatedWaitTime} minutes
               </div>
               <div className="text-xs font-bold mt-1">ESTIMATED WAIT TIME</div>
             </div>
           </div>
 
           {/* Encounter Information */}
-          {queueData.encounter && (
+          {queueData.data.encounter && (
             <div className="mb-6 pb-4 border-b border-black">
               <h2 className="text-sm font-bold uppercase border-b border-black pb-1 mb-4">
                 Encounter Information
@@ -253,13 +268,13 @@ export default function QueueAssignmentPaper({
                 <div>
                   <div className="text-xs font-bold mb-1">Encounter Type</div>
                   <div className="text-sm capitalize">
-                    {queueData.encounter.encounterType || "N/A"}
+                    {queueData.data.encounter.encounterType || "N/A"}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-bold mb-1">Encounter Date</div>
                   <div className="text-sm">
-                    {formatDate(queueData.encounter.encounterDate)}
+                    {formatDate(queueData.data.encounter.encounterDate)}
                   </div>
                 </div>
               </div>
@@ -275,14 +290,14 @@ export default function QueueAssignmentPaper({
               <div>
                 <div className="text-xs font-bold mb-1">Physician Name</div>
                 <div className="text-sm">
-                  Dr. {doctorData.lastName} {doctorData.firstName}
+                  Dr. {doctorData?.data.lastName} {doctorData?.data.firstName}
                 </div>
               </div>
             </div>
           )}
 
           {/* Room Information */}
-          {roomData && (
+          {roomData?.data && (
             <div className="mb-6 pb-4 border-b border-black">
               <h2 className="text-sm font-bold uppercase border-b border-black pb-1 mb-4">
                 Room Information
@@ -291,18 +306,20 @@ export default function QueueAssignmentPaper({
                 <div>
                   <div className="text-xs font-bold mb-1">Room Code</div>
                   <div className="text-sm font-mono">
-                    {roomData?.room.roomCode}
+                    {roomData?.data.room.roomCode}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-bold mb-1">Room Type</div>
                   <div className="text-sm capitalize">
-                    {roomData?.room.roomType}
+                    {roomData?.data.room.roomType}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-bold mb-1">Floor</div>
-                  <div className="text-sm">Floor {roomData?.room.floor}</div>
+                  <div className="text-sm">
+                    Floor {roomData?.data.room.floor}
+                  </div>
                 </div>
               </div>
             </div>
@@ -313,12 +330,14 @@ export default function QueueAssignmentPaper({
         <div className="border-t-2 border-black p-4 text-xs">
           <div className="mb-2">
             <div className="font-bold">Queue Assignment ID:</div>
-            <div className="font-mono text-xs break-all">{queueData.id}</div>
+            <div className="font-mono text-xs break-all">
+              {queueData.data.id}
+            </div>
           </div>
           <div className="mb-3">
             <div className="font-bold">Encounter ID:</div>
             <div className="font-mono text-xs break-all">
-              {queueData.encounterId}
+              {queueData.data.encounterId}
             </div>
           </div>
           <div className="pt-3 border-t border-black">

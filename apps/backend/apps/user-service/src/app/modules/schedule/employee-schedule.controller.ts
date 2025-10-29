@@ -9,7 +9,8 @@ import {
 } from '@backend/shared-domain';
 import { RepositoryPaginationDto } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import { Roles } from '@backend/shared-enums';
+import { Roles, ScheduleStatus } from '@backend/shared-enums';
+import moment from 'moment';
 
 @Controller('employee-schedules')
 export class EmployeeScheduleController {

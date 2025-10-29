@@ -8,6 +8,7 @@ export const MESSAGE_PATTERNS = {
   UPDATE: `Update`,
   DELETE: `Delete`,
   FIND_MANY: 'FindMany',
+  FIND_BY_ROOM_ID: 'FindByRoomId',
 };
 
 //Optional, for consistent naming only

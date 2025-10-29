@@ -3,9 +3,13 @@ import {
   CreateImagingOrderDto,
   ImagingModality,
   ImagingOrder,
+  ImagingOrderForm,
 } from '@backend/shared-domain';
 import { UpdateImagingOrderDto } from '@backend/shared-domain';
-import { ImagingOrderRepository } from './imaging-orders.repository';
+import {
+  FilterByRoomIdType,
+  ImagingOrderRepository,
+} from './imaging-orders.repository';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
@@ -13,17 +17,20 @@ import {
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { OrderStatus } from '@backend/shared-enums';
+import { Between } from 'typeorm';
+import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 
-const relation = ['modality'];
+const relation = ['procedure'];
 @Injectable()
 export class ImagingOrdersService {
   constructor(
     @Inject() private readonly imagingOrderRepository: ImagingOrderRepository,
     @Inject()
-    private readonly imagingModalityRepository: ImagingModalityRepository
-  ) {
-    
-   }
+    private readonly imagingModalityRepository: ImagingModalityRepository,
+    @Inject()
+    private readonly imagingOrderFormRepository: ImagingOrderFormRepository
+  ) {}
 
   private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
     const order = await this.imagingOrderRepository.findOne({ where: { id } });
@@ -36,6 +43,42 @@ export class ImagingOrdersService {
     }
     return order;
   };
+
+  public async generateOrderNumber(roomId: string): Promise<number> {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find all orders for this room created today
+    const todayOrderForms = await this.imagingOrderFormRepository.findAll(
+      {
+        where: {
+          roomId: roomId,
+          createdAt: Between(startOfDay, endOfDay),
+        },
+        order: { createdAt: 'DESC' },
+        take: 1,
+      },
+
+      ['imagingOrders']
+    );
+
+    // Extract numbers from existing order numbers and find the max
+    let maxNumber = 0;
+    if (todayOrderForms && todayOrderForms.length > 0) {
+      todayOrderForms[0].imagingOrders.forEach((order: ImagingOrder) => {
+        if (order.orderNumber > maxNumber) {
+          maxNumber = order.orderNumber;
+        }
+      });
+
+      return maxNumber + 1;
+    } else {
+      return 1;
+    }
+  }
 
   private checkModality = async (id: string): Promise<ImagingModality> => {
     const modality = await this.imagingModalityRepository.findById(id);
@@ -58,8 +101,29 @@ export class ImagingOrdersService {
   create = async (
     createImagingOrderDto: CreateImagingOrderDto
   ): Promise<ImagingOrder> => {
-    await this.checkModality(createImagingOrderDto.modalityId);
-    return await this.imagingOrderRepository.create(createImagingOrderDto);
+    const orderForm = await this.imagingOrderFormRepository.findOne(
+      {
+        where: {
+          id: createImagingOrderDto.imagingOrderFormId,
+          isDeleted: false,
+        },
+      },
+      ['imagingOrders']
+    );
+    if (!orderForm) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Order form not found',
+        IMAGING_SERVICE
+      );
+    }
+
+    return await this.imagingOrderRepository.create({
+      ...createImagingOrderDto,
+      orderStatus: OrderStatus.PENDING,
+      procedureId: createImagingOrderDto.request_procedure_id,
+      orderNumber: await this.generateOrderNumber(orderForm?.roomId),
+    });
   };
 
   findAll = async (): Promise<ImagingOrder[]> => {
@@ -110,11 +174,11 @@ export class ImagingOrdersService {
     const order = await this.checkImagingOrder(id);
 
     //check availablity when update modality
-    if (
-      updateImagingOrderDto.modalityId &&
-      updateImagingOrderDto.modalityId !== order.modalityId
-    )
-      await this.checkModality(updateImagingOrderDto.modalityId);
+    // if (
+    //   updateImagingOrderDto.modalityId &&
+    //   updateImagingOrderDto.modalityId !== order.modalityId
+    // )
+    //   await this.checkModality(updateImagingOrderDto.modalityId);
 
     return await this.imagingOrderRepository.update(id, updateImagingOrderDto);
   };
@@ -124,19 +188,13 @@ export class ImagingOrdersService {
     return await this.imagingOrderRepository.softDelete(id, 'isDeleted');
   };
 
-  findManyByPatientId = async (
-    patientId: string
+  filterImagingOrderByRoomId = async (
+    data: FilterByRoomIdType
   ): Promise<ImagingOrder[]> => {
-    if (!patientId) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'PatientId is required',
-        IMAGING_SERVICE,
-      );
-    }
+    return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
+  };
 
-    return await this.imagingOrderRepository.findAll({
-      where: { patientId },
-    });
+  getRoomStats = async (id: string) => {
+    return await this.imagingOrderRepository.getRoomStats(id);
   };
 }

@@ -2,7 +2,6 @@ import { RoomType } from "@/enums/patient.enum";
 import { Department } from "./department.interface";
 import { RoomStatus } from "@/enums/room.enum";
 
-
 export interface Room {
   id: string;
   roomCode: string;
@@ -25,6 +24,10 @@ export interface Room {
   createdAt: string;
   updatedAt: string;
   department: Department;
+  queueStats?: {
+    currentInProgress?: { queueNumber: number | null };
+    maxWaiting?: { queueNumber: number | null };
+  };
 }
 
 export interface RoomPagination {
@@ -32,7 +35,7 @@ export interface RoomPagination {
   limit: number;
   total: number;
   totalPages: number;
-} 
+}
 
 export interface CreateRoomDto {
   roomCode: string;
@@ -54,5 +57,4 @@ export interface CreateRoomDto {
   isActive: boolean;
 }
 
-export interface UpdateRoomDto extends Partial<CreateRoomDto> {} 
-
+export type UpdateRoomDto = Partial<CreateRoomDto>;

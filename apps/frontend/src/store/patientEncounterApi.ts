@@ -7,7 +7,7 @@ import {
   PaginatedResponse,
   EncounterStats,
   ApiResponse,
-  PaginationParams
+  PaginationParams,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
@@ -47,7 +47,10 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounter by ID
-    getPatientEncounterById: builder.query<ApiResponse<PatientEncounter>, string>({
+    getPatientEncounterById: builder.query<
+      ApiResponse<PatientEncounter>,
+      string
+    >({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",
@@ -56,20 +59,23 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounters by patient
-    getPatientEncountersByPatientId: builder.query<ApiResponse<PaginatedResponse<PatientEncounter>>, {patientId:string; pagination: PaginationParams}>({
-      query: ({patientId, pagination}) => ({
+    getPatientEncountersByPatientId: builder.query<
+      ApiResponse<PaginatedResponse<PatientEncounter>>,
+      { patientId: string; pagination: PaginationParams }
+    >({
+      query: ({ patientId, pagination }) => ({
         url: `/patient/${patientId}`,
         method: "GET",
-        params: pagination
+        params: pagination,
       }),
-      providesTags: (result, error, {patientId}) => [
+      providesTags: (result, error, { patientId }) => [
         { type: "PatientEncounter", id: `patient-${patientId}` },
       ],
     }),
 
     // Get encounters by physician
     getPatientEncountersByPhysicianId: builder.query<
-      PatientEncounter[],
+      ApiResponse<PatientEncounter[]>,
       string
     >({
       query: (physicianId) => ({
@@ -92,7 +98,7 @@ export const patientEncounterApi = createApi({
 
     // Create encounter
     createPatientEncounter: builder.mutation<
-      PatientEncounter,
+      ApiResponse<PatientEncounter>,
       CreatePatientEncounterDto
     >({
       query: (data) => ({

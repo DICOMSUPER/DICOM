@@ -59,5 +59,4 @@ export class DiagnosesReport extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
 }
