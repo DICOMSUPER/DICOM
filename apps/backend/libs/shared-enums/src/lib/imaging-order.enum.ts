@@ -5,6 +5,12 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum OrderFormStatus {
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
 export enum OrderPriority {
   ROUTINE = 'routine',
   URGENT = 'urgent',
