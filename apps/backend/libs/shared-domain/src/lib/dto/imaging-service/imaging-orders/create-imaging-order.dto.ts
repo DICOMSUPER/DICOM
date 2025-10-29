@@ -7,17 +7,12 @@ import {
   IsUUID,
 } from 'class-validator';
 export class CreateImagingOrderDto {
-
   @IsString()
   patientId!: string;
 
   @IsString()
   @IsUUID()
   orderingPhysicianId!: string;
-
-  @IsString()
-  @IsUUID()
-  modalityId?: string;
 
   @IsString()
   bodyPart!: string;

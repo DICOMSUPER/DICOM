@@ -5,7 +5,10 @@ import {
   ImagingOrder,
 } from '@backend/shared-domain';
 import { UpdateImagingOrderDto } from '@backend/shared-domain';
-import { ImagingOrderRepository } from './imaging-orders.repository';
+import {
+  FilterByRoomIdType,
+  ImagingOrderRepository,
+} from './imaging-orders.repository';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
@@ -14,8 +17,9 @@ import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalit
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { OrderStatus } from '@backend/shared-enums';
+import { Between } from 'typeorm';
 
-const relation = ['modality'];
+const relation = ['procedure'];
 @Injectable()
 export class ImagingOrdersService {
   constructor(
@@ -36,20 +40,38 @@ export class ImagingOrdersService {
     return order;
   };
 
-
-  private async generateOrderNumber(): Promise<string> {
+  private async generateOrderNumber(roomId: string): Promise<number> {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const maxAttempts = 5;
-    for (let i = 0; i < maxAttempts; i++) {
-      const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const candidate = `ORD-${date}-${suffix}`;
-      const exists = await this.imagingOrderRepository.findOne({
-        where: { orderNumber: candidate },
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find all orders for this room created today
+    const todayOrders = await this.imagingOrderRepository.findAll({
+      where: {
+        roomId: roomId,
+        createdAt: Between(startOfDay, endOfDay),
+      },
+    });
+
+    // Extract numbers from existing order numbers and find the max
+    let maxNumber = 0;
+    if (todayOrders && todayOrders.length > 0) {
+      todayOrders.forEach((order: ImagingOrder) => {
+        const match = order.orderNumber.toString().match(/ORD-\d{8}-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        }
       });
-      if (!exists) return candidate;
     }
-    // fallback using timestamp
-    return `ORD-${date}-${Date.now().toString().slice(-6)}`;
+
+    // Increment by 1 and format as 4-digit number
+    const nextNumber = maxNumber + 1;
+    return nextNumber;
   }
 
   private checkModality = async (id: string): Promise<ImagingModality> => {
@@ -73,12 +95,11 @@ export class ImagingOrdersService {
   create = async (
     createImagingOrderDto: CreateImagingOrderDto
   ): Promise<ImagingOrder> => {
-    await this.checkModality(createImagingOrderDto.modalityId as string);
     return await this.imagingOrderRepository.create({
       ...createImagingOrderDto,
       orderStatus: OrderStatus.PENDING,
       procedureId: createImagingOrderDto.request_procedure_id,
-      orderNumber: (await this.generateOrderNumber()),
+      orderNumber: await this.generateOrderNumber(createImagingOrderDto.roomId),
     });
   };
 
@@ -130,11 +151,6 @@ export class ImagingOrdersService {
     const order = await this.checkImagingOrder(id);
 
     //check availablity when update modality
-    if (
-      updateImagingOrderDto.modalityId &&
-      updateImagingOrderDto.modalityId !== order.modalityId
-    )
-      await this.checkModality(updateImagingOrderDto.modalityId);
 
     return await this.imagingOrderRepository.update(id, updateImagingOrderDto);
   };
@@ -142,5 +158,15 @@ export class ImagingOrdersService {
   remove = async (id: string): Promise<boolean> => {
     await this.checkImagingOrder(id);
     return await this.imagingOrderRepository.softDelete(id, 'isDeleted');
+  };
+
+  filterImagingOrderByRoomId = async (
+    data: FilterByRoomIdType
+  ): Promise<ImagingOrder[]> => {
+    return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
+  };
+
+  getRoomStats = async (id: string) => {
+    return await this.imagingOrderRepository.getRoomStats(id);
   };
 }

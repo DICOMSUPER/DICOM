@@ -175,12 +175,12 @@ export class AppService {
         }
 
         const bodyPart = await this.bodyPartRepository.findOne({
-          where: { id: order?.procedure.bodyPartId, isDeleted: false },
+          where: { id: order?.procedure?.bodyPartId, isDeleted: false },
         });
         //check imaging modality
         const modality = await this.imagingModalityRepository.findOne(
           {
-            where: { id: order.modalityId, isDeleted: false },
+            where: { id: order?.procedure?.modalityId, isDeleted: false },
           },
           [],
           transactionalEntityManager
@@ -188,7 +188,7 @@ export class AppService {
         if (!modality) {
           throw ThrowMicroserviceException(
             HttpStatus.NOT_FOUND,
-            `Imaging modality not found, modalityId: ${order.modalityId}`,
+            `Imaging modality not found, modalityId: ${order?.procedure?.modalityId}`,
             IMAGING_SERVICE
           );
         }

@@ -1,4 +1,12 @@
-import { IsString, IsEnum, IsOptional, IsUUID, IsDateString, ValidateNested, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsUUID,
+  IsDateString,
+  ValidateNested,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { EncounterType } from '@backend/shared-enums';
 import { VitalSignsDto } from './vital-signs.dto';

@@ -2,18 +2,20 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreateImagingOrderDto, ImagingOrder, UpdateImagingOrderDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  CreateImagingOrderDto,
+  ImagingOrder,
+  UpdateImagingOrderDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 import { ImagingOrdersService } from './imaging-orders.service';
+import type { FilterByRoomIdType } from './imaging-orders.repository';
 
 const moduleName = 'ImagingOrders';
 @Controller()
@@ -21,19 +23,15 @@ export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
   constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
 
-
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
-  async create(
-    @Payload() createImagingOrderDto: any 
-  ): Promise<ImagingOrder> {
+  async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
       // const { createImagingOrderDto } = data;
-      console.log("dto", createImagingOrderDto);
+      console.log('dto', createImagingOrderDto);
 
-      
       return await this.imagingOrdersService.create(createImagingOrderDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
@@ -179,6 +177,32 @@ export class ImagingOrdersController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find many imaging order',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`)
+  async filterOrderByRoomIdType(@Payload() data: FilterByRoomIdType) {
+    try {
+      return await this.imagingOrdersService.filterImagingOrderByRoomId(data);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to filter imaging order by roomId',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStats`)
+  async getRoomOrderStats(@Payload() data: { id: string }) {
+    try {
+      return await this.imagingOrdersService.getRoomStats(data.id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get imaging order room stats',
         IMAGING_SERVICE
       );
     }

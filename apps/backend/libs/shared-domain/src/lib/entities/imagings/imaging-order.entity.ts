@@ -6,18 +6,20 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingModality } from './imaging-modality.entity';
 import { RequestProcedure } from './request-procedure.entity';
+import { DicomStudy } from './dicom-study.entity';
 @Entity('imaging_orders')
 @Index(['patientId'])
 export class ImagingOrder extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   id!: string;
 
-  @Column({ name: 'order_number', length: 50, unique: true })
-  orderNumber!: string;
+  @Column({ name: 'order_number', type: 'int', nullable: true })
+  orderNumber!: number;
 
   @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
@@ -25,12 +27,12 @@ export class ImagingOrder extends BaseEntity {
   @Column({ name: 'ordering_physician_id', type: 'uuid' })
   orderingPhysicianId!: string;
 
-  @Column({ name: 'modality_id', type: 'uuid' })
-  modalityId!: string;
+  // @Column({ name: 'modality_id', type: 'uuid' })
+  // modalityId!: string;
 
-  @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
-  @JoinColumn({ name: 'modality_id' })
-  modality!: ImagingModality;
+  // @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
+  // @JoinColumn({ name: 'modality_id' })
+  // modality!: ImagingModality;
 
   @Column({ name: 'procedure_id', type: 'uuid', nullable: true })
   procedureId?: string;
@@ -73,4 +75,7 @@ export class ImagingOrder extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  @OneToMany(() => DicomStudy, (study) => study.imagingOrder)
+  studies!: DicomStudy[];
 }

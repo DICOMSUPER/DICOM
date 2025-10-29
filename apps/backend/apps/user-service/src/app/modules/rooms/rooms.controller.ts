@@ -12,6 +12,7 @@ import {
   InvalidRoomDataException,
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Roles } from '@backend/shared-enums';
 
 @Controller()
 export class RoomsController {
@@ -184,16 +185,12 @@ export class RoomsController {
       id: string;
       applyScheduleFilter: boolean;
       search?: string;
+      role?: Roles;
     }
   ) {
     this.logger.log('Using pattern: UserService.Room.GetRoomByDepartmentId');
     try {
-      const { id, search, applyScheduleFilter } = data;
-      return await this.roomsService.getRoomByDepartmentId(
-        id,
-        applyScheduleFilter || false,
-        search || ''
-      );
+      return await this.roomsService.getRoomByDepartmentId(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
