@@ -32,7 +32,6 @@ import {
   RequestProcedure,
 } from '@backend/shared-domain';
 import { SeedingModule } from './modules/seeding/seeding.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({

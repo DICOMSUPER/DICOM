@@ -3,17 +3,18 @@
 import React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Patient } from "@/interfaces/patient/patient-workflow.interface"
+import { formatDateYMD } from "@/utils/FormatDate"
 
 export interface SidebarTabProps {
   setSelectedExam: (exam: string) => void
-  examHistory: string[]
+  examHistory: string[],
+  patient: Patient
 }
 
-/**
- * Ghi chú: export default là component memo hoá.
- * React.memo<SidebarTabProps>(Component) để TypeScript biết kiểu props.
- */
-const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory }) => {
+const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, patient }) => {
+
+  console.log("check",patient)
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
       <div className="p-4 border-b">
@@ -30,22 +31,22 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory })
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">PID:</span>
-              <span className="font-medium">2108009129</span>
+              <span className="font-medium">{patient.patientCode}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Họ và tên:</span>
-              <span className="font-medium">PHẠM THỊ MƠ</span>
+              <span className="font-medium">{patient.firstName + " " + patient.lastName}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Năm sinh:</span>
-              <span>1968, nữ, hơn thủy</span>
-            </div>
+              <span>{formatDateYMD(patient.dateOfBirth)}</span>
+            </div>       
             <div className="flex justify-between">
               <span className="text-gray-600">Điện thoại:</span>
-              <span>0982381966</span>
+              <span>{patient.phoneNumber}</span>
             </div>
             <div className="text-xs text-gray-600 mt-2">
-              <div>Địa chỉ: Quảng Ninh, Cẩm Tây, Thành phố Cẩm Phả, Quảng Ninh, Việt Nam</div>
+              <div>Địa chỉ: {patient.address}</div>
             </div>
           </div>
         </div>

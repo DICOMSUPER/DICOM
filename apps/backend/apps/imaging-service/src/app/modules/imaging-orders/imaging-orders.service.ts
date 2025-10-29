@@ -21,7 +21,9 @@ export class ImagingOrdersService {
     @Inject() private readonly imagingOrderRepository: ImagingOrderRepository,
     @Inject()
     private readonly imagingModalityRepository: ImagingModalityRepository
-  ) {}
+  ) {
+    
+   }
 
   private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
     const order = await this.imagingOrderRepository.findOne({ where: { id } });
@@ -120,5 +122,21 @@ export class ImagingOrdersService {
   remove = async (id: string): Promise<boolean> => {
     await this.checkImagingOrder(id);
     return await this.imagingOrderRepository.softDelete(id, 'isDeleted');
+  };
+
+  findManyByPatientId = async (
+    patientId: string
+  ): Promise<ImagingOrder[]> => {
+    if (!patientId) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'PatientId is required',
+        IMAGING_SERVICE,
+      );
+    }
+
+    return await this.imagingOrderRepository.findAll({
+      where: { patientId },
+    });
   };
 }

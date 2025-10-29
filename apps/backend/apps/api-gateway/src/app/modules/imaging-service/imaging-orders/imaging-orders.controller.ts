@@ -22,7 +22,7 @@ export class ImagingOrdersController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
-  ) {}
+  ) { }
 
   @Post()
   async createImagingOrder(@Body() createImagingOrderDto: any) {
@@ -116,6 +116,32 @@ export class ImagingOrdersController {
   async deleteImagingOrder(@Param('id') id: string) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Delete', { id })
+    );
+  }
+
+  @Get('patient/:patientId')
+  async findManybyPatientId(
+    @Param('patientId') patientId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('searchField') searchField?: string,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
+  ) {
+    const paginationDto = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+      searchField,
+      sortField,
+      order,
+    };
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingOrders.FindByPatientId', {
+        paginationDto,
+        patientId,
+      })
     );
   }
 }

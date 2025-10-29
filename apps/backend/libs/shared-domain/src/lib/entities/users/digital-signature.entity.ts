@@ -11,7 +11,7 @@ export class DigitalSignature {
   signedData!: string;
 
   @Column()
-  certificateSeria!: string; 
+  certificateSerial!: string; 
 
   @Column()
   algorithm!: string; 
