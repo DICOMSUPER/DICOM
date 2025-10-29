@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '@backend/entities';
 import { EncounterType } from '@backend/shared-enums';
-import type { VitalSignsCollection, VitalSignsSimplified } from '@backend/shared-interfaces';
+import type { VitalSignsSimplified } from '@backend/shared-interfaces';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Patient } from './patients.entity';
 
 @Entity('patient_encounters')

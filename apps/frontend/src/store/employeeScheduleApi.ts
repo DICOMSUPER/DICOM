@@ -11,6 +11,7 @@ import {
   ShiftTemplate,
 } from "@/interfaces/schedule/schedule.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 export const employeeScheduleApi = createApi({
   reducerPath: "employeeScheduleApi",
@@ -55,7 +56,7 @@ export const employeeScheduleApi = createApi({
     }),
 
     // Get schedules for current user
-    getMySchedules: builder.query<EmployeeSchedule[], { limit?: number }>({
+    getMySchedules: builder.query<ApiResponse<EmployeeSchedule[]>, { limit?: number }>({
       query: ({ limit }) => ({
         url: "/me",
         method: "GET",
@@ -104,7 +105,7 @@ export const employeeScheduleApi = createApi({
 
     // Get schedules by date range
     getSchedulesByDateRange: builder.query<
-      EmployeeSchedule[],
+     EmployeeSchedule[],
       { startDate: string; endDate: string; filters?: Partial<EmployeeScheduleSearchFilters> }
     >({
       query: ({ startDate, endDate, filters }) => ({

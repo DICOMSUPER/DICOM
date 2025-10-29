@@ -638,6 +638,7 @@ export class SeedingService {
 
     const orderStatuses = [
       OrderStatus.PENDING,
+      // OrderStatus.SCHEDULED,
       OrderStatus.CANCELLED,
       OrderStatus.IN_PROGRESS,
       OrderStatus.COMPLETED,
@@ -664,7 +665,7 @@ export class SeedingService {
       const roomId = roomIds[i % roomIds.length];
 
       const order = {
-        orderNumber: `IMG-${String(orderCounter).padStart(6, '0')}`,
+        orderNumber: orderCounter,
         patientId,
         orderingPhysicianId: physicianId,
         modalityId: modality.id,
@@ -756,6 +757,7 @@ export class SeedingService {
     ];
 
     const statuses = [
+      DicomStudyStatus.TECHNICIAN_VERIFIED,
       DicomStudyStatus.SCANNED,
       DicomStudyStatus.READING,
       DicomStudyStatus.PENDING_APPROVAL,

@@ -31,7 +31,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   
     const { data: encountersData, isLoading: isLoadingEncounters } = useGetPatientEncountersByPatientIdQuery(
     {
-      patientId: patientData?.id as string,
+      patientId: patientData?.data.id as string,
       pagination: {
         page: 1,
         limit: 10,
@@ -102,7 +102,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">
-            <PatientProfileCard patient={patientData} />
+            <PatientProfileCard patient={patientData.data} />
           </div>
 
           {/* Main Content */}

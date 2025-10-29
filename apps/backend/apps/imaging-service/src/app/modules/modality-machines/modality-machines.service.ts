@@ -105,6 +105,16 @@ export class ModalityMachinesService {
     );
   };
 
+  findByRoomId = async (roomId: string): Promise<ImagingModality[]> => {
+    const machines = await this.modalityMachinesRepository.findAll({
+      where: { roomId },
+    });
+    const uniqueModalities = Array.from(
+      new Map(machines.map((m) => [m.modality.id, m.modality])).values()
+    );
+    return uniqueModalities;
+  };
+
   update = async (
     id: string,
     updateModalityMachineDto: UpdateModalityMachineDto

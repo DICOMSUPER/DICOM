@@ -11,17 +11,20 @@ import { useDispatch } from "react-redux";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
 
-
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-   const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
+  const handleLogin = async (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ) => {
     try {
       console.log("🔵 Attempting login with:", { email, password: "***" });
-      
+
       const res = await fetch("http://localhost:5000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +52,7 @@ export default function LoginPage() {
 
       // Lưu token
       const token = data.data.tokenResponse.accessToken;
-      
+
       // Giải mã token để lấy user info và role
       const decoded: any = jwtDecode(token);
       console.log("🧩 Token payload:", decoded);
@@ -61,14 +64,16 @@ export default function LoginPage() {
       }
 
       // Dispatch credentials with user info
-      dispatch(setCredentials({ 
-        token,
-        user: {
-          id: decoded.userId || decoded.sub,
-          email: decoded.email || email,
-          role: role
-        }
-      }));
+      dispatch(
+        setCredentials({
+          token,
+          user: {
+            id: decoded.userId || decoded.sub,
+            email: decoded.email || email,
+            role: role,
+          },
+        })
+      );
 
       // Show success toast
       toast.success("Login successful! Redirecting...");

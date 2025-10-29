@@ -2,6 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 
 export const requestProcedureApi = createApi({
@@ -9,7 +10,7 @@ export const requestProcedureApi = createApi({
   baseQuery: axiosBaseQuery("/request-procedure"),
   tagTypes: ["RequestProcedure"],
   endpoints: (builder) => ({
-    getAllRequestProcedures: builder.query<RequestProcedure[], { bodyPartId?: string; modalityId?: string } | void>({
+    getAllRequestProcedures: builder.query<ApiResponse<RequestProcedure[]>, { bodyPartId?: string; modalityId?: string } | void>({
       query: (filters) => ({
         url: "",
         method: "GET",
@@ -17,7 +18,7 @@ export const requestProcedureApi = createApi({
       }),
       providesTags: (result) =>
         result
-          ? [...result.map((r) => ({ type: "RequestProcedure" as const, id: r.id })), { type: "RequestProcedure", id: "LIST" }]
+          ? [...result.data.map((r) => ({ type: "RequestProcedure" as const, id: r.id })), { type: "RequestProcedure", id: "LIST" }]
           : [{ type: "RequestProcedure", id: "LIST" }],
     }),
 

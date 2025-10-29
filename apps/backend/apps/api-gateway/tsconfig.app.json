@@ -9,7 +9,7 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/app/modules/imaging-service/modality-machine/modality-machine.module.ts"],
   "exclude": [
     "out-tsc",
     "dist",

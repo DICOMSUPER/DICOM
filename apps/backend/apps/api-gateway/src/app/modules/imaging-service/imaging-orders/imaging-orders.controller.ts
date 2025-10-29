@@ -15,6 +15,9 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ImagingOrder, Patient, User } from '@backend/shared-domain';
+import { ImagingOrderStatus } from '@backend/shared-enums';
+import { handleError } from '@backend/shared-utils';
 import { firstValueFrom } from 'rxjs';
 
 @Controller('imaging-orders')
@@ -22,7 +25,11 @@ import { firstValueFrom } from 'rxjs';
 export class ImagingOrdersController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
-    private readonly imagingService: ClientProxy
+    private readonly imagingService: ClientProxy,
+    @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+    private readonly patientService: ClientProxy,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
   ) {}
 
   @Post()
@@ -93,6 +100,79 @@ export class ImagingOrdersController {
         { id, type, paginationDto }
       )
     );
+  }
+
+  @Get(':id/room/stats')
+  async getImagingOrderRoomStats(@Param('id') id: string) {
+    const room = await firstValueFrom(
+      this.userService.send('room.get-by-id', { id })
+    );
+    const stats = await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingOrders.GetQueueStats', {
+        id,
+      })
+    );
+    return { ...room, queueStats: { ...stats[id] } };
+  }
+
+  @Get(':id/room/filter')
+  async getImagingOrderFilterByRoomId(
+    @Param('id') id: string,
+    @Query('modalityId') modalityId?: string,
+    @Query('orderStatus') orderStatus?: ImagingOrderStatus,
+    @Query('procedureId') procedureId?: string,
+    @Query('bodyPart') bodyPart?: string,
+    @Query('mrn') mrn?: string,
+    @Query('patientFirstName') patientFirstName?: string,
+    @Query('patientLastName') patientLastName?: string
+  ) {
+    const orders = await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingOrders.FilterByRoomId', {
+        roomId: id,
+        modalityId,
+        orderStatus,
+        procedureId,
+        bodyPart,
+      })
+    );
+
+    const patientIds = orders.map((o: ImagingOrder) => {
+      return o.patientId;
+    });
+
+    const patients = await firstValueFrom(
+      this.patientService.send('PatientService.Patient.Filter', {
+        patientIds,
+        patientFirstName,
+        patientLastName,
+        patientCode: mrn,
+      })
+    );
+
+    const physicianIds = orders.map((o: ImagingOrder) => {
+      return o.orderingPhysicianId;
+    });
+
+    const physicians = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', {
+        userIds: physicianIds,
+      })
+    );
+    if ((patientFirstName || patientLastName || mrn) && patients.length === 0) {
+      return [];
+    }
+
+    const combined = orders.map((order: ImagingOrder) => {
+      return {
+        ...order,
+        patient: patients.find((p: Patient) => p.id === order.patientId),
+        orderPhysician: physicians.find(
+          (u: User) => u.id === order.orderingPhysicianId
+        ),
+      };
+    });
+
+    return combined;
   }
 
   @Get(':id')

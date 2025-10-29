@@ -1,10 +1,8 @@
 "use client";
-
 import DiagnosisInput from "@/components/common/DiagnosisInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,25 +17,19 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetPatientByCodeQuery } from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
-import {
-  CalendarFold,
-  ClipboardList,
-  MapPinHouse,
-  Mars,
-  Plus,
-  Users,
-} from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import PatientSearchInput from "@/components/patients/PatientSearchInput";
+import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
 import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
-import { useCreateImagingOrderMutation } from "@/store/imagingOderApi";
-import { toast } from "sonner";
-import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
+import { useCreateImagingOrderMutation } from "@/store/imagingOrderApi";
+import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { toast } from "sonner";
 
 export interface ImagingProcedure {
   id: string;
@@ -65,7 +57,7 @@ export interface ImagingProcedurePDF {
 }
 
 export default function CreateImagingOrder() {
-  const [patientId, setPatientId] = useState("");
+  const [patientCode, setPatientCode] = useState<string>("");
   // get pdfUrl
   // const [pdfUrl, setPdfURL] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
@@ -137,7 +129,7 @@ export default function CreateImagingOrder() {
         if (p.id !== id) return p;
 
         if (field === "bodyPart") {
-          const bp = bodyPartsData?.find((b: any) => b.id === value);
+          const bp = bodyPartsData?.data.find((b: any) => b.id === value);
           return {
             ...p,
             bodyPart: String(value),
@@ -151,7 +143,7 @@ export default function CreateImagingOrder() {
   };
 
   const isFormValid = () => {
-    const basicInfoValid = patientId && diagnosis && department && room;
+    const basicInfoValid = patientCode && diagnosis && department && room;
     const proceduresValid = procedures.every(
       (p) =>
         p.modality && p.bodyPart && p.clinicalIndication && p.procedureServiceId
@@ -165,7 +157,7 @@ export default function CreateImagingOrder() {
     try {
       const orderPromises = procedures.map(async (procedure) => {
         const orderDto: CreateImagingOrderDto = {
-          patientId: patientData?.id || patientId,
+          patientId: patientCode,
           orderingPhysicianId: userId,
           modalityId: procedure.modality,
           bodyPart: procedure.bodyPartName as string,
@@ -193,12 +185,14 @@ export default function CreateImagingOrder() {
     data: patientData,
     isLoading: isPatientLoading,
     isError: isPatientError,
-  } = useGetPatientByCodeQuery(patientId, {
-    skip: !patientId,
+  } = useGetPatientByCodeQuery(patientCode, {
+    skip: !patientCode,
   });
 
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
-    useGetDepartmentsQuery({});
+    useGetDepartmentsQuery({ limit: 100 });
+
+  console.log("department data", departmentsData);
 
   const { data: roomsData, isError: isRoomsError } =
     useGetRoomsByDepartmentIdQuery(
@@ -210,12 +204,14 @@ export default function CreateImagingOrder() {
       }
     );
 
-  const { data: imagingModalitiesData } = useGetAllImagingModalityQuery();
+  const { data: imagingModalitiesData } = useGetModalitiesInRoomQuery(room, {
+    skip: !room,
+  });
   const { data: bodyPartsData } = useGetAllBodyPartsQuery();
 
   const handleCancel = () => {
     // Reset all form fields
-    setPatientId("");
+    setPatientCode("");
     setDepartment("");
     setDepartmentName("");
     setNotes("");
@@ -237,20 +233,20 @@ export default function CreateImagingOrder() {
 
   const handleDownloadPDF = () => {
     const imagingProcedurePDF: ImagingProcedurePDF = {
-      patientCode: patientData?.patientCode || "",
-      patientName: `${patientData?.firstName} ${patientData?.lastName}`,
-      address: patientData?.address || "",
-      gender: patientData?.gender || "",
-      age: calculateAge(patientData?.dateOfBirth as Date),
-      insuranceNumber: patientData?.insuranceNumber || "Nothing",
+      patientCode: patientData?.data.patientCode || "",
+      patientName: `${patientData?.data.firstName} ${patientData?.data.lastName}`,
+      address: patientData?.data.address || "",
+      gender: patientData?.data.gender || "",
+      age: calculateAge(patientData?.data.dateOfBirth as Date),
+      insuranceNumber: patientData?.data.insuranceNumber || "Nothing",
       diagnosis: diagnosis,
       procedures: procedures,
       departmentName: departmentName,
       roomName: roomName,
       notes: notes,
-      orderingPhysicianName: `${physicianData?.firstName} ${physicianData?.lastName}`,
+      orderingPhysicianName: `${physicianData?.data.firstName} ${physicianData?.data.lastName}`,
     };
-   ImagingOrder({ imagingProcedurePDF });
+    ImagingOrder({ imagingProcedurePDF });
   };
 
   return (
@@ -288,18 +284,28 @@ export default function CreateImagingOrder() {
                     Patient Code <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex gap-4">
-                    <Input
+                    {/* <Input
                       id="patientId"
                       placeholder="Enter patient ID"
-                      value={patientId}
-                      onChange={(e) => setPatientId(e.target.value)}
+                      value={patientCode}
+                      onChange={(value: string) => setPatientCode(value)}
                       className={`${
-                        !patientId ? "border-slate-300" : "border-teal-300"
+                        !patientCode ? "border-slate-300" : "border-teal-300"
+                      }`}
+                    /> */}
+                    <PatientSearchInput
+                      value={patientCode}
+                      onChange={setPatientCode}
+                      onSelect={(item) => {
+                        setPatientCode(item.value);
+                      }}
+                      className={`${
+                        !patientCode ? "border-slate-300" : "border-teal-300"
                       }`}
                     />
                   </div>
                   <div>
-                    {isPatientLoading && <div>Loading patient info...</div>}
+                    {/* {isPatientLoading && <div>Loading patient info...</div>}
                     {isPatientError && (
                       <div className="text-red-500">Patient not found</div>
                     )}
@@ -309,32 +315,32 @@ export default function CreateImagingOrder() {
                           <Users className="w-4 h-4 text-blue-500" />
                           <span className="font-medium w-20">Name:</span>
                           <span>
-                            {patientData?.firstName} {patientData?.lastName}
+                            {patientData?.data.firstName} {patientData?.data.lastName}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <Mars className="w-4 h-4 text-pink-500" />
                           <span className="font-medium w-20">Gender:</span>
-                          <span>{patientData?.gender}</span>
+                          <span>{patientData?.data.gender}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <MapPinHouse className="w-4 h-4 text-emerald-500" />
                           <span className="font-medium w-20">Address:</span>
-                          <span>{patientData?.address}</span>
+                          <span>{patientData?.data.address}</span>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <CalendarFold className="w-4 h-4 text-amber-500" />
                           <span className="font-medium w-20">Age:</span>
                           <span>
-                            {calculateAge(patientData?.dateOfBirth as Date)}{" "}
+                            {calculateAge(patientData?.data.dateOfBirth as Date)}{" "}
                             years
                           </span>
                         </div>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </div>
@@ -382,7 +388,7 @@ export default function CreateImagingOrder() {
                     value={department}
                     onValueChange={(value) => {
                       setDepartment(value);
-                      const selected = departmentsData?.find(
+                      const selected = departmentsData?.data.find(
                         (dept: Department) => dept.id === value
                       );
                       setDepartmentName(selected?.departmentName || "");
@@ -396,7 +402,7 @@ export default function CreateImagingOrder() {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departmentsData?.map((dept: Department) => (
+                      {departmentsData?.data.map((dept: Department) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.departmentName}
                         </SelectItem>
@@ -413,7 +419,7 @@ export default function CreateImagingOrder() {
                     value={room}
                     onValueChange={(value) => {
                       setRoom(value);
-                      const selected = roomsData?.find(
+                      const selected = roomsData?.data.find(
                         (r: Room) => r.id === value
                       );
                       setRoomName(selected?.roomCode || "");
@@ -427,7 +433,7 @@ export default function CreateImagingOrder() {
                       <SelectValue placeholder="Select room" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roomsData?.map((room: Room) => (
+                      {roomsData?.data.map((room: Room) => (
                         <SelectItem key={room.id} value={room.id}>
                           {room.roomCode}
                         </SelectItem>
@@ -471,8 +477,8 @@ export default function CreateImagingOrder() {
                     procedure={procedure}
                     index={index}
                     proceduresLength={procedures.length}
-                    imagingModalitiesData={imagingModalitiesData}
-                    bodyPartsData={bodyPartsData}
+                    imagingModalitiesData={imagingModalitiesData?.data}
+                    bodyPartsData={bodyPartsData?.data}
                     updateProcedure={updateProcedure}
                     removeProcedure={removeProcedure}
                   />

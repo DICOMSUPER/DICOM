@@ -5,7 +5,7 @@ import {
   CreatePatientDto,
   UpdatePatientDto,
   Patient,
-  PatientStatsDto,
+
   PatientCondition,
 } from '@backend/shared-domain';
 import {
@@ -191,7 +191,7 @@ export class PatientController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
-  async getPatientStats(): Promise<PatientStatsDto> {
+  async getPatientStats() {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.patientService.getPatientStats();

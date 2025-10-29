@@ -62,7 +62,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
 
   y += 8;
 
-  doc.text(`Patient ID: ${imagingProcedurePDF.patientId}`, 10, y);
+  doc.text(`Patient ID: ${imagingProcedurePDF.patientCode}`, 10, y);
   y += 8;
 
   doc.text(`Insurance Number: ${imagingProcedurePDF.insuranceNumber}`, 10, y);

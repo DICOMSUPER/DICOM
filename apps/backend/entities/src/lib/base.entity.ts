@@ -8,6 +8,6 @@ export abstract class BaseEntity extends TypeOrmBaseEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
-  @Column({ name: 'is_deleted', default: false }) //add for soft delete
+  @Column({ name: 'is_deleted', default: false }) 
   isDeleted!: boolean;
 }

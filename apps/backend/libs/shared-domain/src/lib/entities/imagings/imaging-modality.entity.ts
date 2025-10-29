@@ -2,15 +2,14 @@ import { BaseEntity } from '@backend/entities';
 import {
   Column,
   Entity,
-  JoinColumn,
   OneToMany,
-  PrimaryGeneratedColumn,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { ModalityMachine } from './modality-machine.entity';
 
 @Entity('imaging_modalities')
 export class ImagingModality extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid', { name: 'modality_id' }) // Type string but increment => error =>Changed to UUID
+  @PrimaryGeneratedColumn('uuid', { name: 'modality_id' })
   id!: string;
 
   @Column({ name: 'modality_code', length: 10, unique: true })

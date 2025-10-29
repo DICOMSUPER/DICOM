@@ -1,27 +1,26 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
 import {
-  Patient,
-  PatientEncounter,
-  DiagnosisReport,
-  CreatePatientDto,
-  UpdatePatientDto,
-  CreatePatientEncounterDto,
-  UpdatePatientEncounterDto,
-  CreateDiagnosisReportDto,
-  UpdateDiagnosisReportDto,
-  PatientSearchFilters,
-  EncounterSearchFilters,
-  DiagnosisSearchFilters,
-  PaginatedResponse,
-  PatientStats,
-  EncounterStats,
-  DiagnosisStats,
   ApiResponse,
-  VitalSignsSimplified,
+  CreatePatientDto,
+  PaginatedResponse,
+  Patient,
   PatientOverview,
+  PatientSearchFilters,
+  PatientStats,
+  UpdatePatientDto
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { PatientCondition } from "@/interfaces/user/medical-history.interface";
+import { createApi } from "@reduxjs/toolkit/query/react";
+
+
+export interface IRepositoryPagination {
+  page?: number;
+  limit?: number;
+  searchField?: string;
+  search?: string;
+  sortField?: string;
+  order?: 'asc' | 'desc';
+  relation?: string[];
+}
 
 export const patientApi = createApi({
   reducerPath: "patientApi",
@@ -29,7 +28,7 @@ export const patientApi = createApi({
   tagTypes: ["Patient", "Encounter", "Diagnosis", "Stats"],
   endpoints: (builder) => ({
     // Patient endpoints
-    getPatients: builder.query<Patient[], PatientSearchFilters>({
+    getPatients: builder.query<ApiResponse<Patient[]>, IRepositoryPagination>({
       query: (filters) => ({
         url: "",
         method: "GET",
@@ -59,7 +58,7 @@ export const patientApi = createApi({
       providesTags: (result, error, id) => [{ type: "Patient", id }],
     }),
 
-    getPatientByCode: builder.query<Patient, string>({
+    getPatientByCode: builder.query<ApiResponse<Patient>, string>({
       query: (patientCode) => ({ url: `/code/${patientCode}`, method: "GET" }),
       providesTags: (result, error, patientCode) => [
         { type: "Patient", id: patientCode },

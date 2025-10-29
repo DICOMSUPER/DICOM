@@ -1,128 +1,126 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import NavigationTabs from "./NavigationTabs";
-import ImagingOrderList from "./ImagingOrderList";
+import React, { useMemo } from "react";
+import FilterBar from "./filter-bar";
+import DataTable from "./data-table";
+import { useSearchParams } from "next/navigation";
+import { useGetImagingOrderByRoomIdFilterQuery } from "@/store/imagingOrderApi";
+import { format } from "date-fns";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/employeeScheduleApi";
 import Loading from "../common/Loading";
-import { ModalityCode } from "./data/modality";
-import Pagination from "../common/Pagination";
-
-type ImagingOrder = {
-  order_status?: "in_progress" | "cancelled" | "completed";
-  [key: string]: unknown;
-};
+import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import CurrentStatus from "./current-status";
 
 export default function ImageTechnicianPageWrapper() {
-  const [page, setPage] = useState<number>(1);
-  const [size, setSize] = useState<number>(5);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
 
-  const [imagingOrders, setImagingOrders] = useState<ImagingOrder[]>([]);
+  const initial = useMemo(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    return {
+      mrn: p.get("mrn") ?? "",
+      patientFirstName: p.get("patientFirstName") ?? "",
+      patientLastName: p.get("patientLastName") ?? "",
+      bodyPart: p.get("bodyPart") ?? "",
+      modalityId: p.get("modalityId") ?? "",
+      orderStatus: p.get("orderStatus") ?? "",
+      procedureId: p.get("procedureId") ?? "",
+    };
+  }, [searchParams]);
 
-  // filters
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "in_progress" | "completed" | "cancelled"
-  >("in_progress");
-  const [urgencyFilter, setUrgencyFilter] = useState<
-    "" | "routine" | "urgent" | "stat"
-  >("");
-  const [modalityFilter, setModalityFilter] = useState<"" | ModalityCode>("");
-  const [patientName, setPatientName] = useState<string>("");
+  const { data: employeeScheduleData, isLoading: isLoadingSchedule } =
+    useGetMySchedulesByDateRangeQuery({
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    });
 
-  const fetchImagingOrder = async () => {
-    try {
-      setIsLoading(true);
+  console.log("Schedule:", employeeScheduleData);
 
-      // Build params; omit order_status when status is 'all'
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.append("order_status", statusFilter);
-      if (urgencyFilter) params.append("urgency", urgencyFilter);
-
-      //mock api pagination
-      params.append("page", page.toString());
-      params.append("limit", size.toString());
-
-      // //patientName not filtered because mockapi not support nest query
-      // if (patientName.trim()) {
-      //   params.append("patientName", patientName);
-      // }
-
-      //the data here does not follow db, is deeply nested, need to adjust to later, which could use many api, or just 1 join table
-      // 1. Get order by order_id
-      // 2. Get user (physician,receiption...), modality, visit, patient, room...
-      const url = `https://67de69d0471aaaa742845858.mockapi.io/imaging_order?${params.toString()}`;
-
-      const ordersResponse = await axios.get(url);
-      let data = ordersResponse.data as ImagingOrder[];
-
-      // client-side filter by patient name
-      if (patientName.trim()) {
-        const query = patientName.trim().toLowerCase();
-        data = data.filter((order: any) => {
-          const first =
-            order?.visit?.patient?.first_name?.toString().toLowerCase() ?? "";
-          const last =
-            order?.visit?.patient?.last_name?.toString().toLowerCase() ?? "";
-          const full = `${first} ${last}`.trim();
-          return (
-            first.includes(query) ||
-            last.includes(query) ||
-            full.includes(query)
-          );
-        });
-      }
-
-      // client-side filter by modality code
-      if (modalityFilter) {
-        data = data.filter(
-          (order: any) => order?.modality?.modality_code === modalityFilter
-        );
-      }
-
-      setImagingOrders(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setImagingOrders([]);
-      setIsLoading(false);
+  // Helper function to get the current active schedule based on time
+  const getCurrentSchedule = () => {
+    if (
+      !employeeScheduleData ||
+      !Array.isArray(employeeScheduleData) ||
+      employeeScheduleData.length === 0
+    ) {
+      return null;
     }
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
+
+    // Try to find a schedule where current time is within the time range
+    const activeSchedule = employeeScheduleData.find((schedule) => {
+      if (!schedule.actual_start_time || !schedule.actual_end_time)
+        return false;
+
+      const [startHour, startMin] = schedule.actual_start_time
+        .split(":")
+        .map(Number);
+      const [endHour, endMin] = schedule.actual_end_time.split(":").map(Number);
+
+      const startMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
+
+      return currentTime >= startMinutes && currentTime <= endMinutes;
+    });
+
+    // If no active schedule found, return the first one
+    return activeSchedule || employeeScheduleData[0];
   };
 
-  // Only fetch once on mount. Subsequent fetches are triggered by the Search button.
-  useEffect(() => {
-    fetchImagingOrder();
-  }, [page, size]);
+  const currentSchedule = getCurrentSchedule();
+  const currentRoomId = currentSchedule?.room_id;
 
-  if (isLoading) return <Loading />;
+  //filter order by roomId
+  const {
+    data: orderData,
+    isLoading: isLoadingStudy,
+    refetch: refetchStudy,
+    error: studyError,
+  } = useGetImagingOrderByRoomIdFilterQuery(
+    {
+      id: currentRoomId || "",
+      filterParams: {
+        modalityId: initial.modalityId || undefined,
+        orderStatus: initial.orderStatus
+          ? (initial.orderStatus as ImagingOrderStatus)
+          : undefined,
+        bodyPart: initial.bodyPart || undefined,
+        mrn: initial.mrn || undefined,
+        patientFirstName: initial.patientFirstName || undefined,
+        patientLastName: initial.patientLastName || undefined,
+        procedureId: initial.procedureId || undefined,
+      },
+    },
+    {
+      skip: isLoadingSchedule || !currentRoomId,
+    }
+  );
+
+  if (isLoadingSchedule) {
+    return <Loading />;
+  }
+
+  if (!employeeScheduleData || employeeScheduleData.length === 0) {
+    return <>No working schedule yet</>;
+  }
+
+  if (!currentRoomId) {
+    return <>No room assigned to your schedule yet</>;
+  }
+
   return (
-    <div>
-      <NavigationTabs
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        urgencyFilter={urgencyFilter}
-        setUrgencyFilter={setUrgencyFilter}
-        modalityFilter={modalityFilter}
-        setModalityFilter={setModalityFilter}
-        patientName={patientName}
-        setPatientName={setPatientName}
-        onGo={fetchImagingOrder}
-      ></NavigationTabs>
-
-      <>
-        <>
-          {imagingOrders.length > 0 ? (
-            <ImagingOrderList orders={imagingOrders} />
-          ) : (
-            <div>No orders found</div>
-          )}
-        </>
-      </>
-      <Pagination
-        page={page}
-        size={10}
-        maxPage={1}
-        theme="light"
-        onPageChange={(newPage) => setPage(newPage)}
+    <div className="flex-1 flex flex-col h-full">
+      <CurrentStatus></CurrentStatus>
+      <FilterBar
+        onRefetch={refetchStudy}
+        caseNumber={(orderData?.data || []).length}
+        maxCases={(orderData?.data || []).length}
+      />
+      <DataTable
+        orders={orderData?.data || []}
+        isLoading={isLoadingStudy}
+        refetch={refetchStudy}
+        error={!!studyError}
       />
     </div>
   );

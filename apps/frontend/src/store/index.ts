@@ -11,11 +11,11 @@ import { departmentApi } from "./departmentApi";
 import { roomApi } from "./roomsApi";
 import userApi from "./userApi";
 import { imagingModalityApi } from "./imagingModalityApi";
-import { modalityMachineApi } from "./modalityMachineApi";
 import { dicomStudyApi } from "./dicomStudyApi";
 import { bodyPartApi } from "./bodyPartApi";
 import { requestProcedureApi } from "./requestProcedureAPi";
-import { imagingOrderApi } from "./imagingOderApi";
+import { imagingOrderApi } from "./imagingOrderApi";
+import { modalityMachineApi } from "./modalityMachineApi";
 
 export const store = configureStore({
   reducer: {

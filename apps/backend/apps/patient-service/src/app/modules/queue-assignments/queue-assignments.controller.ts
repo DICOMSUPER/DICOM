@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
 import {
   CreateQueueAssignmentDto,
+  QueueInfo,
   UpdateQueueAssignmentDto,
 } from '@backend/shared-domain';
 import { QueueAssignment } from '@backend/shared-domain';
@@ -82,12 +83,14 @@ export class QueueAssignmentController {
       );
     }
   }
-
+  // PatientService.QueueAssignment.GetStats
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
-  async getStats() {
+  async getStats(@Payload() data: { date?: string; roomId?: string }) {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`);
     try {
-      return await this.queueAssignmentService.getStats();
+      console.log('data', data);
+
+      return await this.queueAssignmentService.getStats(data.date, data.roomId);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -268,12 +271,30 @@ export class QueueAssignmentController {
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatus`)
   async getMaxWaitingAndCurrentInProgressByPhysicians(
     @Payload() data: { userIds: string[] }
-  ) {
+  ): Promise<QueueInfo> {
     try {
       return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
         data.userIds
       );
     } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get queue status',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatusByRooms`)
+  async getMaxWaitingAndCurrentInProgressByRoomIds(
+    @Payload() data: { roomIds: string[] }
+  ): Promise<QueueInfo> {
+    try {
+      return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByRoomIds(
+        data.roomIds
+      );
+    } catch (error) {
+      console.log(error);
       throw handleErrorFromMicroservices(
         error,
         'Failed to get queue status',

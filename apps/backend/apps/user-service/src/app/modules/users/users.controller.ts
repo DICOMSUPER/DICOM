@@ -10,7 +10,6 @@ import {
   OtpVerificationFailedException,
   RegistrationFailedException,
   InvalidTokenException,
- 
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';
@@ -260,25 +259,46 @@ export class UsersController {
   async getUserIdsByRole(
     @Payload() data: { role: Roles; take?: number }
   ): Promise<{ success: boolean; data: string[]; count: number }> {
-    this.logger.log(`Getting user IDs for role: ${data.role}, take: ${data.take || 10}`);
+    this.logger.log(
+      `Getting user IDs for role: ${data.role}, take: ${data.take || 10}`
+    );
     try {
       const { role, take = 10 } = data;
       const users = await this.usersService.findByRole(role, take);
-      
-      const userIds = users.map(u => u.id);
-      
+
+      const userIds = users.map((u) => u.id);
+
       this.logger.log(`Returning ${userIds.length} user IDs for role: ${role}`);
-      
+
       return {
         success: true,
         data: userIds,
         count: userIds.length,
       };
     } catch (error) {
-      this.logger.error(`Get user IDs by role error: ${(error as Error).message}`);
+      this.logger.error(
+        `Get user IDs by role error: ${(error as Error).message}`
+      );
       throw handleErrorFromMicroservices(
         error,
         `Failed to get user IDs for role: ${data.role}`,
+        'UsersController.getUserIdsByRole'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Users.GetUsersByIds')
+  async getUsersByIds(@Payload() data: { userIds: string[] }) {
+    this.logger.log('Using pattern: UserService.Users.GetUsersByIds');
+    try {
+      return await this.usersService.findUsersByIds(data.userIds);
+    } catch (error) {
+      this.logger.error(
+        `Get user IDs by role error: ${(error as Error).message}`
+      );
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to get user by userIds ${JSON.stringify(data.userIds)}`,
         'UsersController.getUserIdsByRole'
       );
     }

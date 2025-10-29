@@ -6,12 +6,15 @@ import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "@/lib/formatTimeDate";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/employeeScheduleApi";
 import {
   useGetQueueAssignmentsInRoomQuery,
+  useGetQueueStatsQuery,
   useSkipQueueAssignmentMutation,
   useUpdateQueueAssignmentMutation,
 } from "@/store/queueAssignmentApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
+import { format } from "date-fns";
 import { CheckCircle, Clock, Hash, Users } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -19,22 +22,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function QueuePage() {
-  const [userId, setUserId] = useState<string>("");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = localStorage.getItem("user");
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.id === "string") {
-        setUserId(parsed.id);
-      }
-    } catch (err) {
-      console.error("Invalid user in localStorage", err);
-    }
-  }, []);
-
   const [filters, setFilters] = useState<QueueFilters>({
     encounterId: "",
     status: "all",
@@ -66,17 +53,31 @@ export default function QueuePage() {
   });
 
   const { data, isLoading, isFetching, error } =
-    useGetQueueAssignmentsInRoomQuery(
-      { userId, filters: apiFilters },
-      {
-        skip: !userId,
-      }
-    );
+    useGetQueueAssignmentsInRoomQuery({ filters: apiFilters });
+
+  const { data: employeeScheduleData } = useGetMySchedulesByDateRangeQuery({
+    startDate: format(new Date(), "yyyy-MM-dd"),
+    endDate: format(new Date(), "yyyy-MM-dd"),
+  });
+
+  console.log("employeeScheduleData", employeeScheduleData);
 
   const [updateQueueAssignment, { isLoading: isUpdating }] =
     useUpdateQueueAssignmentMutation();
   const [skipQueueAssignment, { isLoading: isSkipping }] =
     useSkipQueueAssignmentMutation();
+
+  const { data: statsData, } = useGetQueueStatsQuery(
+    {
+      date: format(new Date(), "yyyy-MM-dd") as string,
+      roomId: employeeScheduleData?.[0]?.room_id,
+    },
+    {
+      skip: !employeeScheduleData?.[0]?.room_id,
+    }
+  );
+
+  console.log("statsData", statsData);
 
   useEffect(() => {
     if (data) {
@@ -106,7 +107,6 @@ export default function QueuePage() {
         return;
       }
 
-      // Check if there's already a queue in progress
       const inProgressQueue = data?.data.find(
         (item) => item.status === QueueStatus.IN_PROGRESS
       );
@@ -233,26 +233,26 @@ export default function QueuePage() {
                 {/* Total Visited */}
                 <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
                   <Users size={16} />
-                  <span className="text-sm font-semibold">Visited: 500</span>
+                  <span className="text-sm font-semibold">Visited: {statsData?.total || 0}</span>
                 </div>
 
                 {/* Waiting */}
                 <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
                   <Clock size={16} />
-                  <span className="text-sm font-semibold">Waiting: 300</span>
+                  <span className="text-sm font-semibold">Waiting: {statsData?.waiting || 0}</span>
                 </div>
 
                 {/* Completed */}
                 <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
                   <CheckCircle size={16} />
-                  <span className="text-sm font-semibold">Completed: 200</span>
+                  <span className="text-sm font-semibold">Completed: {statsData?.completed || 0}</span>
                 </div>
 
                 {/* Current Token */}
-                <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg shadow-sm hover:bg-purple-200 transition">
+                {/* <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg shadow-sm hover:bg-purple-200 transition">
                   <Hash size={16} />
-                  <span className="text-sm font-semibold">Current: 001</span>
-                </div>
+                  <span className="text-sm font-semibold">Next queue</span>
+                </div> */}
               </div>
             </div>
           </div>
@@ -273,6 +273,7 @@ export default function QueuePage() {
           pagination={paginationMeta}
           onPageChange={handlePageChange}
           isUpdating={isUpdating}
+          isLoading={isLoading || isFetching}
         />
       </div>
     </div>

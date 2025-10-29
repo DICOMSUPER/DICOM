@@ -557,4 +557,16 @@ export class UsersService {
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
+
+  findUsersByIds = async (userIds: string[]): Promise<User[]> => {
+    if (!userIds || userIds.length === 0) {
+      return [];
+    }
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .andWhere('user.id IN (:...userIds)', { userIds })
+      .getMany();
+
+    return users;
+  };
 }
