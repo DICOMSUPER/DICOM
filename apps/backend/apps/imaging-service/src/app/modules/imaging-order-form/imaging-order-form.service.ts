@@ -54,8 +54,9 @@ export class ImagingOrderFormService {
               ...orderDto,
               imagingOrderFormId: form.id,
               orderStatus: OrderStatus.PENDING,
-              orderNumber:
-                await this.imagingOrdersService.generateOrderNumber(),
+              orderNumber: await this.imagingOrdersService.generateOrderNumber(
+                formData.roomId
+              ),
               procedureId: orderDto.request_procedure_id,
             });
             return await manager.save(order);
@@ -118,16 +119,19 @@ export class ImagingOrderFormService {
       .getManyAndCount();
 
     const totalPages = Math.ceil(total / limit);
-    await this.redisService.set(keyName, new PaginatedResponseDto(
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-      page < totalPages,
-      page > 1
-    ), 1800);
-
+    await this.redisService.set(
+      keyName,
+      new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      ),
+      1800
+    );
 
     return new PaginatedResponseDto(
       data,

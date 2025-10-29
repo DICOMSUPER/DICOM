@@ -29,11 +29,11 @@ const authSlice = createSlice({
     ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
-      
+
       // Save to localStorage and cookies
       if (typeof window !== "undefined") {
-        localStorage.setItem("token", action.payload.token);
-        localStorage.setItem("user", JSON.stringify(action.payload.user));
+        // localStorage.setItem("token", action.payload.token);
+        // localStorage.setItem("user", JSON.stringify(action.payload.user));
         Cookies.set("accessToken", action.payload.token);
         Cookies.set("user", JSON.stringify(action.payload.user));
       }
@@ -54,19 +54,22 @@ const authSlice = createSlice({
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
-        
+
         if (token) {
           state.token = token;
           Cookies.set("accessToken", token);
         }
-        
+
         if (user) {
           try {
             const userData = JSON.parse(user);
             state.user = userData;
             Cookies.set("user", user);
           } catch (error) {
-            console.error("Failed to parse user data from localStorage:", error);
+            console.error(
+              "Failed to parse user data from localStorage:",
+              error
+            );
           }
         }
       }
@@ -74,5 +77,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, loadTokenFromStorage } = authSlice.actions;
+export const { setCredentials, logout, loadTokenFromStorage } =
+  authSlice.actions;
 export default authSlice.reducer;

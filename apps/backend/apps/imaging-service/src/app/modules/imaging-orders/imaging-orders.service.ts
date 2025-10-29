@@ -3,9 +3,13 @@ import {
   CreateImagingOrderDto,
   ImagingModality,
   ImagingOrder,
+  ImagingOrderForm,
 } from '@backend/shared-domain';
 import { UpdateImagingOrderDto } from '@backend/shared-domain';
-import { ImagingOrderRepository } from './imaging-orders.repository';
+import {
+  FilterByRoomIdType,
+  ImagingOrderRepository,
+} from './imaging-orders.repository';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
@@ -14,14 +18,18 @@ import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalit
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { OrderStatus } from '@backend/shared-enums';
+import { Between } from 'typeorm';
+import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 
-const relation = ['modality'];
+const relation = ['procedure'];
 @Injectable()
 export class ImagingOrdersService {
   constructor(
     @Inject() private readonly imagingOrderRepository: ImagingOrderRepository,
     @Inject()
-    private readonly imagingModalityRepository: ImagingModalityRepository
+    private readonly imagingModalityRepository: ImagingModalityRepository,
+    @Inject()
+    private readonly imagingOrderFormRepository: ImagingOrderFormRepository
   ) {}
 
   private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
@@ -36,19 +44,40 @@ export class ImagingOrdersService {
     return order;
   };
 
-  public async generateOrderNumber(): Promise<string> {
+  public async generateOrderNumber(roomId: string): Promise<number> {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const maxAttempts = 5;
-    for (let i = 0; i < maxAttempts; i++) {
-      const suffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const candidate = `ORD-${date}-${suffix}`;
-      const exists = await this.imagingOrderRepository.findOne({
-        where: { orderNumber: candidate },
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Find all orders for this room created today
+    const todayOrderForms = await this.imagingOrderFormRepository.findAll(
+      {
+        where: {
+          roomId: roomId,
+          createdAt: Between(startOfDay, endOfDay),
+        },
+        order: { createdAt: 'DESC' },
+        take: 1,
+      },
+
+      ['imagingOrders']
+    );
+
+    // Extract numbers from existing order numbers and find the max
+    let maxNumber = 0;
+    if (todayOrderForms && todayOrderForms.length > 0) {
+      todayOrderForms[0].imagingOrders.forEach((order: ImagingOrder) => {
+        if (order.orderNumber > maxNumber) {
+          maxNumber = order.orderNumber;
+        }
       });
-      if (!exists) return candidate;
+
+      return maxNumber + 1;
+    } else {
+      return 1;
     }
-    // fallback using timestamp
-    return `ORD-${date}-${Date.now().toString().slice(-6)}`;
   }
 
   private checkModality = async (id: string): Promise<ImagingModality> => {
@@ -72,12 +101,28 @@ export class ImagingOrdersService {
   create = async (
     createImagingOrderDto: CreateImagingOrderDto
   ): Promise<ImagingOrder> => {
-    // await this.checkModality(createImagingOrderDto.modalityId as string);
+    const orderForm = await this.imagingOrderFormRepository.findOne(
+      {
+        where: {
+          id: createImagingOrderDto.imagingOrderFormId,
+          isDeleted: false,
+        },
+      },
+      ['imagingOrders']
+    );
+    if (!orderForm) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Order form not found',
+        IMAGING_SERVICE
+      );
+    }
+
     return await this.imagingOrderRepository.create({
       ...createImagingOrderDto,
       orderStatus: OrderStatus.PENDING,
       procedureId: createImagingOrderDto.request_procedure_id,
-      orderNumber: await this.generateOrderNumber(),
+      orderNumber: await this.generateOrderNumber(orderForm?.roomId),
     });
   };
 
@@ -141,5 +186,15 @@ export class ImagingOrdersService {
   remove = async (id: string): Promise<boolean> => {
     await this.checkImagingOrder(id);
     return await this.imagingOrderRepository.softDelete(id, 'isDeleted');
+  };
+
+  filterImagingOrderByRoomId = async (
+    data: FilterByRoomIdType
+  ): Promise<ImagingOrder[]> => {
+    return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
+  };
+
+  getRoomStats = async (id: string) => {
+    return await this.imagingOrderRepository.getRoomStats(id);
   };
 }

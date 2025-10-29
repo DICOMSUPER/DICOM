@@ -5,17 +5,19 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn
+  OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingOrderForm } from './imaging-order-form.entity';
 import { RequestProcedure } from './request-procedure.entity';
+import { DicomStudy } from './dicom-study.entity';
 @Entity('imaging_orders')
 export class ImagingOrder extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
   id!: string;
 
-  @Column({ name: 'order_number',  unique: true })
-  orderNumber!: string;
+  @Column({ name: 'order_number', type: 'int', nullable: true })
+  orderNumber!: number;
 
   @Column({ name: 'procedure_id', type: 'uuid', nullable: true })
   procedureId?: string;
@@ -51,11 +53,12 @@ export class ImagingOrder extends BaseEntity {
   @Column({ name: 'special_instructions', type: 'text', nullable: true })
   specialInstructions?: string;
 
-
-
   //   @Column({ name: 'technologist_id', type: 'uuid', nullable: true })
   //   technologistId?: string;
 
   //   @Column({ name: 'radiologist_id', type: 'uuid', nullable: true })
   //   radiologistId?: string;
+
+  @OneToMany(() => DicomStudy, (study) => study.imagingOrder)
+  studies!: DicomStudy[];
 }

@@ -9,7 +9,25 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { ImagingOrderStatus, OrderStatus } from '@backend/shared-enums';
 
+export interface QueueInfo {
+  [roomId: string]: {
+    maxWaiting: { queueNumber: number; entity?: ImagingOrder } | null;
+    currentInProgress: {
+      queueNumber: number;
+      entity?: ImagingOrder;
+    } | null;
+  };
+}
+
+export interface FilterByRoomIdType {
+  roomId: string;
+  modalityId?: string;
+  orderStatus?: ImagingOrderStatus;
+  procedureId?: string;
+  bodyPart?: string;
+}
 @Injectable()
 export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   constructor(
@@ -112,5 +130,112 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       hasNextPage,
       hasPreviousPage
     );
+  }
+
+  async filterImagingOrderByRoomId(
+    data: FilterByRoomIdType
+  ): Promise<ImagingOrder[]> {
+    const repository = await this.getRepository();
+    const qb = await repository
+      .createQueryBuilder('order')
+      .andWhere('order.roomId = :roomId', { roomId: data.roomId })
+      .leftJoinAndSelect('order.procedure', 'procedure')
+      .innerJoinAndSelect('procedure.modality', 'modality')
+      .innerJoinAndSelect('procedure.bodyPart', 'bodyPart')
+      .leftJoinAndSelect('order.studies', 'studies')
+      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false });
+
+    if (data.modalityId) {
+      qb.andWhere('procedure.modalityId = :modalityId', {
+        modalityId: data.modalityId,
+      });
+    }
+
+    if (data.orderStatus) {
+      qb.andWhere('order.orderStatus = :orderStatus', {
+        orderStatus: data.orderStatus,
+      });
+    }
+
+    if (data.procedureId) {
+      qb.andWhere('order.procedureId = :procedureId', {
+        procedureId: data.procedureId,
+      });
+    }
+
+    if (data.bodyPart) {
+      qb.andWhere('bodyPart.name LIKE :bodyPart', {
+        bodyPart: `%${data.bodyPart.trim()}%`,
+      });
+    }
+    return qb.getMany();
+  }
+
+  async getRoomStats(id: string) {
+    const date = new Date();
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const repository = await this.getRepository();
+
+    // Get all orders for this room today
+    const allOrders = await repository
+      .createQueryBuilder('order')
+      .andWhere('order.roomId = :roomId', { roomId: id })
+      .andWhere('order.createdAt BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
+      })
+      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
+      .getMany();
+
+    // Get pending orders (waiting), ordered by orderNumber ASC
+    const pendingOrders = allOrders
+      .filter((order) => order.orderStatus === OrderStatus.PENDING)
+      .sort((a, b) => a.orderNumber - b.orderNumber);
+
+    // Get in-progress orders, ordered by orderNumber ASC
+    const inProgressOrders = allOrders
+      .filter((order) => order.orderStatus === OrderStatus.IN_PROGRESS)
+      .sort((a, b) => a.orderNumber - b.orderNumber);
+
+    // Get completed and cancelled orders for statistics
+    const completedOrders = allOrders.filter(
+      (order) => order.orderStatus === OrderStatus.COMPLETED
+    );
+    const cancelledOrders = allOrders.filter(
+      (order) => order.orderStatus === OrderStatus.CANCELLED
+    );
+
+    const maxWaiting =
+      pendingOrders.length > 0
+        ? {
+            orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
+            entity: pendingOrders[pendingOrders.length - 1],
+          }
+        : null;
+
+    const currentInProgress =
+      inProgressOrders.length > 0
+        ? {
+            orderNumber: inProgressOrders[0].orderNumber,
+            entity: inProgressOrders[0],
+          }
+        : null;
+
+    return {
+      maxWaiting,
+      currentInProgress,
+      stats: {
+        total: allOrders.length,
+        waiting: pendingOrders.length,
+        inProgress: inProgressOrders.length,
+        completed: completedOrders.length,
+        cancelled: cancelledOrders.length,
+      },
+    };
   }
 }

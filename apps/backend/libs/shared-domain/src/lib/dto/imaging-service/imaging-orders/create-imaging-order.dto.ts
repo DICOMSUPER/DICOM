@@ -7,8 +7,6 @@ import {
   IsUUID,
 } from 'class-validator';
 export class CreateImagingOrderDto {
-
-
   @IsString()
   @IsUUID()
   request_procedure_id?: string;
@@ -30,5 +28,4 @@ export class CreateImagingOrderDto {
 
   @IsString()
   specialInstructions?: string;
-
 }

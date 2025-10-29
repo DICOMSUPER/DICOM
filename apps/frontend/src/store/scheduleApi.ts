@@ -2,6 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ScheduleFormData } from "@/schemas/schedule-schema";
 import { Department } from "@/types";
+import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
 
 export interface User {
   id: string;
@@ -19,8 +20,8 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   queueStats?: {
-    currentInProgress: { queueNumber: number | null };
-    maxWaiting: { queueNumber: number | null };
+    currentInProgress?: { queueNumber: number | null };
+    maxWaiting?: { queueNumber: number | null };
   };
 }
 
@@ -37,6 +38,16 @@ export interface Room {
   roomType: string;
   floor: string;
   department: Department;
+  queueStats?: {
+    currentInProgress?: {
+      queueNumber?: number;
+      qa?: QueueAssignment;
+    };
+    maxWaiting?: {
+      queueNumber?: number;
+      qa?: QueueAssignment;
+    };
+  };
 }
 
 export interface ShiftTemplate {

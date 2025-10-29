@@ -161,14 +161,14 @@ export interface UpdatePatientDto {
 }
 
 export interface VitalSignsSimplified {
-  bpSystolic?: number;        // Blood Pressure Systolic (mmHg)
-  bpDiastolic?: number;       // Blood Pressure Diastolic (mmHg)
-  heartRate?: number;         // Heart Rate (bpm)
-  respiratoryRate?: number;   // Respiratory Rate (breaths/min)
-  temperature?: number;       // Body Temperature (°C or °F)
-  oxygenSaturation?: number;  // Oxygen Saturation (%)
-  weight?: number;            // Weight (kg or lbs)
-  height?: number;            // Height (cm or inches)
+  bpSystolic?: number; // Blood Pressure Systolic (mmHg)
+  bpDiastolic?: number; // Blood Pressure Diastolic (mmHg)
+  heartRate?: number; // Heart Rate (bpm)
+  respiratoryRate?: number; // Respiratory Rate (breaths/min)
+  temperature?: number; // Body Temperature (°C or °F)
+  oxygenSaturation?: number; // Oxygen Saturation (%)
+  weight?: number; // Weight (kg or lbs)
+  height?: number; // Height (cm or inches)
 }
 
 export interface CreatePatientEncounterDto {
@@ -178,11 +178,9 @@ export interface CreatePatientEncounterDto {
   chiefComplaint?: string;
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
-  assignedPhysicianId?: string;
+  assignedPhysicianId?: string | null;
   notes?: string;
 }
-
-
 
 export interface UpdatePatientEncounterDto {
   encounterDate?: string;
@@ -425,8 +423,6 @@ export interface VitalSignsFormProps {
   onChange: (vitalSigns: VitalSignsCollection) => void;
   errors: Record<string, string>;
 }
-
-
 
 export interface ApiResponse<T> {
   success: boolean;

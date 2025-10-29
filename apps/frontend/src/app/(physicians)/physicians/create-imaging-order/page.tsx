@@ -17,24 +17,20 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import {
-  useGetPatientByCodeQuery
-} from "@/store/patientApi";
+import { useGetPatientByCodeQuery } from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
-import {
-  ClipboardList,
-  Plus
-} from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import PatientSearchInput from "@/components/patients/PatientSearchInput";
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
-import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
-import { useCreateImagingOrderMutation } from "@/store/imagingOderApi";
+import { useCreateImagingOrderFormMutation } from "@/store/imagingOrderFormApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import { toast } from "sonner";
+import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
+import { ICreateImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
 
 export interface ImagingProcedure {
   id: string;
@@ -85,8 +81,8 @@ export default function CreateImagingOrder() {
   const [room, setRoom] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
 
-  const [createImagingOrder, { isLoading: isCreating }] =
-    useCreateImagingOrderMutation();
+  const [createImagingOrderForm, { isLoading: isCreating }] =
+    useCreateImagingOrderFormMutation();
   const addProcedure = () => {
     const newProcedure: ImagingProcedure = {
       id: Date.now().toString(),
@@ -160,25 +156,32 @@ export default function CreateImagingOrder() {
     if (!isFormValid()) return;
 
     try {
-      const orderPromises = procedures.map(async (procedure) => {
-        const orderDto: CreateImagingOrderDto = {
-          patientId: patientCode,
-          orderingPhysicianId: userId,
-          modalityId: procedure.modality,
-          bodyPart: procedure.bodyPartName as string,
+      const imagingOrders: CreateImagingOrderDto[] = procedures.map(
+        (procedure) => ({
           request_procedure_id: procedure.procedureServiceId,
-          clinicalIndication: procedure.clinicalIndication,
-          specialInstructions: procedure.specialInstructions,
-          roomId: room,
-          notes: notes,
-        };
-        return await createImagingOrder(orderDto).unwrap();
-      });
-      const results = await Promise.all(orderPromises);
-      if (results) {
-        console.log("Created imaging orders:", results);
-        handleDownloadPDF();
-      }
+          clinicalIndication: procedure.clinicalIndication ?? "",
+          contrastRequired: false,
+          specialInstructions: procedure.specialInstructions ?? "",
+        })
+      );
+
+      // build payload for createImagingOrderForm mutation
+      const payload: ICreateImagingOrderForm = {
+        patientId: patientData?.data.id as string,
+        encounterId: "",
+        roomId: room,
+        notes,
+        imagingOrders,
+      };
+      console.log("pay load", payload);
+
+      // Add other necessary fields here
+
+      // const results = await Promise.all(orderPromises);
+      // if (results) {
+      //   console.log("Created imaging orders:", results);
+      //   handleDownloadPDF();
+      // }
       toast.success("Imaging orders created successfully!");
       handleCancel();
     } catch (error) {
@@ -197,7 +200,6 @@ export default function CreateImagingOrder() {
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
     useGetDepartmentsQuery({ limit: 100 });
 
-  console.log("department data", departmentsData);
 
   const { data: roomsData, isError: isRoomsError } =
     useGetRoomsByDepartmentIdQuery(
@@ -303,7 +305,8 @@ export default function CreateImagingOrder() {
                       onChange={setPatientCode}
                       onSelect={(item) => {
                         setPatientCode(item.value);
-                       
+                        console.log("selected", item);
+                        
                       }}
                       className={`${
                         !patientCode ? "border-slate-300" : "border-teal-300"

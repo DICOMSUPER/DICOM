@@ -4,19 +4,19 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImagingOrder } from '@backend/shared-domain';
+import { ImagingOrder, ImagingOrderForm } from '@backend/shared-domain';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
-export class ImagingOrderFormRepository extends BaseRepository<ImagingOrder> {
+export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm> {
   constructor(
     @InjectEntityManager()
     entityManager: EntityManager
   ) {
-    super(ImagingOrder, entityManager);
+    super(ImagingOrderForm, entityManager);
   }
 
   async findImagingOrderByReferenceId(
@@ -103,7 +103,7 @@ export class ImagingOrderFormRepository extends BaseRepository<ImagingOrder> {
     const hasNextPage = safePage < totalPages;
     const hasPreviousPage = safePage > 1;
 
-    return new PaginatedResponseDto<ImagingOrder>(
+    return new PaginatedResponseDto<ImagingOrderForm>(
       data,
       total,
       safePage,

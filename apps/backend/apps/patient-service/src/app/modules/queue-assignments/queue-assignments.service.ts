@@ -89,14 +89,14 @@ export class QueueAssignmentService {
       );
     }
 
-    const queueNumber =
-      await this.queueRepository.getNextQueueNumberForPhysician(
-        new Date(),
-        encounter.assignedPhysicianId as string
-      );
+    const queueNumber = await this.queueRepository.getNextQueueNumberForRoom(
+      createQueueAssignmentDto.roomId as string,
+      new Date()
+    );
 
     // Calculate estimated wait time based on current queue
     const estimatedWaitTime = await this.calculateEstimatedWaitTime(
+      createQueueAssignmentDto.roomId as string,
       createQueueAssignmentDto.priority
     );
 
@@ -199,10 +199,7 @@ export class QueueAssignmentService {
     return await this.queueRepository.expire(id);
   };
 
-  getStats = async (
-    dateStr?: string,
-    roomId?: string
-  ) => {
+  getStats = async (dateStr?: string, roomId?: string) => {
     return await this.queueRepository.getQueueStats(dateStr, roomId);
   };
 
@@ -305,6 +302,7 @@ export class QueueAssignmentService {
    * Calculate estimated wait time based on current queue
    */
   private async calculateEstimatedWaitTime(
+    roomId: string,
     priority?: QueuePriorityLevel
   ): Promise<number> {
     const startOfDay = new Date();
@@ -315,6 +313,7 @@ export class QueueAssignmentService {
       where: {
         status: QueueStatus.WAITING,
         assignmentDate: Between(startOfDay, endOfDay),
+        roomId: roomId,
       },
     });
     const waitingCount = waitingAssignments.length;
@@ -380,34 +379,30 @@ export class QueueAssignmentService {
 
   // Get all queue assignments in a specific room
   async getAllInRoom(
-  filterQueue: FilterQueueAssignmentDto,
-  userId: string
-): Promise<PaginatedResponseDto<QueueAssignment>> {
-  const {
-    page = 1,
-    limit = 10,
-    status,
-    priority,
-    assignmentDateFrom,
-    assignmentDateTo,
-    queueNumber,
-  } = filterQueue;
+    filterQueue: FilterQueueAssignmentDto,
+    userId: string
+  ): Promise<PaginatedResponseDto<QueueAssignment>> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      assignmentDateFrom,
+      assignmentDateTo,
+      queueNumber,
+    } = filterQueue;
 
-  const whereConditions: any = {};
+    const whereConditions: any = {};
 
-  const user = await firstValueFrom(
-    this.userService.send('UserService.Users.findOne', { userId })
-  );
-
-  if (!user) {
-    throw new NotFoundException(`User with ID ${userId} not found`);
-  }
-
-  if (user.role !== Roles.PHYSICIAN) {
-    throw new NotFoundException(
-      `User with ID ${userId} is not authorized to view room assignments`
+    const user = await firstValueFrom(
+      this.userService.send('UserService.Users.findOne', { userId })
     );
-  }
+
+    if (user.role !== Roles.PHYSICIAN) {
+      throw new NotFoundException(
+        `User with ID ${userId} is not authorized to view room assignments`
+      );
+    }
 
   whereConditions.encounter = {
     assignedPhysicianId: userId,
@@ -418,92 +413,99 @@ export class QueueAssignmentService {
   if (priority) whereConditions.priority = priority;
 
 
-  let fromDate: Date;
-  let toDate: Date;
+  // let fromDate: Date;
+  // let toDate: Date;
 
-  if (assignmentDateFrom) {
-    fromDate = new Date(assignmentDateFrom);
-  } else {
-    fromDate = new Date();
-    fromDate.setHours(0, 0, 0, 0);
-  }
+  // if (assignmentDateFrom) {
+  //   fromDate = new Date(assignmentDateFrom);
+  // } else {
+  //   fromDate = new Date();
+  //   fromDate.setHours(0, 0, 0, 0);
+  // }
 
-  if (assignmentDateTo) {
-    toDate = new Date(assignmentDateTo);
-    toDate.setHours(23, 59, 59, 999);
-  } else {
-    toDate = new Date();
-    toDate.setHours(23, 59, 59, 999);
-  }
+  // if (assignmentDateTo) {
+  //   toDate = new Date(assignmentDateTo);
+  //   toDate.setHours(23, 59, 59, 999);
+  // } else {
+  //   toDate = new Date();
+  //   toDate.setHours(23, 59, 59, 999);
+  // }
 
-  whereConditions.assignmentDate = Between(fromDate, toDate);
+  // whereConditions.assignmentDate = Between(fromDate, toDate);
 
 
-  const result = await this.paginationService.paginate(
-    QueueAssignment,
-    { page, limit },
-    {
-      where: { ...whereConditions },
-      relations: {
-        encounter: {
-          patient: true,
+
+
+
+
+    const result = await this.paginationService.paginate(
+      QueueAssignment,
+      { page, limit },
+      {
+        where: { ...whereConditions },
+        relations: {
+          encounter: {
+            patient: true,
+          },
         },
-      },
-    }
-  );
-
-  if (result.data && result.data.length > 0) {
-    result.data.sort((a, b) => {
-      const getStatusPriority = (status: QueueStatus) => {
-        switch (status) {
-          case QueueStatus.IN_PROGRESS:
-            return 0;
-          case QueueStatus.WAITING:
-            return 1;
-          case QueueStatus.COMPLETED:
-            return 2;
-          case QueueStatus.EXPIRED:
-            return 3;
-          default:
-            return 4;
-        }
-      };
-
-      const statusPriorityA = getStatusPriority(a.status);
-      const statusPriorityB = getStatusPriority(b.status);
-      if (statusPriorityA !== statusPriorityB)
-        return statusPriorityA - statusPriorityB;
-
-      const getPriorityValue = (priority: QueuePriorityLevel) => {
-        switch (priority) {
-          case QueuePriorityLevel.STAT:
-            return 0;
-          case QueuePriorityLevel.URGENT:
-            return 1;
-          case QueuePriorityLevel.ROUTINE:
-            return 2;
-          default:
-            return 3;
-        }
-      };
-
-      if (a.status === QueueStatus.WAITING && b.status === QueueStatus.WAITING) {
-        if (!a.skippedAt && b.skippedAt) return -1;
-        if (a.skippedAt && !b.skippedAt) return 1;
-        if (a.skippedAt && b.skippedAt)
-          return a.skippedAt.getTime() - b.skippedAt.getTime();
       }
+    );
 
-      const priorityA = getPriorityValue(a.priority);
-      const priorityB = getPriorityValue(b.priority);
-      if (priorityA !== priorityB) return priorityA - priorityB;
+    if (result.data && result.data.length > 0) {
+      result.data.sort((a, b) => {
+        const getStatusPriority = (status: QueueStatus) => {
+          switch (status) {
+            case QueueStatus.IN_PROGRESS:
+              return 0;
+            case QueueStatus.WAITING:
+              return 1;
+            case QueueStatus.COMPLETED:
+              return 2;
+            case QueueStatus.EXPIRED:
+              return 3;
+            default:
+              return 4;
+          }
+        };
 
-      return a.queueNumber - b.queueNumber;
-    });
+        const statusPriorityA = getStatusPriority(a.status);
+        const statusPriorityB = getStatusPriority(b.status);
+        if (statusPriorityA !== statusPriorityB)
+          return statusPriorityA - statusPriorityB;
+
+        const getPriorityValue = (priority: QueuePriorityLevel) => {
+          switch (priority) {
+            case QueuePriorityLevel.STAT:
+              return 0;
+            case QueuePriorityLevel.URGENT:
+              return 1;
+            case QueuePriorityLevel.ROUTINE:
+              return 2;
+            default:
+              return 3;
+          }
+        };
+
+        if (
+          a.status === QueueStatus.WAITING &&
+          b.status === QueueStatus.WAITING
+        ) {
+          if (!a.skippedAt && b.skippedAt) return -1;
+          if (a.skippedAt && !b.skippedAt) return 1;
+          if (a.skippedAt && b.skippedAt)
+            return a.skippedAt.getTime() - b.skippedAt.getTime();
+        }
+
+        const priorityA = getPriorityValue(a.priority);
+        const priorityB = getPriorityValue(b.priority);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+
+        return a.queueNumber - b.queueNumber;
+      });
+    }
+
+    return result;
   }
-
-  return result;
-};
   skipQueueAssignment = async (id: string): Promise<QueueAssignment | null> => {
     const assignment = await this.findOne(id);
 
@@ -534,6 +536,14 @@ export class QueueAssignmentService {
   ): Promise<QueueInfo> {
     return await this.queueRepository.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
       physicianIds
+    );
+  }
+
+  async getMaxWaitingAndCurrentInProgressByRoomIds(
+    roomIds: string[]
+  ): Promise<QueueInfo> {
+    return await this.queueRepository.getMaxWaitingAndCurrentInProgressByRoomIds(
+      roomIds
     );
   }
 }

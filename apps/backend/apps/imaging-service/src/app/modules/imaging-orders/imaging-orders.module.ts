@@ -5,6 +5,7 @@ import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalit
 import { ImagingOrdersController } from './imaging-orders.controller';
 import { ImagingOrderRepository } from './imaging-orders.repository';
 import { ImagingOrdersService } from './imaging-orders.service';
+import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 
 @Module({
   imports: [BackendEntitiesModule.forFeature([ImagingOrder, ImagingModality])],
@@ -13,7 +14,8 @@ import { ImagingOrdersService } from './imaging-orders.service';
     ImagingOrdersService,
     ImagingOrderRepository,
     ImagingModalityRepository,
+    ImagingOrderFormRepository,
   ],
-  exports: [BackendEntitiesModule, ImagingOrdersService, ],
+  exports: [BackendEntitiesModule, ImagingOrdersService],
 })
 export class ImagingOrdersModule {}

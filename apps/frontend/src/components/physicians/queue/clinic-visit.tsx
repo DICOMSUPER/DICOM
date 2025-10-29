@@ -199,6 +199,13 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   );
   const onViewPatientProfile = (patientCode: string) => {
     // Implement navigation to patient profile
+    if(!vitalSignsData) {
+      toast.error("No vital signs data to view patient profile.", {
+        duration: 3000,
+      });
+      return;
+    }
+      const enc = encodeURIComponent(detail.id);
     router.push(`/physicians/patients/${patientCode}`);
   };
 

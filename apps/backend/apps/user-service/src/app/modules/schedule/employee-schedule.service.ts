@@ -66,7 +66,7 @@ export class EmployeeScheduleService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Failed to create employee schedule');
+      throw error;
     }
   }
 
