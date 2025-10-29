@@ -5,7 +5,7 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingOrder } from './imaging-order.entity';
 @Entity('imaging_order_form')
@@ -16,6 +16,9 @@ export class ImagingOrderForm extends BaseEntity {
 
   @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
+
+  @Column({ name: 'diagnosis', type: 'varchar', nullable: true })
+  diagnosis?: string;
 
   @Column({ name: 'encounter_id', type: 'uuid' })
   encounterId!: string;

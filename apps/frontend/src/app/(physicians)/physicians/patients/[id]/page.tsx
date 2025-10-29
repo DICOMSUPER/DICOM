@@ -6,9 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { EncounterHistoryTab } from "@/components/patients/detail/visit-history";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetPatientByCodeQuery, useGetPatientOverviewQuery } from "@/store/patientApi";
-import { useGetPatientEncountersByPatientIdQuery } from "@/store/patientEncounterApi";
+import {
+  useGetPatientByCodeQuery,
+  useGetPatientOverviewQuery,
+} from "@/store/patientApi";
+import {
+  useGetPatientEncounterByIdQuery,
+  useGetPatientEncountersByPatientIdQuery,
+} from "@/store/patientEncounterApi";
 import { use, useState } from "react";
+import CreateImagingOrder from "@/components/patients/detail/create-order-form";
 
 interface PatientDetailPageProps {
   params: Promise<{
@@ -18,29 +25,36 @@ interface PatientDetailPageProps {
 
 export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const resolvedParams = use(params);
-   const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: patientData, isLoading } = useGetPatientByCodeQuery(
-    resolvedParams.id
-  );
-  const { data: patientOverview, isLoading: isLoadingOverview } = useGetPatientOverviewQuery(
-    resolvedParams.id
-  );
-  console.log(patientData);
-  console.log(patientOverview);
-  
-    const { data: encountersData, isLoading: isLoadingEncounters } = useGetPatientEncountersByPatientIdQuery(
-    {
-      patientId: patientData?.data.id as string,
-      pagination: {
-        page: 1,
-        limit: 10,
+  const { data: patientEncounterData, isLoading } =
+    useGetPatientEncounterByIdQuery(resolvedParams.id);
+
+
+  const { data: patientOverview, isLoading: isLoadingOverview } =
+    useGetPatientOverviewQuery(
+      patientEncounterData?.data?.patient?.patientCode as string,
+      {
+        skip: !patientEncounterData?.data?.patient?.patientCode,
       }
-    },
-    {
-      skip: activeTab !== "results", 
-    }
-  );
+    );
+  console.log("Patient Encounter Data:", patientEncounterData);
+  console.log("Patient Overview:", patientOverview);
+
+  const { data: encountersData, isLoading: isLoadingEncounters } =
+    useGetPatientEncountersByPatientIdQuery(
+      {
+        patientId: patientEncounterData?.data?.patientId as string,
+        pagination: {
+          page: 1,
+          limit: 10,
+        },
+      },
+      {
+        skip: activeTab !== "results",
+      }
+    );
+    console.log("Encounters Data:", encountersData);
 
   // Conditionally fetch conditions only when tab is active
   // const { data: conditionsData, isLoading: isLoadingConditions } = useGetPatientConditionsByPatientIdQuery(
@@ -55,7 +69,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   //     skip: activeTab !== "medical-history", // Only fetch when medical-history tab is active
   //   }
   // );
-  
 
   if (isLoading) {
     return (
@@ -81,7 +94,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     );
   }
 
-  if (!patientData) {
+  if (!patientEncounterData?.data.patient) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -102,38 +115,49 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">
-            <PatientProfileCard patient={patientData.data} />
+            <PatientProfileCard patient={patientEncounterData?.data?.patient} />
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+            <Tabs
+              defaultValue="overview"
+              className="space-y-6"
+              onValueChange={setActiveTab}
+            >
+              <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
                 {/* display recent vital sign and conditions (first three) */}
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="results">Encounter History</TabsTrigger>
-                <TabsTrigger value="medical-history">
-                  Condition
-                </TabsTrigger>
+                <TabsTrigger value="imaging-order">Create Order Form</TabsTrigger>
+                <TabsTrigger value="medical-history">Condition</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="space-y-6">
-                {patientOverview?.data && <PatientSummaryTab overview={patientOverview.data} />}
+                {patientOverview?.data  && (
+                  <PatientSummaryTab overview={patientOverview?.data} />
+                )}
               </TabsContent>
               <TabsContent value="results" className="space-y-6">
                 {isLoadingEncounters ? (
                   <Skeleton className="h-96 w-full" />
                 ) : (
-                  <EncounterHistoryTab encounterHistory={encountersData?.data || []} />
+                  <EncounterHistoryTab
+                    encounterHistory={encountersData?.data.data || []}
+                  />
                 )}
               </TabsContent>
 
+              <TabsContent value="imaging-order" className="space-y-6">
+                <CreateImagingOrder patient={patientEncounterData?.data?.patient} encounterId={resolvedParams.id} />
+              </TabsContent>
               <TabsContent value="medical-history" className="space-y-6">
-                {/* <MedicalHistoryTab
-                  procedures={procedures}
-                  diagnoses={diagnoses}
-                  visits={visits}
-                  immunizations={immunizations}
-                /> */}
+                {/* {isLoadingConditions ? (
+                  <Skeleton className="h-96 w-full" />
+                ) : (
+                  <MedicalHistoryTab
+                    conditions={conditionsData?.data.data || []}
+                  />
+                )} */}
               </TabsContent>
             </Tabs>
           </div>

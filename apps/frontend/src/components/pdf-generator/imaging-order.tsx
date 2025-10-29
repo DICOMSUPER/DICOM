@@ -132,7 +132,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
   const centerX = signatureX + signatureWidth / 2;
   doc.text(physicianName, centerX, signatureY + 22, { align: "center" });
 
-   doc.save("radiology_request_form.pdf");
+   doc.save(`Imaging_Order_${imagingProcedurePDF.patientCode}.pdf`);
   // === Return Blob URL ===
   // const pdfBlob = doc.output("blob");
   // return URL.createObjectURL(pdfBlob);

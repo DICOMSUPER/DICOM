@@ -15,7 +15,6 @@ export default function ClinicVisitDetailPage({
 }: ClinicVisitDetailPageProps) {
   const resolvedParams = use(params);
 
-  // get patient-encounter by id from api
 
   const { data: patientEncounter, isLoading: isLoadingEncounter } =
     useGetPatientEncounterByIdQuery(resolvedParams.id);

@@ -1,11 +1,12 @@
-import { BaseEntity } from "../base.interface";
+import { BaseEntity } from "../patient/patient-workflow.interface";
 import { Room } from "../user/room.interface";
 import { CreateImagingOrderDto, ImagingOrder } from "./imaging-order.interface";
 
-export interface ICreateImagingOrderForm {
+export interface ICreateImagingOrderForm  {
   patientId: string;
   encounterId: string;
   roomId: string;
+  diagnosis?: string;
   notes?: string;
   imagingOrders: CreateImagingOrderDto[];
 }

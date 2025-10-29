@@ -1,5 +1,5 @@
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ICreateImagingOrderForm, IImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
@@ -11,7 +11,7 @@ export const imagingOrderFormApi = createApi({
   endpoints: (builder) => ({
     // GET /imaging-orders
     getImagingOrdersPaginated: builder.query<
-      PaginatedResponse<ImagingOrder>,
+      PaginatedResponse<IImagingOrderForm>,
       {
         page?: number;
         limit?: number;
@@ -36,12 +36,12 @@ export const imagingOrderFormApi = createApi({
 
 
 
-    getImagingOrderFormById: builder.query<ImagingOrder, string>({
+    getImagingOrderFormById: builder.query<IImagingOrderForm, string>({
       query: (id) => ({ url: `${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "ImagingOrderForm", id }],
     }),
 
-    createImagingOrderForm: builder.mutation<IImagingOrderForm, ICreateImagingOrderForm>({
+    createImagingOrderForm: builder.mutation<ApiResponse<IImagingOrderForm>, ICreateImagingOrderForm>({
       query: (body) => ({ url: "", method: "POST", data: body }),
       invalidatesTags: [{ type: "ImagingOrderForm", id: "LIST" }],
     }),

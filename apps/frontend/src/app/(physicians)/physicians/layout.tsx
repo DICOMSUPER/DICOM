@@ -31,7 +31,7 @@ interface PhysicianLayoutProps {
 
 export default function PhysicianLayout({ children }: PhysicianLayoutProps) {
   const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Physician");
+  const [currentRole, setCurrentRole] = useState("physician");
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -47,10 +47,10 @@ export default function PhysicianLayout({ children }: PhysicianLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen  bg-background">
 
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav userRole={currentRole} />}>
+      <WorkspaceLayout sidebar={<SidebarNav  />}>
         {children}
       </WorkspaceLayout>
     </div>

@@ -19,6 +19,11 @@ export class CreateImagingOrderFormDto {
 
   @IsString()
   @IsOptional()
+  diagnosis?: string;
+
+
+  @IsString()
+  @IsOptional()
   notes?: string;
 
   @IsArray()

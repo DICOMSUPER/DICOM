@@ -20,31 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PatientCondition } from '@/interfaces/patient/patient-condition.interface';
+import { PatientOverview, VitalSignsSimplified } from '@/interfaces/patient/patient-workflow.interface';
 
-// Mock interfaces for demo
-interface VitalSignsSimplified {
-  bpSystolic?: number;
-  bpDiastolic?: number;
-  heartRate?: number;
-  temperature?: number;
-  oxygenSaturation?: number;
-  respiratoryRate?: number;
-}
 
-interface PatientCondition {
-  code: string;
-  codeDisplay?: string;
-  clinicalStatus?: string;
-  severity?: string;
-  verificationStatus?: string;
-  recordedDate?: string;
-  bodySite?: string;
-}
 
-interface PatientOverview {
-  recentVitalSigns: VitalSignsSimplified;
-  recentConditions: PatientCondition[];
-}
 
 interface VitalSignDisplay {
   label: string;
