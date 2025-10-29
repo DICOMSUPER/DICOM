@@ -1,4 +1,5 @@
 import { ImagingModality } from "./imaging_modality.interface";
+import { RequestProcedure } from "./request-procedure.interface";
 
 export interface ImagingOrder {
   id: string;
@@ -19,4 +20,5 @@ export interface ImagingOrder {
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
+  procedure?:RequestProcedure
 }

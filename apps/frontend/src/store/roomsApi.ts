@@ -9,6 +9,7 @@ import {
 } from "@/interfaces/pagination/pagination.interface";
 import { mapApiResponse } from "@/utils/adpater";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { Roles } from "@/enums/user.enum";
 
 export interface RoomSearchFilters {
   type?: string;
@@ -37,14 +38,20 @@ export const roomApi = createApi({
     // Get rooms by departmentID
     getRoomsByDepartmentId: builder.query<
       ApiResponse<Room[]>,
-      { id: string; search?: string; applyScheduleFilter?: boolean }
+      {
+        id: string;
+        search?: string;
+        applyScheduleFilter?: boolean;
+        role?: Roles;
+      }
     >({
-      query: ({ id, search, applyScheduleFilter }) => ({
+      query: ({ id, search, applyScheduleFilter, role }) => ({
         url: `/${id}/department`,
         method: "GET",
         params: {
           search: search || "",
           applyScheduleFilter: applyScheduleFilter || false,
+          role: role || undefined,
         },
       }),
     }),

@@ -24,6 +24,7 @@ export default function QueueAssignmentPaper({
   const { data: queueData, isLoading: isLoadingQueue } =
     useGetQueueAssignmentByIdQuery(queueId);
 
+  console.log(queueData);
   const { data: doctorData, isLoading: isLoadingDoctor } = useGetUserByIdQuery(
     doctorId,
     {
@@ -34,10 +35,11 @@ export default function QueueAssignmentPaper({
   const { data: roomData, isLoading: isLoadingRoom } = useGetRoomByIdQuery(
     queueData?.data.roomId as string,
     {
-      skip: !queueData?.data.roomId,
+      skip: !queueData?.data?.roomId,
     }
   );
 
+  console.log(roomData);
   const { data: patientData, isLoading: isLoadingPatient } =
     useGetPatientByIdQuery(queueData?.data.encounter?.patientId, {
       skip: !queueData?.data.encounter?.patientId,

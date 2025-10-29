@@ -665,7 +665,7 @@ export class SeedingService {
       const roomId = roomIds[i % roomIds.length];
 
       const order = {
-        orderNumber: `IMG-${String(orderCounter).padStart(6, '0')}`,
+        orderNumber: orderCounter,
         patientId,
         orderingPhysicianId: physicianId,
         modalityId: modality.id,

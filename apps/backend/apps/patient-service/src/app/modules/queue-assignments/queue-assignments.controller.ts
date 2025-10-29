@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { QueueAssignmentService } from './queue-assignments.service';
 import {
   CreateQueueAssignmentDto,
+  QueueInfo,
   UpdateQueueAssignmentDto,
 } from '@backend/shared-domain';
 import { QueueAssignment } from '@backend/shared-domain';
@@ -270,12 +271,30 @@ export class QueueAssignmentController {
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatus`)
   async getMaxWaitingAndCurrentInProgressByPhysicians(
     @Payload() data: { userIds: string[] }
-  ) {
+  ): Promise<QueueInfo> {
     try {
       return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
         data.userIds
       );
     } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get queue status',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatusByRooms`)
+  async getMaxWaitingAndCurrentInProgressByRoomIds(
+    @Payload() data: { roomIds: string[] }
+  ): Promise<QueueInfo> {
+    try {
+      return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByRoomIds(
+        data.roomIds
+      );
+    } catch (error) {
+      console.log(error);
       throw handleErrorFromMicroservices(
         error,
         'Failed to get queue status',

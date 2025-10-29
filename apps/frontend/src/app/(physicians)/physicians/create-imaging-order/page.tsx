@@ -17,21 +17,16 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import {
-  useGetPatientByCodeQuery
-} from "@/store/patientApi";
+import { useGetPatientByCodeQuery } from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
-import {
-  ClipboardList,
-  Plus
-} from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import PatientSearchInput from "@/components/patients/PatientSearchInput";
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
 import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
-import { useCreateImagingOrderMutation } from "@/store/imagingOderApi";
+import { useCreateImagingOrderMutation } from "@/store/imagingOrderApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import { toast } from "sonner";
@@ -303,7 +298,6 @@ export default function CreateImagingOrder() {
                       onChange={setPatientCode}
                       onSelect={(item) => {
                         setPatientCode(item.value);
-                       
                       }}
                       className={`${
                         !patientCode ? "border-slate-300" : "border-teal-300"

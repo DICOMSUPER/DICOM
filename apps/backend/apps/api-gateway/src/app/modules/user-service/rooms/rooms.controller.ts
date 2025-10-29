@@ -28,11 +28,12 @@ import {
   TransformInterceptor,
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
-import { CreateRoomDto } from '@backend/shared-domain';
+import { CreateRoomDto, Room } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @ApiTags('Room Management')
 @Controller('rooms')
@@ -41,8 +42,11 @@ export class RoomsController {
   private readonly logger = new Logger('RoomsController');
 
   constructor(
-    @Inject('USER_SERVICE') private readonly roomClient: ClientProxy
-  ) { }
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly roomClient: ClientProxy,
+    @Inject(process.env.patientClient || 'PATIENT_SERVICE')
+    private readonly patientClient: ClientProxy
+  ) {}
 
   // 🩺 Kiểm tra tình trạng service
 
@@ -92,7 +96,8 @@ export class RoomsController {
       );
 
       this.logger.log(
-        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${result.total || 0
+        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${
+          result.total || 0
         })`
       );
 
@@ -110,7 +115,7 @@ export class RoomsController {
   @Post()
   @Role(Roles.SYSTEM_ADMIN)
   async createRoom(@Body() createRoomDto: CreateRoomDto, @Req() req: Request) {
-    const token = req.cookies?.token; 
+    const token = req.cookies?.token;
     this.logger.log(`🏗️ Creating room: ${createRoomDto.roomCode} with token`);
 
     const result = await firstValueFrom(
@@ -123,7 +128,6 @@ export class RoomsController {
     };
   }
 
-
   @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id/department')
   @ApiOperation({ summary: 'Get rooms by departmentID' })
@@ -135,15 +139,39 @@ export class RoomsController {
   async getRoomByDepartmentId(
     @Param('id') id: string,
     @Query('search') search?: string,
-    @Query('applyScheduleFilter') applyScheduleFilter?: boolean
+    @Query('applyScheduleFilter') applyScheduleFilter?: boolean,
+    @Query('role') role?: Roles
   ) {
-    return await firstValueFrom(
-      this.roomClient.send('UserService.Room.GetRoomByDepartmentId', {
-        id,
-        applyScheduleFilter,
-        search: search || '',
-      })
-    );
+    try {
+      const rooms = await firstValueFrom(
+        this.roomClient.send('UserService.Room.GetRoomByDepartmentId', {
+          id,
+          applyScheduleFilter,
+          search: search || '',
+          role: role,
+        })
+      );
+
+      const roomIds = rooms.map((r: Room) => {
+        return r.id;
+      });
+
+      const queueStats = await firstValueFrom(
+        this.patientClient.send(
+          'PatientService.QueueAssignment.GetQueueStatusByRooms',
+          { roomIds }
+        )
+      );
+
+      const combinedRooms = rooms.map((r: Room) => {
+        return { ...r, queueStats: queueStats[r.id] || null };
+      });
+
+      return combinedRooms;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
@@ -222,9 +250,11 @@ export class RoomsController {
   })
   async getRoomsByDepartmentId(@Param('departmentId') departmentId: string) {
     try {
-      this.logger.log(`📋 Fetching rooms for department ID: ${departmentId}`);
+      this.logger.log(`Fetching rooms for department ID: ${departmentId}`);
       const result = await firstValueFrom(
-        this.roomClient.send('room.get-by-department-id', { departmentId })
+        this.roomClient.send('room.get-by-department-id', {
+          departmentId,
+        })
       );
 
       return {
@@ -233,7 +263,7 @@ export class RoomsController {
       };
     } catch (error) {
       this.logger.error(
-        `❌ Failed to fetch rooms for department ID: ${departmentId}`,
+        ` Failed to fetch rooms for department ID: ${departmentId}`,
         error
       );
       throw handleError(error);

@@ -15,6 +15,7 @@ import {
 } from '@backend/shared-exception';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus } from '@nestjs/common';
+import { Roles } from '@backend/shared-enums';
 
 @Injectable()
 export class RoomsService {
@@ -194,63 +195,74 @@ export class RoomsService {
     }
   }
 
-  async getRoomByDepartmentId(
-    id: string,
-    applyScheduleFilter: boolean,
-    search?: string
-  ): Promise<Room[]> {
+  async getRoomByDepartmentId(data: {
+    id: string;
+    applyScheduleFilter: boolean;
+    search?: string;
+    role?: Roles;
+  }): Promise<Room[]> {
     try {
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
-        .leftJoinAndSelect('room.schedules', 'schedules') // Alias: schedules
-        .where('room.department_id = :id', { id }) // Base where for department
-        .andWhere('room.status IN (:...status)', {
-          status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
-        });
+        .innerJoinAndSelect('room.schedules', 'schedules')
+        .innerJoinAndSelect('schedules.employee', 'employee'); // moved up
 
-      // Combine date and time activity filters
-      if (applyScheduleFilter) {
+      qb.where('room.department_id = :id', { id: data.id }).andWhere(
+        'room.status IN (:...status)',
+        {
+          status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
+        }
+      );
+
+      if (data.applyScheduleFilter) {
         const now = new Date();
-        const currentDate = now.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+        const currentDate = now.toISOString().split('T')[0];
         const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayDate = yesterday.toISOString().split('T')[0];
-        const currentTime = now.toTimeString().split(' ')[0]; // 'HH:MM:SS'
+        const currentTime = now.toTimeString().split(' ')[0];
+
         qb.andWhere(
-          `(schedules.work_date = :currentDate
-          AND (
-            (schedules.actual_start_time > schedules.actual_end_time 
-              AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
-            ) 
+          `(
+            (schedules.work_date = :currentDate AND (
+              (schedules.actual_start_time > schedules.actual_end_time 
+                AND (schedules.actual_start_time < :currentTime OR schedules.actual_end_time > :currentTime)
+              ) 
+              OR 
+              (schedules.actual_start_time <= schedules.actual_end_time 
+                AND schedules.actual_start_time < :currentTime 
+                AND schedules.actual_end_time > :currentTime)
+            ))
             OR 
-            (schedules.actual_start_time <= schedules.actual_end_time 
-              AND schedules.actual_start_time < :currentTime 
-              AND schedules.actual_end_time > :currentTime
+            (schedules.work_date = :yesterdayDate
+              AND schedules.actual_start_time > schedules.actual_end_time
+              AND :currentTime < schedules.actual_end_time
             )
-          )
-         )
-         OR 
-         (schedules.work_date = :yesterdayDate
-          AND schedules.actual_start_time > schedules.actual_end_time
-          AND :currentTime < schedules.actual_end_time
-         )`,
+          )`,
           { currentDate, yesterdayDate, currentTime }
         );
+
+        if (data.role) {
+          qb.andWhere('employee.role = :role', { role: data.role });
+        }
       }
 
-      // Optional: Filter by active statuses only (adjust based on your enum)
-      // qb.andWhere('schedules.schedule_status IN (:...statuses)', { statuses: ['completed', 'scheduled', 'confirmed'] });
-
-      if (search) {
+      if (data.search) {
         qb.andWhere(
           '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
-          { search: `%${search}%` }
+          { search: `%${data.search}%` }
         );
       }
+
+      qb.distinct(true); // ensures rooms appear only once
 
       const rooms = await qb.getMany();
 
+      // console.log(
+      //   `Room for department ${data.id}, filter: ${data.applyScheduleFilter}, role: ${data.role}`
+      // );
+      // console.log(JSON.stringify(rooms, null, 4));
       return rooms;
     } catch (error) {
       throw ThrowMicroserviceException(
