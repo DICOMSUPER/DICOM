@@ -198,19 +198,5 @@ export class ImagingOrdersService {
     return await this.imagingOrderRepository.getRoomStats(id);
   };
   
-  findManyByPatientId = async (
-    patientId: string
-  ): Promise<ImagingOrder[]> => {
-    if (!patientId) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'PatientId is required',
-        IMAGING_SERVICE,
-      );
-    }
 
-    return await this.imagingOrderRepository.findAll({
-      where: { patientId },
-    });
-  };
 }
