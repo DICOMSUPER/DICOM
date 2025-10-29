@@ -1,0 +1,72 @@
+import { ICreateImagingOrderForm, IImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
+import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
+import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { createApi } from "@reduxjs/toolkit/query/react";
+
+export const imagingOrderFormApi = createApi({
+  reducerPath: "imagingOrderFormApi",
+  baseQuery: axiosBaseQuery("/imaging-order-form"),
+  tagTypes: ["ImagingOrderForm"],
+  endpoints: (builder) => ({
+    // GET /imaging-orders
+    getImagingOrdersPaginated: builder.query<
+      PaginatedResponse<ImagingOrder>,
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        searchField?: string;
+        sortField?: string;
+        order?: string;
+      } | void
+    >({
+      query: (params) => ({ url: "paginated", method: "GET", params }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "ImagingOrderForm" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrderForm", id: "LIST" },
+            ]
+          : [{ type: "ImagingOrderForm", id: "LIST" }],
+    }),
+
+
+
+    getImagingOrderFormById: builder.query<ImagingOrder, string>({
+      query: (id) => ({ url: `${id}`, method: "GET" }),
+      providesTags: (result, error, id) => [{ type: "ImagingOrderForm", id }],
+    }),
+
+    createImagingOrderForm: builder.mutation<IImagingOrderForm, ICreateImagingOrderForm>({
+      query: (body) => ({ url: "", method: "POST", data: body }),
+      invalidatesTags: [{ type: "ImagingOrderForm", id: "LIST" }],
+    }),
+
+    // PATCH /imaging-orders/:id
+    // updateImagingOrder: builder.mutation<ImagingOrder, { id: string; body: UpdateImagingOrderDto }>({
+    //   query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
+    //   invalidatesTags: (result, error, { id }) => [{ type: "ImagingOrder", id }, { type: "ImagingOrder", id: "LIST" }],
+    // }),
+
+    deleteImagingOrderForm: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `${id}`, method: "DELETE" }),
+      invalidatesTags: (result, error, id) => [
+        { type: "ImagingOrderForm", id },
+        { type: "ImagingOrderForm", id: "LIST" },
+      ],
+    }),
+  }),
+});
+
+export const {
+  // useGetAllImagingOrderFormsQuery,
+  useGetImagingOrdersPaginatedQuery,
+  useGetImagingOrderFormByIdQuery,
+  useCreateImagingOrderFormMutation,
+//   useUpdateImagingOrderMutation,
+  useDeleteImagingOrderFormMutation,
+} = imagingOrderFormApi;
