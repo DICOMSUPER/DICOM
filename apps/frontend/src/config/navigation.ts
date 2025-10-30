@@ -16,6 +16,7 @@ import {
   Monitor,
   Cog,
   Timer,
+  Logs,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -175,16 +176,14 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage patient queue assignments",
     },
     {
-      href: "/physicians/create-imaging-order",
-      label: "Procedure Imaging Order",
-
-      icon: Stethoscope,
+      href: "/physicians/imaging-orders",
+      label: "Imaging Orders List",
+      icon: Logs,
       description: "Patient diagnoses management",
     },
     {
       href: "/physicians/diagnoses-reports",
       label: "Diagnoses Reports",
-
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },

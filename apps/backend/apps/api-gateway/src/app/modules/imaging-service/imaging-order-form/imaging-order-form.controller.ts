@@ -1,7 +1,15 @@
+import { Role } from '@backend/shared-decorators';
+import {
+  FilterImagingOrderFormDto,
+  Patient,
+  Room,
+} from '@backend/shared-domain';
+import { Roles } from '@backend/shared-enums';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import {
   Body,
   Controller,
@@ -16,14 +24,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Role } from '@backend/shared-decorators';
-import {
-  CreateImagingOrderFormDto,
-  FilterImagingOrderFormDto,
-} from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
-import { Roles } from '@backend/shared-enums';
-import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @Controller('imaging-order-form')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -50,39 +51,16 @@ export class ImagingOrderFormController {
   }
 
   @Get()
-  async getAllImagingOrderForms(@Query() filter: FilterImagingOrderFormDto) {
+  @Role(Roles.PHYSICIAN)
+  async getAllImagingOrderForms(
+    @Query() filter: FilterImagingOrderFormDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    const userId = req.userInfo.userId;
     return await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrderForm.FindAll',
-        filter
-      )
-    );
-  }
-
-  @Get('reference/:id')
-  async findImagingOrderFormByReferenceId(
-    @Param('id') id: string,
-    @Query('type') type: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('searchField') searchField?: string,
-    @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
-  ) {
-    const paginationDto = {
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      search,
-      searchField,
-      sortField,
-      order,
-    };
-
-    return await firstValueFrom(
-      this.imagingService.send(
-        'ImagingService.ImagingOrders.FindByReferenceId',
-        { id, type, paginationDto }
+        { filter, userId }
       )
     );
   }
