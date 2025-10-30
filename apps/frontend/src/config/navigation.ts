@@ -155,7 +155,7 @@ export const roleNavigation: RoleNavigation = {
   // Physician - Patient care and medical records
   Physician: [
     {
-      href: "/physicians/dashboard",
+      href: "/physicians",
 
       label: "Dashboard",
       icon: BarChart3,
@@ -176,7 +176,7 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physicians/create-imaging-order",
-      label: "Create Imaging Order",
+      label: "Procedure Imaging Order",
 
       icon: Stethoscope,
       description: "Patient diagnoses management",

@@ -197,9 +197,15 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const initialData = convertVitalSignsToFormData(
     vitalSignsData as VitalSignsSimplified
   );
-  const onViewPatientProfile = (patientCode: string) => {
+  const onViewPatientProfile = (encounterId: string) => {
     // Implement navigation to patient profile
-    router.push(`/physicians/patients/${patientCode}`);
+    if (!vitalSignsData) {
+      toast.error("No vital signs data to view patient profile.", {
+        duration: 3000,
+      });
+      return;
+    }
+    router.push(`/physicians/patients/${encounterId}`);
   };
 
   return (
@@ -219,15 +225,20 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
               <span className="font-mono font-semibold">{detail.id}</span>
             </p>
           </div>
-          <Button
-            onClick={() => onViewPatientProfile(detail?.patient?.patientCode || "")}
-            variant="outline"
-            size="lg"
-            className="border-blue-600 text-blue-600 hover:bg-blue-50"
-          >
-            <EyeClosed size={18} className="mr-2" />
-            <span>View Patient Profile</span>
-          </Button>
+
+          <div>
+            <Button
+              onClick={() =>
+                onViewPatientProfile(detail?.id || "")
+              }
+              variant="outline"
+              size="lg"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              <EyeClosed size={18} className="mr-2" />
+              <span>View Patient Profile</span>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -400,7 +411,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   {detail.encounterType}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+              {/* <div className="flex items-center justify-between py-2 border-b border-gray-100">
                 <span className="font-medium text-gray-600 flex items-center gap-2">
                   <Stethoscope size={16} className="text-gray-400" />
                   Physician ID:
@@ -408,7 +419,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                 <span className="font-mono text-gray-900">
                   {detail.assignedPhysicianId || "Not assigned"}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <div className="space-y-4 mt-6">

@@ -219,4 +219,7 @@ export class ImagingOrdersController {
       this.imagingService.send('ImagingService.ImagingOrders.Delete', { id })
     );
   }
+
+ 
+  
 }

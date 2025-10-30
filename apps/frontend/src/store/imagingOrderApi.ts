@@ -9,20 +9,7 @@ import {
 import { ApiResponse } from "@/services/imagingApi";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 
-// export interface ImagingOrder {
-//   id: string;
-//   orderNumber: string;
-//   patientId: string;
-//   orderingPhysicianId: string;
-//   modalityId?: string;
-//   bodyPart?: string;
-//   procedureId?: string;
-//   urgency?: string;
-//   orderStatus?: string;
-//   createdAt?: string;
-//   updatedAt?: string;
-//   // add other fields you need
-// }
+
 
 export interface RoomFilter {
   id: string;

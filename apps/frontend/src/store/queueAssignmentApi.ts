@@ -98,7 +98,7 @@ export const queueAssignmentApi = createApi({
 
     // Queue Stats
     getQueueStats: builder.query<
-      ApiResponse<QueueStats>,
+      QueueStats,
       { date?: string; roomId?: string }
     >({
       query: ({ date, roomId }) => ({

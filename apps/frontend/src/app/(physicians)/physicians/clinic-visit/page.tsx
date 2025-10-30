@@ -169,9 +169,7 @@ export default function QueuePage() {
         toast.error("Queue item not found");
         return;
       }
-
       await skipQueueAssignment(id).unwrap();
-
       toast.success(`Skipped Queue #${queueItem.queueNumber}`);
     } catch (error) {
       console.error("Failed to complete queue:", error);

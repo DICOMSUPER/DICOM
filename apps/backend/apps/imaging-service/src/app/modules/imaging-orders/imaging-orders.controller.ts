@@ -24,7 +24,8 @@ const moduleName = 'ImagingOrders';
 @Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
+  constructor(private readonly imagingOrdersService: ImagingOrdersService,
+  ) { }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
@@ -217,6 +218,7 @@ export class ImagingOrdersController {
     }
   }
 
+<<<<<<< HEAD
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
   async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
     this.logger.log(
@@ -233,3 +235,7 @@ export class ImagingOrdersController {
     }
   }
 }
+=======
+
+  }
+>>>>>>> 6231d17a76951d1fa0863616384814bef566d6cd

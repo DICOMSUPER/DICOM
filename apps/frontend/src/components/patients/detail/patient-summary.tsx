@@ -4,15 +4,12 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Activity, Droplet, Heart, Thermometer, Wind, Weight, Ruler } from 'lucide-react';
-import { PatientOverview, VitalSignsSimplified } from '@/interfaces/patient/patient-workflow.interface';
-import { PatientCondition } from '@/interfaces/patient/patient-condition.interface';
+import { Activity, Heart, Thermometer } from 'lucide-react';
 import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 import {
@@ -23,18 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PatientCondition } from '@/interfaces/patient/patient-condition.interface';
+import { PatientOverview, VitalSignsSimplified } from '@/interfaces/patient/patient-workflow.interface';
 
-interface PatientSummaryProps {
-  overview: PatientOverview;
-}
+
+
 
 interface VitalSignDisplay {
   label: string;
-  value: number | undefined;
+  value: string | number;
   unit: string;
   icon: React.ReactNode;
   status: 'normal' | 'high' | 'low';
-
 }
 
 const getVitalStatus = (value: number | undefined, type: string): 'normal' | 'high' | 'low' => {
@@ -47,64 +44,51 @@ const getVitalStatus = (value: number | undefined, type: string): 'normal' | 'hi
       return value > 90 ? 'high' : value < 60 ? 'low' : 'normal';
     case 'heartRate':
       return value > 100 ? 'high' : value < 60 ? 'low' : 'normal';
-    case 'respiratoryRate':
-      return value > 20 ? 'high' : value < 12 ? 'low' : 'normal';
     case 'temperature':
       return value > 37.5 ? 'high' : value < 36 ? 'low' : 'normal';
-    case 'oxygenSaturation':
-      return value < 95 ? 'low' : 'normal';
     default:
       return 'normal';
   }
 };
 
 // Transform vital signs data for display
-const transformVitalSigns = (vitalSigns: VitalSignsSimplified): VitalSignDisplay[] => {
+const transformVitalSigns = (vitalSigns: VitalSignsSimplified | undefined): VitalSignDisplay[] => {
   const vitals: VitalSignDisplay[] = [
+    // Blood Pressure - fixed to show systolic/diastolic in correct order
     {
       label: 'Blood Pressure',
-      value: vitalSigns.bpSystolic && vitalSigns.bpDiastolic 
-        ? parseFloat(`${vitalSigns.bpSystolic}.${vitalSigns.bpDiastolic}`) 
-        : undefined,
+      value: (vitalSigns?.bpSystolic && vitalSigns?.bpDiastolic) 
+        ? `${vitalSigns.bpSystolic}/${vitalSigns.bpDiastolic}`
+        : '_/_',
       unit: 'mmHg',
       icon: <Activity className="h-5 w-5" />,
-      status: getVitalStatus(vitalSigns.bpSystolic, 'bpSystolic'),
-
+      status: getVitalStatus(vitalSigns?.bpSystolic, 'bpSystolic'),
     },
+    // Heart Rate
     {
       label: 'Heart Rate',
-      value: vitalSigns.heartRate,
+      value: vitalSigns?.heartRate ?? '_',
       unit: 'bpm',
       icon: <Heart className="h-5 w-5" />,
-      status: getVitalStatus(vitalSigns.heartRate, 'heartRate'),
-
+      status: getVitalStatus(vitalSigns?.heartRate, 'heartRate'),
     },
+    // Temperature
     {
       label: 'Temperature',
-      value: vitalSigns.temperature,
+      value: vitalSigns?.temperature ?? '_',
       unit: '°C',
       icon: <Thermometer className="h-5 w-5" />,
-      status: getVitalStatus(vitalSigns.temperature, 'temperature'),
-
+      status: getVitalStatus(vitalSigns?.temperature, 'temperature'),
     },
-    // {
-    //   label: 'Respiratory Rate',
-    //   value: vitalSigns.respiratoryRate,
-    //   unit: '/min',
-    //   icon: <Wind className="h-5 w-5" />,
-    //   status: getVitalStatus(vitalSigns.respiratoryRate, 'respiratoryRate'),
-
-    // },
   ];
   
-  return vitals.filter(vital => vital.value !== undefined);
+  return vitals;
 };
 
-// Conditions Table Component
 const columnHelper = createColumnHelper<PatientCondition>();
 
 function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState([]);
 
   const columns = [
     columnHelper.accessor('codeDisplay', {
@@ -156,14 +140,6 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
         );
       },
     }),
-    columnHelper.accessor('verificationStatus', {
-      header: 'Verification',
-      cell: (info) => (
-        <span className="text-sm text-gray-600 capitalize">
-          {info.getValue() || '—'}
-        </span>
-      ),
-    }),
     columnHelper.accessor('recordedDate', {
       header: 'Recorded Date',
       cell: (info) => {
@@ -175,14 +151,6 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
         );
       },
     }),
-    columnHelper.accessor('bodySite', {
-      header: 'Body Site',
-      cell: (info) => (
-        <span className="text-sm text-gray-600">
-          {info.getValue() || '—'}
-        </span>
-      ),
-    }),
   ];
 
   const table = useReactTable({
@@ -190,10 +158,8 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
+
+    state: { sorting },
   });
 
   return (
@@ -206,10 +172,7 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
                 <TableHead key={header.id}>
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
             </TableRow>
@@ -239,7 +202,7 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
   );
 }
 
-export function PatientSummaryTab({ overview }: PatientSummaryProps) {
+export function PatientSummaryTab({ overview }: { overview: PatientOverview }) {
   const vitalSignsDisplay = transformVitalSigns(overview.recentVitalSigns);
 
   return (
@@ -249,7 +212,6 @@ export function PatientSummaryTab({ overview }: PatientSummaryProps) {
         <p className="text-gray-600 text-sm">Overview of patient's health status and recent activities.</p>
       </div>
 
-      {/* Vital Signs */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -275,13 +237,10 @@ export function PatientSummaryTab({ overview }: PatientSummaryProps) {
                     <h4 className="font-medium text-gray-900 text-sm">{vital.label}</h4>
                     <div className="flex items-baseline gap-2 mt-1">
                       <span className="text-2xl font-bold text-gray-900">
-                        {vital.label === 'Blood Pressure' 
-                          ? `${overview.recentVitalSigns.bpSystolic}/${overview.recentVitalSigns.bpDiastolic}`
-                          : vital.value}
+                        {vital.value}
                       </span>
                       <span className="text-sm text-gray-600">{vital.unit}</span>
                     </div>
-
                   </div>
                 </div>
                 
@@ -314,7 +273,6 @@ export function PatientSummaryTab({ overview }: PatientSummaryProps) {
         </CardContent>
       </Card>
 
-      {/* Conditions Table */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

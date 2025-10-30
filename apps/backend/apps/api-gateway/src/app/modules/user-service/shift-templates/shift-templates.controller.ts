@@ -9,7 +9,8 @@ import {
   UseInterceptors,
   Delete,
   Patch,
-  Query
+  Query,
+  Req
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
@@ -20,6 +21,7 @@ import { CreateShiftTemplateDto, UpdateShiftTemplateDto } from '@backend/shared-
 import { Roles } from '@backend/shared-enums';
 import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
+import type { Request } from 'express';
 
 @ApiTags('Shift Template Management')
 @Controller('shift-templates')
@@ -64,7 +66,7 @@ export class ShiftTemplatesController {
       // Filter by is_active if provided
       let filteredData = result.data || [];
       if (is_active !== undefined) {
-        filteredData = filteredData.filter((template: any) => template.is_active === (is_active === true || is_active === 'true'));
+        filteredData = filteredData.filter((template: any) => template.is_active === (is_active === true ));
       }
 
       const response = {
@@ -172,12 +174,13 @@ export class ShiftTemplatesController {
   @ApiOperation({ summary: 'Create a new shift template' })
   @ApiBody({ type: CreateShiftTemplateDto })
   @ApiResponse({ status: 201, description: 'Shift template created successfully' })
-  async createShiftTemplate(@Body() createDto: CreateShiftTemplateDto) {
+  async createShiftTemplate(@Body() createDto: CreateShiftTemplateDto,@Req() req: Request) {
     try {
+      const token = req.cookies?.token; 
       this.logger.log(`🏗️ Creating shift template: ${createDto.shift_name}`);
 
       const result = await firstValueFrom(
-        this.shiftTemplateClient.send('UserService.ShiftTemplate.Create', createDto),
+        this.shiftTemplateClient.send('UserService.ShiftTemplate.Create', {...createDto, token}),
       );
 
       return result;

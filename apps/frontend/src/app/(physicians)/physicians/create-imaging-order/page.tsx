@@ -20,16 +20,17 @@ import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { useGetPatientByCodeQuery } from "@/store/patientApi";
 import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
 import { ClipboardList, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import PatientSearchInput from "@/components/patients/PatientSearchInput";
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
-import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
-import { useCreateImagingOrderMutation } from "@/store/imagingOrderApi";
+import { useCreateImagingOrderFormMutation } from "@/store/imagingOrderFormApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import { toast } from "sonner";
+import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
+import { ICreateImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
 
 export interface ImagingProcedure {
   id: string;
@@ -57,6 +58,7 @@ export interface ImagingProcedurePDF {
 }
 
 export default function CreateImagingOrder() {
+  // const encounterId = use(params).id;
   const [patientCode, setPatientCode] = useState<string>("");
   // get pdfUrl
   // const [pdfUrl, setPdfURL] = useState<string | null>(null);
@@ -80,8 +82,8 @@ export default function CreateImagingOrder() {
   const [room, setRoom] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
 
-  const [createImagingOrder, { isLoading: isCreating }] =
-    useCreateImagingOrderMutation();
+  const [createImagingOrderForm, { isLoading: isCreating }] =
+    useCreateImagingOrderFormMutation();
   const addProcedure = () => {
     const newProcedure: ImagingProcedure = {
       id: Date.now().toString(),
@@ -143,7 +145,7 @@ export default function CreateImagingOrder() {
   };
 
   const isFormValid = () => {
-    const basicInfoValid = patientCode && diagnosis && department && room;
+    const basicInfoValid = diagnosis && department && room;
     const proceduresValid = procedures.every(
       (p) =>
         p.modality && p.bodyPart && p.clinicalIndication && p.procedureServiceId
@@ -153,27 +155,36 @@ export default function CreateImagingOrder() {
 
   const handleSave = async () => {
     if (!isFormValid()) return;
-
+    
+    console.log("diagnosis before payload:", diagnosis);
     try {
-      const orderPromises = procedures.map(async (procedure) => {
-        const orderDto: CreateImagingOrderDto = {
-          patientId: patientCode,
-          orderingPhysicianId: userId,
-          modalityId: procedure.modality,
-          bodyPart: procedure.bodyPartName as string,
+      const imagingOrders: CreateImagingOrderDto[] = procedures.map(
+        (procedure) => ({
           request_procedure_id: procedure.procedureServiceId,
-          clinicalIndication: procedure.clinicalIndication,
-          specialInstructions: procedure.specialInstructions,
-          roomId: room,
-          notes: notes,
-        };
-        return await createImagingOrder(orderDto).unwrap();
-      });
-      const results = await Promise.all(orderPromises);
-      if (results) {
-        console.log("Created imaging orders:", results);
-        handleDownloadPDF();
-      }
+          clinicalIndication: procedure.clinicalIndication ?? "",
+          contrastRequired: false,
+          specialInstructions: procedure.specialInstructions ?? "",
+        })
+      );
+
+      // build payload for createImagingOrderForm mutation
+      const payload: ICreateImagingOrderForm = {
+        patientId: patientData?.data.id as string,
+        encounterId: "",
+        roomId: room,
+        diagnosis,
+        notes,
+        imagingOrders,
+      };
+      console.log("pay load", payload);
+
+      // Add other necessary fields here
+
+      // const results = await Promise.all(orderPromises);
+      // if (results) {
+      //   console.log("Created imaging orders:", results);
+      //   handleDownloadPDF();
+      // }
       toast.success("Imaging orders created successfully!");
       handleCancel();
     } catch (error) {
@@ -191,8 +202,6 @@ export default function CreateImagingOrder() {
 
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
     useGetDepartmentsQuery({ limit: 100 });
-
-  console.log("department data", departmentsData);
 
   const { data: roomsData, isError: isRoomsError } =
     useGetRoomsByDepartmentIdQuery(
@@ -284,25 +293,18 @@ export default function CreateImagingOrder() {
                     Patient Code <span className="text-red-500">*</span>
                   </Label>
                   <div className="flex gap-4">
-                    {/* <Input
-                      id="patientId"
-                      placeholder="Enter patient ID"
-                      value={patientCode}
-                      onChange={(value: string) => setPatientCode(value)}
-                      className={`${
-                        !patientCode ? "border-slate-300" : "border-teal-300"
-                      }`}
-                    /> */}
-                    <PatientSearchInput
+                    {/* <PatientSearchInput
                       value={patientCode}
                       onChange={setPatientCode}
                       onSelect={(item) => {
                         setPatientCode(item.value);
+                        console.log("selected", item);
+                        
                       }}
                       className={`${
                         !patientCode ? "border-slate-300" : "border-teal-300"
                       }`}
-                    />
+                    /> */}
                   </div>
                   <div>
                     {/* {isPatientLoading && <div>Loading patient info...</div>}

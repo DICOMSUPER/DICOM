@@ -398,43 +398,45 @@ export class QueueAssignmentService {
       this.userService.send('UserService.Users.findOne', { userId })
     );
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
     if (user.role !== Roles.PHYSICIAN) {
       throw new NotFoundException(
         `User with ID ${userId} is not authorized to view room assignments`
       );
     }
 
-    whereConditions.encounter = {
-      assignedPhysicianId: userId,
-    };
+  whereConditions.encounter = {
+    assignedPhysicianId: userId,
+  };
 
-    if (status) whereConditions.status = status;
-    if (queueNumber) whereConditions.queueNumber = queueNumber;
-    if (priority) whereConditions.priority = priority;
+  if (status) whereConditions.status = status;
+  if (queueNumber) whereConditions.queueNumber = queueNumber;
+  if (priority) whereConditions.priority = priority;
 
-    let fromDate: Date;
-    let toDate: Date;
 
-    if (assignmentDateFrom) {
-      fromDate = new Date(assignmentDateFrom);
-    } else {
-      fromDate = new Date();
-      fromDate.setHours(0, 0, 0, 0);
-    }
+  // let fromDate: Date;
+  // let toDate: Date;
 
-    if (assignmentDateTo) {
-      toDate = new Date(assignmentDateTo);
-      toDate.setHours(23, 59, 59, 999);
-    } else {
-      toDate = new Date();
-      toDate.setHours(23, 59, 59, 999);
-    }
+  // if (assignmentDateFrom) {
+  //   fromDate = new Date(assignmentDateFrom);
+  // } else {
+  //   fromDate = new Date();
+  //   fromDate.setHours(0, 0, 0, 0);
+  // }
 
-    whereConditions.assignmentDate = Between(fromDate, toDate);
+  // if (assignmentDateTo) {
+  //   toDate = new Date(assignmentDateTo);
+  //   toDate.setHours(23, 59, 59, 999);
+  // } else {
+  //   toDate = new Date();
+  //   toDate.setHours(23, 59, 59, 999);
+  // }
+
+  // whereConditions.assignmentDate = Between(fromDate, toDate);
+
+
+
+
+
 
     const result = await this.paginationService.paginate(
       QueueAssignment,
