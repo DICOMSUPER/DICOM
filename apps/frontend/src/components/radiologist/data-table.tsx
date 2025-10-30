@@ -104,10 +104,10 @@ export default function DataTable({
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Contrast
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700">
+              <th className="px-4 py-2 text-left font-semibold text-gray-700  border-r border-gray-300">
                 Notes
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700">
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 ">
                 Actions
               </th>
             </tr>
@@ -169,13 +169,13 @@ export default function DataTable({
                     className="px-4 py-2 border-r border-gray-200 text-gray-700"
                     title={row.modalityMachine?.name}
                   >
-                    {row.imagingOrder?.modality.modalityCode}
+                    {row.imagingOrder?.procedure?.modality?.modalityCode}
                   </td>
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.imagingOrder?.contrastRequired ? "Yes" : "No"}
                   </td>
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                    {row.imagingOrder?.notes}
+                    {row.imagingOrder?.imagingOrderForm?.notes}
                   </td>
                   <td className="px-4 py-2 text-gray-600 text-xs">
                     <button

@@ -18,6 +18,8 @@ export interface CreateImagingOrderDto {
   notes?: string;
 }
 
+export type UpdateImagingOrderDto = Partial<CreateImagingOrderDto>;
+
 export interface ImagingOrder extends BaseEntity {
   orderNumber: string;
   patientId: string;

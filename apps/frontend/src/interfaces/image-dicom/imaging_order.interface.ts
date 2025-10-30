@@ -1,3 +1,4 @@
+import { ImagingOrderForm } from "./imaging-order-form.interface";
 import { ImagingModality } from "./imaging_modality.interface";
 import { RequestProcedure } from "./request-procedure.interface";
 
@@ -17,8 +18,9 @@ export interface ImagingOrder {
   roomId: string;
   notes: string;
   modality: ImagingModality;
+  imagingOrderForm: ImagingOrderForm;
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
-  procedure?:RequestProcedure
+  procedure?: RequestProcedure;
 }

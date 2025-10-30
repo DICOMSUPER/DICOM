@@ -1,7 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ScheduleFormData } from "@/schemas/schedule-schema";
-import { Department } from "@/types";
+import { ScheduleFormData } from "@/lib/validation/schedule-schema";
+import { Department } from "@/interfaces/user/department.interface";
 import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
 
 export interface User {

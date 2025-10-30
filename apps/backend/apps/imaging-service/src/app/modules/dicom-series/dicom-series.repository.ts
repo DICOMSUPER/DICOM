@@ -10,6 +10,8 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
+export type SeriesReferenceType = 'study' | 'seriesInstanceUid';
+
 @Injectable()
 export class DicomSeriesRepository extends BaseRepository<DicomSeries> {
   constructor(@InjectEntityManager() entityManager: EntityManager) {
@@ -18,7 +20,7 @@ export class DicomSeriesRepository extends BaseRepository<DicomSeries> {
 
   async findSeriesByReferenceId(
     id: string,
-    type: 'study' | 'seriesInstanceUid' | 'order' | 'modality',
+    type: SeriesReferenceType,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ): Promise<PaginatedResponseDto<DicomSeries>> {
@@ -68,17 +70,27 @@ export class DicomSeriesRepository extends BaseRepository<DicomSeries> {
     }
 
     //  Relations
+    //  Relations
     if (relation?.length) {
       relation.forEach((r) => {
-        // Handle nested relations (e.g., 'study.modality')
-        if (r.includes('.')) {
-          const parts = r.split('.');
-          const parentAlias = parts[0];
-          const childRelation = parts[1];
-          query.leftJoinAndSelect(`${parentAlias}.${childRelation}`, `${parentAlias}_${childRelation}`);
-        } else {
-          // Handle direct relations
-          query.leftJoinAndSelect(`entity.${r}`, r);
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
         }
       });
     }
