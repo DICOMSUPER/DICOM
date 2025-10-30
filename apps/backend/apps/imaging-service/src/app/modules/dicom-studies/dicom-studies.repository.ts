@@ -46,49 +46,52 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     const safePage = Math.max(1, page);
     const safeLimit = Math.max(1, Math.min(limit, 100));
     const skip = (safePage - 1) * safeLimit;
+    const query = repository
+      .createQueryBuilder('entity')
+      .leftJoinAndSelect('entity.imagingOrder', 'imagingOrder')
+      .leftJoinAndSelect('imagingOrder.procedure', 'procedure')
+      .leftJoinAndSelect('imagingOrder.imagingOrderForm', 'imagingOrderForm');
 
     let referenceField;
     switch (type) {
       case 'modality':
-        referenceField = 'modalityId';
+        referenceField = 'procedure.modalityId';
         break;
       case 'order':
-        referenceField = 'orderId';
+        referenceField = 'entity.orderId';
         break;
       case 'patient':
-        referenceField = 'patientId';
+        referenceField = 'entity.patientId';
         break;
       case 'verifyingRadiologist':
-        referenceField = 'verifyingRadiologistId';
+        referenceField = 'entity.verifyingRadiologistId';
         break;
 
       case 'performingTechnician':
-        referenceField = 'performingTechnicianId';
+        referenceField = 'entity.performingTechnicianId';
         break;
 
       case 'referringPhysician':
-        referenceField = 'referringPhysicianId';
+        referenceField = 'entity.referringPhysicianId';
         break;
 
       case 'studyInstanceUid':
-        referenceField = 'studyInstanceUid';
+        referenceField = 'entity.studyInstanceUid';
         break;
 
       default:
         throw ThrowMicroserviceException(
           HttpStatus.BAD_REQUEST,
-          'Invalid type find by referenceId for ImagingOrder',
+          'Invalid type find by referenceId for Dicom Studies',
           IMAGING_SERVICE
         );
     }
 
-    const query = repository.createQueryBuilder('entity');
-
-    query.andWhere(`entity.${referenceField} = :referenceId`, {
+    query.andWhere(`${referenceField} = :referenceId`, {
       referenceId: id,
     });
 
-    //  Search filter
+    //  Search filter, only support main entity for now
     if (search && searchField) {
       query.andWhere(`entity.${searchField} LIKE :search`, {
         search: `%${search}%`,
@@ -97,10 +100,30 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
 
     //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
+        }
+      });
     }
 
-    // Sorting
+    // Sorting, , only support main entity for now
     if (sortField && order) {
       query.orderBy(
         `entity.${sortField}`,
@@ -134,26 +157,27 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
 
   async filter(data: FilterData): Promise<DicomStudy[]> {
     const repository = this.getRepository();
-    const qb = await repository
+    const qb = repository
       .createQueryBuilder('study')
       .leftJoinAndSelect('study.imagingOrder', 'order')
-      .leftJoinAndSelect('order.modality', 'modality')
+      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
       .leftJoinAndSelect('study.modalityMachine', 'modality_machine')
       .innerJoinAndSelect('study.series', 'series')
       .innerJoinAndSelect('series.instances', 'instance')
       .innerJoinAndSelect('order.procedure', 'procedure')
+      .leftJoinAndSelect('procedure.modality', 'modality')
       .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .andWhere('study.isDeleted = :notDeleted', { notDeleted: false });
     if (data.studyUID)
-      qb.andWhere('study.study_instance_uid ILIKE :studyUID', {
+      qb.andWhere('study.studyInstanceUid ILIKE :studyUID', {
         studyUID: `%${data.studyUID}%`,
       });
     if (data.startDate)
-      qb.andWhere('study.study_date >= :startDate', {
+      qb.andWhere('study.studyDate >= :startDate', {
         startDate: new Date(data.startDate),
       });
     if (data.endDate)
-      qb.andWhere('study.study_date <= :endDate', {
+      qb.andWhere('study.studyDate <= :endDate', {
         endDate: new Date(data.endDate),
       });
 
@@ -163,23 +187,23 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       });
 
     if (data.modalityId)
-      qb.andWhere('modality.modality_id = :modalityId', {
-        modalityId: `${data.modalityId}`,
+      qb.andWhere('modality.id = :modalityId', {
+        modalityId: data.modalityId,
       });
 
     if (data.modalityMachineId)
-      qb.andWhere('study.modality_machine_id = :modalityMachineId', {
+      qb.andWhere('study.modalityMachineId = :modalityMachineId', {
         modalityMachineId: data.modalityMachineId,
       });
 
     if (data.studyStatus && data.studyStatus.toLocaleLowerCase() !== 'all')
-      qb.andWhere('study.study_status = :studyStatus', {
+      qb.andWhere('study.studyStatus = :studyStatus', {
         studyStatus: data.studyStatus,
       });
 
     //radiologist can only see technician verified status study
     if (data.role && data.role === Roles.RADIOLOGIST) {
-      qb.andWhere('study.study_status <> :status', {
+      qb.andWhere('study.studyStatus <> :status', {
         status: DicomStudyStatus.SCANNED,
       });
     }

@@ -196,7 +196,9 @@ export class DicomStudiesController {
 
       // Step 4: Get rooms and join with studies
       const roomIds = studies
-        .map((study: DicomStudy) => study.imagingOrder?.roomId)
+        .map(
+          (study: DicomStudy) => study.imagingOrder?.imagingOrderForm?.roomId
+        )
         .filter((id: string | undefined) => id !== null && id !== undefined);
 
       if (roomIds.length > 0) {
@@ -212,7 +214,8 @@ export class DicomStudiesController {
         studies = studies.map((study: DicomStudy) => ({
           ...study,
           room: rooms.find(
-            (room: Room) => room.id === study.imagingOrder?.roomId
+            (room: Room) =>
+              room.id === study.imagingOrder?.imagingOrderForm?.roomId
           ),
         }));
       }

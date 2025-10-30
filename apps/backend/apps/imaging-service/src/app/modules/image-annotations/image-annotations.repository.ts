@@ -9,15 +9,18 @@ import { EntityManager } from 'typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+
+export type FindFilterAnnotation = 'annotator' | 'instance';
+
 @Injectable()
-export class ImageAnotationsRepository extends BaseRepository<ImageAnnotation> {
+export class ImageAnnotationsRepository extends BaseRepository<ImageAnnotation> {
   constructor(@InjectEntityManager() entityManager: EntityManager) {
     super(ImageAnnotation, entityManager);
   }
 
   async findByReferenceId(
     id: string,
-    type: 'annotator' | 'instance',
+    type: FindFilterAnnotation,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ): Promise<PaginatedResponseDto<ImageAnnotation>> {
@@ -48,7 +51,7 @@ export class ImageAnotationsRepository extends BaseRepository<ImageAnnotation> {
       default:
         throw ThrowMicroserviceException(
           HttpStatus.BAD_REQUEST,
-          'Invalid type find by referenceId for ImagingOrder',
+          'Invalid type find by referenceId for ImagingAnnotation',
           IMAGING_SERVICE
         );
         break;
@@ -68,7 +71,27 @@ export class ImageAnotationsRepository extends BaseRepository<ImageAnnotation> {
 
     //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
+        }
+      });
     }
 
     // Sorting

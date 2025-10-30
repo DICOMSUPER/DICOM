@@ -20,9 +20,17 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 import { FilterData } from './dicom-studies.controller';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-//relation: imagingOrder, series
-const relation = ['imagingOrder', 'series', 'modalityMachine'];
+//relation: imagingOrder, series, modalityMachine
+const relation = [
+  'imagingOrder',
+  'imagingOrder.imagingOrderForm',
+  'imagingOrder.procedure',
+  'series',
+  'modalityMachine',
+];
 
 @Injectable()
 export class DicomStudiesService {
@@ -32,12 +40,20 @@ export class DicomStudiesService {
     @Inject()
     private readonly imagingModalitiesRepository: ImagingModalityRepository,
     @Inject()
-    private readonly imagingOrdersRepository: ImagingOrderRepository
+    private readonly imagingOrdersRepository: ImagingOrderRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
-  private checkDicomStudy = async (id: string): Promise<DicomStudy> => {
-    const dicomStudy = await this.dicomStudiesRepository.findOne({
-      where: { id },
-    });
+  private checkDicomStudy = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<DicomStudy> => {
+    const dicomStudy = await this.dicomStudiesRepository.findOne(
+      {
+        where: { id },
+      },
+      [],
+      em
+    );
 
     if (!dicomStudy) {
       throw ThrowMicroserviceException(
@@ -51,11 +67,16 @@ export class DicomStudiesService {
   };
 
   private checkImagingModality = async (
-    id: string
+    id: string,
+    em?: EntityManager
   ): Promise<ImagingModality> => {
-    const imagingModality = await this.imagingModalitiesRepository.findOne({
-      where: { id },
-    });
+    const imagingModality = await this.imagingModalitiesRepository.findOne(
+      {
+        where: { id },
+      },
+      [],
+      em
+    );
 
     if (!imagingModality) {
       throw ThrowMicroserviceException(
@@ -76,10 +97,17 @@ export class DicomStudiesService {
     return imagingModality;
   };
 
-  private checkImagingOrder = async (id: string): Promise<ImagingOrder> => {
-    const imagingOrder = await this.imagingOrdersRepository.findOne({
-      where: { id },
-    });
+  private checkImagingOrder = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<ImagingOrder> => {
+    const imagingOrder = await this.imagingOrdersRepository.findOne(
+      {
+        where: { id },
+      },
+      [],
+      em
+    );
 
     if (!imagingOrder) {
       throw ThrowMicroserviceException(
@@ -98,7 +126,7 @@ export class DicomStudiesService {
     ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
-        'Failed to create dicom study: Invalid status for ImagingOrder',
+        'Failed to create dicom study: can not create studies for completed or canceled order',
         IMAGING_SERVICE
       );
     }
@@ -108,13 +136,15 @@ export class DicomStudiesService {
   create = async (
     createDicomStudyDto: CreateDicomStudyDto
   ): Promise<DicomStudy> => {
-    //check imaging order
-    await this.checkImagingOrder(createDicomStudyDto.orderId);
+    return this.entityManager.transaction(async (em) => {
+      //check imaging order
+      await this.checkImagingOrder(createDicomStudyDto.orderId, em);
 
-    //check imaging modality
-    await this.checkImagingModality(createDicomStudyDto.modalityId);
+      //check imaging modality
+      await this.checkImagingModality(createDicomStudyDto.modalityId, em);
 
-    return await this.dicomStudiesRepository.create(createDicomStudyDto);
+      return await this.dicomStudiesRepository.create(createDicomStudyDto, em);
+    });
   };
 
   findAll = async (): Promise<DicomStudy[]> => {
@@ -135,31 +165,39 @@ export class DicomStudiesService {
     id: string,
     updateDicomStudyDto: UpdateDicomStudyDto
   ): Promise<DicomStudy | null> => {
-    //check dicom study
-    const dicomStudy = await this.checkDicomStudy(id);
+    return this.entityManager.transaction(async (em) => {
+      //check dicom study
+      const dicomStudy = await this.checkDicomStudy(id, em);
 
-    //check  imaging order if provided›
-    if (
-      updateDicomStudyDto.orderId &&
-      dicomStudy.orderId !== updateDicomStudyDto.orderId
-    )
-      await this.checkImagingOrder(updateDicomStudyDto.orderId);
+      //check  imaging order if provided›
+      if (
+        updateDicomStudyDto.orderId &&
+        dicomStudy.orderId !== updateDicomStudyDto.orderId
+      )
+        await this.checkImagingOrder(updateDicomStudyDto.orderId, em);
 
-    //check imaging modality if provided
-    if (
-      updateDicomStudyDto.modalityId
-      // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
-    ) {
-      await this.checkImagingModality(updateDicomStudyDto.modalityId);
-    }
+      //check imaging modality if provided
+      if (
+        updateDicomStudyDto.modalityId
+        // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
+      ) {
+        await this.checkImagingModality(updateDicomStudyDto.modalityId, em);
+      }
 
-    return await this.dicomStudiesRepository.update(id, updateDicomStudyDto);
+      return await this.dicomStudiesRepository.update(
+        id,
+        updateDicomStudyDto,
+        em
+      );
+    });
   };
 
   remove = async (id: string): Promise<boolean> => {
-    await this.checkDicomStudy(id);
+    return await this.entityManager.transaction(async (em) => {
+      await this.checkDicomStudy(id, em);
 
-    return await this.dicomStudiesRepository.softDelete(id, 'isDeleted');
+      return await this.dicomStudiesRepository.softDelete(id, 'isDeleted', em);
+    });
   };
 
   findDicomStudiesByReferenceId = async (

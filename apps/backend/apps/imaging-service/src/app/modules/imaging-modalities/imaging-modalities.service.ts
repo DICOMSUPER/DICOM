@@ -11,20 +11,26 @@ import {
 } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 const relations = ['modalityMachines'];
 @Injectable()
 export class ImagingModalitiesService {
   constructor(
     @Inject()
-    private readonly imagingModalityRepository: ImagingModalityRepository
+    private readonly imagingModalityRepository: ImagingModalityRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
   create = async (
     createImagingModalityDto: CreateImagingModalityDto
   ): Promise<ImagingModality> => {
-    return await this.imagingModalityRepository.create(
-      createImagingModalityDto
-    );
+    return await this.entityManager.transaction(async (em) => {
+      return await this.imagingModalityRepository.create(
+        createImagingModalityDto,
+        em
+      );
+    });
   };
 
   findAll = async (): Promise<ImagingModality[]> => {
@@ -57,38 +63,55 @@ export class ImagingModalitiesService {
     id: string,
     updateImagingModalityDto: UpdateImagingModalityDto
   ): Promise<ImagingModality | null> => {
-    const modality = await this.imagingModalityRepository.findOne({
-      where: { id },
-    });
-
-    if (!modality) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Modality not found',
-        IMAGING_SERVICE
+    return await this.entityManager.transaction(async (em) => {
+      const modality = await this.imagingModalityRepository.findOne(
+        {
+          where: { id },
+        },
+        [],
+        em
       );
-    }
 
-    return await this.imagingModalityRepository.update(
-      id,
-      updateImagingModalityDto
-    );
+      if (!modality) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Modality not found',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.imagingModalityRepository.update(
+        id,
+        updateImagingModalityDto,
+        em
+      );
+    });
   };
 
   remove = async (id: string): Promise<boolean> => {
-    const modality = await this.imagingModalityRepository.findOne({
-      where: { id },
-    });
-
-    if (!modality) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Modality not found',
-        IMAGING_SERVICE
+    return await this.entityManager.transaction(async (em) => {
+      const modality = await this.imagingModalityRepository.findOne(
+        {
+          where: { id },
+        },
+        [],
+        em
       );
-    }
 
-    return await this.imagingModalityRepository.softDelete(id, 'isDeleted');
+      if (!modality) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Modality not found',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.imagingModalityRepository.softDelete(
+        id,
+        'isDeleted',
+        em
+      );
+    });
   };
 
   findMany = async (

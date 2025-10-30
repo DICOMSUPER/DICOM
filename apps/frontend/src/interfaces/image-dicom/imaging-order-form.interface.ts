@@ -2,7 +2,7 @@ import { BaseEntity } from "../patient/patient-workflow.interface";
 import { Room } from "../user/room.interface";
 import { CreateImagingOrderDto, ImagingOrder } from "./imaging-order.interface";
 
-export interface ICreateImagingOrderForm  {
+export interface ICreateImagingOrderForm {
   patientId: string;
   encounterId: string;
   roomId: string;
@@ -16,6 +16,19 @@ export enum OrderFormStatus {
   CANCELLED = "cancelled",
 }
 
+export interface ImagingOrderForm {
+  id: string;
+  patientId: string;
+  encounterId: string;
+  orderingPhysicianId: string;
+  imagingOrders?: ImagingOrder[]; // Optional if not always loaded
+  orderFormStatus: OrderFormStatus;
+  notes?: string;
+  roomId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  isDeleted?: boolean;
+}
 export interface IImagingOrderForm extends BaseEntity {
   patientId: string;
   encounterId: string;

@@ -4,6 +4,7 @@ import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface"
 import {
   CreateImagingOrderDto,
   ImagingOrder,
+  UpdateImagingOrderDto,
 } from "@/interfaces/image-dicom/imaging-order.interface";
 import { ApiResponse } from "@/services/imagingApi";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
@@ -104,11 +105,16 @@ export const imagingOrderApi = createApi({
       invalidatesTags: [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
-    // PATCH /imaging-orders/:id
-    // updateImagingOrder: builder.mutation<ImagingOrder, { id: string; body: UpdateImagingOrderDto }>({
-    //   query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
-    //   invalidatesTags: (result, error, { id }) => [{ type: "ImagingOrder", id }, { type: "ImagingOrder", id: "LIST" }],
-    // }),
+    updateImagingOrder: builder.mutation<
+      ImagingOrder,
+      { id: string; body: UpdateImagingOrderDto }
+    >({
+      query: ({ id, body }) => ({ url: `/${id}`, method: "PATCH", data: body }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "ImagingOrder", id },
+        { type: "ImagingOrder", id: "LIST" },
+      ],
+    }),
 
     deleteImagingOrder: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({ url: `/${id}`, method: "DELETE" }),
@@ -131,7 +137,7 @@ export const imagingOrderApi = createApi({
 
     getOrderStatsForRoom: builder.query<ApiResponse<unknown>, string>({
       query: (id) => ({
-        url: `/${id}/room/stats`,
+        url: `/${id}/room-stats`,
         method: "GET",
       }),
     }),
@@ -146,6 +152,6 @@ export const {
   useCreateImagingOrderMutation,
   useGetImagingOrderByRoomIdFilterQuery,
   useGetOrderStatsForRoomQuery,
-  //   useUpdateImagingOrderMutation,
+  useUpdateImagingOrderMutation,
   useDeleteImagingOrderMutation,
 } = imagingOrderApi;

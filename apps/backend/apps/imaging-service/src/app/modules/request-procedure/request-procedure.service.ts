@@ -11,31 +11,36 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { RequestProcedureRepository } from './request-procedure.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class RequestProcedureService {
   constructor(
     @Inject()
-    private readonly requestProcedureRepository: RequestProcedureRepository
+    private readonly requestProcedureRepository: RequestProcedureRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
   create = async (
     createRequestProcedureDto: CreateRequestProcedureDto
   ): Promise<RequestProcedure> => {
-    // check for existing procedure with the same name
-    const existingProcedure = await this.requestProcedureRepository.findOne({
-      where: { name: createRequestProcedureDto.name },
-    });
+    return await this.entityManager.transaction(async (em) => {
+      // check for existing procedure with the same name
+      const existingProcedure = await this.requestProcedureRepository.findOne({
+        where: { name: createRequestProcedureDto.name },
+      });
 
-    if (existingProcedure) {
-      throw ThrowMicroserviceException(
-        HttpStatus.CONFLICT,
-        'Procedure with the same name already exists',
-        IMAGING_SERVICE
-      );
-    }
-    return await this.requestProcedureRepository.create({
-      ...createRequestProcedureDto,
-      isActive: true,
+      if (existingProcedure) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Procedure with the same name already exists',
+          IMAGING_SERVICE
+        );
+      }
+      return await this.requestProcedureRepository.create({
+        ...createRequestProcedureDto,
+        isActive: true,
+      });
     });
   };
 
@@ -71,49 +76,53 @@ export class RequestProcedureService {
     id: string,
     updateRequestProcedureDto: UpdateRequestProcedureDto
   ): Promise<RequestProcedure | null> => {
-    const procedure = await this.requestProcedureRepository.findOne({
-      where: { id },
-    });
+    return await this.entityManager.transaction(async (em) => {
+      const procedure = await this.requestProcedureRepository.findOne({
+        where: { id },
+      });
 
-    if (!procedure) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Procedure not found',
-        IMAGING_SERVICE
+      if (!procedure) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Procedure not found',
+          IMAGING_SERVICE
+        );
+      }
+      const existingProcedure = await this.requestProcedureRepository.findOne({
+        where: { name: updateRequestProcedureDto.name },
+      });
+
+      if (existingProcedure) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Procedure with the same name already exists',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.requestProcedureRepository.update(
+        id,
+        updateRequestProcedureDto
       );
-    }
-    const existingProcedure = await this.requestProcedureRepository.findOne({
-      where: { name: updateRequestProcedureDto.name },
     });
-
-    if (existingProcedure) {
-      throw ThrowMicroserviceException(
-        HttpStatus.CONFLICT,
-        'Procedure with the same name already exists',
-        IMAGING_SERVICE
-      );
-    }
-
-    return await this.requestProcedureRepository.update(
-      id,
-      updateRequestProcedureDto
-    );
   };
 
   remove = async (id: string): Promise<boolean> => {
-    const procedure = await this.requestProcedureRepository.findOne({
-      where: { id },
+    return await this.entityManager.transaction(async (em) => {
+      const procedure = await this.requestProcedureRepository.findOne({
+        where: { id },
+      });
+
+      if (!procedure) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Procedure not found',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.requestProcedureRepository.softDelete(id, 'isDeleted');
     });
-
-    if (!procedure) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Procedure not found',
-        IMAGING_SERVICE
-      );
-    }
-
-    return await this.requestProcedureRepository.softDelete(id, 'isDeleted');
   };
 
   findMany = async (
