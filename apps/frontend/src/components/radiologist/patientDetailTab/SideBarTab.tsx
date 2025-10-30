@@ -1,20 +1,34 @@
-"use client"
+"use client";
 
-import React from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Patient } from "@/interfaces/patient/patient-workflow.interface"
-import { formatDateYMD } from "@/utils/FormatDate"
+import React, { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import { formatDateYMD } from "@/utils/FormatDate";
+import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
+
+export interface ExamItem {
+  id: string;
+  label: string;
+  modality: string;
+  date: string;
+}
 
 export interface SidebarTabProps {
-  setSelectedExam: (exam: string) => void
-  examHistory: string[],
-  patient: Patient
+  setSelectedExam: (exam: string) => void;
+  examHistory: ExamItem[];
+  patient: Patient;
 }
 
 const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, patient }) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+ 
+  const { data, error, isLoading } = useGetDicomStudiesByOrderIdQuery(examHistory[0]?.id || "");
 
-  console.log("check",patient)
+  const handleToggle = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
       <div className="p-4 border-b">
@@ -40,7 +54,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
             <div className="flex justify-between">
               <span className="text-gray-600">Năm sinh:</span>
               <span>{formatDateYMD(patient.dateOfBirth)}</span>
-            </div>       
+            </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Điện thoại:</span>
               <span>{patient.phoneNumber}</span>
@@ -58,23 +72,39 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
           <h4 className="text-xs font-semibold text-gray-700 mb-2">LỊCH SỬ KHÁM</h4>
           <ScrollArea className="h-48">
             <div className="space-y-1">
-              {examHistory.map((exam, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedExam(exam)}
-                  className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 rounded"
-                >
-                  {exam}
-                </button>
+              {examHistory.map((exam) => (
+                <div key={exam.id} className="border rounded">
+                  <button
+                    onClick={() => handleToggle(exam.id)}
+                    className="w-full flex justify-between items-center px-2 py-1.5 text-sm hover:bg-gray-100 rounded"
+                  >
+                    <span>{exam.label}</span>
+                    <span className="text-xs">{expandedId === exam.id ? "▲" : "▼"}</span>
+                  </button>
+
+                  {expandedId === exam.id && (
+                    <div className="px-3 py-2 bg-gray-50 text-xs space-y-2">
+                      <div>Mã đơn: <span className="font-medium">{exam.id}</span></div>
+                      <div>Modality: {exam.modality}</div>
+                      <div>Ngày: {exam.date}</div>
+
+                      <button
+                        onClick={() => setSelectedExam(exam.id)}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        Xem chi tiết
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </ScrollArea>
         </div>
       </div>
     </aside>
-  )
-}
+  );
+};
 
-SidebarTab.displayName = "SidebarTab"
-
-export default React.memo<SidebarTabProps>(SidebarTab)
+SidebarTab.displayName = "SidebarTab";
+export default React.memo<SidebarTabProps>(SidebarTab);

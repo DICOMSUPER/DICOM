@@ -171,6 +171,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     return qb.getMany();
   }
 
+
   async getRoomStats(id: string) {
     const date = new Date();
     const startOfDay = new Date(date);
@@ -213,17 +214,17 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const maxWaiting =
       pendingOrders.length > 0
         ? {
-            orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
-            entity: pendingOrders[pendingOrders.length - 1],
-          }
+          orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
+          entity: pendingOrders[pendingOrders.length - 1],
+        }
         : null;
 
     const currentInProgress =
       inProgressOrders.length > 0
         ? {
-            orderNumber: inProgressOrders[0].orderNumber,
-            entity: inProgressOrders[0],
-          }
+          orderNumber: inProgressOrders[0].orderNumber,
+          entity: inProgressOrders[0],
+        }
         : null;
 
     return {
@@ -238,4 +239,80 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       },
     };
   }
+  async findByPatientIdWithPagination(
+    patientId: string,
+    paginationDto: RepositoryPaginationDto,
+    entityManager?: EntityManager,
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+    const repository = this.getRepository(entityManager);
+    const {
+      page = 1,
+      limit = 10,
+      sortField,
+      order,
+      relation,
+      searchField,
+      search,
+    } = paginationDto;
+
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    const skip = (safePage - 1) * safeLimit;
+
+    const query = repository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.procedure', 'procedure')
+      .leftJoinAndSelect('procedure.modality', 'modality')
+      .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
+      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
+      .where('order.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('imagingOrderForm.patientId = :patientId', { patientId });
+
+    // Search filter
+    if (search && searchField) {
+      query.andWhere(`order.${searchField} LIKE :search`, {
+        search: `%${search}%`,
+      });
+    }
+
+    // Sort
+    if (sortField && order) {
+      query.orderBy(`order.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      query.orderBy('order.createdAt', 'DESC');
+    }
+
+    // Relations (nếu có truyền thêm)
+    if (relation?.length) {
+      relation.forEach((r) => query.leftJoinAndSelect(`order.${r}`, r));
+    }
+
+    query.skip(skip).take(safeLimit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    if (!data || data.length === 0) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'No imaging orders found for this patient',
+        IMAGING_SERVICE,
+      );
+    }
+
+    const totalPages = Math.ceil(total / safeLimit);
+    const hasNextPage = safePage < totalPages;
+    const hasPreviousPage = safePage > 1;
+
+    return new PaginatedResponseDto<ImagingOrder>(
+      data,
+      total,
+      safePage,
+      safeLimit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage,
+    );
+  }
+
+
 }

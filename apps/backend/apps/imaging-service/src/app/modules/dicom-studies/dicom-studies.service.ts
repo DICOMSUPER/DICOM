@@ -33,7 +33,7 @@ export class DicomStudiesService {
     private readonly imagingModalitiesRepository: ImagingModalityRepository,
     @Inject()
     private readonly imagingOrdersRepository: ImagingOrderRepository
-  ) {}
+  ) { }
   private checkDicomStudy = async (id: string): Promise<DicomStudy> => {
     const dicomStudy = await this.dicomStudiesRepository.findOne({
       where: { id },
@@ -186,4 +186,22 @@ export class DicomStudiesService {
   filter = async (data: FilterData) => {
     return await this.dicomStudiesRepository.filter(data);
   };
+
+  findByOrderId = async (orderId: string): Promise<DicomStudy[]> => {
+    const imagingOrder = await this.checkImagingOrder(orderId);
+    if (!imagingOrder) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Imaging Order not found for given orderId',
+        IMAGING_SERVICE
+      );
+    }
+
+    return await this.dicomStudiesRepository.findAll(
+      { where: { orderId } },
+      relation
+    );
+  };
+
+
 }

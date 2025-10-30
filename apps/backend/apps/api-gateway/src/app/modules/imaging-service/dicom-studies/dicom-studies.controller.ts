@@ -26,6 +26,8 @@ import {
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { Roles } from '@backend/shared-enums';
+import { Public, Role } from '@backend/shared-decorators';
 import { userInfo } from 'os';
 @Controller('dicom-studies')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -39,6 +41,7 @@ export class DicomStudiesController {
     private readonly userService: ClientProxy
   ) {}
 
+  @Public()
   @Get()
   async getAllDicomStudies() {
     return await firstValueFrom(
@@ -240,7 +243,8 @@ export class DicomStudiesController {
       })
     );
   }
-
+  
+  @Role( Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN)
   @Patch(':id')
   async updateDicomStudy(
     @Param('id') id: string,
@@ -254,10 +258,21 @@ export class DicomStudiesController {
     );
   }
 
+  @Role( Roles.SYSTEM_ADMIN)
   @Delete(':id')
   async deleteDicomStudy(@Param('id') id: string) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.Delete', { id })
+    );
+  }
+
+  @Role( Roles.RADIOLOGIST)
+  @Get('order/:orderId')
+  async getDicomStudiesByOrderId(@Param('orderId') orderId: string) {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.DicomStudies.FindByOrderId', {
+        orderId,
+      })
     );
   }
 }

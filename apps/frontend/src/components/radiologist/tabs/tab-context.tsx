@@ -1,6 +1,7 @@
 import React, { ReactNode, createContext, useContext, useState } from "react";
 import BaseTab from "./base-tab";
 import Sidebar from "../side-bar";
+import StudyTab from "./study-tab";
 
 export interface TabData {
   id: string;
@@ -36,7 +37,14 @@ const TabContext = createContext<TabContextType>({
       hasSideBar: true,
       SidebarContent: <Sidebar />,
     },
+    {
+      id: "1",
+      name: "Study 1",
+      tabContent: <StudyTab />,
+      hasSideBar: false,
+    }
   ],
+  
 });
 
 export const useTabs = () => {
@@ -48,13 +56,19 @@ export const useTabs = () => {
 export default function TabProvider({ children }: { children: ReactNode }) {
   const [activeTabId, setActiveTabId] = useState("0");
   const [availableTabs, setAvailableTab] = useState<TabData[]>([
+    // {
+    //   id: "0",
+    //   name: "Working tree",
+    //   tabContent: <BaseTab />,
+    //   hasSideBar: true,
+    //   SidebarContent: <Sidebar />,
+    // },
     {
-      id: "0",
-      name: "Working tree",
-      tabContent: <BaseTab />,
-      hasSideBar: true,
-      SidebarContent: <Sidebar />,
-    },
+      id: "1",
+      name: "Study 1",
+      tabContent: <StudyTab />,
+      hasSideBar: false,
+    }
   ]);
 
   const openTab = (

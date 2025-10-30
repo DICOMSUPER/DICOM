@@ -18,7 +18,6 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Role } from '@backend/shared-decorators';
 import {
-  CreateImagingOrderFormDto,
   FilterImagingOrderFormDto,
 } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
@@ -31,7 +30,7 @@ export class ImagingOrderFormController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
-  ) {}
+  ) { }
 
   @Post()
   @Role(Roles.PHYSICIAN)
@@ -113,6 +112,35 @@ export class ImagingOrderFormController {
   async deleteImagingOrderForm(@Param('id') id: string) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.Delete', { id })
+    );
+  }
+
+  @Get('patient/:patientId')
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST)
+  async findByPatientId(
+    @Param('patientId') patientId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
+  ) {
+    const paginationDto = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+      sortField,
+      order,
+    };
+
+    return await firstValueFrom(
+      this.imagingService.send(
+        'ImagingService.ImagingOrderForm.FindByPatientId',
+        {
+          patientId,
+          paginationDto,
+        }
+      )
     );
   }
 }

@@ -21,7 +21,7 @@ const moduleName = 'ImagingOrders';
 @Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
+  constructor(private readonly imagingOrdersService: ImagingOrdersService) { }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
@@ -207,4 +207,31 @@ export class ImagingOrdersController {
       );
     }
   }
+ @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
+async findByPatientId(
+  @Payload()
+  data: {
+    patientId: string;
+    pagination?: RepositoryPaginationDto;
+  },
+): Promise<PaginatedResponseDto<ImagingOrder>> {
+  this.logger.log(
+    `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
+  );
+
+  try {
+    const { patientId, pagination } = data;
+
+    return await this.imagingOrdersService.findByPatientId(
+      patientId,
+      pagination ?? { page: 1, limit: 10 },
+    );
+  } catch (error) {
+    throw handleErrorFromMicroservices(
+      error,
+      `Failed to find imaging orders for patientId: ${data.patientId}`,
+      IMAGING_SERVICE,
+    );
+  }
+}
 }

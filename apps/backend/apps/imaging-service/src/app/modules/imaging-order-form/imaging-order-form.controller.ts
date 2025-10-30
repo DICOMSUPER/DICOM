@@ -257,4 +257,39 @@ export class ImagingOrderFormController {
       );
     }
   }
+  
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
+  async findByPatientId(
+    @Payload()
+    data: {
+      patientId: string;
+      paginationDto?: RepositoryPaginationDto;
+    }
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
+    );
+    try {
+      const { patientId, paginationDto } = data;
+      return await this.imagingOrderFormService.findByPatientId(
+        patientId,
+        paginationDto
+          ? {
+              page: paginationDto.page || 1,
+              limit: paginationDto.limit || 10,
+              search: paginationDto.search || '',
+              sortField: paginationDto.sortField || 'createdAt',
+              order: paginationDto.order || 'DESC',
+            }
+          : undefined
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find imaging order forms for patient with id: ${data.patientId}`,
+        IMAGING_SERVICE
+      );
+    }
+  }
+  
 }

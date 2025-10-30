@@ -22,7 +22,7 @@ const moduleName = 'DicomStudies';
 @Controller('dicom-studies')
 export class DicomStudiesController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly dicomStudiesService: DicomStudiesService) {}
+  constructor(private readonly dicomStudiesService: DicomStudiesService) { }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -180,6 +180,25 @@ export class DicomStudiesController {
     }
   }
 
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByOrderId`)
+  async findByOrderId(
+    @Payload() data: { orderId: string }
+  ): Promise<DicomStudy[]> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByOrderId`
+    );
+    try {
+      const { orderId } = data;
+      return await this.dicomStudiesService.findByOrderId(orderId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find dicom studies by orderId: ${data.orderId}`,
+        IMAGING_SERVICE
+      );
+    }
+  }
+
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.Filter`)
   async filterStudy(
     @Payload()
@@ -196,6 +215,8 @@ export class DicomStudiesController {
     }
   }
 }
+
+
 export interface FilterData {
   role?: Roles;
   studyUID?: string;

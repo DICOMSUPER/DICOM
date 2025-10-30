@@ -5,6 +5,7 @@ import {
 } from '@backend/database';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -22,6 +23,7 @@ import { OrderFormStatus, OrderStatus } from '@backend/shared-enums';
 import { createCacheKey } from '@backend/shared-utils';
 import { RedisService } from '@backend/redis';
 import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class ImagingOrderFormService {
@@ -30,7 +32,8 @@ export class ImagingOrderFormService {
     private readonly orderFormRepository: Repository<ImagingOrderForm>,
     @InjectRepository(ImagingOrder)
     private readonly orderRepository: Repository<ImagingOrder>,
-
+     @Inject(process.env.PATIENT_SERVICE || 'PATIENT_SERVICE')
+    private readonly patientService: ClientProxy,
     private readonly redisService: RedisService,
     private readonly imagingOrdersService: ImagingOrdersService
   ) {}
@@ -394,4 +397,75 @@ export class ImagingOrderFormService {
 
     return stats;
   }
+
+
+
+  async findByPatientId(
+    patientId: string,
+    paginationDto?: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      sortField = 'createdAt',
+      order = 'DESC',
+    } = paginationDto || {};
+
+    const keyName = createCacheKey.system(
+      'imaging_order_forms',
+      undefined,
+      'by_patient',
+      { patientId, ...paginationDto }
+    );
+
+    const cachedData = await this.redisService.get<
+      PaginatedResponseDto<ImagingOrderForm>
+    >(keyName);
+    if (cachedData) {
+      console.log('📦 ImagingOrderForms by patient retrieved from cache');
+      return cachedData;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.orderFormRepository
+      .createQueryBuilder('orderForm')
+      .leftJoinAndSelect('orderForm.imagingOrders', 'imagingOrders')
+      .where('orderForm.patientId = :patientId', { patientId })
+      .andWhere('orderForm.isDeleted = :isDeleted', { isDeleted: false });
+
+    // Search in clinical indication, special instructions, or notes
+    if (search) {
+      queryBuilder.andWhere(
+        '(orderForm.clinicalIndication ILIKE :search OR orderForm.specialInstructions ILIKE :search OR orderForm.notes ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+
+    // Sorting
+    queryBuilder.orderBy(`orderForm.${sortField}`, order as 'ASC' | 'DESC');
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+    const result = new PaginatedResponseDto(
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      page < totalPages,
+      page > 1
+    );
+
+    // Cache for 30 minutes
+    await this.redisService.set(keyName, result, 1800);
+
+    return result;
+  }
+
 }
