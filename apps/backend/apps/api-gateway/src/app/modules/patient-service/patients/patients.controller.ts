@@ -21,6 +21,7 @@ import { Public, Role } from '@backend/shared-decorators';
 import { Roles as RoleEnum } from '@backend/shared-enums';
 import { RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { TransformInterceptor } from '@backend/shared-interceptor';
+import { CreatePatientDto, UpdatePatientDto } from '@backend/shared-domain';
 
 @Controller('patients')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -35,7 +36,7 @@ export class PatientServiceController {
   @Post()
   @Role(RoleEnum.RECEPTION_STAFF, RoleEnum.PHYSICIAN)
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createPatientDto: any) {
+  async create(@Body() createPatientDto: CreatePatientDto) {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.Create', {
@@ -182,7 +183,7 @@ export class PatientServiceController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePatientDto: any) {
+  async update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
     try {
       // Validate UUID format
       if (!ValidationUtils.isValidUUID(id)) {

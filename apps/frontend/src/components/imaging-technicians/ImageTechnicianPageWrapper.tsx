@@ -110,7 +110,12 @@ export default function ImageTechnicianPageWrapper() {
 
   return (
     <div className="flex-1 flex flex-col h-full">
-      <CurrentStatus></CurrentStatus>
+      <div>
+        {" "}
+        {currentRoomId && (
+          <CurrentStatus roomId={currentRoomId}></CurrentStatus>
+        )}
+      </div>
       <FilterBar
         onRefetch={refetchStudy}
         caseNumber={(orderData?.data || []).length}

@@ -5,7 +5,10 @@ import {
   DicomStudy,
 } from '@backend/shared-domain';
 import { UpdateDicomSeriesDto } from '@backend/shared-domain';
-import { DicomSeriesRepository } from './dicom-series.repository';
+import {
+  DicomSeriesRepository,
+  SeriesReferenceType,
+} from './dicom-series.repository';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 import { EntityManager } from 'typeorm';
@@ -35,12 +38,19 @@ export class DicomSeriesService {
     @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
-  private getLastestDicomSeriesNumber = async (id: string): Promise<number> => {
+  private getLatestDicomSeriesNumber = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<number> => {
     let seriesNumber = 1;
-    const latestDicomSeries = await this.dicomSeriesRepository.findOne({
-      where: { studyId: id },
-      order: { seriesNumber: -1 },
-    });
+    const latestDicomSeries = await this.dicomSeriesRepository.findOne(
+      {
+        where: { studyId: id },
+        order: { seriesNumber: -1 },
+      },
+      [],
+      em
+    );
 
     if (latestDicomSeries) {
       seriesNumber = latestDicomSeries.seriesNumber + 1;
@@ -124,21 +134,28 @@ export class DicomSeriesService {
   create = async (
     createDicomSeriesDto: CreateDicomSeriesDto
   ): Promise<DicomSeries> => {
-    await this.checkDicomStudy(createDicomSeriesDto.studyId);
-    await this.updateDicomStudyNumberOfSeries(
-      createDicomSeriesDto.studyId,
-      1,
-      'add'
-    );
+    return this.entityManager.transaction(async (em) => {
+      await this.checkDicomStudy(createDicomSeriesDto.studyId, em);
+      await this.updateDicomStudyNumberOfSeries(
+        createDicomSeriesDto.studyId,
+        1,
+        'add',
+        em
+      );
 
-    const seriesNumber = await this.getLastestDicomSeriesNumber(
-      createDicomSeriesDto.studyId
-    );
+      const seriesNumber = await this.getLatestDicomSeriesNumber(
+        createDicomSeriesDto.studyId,
+        em
+      );
 
-    return await this.dicomSeriesRepository.create({
-      ...createDicomSeriesDto,
-      seriesNumber: seriesNumber,
-      numberOfInstances: 0,
+      return await this.dicomSeriesRepository.create(
+        {
+          ...createDicomSeriesDto,
+          seriesNumber: seriesNumber,
+          numberOfInstances: 0,
+        },
+        em
+      );
     });
   };
 
@@ -192,7 +209,7 @@ export class DicomSeriesService {
 
           updateData = {
             ...updateDicomSeriesDto,
-            seriesNumber: await this.getLastestDicomSeriesNumber(newStudy.id),
+            seriesNumber: await this.getLatestDicomSeriesNumber(newStudy.id),
           };
         }
 
@@ -206,9 +223,16 @@ export class DicomSeriesService {
   };
 
   remove = async (id: string): Promise<boolean> => {
-    const series = await this.checkDicomSeries(id);
-    await this.updateDicomStudyNumberOfSeries(series.studyId, 1, 'subtract');
-    return await this.dicomSeriesRepository.softDelete(id, 'isDeleted');
+    return this.entityManager.transaction(async (em) => {
+      const series = await this.checkDicomSeries(id);
+      await this.updateDicomStudyNumberOfSeries(
+        series.studyId,
+        1,
+        'subtract',
+        em
+      );
+      return await this.dicomSeriesRepository.softDelete(id, 'isDeleted', em);
+    });
   };
 
   findMany = async (
@@ -219,7 +243,7 @@ export class DicomSeriesService {
 
   findByReferenceId = async (
     id: string,
-    type: 'study' | 'seriesInstanceUid' | 'order' | 'modality',
+    type: SeriesReferenceType,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<DicomSeries>> => {
     return await this.dicomSeriesRepository.findSeriesByReferenceId(id, type, {

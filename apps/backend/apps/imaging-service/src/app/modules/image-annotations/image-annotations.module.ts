@@ -4,7 +4,7 @@ import { ImageAnnotationsController } from './image-annotations.controller';
 import { ImageAnnotation } from '@backend/shared-domain';
 import { DicomInstance } from '@backend/shared-domain';
 import { BackendEntitiesModule } from '@backend/entities';
-import { ImageAnotationsRepository } from './image-anotations.repository';
+import { ImageAnnotationsRepository } from './image-annotations.repository';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 
 @Module({
@@ -12,7 +12,7 @@ import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.rep
   controllers: [ImageAnnotationsController],
   providers: [
     ImageAnnotationsService,
-    ImageAnotationsRepository,
+    ImageAnnotationsRepository,
     DicomInstancesRepository,
   ],
   exports: [BackendEntitiesModule],

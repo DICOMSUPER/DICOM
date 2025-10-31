@@ -1,13 +1,16 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PaginationModule } from './pagination/pagination.module';
 
 interface DatabaseModuleOptions {
   prefix: string;
   defaultDbName?: string;
 }
 
-@Module({})
+@Module({
+  imports: [PaginationModule]
+})
 export class DatabaseModule {
   static forService(options: DatabaseModuleOptions): DynamicModule {
     const { prefix, defaultDbName } = options;
