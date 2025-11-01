@@ -115,12 +115,12 @@ export const roleNavigation: RoleNavigation = {
       icon: BarChart3,
       description: "Daily overview",
     },
-    {
-      href: "/reception/patients",
-      label: "Patients",
-      icon: Users,
-      description: "Patient registration and search",
-    },
+    // {
+    //   href: "/reception/patients",
+    //   label: "Patients",
+    //   icon: Users,
+    //   description: "Patient registration and search",
+    // },
     {
       href: "/reception/registration",
       label: "Register Patient",

@@ -4,7 +4,6 @@ import { CreateImagingOrderDto, ImagingOrder } from "./imaging-order.interface";
 
 export interface ICreateImagingOrderForm {
   patientId: string;
-
   encounterId: string;
   roomId: string;
   diagnosis?: string;
@@ -37,6 +36,7 @@ export interface IImagingOrderForm extends BaseEntity {
   orderingPhysicianId?: string;
   imagingOrders?: ImagingOrder[];
   orderFormStatus: OrderFormStatus;
+  diagnosis?: string | null;
   notes?: string | null;
   roomId?: string | null;
   room: Room | null;

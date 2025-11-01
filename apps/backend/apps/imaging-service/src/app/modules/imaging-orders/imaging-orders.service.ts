@@ -32,14 +32,9 @@ export class ImagingOrdersService {
     @Inject()
     private readonly imagingModalityRepository: ImagingModalityRepository,
     @Inject()
-<<<<<<< HEAD
     private readonly imagingOrderFormRepository: ImagingOrderFormRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
-=======
-    private readonly imagingOrderFormRepository: ImagingOrderFormRepository
-  ) { }
->>>>>>> 6231d17a76951d1fa0863616384814bef566d6cd
 
   private checkImagingOrder = async (
     id: string,

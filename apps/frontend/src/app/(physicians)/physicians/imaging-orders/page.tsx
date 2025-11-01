@@ -80,7 +80,7 @@ export default function ImagingOrderFormPage() {
   const router = useRouter();
 
   const handleViewDetails = (id: string) => {
-    router.push(`/physicians/clinic-visit/${id}`);
+    router.push(`/physicians/imaging-orders/${id}`);
   };
 
   const handleFiltersChange = (newFilters: ImagingOrderFormFilters) => {

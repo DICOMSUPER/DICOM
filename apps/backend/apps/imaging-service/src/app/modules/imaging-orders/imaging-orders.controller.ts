@@ -218,7 +218,6 @@ export class ImagingOrdersController {
     }
   }
 
-<<<<<<< HEAD
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
   async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
     this.logger.log(
@@ -235,7 +234,3 @@ export class ImagingOrdersController {
     }
   }
 }
-=======
-
-  }
->>>>>>> 6231d17a76951d1fa0863616384814bef566d6cd

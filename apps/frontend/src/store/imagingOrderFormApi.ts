@@ -29,8 +29,8 @@ export const imagingOrderFormApi = createApi({
 
 
 
-    getImagingOrderFormById: builder.query<IImagingOrderForm, string>({
-      query: (id) => ({ url: `${id}`, method: "GET" }),
+    getImagingOrderFormById: builder.query<ApiResponse<IImagingOrderForm>, string>({
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "ImagingOrderForm", id }],
     }),
 

@@ -204,7 +204,7 @@ export function ImagingOrderFormTable({
         </div>
       ),
       cell: ({ row }) => {
-        const queueItem = row.original;
+        const orderFormItem = row.original;
         return (
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -218,7 +218,7 @@ export function ImagingOrderFormTable({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() => onViewDetails(queueItem.encounterId)}
+                  onClick={() => onViewDetails(orderFormItem.id)}
                   className="cursor-pointer"
                 >
                   <Eye className="mr-2 h-4 w-4" />
@@ -253,7 +253,7 @@ export function ImagingOrderFormTable({
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No queue items found
+            No order items found
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters
