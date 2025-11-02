@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDateYMD } from "@/utils/FormatDate";
-import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
+import { ExamItemDetail } from "./ExamDetail";
 
 export interface ExamItem {
   id: string;
@@ -15,22 +15,26 @@ export interface ExamItem {
 }
 
 export interface SidebarTabProps {
-  setSelectedExam: (exam: string) => void;
+  setSelectedExam: (examId: string) => void;
   examHistory: ExamItem[];
   patient: Patient;
 }
 
-const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, patient }) => {
+const SidebarTab: React.FC<SidebarTabProps> = ({
+  setSelectedExam,
+  examHistory,
+  patient,
+}) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
- 
-  const { data, error, isLoading } = useGetDicomStudiesByOrderIdQuery(examHistory[0]?.id || "");
 
   const handleToggle = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
+  console.log("check 1 --> examstory", examHistory);
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
+      {/* --- Header --- */}
       <div className="p-4 border-b">
         <h3 className="font-medium text-sm mb-2">Thông tin ca</h3>
         <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
@@ -41,7 +45,9 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
       <div className="p-4 space-y-4">
         {/* --- Thông tin bệnh nhân --- */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-700 mb-2">THÔNG TIN BỆNH NHÂN</h4>
+          <h4 className="text-xs font-semibold text-gray-700 mb-2">
+            THÔNG TIN BỆNH NHÂN
+          </h4>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">PID:</span>
@@ -49,7 +55,9 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Họ và tên:</span>
-              <span className="font-medium">{patient.firstName + " " + patient.lastName}</span>
+              <span className="font-medium">
+                {patient.firstName + " " + patient.lastName}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Năm sinh:</span>
@@ -69,34 +77,19 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
 
         {/* --- Lịch sử khám --- */}
         <div>
-          <h4 className="text-xs font-semibold text-gray-700 mb-2">LỊCH SỬ KHÁM</h4>
+          <h4 className="text-xs font-semibold text-gray-700 mb-2">
+            LỊCH SỬ KHÁM
+          </h4>
           <ScrollArea className="h-48">
             <div className="space-y-1">
               {examHistory.map((exam) => (
-                <div key={exam.id} className="border rounded">
-                  <button
-                    onClick={() => handleToggle(exam.id)}
-                    className="w-full flex justify-between items-center px-2 py-1.5 text-sm hover:bg-gray-100 rounded"
-                  >
-                    <span>{exam.label}</span>
-                    <span className="text-xs">{expandedId === exam.id ? "▲" : "▼"}</span>
-                  </button>
-
-                  {expandedId === exam.id && (
-                    <div className="px-3 py-2 bg-gray-50 text-xs space-y-2">
-                      <div>Mã đơn: <span className="font-medium">{exam.id}</span></div>
-                      <div>Modality: {exam.modality}</div>
-                      <div>Ngày: {exam.date}</div>
-
-                      <button
-                        onClick={() => setSelectedExam(exam.id)}
-                        className="text-blue-600 hover:underline text-xs"
-                      >
-                        Xem chi tiết
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <ExamItemDetail
+                  key={exam.id}
+                  exam={exam}
+                  expandedId={expandedId}
+                  handleToggle={handleToggle}
+                  setSelectedExam={setSelectedExam}
+                />
               ))}
             </div>
           </ScrollArea>
@@ -107,4 +100,4 @@ const SidebarTab: React.FC<SidebarTabProps> = ({ setSelectedExam, examHistory, p
 };
 
 SidebarTab.displayName = "SidebarTab";
-export default React.memo<SidebarTabProps>(SidebarTab);
+export default React.memo(SidebarTab);

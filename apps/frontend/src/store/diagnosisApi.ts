@@ -9,7 +9,7 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 
 export const diagnosisApi = createApi({
   reducerPath: "diagnosisApi",
-  baseQuery: axiosBaseQuery("/diagnoses"),
+  baseQuery: axiosBaseQuery("/diagnosis-reports"),
   tagTypes: ["Diagnosis"],
   endpoints: (builder) => ({
     // Get all diagnoses with filters
@@ -54,6 +54,16 @@ export const diagnosisApi = createApi({
       ],
     }),
 
+    getDiagnoseByStudyId: builder.query<DiagnosisReport[], string>({
+      query: (studyId) => ({
+        url: `/studyId/${studyId}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, studyId) => [
+        { type: "Diagnosis", id: `study-${studyId}` },
+      ],
+    }),
+
     // Get diagnoses by physician
     getDiagnosesByPhysician: builder.query<DiagnosisReport[], string>({
       query: (physicianId) => ({
@@ -93,6 +103,16 @@ export const diagnosisApi = createApi({
       providesTags: ["Diagnosis"],
     }),
 
+    getDiagnoseByPatientId: builder.query<DiagnosisReport[], string>({
+      query: (patientId) => ({
+        url: `/patient/${patientId}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, patientId) => [
+        { type: "Diagnosis", id: `patient-${patientId}` },
+      ],
+    }),
+
     // Create diagnosis
     createDiagnosis: builder.mutation<
       DiagnosisReport,
@@ -108,6 +128,7 @@ export const diagnosisApi = createApi({
         "Diagnosis",
       ],
     }),
+
 
     // Update diagnosis
     updateDiagnosis: builder.mutation<
@@ -141,10 +162,12 @@ export const {
   useGetDiagnosisByIdQuery,
   useGetDiagnosesByEncounterQuery,
   useGetDiagnosesByPatientQuery,
+  useGetDiagnoseByPatientIdQuery,
   useGetDiagnosesByPhysicianQuery,
   useGetDiagnosisStatsQuery,
   useGetDiagnosesByTypeQuery,
   useCreateDiagnosisMutation,
   useUpdateDiagnosisMutation,
   useDeleteDiagnosisMutation,
+  useGetDiagnoseByStudyIdQuery,
 } = diagnosisApi;
