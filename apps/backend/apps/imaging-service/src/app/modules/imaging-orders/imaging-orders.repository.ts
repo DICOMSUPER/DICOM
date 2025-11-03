@@ -28,6 +28,12 @@ export interface FilterByRoomIdType {
   procedureId?: string;
   bodyPart?: string;
 }
+
+export type ReferenceFieldOrderType =
+  | 'physician'
+  | 'room'
+  | 'patient'
+  | 'encounter';
 @Injectable()
 export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   constructor(
@@ -39,7 +45,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
   async findImagingOrderByReferenceId(
     id: string,
-    type: 'physician' | 'room' | 'patient' | 'visit',
+    type: ReferenceFieldOrderType,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ) {
@@ -58,20 +64,24 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const safeLimit = Math.max(1, Math.min(limit, 100));
     const skip = (safePage - 1) * safeLimit;
 
+    const query = repository
+      .createQueryBuilder('entity')
+      .leftJoinAndSelect('entity.imagingOrderForm', 'imagingOrderForm');
+
     let referenceField;
     switch (type) {
       case 'physician':
-        referenceField = 'orderingPhysicianId';
+        referenceField = 'imagingOrderForm.orderingPhysicianId';
         break;
       case 'room':
-        referenceField = 'roomId';
+        referenceField = 'imagingOrderForm.roomId';
         break;
 
       case 'patient':
-        referenceField = 'patientId';
+        referenceField = 'imagingOrderForm.patientId';
         break;
-      case 'visit':
-        referenceField = 'visitId';
+      case 'encounter':
+        referenceField = 'imagingOrderForm.encounterId';
         break;
 
       default:
@@ -82,9 +92,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
         );
     }
 
-    const query = repository.createQueryBuilder('entity');
-
-    query.andWhere(`entity.${referenceField} = :referenceId`, {
+    query.andWhere(`${referenceField} = :referenceId`, {
       referenceId: id,
     });
 
@@ -97,7 +105,27 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
+        }
+      });
     }
 
     // Sorting
@@ -135,16 +163,17 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   async filterImagingOrderByRoomId(
     data: FilterByRoomIdType
   ): Promise<ImagingOrder[]> {
-    const repository = await this.getRepository();
-    const qb = await repository
+    const repository = this.getRepository();
+    const qb = repository
       .createQueryBuilder('order')
-      .andWhere('order.roomId = :roomId', { roomId: data.roomId })
+      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
+      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: data.roomId })
       .leftJoinAndSelect('order.procedure', 'procedure')
       .innerJoinAndSelect('procedure.modality', 'modality')
       .innerJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .leftJoinAndSelect('order.studies', 'studies')
-      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false });
-
+      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
+      .addOrderBy('order.createdAt', 'ASC');
     if (data.modalityId) {
       qb.andWhere('procedure.modalityId = :modalityId', {
         modalityId: data.modalityId,
@@ -180,12 +209,13 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const repository = await this.getRepository();
+    const repository = this.getRepository();
 
     // Get all orders for this room today
     const allOrders = await repository
       .createQueryBuilder('order')
-      .andWhere('order.roomId = :roomId', { roomId: id })
+      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
+      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: id })
       .andWhere('order.createdAt BETWEEN :start AND :end', {
         start: startOfDay,
         end: endOfDay,

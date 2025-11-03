@@ -17,10 +17,11 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
-import { Role } from '@backend/shared-decorators';
+import { Public, Role } from '@backend/shared-decorators';
 import { Roles as RoleEnum } from '@backend/shared-enums';
 import { RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { TransformInterceptor } from '@backend/shared-interceptor';
+import { CreatePatientDto, UpdatePatientDto } from '@backend/shared-domain';
 
 @Controller('patients')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -35,7 +36,7 @@ export class PatientServiceController {
   @Post()
   @Role(RoleEnum.RECEPTION_STAFF, RoleEnum.PHYSICIAN)
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createPatientDto: any) {
+  async create(@Body() createPatientDto: CreatePatientDto) {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.Patient.Create', {
@@ -44,6 +45,30 @@ export class PatientServiceController {
       );
     } catch (error) {
       this.logger.error('Error creating patient:', error);
+      throw error;
+    }
+  }
+
+  // @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
+  @Public()
+  @Get('filter')
+  async filter(
+    @Query()
+    filterDto: {
+      patientIds: string[] | [];
+      patientFirstName?: string;
+      patientLastName?: string;
+      patientCode?: string;
+    }
+  ) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.Filter', {
+          filterDto,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error filtering patients:', error);
       throw error;
     }
   }
@@ -111,6 +136,20 @@ export class PatientServiceController {
       throw error;
     }
   }
+  @Get('name')
+  @Public()
+  async findPatientByName(@Query('patientName') patientName: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.FindByName', {
+          patientName,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error finding patient by name:', error);
+      throw error;
+    }
+  }
 
   @Get('overview/:patientCode')
   async getPatientOverview(@Param('patientCode') patientCode: string) {
@@ -144,7 +183,7 @@ export class PatientServiceController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePatientDto: any) {
+  async update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
     try {
       // Validate UUID format
       if (!ValidationUtils.isValidUUID(id)) {

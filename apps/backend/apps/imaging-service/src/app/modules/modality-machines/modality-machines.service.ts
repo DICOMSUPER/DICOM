@@ -13,6 +13,8 @@ import {
 } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 const relations = ['modality'];
 
@@ -22,11 +24,13 @@ export class ModalityMachinesService {
     @Inject()
     private readonly modalityMachinesRepository: ModalityMachinesRepository,
     @Inject()
-    private readonly imagingModalityRepository: ImagingModalityRepository
+    private readonly imagingModalityRepository: ImagingModalityRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
   private checkModalityMachine = async (
-    id: string
+    id: string,
+    em?: EntityManager
   ): Promise<ModalityMachine> => {
     const modalityMachine = await this.modalityMachinesRepository.findOne(
       {
@@ -47,7 +51,8 @@ export class ModalityMachinesService {
   };
 
   private checkImagingModality = async (
-    id: string
+    id: string,
+    em?: EntityManager
   ): Promise<ImagingModality> => {
     const imagingModality = await this.imagingModalityRepository.findOne({
       where: { id, isDeleted: false },
@@ -75,12 +80,20 @@ export class ModalityMachinesService {
   create = async (
     createModalityMachineDto: CreateModalityMachineDto
   ): Promise<ModalityMachine> => {
-    // Check imaging modality
-    await this.checkImagingModality(createModalityMachineDto.modalityId);
+    return await this.entityManager.transaction(async (em) => {
+      // Check imaging modality
+      return await this.entityManager.transaction(async (em) => {
+        await this.checkImagingModality(
+          createModalityMachineDto.modalityId,
+          em
+        );
 
-    return await this.modalityMachinesRepository.create(
-      createModalityMachineDto
-    );
+        return await this.modalityMachinesRepository.create(
+          createModalityMachineDto,
+          em
+        );
+      });
+    });
   };
 
   findAll = async (modalityId?: string): Promise<ModalityMachine[]> => {
@@ -119,25 +132,29 @@ export class ModalityMachinesService {
     id: string,
     updateModalityMachineDto: UpdateModalityMachineDto
   ): Promise<ModalityMachine | null> => {
-    await this.checkModalityMachine(id);
+    return await this.entityManager.transaction(async (em) => {
+      await this.checkModalityMachine(id);
 
-    // Check imaging modality if provided
-    if (updateModalityMachineDto?.modalityId) {
-      await this.checkImagingModality(
-        updateModalityMachineDto.modalityId as string
+      // Check imaging modality if provided
+      if (updateModalityMachineDto?.modalityId) {
+        await this.checkImagingModality(
+          updateModalityMachineDto.modalityId as string
+        );
+      }
+
+      return await this.modalityMachinesRepository.update(
+        id,
+        updateModalityMachineDto
       );
-    }
-
-    return await this.modalityMachinesRepository.update(
-      id,
-      updateModalityMachineDto
-    );
+    });
   };
 
   remove = async (id: string): Promise<boolean> => {
-    await this.checkModalityMachine(id);
+    return await this.entityManager.transaction(async (em) => {
+      await this.checkModalityMachine(id);
 
-    return await this.modalityMachinesRepository.softDelete(id, 'isDeleted');
+      return await this.modalityMachinesRepository.softDelete(id, 'isDeleted');
+    });
   };
 
   findMany = async (

@@ -1,5 +1,10 @@
+import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
 import { useRouter } from "next/navigation";
+import StatusButton from "./status-button";
+import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
+import { toast } from "sonner";
+
 // Helper function to format date (e.g., "2025-09-19T07:38:34.275Z" to "9/19/25")
 const formatDate = (date: string | Date): string => {
   const d = date instanceof Date ? date : new Date(date);
@@ -18,6 +23,28 @@ const formatTime = (date: string): string => {
     .padStart(2, "0")}`;
 };
 
+export const formatOrderNumber = (
+  n: string | number | null | undefined,
+  pad = 0
+) => {
+  const s = String(n ?? "");
+  return `ORD${pad ? s.padStart(pad, "0") : s}`;
+};
+
+export const formatDateShort = (iso: string | Date | null | undefined) => {
+  if (!iso) return "-";
+  try {
+    return new Date(iso).toLocaleDateString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+};
+
 export default function DataTable({
   orders,
   isLoading,
@@ -31,6 +58,7 @@ export default function DataTable({
 }) {
   const tableData = orders || [];
   const router = useRouter();
+  const [updateImagingOrder] = useUpdateImagingOrderMutation();
   if (isLoading) {
     return <div className="flex-1 bg-white p-4">Loading...</div>;
   }
@@ -38,6 +66,39 @@ export default function DataTable({
   if (error) {
     return <div className="flex-1 bg-white p-4">Error loading orders</div>;
   }
+
+  const changImagingOrderStatus = async (
+    id: string,
+    status: ImagingOrderStatus
+  ) => {
+    try {
+      await updateImagingOrder({ id, body: { orderStatus: status } }).unwrap();
+      toast.success("Order status updated successfully");
+      // Force refetch after successful update
+      if (typeof refetch === "function") {
+        await refetch();
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      toast.error("Failed to process order");
+    }
+  };
+
+  const OnCallIn = async (id: string) => {
+    changImagingOrderStatus(id, ImagingOrderStatus.IN_PROGRESS);
+  };
+
+  const OnViewDetail = async (id: string) => {
+    router.push(`/imaging-technicians/order/${id}`);
+  };
+
+  const onMarkCompleted = async (id: string) => {
+    changImagingOrderStatus(id, ImagingOrderStatus.COMPLETED);
+  };
+
+  const onMarkCancelled = async (id: string) => {
+    changImagingOrderStatus(id, ImagingOrderStatus.CANCELLED);
+  };
 
   return (
     <div className="flex-1 bg-white">
@@ -105,9 +166,17 @@ export default function DataTable({
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {idx + 1}
                   </td>
-                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                    {row.orderNumber}
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700 align-top">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">
+                        {formatOrderNumber(row.orderNumber, 4)}
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        ({String(formatDateShort(row.createdAt))})
+                      </span>
+                    </div>
                   </td>
+
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.patient?.patientCode}
                   </td>
@@ -151,12 +220,16 @@ export default function DataTable({
                     {row.notes || "N/A"}
                   </td>
                   <td className="px-4 py-2 text-gray-600 text-xs">
-                    <button
-                      className="text-blue-500 cursor-pointer"
-                      onClick={() => {}}
-                    >
-                      View
-                    </button>
+                    {row.orderStatus && (
+                      <StatusButton
+                        status={row?.orderStatus}
+                        orderId={row.id}
+                        onCallIn={OnCallIn}
+                        onMarkCancelled={onMarkCancelled}
+                        onMarkCompleted={onMarkCompleted}
+                        onViewDetail={OnViewDetail}
+                      />
+                    )}
                   </td>
                 </tr>
               ))}

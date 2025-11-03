@@ -1,18 +1,26 @@
 import { PaginationDto } from '@backend/database';
 import { OrderFormStatus } from '@backend/shared-enums';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterImagingOrderFormDto extends PaginationDto {
     @IsOptional()
     @IsString()
-    name?: string;
+    patientName?: string;
     
-    @IsOptional()
-    @IsUUID()
-    patientId?: string;
-
     @IsEnum(OrderFormStatus)
     @IsOptional()
     status?: OrderFormStatus;
+
+}
+
+export class FilterImagingOrderFormServiceDto extends PaginationDto {
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  patientIds?: string[];
+
+  @IsOptional()
+  @IsEnum(OrderFormStatus)
+  status?: OrderFormStatus;
 
 }

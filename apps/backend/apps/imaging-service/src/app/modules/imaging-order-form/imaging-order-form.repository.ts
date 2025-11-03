@@ -1,15 +1,20 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   BaseRepository,
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImagingOrder, ImagingOrderForm } from '@backend/shared-domain';
+import { ImagingOrderForm } from '@backend/shared-domain';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
+export type FilterFieldOrderForm =
+  | 'physician'
+  | 'room'
+  | 'patient'
+  | 'encounter';
 @Injectable()
 export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm> {
   constructor(
@@ -19,12 +24,12 @@ export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm>
     super(ImagingOrderForm, entityManager);
   }
 
-  async findImagingOrderByReferenceId(
+  async findImagingOrderFormByReferenceId(
     id: string,
-    type: 'physician' | 'room' | 'patient' | 'visit',
+    type: FilterFieldOrderForm,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
-  ) {
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
     const repository = this.getRepository(entityManager);
     const {
       page = 1,
@@ -52,14 +57,14 @@ export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm>
       case 'patient':
         referenceField = 'patientId';
         break;
-      case 'visit':
-        referenceField = 'visitId';
+      case 'encounter':
+        referenceField = 'encounterId';
         break;
 
       default:
         throw ThrowMicroserviceException(
           HttpStatus.BAD_REQUEST,
-          'Invalid type find by referenceId for ImagingOrder',
+          'Invalid type find by referenceId for ImagingOrderForm',
           IMAGING_SERVICE
         );
     }
@@ -79,7 +84,27 @@ export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm>
 
     //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
+        }
+      });
     }
 
     // Sorting

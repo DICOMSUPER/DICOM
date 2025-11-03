@@ -44,6 +44,7 @@ import { ImagingOrderFormModule } from './modules/imaging-order-form/imaging-ord
 import { ImagingOrderFormService } from './modules/imaging-order-form/imaging-order-form.service';
 import { ImagingOrderFormRepository } from './modules/imaging-order-form/imaging-order-form.repository';
 import { BackendRedisModule } from '@backend/redis';
+import { PatientServiceClientModule } from '@backend/shared-client';
 
 @Module({
   imports: [
@@ -78,7 +79,8 @@ import { BackendRedisModule } from '@backend/redis';
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,
-    BackendRedisModule,
+    // BackendRedisModule,
+    PatientServiceClientModule
   ],
   controllers: [AppController],
   providers: [

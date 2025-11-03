@@ -9,29 +9,37 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ImageAnotationsRepository } from './image-anotations.repository';
+import {
+  FindFilterAnnotation,
+  ImageAnnotationsRepository,
+} from './image-annotations.repository';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
+import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
 
 const relation = ['instance'];
 @Injectable()
 export class ImageAnnotationsService {
   constructor(
     @Inject()
-    private readonly imageAnnotationRepository: ImageAnotationsRepository,
+    private readonly imageAnnotationRepository: ImageAnnotationsRepository,
     @Inject()
-    private readonly dicomInstanceRepository: DicomInstancesRepository
+    private readonly dicomInstanceRepository: DicomInstancesRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
-  private checkImageAnotation = async (
-    id: string
+  private checkImageAnnotation = async (
+    id: string,
+    em?: EntityManager
   ): Promise<ImageAnnotation> => {
     const annotation = await this.imageAnnotationRepository.findOne(
       {
         where: { id },
       },
-      relation
+      relation,
+      em
     );
     if (!annotation) {
       throw ThrowMicroserviceException(
@@ -43,10 +51,17 @@ export class ImageAnnotationsService {
     return annotation;
   };
 
-  private checkDicomInstance = async (id: string): Promise<DicomInstance> => {
-    const instance = await this.dicomInstanceRepository.findOne({
-      where: { id },
-    });
+  private checkDicomInstance = async (
+    id: string,
+    em?: EntityManager
+  ): Promise<DicomInstance> => {
+    const instance = await this.dicomInstanceRepository.findOne(
+      {
+        where: { id },
+      },
+      [],
+      em
+    );
 
     if (!instance) {
       throw ThrowMicroserviceException(
@@ -62,9 +77,12 @@ export class ImageAnnotationsService {
   create = async (
     createImageAnnotationDto: CreateImageAnnotationDto
   ): Promise<ImageAnnotation> => {
-    return await this.imageAnnotationRepository.create(
-      createImageAnnotationDto
-    );
+    return await this.entityManager.transaction(async (em) => {
+      return await this.imageAnnotationRepository.create(
+        createImageAnnotationDto,
+        em
+      );
+    });
   };
 
   findAll = async (): Promise<ImageAnnotation[]> => {
@@ -73,31 +91,40 @@ export class ImageAnnotationsService {
 
   findOne = async (id: string): Promise<ImageAnnotation | null> => {
     //check image anotation & since it's already queried
-    return await this.checkImageAnotation(id);
+    return await this.checkImageAnnotation(id);
   };
 
   update = async (
     id: string,
     updateImageAnnotationDto: UpdateImageAnnotationDto
   ): Promise<ImageAnnotation | null> => {
-    const annotation = await this.checkImageAnotation(id);
+    return await this.entityManager.transaction(async (em) => {
+      const annotation = await this.checkImageAnnotation(id, em);
 
-    if (
-      updateImageAnnotationDto.instanceId &&
-      updateImageAnnotationDto.instanceId !== annotation.instanceId
-    ) {
-      await this.checkDicomInstance(updateImageAnnotationDto.instanceId);
-    }
-    return await this.imageAnnotationRepository.update(
-      id,
-      updateImageAnnotationDto
-    );
+      if (
+        updateImageAnnotationDto.instanceId &&
+        updateImageAnnotationDto.instanceId !== annotation.instanceId
+      ) {
+        await this.checkDicomInstance(updateImageAnnotationDto.instanceId, em);
+      }
+      return await this.imageAnnotationRepository.update(
+        id,
+        updateImageAnnotationDto,
+        em
+      );
+    });
   };
 
   remove = async (id: string): Promise<boolean> => {
-    await this.checkImageAnotation(id);
+    return await this.entityManager.transaction(async (em) => {
+      await this.checkImageAnnotation(id, em);
 
-    return await this.imageAnnotationRepository.softDelete(id, 'isDeleted');
+      return await this.imageAnnotationRepository.softDelete(
+        id,
+        'isDeleted',
+        em
+      );
+    });
   };
 
   findMany = async (
@@ -111,7 +138,7 @@ export class ImageAnnotationsService {
 
   findByReferenceId = async (
     id: string,
-    type: 'annotator' | 'instance',
+    type: FindFilterAnnotation,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<ImageAnnotation>> => {
     return await this.imageAnnotationRepository.findByReferenceId(id, type, {

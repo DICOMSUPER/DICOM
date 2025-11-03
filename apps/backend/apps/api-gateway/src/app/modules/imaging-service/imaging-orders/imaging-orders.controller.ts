@@ -15,7 +15,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { ImagingOrder, Patient, User } from '@backend/shared-domain';
+import {
+  ImagingOrder,
+  Patient,
+  UpdateImagingOrderDto,
+  User,
+} from '@backend/shared-domain';
 import { ImagingOrderStatus } from '@backend/shared-enums';
 import { handleError } from '@backend/shared-utils';
 import { firstValueFrom } from 'rxjs';
@@ -137,7 +142,7 @@ export class ImagingOrdersController {
     );
 
     const patientIds = orders.map((o: ImagingOrder) => {
-      return o.patientId;
+      return o.imagingOrderForm?.patientId;
     });
 
     const patients = await firstValueFrom(
@@ -150,7 +155,7 @@ export class ImagingOrdersController {
     );
 
     const physicianIds = orders.map((o: ImagingOrder) => {
-      return o.orderingPhysicianId;
+      return o?.imagingOrderForm?.orderingPhysicianId;
     });
 
     const physicians = await firstValueFrom(
@@ -165,14 +170,27 @@ export class ImagingOrdersController {
     const combined = orders.map((order: ImagingOrder) => {
       return {
         ...order,
-        patient: patients.find((p: Patient) => p.id === order.patientId),
+        patient: patients.find(
+          (p: Patient) => p.id === order.imagingOrderForm?.patientId
+        ),
         orderPhysician: physicians.find(
-          (u: User) => u.id === order.orderingPhysicianId
+          (u: User) => u.id === order.imagingOrderForm?.orderingPhysicianId
         ),
       };
     });
 
     return combined;
+  }
+
+  @Get(':id/room-stats')
+  async getRoomImagingOrderStats(@Param('id') id: string) {
+    console.log('GetQueueStats');
+    const stats = await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingOrders.GetQueueStats', {
+        id,
+      })
+    );
+    return stats;
   }
 
   @Get(':id')
@@ -185,7 +203,7 @@ export class ImagingOrdersController {
   @Patch(':id')
   async updateImagingOrder(
     @Param('id') id: string,
-    @Body() updateImagingOrderDto: any
+    @Body() updateImagingOrderDto: UpdateImagingOrderDto
   ) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Update', {
@@ -202,29 +220,6 @@ export class ImagingOrdersController {
     );
   }
 
-  @Get('patient/:patientId')
-  async findManybyPatientId(
-    @Param('patientId') patientId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('searchField') searchField?: string,
-    @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
-  ) {
-    const paginationDto = {
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-      search,
-      searchField,
-      sortField,
-      order,
-    };
-    return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingOrders.FindByPatientId', {
-        paginationDto,
-        patientId,
-      })
-    );
-  }
+ 
+  
 }

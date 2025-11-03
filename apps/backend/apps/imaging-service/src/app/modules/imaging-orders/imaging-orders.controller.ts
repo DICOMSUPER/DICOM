@@ -15,7 +15,10 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 import { ImagingOrdersService } from './imaging-orders.service';
-import type { FilterByRoomIdType } from './imaging-orders.repository';
+import type {
+  FilterByRoomIdType,
+  ReferenceFieldOrderType,
+} from './imaging-orders.repository';
 
 const moduleName = 'ImagingOrders';
 @Controller()
@@ -124,7 +127,7 @@ export class ImagingOrdersController {
     @Payload()
     data: {
       id: string;
-      type: 'physician' | 'room' | 'patient' | 'visit';
+      type: ReferenceFieldOrderType;
       paginationDto: RepositoryPaginationDto;
     }
   ): Promise<PaginatedResponseDto<ImagingOrder>> {
@@ -184,6 +187,9 @@ export class ImagingOrdersController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`)
   async filterOrderByRoomIdType(@Payload() data: FilterByRoomIdType) {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`
+    );
     try {
       return await this.imagingOrdersService.filterImagingOrderByRoomId(data);
     } catch (error) {
@@ -197,6 +203,9 @@ export class ImagingOrdersController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStats`)
   async getRoomOrderStats(@Payload() data: { id: string }) {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStats`
+    );
     try {
       return await this.imagingOrdersService.getRoomStats(data.id);
     } catch (error) {

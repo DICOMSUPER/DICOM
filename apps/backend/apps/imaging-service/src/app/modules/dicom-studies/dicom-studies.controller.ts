@@ -204,6 +204,7 @@ export class DicomStudiesController {
     @Payload()
     data: FilterData
   ) {
+    this.logger.log(`Using pattern: ${IMAGING_SERVICE}.${moduleName}.Filter`);
     try {
       return await this.dicomStudiesService.filter(data);
     } catch (error) {

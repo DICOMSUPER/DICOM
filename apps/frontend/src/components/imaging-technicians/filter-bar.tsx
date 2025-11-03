@@ -112,9 +112,6 @@ export default function FilterBar({
         <h3 className="text-sm font-semibold text-gray-700">
           Displaying {caseNumber} of {maxCases} order
         </h3>
-        <div className="text-sm text-red-600 font-semibold">
-          Signed cases: 273
-        </div>
       </div>
 
       {/* Basic Filters */}

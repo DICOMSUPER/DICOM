@@ -5,9 +5,10 @@ import {
   Entity,
   Index,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ImagingOrder } from './imaging-order.entity';
+import { Patient } from '../patients';
 @Entity('imaging_order_form')
 @Index(['patientId'])
 export class ImagingOrderForm extends BaseEntity {
@@ -16,6 +17,9 @@ export class ImagingOrderForm extends BaseEntity {
 
   @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
+
+  @Column({ name: 'diagnosis', type: 'varchar', nullable: true })
+  diagnosis?: string;
 
   @Column({ name: 'encounter_id', type: 'uuid' })
   encounterId!: string;
@@ -39,4 +43,6 @@ export class ImagingOrderForm extends BaseEntity {
 
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
   roomId!: string;
+
+  patient?: Patient; 
 }
