@@ -24,10 +24,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { Role } from '@backend/shared-decorators';
-import {
-  FilterImagingOrderFormDto,
-} from '@backend/shared-domain';
+
 import { firstValueFrom } from 'rxjs';
 
 @Controller('imaging-order-form')

@@ -38,7 +38,7 @@ export class ImagingOrderFormService {
     private readonly orderFormRepository: Repository<ImagingOrderForm>,
     @InjectRepository(ImagingOrder)
     private readonly orderRepository: Repository<ImagingOrder>,
-
+    private readonly redisService: RedisService,
     // private readonly redisService: RedisService,
     private readonly imagingOrdersService: ImagingOrdersService,
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')

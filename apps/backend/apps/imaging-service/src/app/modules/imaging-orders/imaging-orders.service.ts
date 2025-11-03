@@ -32,7 +32,9 @@ export class ImagingOrdersService {
     @Inject()
     private readonly imagingModalityRepository: ImagingModalityRepository,
     @Inject()
-    private readonly imagingOrderFormRepository: ImagingOrderFormRepository
+    private readonly imagingOrderFormRepository: ImagingOrderFormRepository,
+
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) { }
 
   private checkImagingOrder = async (
@@ -244,5 +246,7 @@ export class ImagingOrdersService {
       paginationDto ?? { page: 1, limit: 10 },
     );
   }
+
+  
 
 }

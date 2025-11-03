@@ -174,11 +174,10 @@ export const {
   useCreateImagingOrderMutation,
   useGetImagingOrderByRoomIdFilterQuery,
   useGetOrderStatsForRoomQuery,
-<<<<<<< HEAD
+
   useGetImagingOrdersByPatientIdQuery,
   //   useUpdateImagingOrderMutation,
-=======
+
   useUpdateImagingOrderMutation,
->>>>>>> main
   useDeleteImagingOrderMutation,
 } = imagingOrderApi;
