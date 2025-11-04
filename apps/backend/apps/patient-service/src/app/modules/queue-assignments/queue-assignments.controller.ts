@@ -18,6 +18,14 @@ import {
 } from '../../../constant/microservice.constant';
 
 const moduleName = 'QueueAssignment';
+
+export interface GetQueueStatusByUserIdsRequest {
+  userIds: string[] | [];
+}
+
+export interface GetQueueStatusByRoomsRequest {
+  roomIds: string[] | [];
+}
 @Controller('queue-assignments')
 export class QueueAssignmentController {
   private logger = new Logger(PATIENT_SERVICE);
@@ -270,7 +278,7 @@ export class QueueAssignmentController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatus`)
   async getMaxWaitingAndCurrentInProgressByPhysicians(
-    @Payload() data: { userIds: string[] }
+    @Payload() data: GetQueueStatusRequest
   ): Promise<QueueInfo> {
     try {
       return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByPhysiciansInDate(
@@ -287,7 +295,7 @@ export class QueueAssignmentController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetQueueStatusByRooms`)
   async getMaxWaitingAndCurrentInProgressByRoomIds(
-    @Payload() data: { roomIds: string[] }
+    @Payload() data: GetQueueStatusByRoomsRequest
   ): Promise<QueueInfo> {
     try {
       return this.queueAssignmentService.getMaxWaitingAndCurrentInProgressByRoomIds(

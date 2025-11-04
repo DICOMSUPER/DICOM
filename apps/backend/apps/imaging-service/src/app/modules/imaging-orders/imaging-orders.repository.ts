@@ -21,6 +21,25 @@ export interface QueueInfo {
   };
 }
 
+export interface RoomOrderStats {
+  maxWaiting: {
+    orderNumber: number;
+    entity?: ImagingOrder;
+  } | null;
+
+  currentInProgress: {
+    orderNumber: number;
+    entity?: ImagingOrder;
+  } | null;
+
+  stats: {
+    total: number;
+    waiting: number;
+    inProgress: number;
+    completed: number;
+    cancelled: number;
+  };
+}
 export interface FilterByRoomIdType {
   roomId: string;
   modalityId?: string;
@@ -48,7 +67,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     type: ReferenceFieldOrderType,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
-  ) {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
     const repository = this.getRepository(entityManager);
     const {
       page = 1,
@@ -200,7 +219,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     return qb.getMany();
   }
 
-  async getRoomStatsInDate(id: string) {
+  async getRoomStatsInDate(id: string): Promise<RoomOrderStats> {
     const date = new Date();
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -269,7 +288,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     };
   }
 
-  async getRoomStats(id: string) {
+  async getRoomStats(id: string): Promise<RoomOrderStats> {
     const repository = this.getRepository();
 
     // Get all non-deleted orders for this room (all-time)

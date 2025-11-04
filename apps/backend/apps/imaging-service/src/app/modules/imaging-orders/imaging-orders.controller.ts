@@ -18,14 +18,14 @@ import { ImagingOrdersService } from './imaging-orders.service';
 import type {
   FilterByRoomIdType,
   ReferenceFieldOrderType,
+  RoomOrderStats,
 } from './imaging-orders.repository';
 
 const moduleName = 'ImagingOrders';
 @Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService,
-  ) { }
+  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
@@ -187,7 +187,9 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`)
-  async filterOrderByRoomIdType(@Payload() data: FilterByRoomIdType) {
+  async filterOrderByRoomIdType(
+    @Payload() data: FilterByRoomIdType
+  ): Promise<ImagingOrder[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`
     );
@@ -203,7 +205,9 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStats`)
-  async getRoomOrderStats(@Payload() data: { id: string }) {
+  async getRoomOrderStats(
+    @Payload() data: { id: string }
+  ): Promise<RoomOrderStats> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStats`
     );
@@ -218,9 +222,10 @@ export class ImagingOrdersController {
     }
   }
 
-<<<<<<< HEAD
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
-  async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
+  async getRoomOrderStatsInDate(
+    @Payload() data: { id: string }
+  ): Promise<RoomOrderStats> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`
     );
@@ -235,7 +240,3 @@ export class ImagingOrdersController {
     }
   }
 }
-=======
-
-  }
->>>>>>> 6231d17a76951d1fa0863616384814bef566d6cd

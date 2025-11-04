@@ -10,6 +10,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
+export type ReferenceFieldInstanceType = 'series' | 'sopInstanceUid';
 @Injectable()
 export class DicomInstancesRepository extends BaseRepository<DicomInstance> {
   constructor(@InjectEntityManager() entityManager: EntityManager) {
@@ -18,7 +19,7 @@ export class DicomInstancesRepository extends BaseRepository<DicomInstance> {
 
   async findInstancesByReferenceId(
     id: string,
-    type: 'series' | 'sopInstanceUid',
+    type: ReferenceFieldInstanceType,
     paginationDto: RepositoryPaginationDto,
     entityManager?: EntityManager
   ): Promise<PaginatedResponseDto<DicomInstance>> {

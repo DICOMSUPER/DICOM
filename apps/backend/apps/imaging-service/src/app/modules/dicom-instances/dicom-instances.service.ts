@@ -1,7 +1,10 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateDicomInstanceDto } from '@backend/shared-domain';
 import { UpdateDicomInstanceDto } from '@backend/shared-domain';
-import { DicomInstancesRepository } from './dicom-instances.repository';
+import {
+  DicomInstancesRepository,
+  ReferenceFieldInstanceType,
+} from './dicom-instances.repository';
 import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';
 import { EntityManager } from 'typeorm';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
@@ -262,7 +265,7 @@ export class DicomInstancesService {
 
   findByReferenceId = async (
     id: string,
-    type: 'series' | 'sopInstanceUid',
+    type: ReferenceFieldInstanceType,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<DicomInstance>> => {
     return await this.dicomInstancesRepository.findInstancesByReferenceId(

@@ -18,6 +18,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { DiagnosisStatus } from '@backend/shared-enums';
 import { VitalSignsSimplified } from '@backend/shared-interfaces';
 
+export interface PatientOverview {
+  recentVitalSigns: VitalSignsSimplified;
+  recentConditions: PatientCondition[];
+}
 @Injectable()
 export class PatientService {
   constructor(
@@ -105,10 +109,7 @@ export class PatientService {
 
   getOverview = async (
     patientCode: string
-  ): Promise<{
-    recentVitalSigns: VitalSignsSimplified;
-    recentConditions: PatientCondition[];
-  } | null> => {
+  ): Promise<PatientOverview | null> => {
     const patient = await this.patientRepository.findByPatientCode(patientCode);
 
     if (!patient) {

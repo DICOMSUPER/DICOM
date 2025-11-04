@@ -184,7 +184,7 @@ export class DicomStudiesController {
   async filterStudy(
     @Payload()
     data: FilterData
-  ) {
+  ): Promise<DicomStudy[]> {
     this.logger.log(`Using pattern: ${IMAGING_SERVICE}.${moduleName}.Filter`);
     try {
       return await this.dicomStudiesService.filter(data);
