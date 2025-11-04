@@ -6,7 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DicomInstance } from './dicom-instance.entity';
 import { DicomStudy } from './dicom-study.entity';

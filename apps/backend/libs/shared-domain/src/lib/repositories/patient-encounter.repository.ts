@@ -37,11 +37,15 @@ export interface EncounterWithDetails {
   diagnosesCount?: number;
 }
 
+export interface PaginatedEncounter {
+  encounters: PatientEncounter[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 @Injectable()
 export class PatientEncounterRepository extends BaseRepository<PatientEncounter> {
-  constructor(
-    entityManager: EntityManager,
-  ) {
+  constructor(entityManager: EntityManager) {
     super(PatientEncounter, entityManager);
   }
 
@@ -49,16 +53,16 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
    * Find encounter by ID with relations
    */
   async findByIdWithRelations(id: string): Promise<PatientEncounter | null> {
-    return await this.findOne(
-      { where: { id } },
-      ['patient']
-    );
+    return await this.findOne({ where: { id } }, ['patient']);
   }
 
   /**
    * Find encounters by patient ID
    */
-  async findByPatientId(patientId: string, limit?: number): Promise<PatientEncounter[]> {
+  async findByPatientId(
+    patientId: string,
+    limit?: number
+  ): Promise<PatientEncounter[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -76,7 +80,9 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
   /**
    * Find all encounters with optional filters
    */
-  async findAllWithFilters(filters: EncounterSearchFilters = {}): Promise<PatientEncounter[]> {
+  async findAllWithFilters(
+    filters: EncounterSearchFilters = {}
+  ): Promise<PatientEncounter[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -84,37 +90,40 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
 
     if (filters.patientId) {
       queryBuilder.andWhere('encounter.patientId = :patientId', {
-        patientId: filters.patientId
+        patientId: filters.patientId,
       });
     }
 
     if (filters.encounterType) {
       queryBuilder.andWhere('encounter.encounterType = :encounterType', {
-        encounterType: filters.encounterType
+        encounterType: filters.encounterType,
       });
     }
 
     if (filters.encounterDateFrom) {
       queryBuilder.andWhere('encounter.encounterDate >= :encounterDateFrom', {
-        encounterDateFrom: filters.encounterDateFrom
+        encounterDateFrom: filters.encounterDateFrom,
       });
     }
 
     if (filters.encounterDateTo) {
       queryBuilder.andWhere('encounter.encounterDate <= :encounterDateTo', {
-        encounterDateTo: filters.encounterDateTo
+        encounterDateTo: filters.encounterDateTo,
       });
     }
 
     if (filters.assignedPhysicianId) {
-      queryBuilder.andWhere('encounter.assignedPhysicianId = :assignedPhysicianId', {
-        assignedPhysicianId: filters.assignedPhysicianId
-      });
+      queryBuilder.andWhere(
+        'encounter.assignedPhysicianId = :assignedPhysicianId',
+        {
+          assignedPhysicianId: filters.assignedPhysicianId,
+        }
+      );
     }
 
     if (filters.chiefComplaint) {
       queryBuilder.andWhere('encounter.chiefComplaint ILIKE :chiefComplaint', {
-        chiefComplaint: `%${filters.chiefComplaint}%`
+        chiefComplaint: `%${filters.chiefComplaint}%`,
       });
     }
 
@@ -136,11 +145,11 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
    */
   async findWithPagination(
     paginationDto: RepositoryPaginationDto
-  ): Promise<{ encounters: PatientEncounter[]; total: number; page: number; totalPages: number }> {
+  ): Promise<PaginatedEncounter> {
     // Set default relations for encounter queries
     const paginationWithRelations = {
       ...paginationDto,
-      relation: paginationDto.relation || ['patient']
+      relation: paginationDto.relation || ['patient'],
     };
 
     const result = await this.paginate(paginationWithRelations);
@@ -149,7 +158,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       encounters: result.data,
       total: result.total,
       page: result.page,
-      totalPages: result.totalPages
+      totalPages: result.totalPages,
     };
   }
 
@@ -172,11 +181,10 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
   /**
    * Get encounter with detailed information including diagnoses
    */
-  async findEncounterWithDetails(id: string): Promise<EncounterWithDetails | null> {
-    const encounter = await this.findOne(
-      { where: { id } },
-      ['patient']
-    );
+  async findEncounterWithDetails(
+    id: string
+  ): Promise<EncounterWithDetails | null> {
+    const encounter = await this.findOne({ where: { id } }, ['patient']);
 
     if (!encounter) {
       return null;
@@ -185,20 +193,23 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     // Get diagnoses for this encounter
     const diagnoses = await this.getRepository().manager.find(DiagnosesReport, {
       where: { encounterId: id, isDeleted: false },
-      order: { diagnosisDate: 'DESC' }
+      order: { diagnosisDate: 'DESC' },
     });
 
     return {
       ...encounter,
       diagnoses,
-      diagnosesCount: diagnoses.length
+      diagnosesCount: diagnoses.length,
     } as EncounterWithDetails;
   }
 
   /**
    * Get encounters by physician ID
    */
-  async findByPhysicianId(physicianId: string, limit?: number): Promise<PatientEncounter[]> {
+  async findByPhysicianId(
+    physicianId: string,
+    limit?: number
+  ): Promise<PatientEncounter[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .leftJoinAndSelect('encounter.patient', 'patient')
@@ -225,21 +236,24 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const whereClause = patientId ? { patientId, isDeleted: false } : { isDeleted: false };
+    const whereClause = patientId
+      ? { patientId, isDeleted: false }
+      : { isDeleted: false };
 
-    const [totalEncounters, encountersThisMonth, allEncounters] = await Promise.all([
-      this.getRepository().count({ where: whereClause }),
-      this.getRepository().count({ 
-        where: { 
-          ...whereClause,
-          encounterDate: Between(startOfMonth, now)
-        } 
-      }),
-      this.getRepository().find({ 
-        where: whereClause,
-        select: ['encounterType']
-      })
-    ]);
+    const [totalEncounters, encountersThisMonth, allEncounters] =
+      await Promise.all([
+        this.getRepository().count({ where: whereClause }),
+        this.getRepository().count({
+          where: {
+            ...whereClause,
+            encounterDate: Between(startOfMonth, now),
+          },
+        }),
+        this.getRepository().find({
+          where: whereClause,
+          select: ['encounterType'],
+        }),
+      ]);
 
     // Count encounters by type
     const encountersByType = allEncounters.reduce((acc, encounter) => {
@@ -249,26 +263,28 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     }, {} as Record<string, number>);
 
     // Calculate average encounters per patient
-    const uniquePatients = new Set(allEncounters.map(e => e.patientId)).size;
-    const averageEncountersPerPatient = uniquePatients > 0 ? totalEncounters / uniquePatients : 0;
+    const uniquePatients = new Set(allEncounters.map((e) => e.patientId)).size;
+    const averageEncountersPerPatient =
+      uniquePatients > 0 ? totalEncounters / uniquePatients : 0;
 
     return {
       totalEncounters,
       encountersByType,
       encountersThisMonth,
-      averageEncountersPerPatient
+      averageEncountersPerPatient,
     };
   }
-
 
   /**
    * Get recent encounters for a patient
    */
-  async getRecentEncounters(patientId: string, limit: number = 5): Promise<PatientEncounter[]> {
+  async getRecentEncounters(
+    patientId: string,
+    limit: number = 5
+  ): Promise<PatientEncounter[]> {
     return await this.findAll(
       { where: { patientId }, take: limit, order: { encounterDate: 'DESC' } },
       ['patient']
     );
   }
-
 }

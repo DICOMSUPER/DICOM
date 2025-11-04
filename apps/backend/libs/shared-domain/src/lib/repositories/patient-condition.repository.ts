@@ -36,11 +36,15 @@ export interface ConditionWithDetails {
   patient?: any;
 }
 
+export interface PaginatedCondition {
+  conditions: PatientCondition[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 @Injectable()
 export class PatientConditionRepository extends BaseRepository<PatientCondition> {
-  constructor(
-    entityManager: EntityManager,
-  ) {
+  constructor(entityManager: EntityManager) {
     super(PatientCondition, entityManager);
   }
 
@@ -48,21 +52,21 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
    * Find condition by ID with relations
    */
   async findByIdWithRelations(id: string): Promise<PatientCondition | null> {
-    return await this.findOne(
-      { where: { id } },
-      ['patient']
-    );
+    return await this.findOne({ where: { id } }, ['patient']);
   }
 
   /**
    * Find conditions by patient ID
    */
-  async findByPatientId(patientId: string, limit?: number): Promise<PatientCondition[]> {
+  async findByPatientId(
+    patientId: string,
+    limit?: number
+  ): Promise<PatientCondition[]> {
     return await this.findAll(
-      { 
-        where: { patientId }, 
+      {
+        where: { patientId },
         order: { recordedDate: 'DESC' },
-        take: limit
+        take: limit,
       },
       ['patient']
     );
@@ -71,7 +75,9 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
   /**
    * Find all conditions with optional filters
    */
-  async findAllWithFilters(filters: PatientConditionSearchFilters = {}): Promise<PatientCondition[]> {
+  async findAllWithFilters(
+    filters: PatientConditionSearchFilters = {}
+  ): Promise<PatientCondition[]> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('condition')
       .leftJoinAndSelect('condition.patient', 'patient')
@@ -79,49 +85,52 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
 
     if (filters.patientId) {
       queryBuilder.andWhere('condition.patientId = :patientId', {
-        patientId: filters.patientId
+        patientId: filters.patientId,
       });
     }
 
     if (filters.code) {
       queryBuilder.andWhere('condition.code = :code', {
-        code: filters.code
+        code: filters.code,
       });
     }
 
     if (filters.codeSystem) {
       queryBuilder.andWhere('condition.codeSystem = :codeSystem', {
-        codeSystem: filters.codeSystem
+        codeSystem: filters.codeSystem,
       });
     }
 
     if (filters.clinicalStatus) {
       queryBuilder.andWhere('condition.clinicalStatus = :clinicalStatus', {
-        clinicalStatus: filters.clinicalStatus
+        clinicalStatus: filters.clinicalStatus,
       });
     }
 
     if (filters.verificationStatus) {
-      queryBuilder.andWhere('condition.verificationStatus = :verificationStatus', {
-        verificationStatus: filters.verificationStatus
-      });
+      queryBuilder.andWhere(
+        'condition.verificationStatus = :verificationStatus',
+        {
+          verificationStatus: filters.verificationStatus,
+        }
+      );
     }
 
     if (filters.severity) {
       queryBuilder.andWhere('condition.severity = :severity', {
-        severity: filters.severity
+        severity: filters.severity,
       });
     }
 
     if (filters.recordedDateFrom) {
       queryBuilder.andWhere('condition.recordedDate >= :recordedDateFrom', {
-        recordedDateFrom: filters.recordedDateFrom
+        recordedDateFrom: filters.recordedDateFrom,
       });
     }
 
     if (filters.recordedDateTo) {
       queryBuilder.andWhere('condition.recordedDate <= :recordedDateTo', {
-        recordedDateTo: filters.recordedDateTo
+        recordedDateTo: filters.recordedDateTo,
       });
     }
 
@@ -143,11 +152,11 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
    */
   async findWithPagination(
     paginationDto: RepositoryPaginationDto
-  ): Promise<{ conditions: PatientCondition[]; total: number; page: number; totalPages: number }> {
+  ): Promise<PaginatedCondition> {
     // Set default relations for condition queries
     const paginationWithRelations = {
       ...paginationDto,
-      relation: paginationDto.relation || ['patient']
+      relation: paginationDto.relation || ['patient'],
     };
 
     const result = await this.paginate(paginationWithRelations);
@@ -156,7 +165,7 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
       conditions: result.data,
       total: result.total,
       page: result.page,
-      totalPages: result.totalPages
+      totalPages: result.totalPages,
     };
   }
 
@@ -179,11 +188,10 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
   /**
    * Get condition with detailed information
    */
-  async findConditionWithDetails(id: string): Promise<ConditionWithDetails | null> {
-    const condition = await this.findOne(
-      { where: { id } },
-      ['patient']
-    );
+  async findConditionWithDetails(
+    id: string
+  ): Promise<ConditionWithDetails | null> {
+    const condition = await this.findOne({ where: { id } }, ['patient']);
 
     if (!condition) {
       return null;
@@ -191,7 +199,7 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
 
     return {
       ...condition,
-      patient: condition.patient
+      patient: condition.patient,
     } as ConditionWithDetails;
   }
 
@@ -226,21 +234,24 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const whereClause = patientId ? { patientId, isDeleted: false } : { isDeleted: false };
+    const whereClause = patientId
+      ? { patientId, isDeleted: false }
+      : { isDeleted: false };
 
-    const [totalConditions, conditionsThisMonth, allConditions] = await Promise.all([
-      this.getRepository().count({ where: whereClause }),
-      this.getRepository().count({ 
-        where: { 
-          ...whereClause,
-          recordedDate: Between(startOfMonth, now)
-        } 
-      }),
-      this.getRepository().find({ 
-        where: whereClause,
-        select: ['code', 'severity', 'clinicalStatus']
-      })
-    ]);
+    const [totalConditions, conditionsThisMonth, allConditions] =
+      await Promise.all([
+        this.getRepository().count({ where: whereClause }),
+        this.getRepository().count({
+          where: {
+            ...whereClause,
+            recordedDate: Between(startOfMonth, now),
+          },
+        }),
+        this.getRepository().find({
+          where: whereClause,
+          select: ['code', 'severity', 'clinicalStatus'],
+        }),
+      ]);
 
     // Count conditions by code
     const conditionsByCode = allConditions.reduce((acc, condition) => {
@@ -257,34 +268,38 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
     }, {} as Record<string, number>);
 
     // Count conditions by clinical status
-    const conditionsByClinicalStatus = allConditions.reduce((acc, condition) => {
-      const status = condition.clinicalStatus || 'UNKNOWN';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const conditionsByClinicalStatus = allConditions.reduce(
+      (acc, condition) => {
+        const status = condition.clinicalStatus || 'UNKNOWN';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       totalConditions,
       conditionsByCode,
       conditionsBySeverity,
       conditionsByClinicalStatus,
-      conditionsThisMonth
+      conditionsThisMonth,
     };
   }
-
 
   /**
    * Get recent conditions for a patient
    */
-  async getRecentConditions(patientId: string, limit: number = 5): Promise<PatientCondition[]> {
+  async getRecentConditions(
+    patientId: string,
+    limit: number = 5
+  ): Promise<PatientCondition[]> {
     return await this.findAll(
-      { 
-        where: { patientId }, 
-        take: limit, 
-        order: { recordedDate: 'DESC' } 
+      {
+        where: { patientId },
+        take: limit,
+        order: { recordedDate: 'DESC' },
       },
       ['patient']
     );
   }
-
 }

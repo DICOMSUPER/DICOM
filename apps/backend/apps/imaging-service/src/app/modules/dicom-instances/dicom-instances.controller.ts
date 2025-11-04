@@ -21,6 +21,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { ReferenceFieldInstanceType } from './dicom-instances.repository';
 
 const moduleName = 'DicomInstances';
 @Controller('dicom-instances')
@@ -162,7 +163,7 @@ export class DicomInstancesController {
     @Payload()
     data: {
       id: string;
-      type: 'sopInstanceUid' | 'series';
+      type: ReferenceFieldInstanceType;
       paginationDto: RepositoryPaginationDto;
     }
   ): Promise<PaginatedResponseDto<DicomInstance>> {

@@ -189,19 +189,19 @@ export class BaseRepository<T extends ObjectLiteral> {
 
     const query = repository.createQueryBuilder('entity');
 
-    // 🔎 Search filter
+    // Search filter
     if (search && searchField) {
       query.andWhere(`entity.${searchField} LIKE :search`, {
         search: `%${search}%`,
       });
     }
 
-    // 🔗 Relations
+    // Relations
     if (relation?.length) {
       relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
     }
 
-    // ↕️ Sorting
+    //  Sorting
     if (sortField && order) {
       query.orderBy(
         `entity.${sortField}`,
@@ -209,7 +209,7 @@ export class BaseRepository<T extends ObjectLiteral> {
       );
     }
 
-    // 🚫 Exclude soft-deleted
+    //  Exclude soft-deleted
     if (this.hasIsDeletedColumn(entityManager)) {
       query.andWhere('entity.isDeleted = :isDeleted', { isDeleted: false });
     }

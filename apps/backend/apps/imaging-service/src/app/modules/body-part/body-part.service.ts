@@ -11,27 +11,36 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { BodyPartRepository } from './body-part.repository';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class BodyPartService {
   constructor(
     @Inject()
-    private readonly bodyPartRepository: BodyPartRepository
+    private readonly bodyPartRepository: BodyPartRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
   create = async (createBodyPartDto: CreateBodyPartDto): Promise<BodyPart> => {
-    const existingBodyPart = await this.bodyPartRepository.findOne({
-      where: { name: createBodyPartDto.name },
-    });
-
-    if (existingBodyPart) {
-      throw ThrowMicroserviceException(
-        HttpStatus.CONFLICT,
-        'Body part with the same name already exists',
-        IMAGING_SERVICE
+    return await this.entityManager.transaction(async (em) => {
+      const existingBodyPart = await this.bodyPartRepository.findOne(
+        {
+          where: { name: createBodyPartDto.name },
+        },
+        [],
+        em
       );
-    }
 
-    return await this.bodyPartRepository.create(createBodyPartDto);
+      if (existingBodyPart) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Body part with the same name already exists',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.bodyPartRepository.create(createBodyPartDto, em);
+    });
   };
 
   findAll = async (): Promise<BodyPart[]> => {
@@ -58,46 +67,50 @@ export class BodyPartService {
     id: string,
     updateBodyPartDto: UpdateBodyPartDto
   ): Promise<BodyPart | null> => {
-    const bodyPart = await this.bodyPartRepository.findOne({
-      where: { id },
+    return await this.entityManager.transaction(async (em) => {
+      const bodyPart = await this.bodyPartRepository.findOne({
+        where: { id },
+      });
+
+      if (!bodyPart) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Body part not found',
+          IMAGING_SERVICE
+        );
+      }
+      const existingBodyPart = await this.bodyPartRepository.findOne({
+        where: { name: updateBodyPartDto.name },
+      });
+
+      if (existingBodyPart) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Body part with the same name already exists',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.bodyPartRepository.update(id, updateBodyPartDto);
     });
-
-    if (!bodyPart) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Body part not found',
-        IMAGING_SERVICE
-      );
-    }
-    const existingBodyPart = await this.bodyPartRepository.findOne({
-      where: { name: updateBodyPartDto.name },
-    });
-
-    if (existingBodyPart) {
-      throw ThrowMicroserviceException(
-        HttpStatus.CONFLICT,
-        'Body part with the same name already exists',
-        IMAGING_SERVICE
-      );
-    }
-
-    return await this.bodyPartRepository.update(id, updateBodyPartDto);
   };
 
   remove = async (id: string): Promise<boolean> => {
-    const bodyPart = await this.bodyPartRepository.findOne({
-      where: { id },
+    return await this.entityManager.transaction(async (em) => {
+      const bodyPart = await this.bodyPartRepository.findOne({
+        where: { id },
+      });
+
+      if (!bodyPart) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Body part not found',
+          IMAGING_SERVICE
+        );
+      }
+
+      return await this.bodyPartRepository.softDelete(id, 'isDeleted');
     });
-
-    if (!bodyPart) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Body part not found',
-        IMAGING_SERVICE
-      );
-    }
-
-    return await this.bodyPartRepository.softDelete(id, 'isDeleted');
   };
 
   findMany = async (

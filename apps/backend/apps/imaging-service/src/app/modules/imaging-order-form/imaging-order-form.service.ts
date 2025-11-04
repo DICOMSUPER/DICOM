@@ -30,6 +30,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
 import { instanceToPlain } from 'class-transformer';
 
+export interface OrderFormStats {
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  inProgressOrders: number;
+  cancelledOrders: number;
+  completionPercentage: number;
+}
 @Injectable()
 export class ImagingOrderFormService {
   private readonly logger = new Logger(ImagingOrderFormService.name);
@@ -343,7 +351,9 @@ export class ImagingOrderFormService {
     await this.orderFormRepository.save(orderForm);
   }
 
-  async findMany(paginationDto: RepositoryPaginationDto) {
+  async findMany(
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
     const {
       page = 1,
       limit = 10,
@@ -391,12 +401,16 @@ export class ImagingOrderFormService {
       .take(limit)
       .getManyAndCount();
 
+    const totalPages = Math.ceil(total / limit);
+
     return {
       data,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
     };
   }
 
@@ -404,7 +418,7 @@ export class ImagingOrderFormService {
     id: string,
     type: 'physician' | 'patient' | 'room',
     paginationDto: RepositoryPaginationDto
-  ) {
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
     const {
       page = 1,
       limit = 10,
@@ -449,12 +463,16 @@ export class ImagingOrderFormService {
       .take(limit)
       .getManyAndCount();
 
+    const totalPages = Math.ceil(total / limit);
+
     return {
       data,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
     };
   }
 
@@ -506,14 +524,7 @@ export class ImagingOrderFormService {
     });
   }
 
-  async getOrderFormStatistics(orderFormId: string): Promise<{
-    totalOrders: number;
-    completedOrders: number;
-    pendingOrders: number;
-    inProgressOrders: number;
-    cancelledOrders: number;
-    completionPercentage: number;
-  }> {
+  async getOrderFormStatistics(orderFormId: string): Promise<OrderFormStats> {
     const orders = await this.getOrdersByFormId(orderFormId);
 
     const stats = {
