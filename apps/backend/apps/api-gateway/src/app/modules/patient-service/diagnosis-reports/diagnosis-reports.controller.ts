@@ -35,8 +35,8 @@ export class DiagnosisReportsController {
     private readonly patientService: ClientProxy
   ) {}
 
-  @Post()
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
+  @Post()
   async createDiagnoseReport(
     @Body() createDiagnosesReportDto: CreateDiagnosesReportDto
   ) {
@@ -158,6 +158,28 @@ export class DiagnosisReportsController {
         this.patientService.send('PatientService.DiagnosesReport.Delete', {
           id,
         })
+      );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+ @Get('studyId/:studyId')
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN,
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN
+  )
+  async getDiagnosisReportByStudyId(@Param('studyId') studyId: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send(
+          'PatientService.DiagnosesReport.FindByStudyId', {
+            studyId,
+          }
+        )
       );
     } catch (error) {
       this.logger.error(error);

@@ -34,6 +34,7 @@
     "dicom-parser": "^1.8.21",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "ioredis": "^5.8.2",
     "keyv": "^5.5.2",
     "moment": "^2.30.1",
     "multer": "^2.0.2",

@@ -224,4 +224,20 @@ export class DicomStudiesService {
   filter = async (data: FilterData): Promise<DicomStudy[]> => {
     return await this.dicomStudiesRepository.filter(data);
   };
+
+  findByOrderId = async (orderId: string): Promise<DicomStudy[]> => {
+    const imagingOrder = await this.checkImagingOrder(orderId);
+    if (!imagingOrder) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Imaging Order not found for given orderId',
+        IMAGING_SERVICE
+      );
+    }
+
+    return await this.dicomStudiesRepository.findAll(
+      { where: { orderId } },
+      relation
+    );
+  };
 }

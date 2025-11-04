@@ -221,11 +221,35 @@ export class ImagingOrdersController {
       );
     }
   }
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
+  async findByPatientId(
+    @Payload()
+    data: {
+      patientId: string;
+      pagination?: RepositoryPaginationDto;
+    }
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
+    );
+    try {
+      const { patientId, pagination } = data;
+
+      return await this.imagingOrdersService.findByPatientId(
+        patientId,
+        pagination ?? { page: 1, limit: 10 }
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find imaging orders for patientId: ${data.patientId}`,
+        IMAGING_SERVICE
+      );
+    }
+  }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
-  async getRoomOrderStatsInDate(
-    @Payload() data: { id: string }
-  ): Promise<RoomOrderStats> {
+  async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`
     );

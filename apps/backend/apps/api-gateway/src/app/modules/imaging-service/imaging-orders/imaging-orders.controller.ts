@@ -220,6 +220,14 @@ export class ImagingOrdersController {
     );
   }
 
- 
+  @Get('patient/:patientId')
+  async getImagingOrdersByPatientId(@Param('patientId') patientId: string) {
+    return await firstValueFrom(
+      this.imagingService.send(
+        'ImagingService.ImagingOrders.FindByPatientId',
+        { patientId }
+      )
+    );
+  }
   
 }

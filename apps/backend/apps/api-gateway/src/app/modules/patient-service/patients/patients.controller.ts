@@ -17,7 +17,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
-import { Role } from '@backend/shared-decorators';
+import { Public, Role } from '@backend/shared-decorators';
 import { Roles as RoleEnum } from '@backend/shared-enums';
 import { RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { TransformInterceptor } from '@backend/shared-interceptor';
@@ -45,6 +45,30 @@ export class PatientServiceController {
       );
     } catch (error) {
       this.logger.error('Error creating patient:', error);
+      throw error;
+    }
+  }
+
+  // @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
+  @Public()
+  @Get('filter')
+  async filter(
+    @Query()
+    filterDto: {
+      patientIds: string[] | [];
+      patientFirstName?: string;
+      patientLastName?: string;
+      patientCode?: string;
+    }
+  ) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.Filter', {
+          filterDto,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error filtering patients:', error);
       throw error;
     }
   }
@@ -109,6 +133,20 @@ export class PatientServiceController {
       );
     } catch (error) {
       this.logger.error('Error finding patient by code:', error);
+      throw error;
+    }
+  }
+  @Get('name')
+  @Public()
+  async findPatientByName(@Query('patientName') patientName: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.FindByName', {
+          patientName,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error finding patient by name:', error);
       throw error;
     }
   }

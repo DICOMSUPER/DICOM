@@ -4,11 +4,11 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 import {
-  CreateImagingOrderFormDto,
-  UpdateImagingOrderFormDto,
-  ImagingOrderForm,
-  ImagingOrder,
   FilterImagingOrderFormDto,
+  FilterImagingOrderFormServiceDto,
+  ImagingOrder,
+  ImagingOrderForm,
+  UpdateImagingOrderFormDto
 } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Controller, Logger } from '@nestjs/common';
@@ -55,13 +55,13 @@ export class ImagingOrderFormController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
   async findAll(
-    @Payload() filter: FilterImagingOrderFormDto
+    @Payload() data: { filter: any, userId: string }
   ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
     try {
-      return await this.imagingOrderFormService.findAll(filter);
+      return await this.imagingOrderFormService.findAll(data.filter, data.userId);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -250,4 +250,39 @@ export class ImagingOrderFormController {
       );
     }
   }
+  
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
+  async findByPatientId(
+    @Payload()
+    data: {
+      patientId: string;
+      paginationDto?: RepositoryPaginationDto;
+    }
+  ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
+    );
+    try {
+      const { patientId, paginationDto } = data;
+      return await this.imagingOrderFormService.findByPatientId(
+        patientId,
+        paginationDto
+          ? {
+              page: paginationDto.page || 1,
+              limit: paginationDto.limit || 10,
+              search: paginationDto.search || '',
+              sortField: paginationDto.sortField || 'createdAt',
+              order: paginationDto.order || 'DESC',
+            }
+          : undefined
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find imaging order forms for patient with id: ${data.patientId}`,
+        IMAGING_SERVICE
+      );
+    }
+  }
+  
 }

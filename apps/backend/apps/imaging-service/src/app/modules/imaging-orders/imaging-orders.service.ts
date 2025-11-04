@@ -34,6 +34,7 @@ export class ImagingOrdersService {
     private readonly imagingModalityRepository: ImagingModalityRepository,
     @Inject()
     private readonly imagingOrderFormRepository: ImagingOrderFormRepository,
+
     @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
@@ -235,4 +236,14 @@ export class ImagingOrdersService {
   getRoomStats = async (id: string): Promise<RoomOrderStats> => {
     return await this.imagingOrderRepository.getRoomStats(id);
   };
+
+  async findByPatientId(
+    patientId: string,
+    paginationDto?: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+    return this.imagingOrderRepository.findByPatientIdWithPagination(
+      patientId,
+      paginationDto ?? { page: 1, limit: 10 }
+    );
+  }
 }

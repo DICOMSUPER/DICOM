@@ -10,7 +10,7 @@ export interface CreateImagingOrderDto {
   // modalityId: string;
   // bodyPart: string;
   request_procedure_id?: string;
-  // orderStatus?: ImagingOrderStatus;
+  orderStatus?: ImagingOrderStatus;
   clinicalIndication?: string;
   contrastRequired?: boolean;
   specialInstructions?: string;

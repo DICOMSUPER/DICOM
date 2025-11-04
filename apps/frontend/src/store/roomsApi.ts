@@ -57,7 +57,7 @@ export const roomApi = createApi({
     }),
 
     // Get room by ID
-    getRoomById: builder.query<ApiResponse<Room>, string>({
+    getRoomById: builder.query<ApiResponse<{ room: Room }>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",

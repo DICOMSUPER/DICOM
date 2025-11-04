@@ -23,7 +23,7 @@ export class DiagnosesReportService {
     @Inject()
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
     private readonly encounterRepository: PatientEncounterRepository
-  ) {}
+  ) { }
 
   private checkDiagnosesReport = async (
     id: string
@@ -121,4 +121,53 @@ export class DiagnosesReportService {
   ) => {
     return await this.diagnosisReportRepository.filter(studyIds, reportStatus);
   };
+
+  // async findByStudyId(studyId: string): Promise<DiagnosesReport[]> {
+  //   if (!studyId) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.BAD_REQUEST,
+  //       'Study ID is required',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
+
+  //   const reports = await this.diagnosisReportRepository.findAll(
+  //     { where: { studyId, isDeleted: false }, order: { createdAt: 'DESC' } },
+  //     ['encounter', 'encounter.patient']
+  //   );
+
+  //   if (!reports || reports.length === 0) {
+  //     throw ThrowMicroserviceException(
+  //       HttpStatus.NOT_FOUND,
+  //       'No diagnosis reports found for this study ID',
+  //       PATIENT_SERVICE
+  //     );
+  //   }
+
+  //   return reports;
+  // }
+  async findByStudyId(studyId: string): Promise<DiagnosesReport[]> {
+    if (!studyId) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Study ID is required',
+        PATIENT_SERVICE
+      );
+    }
+
+    const reports = await this.diagnosisReportRepository.findAll(
+      {
+        where: { studyId, isDeleted: false },
+        order: { createdAt: 'DESC' },
+      },
+      ['encounter', 'encounter.patient']
+    );
+
+    // ✅ Nếu không có dữ liệu thì trả về mảng rỗng thay vì ném lỗi
+    if (!reports || reports.length === 0) {
+      return [];
+    }
+
+    return reports;
+  }
 }

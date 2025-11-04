@@ -380,4 +380,16 @@ export class PatientRepository extends BaseRepository<Patient> {
 
     return qb.getMany();
   }
+
+  async filterPatientName(patientName: string): Promise<Patient[]> {
+    const repository = await this.getRepository();
+    const qb = repository.createQueryBuilder('patient');
+
+    qb.where(
+      `(patient.first_name || ' ' || patient.last_name) ILIKE :patientName`,
+      { patientName: `%${patientName}%` }
+    );
+
+    return qb.getMany();
+  }
 }

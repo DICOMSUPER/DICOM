@@ -10,6 +10,7 @@ import { DepartmentModule } from './department/department.module';
 import { EmployeeSchedulesModule } from './employee-schedules/employee-schedules.module';
 import { WeeklySchedulePatternsModule } from './weekly-schedule-patterns/weekly-schedule-patterns.module';
 import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
+import { DigitalSignatureModule } from './digital-signature/digital-signature.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     WeeklySchedulePatternsModule,
     ShiftTemplatesModule,
     PatientServiceClientModule,
+    DigitalSignatureModule,
   ],
   exports: [
     UserServiceClientModule,
@@ -31,6 +33,7 @@ import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
     DepartmentModule,
     EmployeeSchedulesModule,
     ShiftTemplatesModule,
+    DigitalSignatureModule,
   ],
 
 })

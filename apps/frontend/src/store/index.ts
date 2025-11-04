@@ -16,7 +16,8 @@ import { bodyPartApi } from "./bodyPartApi";
 import { requestProcedureApi } from "./requestProcedureAPi";
 import { imagingOrderApi } from "./imagingOrderApi";
 import { modalityMachineApi } from "./modalityMachineApi";
-import { imagingOrderFormApi } from "./imagingOrderFormApi";
+import { imagingOrderFormApi } from "./imaging-order-formApi";
+import { diagnosisApi } from "./diagnosisApi";
 
 export const store = configureStore({
   reducer: {
@@ -38,7 +39,8 @@ export const store = configureStore({
     [requestProcedureApi.reducerPath]: requestProcedureApi.reducer,
     [imagingOrderApi.reducerPath]: imagingOrderApi.reducer,
     [imagingOrderFormApi.reducerPath]: imagingOrderFormApi.reducer,
-
+    [diagnosisApi.reducerPath]: diagnosisApi.reducer,
+   
   },
   middleware: (getDefault) =>
     getDefault()
@@ -57,8 +59,10 @@ export const store = configureStore({
       .concat(bodyPartApi.middleware)
       .concat(requestProcedureApi.middleware)
       .concat(imagingOrderApi.middleware)
+      .concat(diagnosisApi.middleware)
       .concat(imagingOrderFormApi.middleware),
  
+
 });
 
 export type RootState = ReturnType<typeof store.getState>;

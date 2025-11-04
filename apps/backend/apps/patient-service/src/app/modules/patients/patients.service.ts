@@ -107,6 +107,18 @@ export class PatientService {
     return patient;
   };
 
+  findPatientByName = async (patientName: string): Promise<Patient[]> => {
+    const patients = await this.patientRepository.filterPatientName(patientName);
+    if (!patients) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Failed to find patient by name',
+        PATIENT_SERVICE
+      );
+    }
+    return patients;
+  };
+
   getOverview = async (
     patientCode: string
   ): Promise<PatientOverview | null> => {

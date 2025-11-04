@@ -23,9 +23,9 @@ export class DiagnosesReportController {
   private logger = new Logger(PATIENT_SERVICE);
   constructor(
     private readonly diagnosesReportService: DiagnosesReportService
-  ) {}
+  ) { }
 
-  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
+  @MessagePattern('PatientService.DiagnosesReport.Create')
   async create(
     @Payload() data: { createDiagnosesReportDto: CreateDiagnosesReportDto }
   ): Promise<DiagnosesReport> {
@@ -170,6 +170,21 @@ export class DiagnosesReportController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to filter diagnoses reports',
+        PATIENT_SERVICE
+      );
+    }
+  }
+  //find by studyId
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.FindByStudyId`)
+  async findByStudyId(@Payload() data: { studyId: string }) {
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByStudyId`);
+    try {
+      const { studyId } = data;
+      return await this.diagnosesReportService.findByStudyId(studyId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find diagnoses reports by studyId: ${data.studyId}`,
         PATIENT_SERVICE
       );
     }

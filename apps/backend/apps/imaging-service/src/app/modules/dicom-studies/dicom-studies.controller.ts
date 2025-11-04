@@ -196,7 +196,27 @@ export class DicomStudiesController {
       );
     }
   }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByOrderId`)
+  async findByOrderId(
+    @Payload() data: { orderId: string }
+  ): Promise<DicomStudy[]> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByOrderId`
+    );
+    try {
+      const { orderId } = data;
+      return await this.dicomStudiesService.findByOrderId(orderId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find dicom studies by orderId: ${data.orderId}`,
+        IMAGING_SERVICE
+      );
+    }
+  }
 }
+
 export interface FilterData {
   role?: Roles;
   studyUID?: string;

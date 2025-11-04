@@ -20,6 +20,8 @@ import {
   CreateModalityMachineDto,
   UpdateModalityMachineDto,
 } from '@backend/shared-domain';
+import { Public, Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 
 @Controller('modality-machines')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -29,6 +31,7 @@ export class ModalityMachinesController {
     private readonly imagingService: ClientProxy
   ) {}
 
+  @Public()
   @Get()
   async findAll(@Query('modalityId') modalityId?: string) {
     try {

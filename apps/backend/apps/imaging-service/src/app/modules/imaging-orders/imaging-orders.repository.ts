@@ -179,6 +179,64 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     );
   }
 
+  async getRoomStats(id: string) {
+    const repository = this.getRepository();
+
+    // Get all non-deleted orders for this room (all-time)
+    const allOrders = await repository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
+      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: id })
+      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
+      .getMany();
+
+    // Get pending orders (waiting), ordered by orderNumber ASC
+    const pendingOrders = allOrders
+      .filter((order) => order.orderStatus === OrderStatus.PENDING)
+      .sort((a, b) => a.orderNumber - b.orderNumber);
+
+    // Get in-progress orders, ordered by orderNumber ASC
+    const inProgressOrders = allOrders
+      .filter((order) => order.orderStatus === OrderStatus.IN_PROGRESS)
+      .sort((a, b) => a.orderNumber - b.orderNumber);
+
+    // Get completed and cancelled orders for statistics
+    const completedOrders = allOrders.filter(
+      (order) => order.orderStatus === OrderStatus.COMPLETED
+    );
+    const cancelledOrders = allOrders.filter(
+      (order) => order.orderStatus === OrderStatus.CANCELLED
+    );
+
+    const maxWaiting =
+      pendingOrders.length > 0
+        ? {
+            orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
+            entity: pendingOrders[pendingOrders.length - 1],
+          }
+        : null;
+
+    const currentInProgress =
+      inProgressOrders.length > 0
+        ? {
+            orderNumber: inProgressOrders[0].orderNumber,
+            entity: inProgressOrders[0],
+          }
+        : null;
+
+    return {
+      maxWaiting,
+      currentInProgress,
+      stats: {
+        total: allOrders.length,
+        waiting: pendingOrders.length,
+        inProgress: inProgressOrders.length,
+        completed: completedOrders.length,
+        cancelled: cancelledOrders.length,
+      },
+    };
+  }
+
   async filterImagingOrderByRoomId(
     data: FilterByRoomIdType
   ): Promise<ImagingOrder[]> {
@@ -219,7 +277,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     return qb.getMany();
   }
 
-  async getRoomStatsInDate(id: string): Promise<RoomOrderStats> {
+  async getRoomStatsInDate(id: string) {
     const date = new Date();
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
@@ -288,61 +346,81 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     };
   }
 
-  async getRoomStats(id: string): Promise<RoomOrderStats> {
-    const repository = this.getRepository();
+  async findByPatientIdWithPagination(
+    patientId: string,
+    paginationDto: RepositoryPaginationDto,
+    entityManager?: EntityManager
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+    const repository = this.getRepository(entityManager);
+    const {
+      page = 1,
+      limit = 10,
+      sortField,
+      order,
+      relation,
+      searchField,
+      search,
+    } = paginationDto;
 
-    // Get all non-deleted orders for this room (all-time)
-    const allOrders = await repository
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    const skip = (safePage - 1) * safeLimit;
+
+    const query = repository
       .createQueryBuilder('order')
+      .leftJoinAndSelect('order.procedure', 'procedure')
+      .leftJoinAndSelect('procedure.modality', 'modality')
+      .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
-      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: id })
-      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
-      .getMany();
+      .where('order.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('imagingOrderForm.patientId = :patientId', { patientId });
 
-    // Get pending orders (waiting), ordered by orderNumber ASC
-    const pendingOrders = allOrders
-      .filter((order) => order.orderStatus === OrderStatus.PENDING)
-      .sort((a, b) => a.orderNumber - b.orderNumber);
+    // Search filter
+    if (search && searchField) {
+      query.andWhere(`order.${searchField} LIKE :search`, {
+        search: `%${search}%`,
+      });
+    }
 
-    // Get in-progress orders, ordered by orderNumber ASC
-    const inProgressOrders = allOrders
-      .filter((order) => order.orderStatus === OrderStatus.IN_PROGRESS)
-      .sort((a, b) => a.orderNumber - b.orderNumber);
+    // Sort
+    if (sortField && order) {
+      query.orderBy(
+        `order.${sortField}`,
+        order.toUpperCase() as 'ASC' | 'DESC'
+      );
+    } else {
+      query.orderBy('order.createdAt', 'DESC');
+    }
 
-    // Get completed and cancelled orders for statistics
-    const completedOrders = allOrders.filter(
-      (order) => order.orderStatus === OrderStatus.COMPLETED
+    // Relations (nếu có truyền thêm)
+    if (relation?.length) {
+      relation.forEach((r) => query.leftJoinAndSelect(`order.${r}`, r));
+    }
+
+    query.skip(skip).take(safeLimit);
+
+    const [data, total] = await query.getManyAndCount();
+
+    if (!data || data.length === 0) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'No imaging orders found for this patient',
+        IMAGING_SERVICE
+      );
+    }
+
+    const totalPages = Math.ceil(total / safeLimit);
+    const hasNextPage = safePage < totalPages;
+    const hasPreviousPage = safePage > 1;
+
+    return new PaginatedResponseDto<ImagingOrder>(
+      data,
+      total,
+      safePage,
+      safeLimit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
     );
-    const cancelledOrders = allOrders.filter(
-      (order) => order.orderStatus === OrderStatus.CANCELLED
-    );
-
-    const maxWaiting =
-      pendingOrders.length > 0
-        ? {
-            orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
-            entity: pendingOrders[pendingOrders.length - 1],
-          }
-        : null;
-
-    const currentInProgress =
-      inProgressOrders.length > 0
-        ? {
-            orderNumber: inProgressOrders[0].orderNumber,
-            entity: inProgressOrders[0],
-          }
-        : null;
-
-    return {
-      maxWaiting,
-      currentInProgress,
-      stats: {
-        total: allOrders.length,
-        waiting: pendingOrders.length,
-        inProgress: inProgressOrders.length,
-        completed: completedOrders.length,
-        cancelled: cancelledOrders.length,
-      },
-    };
   }
 }

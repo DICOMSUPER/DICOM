@@ -35,12 +35,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map((r) => ({
-                type: "ImagingOrder" as const,
-                id: r.id,
-              })),
-              { type: "ImagingOrder", id: "LIST" },
-            ]
+            ...result.map((r) => ({
+              type: "ImagingOrder" as const,
+              id: r.id,
+            })),
+            { type: "ImagingOrder", id: "LIST" },
+          ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
@@ -59,12 +59,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "ImagingOrder" as const,
-                id: r.id,
-              })),
-              { type: "ImagingOrder", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "ImagingOrder" as const,
+              id: r.id,
+            })),
+            { type: "ImagingOrder", id: "LIST" },
+          ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
@@ -86,12 +86,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "ImagingOrder" as const,
-                id: r.id,
-              })),
-              { type: "ImagingOrder", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "ImagingOrder" as const,
+              id: r.id,
+            })),
+            { type: "ImagingOrder", id: "LIST" },
+          ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
@@ -123,6 +123,27 @@ export const imagingOrderApi = createApi({
         { type: "ImagingOrder", id: "LIST" },
       ],
     }),
+    //find  by id patient
+    getImagingOrdersByPatientId: builder.query<
+      PaginatedResponse<ImagingOrder>,
+      { patientId: string; page?: number; limit?: number }
+    >({
+      query: ({ patientId, page, limit }) => ({
+        url: `/patient/${patientId}`,
+        method: "GET",
+        params: { page, limit },
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.data.map((r) => ({
+              type: "ImagingOrder" as const,
+              id: r.id,
+            })),
+            { type: "ImagingOrder", id: "LIST" },
+          ]
+          : [{ type: "ImagingOrder", id: "LIST" }],
+    }),
 
     getImagingOrderByRoomIdFilter: builder.query<
       ApiResponse<ImagingOrder[]>,
@@ -142,6 +163,7 @@ export const imagingOrderApi = createApi({
       }),
     }),
   }),
+
 });
 
 export const {
@@ -152,6 +174,10 @@ export const {
   useCreateImagingOrderMutation,
   useGetImagingOrderByRoomIdFilterQuery,
   useGetOrderStatsForRoomQuery,
+
+  useGetImagingOrdersByPatientIdQuery,
+  //   useUpdateImagingOrderMutation,
+
   useUpdateImagingOrderMutation,
   useDeleteImagingOrderMutation,
 } = imagingOrderApi;
