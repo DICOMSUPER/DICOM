@@ -27,16 +27,24 @@ export default function MedicalRecordPage() {
         label: `${modalityName} - ${formattedDate}`,
         modality: modalityName,
         date: formattedDate,
+        encounterId: order.imagingOrderForm.encounterId,
       };
     });
   }, [imagingOrdersData]);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
 
-  const handleSelectExam = useCallback((studyId: string | null) => {
+  const handleSelectExam = useCallback((studyId: string | null, encounterId?: string | null) => {
     setSelectedStudyId(studyId);
     setSelectedExam(studyId ? "existing" : "new");
-  }, []);
 
-  // Khi có selectedStudyId, gọi API diagnosis
+    if (encounterId) {
+      setSelectedEncounterId(encounterId);
+    } else {
+      // Nếu không có studyId thì lấy encounter đầu tiên
+      const firstEncounter = examHistory[0]?.encounterId || null;
+      setSelectedEncounterId(firstEncounter);
+    }
+  }, [examHistory]);
   const { data: diagnosisData, isLoading: isDiagnosisLoading } = useGetDiagnoseByStudyIdQuery(
     selectedStudyId ?? "",
     { skip: !selectedStudyId }
@@ -57,6 +65,7 @@ export default function MedicalRecordPage() {
         selectedStudyId={selectedStudyId}
         diagnosisData={diagnosisData}
         isDiagnosisLoading={isDiagnosisLoading}
+        encounterId={selectedEncounterId}
       />
     </div>
   );

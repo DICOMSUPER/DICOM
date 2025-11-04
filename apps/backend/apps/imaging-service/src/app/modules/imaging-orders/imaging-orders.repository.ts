@@ -259,74 +259,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   }
 
 
-  async getRoomStats(id: string) {
-    const date = new Date();
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const repository = this.getRepository();
-
-    // Get all orders for this room today
-    const allOrders = await repository
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
-      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: id })
-      .andWhere('order.createdAt BETWEEN :start AND :end', {
-        start: startOfDay,
-        end: endOfDay,
-      })
-      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
-      .getMany();
-
-    // Get pending orders (waiting), ordered by orderNumber ASC
-    const pendingOrders = allOrders
-      .filter((order) => order.orderStatus === OrderStatus.PENDING)
-      .sort((a, b) => a.orderNumber - b.orderNumber);
-
-    // Get in-progress orders, ordered by orderNumber ASC
-    const inProgressOrders = allOrders
-      .filter((order) => order.orderStatus === OrderStatus.IN_PROGRESS)
-      .sort((a, b) => a.orderNumber - b.orderNumber);
-
-    // Get completed and cancelled orders for statistics
-    const completedOrders = allOrders.filter(
-      (order) => order.orderStatus === OrderStatus.COMPLETED
-    );
-    const cancelledOrders = allOrders.filter(
-      (order) => order.orderStatus === OrderStatus.CANCELLED
-    );
-
-    const maxWaiting =
-      pendingOrders.length > 0
-        ? {
-          orderNumber: pendingOrders[pendingOrders.length - 1].orderNumber,
-          entity: pendingOrders[pendingOrders.length - 1],
-        }
-        : null;
-
-    const currentInProgress =
-      inProgressOrders.length > 0
-        ? {
-          orderNumber: inProgressOrders[0].orderNumber,
-          entity: inProgressOrders[0],
-        }
-        : null;
-
-    return {
-      maxWaiting,
-      currentInProgress,
-      stats: {
-        total: allOrders.length,
-        waiting: pendingOrders.length,
-        inProgress: inProgressOrders.length,
-        completed: completedOrders.length,
-        cancelled: cancelledOrders.length,
-      },
-    };
-  }
+ 
   async findByPatientIdWithPagination(
     patientId: string,
     paginationDto: RepositoryPaginationDto,

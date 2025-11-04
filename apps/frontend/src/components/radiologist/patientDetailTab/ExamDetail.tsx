@@ -13,11 +13,12 @@ export const ExamItemDetail = React.memo(
     );
 
     const study = data?.data?.[0];
+  
 
-    if (error) { 
-        return (
-            <div className="border rounded"> </div>
-        )
+    if (error) {
+      return (
+        <div className="border rounded"> </div>
+      )
     }
 
     return (
@@ -49,7 +50,13 @@ export const ExamItemDetail = React.memo(
                 </div>
 
                 <button
-                  onClick={() => setSelectedExam(study ? study.id : null)}
+                  onClick={() => {
+                    // Lấy luôn studyId + encounterId
+                    setSelectedExam(study ? study.id : null);
+                    if (study) {
+                      handleToggle(study.id, study?.imagingOrder?.imagingOrderForm?.encounterId);
+                    }
+                  }}
                   className="text-blue-600 hover:underline text-xs"
                 >
                   Xem chi tiết
