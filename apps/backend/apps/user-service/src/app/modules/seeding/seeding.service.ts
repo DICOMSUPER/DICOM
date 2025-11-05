@@ -113,7 +113,7 @@ export class SeedingService {
       {
         username: 'system_admin',
         email: 'system_admin@hospital.com',
-        password: 'system_admin123',
+        password: 'Password_123!',
         firstName: 'System',
         lastName: 'Administrator',
         phone: '0123456789',
@@ -126,7 +126,7 @@ export class SeedingService {
       {
         username: 'physician',
         email: 'physician@hospital.com',
-        password: 'physician123',
+        password: 'Password_123!',
         firstName: 'Nguyễn Văn',
         lastName: 'Bác Sĩ',
         phone: '0123456790',
@@ -139,7 +139,7 @@ export class SeedingService {
       {
         username: 'imaging_technician',
         email: 'imaging_technician@hospital.com',
-        password: 'imaging_tech123',
+        password: 'Password_123!',
         firstName: 'Trần Thị',
         lastName: 'Kỹ Thuật Viên',
         phone: '0123456791',
@@ -152,7 +152,7 @@ export class SeedingService {
       {
         username: 'radiologist',
         email: 'radiologist@hospital.com',
-        password: 'radiologist123',
+        password: 'Password_123!',
         firstName: 'Phạm',
         lastName: 'Bác Sĩ Chẩn Đoán',
         phone: '0123456793',
@@ -165,7 +165,7 @@ export class SeedingService {
       {
         username: 'reception_staff',
         email: 'reception_staff@hospital.com',
-        password: 'reception_staff123',
+        password: 'Password_123!',
         firstName: 'Lê Thị',
         lastName: 'Lễ Tân',
         phone: '0123456792',
