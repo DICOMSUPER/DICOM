@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import classnames from 'classnames';
-import { useDrag } from 'react-dnd';
 
 import { DisplaySetMessageListTooltip } from '../DisplaySetMessageListTooltip';
 import { TooltipTrigger, TooltipContent, Tooltip } from '../Tooltip';
@@ -76,18 +75,7 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
   // ThumbnailMenuItems = () => null,
 }) => {
   const dragRef = useRef<HTMLDivElement>(null);
-  
-  const [{ isDragging }, drag] = useDrag({
-    type: 'displayset',
-    item: { ...dragData },
-    canDrag: () => Object.keys(dragData).length !== 0,
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
 
-  // Connect drag ref
-  drag(dragRef);
 
   const [lastTap, setLastTap] = useState(0);
 
