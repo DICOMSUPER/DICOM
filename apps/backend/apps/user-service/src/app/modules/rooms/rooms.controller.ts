@@ -1,7 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RoomsService } from './rooms.service';
-import { CreateRoomDto } from '@backend/shared-domain';
+import { CreateRoomDto, Room } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
 import {
   RoomNotFoundException,
@@ -222,7 +222,7 @@ export class RoomsController {
         : result.data
         ? [result.data]
         : [];
-      const roomIds = rooms.map((r) => r.id);
+      const roomIds = rooms.map((r: Room) => r.id);
 
       this.logger.log(`Returning ${roomIds.length} room IDs`);
 
