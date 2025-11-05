@@ -1,7 +1,8 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PaginationModule } from './pagination/pagination.module';
+import { DataSource } from 'typeorm';
 
 interface DatabaseModuleOptions {
   prefix: string;
@@ -48,8 +49,56 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
+            ssl: { rejectUnauthorized: false }
           }),
         }),
+      ],
+      providers: [
+        {
+          provide: `${prefixUpper}_DB_CONNECT_LOGGER`,
+          inject: [DataSource, ConfigService],
+          useFactory: async (dataSource: DataSource, configService: ConfigService) => {
+            const logger = new Logger(`${prefixUpper} Database`);
+            const shouldLog = configService.get<boolean>(
+              `${prefixUpper}_DB_LOG_ON_CONNECT`,
+              true
+            );
+            if (!shouldLog) {
+              return true;
+            }
+            try {
+              const host = configService.get<string>(`${prefixUpper}_DB_HOST`, 'localhost');
+              const port = configService.get<number>(`${prefixUpper}_DB_PORT`, 5432);
+              const database = configService.get<string>(
+                `${prefixUpper}_DB_NAME`,
+                defaultDbName || `${prefix.toLowerCase()}_service`
+              );
+              const username = configService.get<string>(`${prefixUpper}_DB_USERNAME`, 'postgres');
+              const loggingEnabled = configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false);
+              const syncEnabled = configService.get<boolean>(`${prefixUpper}_DB_SYNC`, true);
+              const sslRejectUnauthorized = false; // matches ssl: { rejectUnauthorized: false }
+
+              const start = Date.now();
+              if (!dataSource.isInitialized) {
+                await dataSource.initialize();
+              }
+              const ms = Date.now() - start;
+              const maskedUser = username ? `${username}` : 'unknown';
+              const message = [
+                'Connected:',
+                `  host=${host} port=${port} db=${database}`,
+                `  user=${maskedUser}`,
+                `  ssl=require(rejectUnauthorized=${sslRejectUnauthorized})`,
+                `  logging=${loggingEnabled} sync=${syncEnabled}`,
+                `  time=${ms}ms`,
+              ].join('\n');
+              logger.log(message);
+            } catch (err) {
+              logger.error('Database connection failed', err as Error);
+            }
+            return true;
+          },
+        },
       ],
     };
   }
