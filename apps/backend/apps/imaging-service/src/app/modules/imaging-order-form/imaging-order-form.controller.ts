@@ -17,7 +17,7 @@ import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
-import { ImagingOrderFormService } from './imaging-order-form.service';
+import { ImagingOrderFormService, OrderFormStats } from './imaging-order-form.service';
 
 const moduleName = 'ImagingOrderForm';
 
@@ -214,14 +214,7 @@ export class ImagingOrderFormController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStatistics`)
   async getStatistics(
     @Payload() data: { orderFormId: string }
-  ): Promise<{
-    totalOrders: number;
-    completedOrders: number;
-    pendingOrders: number;
-    inProgressOrders: number;
-    cancelledOrders: number;
-    completionPercentage: number;
-  }> {
+  ): Promise<OrderFormStats> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStatistics`
     );

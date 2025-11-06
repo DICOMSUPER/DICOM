@@ -138,7 +138,7 @@ export class AppService {
     return { message: 'Hello API' };
   }
 
-  extractMetadataFromFileBuffer = (buffer: Buffer) => {
+  extractMetadataFromFileBuffer = (buffer: Buffer): DICOMMetadata => {
     const dicomData = dcmjs.data.DicomMessage.readFile(buffer);
     const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
       dicomData.dict
@@ -154,7 +154,7 @@ export class AppService {
     filePath: string,
     patient: Patient,
     modalityMachineId: string
-  ) => {
+  ): Promise<object> => {
     return await this.entityManager.transaction(
       async (transactionalEntityManager) => {
         let createSeries = false;
@@ -163,7 +163,7 @@ export class AppService {
           {
             where: { id: orderId, isDeleted: false },
           },
-          ['procedure'],
+          ['procedure', 'imagingOrderForm'],
           transactionalEntityManager
         );
         if (!order) {
@@ -225,10 +225,10 @@ export class AppService {
           );
         }
 
-        if (patient.id !== order.patientId) {
+        if (patient.id !== order.imagingOrderForm?.patientId) {
           throw ThrowMicroserviceException(
             HttpStatus.BAD_REQUEST,
-            `Patient ID mismatch, patientId: ${patient.id} does not match with the patientId in the order( ${order.patientId} )`,
+            `Patient ID mismatch, patientId: ${patient.id} does not match with the patientId in the order( ${order.imagingOrderForm?.patientId} )`,
             IMAGING_SERVICE
           );
         }
@@ -281,7 +281,7 @@ export class AppService {
             studyTime: data.StudyTime,
             modalityMachineId: modalityMachineId,
             studyDescription: data.StudyDescription,
-            referringPhysicianId: order.orderingPhysicianId,
+            referringPhysicianId: order.imagingOrderForm?.orderingPhysicianId,
             performingTechnicianId: performingTechnicianId,
             studyStatus: DicomStudyStatus.SCANNED,
             numberOfSeries: 0,
@@ -355,7 +355,7 @@ export class AppService {
           seriesId: series.id,
           instanceNumber: instanceNumber,
           filePath: filePath,
-          fileName: data.SOPInstanceUID,
+          fileName: `${data.SOPInstanceUID}.dcm`,
           numberOfFrame: data.NumberOfFrames,
           rows: data.Rows,
           columns: data.Columns,

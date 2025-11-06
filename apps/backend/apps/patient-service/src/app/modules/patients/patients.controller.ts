@@ -5,7 +5,6 @@ import {
   CreatePatientDto,
   UpdatePatientDto,
   Patient,
-
   PatientCondition,
 } from '@backend/shared-domain';
 import {
@@ -20,6 +19,20 @@ import {
 import { VitalSignsSimplified } from '@backend/shared-interfaces';
 
 const moduleName = 'Patient';
+
+export interface GetPatientIdsResponse {
+  success: boolean;
+  data: string[];
+  count: number;
+}
+
+export interface FilterPatientRequest {
+  patientIds: string[] | [];
+  patientFirstName?: string;
+  patientLastName?: string;
+  patientCode?: string;
+}
+
 @Controller('patients')
 export class PatientController {
   private logger = new Logger(PATIENT_SERVICE);
@@ -237,7 +250,7 @@ export class PatientController {
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetIds`)
   async getPatientIds(
     @Payload() data: { take?: number; skip?: number }
-  ): Promise<{ success: boolean; data: string[]; count: number }> {
+  ): Promise<GetPatientIdsResponse | null> {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetIds`);
     try {
       const { take = 10, skip = 0 } = data;
@@ -268,12 +281,7 @@ export class PatientController {
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
   async filterPatient(
     @Payload()
-    data: {
-      patientIds: string[] | [];
-      patientFirstName?: string;
-      patientLastName?: string;
-      patientCode?: string;
-    }
+    data: FilterPatientRequest
   ) {
     try {
       return await this.patientService.filter(

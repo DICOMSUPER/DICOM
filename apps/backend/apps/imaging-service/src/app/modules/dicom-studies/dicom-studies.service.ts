@@ -221,7 +221,7 @@ export class DicomStudiesService {
     });
   };
 
-  filter = async (data: FilterData) => {
+  filter = async (data: FilterData): Promise<DicomStudy[]> => {
     return await this.dicomStudiesRepository.filter(data);
   };
 
@@ -240,6 +240,4 @@ export class DicomStudiesService {
       relation
     );
   };
-
-
 }

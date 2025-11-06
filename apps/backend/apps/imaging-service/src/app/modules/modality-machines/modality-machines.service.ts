@@ -36,7 +36,8 @@ export class ModalityMachinesService {
       {
         where: { id, isDeleted: false },
       },
-      relations
+      relations,
+      em
     );
 
     if (!modalityMachine) {
@@ -54,9 +55,13 @@ export class ModalityMachinesService {
     id: string,
     em?: EntityManager
   ): Promise<ImagingModality> => {
-    const imagingModality = await this.imagingModalityRepository.findOne({
-      where: { id, isDeleted: false },
-    });
+    const imagingModality = await this.imagingModalityRepository.findOne(
+      {
+        where: { id, isDeleted: false },
+      },
+      [],
+      em
+    );
 
     if (!imagingModality) {
       throw ThrowMicroserviceException(
@@ -82,17 +87,13 @@ export class ModalityMachinesService {
   ): Promise<ModalityMachine> => {
     return await this.entityManager.transaction(async (em) => {
       // Check imaging modality
-      return await this.entityManager.transaction(async (em) => {
-        await this.checkImagingModality(
-          createModalityMachineDto.modalityId,
-          em
-        );
 
-        return await this.modalityMachinesRepository.create(
-          createModalityMachineDto,
-          em
-        );
-      });
+      await this.checkImagingModality(createModalityMachineDto.modalityId, em);
+
+      return await this.modalityMachinesRepository.create(
+        createModalityMachineDto,
+        em
+      );
     });
   };
 

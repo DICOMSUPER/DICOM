@@ -18,13 +18,14 @@ import { ImagingOrdersService } from './imaging-orders.service';
 import type {
   FilterByRoomIdType,
   ReferenceFieldOrderType,
+  RoomOrderStats,
 } from './imaging-orders.repository';
 
 const moduleName = 'ImagingOrders';
 @Controller()
 export class ImagingOrdersController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(private readonly imagingOrdersService: ImagingOrdersService) { }
+  constructor(private readonly imagingOrdersService: ImagingOrdersService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(@Payload() createImagingOrderDto: any): Promise<ImagingOrder> {
@@ -186,7 +187,9 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`)
-  async filterOrderByRoomIdType(@Payload() data: FilterByRoomIdType) {
+  async filterOrderByRoomIdType(
+    @Payload() data: FilterByRoomIdType
+  ): Promise<ImagingOrder[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`
     );
@@ -202,7 +205,9 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStats`)
-  async getRoomOrderStats(@Payload() data: { id: string }) {
+  async getRoomOrderStats(
+    @Payload() data: { id: string }
+  ): Promise<RoomOrderStats> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStats`
     );
@@ -216,31 +221,46 @@ export class ImagingOrdersController {
       );
     }
   }
- @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
-async findByPatientId(
-  @Payload()
-  data: {
-    patientId: string;
-    pagination?: RepositoryPaginationDto;
-  },
-): Promise<PaginatedResponseDto<ImagingOrder>> {
-  this.logger.log(
-    `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
-  );
-
-  try {
-    const { patientId, pagination } = data;
-
-    return await this.imagingOrdersService.findByPatientId(
-      patientId,
-      pagination ?? { page: 1, limit: 10 },
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
+  async findByPatientId(
+    @Payload()
+    data: {
+      patientId: string;
+      pagination?: RepositoryPaginationDto;
+    }
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByPatientId`
     );
-  } catch (error) {
-    throw handleErrorFromMicroservices(
-      error,
-      `Failed to find imaging orders for patientId: ${data.patientId}`,
-      IMAGING_SERVICE,
-    );
+    try {
+      const { patientId, pagination } = data;
+
+      return await this.imagingOrdersService.findByPatientId(
+        patientId,
+        pagination ?? { page: 1, limit: 10 }
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find imaging orders for patientId: ${data.patientId}`,
+        IMAGING_SERVICE
+      );
+    }
   }
-}
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
+  async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`
+    );
+    try {
+      return await this.imagingOrdersService.getRoomStatsInDate(data.id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get imaging order room stats',
+        IMAGING_SERVICE
+      );
+    }
+  }
 }

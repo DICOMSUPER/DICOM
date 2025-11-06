@@ -10,6 +10,7 @@ import {
   FilterByRoomIdType,
   ImagingOrderRepository,
   ReferenceFieldOrderType,
+  RoomOrderStats,
 } from './imaging-orders.repository';
 import {
   PaginatedResponseDto,
@@ -35,7 +36,7 @@ export class ImagingOrdersService {
     private readonly imagingOrderFormRepository: ImagingOrderFormRepository,
 
     @InjectEntityManager() private readonly entityManager: EntityManager
-  ) { }
+  ) {}
 
   private checkImagingOrder = async (
     id: string,
@@ -198,21 +199,20 @@ export class ImagingOrdersService {
     updateImagingOrderDto: UpdateImagingOrderDto
   ): Promise<ImagingOrder | null> => {
     return await this.entityManager.transaction(async (em) => {
-      return await this.entityManager.transaction(async (em) => {
-        const order = await this.checkImagingOrder(id);
+      const order = await this.checkImagingOrder(id, em);
 
-        //check availablity when update modality
-        // if (
-        //   updateImagingOrderDto.modalityId &&
-        //   updateImagingOrderDto.modalityId !== order.modalityId
-        // )
-        //   await this.checkModality(updateImagingOrderDto.modalityId);
+      //check availablity when update modality
+      // if (
+      //   updateImagingOrderDto.modalityId &&
+      //   updateImagingOrderDto.modalityId !== order.modalityId
+      // )
+      //   await this.checkModality(updateImagingOrderDto.modalityId);
 
-        return await this.imagingOrderRepository.update(
-          id,
-          updateImagingOrderDto
-        );
-      });
+      return await this.imagingOrderRepository.update(
+        id,
+        updateImagingOrderDto,
+        em
+      );
     });
   };
 
@@ -229,24 +229,21 @@ export class ImagingOrdersService {
     return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
   };
 
-  getRoomStatsInDate = async (id: string) => {
+  getRoomStatsInDate = async (id: string): Promise<RoomOrderStats> => {
     return await this.imagingOrderRepository.getRoomStatsInDate(id);
   };
 
-  getRoomStats = async (id: string) => {
+  getRoomStats = async (id: string): Promise<RoomOrderStats> => {
     return await this.imagingOrderRepository.getRoomStats(id);
   };
 
   async findByPatientId(
     patientId: string,
-    paginationDto?: RepositoryPaginationDto,
+    paginationDto?: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<ImagingOrder>> {
     return this.imagingOrderRepository.findByPatientIdWithPagination(
       patientId,
-      paginationDto ?? { page: 1, limit: 10 },
+      paginationDto ?? { page: 1, limit: 10 }
     );
   }
-
-  
-
 }

@@ -28,6 +28,12 @@ export interface PatientSearchFilters {
   offset?: number;
 }
 
+export interface PatientFilterType {
+  patients: Patient[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 export interface PatientWithRelations {
   id: string;
   patientCode: string;
@@ -100,12 +106,9 @@ export class PatientRepository extends BaseRepository<Patient> {
   /**
    * Find patients with pagination using BaseRepository paginate method
    */
-  async findWithPagination(paginationDto: RepositoryPaginationDto): Promise<{
-    patients: Patient[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  async findWithPagination(
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PatientFilterType> {
     // Set default relations for patient queries
     const paginationWithRelations = {
       ...paginationDto,

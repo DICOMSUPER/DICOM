@@ -2,8 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { imagingApi, DicomSeries } from "@/services/imagingApi";
 
@@ -228,10 +226,8 @@ function ViewerPageContent() {
 
 export default function ViewerPage() {
   return (
-    <DndProvider backend={HTML5Backend}>
-      <ViewerProvider>
-        <ViewerPageContent />
-      </ViewerProvider>
-    </DndProvider>
+    <ViewerProvider>
+      <ViewerPageContent />
+    </ViewerProvider>
   );
 }
