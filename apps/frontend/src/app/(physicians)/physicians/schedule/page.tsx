@@ -294,7 +294,7 @@ export default function PhysicianSchedulePage() {
 
         {/* Right Panel - Schedule View */}
         <div className="lg:col-span-2 p-4 lg:p-6">
-          {/* View Mode Tabs */}
+        
           <div className="mb-4 lg:mb-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
               <TabsList className="bg-gray-100 w-full grid grid-cols-4">
@@ -314,8 +314,8 @@ export default function PhysicianSchedulePage() {
             </Tabs>
           </div>
 
-          {/* Error State */}
-          {schedulesError && !isLoading && (
+    
+          {/* {schedulesError && !isLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center max-w-md mx-auto">
                 <div className="flex justify-center mb-4">
@@ -338,7 +338,7 @@ export default function PhysicianSchedulePage() {
                 </Button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Content - Skeleton loading is handled within each view component */}
           {!schedulesError && (
