@@ -5,8 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { imagingApi, DicomSeries } from "@/services/imagingApi";
 
-// 🧩 Thêm dòng này để tránh lỗi build khi dùng useSearchParams
-export const dynamic = "force-dynamic";
+
 
 // Layout components
 import ViewerHeader from "@/components/viewer/layout/ViewerHeader";
