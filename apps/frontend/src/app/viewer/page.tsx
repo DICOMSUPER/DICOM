@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { imagingApi, DicomSeries } from "@/services/imagingApi";
 
+export const dynamic = "force-dynamic";
 
 
 // Layout components
