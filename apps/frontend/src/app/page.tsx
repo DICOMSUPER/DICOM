@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  // redirect("/login");
-  <div>anh minh</div>
+  redirect("/login");
 }
