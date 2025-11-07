@@ -38,8 +38,8 @@ import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
 import { 
-  useGetEmployeeSchedulesQuery, 
-  useDeleteEmployeeScheduleMutation,
+  useGetRoomSchedulesQuery, 
+  useDeleteRoomScheduleMutation,
   useGetShiftTemplatesQuery,
   useGetRoomsQuery,
   useGetScheduleStatsQuery,
@@ -99,7 +99,7 @@ export default function ScheduleManagementPage() {
     isFetching: schedulesFetching,
     error: schedulesError,
     refetch: refetchSchedules 
-  } = useGetEmployeeSchedulesQuery({
+  } = useGetRoomSchedulesQuery({
     page: 1,
     limit: 1000, // Fetch all schedules for the month
     search: search || undefined,
@@ -147,7 +147,7 @@ export default function ScheduleManagementPage() {
     employee_id: employeeFilter !== "all" ? employeeFilter : undefined,
   });
 
-  const [deleteSchedule, { isLoading: isDeleting }] = useDeleteEmployeeScheduleMutation();
+  const [deleteSchedule, { isLoading: isDeleting }] = useDeleteRoomScheduleMutation();
 
   const allSchedules = schedulesData?.data || [];
   const total = schedulesData?.total || 0;

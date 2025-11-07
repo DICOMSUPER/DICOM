@@ -37,6 +37,12 @@ export class CreatePatientEncounterDto {
   vitalSigns?: VitalSignsDto;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  serviceRoomId?: string;
+
+
+  @IsOptional()
   @IsUUID()
   assignedPhysicianId?: string;
 

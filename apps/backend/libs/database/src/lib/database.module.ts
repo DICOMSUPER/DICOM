@@ -9,7 +9,7 @@ interface DatabaseModuleOptions {
 }
 
 @Module({
-  imports: [PaginationModule]
+  imports: [PaginationModule],
 })
 export class DatabaseModule {
   static forService(options: DatabaseModuleOptions): DynamicModule {
@@ -39,7 +39,7 @@ export class DatabaseModule {
               defaultDbName || `${prefix.toLowerCase()}_service`
             ),
             // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: configService.get<boolean>(    
+            synchronize: configService.get<boolean>(
               `${prefixUpper}_DB_SYNC`,
               true
             ),
@@ -48,6 +48,9 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
+            ssl: {
+              rejectUnauthorized: false, 
+            },
           }),
         }),
       ],

@@ -2,14 +2,14 @@
 
 import { format, isSameDay } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface MonthViewProps {
   calendarDays: Date[];
-  schedules: EmployeeSchedule[];
+  schedules: RoomSchedule[];
   selectedDate: Date;
   isLoading?: boolean;
-  onScheduleClick?: (schedule: EmployeeSchedule) => void;
+  onScheduleClick?: (schedule: RoomSchedule) => void;
 }
 
 export function MonthView({ calendarDays, schedules, selectedDate, isLoading = false, onScheduleClick }: MonthViewProps) {

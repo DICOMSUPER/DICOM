@@ -6,3 +6,10 @@ export enum ConditionVerificationStatus {
     REFUTED = 'refuted',
     ENTERED_IN_ERROR = 'entered-in-error'
 }
+export enum ClinicalStatus {
+    ACTIVE = 'active',
+    RECURRENT = 'recurrent',
+    INACTIVE = 'inactive',
+    REMISSION = 'remission',
+    RESOLVED = 'resolved'
+}

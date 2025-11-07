@@ -3,16 +3,16 @@
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface DayViewProps {
   selectedDate: Date;
   timeSlots: { time: string; hour: number }[];
-  schedules: EmployeeSchedule[];
-  getScheduleForTimeSlot: (date: Date, hour: number) => EmployeeSchedule | undefined;
+  schedules: RoomSchedule[];
+  getScheduleForTimeSlot: (date: Date, hour: number) => RoomSchedule | undefined;
   getStatusColor: (status: string) => string;
   isLoading?: boolean;
-  onScheduleClick?: (schedule: EmployeeSchedule) => void;
+  onScheduleClick?: (schedule: RoomSchedule) => void;
 }
 
 export function DayView({ selectedDate, timeSlots, schedules, getScheduleForTimeSlot, getStatusColor, isLoading = false, onScheduleClick }: DayViewProps) {

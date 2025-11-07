@@ -30,7 +30,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const { data: patientEncounterData, isLoading } =
     useGetPatientEncounterByIdQuery(resolvedParams.id);
 
-
   const { data: patientOverview, isLoading: isLoadingOverview } =
     useGetPatientOverviewQuery(
       patientEncounterData?.data?.patient?.patientCode as string,
@@ -54,7 +53,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         skip: activeTab !== "results",
       }
     );
-    console.log("Encounters Data:", encountersData);
+  console.log("Encounters Data:", encountersData);
 
   // Conditionally fetch conditions only when tab is active
   // const { data: conditionsData, isLoading: isLoadingConditions } = useGetPatientConditionsByPatientIdQuery(
@@ -129,11 +128,13 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 {/* display recent vital sign and conditions (first three) */}
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="results">Encounter History</TabsTrigger>
-                <TabsTrigger value="imaging-order">Create Order Form</TabsTrigger>
+                <TabsTrigger value="imaging-order">
+                  Create Order Form
+                </TabsTrigger>
                 <TabsTrigger value="medical-history">Condition</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="space-y-6">
-                {patientOverview?.data  && (
+                {patientOverview?.data && (
                   <PatientSummaryTab overview={patientOverview?.data} />
                 )}
               </TabsContent>
@@ -148,7 +149,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               </TabsContent>
 
               <TabsContent value="imaging-order" className="space-y-6">
-                <CreateImagingOrder patient={patientEncounterData?.data?.patient} encounterId={resolvedParams.id} />
+                <CreateImagingOrder
+                  patient={patientEncounterData?.data?.patient}
+                  encounterId={resolvedParams.id}
+                />
               </TabsContent>
               <TabsContent value="medical-history" className="space-y-6">
                 {/* {isLoadingConditions ? (

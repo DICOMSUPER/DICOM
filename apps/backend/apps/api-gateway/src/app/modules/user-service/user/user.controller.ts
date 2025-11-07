@@ -27,7 +27,7 @@ import { Role } from '@backend/shared-decorators';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { AuthGuard } from '@backend/shared-guards';
 // removed unused import
-import { EmployeeSchedule, User } from '@backend/shared-domain';
+import { RoomSchedule, User } from '@backend/shared-domain';
 class LoginDto {
   email!: string;
   password!: string;
@@ -218,6 +218,47 @@ export class UserController {
       throw handleError(error);
     }
   }
+    @Get('profile')
+  @Role(
+    Roles.SYSTEM_ADMIN,
+    Roles.PHYSICIAN,
+    Roles.RECEPTION_STAFF,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST
+  )
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  async getCurrentProfile(@Req() req: IAuthenticatedRequest) {
+    try {
+      const userId = req['userInfo'].userId;
+
+      this.logger.log(`📋 Fetching current profile for user ID: ${userId}`);
+
+      const result = await firstValueFrom(
+        this.userClient.send('UserService.Users.findOne', { id: userId })
+      );
+
+      if (!result) {
+        throw new Error('User profile not found');
+      }
+
+      this.logger.log(
+        `✅ Profile retrieved successfully for user ID: ${userId}`
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get current profile`, error);
+      throw handleError(error);
+    }
+  }
 
   @Get('users')
   @Role(Roles.SYSTEM_ADMIN)
@@ -236,9 +277,7 @@ export class UserController {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(
-        `📋 Fetching users - Page: ${pageNum}, Limit: ${limitNum}`
-      );
+      this.logger.log(`Fetching users - Page: ${pageNum}, Limit: ${limitNum}`);
 
       const result = await firstValueFrom(
         this.userClient.send('user.get-all-users', {
@@ -250,7 +289,7 @@ export class UserController {
       );
 
       this.logger.log(
-        `✅ Retrieved ${result.data?.length || 0} users (Total: ${
+        `Retrieved ${result.data?.length || 0} users (Total: ${
           result.total || 0
         })`
       );
@@ -294,12 +333,12 @@ export class UserController {
     try {
       const scheduleArray = await firstValueFrom(
         this.userClient.send(
-          'UserService.EmployeeSchedule.GetOverlappingSchedule',
+          'UserService.RoomSchedule.GetOverlappingSchedule',
           { id, role, search }
         )
       );
       //map user from schedule
-      const userArray = scheduleArray.map((schedule: EmployeeSchedule) => {
+      const userArray = scheduleArray.map((schedule: RoomSchedule) => {
         return schedule.employee;
       });
 
@@ -339,4 +378,8 @@ export class UserController {
       throw handleError(error);
     }
   }
+
+  // ...existing code...
+
+
 }

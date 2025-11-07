@@ -1,7 +1,8 @@
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ICreateImagingOrderForm, IImagingOrderForm, ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { mapApiResponse } from "@/utils/adpater";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export const imagingOrderFormApi = createApi({
@@ -9,7 +10,7 @@ export const imagingOrderFormApi = createApi({
   baseQuery: axiosBaseQuery("/imaging-order-form"),
   tagTypes: ["ImagingOrderForm"],
   endpoints: (builder) => ({
-    // GET /imaging-orders
+    // GET /imaging-order-form (paginated)
     getImagingOrderFormPaginated: builder.query<
       PaginatedResponse<IImagingOrderForm>,
        { filters?: ImagingOrderFormFilters }
@@ -27,6 +28,20 @@ export const imagingOrderFormApi = createApi({
           : [{ type: "ImagingOrderForm", id: "LIST" }],
     }),
 
+    // GET /imaging-order-form/patient/:patientId
+    getImagingOrderFormsByPatientId: builder.query<
+      PaginatedResponse<IImagingOrderForm>,
+      { patientId: string } & QueryParams
+    >({
+      query: ({ patientId, ...params }) => ({
+        url: `/patient/${patientId}`,
+        method: "GET",
+        params,
+      }),
+      transformResponse: (response: any) =>
+        mapApiResponse<IImagingOrderForm>(response),
+      providesTags: ["ImagingOrderForm"],
+    }),
 
 
     getImagingOrderFormById: builder.query<ApiResponse<IImagingOrderForm>, string>({
@@ -34,16 +49,12 @@ export const imagingOrderFormApi = createApi({
       providesTags: (result, error, id) => [{ type: "ImagingOrderForm", id }],
     }),
 
+
     createImagingOrderForm: builder.mutation<ApiResponse<IImagingOrderForm>, ICreateImagingOrderForm>({
       query: (body) => ({ url: "", method: "POST", data: body }),
-      invalidatesTags: [{ type: "ImagingOrderForm", id: "LIST" }],
+      invalidatesTags: ["ImagingOrderForm"],
     }),
 
-    // PATCH /imaging-orders/:id
-    // updateImagingOrder: builder.mutation<ImagingOrder, { id: string; body: UpdateImagingOrderDto }>({
-    //   query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
-    //   invalidatesTags: (result, error, { id }) => [{ type: "ImagingOrder", id }, { type: "ImagingOrder", id: "LIST" }],
-    // }),
 
     deleteImagingOrderForm: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({ url: `${id}`, method: "DELETE" }),
@@ -56,10 +67,9 @@ export const imagingOrderFormApi = createApi({
 });
 
 export const {
-  // useGetAllImagingOrderFormsQuery,
   useGetImagingOrderFormPaginatedQuery,
+  useGetImagingOrderFormsByPatientIdQuery,
   useGetImagingOrderFormByIdQuery,
   useCreateImagingOrderFormMutation,
-//   useUpdateImagingOrderMutation,
   useDeleteImagingOrderFormMutation,
 } = imagingOrderFormApi;

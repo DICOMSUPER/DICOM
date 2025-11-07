@@ -32,10 +32,13 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared-enums/tsconfig.lib.json"
+      "path": "../../entities/tsconfig.lib.json"
     },
     {
       "path": "../../libs/redis/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-enums/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-utils/tsconfig.lib.json"

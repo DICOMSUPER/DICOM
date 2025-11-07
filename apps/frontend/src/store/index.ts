@@ -4,7 +4,7 @@ import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
 import { patientEncounterApi } from "./patientEncounterApi";
 import { scheduleApi } from "./scheduleApi";
-import { employeeScheduleApi } from "./employeeScheduleApi";
+
 import authReducer from "./authSlice";
 import patientReducer from "./patientSlice";
 import { departmentApi } from "./departmentApi";
@@ -16,8 +16,9 @@ import { bodyPartApi } from "./bodyPartApi";
 import { requestProcedureApi } from "./requestProcedureAPi";
 import { imagingOrderApi } from "./imagingOrderApi";
 import { modalityMachineApi } from "./modalityMachineApi";
-import { imagingOrderFormApi } from "./imaging-order-formApi";
+import { imagingOrderFormApi } from "./imagingOrderFormApi";
 import { diagnosisApi } from "./diagnosisApi";
+import { RoomScheduleApi } from "./roomScheduleApi";
 
 export const store = configureStore({
   reducer: {
@@ -30,7 +31,7 @@ export const store = configureStore({
     [scheduleApi.reducerPath]: scheduleApi.reducer,
     [departmentApi.reducerPath]: departmentApi.reducer,
     [roomApi.reducerPath]: roomApi.reducer,
-    [employeeScheduleApi.reducerPath]: employeeScheduleApi.reducer,
+    [RoomScheduleApi.reducerPath]: RoomScheduleApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
     [imagingModalityApi.reducerPath]: imagingModalityApi.reducer,
     [modalityMachineApi.reducerPath]: modalityMachineApi.reducer,
@@ -51,7 +52,7 @@ export const store = configureStore({
       .concat(scheduleApi.middleware)
       .concat(departmentApi.middleware)
       .concat(roomApi.middleware)
-      .concat(employeeScheduleApi.middleware)
+      .concat(RoomScheduleApi.middleware)
       .concat(userApi.middleware)
       .concat(imagingModalityApi.middleware)
       .concat(modalityMachineApi.middleware)
@@ -61,8 +62,6 @@ export const store = configureStore({
       .concat(imagingOrderApi.middleware)
       .concat(diagnosisApi.middleware)
       .concat(imagingOrderFormApi.middleware),
- 
-
 });
 
 export type RootState = ReturnType<typeof store.getState>;

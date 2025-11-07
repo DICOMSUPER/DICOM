@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -17,8 +16,11 @@ import { User } from './user.entity';
         password: config.get<string>('DB_PASSWORD', 'minhminh123.'),
         database: config.get<string>('DB_NAME', 'appdb'),
         entities: [User],
-        synchronize: config.get<string>('TYPEORM_SYNC', 'true') === 'true', 
+        synchronize: config.get<string>('TYPEORM_SYNC', 'true') === 'true',
         logging: config.get<string>('TYPEORM_LOGGING', 'false') === 'true',
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }),
       inject: [ConfigService],
     }),

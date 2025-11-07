@@ -4,10 +4,13 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared-enums"
+      "path": "../../entities"
     },
     {
       "path": "../../libs/redis"
+    },
+    {
+      "path": "../../libs/shared-enums"
     },
     {
       "path": "../../libs/shared-utils"
