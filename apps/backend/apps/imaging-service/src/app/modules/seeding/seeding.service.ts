@@ -6,6 +6,7 @@ import { firstValueFrom, timeout } from 'rxjs';
 import {
   ImagingModality,
   ImagingOrder,
+  ImagingOrderForm,
   DicomStudy,
   DicomSeries,
   DicomInstance,
@@ -13,6 +14,7 @@ import {
   ModalityMachine,
   BodyPart,
   RequestProcedure,
+  PatientEncounter,
 } from '@backend/shared-domain';
 import {
   OrderStatus,
@@ -20,6 +22,7 @@ import {
   DicomStudyStatus,
   AnnotationType,
   AnnotationStatus,
+  OrderFormStatus,
   Roles,
   MachineStatus,
 } from '@backend/shared-enums';
@@ -37,6 +40,8 @@ export class SeedingService {
     private readonly bodyPartRepository: Repository<BodyPart>,
     @InjectRepository(RequestProcedure)
     private readonly requestProcedureRepository: Repository<RequestProcedure>,
+    @InjectRepository(ImagingOrderForm)
+    private readonly imagingOrderFormRepository: Repository<ImagingOrderForm>,
     @InjectRepository(ImagingOrder)
     private readonly imagingOrderRepository: Repository<ImagingOrder>,
     @InjectRepository(DicomStudy)
@@ -47,7 +52,6 @@ export class SeedingService {
     private readonly dicomInstanceRepository: Repository<DicomInstance>,
     @InjectRepository(ImageAnnotation)
     private readonly imageAnnotationRepository: Repository<ImageAnnotation>,
-    // ✅ Inject microservice clients instead of cross-database repositories
     @Inject('PATIENT_SERVICE')
     private readonly patientServiceClient: ClientProxy,
     @Inject('USER_SERVICE')
@@ -183,6 +187,36 @@ export class SeedingService {
     }
   }
 
+  private async getEncounterIdsByPatient(
+    patientId: string,
+    take = 3
+  ): Promise<string[]> {
+    try {
+      const response = await firstValueFrom(
+        this.patientServiceClient
+          .send('PatientService.Encounter.FindByPatientId', {
+            patientId,
+            pagination: {
+              page: 1,
+              limit: take,
+            },
+          })
+          .pipe(timeout(5000))
+      );
+      
+      if (response?.data?.length) {
+        return response.data.map((encounter: PatientEncounter) => encounter.id);
+      }
+
+      return [];
+    } catch (error: any) {
+      this.logger.error(
+        `❌ Failed to get encounter IDs for patient ${patientId}: ${error.message}`
+      );
+      return [];
+    }
+  }
+
   async runSeeding(): Promise<void> {
     this.logger.log('🌱 Starting Imaging Service database seeding...');
 
@@ -191,6 +225,7 @@ export class SeedingService {
       await this.seedBodyParts();
       await this.seedModalityMachines();
       await this.seedRequestProcedures();
+      await this.seedImagingOrderForms();
       await this.seedImagingOrders();
       await this.seedDicomStudies();
       await this.seedDicomSeries();
@@ -583,6 +618,154 @@ export class SeedingService {
     }
   }
 
+  async seedImagingOrderForms(): Promise<void> {
+    this.logger.log('📝 Seeding imaging order forms...');
+
+    const procedures = await this.requestProcedureRepository.find({
+      where: { isActive: true },
+      take: 20,
+    });
+
+    if (procedures.length === 0) {
+      this.logger.warn(
+        '⚠️ No procedures found, skipping imaging order form seeding'
+      );
+      return;
+    }
+
+    const clinicalIndications = [
+      'Đau đầu kéo dài',
+      'Chấn thương sau tai nạn giao thông',
+      'Theo dõi khối u não',
+      'Khó thở và đau ngực',
+      'Đau bụng cấp',
+      'Theo dõi sau phẫu thuật',
+      'Tầm soát ung thư',
+      'Đau cột sống mạn tính',
+      'Kiểm tra định kỳ',
+      'Nghi ngờ viêm phổi',
+    ];
+
+    const historyNotes = [
+      'Bệnh nhân có tiền sử tăng huyết áp',
+      'Bệnh nhân từng phẫu thuật vùng bụng',
+      'Bệnh nhân không dị ứng thuốc cản quang',
+      'Có tiền sử tai biến mạch máu não',
+      'Bệnh nhân bị tiểu đường type 2',
+      'Không có tiền sử bệnh lý đáng kể',
+      'Tiền sử gia đình mắc ung thư phổi',
+      'Bệnh nhân hiện đang dùng thuốc chống đông',
+    ];
+
+    const preparationInstructions = [
+      'Nhịn ăn ít nhất 6 giờ trước khi chụp',
+      'Uống nhiều nước trước khi siêu âm',
+      'Không đeo trang sức hoặc kim loại',
+      'Thông báo về dị ứng thuốc cản quang',
+      'Ký cam kết trước khi can thiệp',
+      'Mặc đồ rộng thoải mái',
+    ];
+
+    const additionalNotes = [
+      'Ưu tiên chụp trong giờ hành chính',
+      'Theo dõi sát sinh hiệu sau thủ thuật',
+      'Liên hệ bác sĩ điều trị kết quả sớm',
+      'Cần phiên dịch viên hỗ trợ',
+      'Đăng ký xe lăn hỗ trợ di chuyển',
+      'Ghi hình bổ sung nếu phát hiện bất thường',
+    ];
+
+    const orderFormStatuses = [
+      OrderFormStatus.IN_PROGRESS,
+      OrderFormStatus.COMPLETED,
+      OrderFormStatus.CANCELLED,
+    ];
+
+    const patientIds = await this.getPatientIdsFromService(20);
+    if (patientIds.length === 0) {
+      this.logger.warn(
+        '⚠️ No patients found, skipping imaging order form seeding'
+      );
+      return;
+    }
+
+    const physicianIds = await this.getPhysicianIdsFromService(10);
+    if (physicianIds.length === 0) {
+      this.logger.warn(
+        '⚠️ No physicians found, skipping imaging order form seeding'
+      );
+      return;
+    }
+
+    const roomIds = await this.getRoomIdsFromService(5);
+    if (roomIds.length === 0) {
+      this.logger.warn(
+        '⚠️ No rooms found, skipping imaging order form seeding'
+      );
+      return;
+    }
+
+    const encounterCache = new Map<string, string[]>();
+    let formCounter = 1;
+
+    for (const procedure of procedures) {
+      const patientId = patientIds[formCounter % patientIds.length];
+      const physicianId = physicianIds[formCounter % physicianIds.length];
+      const roomId = roomIds[formCounter % roomIds.length];
+      const diagnosis = clinicalIndications[formCounter % clinicalIndications.length];
+
+      const existing = await this.imagingOrderFormRepository.findOne({
+        where: {
+          patientId,
+          orderingPhysicianId: physicianId,
+          diagnosis,
+        },
+      });
+
+      if (existing) {
+        this.logger.log(
+          `⚠️ Imaging order form already exists for procedure: ${procedure.name}`
+        );
+        continue;
+      }
+
+      if (!encounterCache.has(patientId)) {
+        const encounters = await this.getEncounterIdsByPatient(patientId, 5);
+        encounterCache.set(patientId, encounters);
+      }
+
+      const encounterIds = encounterCache.get(patientId) ?? [];
+    if (encounterIds.length === 0) {
+      this.logger.warn(
+        `⚠️ No encounter IDs returned for patient ${patientId}, skipping imaging order form seeding`
+      );
+      continue;
+    }
+
+    const encounterId = encounterIds[formCounter % encounterIds.length];
+
+      const combinedNotes = `${additionalNotes[formCounter % additionalNotes.length]}. Chuẩn bị: ${preparationInstructions[formCounter % preparationInstructions.length]}. Lịch sử: ${historyNotes[formCounter % historyNotes.length]}.`;
+
+      const form = {
+        patientId,
+        orderingPhysicianId: physicianId,
+        encounterId,
+        diagnosis,
+        orderFormStatus:
+          orderFormStatuses[formCounter % orderFormStatuses.length],
+        notes: combinedNotes,
+        roomId,
+      };
+
+      const newForm = this.imagingOrderFormRepository.create(form as any);
+      await this.imagingOrderFormRepository.save(newForm);
+      this.logger.log(
+        `✅ Created imaging order form for procedure: ${procedure.name}`
+      );
+      formCounter++;
+    }
+  }
+
   async seedImagingOrders(): Promise<void> {
     this.logger.log('📋 Seeding imaging orders...');
 
@@ -597,6 +780,21 @@ export class SeedingService {
       );
       return;
     }
+
+    const procedures = await this.requestProcedureRepository.find({
+      where: { isActive: true },
+    });
+
+    if (procedures.length === 0) {
+      this.logger.warn(
+        '⚠️ No procedures found, skipping imaging order seeding'
+      );
+      return;
+    }
+
+    const orderForms = await this.imagingOrderFormRepository.find({
+      take: 30,
+    });
 
     // ✅ Get IDs from other services via microservice communication
     const patientIds = await this.getPatientIdsFromService(10);
@@ -660,14 +858,23 @@ export class SeedingService {
     // Create 20 sample imaging orders
     for (let i = 0; i < 20; i++) {
       const modality = modalities[i % modalities.length];
+      const procedure = procedures[i % procedures.length];
       const patientId = patientIds[i % patientIds.length];
       const physicianId = physicianIds[i % physicianIds.length];
       const roomId = roomIds[i % roomIds.length];
+
+      const associatedForm =
+        orderForms.length > 0
+          ? orderForms.find((form) => form.patientId === patientId) ||
+            orderForms[i % orderForms.length]
+          : undefined;
 
       const order = {
         orderNumber: orderCounter,
         patientId,
         orderingPhysicianId: physicianId,
+        procedureId: procedure.id,
+        imagingOrderFormId: associatedForm?.id,
         modalityId: modality.id,
         bodyPart: bodyParts[i % bodyParts.length],
         urgency: urgencies[i % urgencies.length],
@@ -710,7 +917,13 @@ export class SeedingService {
       take: 10,
     });
 
-    // Get modality machines
+    if (imagingOrders.length === 0) {
+      this.logger.warn(
+        '⚠️ No imaging orders found, skipping DICOM study seeding'
+      );
+      return;
+    }
+
     const modalityMachines = await this.modalityMachineRepository.find({
       where: { status: MachineStatus.ACTIVE },
     });
@@ -722,27 +935,27 @@ export class SeedingService {
       return;
     }
 
-    // ✅ Get IDs from other services via microservice communication
-    const patientIds = await this.getPatientIdsFromService(10);
-    const physicianIds = await this.getPhysicianIdsFromService(5);
-    const technicianIds = await this.getTechnicianIdsFromService(5);
-    const radiologistIds = await this.getRadiologistIdsFromService(1);
-    // Check if we have required data
+    const patientIds = await this.getPatientIdsFromService(20);
     if (patientIds.length === 0) {
       this.logger.warn('⚠️ No patients found, skipping DICOM study seeding');
       return;
     }
 
+    const physicianIds = await this.getPhysicianIdsFromService(10);
     if (physicianIds.length === 0) {
       this.logger.warn('⚠️ No physicians found, skipping DICOM study seeding');
       return;
     }
 
-    // Use physician IDs if no technicians found
-    const finalTechnicianIds =
+    const technicianIds = await this.getTechnicianIdsFromService(10);
+    const radiologistIds = await this.getRadiologistIdsFromService(5);
+
+    const effectiveTechnicianIds =
       technicianIds.length > 0 ? technicianIds : physicianIds;
     if (technicianIds.length === 0) {
-      this.logger.warn('⚠️ No technicians found, using physicians instead');
+      this.logger.warn(
+        '⚠️ No technicians found, using physicians as fallback for performing technician'
+      );
     }
 
     const studyDescriptions = [
@@ -765,55 +978,79 @@ export class SeedingService {
       DicomStudyStatus.RESULT_PRINTED,
     ];
 
-    // Create 15 sample DICOM studies
-    for (let i = 0; i < 15; i++) {
+    const studiesToCreate = Math.min(
+      30,
+      Math.max(patientIds.length, modalityMachines.length * 2)
+    );
+
+    let createdCount = 0;
+
+    for (let i = 0; i < studiesToCreate; i++) {
       const patientId = patientIds[i % patientIds.length];
+      const patientCode = `MRN-${patientId.slice(0, 8).toUpperCase()}`;
       const physicianId = physicianIds[i % physicianIds.length];
-      const technicianId = finalTechnicianIds[i % finalTechnicianIds.length];
-      const radiologistId = radiologistIds[i % radiologistIds.length];
-      const orderId =
-        imagingOrders.length > 0
-          ? imagingOrders[i % imagingOrders.length].id
+      const technicianId =
+        effectiveTechnicianIds[i % effectiveTechnicianIds.length];
+      const radiologistId =
+        radiologistIds.length > 0
+          ? radiologistIds[i % radiologistIds.length]
           : undefined;
+      const orderId = imagingOrders[i % imagingOrders.length]?.id;
+      const modalityMachine =
+        modalityMachines[i % modalityMachines.length];
 
       const studyDate = new Date();
       studyDate.setDate(studyDate.getDate() - Math.floor(Math.random() * 30));
 
-      const modalityMachine = modalityMachines[i % modalityMachines.length];
+      const studyTime = `${String(8 + (i % 10)).padStart(2, '0')}:${String(
+        Math.floor(Math.random() * 60)
+      ).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(
+        2,
+        '0'
+      )}`;
 
       const study = {
-        studyInstanceUid: `1.2.840.113619.2.${Date.now()}.${i}.${Math.random()
+        studyInstanceUid: `1.2.840.113619.${Date.now()}.${i}.${Math.random()
           .toString(36)
-          .substr(2, 9)}`,
+          .slice(2, 10)}`,
         patientId,
+        patientCode,
         orderId,
         modalityMachineId: modalityMachine.id,
         studyDate,
-        studyTime: '14:30:00',
+        studyTime,
         studyDescription: studyDescriptions[i % studyDescriptions.length],
         referringPhysicianId: physicianId,
         performingTechnicianId: technicianId,
         verifyingRadiologistId: radiologistId,
         studyStatus: statuses[i % statuses.length],
-        numberOfSeries: 0, // Will be updated when series are created
+        numberOfSeries: 0,
         storagePath: `/dicom/studies/${studyDate.getFullYear()}/${String(
           studyDate.getMonth() + 1
-        ).padStart(2, '0')}/${i}`,
+        ).padStart(2, '0')}/${studyDate.getDate()}/${patientId}`,
       };
 
       const existing = await this.dicomStudyRepository.findOne({
         where: { studyInstanceUid: study.studyInstanceUid },
       });
 
-      if (!existing) {
-        const newStudy = this.dicomStudyRepository.create(study as any);
-        await this.dicomStudyRepository.save(newStudy);
-        this.logger.log(`✅ Created DICOM study: ${study.studyDescription}`);
-      } else {
+      if (existing) {
         this.logger.log(
           `⚠️ DICOM study already exists: ${study.studyInstanceUid}`
         );
+        continue;
       }
+
+      const newStudy = this.dicomStudyRepository.create(study as any);
+      await this.dicomStudyRepository.save(newStudy);
+      createdCount++;
+      this.logger.log(`✅ Created DICOM study: ${study.studyDescription}`);
+    }
+
+    if (createdCount === 0) {
+      this.logger.log('ℹ️ No new DICOM studies were created.');
+    } else {
+      this.logger.log(`✅ Created ${createdCount} DICOM studies in total`);
     }
   }
 
@@ -1014,12 +1251,16 @@ export class SeedingService {
     );
 
     const annotationTypes = [
-      AnnotationType.TEXT,
-      AnnotationType.ARROW,
-      AnnotationType.CIRCLE,
-      AnnotationType.RECTANGLE,
-      AnnotationType.POLYGON,
-      AnnotationType.MEASUREMENT,
+      AnnotationType.LENGTH,
+      AnnotationType.HEIGHT,
+      AnnotationType.ANGLE,
+      AnnotationType.CIRCLE_ROI,
+      AnnotationType.RECTANGLE_ROI,
+      AnnotationType.ELLIPTICAL_ROI,
+      AnnotationType.BIDIRECTIONAL,
+      AnnotationType.ARROW_ANNOTATE,
+      AnnotationType.LABEL,
+      AnnotationType.PROBE,
     ];
 
     const annotationStatuses = [
@@ -1055,34 +1296,48 @@ export class SeedingService {
           instanceId: instance.id,
           annotationType,
           annotationData:
-            annotationType === AnnotationType.MEASUREMENT
+            annotationType === AnnotationType.LENGTH || annotationType === AnnotationType.HEIGHT
               ? { type: 'length', points: 2 }
-              : annotationType === AnnotationType.CIRCLE
+              : annotationType === AnnotationType.ANGLE || annotationType === AnnotationType.COBB_ANGLE
+              ? { type: 'angle', points: 3 }
+              : annotationType === AnnotationType.CIRCLE_ROI || annotationType === AnnotationType.ELLIPTICAL_ROI
               ? { radius: Math.random() * 50 + 10 }
-              : annotationType === AnnotationType.RECTANGLE
+              : annotationType === AnnotationType.RECTANGLE_ROI
               ? { width: Math.random() * 100, height: Math.random() * 100 }
+              : annotationType === AnnotationType.BIDIRECTIONAL
+              ? { type: 'bidirectional', points: 2 }
               : { content: 'Annotation data' },
           coordinates:
-            annotationType === AnnotationType.MEASUREMENT
+            annotationType === AnnotationType.LENGTH || annotationType === AnnotationType.HEIGHT || annotationType === AnnotationType.BIDIRECTIONAL
               ? {
                   start: { x: Math.random() * 512, y: Math.random() * 512 },
                   end: { x: Math.random() * 512, y: Math.random() * 512 },
                 }
-              : annotationType === AnnotationType.CIRCLE
+              : annotationType === AnnotationType.ANGLE || annotationType === AnnotationType.COBB_ANGLE
+              ? {
+                  point1: { x: Math.random() * 512, y: Math.random() * 512 },
+                  point2: { x: Math.random() * 512, y: Math.random() * 512 },
+                  point3: { x: Math.random() * 512, y: Math.random() * 512 },
+                }
+              : annotationType === AnnotationType.CIRCLE_ROI || annotationType === AnnotationType.ELLIPTICAL_ROI
               ? { center: { x: Math.random() * 512, y: Math.random() * 512 } }
               : {
                   topLeft: { x: Math.random() * 512, y: Math.random() * 512 },
                 },
           measurementValue:
-            annotationType === AnnotationType.MEASUREMENT
+            annotationType === AnnotationType.LENGTH || annotationType === AnnotationType.HEIGHT || annotationType === AnnotationType.BIDIRECTIONAL
               ? parseFloat((Math.random() * 50 + 5).toFixed(2))
+              : annotationType === AnnotationType.ANGLE || annotationType === AnnotationType.COBB_ANGLE
+              ? parseFloat((Math.random() * 180).toFixed(2))
               : undefined,
           measurementUnit:
-            annotationType === AnnotationType.MEASUREMENT
-              ? measurementUnits[i % measurementUnits.length]
+            annotationType === AnnotationType.LENGTH || annotationType === AnnotationType.HEIGHT || annotationType === AnnotationType.BIDIRECTIONAL
+              ? measurementUnits[0] // mm or cm
+              : annotationType === AnnotationType.ANGLE || annotationType === AnnotationType.COBB_ANGLE
+              ? measurementUnits[3] // degree
               : undefined,
           textContent:
-            annotationType === AnnotationType.TEXT
+            annotationType === AnnotationType.LABEL || annotationType === AnnotationType.ARROW_ANNOTATE
               ? textContents[annotationCounter % textContents.length]
               : undefined,
           colorCode: colors[annotationCounter % colors.length],

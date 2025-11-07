@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
-import { DicomStudy, DicomSeries } from "@/services/imagingApi";
+import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { useViewer } from "@/contexts/ViewerContext";
 import { useEffect, useState } from "react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { DicomSeries } from '@/services/imagingApi';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 
 export type ToolType = 
   | 'WindowLevel'

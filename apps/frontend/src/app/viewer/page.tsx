@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
-import { imagingApi, DicomSeries } from "@/services/imagingApi";
+import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ function ViewerPageContent() {
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
   const [series, setSeries] = useState<DicomSeries[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
 
   // Ensure viewport 0 is active on page load
   useEffect(() => {
@@ -93,10 +95,11 @@ function ViewerPageContent() {
     if (studyId) {
       setLoading(true);
       try {
-        const seriesResponse = await imagingApi.getSeriesByReferenceId(studyId, "study", {
-          page: 1,
-          limit: 50,
-        });
+        const seriesResponse = await fetchSeriesByReference({
+          id: studyId,
+          type: "study",
+          params: { page: 1, limit: 50 },
+        }).unwrap();
         setSeries(seriesResponse.data?.data || []);
 
         // Dispatch refreshViewport event to force viewport rebuild

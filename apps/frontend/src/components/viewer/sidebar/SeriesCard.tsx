@@ -3,7 +3,7 @@ import React from 'react';
 import { GripVertical, Activity, ImageIcon, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomSeries } from '@/services/imagingApi';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import dynamic from 'next/dynamic';
 
 const DicomThumbnail = dynamic(() => import('./DicomThumbnail'), {

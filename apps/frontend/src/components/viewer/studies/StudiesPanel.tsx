@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomStudy, DicomSeries } from '@/services/imagingApi';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
+import { DicomStudy } from '@/interfaces/image-dicom/dicom-study.interface';
 
 interface StudiesPanelProps {
   isCollapsed: boolean;

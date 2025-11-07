@@ -5,9 +5,11 @@ import { Filter, FolderOpen, Database, Loader2, Grid3X3, List } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomSeries, DicomInstance } from '@/services/imagingApi';
+import { DicomInstance } from '@/interfaces/image-dicom/dicom-instances.interface';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { useViewer } from '@/contexts/ViewerContext';
-import { imagingApi } from '@/services/imagingApi';
+import { useLazyGetDicomSeriesByReferenceQuery } from '@/store/dicomSeriesApi';
+import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
 import SeriesCard from '../sidebar/SeriesCard';
 import SeriesFilter from '../sidebar/SeriesFilter';
 
@@ -29,6 +31,8 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
+  const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
+  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
   
 
   const handleSeriesClick = (series: DicomSeries) => {
@@ -48,7 +52,11 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
         console.log('🔄 Loading series for studyId:', studyId);
         setLoading(true);
         try {
-          const seriesResponse = await imagingApi.getSeriesByReferenceId(studyId, 'study', { page: 1, limit: 50 });
+          const seriesResponse = await fetchSeriesByReference({
+            id: studyId,
+            type: 'study',
+            params: { page: 1, limit: 50 },
+          }).unwrap();
           console.log('✅ Loaded series for study:', studyId, seriesResponse);
           // Pass series data to parent component - seriesResponse.data.data contains the actual array
           onSeriesLoaded?.(seriesResponse.data?.data || []);
@@ -64,7 +72,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
     };
 
     loadSeries();
-  }, [studyId, onSeriesLoaded, loadedStudyId]);
+  }, [studyId, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
 
 
   // Toggle series expansion - keep multiple expanded
@@ -85,7 +93,12 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
     if (isExpanding && !seriesInstances[seriesId]) {
       setLoadingInstances(prev => new Set(prev).add(seriesId));
       try {
-        const instances = await imagingApi.getSeriesInstances(seriesId);
+        const response = await fetchInstancesByReference({
+          id: seriesId,
+          type: 'series',
+          params: { page: 1, limit: 1000 },
+        }).unwrap();
+        const instances = response.data?.data || [];
         setSeriesInstances(prev => ({
           ...prev,
           [seriesId]: instances

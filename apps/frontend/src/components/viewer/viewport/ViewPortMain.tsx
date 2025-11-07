@@ -21,9 +21,16 @@ import {
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { Events } from "@cornerstonejs/tools/enums";
-import { imagingApi } from "@/services/imagingApi";
+import { useCreateAnnotationMutation } from "@/store/annotationApi";
+import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
 import { useViewer } from "@/contexts/ViewerContext";
+import { useSelector } from "react-redux";
+import Cookies from "js-cookie";
+import type {
+  Annotation,
+  AnnotationEventDetail,
+} from "@/types/Annotation";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -57,6 +64,24 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
   const [forceRebuild, setForceRebuild] = useState(false);
   const toolManagerRef = useRef<any>(null);
+  const [currentInstances, setCurrentInstances] = useState<any[]>([]);
+  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
+  const [createAnnotation] = useCreateAnnotationMutation();
+  
+  // Get current user from Redux or cookies
+  const authUser = useSelector((state: any) => state.auth?.user);
+  const getUser = () => {
+    if (authUser?.id) return authUser;
+    try {
+      const userCookie = Cookies.get("user");
+      if (userCookie) {
+        return JSON.parse(userCookie);
+      }
+    } catch (error) {
+      console.error("Failed to parse user from cookie:", error);
+    }
+    return null;
+  };
 
   const getTotalFrames = async (imageId: string) => {
     try {
@@ -85,11 +110,11 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
     console.log('🔄 Loading instances for series:', seriesId);
     try {
-      const instancesResponse = await imagingApi.getInstancesByReferenceId(
-        seriesId, 
-        'series', 
-        { page: 1, limit: 9999 }
-      );
+      const instancesResponse = await fetchInstancesByReference({
+        id: seriesId,
+        type: 'series',
+        params: { page: 1, limit: 9999 },
+      }).unwrap();
 
       const instances = instancesResponse.data?.data || [];
       
@@ -98,6 +123,9 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         ...prev,
         [seriesId]: instances
       }));
+      
+      // Store current instances for annotation mapping
+      setCurrentInstances(instances);
 
       console.log('✅ Cached instances for series:', seriesId, `(${instances.length} instances)`);
       console.log('📊 Cache status:', Object.keys(seriesInstancesCache).length + 1, 'series cached');
@@ -602,11 +630,139 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
         setLoadingProgress(90);
 
+        // Helper function to extract instance ID from imageId
+        const getInstanceIdFromImageId = (imageId: string): string | null => {
+          // Try to find instance by matching imageId with instance filePath or URL
+          // ImageId format might be: "wadouri:https://..." or similar
+          // We need to match it with instances in the cache
+          const instances = seriesInstancesCache[selectedSeries.id] || currentInstances;
+          
+          // Try to extract instance ID from imageId if it contains instance info
+          // Or match by filePath/fileName
+          for (const instance of instances) {
+            if (imageId.includes(instance.fileName) || 
+                imageId.includes(instance.sopInstanceUid) ||
+                imageId.includes(instance.id)) {
+              return instance.id;
+            }
+          }
+          
+          // If no match, try to get from current frame
+          const currentImageId = vp.getCurrentImageId();
+          if (currentImageId) {
+            const currentIndex = vp.getCurrentImageIdIndex();
+            if (currentIndex >= 0 && instances[currentIndex]) {
+              return instances[currentIndex].id;
+            }
+          }
+          
+          return null;
+        };
+
+        // Helper function to map Cornerstone annotation to DTO
+        const mapAnnotationToDto = async (
+          annotation: Annotation
+        ): Promise<any> => {
+          const user = getUser();
+          if (!user?.id) {
+            throw new Error("User not authenticated. Cannot create annotation.");
+          }
+
+          // Get current imageId from viewport
+          const currentImageId = vp.getCurrentImageId();
+          if (!currentImageId) {
+            throw new Error("No image loaded in viewport. Cannot create annotation.");
+          }
+
+          // Get instance ID
+          let instanceId = getInstanceIdFromImageId(currentImageId);
+          if (!instanceId) {
+            console.warn("Could not determine instance ID from imageId:", currentImageId);
+            // Try to get from current frame
+            const currentIndex = vp.getCurrentImageIdIndex();
+            const instances = seriesInstancesCache[selectedSeries.id] || currentInstances;
+            if (currentIndex >= 0 && instances[currentIndex]) {
+              instanceId = instances[currentIndex].id;
+              console.log("Using fallback instance ID:", instanceId);
+            } else {
+              throw new Error("Could not determine instance ID for annotation.");
+            }
+          }
+
+          // Extract tool name from metadata
+          const toolName = annotation.metadata?.toolName || "Unknown";
+          
+          // Extract measurement data from cachedStats
+          let measurementValue: number | undefined;
+          let measurementUnit: string | undefined;
+          
+          if (annotation.data?.cachedStats && currentImageId) {
+            const stats = annotation.data.cachedStats[`imageId:${currentImageId}`];
+            if (stats) {
+              measurementValue = stats.length || stats.area || stats.volume;
+              measurementUnit = stats.unit;
+            }
+          }
+
+          // Extract coordinates from handles
+          const coordinates = annotation.data?.handles?.points 
+            ? { points: annotation.data.handles.points }
+            : undefined;
+
+          // Extract text content
+          const textContent = annotation.data?.label || undefined;
+
+          return {
+            instanceId,
+            annotationType: toolName, // This should match AnnotationType enum values
+            annotationData: annotation, // Store full Cornerstone annotation
+            coordinates,
+            measurementValue,
+            measurementUnit,
+            textContent,
+            colorCode: annotation.metadata?.segmentColor || undefined,
+            annotationStatus: "draft", // Default to draft
+            annotatorId: user.id,
+            annotationDate: new Date(),
+            notes: undefined,
+          };
+        };
+
+        // Annotation creation handler
+        const handleAnnotationCompleted = async (
+          evt: CustomEvent<AnnotationEventDetail>
+        ) => {
+          try {
+            const { annotation } = evt.detail;
+            
+            if (!annotation) {
+              console.warn("Annotation event received but no annotation data");
+              return;
+            }
+
+            console.log("📝 Annotation completed:", annotation);
+            
+            // Map annotation to DTO format
+            const annotationDto = await mapAnnotationToDto(annotation);
+            
+            // Save to backend
+            const response = await createAnnotation(annotationDto).unwrap();
+            
+            if (response.success) {
+              console.log("✅ Annotation saved successfully:", response.data);
+            } else {
+              console.error("❌ Failed to save annotation:", response);
+            }
+          } catch (error: any) {
+            console.error("❌ Error creating annotation:", error);
+            // Optionally show user-friendly error message
+            // You could use a toast notification here
+          }
+        };
+
         eventTarget.addEventListener(
           Events.ANNOTATION_COMPLETED,
-          (evt: any) => {
-            const { annotation } = evt.detail;
-          }
+          handleAnnotationCompleted
         );
 
         eventTarget.addEventListener(
@@ -875,7 +1031,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                       className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${loadingProgress}%` }}
                     >
-                      <div className="w-full h-full bg-gradient-to-r from-blue-400 to-blue-600 animate-pulse"></div>
+                      <div className="w-full h-full bg-linear-to-r from-blue-400 to-blue-600 animate-pulse"></div>
                     </div>
                   </div>
                 </div>

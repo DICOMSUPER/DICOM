@@ -18,6 +18,9 @@ import { imagingOrderApi } from "./imagingOrderApi";
 import { modalityMachineApi } from "./modalityMachineApi";
 import { imagingOrderFormApi } from "./imaging-order-formApi";
 import { diagnosisApi } from "./diagnosisApi";
+import { dicomInstanceApi } from "./dicomInstanceApi";
+import { dicomSeriesApi } from "./dicomSeriesApi";
+import { annotationApi } from "./annotationApi";
 
 export const store = configureStore({
   reducer: {
@@ -40,6 +43,9 @@ export const store = configureStore({
     [imagingOrderApi.reducerPath]: imagingOrderApi.reducer,
     [imagingOrderFormApi.reducerPath]: imagingOrderFormApi.reducer,
     [diagnosisApi.reducerPath]: diagnosisApi.reducer,
+    [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
+    [dicomSeriesApi.reducerPath]: dicomSeriesApi.reducer,
+    [annotationApi.reducerPath]: annotationApi.reducer,
    
   },
   middleware: (getDefault) =>
@@ -60,7 +66,10 @@ export const store = configureStore({
       .concat(requestProcedureApi.middleware)
       .concat(imagingOrderApi.middleware)
       .concat(diagnosisApi.middleware)
-      .concat(imagingOrderFormApi.middleware),
+      .concat(imagingOrderFormApi.middleware)
+      .concat(dicomInstanceApi.middleware)
+      .concat(dicomSeriesApi.middleware)
+      .concat(annotationApi.middleware),
  
 
 });

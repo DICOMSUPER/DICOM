@@ -10,6 +10,21 @@ import {
 } from "@/interfaces/image-dicom/dicom-study.interface";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
+type StudyReferenceType =
+  | "modality"
+  | "order"
+  | "patient"
+  | "performingPhysician"
+  | "technician"
+  | "referringPhysician"
+  | "studyInstanceUid";
+
+type StudiesByReferenceArgs = {
+  id: string;
+  type: StudyReferenceType;
+  params?: PaginatedQuery;
+};
+
 export const dicomStudyApi = createApi({
   reducerPath: "dicomStudyApi",
   baseQuery: axiosBaseQuery("/dicom-studies"),
@@ -33,11 +48,29 @@ export const dicomStudyApi = createApi({
     }),
 
     getPaginatedDicomStudies: builder.query<
-      ApiResponse<PaginatedResponse<DicomStudy[]>>,
+      ApiResponse<PaginatedResponse<DicomStudy>>,
       PaginatedQuery
     >({
       query: (params) => ({ url: "/paginated", method: "GET", params }),
       providesTags: [{ type: "DicomStudies", id: "LIST" }],
+    }),
+
+    getDicomStudiesByReference: builder.query<
+      ApiResponse<PaginatedResponse<DicomStudy>>,
+      StudiesByReferenceArgs
+    >({
+      query: ({ id, type, params }) => ({
+        url: `/reference/${id}`,
+        method: "GET",
+        params: { type, ...(params || {}) },
+      }),
+      providesTags: (result) =>
+        result?.data?.data
+          ? result.data.data.map((study) => ({
+              type: "DicomStudy" as const,
+              id: study.id,
+            }))
+          : [],
     }),
 
     getDicomStudiesFiltered: builder.query<
@@ -112,6 +145,8 @@ export const dicomStudyApi = createApi({
 export const {
   useGetAllDicomStudiesQuery,
   useGetPaginatedDicomStudiesQuery,
+  useGetDicomStudiesByReferenceQuery,
+  useLazyGetDicomStudiesByReferenceQuery,
   useGetOneDicomStudyQuery,
   useGetDicomStudiesFilteredQuery,
   useGetDicomStudiesByOrderIdQuery,

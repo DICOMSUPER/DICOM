@@ -6,7 +6,7 @@ import {
   ImagingOrder,
   UpdateImagingOrderDto,
 } from "@/interfaces/image-dicom/imaging-order.interface";
-import { ApiResponse } from "@/services/imagingApi";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 
 
