@@ -56,13 +56,13 @@ export const useTabs = () => {
 export default function TabProvider({ children }: { children: ReactNode }) {
   const [activeTabId, setActiveTabId] = useState("0");
   const [availableTabs, setAvailableTab] = useState<TabData[]>([
-    // {
-    //   id: "0",
-    //   name: "Working tree",
-    //   tabContent: <BaseTab />,
-    //   hasSideBar: true,
-    //   SidebarContent: <Sidebar />,
-    // },
+    {
+      id: "0",
+      name: "Working tree",
+      tabContent: <BaseTab />,
+      hasSideBar: true,
+      SidebarContent: <Sidebar />,
+    },
     {
       id: "1",
       name: "Study 1",

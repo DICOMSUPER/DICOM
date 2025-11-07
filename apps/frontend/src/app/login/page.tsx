@@ -20,7 +20,7 @@ export default function LoginPage() {
   const handleLogin = async (
     email: string,
     password: string,
-    rememberMe: boolean
+
   ) => {
     try {
       console.log("🔵 Attempting login with:", { email, password: "***" });
@@ -38,10 +38,9 @@ export default function LoginPage() {
         let errorMessage = `Login failed (${res.status})`;
         try {
           const err = await res.json();
-          console.log("🔴 Error response:", err);
+
           errorMessage = err.message || errorMessage;
         } catch (parseError) {
-          console.log("🔴 Parse error:", parseError);
           errorMessage = `${errorMessage}: ${res.statusText}`;
         }
         toast.error(errorMessage);

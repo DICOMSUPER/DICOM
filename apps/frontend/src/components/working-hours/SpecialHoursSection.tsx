@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 "use client";
 
 import { useState, useEffect } from "react";

@@ -1,3 +1,4 @@
+
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
 
 export function mapApiResponse<T>(response: any): PaginatedResponse<T> {

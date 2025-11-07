@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 /**
  * Debounce function type with cleanup method
  */
