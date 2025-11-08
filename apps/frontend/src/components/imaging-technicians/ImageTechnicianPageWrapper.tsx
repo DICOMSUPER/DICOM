@@ -5,7 +5,7 @@ import DataTable from "./data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetImagingOrderByRoomIdFilterQuery } from "@/store/imagingOrderApi";
 import { format } from "date-fns";
-import { useGetMySchedulesByDateRangeQuery } from "@/store/RoomScheduleApi";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
 import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus from "./current-status";
