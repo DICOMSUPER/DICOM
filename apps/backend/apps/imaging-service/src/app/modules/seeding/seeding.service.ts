@@ -915,6 +915,7 @@ export class SeedingService {
 
     const imagingOrders = await this.imagingOrderRepository.find({
       take: 10,
+      relations: ['imagingOrderForm'],
     });
 
     if (imagingOrders.length === 0) {
@@ -986,7 +987,10 @@ export class SeedingService {
     let createdCount = 0;
 
     for (let i = 0; i < studiesToCreate; i++) {
-      const patientId = patientIds[i % patientIds.length];
+      const order = imagingOrders[i % imagingOrders.length];
+      const patientId =
+        order?.imagingOrderForm?.patientId ||
+        patientIds[i % patientIds.length];
       const patientCode = `MRN-${patientId.slice(0, 8).toUpperCase()}`;
       const physicianId = physicianIds[i % physicianIds.length];
       const technicianId =
@@ -995,7 +999,7 @@ export class SeedingService {
         radiologistIds.length > 0
           ? radiologistIds[i % radiologistIds.length]
           : undefined;
-      const orderId = imagingOrders[i % imagingOrders.length]?.id;
+      const orderId = order?.id;
       const modalityMachine =
         modalityMachines[i % modalityMachines.length];
 
@@ -1385,6 +1389,7 @@ export class SeedingService {
         await queryRunner.query('TRUNCATE TABLE "dicom_series" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "dicom_studies" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "imaging_orders" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "imaging_order_forms" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "request_procedure" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "modality_machines" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "body_part" CASCADE');

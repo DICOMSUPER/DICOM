@@ -27,7 +27,7 @@ import { ReportTemplatesModule } from './modules/report-templates/report-templat
       defaultDbName: 'dicom_patient_service',
     }),
     TypeOrmModule,
-    // SeedingModule,
+    SeedingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

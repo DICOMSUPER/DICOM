@@ -1,8 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { ShiftTemplate, Department, Room, User, RoomSchedule } from '@backend/shared-domain';
-import { ShiftType, Roles } from '@backend/shared-enums';
+import {
+  ShiftTemplate,
+  Department,
+  Room,
+  User,
+  RoomSchedule,
+  Services,
+  ServiceRoom,
+  EmployeeRoomAssignment,
+} from '@backend/shared-domain';
+import { ShiftType, Roles, ScheduleStatus } from '@backend/shared-enums';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -20,6 +29,12 @@ export class SeedingService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(RoomSchedule)
     private readonly RoomScheduleRepository: Repository<RoomSchedule>,
+    @InjectRepository(Services)
+    private readonly servicesRepository: Repository<Services>,
+    @InjectRepository(ServiceRoom)
+    private readonly serviceRoomRepository: Repository<ServiceRoom>,
+    @InjectRepository(EmployeeRoomAssignment)
+    private readonly employeeRoomAssignmentRepository: Repository<EmployeeRoomAssignment>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -30,6 +45,8 @@ export class SeedingService {
       await this.seedDepartments();
       await this.seedUsers();
       await this.seedRooms();
+      await this.seedServices();
+      await this.seedServiceRooms();
       await this.seedShiftTemplates();
       await this.seedRoomSchedules();
       
@@ -292,6 +309,46 @@ export class SeedingService {
         notes: 'Phòng ICU với thiết bị y tế hiện đại',
         isActive: true,
       },
+      {
+        roomCode: 'P301',
+        roomType: 'GENERAL',
+        departmentId: firstDepartment.id,
+        floor: 3,
+        capacity: 2,
+        pricePerDay: 450000,
+        status: 'AVAILABLE',
+        description: 'Phòng khám nhi tổng quát tầng 3',
+        hasTV: true,
+        hasAirConditioning: true,
+        hasWiFi: true,
+        hasTelephone: true,
+        hasAttachedBathroom: false,
+        isWheelchairAccessible: true,
+        hasOxygenSupply: true,
+        hasNurseCallButton: true,
+        notes: 'Ưu tiên bệnh nhi, gần khu vui chơi',
+        isActive: true,
+      },
+      {
+        roomCode: 'P302',
+        roomType: 'GENERAL',
+        departmentId: firstDepartment.id,
+        floor: 3,
+        capacity: 2,
+        pricePerDay: 500000,
+        status: 'AVAILABLE',
+        description: 'Phòng khám sản phụ khoa tầng 3',
+        hasTV: true,
+        hasAirConditioning: true,
+        hasWiFi: true,
+        hasTelephone: true,
+        hasAttachedBathroom: true,
+        isWheelchairAccessible: true,
+        hasOxygenSupply: true,
+        hasNurseCallButton: true,
+        notes: 'Trang bị bàn khám sản khoa chuyên dụng',
+        isActive: true,
+      },
     ];
 
     for (const room of rooms) {
@@ -306,6 +363,147 @@ export class SeedingService {
       } else {
         this.logger.log(`⚠️ Room already exists: ${room.roomCode}`);
       }
+    }
+  }
+
+  async seedServices(): Promise<void> {
+    this.logger.log('🧰 Seeding hospital services...');
+
+    const services = [
+      {
+        serviceCode: 'SRV_RAD',
+        serviceName: 'Chẩn đoán hình ảnh',
+        description:
+          'Dịch vụ chẩn đoán hình ảnh tổng quát bao gồm X-quang, CT và MRI',
+        isActive: true,
+      },
+      {
+        serviceCode: 'SRV_CARD',
+        serviceName: 'Khám tim mạch',
+        description:
+          'Dịch vụ khám và theo dõi bệnh lý tim mạch cho bệnh nhân nội và ngoại trú',
+        isActive: true,
+      },
+      {
+        serviceCode: 'SRV_PED',
+        serviceName: 'Khám nhi tổng quát',
+        description: 'Khám và điều trị cho trẻ em với đội ngũ bác sĩ chuyên khoa',
+        isActive: true,
+      },
+      {
+        serviceCode: 'SRV_OB',
+        serviceName: 'Sản phụ khoa',
+        description: 'Chăm sóc sức khỏe sinh sản và theo dõi thai kỳ',
+        isActive: true,
+      },
+      {
+        serviceCode: 'SRV_ER',
+        serviceName: 'Cấp cứu 24/7',
+        description: 'Dịch vụ cấp cứu và hồi sức cấp cứu hoạt động 24/7',
+        isActive: true,
+      },
+    ];
+
+    for (const service of services) {
+      const existing = await this.servicesRepository.findOne({
+        where: { serviceCode: service.serviceCode },
+      });
+
+      if (!existing) {
+        const newService = this.servicesRepository.create(service);
+        await this.servicesRepository.save(newService);
+        this.logger.log(`✅ Created service: ${service.serviceName}`);
+      } else {
+        this.logger.log(`⚠️ Service already exists: ${service.serviceName}`);
+      }
+    }
+  }
+
+  async seedServiceRooms(): Promise<void> {
+    this.logger.log('🔗 Seeding service-room assignments...');
+
+    const services = await this.servicesRepository.find({
+      where: { isActive: true },
+    });
+    const rooms = await this.roomRepository.find({ where: { isActive: true } });
+
+    if (services.length === 0 || rooms.length === 0) {
+      this.logger.warn(
+        '⚠️ Missing services or rooms, skipping service-room seeding'
+      );
+      return;
+    }
+
+    const serviceMap = new Map(services.map((service) => [service.serviceCode, service]));
+    const roomMap = new Map(rooms.map((room) => [room.roomCode, room]));
+
+    const assignments = [
+      {
+        serviceCode: 'SRV_RAD',
+        roomCode: 'P101',
+        notes: 'Phòng chẩn đoán hình ảnh CT',
+      },
+      {
+        serviceCode: 'SRV_RAD',
+        roomCode: 'P201',
+        notes: 'Phòng chẩn đoán hình ảnh MRI',
+      },
+      {
+        serviceCode: 'SRV_CARD',
+        roomCode: 'P102',
+        notes: 'Phòng khám tim mạch chuyên sâu',
+      },
+      {
+        serviceCode: 'SRV_PED',
+        roomCode: 'P301',
+        notes: 'Phòng khám nhi tổng quát',
+      },
+      {
+        serviceCode: 'SRV_OB',
+        roomCode: 'P302',
+        notes: 'Phòng khám sản phụ khoa',
+      },
+    ];
+
+    for (const assignment of assignments) {
+      const service = serviceMap.get(assignment.serviceCode);
+      if (!service) {
+        this.logger.warn(
+          `⚠️ Service code ${assignment.serviceCode} not found, skipping assignment`
+        );
+        continue;
+      }
+
+      const room = roomMap.get(assignment.roomCode);
+      if (!room) {
+        this.logger.warn(
+          `⚠️ Room code ${assignment.roomCode} not found, skipping assignment for service ${service.serviceName}`
+        );
+        continue;
+      }
+
+      const existing = await this.serviceRoomRepository.findOne({
+        where: { serviceId: service.id, roomId: room.id },
+      });
+
+      if (existing) {
+        this.logger.log(
+          `⚠️ Service ${service.serviceName} already assigned to room ${room.roomCode}`
+        );
+        continue;
+      }
+
+      const newAssignment = this.serviceRoomRepository.create({
+        serviceId: service.id,
+        roomId: room.id,
+        isActive: true,
+        notes: assignment.notes,
+      });
+
+      await this.serviceRoomRepository.save(newAssignment);
+      this.logger.log(
+        `✅ Assigned service ${service.serviceName} to room ${room.roomCode}`
+      );
     }
   }
 
@@ -452,47 +650,63 @@ export class SeedingService {
   async seedRoomSchedules(): Promise<void> {
     this.logger.log('📅 Seeding employee schedules...');
 
-    // Get all required data
     const users = await this.userRepository.find({
-      where: { isActive: true }
+      where: { isActive: true },
     });
     const rooms = await this.roomRepository.find({
-      where: { isActive: true }
+      where: { isActive: true },
     });
     const shiftTemplates = await this.shiftTemplateRepository.find({
-      where: { is_active: true }
+      where: { is_active: true },
     });
 
-    this.logger.log(`📊 Found ${users.length} users, ${rooms.length} rooms, ${shiftTemplates.length} shift templates`);
+    this.logger.log(
+      `📊 Found ${users.length} users, ${rooms.length} rooms, ${shiftTemplates.length} shift templates`
+    );
 
     if (users.length === 0 || rooms.length === 0 || shiftTemplates.length === 0) {
       this.logger.warn('⚠️ Missing required data for schedule seeding');
-      this.logger.warn(`Users: ${users.length}, Rooms: ${rooms.length}, ShiftTemplates: ${shiftTemplates.length}`);
+      this.logger.warn(
+        `Users: ${users.length}, Rooms: ${rooms.length}, ShiftTemplates: ${shiftTemplates.length}`
+      );
       return;
     }
 
-    // Log room details for debugging
+    const adminUser =
+      users.find((user) => user.role === Roles.SYSTEM_ADMIN) ?? users[0];
+
     this.logger.log('🏥 Available rooms:');
-    rooms.forEach(room => {
+    rooms.forEach((room) => {
       this.logger.log(`  - ${room.roomCode} (ID: ${room.id})`);
     });
 
-    // Filter users by role
-    const physicians = users.filter(u => u.role === Roles.PHYSICIAN);
-    const receptionStaff = users.filter(u => u.role === Roles.RECEPTION_STAFF);
-    const imagingTechs = users.filter(u => u.role === Roles.IMAGING_TECHNICIAN);
+    const physicians = users.filter((u) => u.role === Roles.PHYSICIAN);
+    const receptionStaff = users.filter(
+      (u) => u.role === Roles.RECEPTION_STAFF
+    );
+    const imagingTechs = users.filter(
+      (u) => u.role === Roles.IMAGING_TECHNICIAN
+    );
 
-    // Get shift templates by type
-    const morningShift = shiftTemplates.find(s => s.shift_type === ShiftType.MORNING && s.shift_name === 'Ca Sáng');
-    const afternoonShift = shiftTemplates.find(s => s.shift_type === ShiftType.AFTERNOON && s.shift_name === 'Ca Chiều');
-    const fullDayShift = shiftTemplates.find(s => s.shift_type === ShiftType.FULL_DAY);
-    const nightShift = shiftTemplates.find(s => s.shift_type === ShiftType.NIGHT);
+    const morningShift = shiftTemplates.find(
+      (s) => s.shift_type === ShiftType.MORNING && s.shift_name === 'Ca Sáng'
+    );
+    const afternoonShift = shiftTemplates.find(
+      (s) => s.shift_type === ShiftType.AFTERNOON && s.shift_name === 'Ca Chiều'
+    );
+    const fullDayShift = shiftTemplates.find(
+      (s) => s.shift_type === ShiftType.FULL_DAY
+    );
+    const nightShift = shiftTemplates.find(
+      (s) => s.shift_type === ShiftType.NIGHT
+    );
+    const fallbackShift = shiftTemplates[0];
 
     const today = new Date();
 
     let schedulesCreated = 0;
+    let assignmentsCreated = 0;
 
-    // Helper function to format date as YYYY-MM-DD
     const formatDate = (date: Date): string => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -500,140 +714,205 @@ export class SeedingService {
       return `${year}-${month}-${day}`;
     };
 
-    // Create schedules for the past 7 days and next 14 days
+    const randomItem = <T>(collection: T[]): T | undefined =>
+      collection.length
+        ? collection[Math.floor(Math.random() * collection.length)]
+        : undefined;
+
+    const createScheduleFor = async ({
+      employee,
+      room,
+      shift,
+      workDate,
+      dayOffset,
+      roleLabel,
+      overtimeMax = 3,
+      overtimeThreshold = 0.5,
+    }: {
+      employee: User;
+      room?: Room;
+      shift?: ShiftTemplate;
+      workDate: string;
+      dayOffset: number;
+      roleLabel: string;
+      overtimeMax?: number;
+      overtimeThreshold?: number;
+    }): Promise<void> => {
+      if (!room) {
+        this.logger.warn(
+          `⚠️ Skipping schedule for ${employee.firstName} ${employee.lastName} on ${workDate} because no room is available`
+        );
+        return;
+      }
+
+      const effectiveShift = shift ?? fallbackShift;
+      if (!effectiveShift) {
+        this.logger.warn(
+          `⚠️ Skipping schedule for ${employee.firstName} ${employee.lastName} on ${workDate} because no shift template is available`
+        );
+        return;
+      }
+
+      const existingAssignment =
+        await this.employeeRoomAssignmentRepository
+          .createQueryBuilder('assignment')
+          .innerJoin('assignment.roomSchedule', 'schedule')
+          .where('assignment.employeeId = :employeeId', {
+            employeeId: employee.id,
+          })
+          .andWhere('schedule.work_date = :workDate', { workDate })
+          .getOne();
+
+      if (existingAssignment) {
+        this.logger.log(
+          `⚠️ Assignment already exists for ${employee.firstName} ${employee.lastName} on ${workDate}`
+        );
+        return;
+      }
+
+      const scheduleStatus =
+        dayOffset < 0
+          ? ScheduleStatus.COMPLETED
+          : dayOffset === 0
+          ? ScheduleStatus.CONFIRMED
+          : ScheduleStatus.SCHEDULED;
+
+      const notes =
+        dayOffset < 0
+          ? `Đã hoàn thành ${roleLabel}`
+          : dayOffset === 0
+          ? `${roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1)} hôm nay`
+          : undefined;
+
+      const shouldAddOvertime =
+        dayOffset < -3 && Math.random() > (overtimeThreshold ?? 0.5);
+      const overtimeHours = shouldAddOvertime
+        ? Math.floor(Math.random() * overtimeMax) + 1
+        : 0;
+
+      const scheduleEntity = this.RoomScheduleRepository.create({
+        room_id: room.id,
+        shift_template_id: effectiveShift.shift_template_id,
+        work_date: workDate,
+        actual_start_time: effectiveShift.start_time,
+        actual_end_time: effectiveShift.end_time,
+        schedule_status: scheduleStatus,
+        notes,
+        overtime_hours: overtimeHours,
+        created_by: adminUser?.id,
+      });
+
+      const savedSchedule = await this.RoomScheduleRepository.save(
+        scheduleEntity
+      );
+
+      const assignmentEntity = this.employeeRoomAssignmentRepository.create({
+        roomScheduleId: savedSchedule.schedule_id,
+        employeeId: employee.id,
+        isActive: true,
+      });
+
+      await this.employeeRoomAssignmentRepository.save(assignmentEntity);
+
+      schedulesCreated++;
+      assignmentsCreated++;
+
+      this.logger.log(
+        `✅ Saved schedule ${savedSchedule.schedule_id} for ${employee.firstName} ${employee.lastName} on ${workDate} (room ${room.roomCode}, shift ${effectiveShift.shift_name})`
+      );
+    };
+
     for (let dayOffset = -7; dayOffset <= 14; dayOffset++) {
       const date = new Date(today);
       date.setDate(today.getDate() + dayOffset);
       const workDate = formatDate(date);
 
-      // Schedule for Physicians (mostly full day shifts)
       for (const physician of physicians) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
-        const shift = dayOffset % 3 === 0 ? morningShift : dayOffset % 3 === 1 ? afternoonShift : fullDayShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: physician.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca làm việc` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-          };
-
-          this.logger.log(`📅 Creating schedule for ${physician.firstName} ${physician.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
-
-          const existing = await this.RoomScheduleRepository.findOne({
-            where: {
-              employee_id: physician.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
-            this.logger.log(`✅ Saved physician schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
-            schedulesCreated++;
-          } else {
-            this.logger.log(`⚠️ Schedule already exists for ${physician.firstName} on ${workDate}`);
-          }
-        }
+        const room = randomItem(rooms);
+        const shift =
+          dayOffset % 3 === 0
+            ? morningShift
+            : dayOffset % 3 === 1
+            ? afternoonShift
+            : fullDayShift;
+        await createScheduleFor({
+          employee: physician,
+          room,
+          shift,
+          workDate,
+          dayOffset,
+          roleLabel: 'ca khám',
+          overtimeMax: 3,
+          overtimeThreshold: 0.3,
+        });
       }
 
-      // Schedule for Reception Staff (morning and afternoon shifts)
       for (const staff of receptionStaff) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
+        const room = randomItem(rooms);
         const shift = dayOffset % 2 === 0 ? morningShift : afternoonShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: staff.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca tiếp tân` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.8 ? Math.floor(Math.random() * 2) + 1 : 0,
-          };
-
-          this.logger.log(`📅 Creating schedule for ${staff.firstName} ${staff.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
-
-          const existing = await this.RoomScheduleRepository.findOne({
-            where: {
-              employee_id: staff.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
-            this.logger.log(`✅ Saved reception schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
-            schedulesCreated++;
-          } else {
-            this.logger.log(`⚠️ Schedule already exists for ${staff.firstName} on ${workDate}`);
-          }
-        }
+        await createScheduleFor({
+          employee: staff,
+          room,
+          shift,
+          workDate,
+          dayOffset,
+          roleLabel: 'ca tiếp tân',
+          overtimeMax: 2,
+          overtimeThreshold: 0.2,
+        });
       }
 
-      // Schedule for Imaging Technicians (varied shifts including night)
       for (const tech of imagingTechs) {
-        const room = rooms[Math.floor(Math.random() * rooms.length)];
+        const room = randomItem(rooms);
         const shiftIndex = dayOffset % 4;
-        const shift = shiftIndex === 0 ? morningShift : shiftIndex === 1 ? afternoonShift : shiftIndex === 2 ? fullDayShift : nightShift;
-        
-        if (shift) {
-          const schedule = {
-            employee_id: tech.id,
-            room_id: room.id,
-            shift_template_id: shift.shift_template_id,
-            work_date: workDate,
-            actual_start_time: shift.start_time,
-            actual_end_time: shift.end_time,
-            schedule_status: dayOffset < 0 ? 'completed' : dayOffset === 0 ? 'confirmed' : 'scheduled',
-            notes: dayOffset < 0 ? `Đã hoàn thành ca kỹ thuật viên` : dayOffset === 0 ? 'Ca làm việc hôm nay' : null,
-            overtime_hours: dayOffset < -3 && Math.random() > 0.7 ? Math.floor(Math.random() * 3) + 1 : 0,
-          };
-
-          this.logger.log(`📅 Creating schedule for ${tech.firstName} ${tech.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
-
-          const existing = await this.RoomScheduleRepository.findOne({
-            where: {
-              employee_id: tech.id,
-              work_date: workDate,
-            }
-          });
-
-          if (!existing) {
-            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
-            this.logger.log(`✅ Saved imaging tech schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
-            schedulesCreated++;
-          } else {
-            this.logger.log(`⚠️ Schedule already exists for ${tech.firstName} on ${workDate}`);
-          }
-        }
+        const shift =
+          shiftIndex === 0
+            ? morningShift
+            : shiftIndex === 1
+            ? afternoonShift
+            : shiftIndex === 2
+            ? fullDayShift
+            : nightShift;
+        await createScheduleFor({
+          employee: tech,
+          room,
+          shift,
+          workDate,
+          dayOffset,
+          roleLabel: 'ca kỹ thuật viên',
+          overtimeMax: 3,
+          overtimeThreshold: 0.4,
+        });
       }
     }
 
-    this.logger.log(`✅ Created ${schedulesCreated} employee schedules (past 7 days + next 14 days)`);
-    
-    // Verify the seeding by checking a few schedules
+    this.logger.log(
+      `✅ Created ${schedulesCreated} room schedules with ${assignmentsCreated} employee assignments`
+    );
+
     const sampleSchedules = await this.RoomScheduleRepository.find({
       take: 5,
-      relations: ['room', 'employee', 'shift_template']
+      relations: [
+        'room',
+        'shift_template',
+        'employeeRoomAssignments',
+        'employeeRoomAssignments.employee',
+      ],
+      order: { work_date: 'DESC' },
     });
-    
-    this.logger.log('🔍 Sample schedules created:');
-    sampleSchedules.forEach(schedule => {
-      this.logger.log(`  - ${schedule.employee?.firstName} ${schedule.employee?.lastName} on ${schedule.work_date} in room ${schedule.room?.roomCode || 'NULL'} (room_id: ${schedule.room_id})`);
-    });
+
+    if (sampleSchedules.length) {
+      this.logger.log('🔍 Sample schedules created:');
+      sampleSchedules.forEach((schedule) => {
+        const assignment = schedule.employeeRoomAssignments?.[0];
+        const employeeName = assignment?.employee
+          ? `${assignment.employee.firstName} ${assignment.employee.lastName}`
+          : 'Chưa gán nhân sự';
+        this.logger.log(
+          `  - ${employeeName} on ${schedule.work_date} in room ${schedule.room?.roomCode ?? 'NULL'} (schedule ID: ${schedule.schedule_id})`
+        );
+      });
+    }
   }
 
   async clearAllData(): Promise<void> {
@@ -645,8 +924,15 @@ export class SeedingService {
       
       try {
         // Use TRUNCATE CASCADE to delete all data and handle foreign keys automatically
-        await queryRunner.query('TRUNCATE TABLE "weekly_schedule_patterns" CASCADE');
-        await queryRunner.query('TRUNCATE TABLE "employee_schedules" CASCADE');
+        await queryRunner.query(
+          'TRUNCATE TABLE "weekly_schedule_patterns" CASCADE'
+        );
+        await queryRunner.query(
+          'TRUNCATE TABLE "employee_room_assignments" CASCADE'
+        );
+        await queryRunner.query('TRUNCATE TABLE "room_schedules" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "services_rooms" CASCADE');
+        await queryRunner.query('TRUNCATE TABLE "services" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "shift_templates" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "rooms" CASCADE');
         await queryRunner.query('TRUNCATE TABLE "users" CASCADE');

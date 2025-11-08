@@ -75,7 +75,7 @@ import { PatientServiceClientModule } from '@backend/shared-client';
     ImagingModalitiesModule,
     ImagingOrdersModule,
     ModalityMachinesModule,
-    // SeedingModule,
+    SeedingModule,
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,

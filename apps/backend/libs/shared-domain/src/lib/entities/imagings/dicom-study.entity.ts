@@ -10,7 +10,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
-import { ImagingModality } from './imaging-modality.entity';
 import { ImagingOrder } from './imaging-order.entity';
 import { ModalityMachine } from './modality-machine.entity';
 
@@ -27,7 +26,7 @@ export class DicomStudy extends BaseEntity {
   @Column({ name: 'study_instance_uid', length: 255, unique: true })
   studyInstanceUid!: string;
 
-  @Column({ name: 'patient_id' })
+  @Column({ name: 'patient_id', type: 'uuid' })
   patientId!: string;
 
   @Column({ name: 'patient_code', length: 255, nullable: true })
