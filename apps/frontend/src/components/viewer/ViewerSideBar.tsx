@@ -3,6 +3,7 @@ import DicomImageLoader from "./DicomImageLoader";
 import Link from "next/link";
 import DicomThumbnail from "./DicomThumbnail";
 import { RenderingEngine } from "@cornerstonejs/core";
+import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
 
 export default function ViewerSideBar({
   isOpen,
@@ -18,7 +19,16 @@ export default function ViewerSideBar({
   setRenderingEngine: (engine: RenderingEngine) => void;
 }) {
   const returnThumbnail = (instance: any) => {
-    const imageId = `wadouri:${(instance as any)?.file_path}`;
+    const resolvedUrl = resolveDicomImageUrl(
+      (instance as any)?.file_path,
+      (instance as any)?.file_name
+    );
+
+    if (!resolvedUrl) {
+      return null;
+    }
+
+    const imageId = `wadouri:${resolvedUrl}`;
     return (
       <Link
         key={instance?.sop_instance_uid}

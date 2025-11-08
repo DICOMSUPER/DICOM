@@ -12,6 +12,8 @@ import { useLazyGetDicomSeriesByReferenceQuery } from '@/store/dicomSeriesApi';
 import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
 import SeriesCard from '../sidebar/SeriesCard';
 import SeriesFilter from '../sidebar/SeriesFilter';
+import { extractApiData } from '@/utils/api';
+import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
@@ -20,7 +22,12 @@ interface ViewerRightSidebarProps {
   onSeriesLoaded?: (series: DicomSeries[]) => void;
 }
 
-const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoaded }: ViewerRightSidebarProps) => {
+const ViewerRightSidebar = ({
+  onSeriesSelect,
+  series = [],
+  studyId,
+  onSeriesLoaded,
+}: ViewerRightSidebarProps) => {
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [filterModality, setFilterModality] = useState<string>('All');
@@ -31,13 +38,46 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
   
 
-  const handleSeriesClick = (series: DicomSeries) => {
-    setSelectedSeries(series.id);
-    onSeriesSelect?.(series);
+useEffect(() => {
+    let cancelled = false;
+
+    if (!Array.isArray(series) || series.length === 0) {
+      setSeriesList([]);
+      if (!loading) {
+        setThumbnailPaths({});
+      }
+      return;
+    }
+
+    setSeriesList(series);
+
+    const preload = async () => {
+      setLoading(true);
+      try {
+        await preloadThumbnails(series);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void preload();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [series]);
+
+  const handleSeriesClick = (seriesItem: DicomSeries) => {
+    setSelectedSeries(seriesItem.id);
+    onSeriesSelect?.(seriesItem);
   };
   // Helper function to get modality for a series
   const getSeriesModality = (series: DicomSeries) => {
@@ -46,33 +86,107 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
   };
 
   // Load series when studyId changes (with caching)
-  useEffect(() => {
+useEffect(() => {
     const loadSeries = async () => {
-      if (studyId && studyId !== loadedStudyId) {
-        console.log('🔄 Loading series for studyId:', studyId);
-        setLoading(true);
-        try {
-          const seriesResponse = await fetchSeriesByReference({
-            id: studyId,
-            type: 'study',
-            params: { page: 1, limit: 50 },
-          }).unwrap();
-          console.log('✅ Loaded series for study:', studyId, seriesResponse);
-          // Pass series data to parent component - seriesResponse.data.data contains the actual array
-          onSeriesLoaded?.(seriesResponse.data?.data || []);
-          setLoadedStudyId(studyId);
-        } catch (error) {
-          console.error('❌ Failed to load series:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else if (studyId === loadedStudyId) {
-        console.log('📋 Using cached series for studyId:', studyId);
+      if (!studyId) {
+        return;
+      }
+
+      if (studyId !== loadedStudyId) {
+        setSeriesList([]);
+        setSeriesInstances({});
+        setThumbnailPaths({});
+      }
+
+      console.log('🔄 Loading series for studyId:', studyId);
+      setLoading(true);
+
+      try {
+        const seriesResponse = await fetchSeriesByReference({
+          id: studyId,
+          type: 'study',
+          params: { page: 1, limit: 50 },
+        }).unwrap();
+
+        console.log('✅ Loaded series for study:', studyId, seriesResponse);
+
+        const fetchedSeries = extractApiData<DicomSeries>(seriesResponse);
+
+        setSeriesList(fetchedSeries);
+        onSeriesLoaded?.(fetchedSeries);
+        preloadThumbnails(fetchedSeries);
+        setLoadedStudyId(studyId);
+      } catch (error) {
+        console.error('❌ Failed to load series:', error);
+        setSeriesList([]);
+        onSeriesLoaded?.([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadSeries();
   }, [studyId, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
+
+  // Preload thumbnail paths for series
+  const preloadThumbnails = async (seriesArray: DicomSeries[]) => {
+    const updatedThumbnails: Record<string, string> = {};
+
+    for (const seriesItem of seriesArray) {
+      if (!seriesItem || !seriesItem.id) continue;
+
+      const cachedInstances = seriesInstances[seriesItem.id];
+      const cachedInstanceWithPath = cachedInstances?.find(
+        (inst: DicomInstance) =>
+          resolveDicomImageUrl(inst.filePath, inst.fileName)
+      );
+
+      if (cachedInstanceWithPath) {
+        const resolved = resolveDicomImageUrl(
+          cachedInstanceWithPath.filePath,
+          cachedInstanceWithPath.fileName
+        );
+        if (resolved) {
+          updatedThumbnails[seriesItem.id] = resolved;
+        }
+        continue;
+      }
+
+      try {
+        const response = await fetchInstancesByReference({
+          id: seriesItem.id,
+          type: 'series',
+          params: { page: 1, limit: 1 },
+        }).unwrap();
+
+        const instances = extractApiData<DicomInstance>(response);
+        const firstWithFile = instances.find(
+          (inst: DicomInstance) =>
+            resolveDicomImageUrl(inst.filePath, inst.fileName)
+        );
+
+        if (firstWithFile) {
+          const resolved = resolveDicomImageUrl(
+            firstWithFile.filePath,
+            firstWithFile.fileName
+          );
+          if (resolved) {
+            updatedThumbnails[seriesItem.id] = resolved;
+          }
+          setSeriesInstances((prev) => ({
+            ...prev,
+            [seriesItem.id]: instances,
+          }));
+        }
+      } catch (error) {
+        console.warn('Failed to preload thumbnail for series', seriesItem.id, error);
+      }
+    }
+
+    if (Object.keys(updatedThumbnails).length) {
+      setThumbnailPaths((prev) => ({ ...prev, ...updatedThumbnails }));
+    }
+  };
 
 
   // Toggle series expansion - keep multiple expanded
@@ -117,29 +231,44 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
 
 
   // Filter series based on search and modality
-  const filteredSeries = (series || []).filter(s => {
-    const matchesSearch = searchQuery === '' || (s.seriesDescription || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesModality = filterModality === 'All' || getSeriesModality(s) === filterModality;
+  const filteredSeries = (seriesList || []).filter((s) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      (s.seriesDescription || '')
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    const matchesModality =
+      filterModality === 'All' || getSeriesModality(s) === filterModality;
     return matchesSearch && matchesModality;
   });
 
   // Render series card using SeriesCard component
-  const renderSeriesCard = (s: DicomSeries) => (
-    <SeriesCard
-      key={s.id}
-      series={s}
-      isSelected={selectedSeries === s.id}
-      viewMode={viewMode}
-      onSeriesClick={handleSeriesClick}
-    />
-  );
+  const renderSeriesCard = (s: DicomSeries) => {
+    const resolvedFallback = resolveDicomImageUrl(
+      seriesInstances[s.id]?.[0]?.filePath,
+      seriesInstances[s.id]?.[0]?.fileName
+    );
+    const thumbnailPath = thumbnailPaths[s.id] ?? resolvedFallback ?? undefined;
+
+    return (
+      <SeriesCard
+        key={s.id}
+        series={s}
+        isSelected={selectedSeries === s.id}
+        viewMode={viewMode}
+        onSeriesClick={handleSeriesClick}
+        thumbnailPath={thumbnailPath}
+        loadingThumbnail={!thumbnailPath}
+      />
+    );
+  };
 
 
   return (
     <TooltipProvider>
-      <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-l-2 border-teal-900/30 flex flex-col h-full shadow-2xl">
+      <div className="bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 border-l-2 border-teal-900/30 flex flex-col h-full shadow-2xl">
         {/* Medical-themed Header */}
-        <div className="h-14 flex items-center justify-between px-4 border-b-2 border-teal-800/40 bg-gradient-to-r from-slate-800 to-slate-900">
+        <div className="h-14 flex items-center justify-between px-4 border-b-2 border-teal-800/40 bg-linear-to-r from-slate-800 to-slate-900">
           <div className="flex items-center gap-3">
             <div className="p-1.5 bg-teal-600/20 rounded-lg border border-teal-500/30">
               <Database className="h-4 w-4 text-teal-400" />
@@ -148,8 +277,11 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
                <h2 className="text-teal-300 font-bold text-sm tracking-wide">
                  IMAGE SERIES
                </h2>
-               <Badge variant="secondary" className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30">
-                 {(series || []).length} Total
+                 <Badge
+                   variant="secondary"
+                   className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
+                 >
+                   {seriesList.length} Total
                </Badge>
              </div>
           </div>
@@ -240,7 +372,9 @@ const ViewerRightSidebar = ({ onSeriesSelect, series = [], studyId, onSeriesLoad
                </div>
              ) : filteredSeries.length > 0 ? (
                <div className={viewMode === 'grid' ? 'space-y-1' : 'space-y-1'}>
-                 {filteredSeries.map((s) => renderSeriesCard(s))}
+                 {filteredSeries.map((s) =>
+                   renderSeriesCard(s)
+                 )}
                </div>
              ) : (
                <div className="text-center text-slate-500 py-8">

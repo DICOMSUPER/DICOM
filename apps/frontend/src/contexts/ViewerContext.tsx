@@ -123,24 +123,24 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const setActiveTool = (tool: ToolType) => {
-    setState(prev => ({ 
-      ...prev, 
+  const setActiveTool = useCallback((tool: ToolType) => {
+    setState(prev => ({
+      ...prev,
       activeTool: tool,
-      isToolActive: true 
+      isToolActive: true,
     }));
     console.log('Tool activated:', tool);
-  };
+  }, []);
 
   const setLayout = (layout: GridLayout) => {
     setState(prev => saveToHistory({ ...prev, layout }));
     console.log('Layout changed:', layout);
   };
 
-  const setActiveViewport = (viewport: number) => {
+  const setActiveViewport = useCallback((viewport: number) => {
     setState(prev => ({ ...prev, activeViewport: viewport }));
     console.log('Active viewport changed:', viewport);
-  };
+  }, []);
 
   const getViewportTransform = (viewport: number): ViewportTransform => {
     return state.viewportTransforms.get(viewport) || defaultTransform;

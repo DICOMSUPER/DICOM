@@ -103,7 +103,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
         if (!window.cornerstoneInitialized) {
           await csRenderInit();
           await csToolsInit();
-          dicomImageLoaderInit({ maxWebWorkers: 1 });
+        dicomImageLoaderInit({ maxWebWorkers: 4 });
           window.cornerstoneInitialized = true;
         }
 

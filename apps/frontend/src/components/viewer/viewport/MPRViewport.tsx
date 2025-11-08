@@ -14,6 +14,7 @@ import { viewportSyncService } from "@/services/ViewportSyncService";
 import type { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 import { smartSort, extractSortingMetadata } from "@/utils/dicom/sortInstances";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
+import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
 
 interface MPRViewportProps {
   selectedSeries?: any;
@@ -62,7 +63,7 @@ export default function MPRViewport({
         // Init Cornerstone
         await csRenderInit();
         await csToolsInit();
-        dicomImageLoaderInit({ maxWebWorkers: 1 });
+        dicomImageLoaderInit({ maxWebWorkers: 4 });
         setLoadingProgress(10);
 
         let imageIds: string[] = [];
@@ -83,19 +84,19 @@ export default function MPRViewport({
 
             if (instanceData.length > 0) {
               const instancesWithMetadata: DicomInstance[] = instanceData
-                .filter((instance) => !!instance.filePath)
+                .filter((instance) => !!resolveDicomImageUrl(instance.filePath, instance.fileName))
                 .map((instance) =>
                   extractSortingMetadata(instance) as DicomInstance
                 );
 
               const sortedInstances = smartSort(instancesWithMetadata);
 
-              imageIds = sortedInstances.map((instance) => {
-                const path = instance.filePath.startsWith("http")
-                  ? instance.filePath
-                  : `${instance.filePath}/${instance.fileName}`;
-                return `wadouri:${path}`;
-              });
+              imageIds = sortedInstances
+                .map((instance) =>
+                  resolveDicomImageUrl(instance.filePath, instance.fileName)
+                )
+                .filter((path): path is string => Boolean(path))
+                .map((path) => `wadouri:${path}`);
 
               console.log(
                 "✅ Sorted and loaded",

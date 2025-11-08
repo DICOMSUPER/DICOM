@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
+import { extractApiData } from "@/utils/api";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +101,9 @@ function ViewerPageContent() {
           type: "study",
           params: { page: 1, limit: 50 },
         }).unwrap();
-        setSeries(seriesResponse.data?.data || []);
+        const refreshedSeries = extractApiData<DicomSeries>(seriesResponse);
+        setSeries(refreshedSeries);
+        handleSeriesLoaded(refreshedSeries);
 
         // Dispatch refreshViewport event to force viewport rebuild
         window.dispatchEvent(
