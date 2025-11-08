@@ -1,17 +1,16 @@
+import { Department, DigitalSignature, Qualification, WeeklySchedulePattern } from '@backend/shared-domain';
+import { Roles } from '@backend/shared-enums';
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { Roles } from '@backend/shared-enums';
-import { Department, DigitalSignature, EmployeeSchedule, WeeklySchedulePattern } from '@backend/shared-domain';
-import { Qualification } from '@backend/shared-domain';
-import { BaseEntity } from '@backend/database';
+import { EmployeeRoomAssignment } from './employee-room-assignments.entity';
 
 @Entity('users')
 export class User {
@@ -78,11 +77,11 @@ export class User {
   // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
   // roomAssignments!: RoomAssignment[];
   @OneToMany(
-    () => EmployeeSchedule,
-    (employeeSchedule) => employeeSchedule.employee
+    () => EmployeeRoomAssignment,
+    (employeeRoomAssignment) => employeeRoomAssignment.employee
   )
-  employeeSchedules!: EmployeeSchedule[];
-  
-   @OneToMany(() => DigitalSignature, (sig) => sig.user)
+  employeeRoomAssignments!: EmployeeRoomAssignment[];
+
+  @OneToMany(() => DigitalSignature, (sig) => sig.user)
   digitalSignatures!: DigitalSignature[];
 }

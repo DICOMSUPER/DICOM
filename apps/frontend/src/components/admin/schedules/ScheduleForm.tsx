@@ -21,8 +21,8 @@ import { CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { 
-  useCreateEmployeeScheduleMutation, 
-  useUpdateEmployeeScheduleMutation 
+  useCreateRoomScheduleMutation, 
+  useUpdateRoomScheduleMutation 
 } from "@/store/scheduleApi";
 import { toast } from "sonner";
 import { UserRole, ROLE_OPTIONS } from "@/enums/role.enum";
@@ -124,8 +124,8 @@ export function ScheduleForm({
     },
   });
 
-  const [createSchedule, { isLoading: isCreating }] = useCreateEmployeeScheduleMutation();
-  const [updateSchedule, { isLoading: isUpdating }] = useUpdateEmployeeScheduleMutation();
+  const [createSchedule, { isLoading: isCreating }] = useCreateRoomScheduleMutation();
+  const [updateSchedule, { isLoading: isUpdating }] = useUpdateRoomScheduleMutation();
 
   const selectedShiftTemplateId = watch("shift_template_id");
 

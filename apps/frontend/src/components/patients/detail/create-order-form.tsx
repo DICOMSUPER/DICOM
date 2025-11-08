@@ -35,7 +35,10 @@ import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.in
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 import { useCreateImagingOrderFormMutation } from "@/store/imagingOrderFormApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import { useGetUserByIdQuery } from "@/store/userApi";
+import {
+  useGetCurrentProfileQuery,
+  useGetUserByIdQuery,
+} from "@/store/userApi";
 import { toast } from "sonner";
 
 export interface ImagingProcedure {
@@ -72,7 +75,9 @@ export default function CreateImagingOrder({
   patient,
   encounterId,
 }: CreateImagingOrderProps) {
-  const [userId, setUserId] = useState<string>("");
+  const { data: profile } = useGetCurrentProfileQuery();
+  console.log("Profile Data:", profile?.data.data);
+
   const [department, setDepartment] = useState("");
   const [roomName, setRoomName] = useState("");
   const [departmentName, setDepartmentName] = useState("");
@@ -114,24 +119,6 @@ export default function CreateImagingOrder({
     }
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = localStorage.getItem("user");
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed.id === "string") {
-        setUserId(parsed.id);
-      }
-    } catch (err) {
-      console.error("Invalid user in localStorage", err);
-    }
-  }, []);
-
-  const { data: physicianData } = useGetUserByIdQuery(userId, {
-    skip: !userId,
-  });
-
   const updateProcedure = (
     id: string,
     field: keyof ImagingProcedure,
@@ -165,7 +152,10 @@ export default function CreateImagingOrder({
   };
 
   const handleSave = async () => {
-    if (!isFormValid()) return;
+    if (!isFormValid()) {
+      console.log("Form is invalid");
+      return;
+    }
 
     try {
       const imagingOrders: CreateImagingOrderDto[] = procedures.map(
@@ -186,12 +176,13 @@ export default function CreateImagingOrder({
         imagingOrders,
       };
       const result = await createImagingOrderForm(payload).unwrap();
-
       if (result.success) {
+        console.log("result", result);
         handleDownloadPDF();
         toast.success("Imaging orders created successfully!");
+        handleCancel();
       }
-      handleCancel();
+      // handleCancel();
     } catch (error) {
       toast.error("Failed to create imaging orders. Please try again.");
     }
@@ -248,7 +239,7 @@ export default function CreateImagingOrder({
       departmentName: departmentName,
       roomName: roomName,
       notes: notes,
-      orderingPhysicianName: `${physicianData?.data.firstName} ${physicianData?.data.lastName}`,
+      orderingPhysicianName: `${profile?.data.data.firstName} ${profile?.data.data.lastName}`,
     };
     ImagingOrder({ imagingProcedurePDF });
   };

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto, EmployeeSchedule } from '@backend/shared-domain';
+import { CreateUserDto, RoomSchedule } from '@backend/shared-domain';
 import { UpdateUserDto } from '@backend/shared-domain';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -30,8 +30,8 @@ export class UsersService {
     private otpService: OtpService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(EmployeeSchedule)
-    private employeeScheduleRepository: Repository<EmployeeSchedule>
+    @InjectRepository(RoomSchedule)
+    private RoomScheduleRepository: Repository<RoomSchedule>
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {

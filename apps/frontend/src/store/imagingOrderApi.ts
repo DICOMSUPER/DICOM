@@ -9,8 +9,6 @@ import {
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 
-
-
 export interface RoomFilter {
   id: string;
   filterParams: {
@@ -144,7 +142,6 @@ export const imagingOrderApi = createApi({
           ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
-
     getImagingOrderByRoomIdFilter: builder.query<
       ApiResponse<ImagingOrder[]>,
       RoomFilter
@@ -155,7 +152,6 @@ export const imagingOrderApi = createApi({
         params: filterParams,
       }),
     }),
-
     getOrderStatsForRoom: builder.query<ApiResponse<unknown>, string>({
       query: (id) => ({
         url: `/${id}/room-stats`,

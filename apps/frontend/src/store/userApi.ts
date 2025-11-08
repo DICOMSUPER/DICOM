@@ -25,7 +25,7 @@ export interface UserFilters {
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: axiosBaseQuery("/user"),
-  tagTypes: ["User"],
+  tagTypes: ["User", "Profile"],
   endpoints: (builder) => ({
     getAllUsers: builder.query<PaginatedResponse<User>, UserFilters>({
       query: (params) => ({
@@ -84,6 +84,14 @@ export const userApi = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+
+    getCurrentProfile: builder.query<ApiResponse<{data:User}>, void>({
+      query: () => ({
+        url: "/profile",
+        method: "GET",
+      }),
+      providesTags: ["Profile"],
+    }),
   }),
 });
 
@@ -94,6 +102,7 @@ export const {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useGetCurrentProfileQuery,
 } = userApi;
 
 export default userApi;

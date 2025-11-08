@@ -15,8 +15,8 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { 
   useGetMySchedulesByDateRangeQuery,
   useGetMySchedulesByDateQuery,
-} from "@/store/employeeScheduleApi";
-import { EmployeeSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
+} from "@/store/RoomScheduleApi";
+import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
 // Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
 
@@ -36,7 +36,7 @@ const timeSlots = [
 export default function PhysicianSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
-  const [selectedSchedule, setSelectedSchedule] = useState<EmployeeSchedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch schedules for entire month (single query)
@@ -52,7 +52,7 @@ export default function PhysicianSchedulePage() {
   });
 
   // Filter schedules based on current view mode and selected date
-  const getFilteredSchedules = (): EmployeeSchedule[] => {
+  const getFilteredSchedules = (): RoomSchedule[] => {
     const scheduleArray = Array.isArray(allSchedules) ? allSchedules : [];
     
     switch (viewMode) {
@@ -134,7 +134,7 @@ export default function PhysicianSchedulePage() {
     }
   };
 
-  const handleScheduleClick = (schedule: EmployeeSchedule) => {
+  const handleScheduleClick = (schedule: RoomSchedule) => {
     setSelectedSchedule(schedule);
     setIsModalOpen(true);
   };

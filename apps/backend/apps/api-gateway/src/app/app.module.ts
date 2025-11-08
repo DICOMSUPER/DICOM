@@ -42,7 +42,7 @@ dotenv.config();
     AuditLogModule,
     NotificationsModule,
     PatientServiceModule,
-    SeedingModule,
+    // SeedingModule,
   ],
   controllers: [AppController],
   providers: [

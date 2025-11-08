@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { ShiftTemplate, Department, Room, User, EmployeeSchedule } from '@backend/shared-domain';
+import { ShiftTemplate, Department, Room, User, RoomSchedule } from '@backend/shared-domain';
 import { ShiftType, Roles } from '@backend/shared-enums';
 import * as bcrypt from 'bcrypt';
 
@@ -18,8 +18,8 @@ export class SeedingService {
     private readonly roomRepository: Repository<Room>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(EmployeeSchedule)
-    private readonly employeeScheduleRepository: Repository<EmployeeSchedule>,
+    @InjectRepository(RoomSchedule)
+    private readonly RoomScheduleRepository: Repository<RoomSchedule>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -31,7 +31,7 @@ export class SeedingService {
       await this.seedUsers();
       await this.seedRooms();
       await this.seedShiftTemplates();
-      await this.seedEmployeeSchedules();
+      await this.seedRoomSchedules();
       
       this.logger.log('✅ User Service database seeding completed successfully!');
     } catch (error: any) {
@@ -449,7 +449,7 @@ export class SeedingService {
       }
     }
   }
-  async seedEmployeeSchedules(): Promise<void> {
+  async seedRoomSchedules(): Promise<void> {
     this.logger.log('📅 Seeding employee schedules...');
 
     // Get all required data
@@ -526,7 +526,7 @@ export class SeedingService {
 
           this.logger.log(`📅 Creating schedule for ${physician.firstName} ${physician.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
 
-          const existing = await this.employeeScheduleRepository.findOne({
+          const existing = await this.RoomScheduleRepository.findOne({
             where: {
               employee_id: physician.id,
               work_date: workDate,
@@ -534,8 +534,8 @@ export class SeedingService {
           });
 
           if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
+            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
             this.logger.log(`✅ Saved physician schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
           } else {
@@ -564,7 +564,7 @@ export class SeedingService {
 
           this.logger.log(`📅 Creating schedule for ${staff.firstName} ${staff.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
 
-          const existing = await this.employeeScheduleRepository.findOne({
+          const existing = await this.RoomScheduleRepository.findOne({
             where: {
               employee_id: staff.id,
               work_date: workDate,
@@ -572,8 +572,8 @@ export class SeedingService {
           });
 
           if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
+            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
             this.logger.log(`✅ Saved reception schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
           } else {
@@ -603,7 +603,7 @@ export class SeedingService {
 
           this.logger.log(`📅 Creating schedule for ${tech.firstName} ${tech.lastName} on ${workDate} in room ${room.roomCode} (ID: ${room.id})`);
 
-          const existing = await this.employeeScheduleRepository.findOne({
+          const existing = await this.RoomScheduleRepository.findOne({
             where: {
               employee_id: tech.id,
               work_date: workDate,
@@ -611,8 +611,8 @@ export class SeedingService {
           });
 
           if (!existing) {
-            const newSchedule = this.employeeScheduleRepository.create(schedule as any);
-            const savedSchedule = await this.employeeScheduleRepository.save(newSchedule);
+            const newSchedule = this.RoomScheduleRepository.create(schedule as any);
+            const savedSchedule = await this.RoomScheduleRepository.save(newSchedule);
             this.logger.log(`✅ Saved imaging tech schedule ID: ${(savedSchedule as any).schedule_id}, room_id: ${(savedSchedule as any).room_id}`);
             schedulesCreated++;
           } else {
@@ -625,7 +625,7 @@ export class SeedingService {
     this.logger.log(`✅ Created ${schedulesCreated} employee schedules (past 7 days + next 14 days)`);
     
     // Verify the seeding by checking a few schedules
-    const sampleSchedules = await this.employeeScheduleRepository.find({
+    const sampleSchedules = await this.RoomScheduleRepository.find({
       take: 5,
       relations: ['room', 'employee', 'shift_template']
     });

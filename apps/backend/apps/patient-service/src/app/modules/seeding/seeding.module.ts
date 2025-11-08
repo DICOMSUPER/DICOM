@@ -6,7 +6,6 @@ import {
   Patient,
   PatientCondition,
   PatientEncounter,
-  QueueAssignment,
   DiagnosesReport,
 } from '@backend/shared-domain';
 import { UserServiceClientModule } from '@backend/shared-client';
@@ -17,7 +16,7 @@ import { UserServiceClientModule } from '@backend/shared-client';
       Patient,
       PatientCondition,
       PatientEncounter,
-      QueueAssignment,
+
       DiagnosesReport,
     ]),
     UserServiceClientModule,

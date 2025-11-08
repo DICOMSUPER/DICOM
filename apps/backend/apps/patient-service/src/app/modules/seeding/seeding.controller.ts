@@ -67,15 +67,7 @@ export class SeedingController {
     };
   }
 
-  @MessagePattern('PatientService.Seeding.SeedQueueAssignments')
-  async microserviceSeedQueueAssignments(@Payload() data: any) {
-    await this.seedingService.seedQueueAssignments();
-    return {
-      success: true,
-      message: 'Queue assignments seeded successfully!',
-      timestamp: new Date().toISOString(),
-    };
-  }
+
 
   @MessagePattern('PatientService.Seeding.SeedDiagnosesReports')
   async microserviceSeedDiagnosesReports(@Payload() data: any) {
@@ -96,7 +88,6 @@ export class SeedingController {
         patients: 'available',
         encounters: 'available',
         conditions: 'available',
-        queueAssignments: 'available',
         diagnosesReports: 'available',
       },
       timestamp: new Date().toISOString(),

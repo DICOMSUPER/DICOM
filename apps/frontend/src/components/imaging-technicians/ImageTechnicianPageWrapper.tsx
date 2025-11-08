@@ -5,7 +5,7 @@ import DataTable from "./data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetImagingOrderByRoomIdFilterQuery } from "@/store/imagingOrderApi";
 import { format } from "date-fns";
-import { useGetMySchedulesByDateRangeQuery } from "@/store/employeeScheduleApi";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/RoomScheduleApi";
 import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus from "./current-status";
@@ -26,20 +26,20 @@ export default function ImageTechnicianPageWrapper() {
     };
   }, [searchParams]);
 
-  const { data: employeeScheduleData, isLoading: isLoadingSchedule } =
+  const { data: RoomScheduleData, isLoading: isLoadingSchedule } =
     useGetMySchedulesByDateRangeQuery({
       startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(), "yyyy-MM-dd"),
     });
 
-  console.log("Schedule:", employeeScheduleData);
+  console.log("Schedule:", RoomScheduleData);
 
   // Helper function to get the current active schedule based on time
   const getCurrentSchedule = () => {
     if (
-      !employeeScheduleData ||
-      !Array.isArray(employeeScheduleData) ||
-      employeeScheduleData.length === 0
+      !RoomScheduleData ||
+      !Array.isArray(RoomScheduleData) ||
+      RoomScheduleData.length === 0
     ) {
       return null;
     }
@@ -48,7 +48,7 @@ export default function ImageTechnicianPageWrapper() {
     const currentTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
 
     // Try to find a schedule where current time is within the time range
-    const activeSchedule = employeeScheduleData.find((schedule) => {
+    const activeSchedule = RoomScheduleData.find((schedule) => {
       if (!schedule.actual_start_time || !schedule.actual_end_time)
         return false;
 
@@ -64,7 +64,7 @@ export default function ImageTechnicianPageWrapper() {
     });
 
     // If no active schedule found, return the first one
-    return activeSchedule || employeeScheduleData[0];
+    return activeSchedule || RoomScheduleData[0];
   };
 
   const currentSchedule = getCurrentSchedule();
@@ -100,7 +100,7 @@ export default function ImageTechnicianPageWrapper() {
     return <Loading />;
   }
 
-  if (!employeeScheduleData || employeeScheduleData.length === 0) {
+  if (!RoomScheduleData || RoomScheduleData.length === 0) {
     return <>No working schedule yet</>;
   }
 

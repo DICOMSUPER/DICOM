@@ -54,7 +54,7 @@ export interface ShiftTemplate {
   is_active: boolean;
 }
 
-export interface EmployeeSchedule {
+export interface RoomSchedule {
   schedule_id: string;
   employee_id: string;
   room_id?: string;
@@ -72,7 +72,7 @@ export interface EmployeeSchedule {
 }
 
 // DTOs for API calls
-export interface CreateEmployeeScheduleDto {
+export interface CreateRoomScheduleDto {
   employee_id: string;
   room_id?: string;
   shift_template_id?: string;
@@ -84,7 +84,7 @@ export interface CreateEmployeeScheduleDto {
   overtime_hours?: number;
 }
 
-export interface UpdateEmployeeScheduleDto {
+export interface UpdateRoomScheduleDto {
   room_id?: string;
   shift_template_id?: string;
   work_date?: string;
@@ -95,7 +95,7 @@ export interface UpdateEmployeeScheduleDto {
   overtime_hours?: number;
 }
 
-export interface EmployeeScheduleSearchFilters {
+export interface RoomScheduleSearchFilters {
   employee_id?: string;
   room_id?: string;
   work_date?: string;

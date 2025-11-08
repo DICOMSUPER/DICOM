@@ -234,7 +234,7 @@ export class ImagingOrdersController {
     );
     try {
       const { patientId, pagination } = data;
-
+      
       return await this.imagingOrdersService.findByPatientId(
         patientId,
         pagination ?? { page: 1, limit: 10 }

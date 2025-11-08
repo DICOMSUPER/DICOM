@@ -2,7 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ScheduleFormData } from "@/lib/validation/schedule-schema";
 import { Department } from "@/interfaces/user/department.interface";
-import { QueueAssignment } from "@/interfaces/patient/queue-assignment.interface";
+
 
 export interface User {
   id: string;
@@ -64,7 +64,7 @@ export interface ShiftTemplate {
   updatedAt: string;
 }
 
-export interface EmployeeSchedule {
+export interface RoomSchedule {
   schedule_id: string;
   employee_id: string;
   room_id?: string;
@@ -182,7 +182,7 @@ export const scheduleApi = createApi({
   reducerPath: "scheduleApi",
   baseQuery: axiosBaseQuery(""),
   tagTypes: [
-    "EmployeeSchedule",
+    "RoomSchedule",
     "ShiftTemplate",
     "Room",
     "ScheduleStats",
@@ -192,8 +192,8 @@ export const scheduleApi = createApi({
   ],
   endpoints: (builder) => ({
     // Employee Schedules
-    getEmployeeSchedules: builder.query<
-      PaginatedResponse<EmployeeSchedule>,
+    getRoomSchedules: builder.query<
+      PaginatedResponse<RoomSchedule>,
       {
         page?: number;
         limit?: number;
@@ -209,37 +209,37 @@ export const scheduleApi = createApi({
       }
     >({
       query: (params: any) => ({
-        url: "/employee-schedules",
+        url: "/room-schedules",
         method: "GET",
         params,
       }),
-      providesTags: ["EmployeeSchedule"],
+      providesTags: ["RoomSchedule"],
     }),
 
-    getEmployeeScheduleById: builder.query<EmployeeSchedule, string>({
+    getRoomScheduleById: builder.query<RoomSchedule, string>({
       query: (id: string) => ({
-        url: `/employee-schedules/${id}`,
+        url: `/room-schedules/${id}`,
         method: "GET",
       }),
       providesTags: (result: any, error: any, id: string) => [
-        { type: "EmployeeSchedule", id },
+        { type: "RoomSchedule", id },
       ],
     }),
 
-    createEmployeeSchedule: builder.mutation<
-      EmployeeSchedule,
+    createRoomSchedule: builder.mutation<
+      RoomSchedule,
       ScheduleFormData
     >({
       query: (schedule: ScheduleFormData) => ({
-        url: "/employee-schedules",
+        url: "/room-schedules",
         method: "POST",
         data: schedule,
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
-    updateEmployeeSchedule: builder.mutation<
-      EmployeeSchedule,
+    updateRoomSchedule: builder.mutation<
+      RoomSchedule,
       { id: string; updates: Partial<ScheduleFormData> }
     >({
       query: ({
@@ -249,22 +249,22 @@ export const scheduleApi = createApi({
         id: string;
         updates: Partial<ScheduleFormData>;
       }) => ({
-        url: `/employee-schedules/${id}`,
+        url: `/room-schedules/${id}`,
         method: "PATCH",
         data: updates,
       }),
       invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
-        { type: "EmployeeSchedule", id },
-        "EmployeeSchedule",
+        { type: "RoomSchedule", id },
+        "RoomSchedule",
       ],
     }),
 
-    deleteEmployeeSchedule: builder.mutation<boolean, string>({
+    deleteRoomSchedule: builder.mutation<boolean, string>({
       query: (id: string) => ({
-        url: `/employee-schedules/${id}`,
+        url: `/room-schedules/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
     // Shift Templates
@@ -411,7 +411,7 @@ export const scheduleApi = createApi({
     // Schedule Statistics
     getScheduleStats: builder.query<any, { employee_id?: string }>({
       query: ({ employee_id }: { employee_id?: string }) => ({
-        url: "/employee-schedules/stats",
+        url: "/room-schedules/stats",
         method: "GET",
         params: { employee_id },
       }),
@@ -625,42 +625,42 @@ export const scheduleApi = createApi({
 
     // Bulk Operations
     createBulkSchedules: builder.mutation<
-      EmployeeSchedule[],
+      RoomSchedule[],
       ScheduleFormData[]
     >({
       query: (schedules: ScheduleFormData[]) => ({
-        url: "/employee-schedules/bulk",
+        url: "/room-schedules/bulk",
         method: "POST",
         data: { schedules },
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
     updateBulkSchedules: builder.mutation<
-      EmployeeSchedule[],
+      RoomSchedule[],
       { updates: { id: string; data: Partial<ScheduleFormData> }[] }
     >({
       query: (data: {
         updates: { id: string; data: Partial<ScheduleFormData> }[];
       }) => ({
-        url: "/employee-schedules/bulk",
+        url: "/room-schedules/bulk",
         method: "PATCH",
         data: data,
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
     deleteBulkSchedules: builder.mutation<boolean, { ids: string[] }>({
       query: (data: { ids: string[] }) => ({
-        url: "/employee-schedules/bulk",
+        url: "/room-schedules/bulk",
         method: "DELETE",
         data: data,
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
     copyWeekSchedules: builder.mutation<
-      EmployeeSchedule[],
+      RoomSchedule[],
       {
         source_week_start: string;
         target_week_start: string;
@@ -672,18 +672,18 @@ export const scheduleApi = createApi({
         target_week_start: string;
         employee_id?: string;
       }) => ({
-        url: "/employee-schedules/copy-week",
+        url: "/room-schedules/copy-week",
         method: "POST",
         data: data,
       }),
-      invalidatesTags: ["EmployeeSchedule"],
+      invalidatesTags: ["RoomSchedule"],
     }),
 
     // Conflict Detection
     checkScheduleConflict: builder.query<
       {
         hasConflict: boolean;
-        conflictingSchedule?: EmployeeSchedule;
+        conflictingSchedule?: RoomSchedule;
       },
       {
         employee_id: string;
@@ -694,7 +694,7 @@ export const scheduleApi = createApi({
       }
     >({
       query: (params: any) => ({
-        url: "/employee-schedules/check-conflict",
+        url: "/room-schedules/check-conflict",
         method: "POST",
         data: params,
       }),
@@ -703,12 +703,12 @@ export const scheduleApi = createApi({
     validateSchedulesAgainstWorkingHours: builder.query<
       {
         valid: boolean;
-        violations: { schedule: EmployeeSchedule; reason: string }[];
+        violations: { schedule: RoomSchedule; reason: string }[];
       },
-      { schedules: EmployeeSchedule[] }
+      { schedules: RoomSchedule[] }
     >({
-      query: (data: { schedules: EmployeeSchedule[] }) => ({
-        url: "/employee-schedules/validate-working-hours",
+      query: (data: { schedules: RoomSchedule[] }) => ({
+        url: "/room-schedules/validate-working-hours",
         method: "POST",
         data: data,
       }),
@@ -748,7 +748,7 @@ export const scheduleApi = createApi({
         method: "POST",
         data: data,
       }),
-      invalidatesTags: ["EmployeeSchedule", "ShiftTemplate"],
+      invalidatesTags: ["RoomSchedule", "ShiftTemplate"],
     }),
 
     applyTemplateToEmployees: builder.mutation<
@@ -774,17 +774,17 @@ export const scheduleApi = createApi({
         method: "POST",
         data: data,
       }),
-      invalidatesTags: ["EmployeeSchedule", "ShiftTemplate"],
+      invalidatesTags: ["RoomSchedule", "ShiftTemplate"],
     }),
   }),
 });
 
 export const {
-  useGetEmployeeSchedulesQuery,
-  useGetEmployeeScheduleByIdQuery,
-  useCreateEmployeeScheduleMutation,
-  useUpdateEmployeeScheduleMutation,
-  useDeleteEmployeeScheduleMutation,
+  useGetRoomSchedulesQuery,
+  useGetRoomScheduleByIdQuery,
+  useCreateRoomScheduleMutation,
+  useUpdateRoomScheduleMutation,
+  useDeleteRoomScheduleMutation,
   useGetShiftTemplatesQuery,
   useGetShiftTemplateByIdQuery,
   useGetShiftTemplatesByTypeQuery,

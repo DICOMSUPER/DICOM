@@ -3,13 +3,13 @@
 import { Clock, User, CalendarOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface ListViewProps {
-  schedules: EmployeeSchedule[];
+  schedules: RoomSchedule[];
   getStatusColor: (status: string) => string;
   isLoading?: boolean;
-  onScheduleClick?: (schedule: EmployeeSchedule) => void;
+  onScheduleClick?: (schedule: RoomSchedule) => void;
 }
 
 export function ListView({ schedules, getStatusColor, isLoading = false, onScheduleClick }: ListViewProps) {

@@ -12,7 +12,7 @@ import { Patient } from '../entities/patients/patients.entity';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { DiagnosesReport } from '../entities/patients/diagnoses-reports.entity';
 import { PatientCondition } from '../entities/patients/patient-conditions';
-import { DiagnosisStatus } from '@backend/shared-enums';
+
 
 export interface PatientSearchFilters {
   patientCode?: string;
