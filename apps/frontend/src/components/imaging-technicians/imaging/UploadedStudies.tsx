@@ -5,12 +5,25 @@ import SmallBreadCrumb from "@/components/common/SmallBreadCrumb";
 import { Folder, File } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 
-export default function UploadedStudies({ studies }: { studies?: any[] }) {
+export default function UploadedStudies({
+  currentLevel,
+  setCurrentLevel,
+  studies,
+  series,
+  instances,
+}: {
+  currentLevel: "studies" | "series" | "instances";
+  setCurrentLevel: (level: "studies" | "series" | "instances") => void;
+  studies?: DicomStudy[];
+  series?: DicomSeries[];
+  instances?: DicomInstance[];
+}) {
   // Navigation state
-  const [currentLevel, setCurrentLevel] = useState<
-    "studies" | "series" | "instances"
-  >("studies");
+
   const [selectedStudy, setSelectedStudy] = useState<any>(null);
   const [selectedSeries, setSelectedSeries] = useState<any>(null);
 
@@ -77,8 +90,12 @@ export default function UploadedStudies({ studies }: { studies?: any[] }) {
                 <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
                   <Folder className="w-5 h-5 text-blue-500" />
                 </div>
-                <span className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200">
-                  {study.study_description || `Study ${study.study_id}`}
+                <span
+                  className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200"
+                  title={`${study.studyInstanceUid} - [${study.studyDate}]`}
+                >
+                  {study.studyDescription ||
+                    `Study ...${study.studyInstanceUid.slice(-7)}`}
                 </span>
                 <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
                   {study.series.length} series

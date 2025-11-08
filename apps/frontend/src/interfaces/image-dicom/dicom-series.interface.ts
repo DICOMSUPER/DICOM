@@ -1,4 +1,5 @@
 import { BaseEntity } from "../base.interface";
+import { PaginatedQuery } from "../pagination/pagination.interface";
 import { DicomInstance } from "./dicom-instances.interface";
 
 export interface DicomSeries extends BaseEntity {
@@ -13,4 +14,10 @@ export interface DicomSeries extends BaseEntity {
   protocolName: string;
   numberOfInstances: number;
   instances: DicomInstance[];
+}
+
+export default interface DicomSeriesReferenceQuery
+  extends Partial<PaginatedQuery> {
+  id: string;
+  type: string;
 }

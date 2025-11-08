@@ -33,11 +33,15 @@ export class ModalityMachinesController {
 
   @Public()
   @Get()
-  async findAll(@Query('modalityId') modalityId?: string) {
+  async findAll(
+    @Query('modalityId') modalityId?: string,
+    @Query('roomId') roomId?: string
+  ) {
     try {
       return await firstValueFrom(
         this.imagingService.send('ImagingService.ModalityMachines.FindAll', {
           modalityId,
+          roomId,
         })
       );
     } catch (error) {

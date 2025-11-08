@@ -16,7 +16,6 @@ import { Repository } from 'typeorm';
 import {
   CreateImagingOrderFormDto,
   FilterImagingOrderFormDto,
-  FilterImagingOrderFormServiceDto,
   ImagingOrder,
   ImagingOrderForm,
   Patient,
@@ -552,8 +551,6 @@ export class ImagingOrderFormService {
     return stats;
   }
 
-
-
   async findByPatientId(
     patientId: string,
     paginationDto?: RepositoryPaginationDto
@@ -621,5 +618,4 @@ export class ImagingOrderFormService {
 
     return result;
   }
-
 }

@@ -4,11 +4,12 @@ import {
 } from "@/interfaces/pagination/pagination.interface";
 import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import {
+import DicomStudyReferenceQuery, {
   DicomStudy,
   DicomStudyFilterQuery,
 } from "@/interfaces/image-dicom/dicom-study.interface";
 import { createApi } from "@reduxjs/toolkit/query/react";
+import { string } from "zod";
 
 export const dicomStudyApi = createApi({
   reducerPath: "dicomStudyApi",
@@ -21,9 +22,12 @@ export const dicomStudyApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.data.map((s) => ({ type: "DicomStudy" as const, id: s.id })),
-            { type: "DicomStudies", id: "LIST" },
-          ]
+              ...result.data.map((s) => ({
+                type: "DicomStudy" as const,
+                id: s.id,
+              })),
+              { type: "DicomStudies", id: "LIST" },
+            ]
           : [{ type: "DicomStudies", id: "LIST" }],
     }),
 
@@ -58,7 +62,10 @@ export const dicomStudyApi = createApi({
       ],
     }),
 
-    createDicomStudy: builder.mutation<ApiResponse<DicomStudy>, Partial<DicomStudy>>({
+    createDicomStudy: builder.mutation<
+      ApiResponse<DicomStudy>,
+      Partial<DicomStudy>
+    >({
       query: (body) => ({
         url: "",
         method: "POST",
@@ -106,6 +113,26 @@ export const dicomStudyApi = createApi({
       }),
       invalidatesTags: [{ type: "DicomStudies", id: "LIST" }],
     }),
+
+    useGetDicomStudyByReferenceId: builder.query<
+      ApiResponse<PaginatedResponse<DicomStudy>>,
+      DicomStudyReferenceQuery
+    >({
+      query: ({
+        id,
+        type,
+        page,
+        limit,
+        search,
+        searchField,
+        sortBy,
+        order,
+      }) => ({
+        url: `/reference/${id}`,
+        method: "GET",
+        params: { type, page, limit, search, searchField, sortBy, order },
+      }),
+    }),
   }),
 });
 
@@ -118,4 +145,5 @@ export const {
   useCreateDicomStudyMutation,
   useUpdateDicomStudyMutation,
   useDeleteDicomStudyMutation,
+  useUseGetDicomStudyByReferenceIdQuery,
 } = dicomStudyApi;

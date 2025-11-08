@@ -6,110 +6,90 @@ import OrderInfo from "./OrderInfo";
 import Loading from "@/components/common/Loading";
 import UploadedStudies from "./UploadedStudies";
 import FileUpload from "./FileUpload";
+import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { useGetImagingOrderByIdQuery } from "@/store/imagingOrderApi";
+import { useUseGetDicomStudyByReferenceIdQuery } from "@/store/dicomStudyApi";
+import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { useGetDicomSeriesReferencedIdQuery } from "@/store/dicomSeriesApi";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/employeeScheduleApi";
+import { format } from "date-fns";
 
 export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [order, setOrder] = useState(null);
-  const [studies, setStudies] = useState<any[]>([]);
   const [files, setFiles] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [importProgress, setImportProgress] = useState(0);
-  const [isImporting, setIsImporting] = useState(false);
+  const [selectedStudy, setSelectedStudy] = useState<DicomStudy | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(
+    null
+  );
+  const [importProgress, setImportProgress] = useState<number>(0);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
   const fileInputRef = useRef(null);
+  const [currentLevel, setCurrentLevel] = useState<
+    "studies" | "series" | "instances"
+  >("studies");
+  let order = null;
+  let studies = null;
 
-  const fetchStudies = async () => {
-    try {
-      setIsLoading(true);
+  const { data: employeeScheduleData, isLoading: isLoadingSchedule } =
+    useGetMySchedulesByDateRangeQuery({
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: format(new Date(), "yyyy-MM-dd"),
+    });
 
-      //the data here does not follow db, is deeply nested, need to adjust to later, which could use many api, or just 1 join table
-      // 1. Get studies by order_id
-      // 2. Get series by study_id
-      // 3. Get instance by series_id
-      const response = await axios.get(
-        `https://67de69d0471aaaa742845858.mockapi.io/dicom_instance?order_id=${order_id}`
-      );
+  console.log("Schedule:", employeeScheduleData);
 
-      const studyMap = new Map();
-      response.data.forEach((instance: any) => {
-        const study = instance.series?.study;
-        const series = instance.series;
-        if (study && study.study_id && series && series.series_id) {
-          if (!studyMap.has(study.study_id)) {
-            studyMap.set(study.study_id, {
-              ...study,
-              series: new Map(),
-            });
-          }
-          const studyData = studyMap.get(study.study_id);
-          if (!studyData.series.has(series.series_id)) {
-            studyData.series.set(series.series_id, {
-              ...series,
-              instances: [],
-            });
-          }
-          studyData.series.get(series.series_id).instances.push({
-            id: instance.id,
-            instance_id: instance.instance_id,
-            sop_instance_uid: instance.sop_instance_uid,
-            instance_number: instance.instance_number,
-            file_path: instance.file_path,
-            file_name: instance.file_name,
-            rows: instance.rows,
-            columns: instance.columns,
-            bits_allocated: instance.bits_allocated,
-            bits_stored: instance.bits_stored,
-            created_at: instance.created_at,
-            is_deleted: instance.is_deleted,
-          });
-        }
-      });
+  const { data: orderData, isLoading: isLoadingOrder } =
+    useGetImagingOrderByIdQuery(order_id);
 
-      const studiesArray = Array.from(studyMap.values()).map((study) => ({
-        ...study,
-        series: Array.from(study.series.values()),
-      }));
-      setStudies(studiesArray);
-      setIsLoading(false);
-    } catch (error) {
-      setIsLoading(false);
-      console.log(error);
+  if (!isLoadingOrder) {
+    order = orderData.data;
+  }
+
+  const {
+    data: studyData,
+    isLoading: isLoadingStudy,
+    refetch: refetchStudy,
+  } = useUseGetDicomStudyByReferenceIdQuery(
+    { id: order?.id ?? "", type: "order" },
+    {
+      skip: !order?.id,
     }
-  };
-  const fetchOrder = async () => {
-    try {
-      setIsLoading(true);
+  );
+  studies = studyData?.data ?? [];
 
-      //the data here does not follow db, is deeply nested, need to adjust to later, which could use many api, or just 1 join table
-      // 1. Get order by order_id
-      // 2. Get user (physician,receiption...), modality, visit, patient, room...
-      const response = await axios.get(
-        `https://67de69d0471aaaa742845858.mockapi.io/imaging_order/${order_id}`
-      );
-
-      setOrder(response.data);
-      setIsLoading(false);
-    } catch (error) {
-      setIsLoading(false);
-      console.log(error);
+  const {
+    data: seriesData,
+    isLoading: isLoadingSeries,
+    refetch: refetchSeries,
+  } = useGetDicomSeriesReferencedIdQuery(
+    { id: selectedStudy?.id ?? "", type: "order" },
+    {
+      skip: !selectedStudy || !selectedStudy?.id,
     }
-  };
+  );
+  const series = seriesData?.data ?? [];
 
-  useEffect(() => {
-    fetchOrder();
-    fetchStudies();
-  }, [order_id]);
+  if (isLoadingOrder) return <Loading />;
 
-  if (isLoading) return <Loading />;
   return (
     <div>
       <div className="py-1">
-        {order && <OrderInfo order={order}></OrderInfo>}
+        {!isLoadingOrder && orderData && (
+          <OrderInfo order={orderData.data}></OrderInfo>
+        )}
       </div>
       <div className="py-1">
-        {order && <UploadedStudies studies={studies} />}
+        {orderData && (
+          <UploadedStudies
+            currentLevel={currentLevel}
+            setCurrentLevel={setCurrentLevel}
+            studies={studies}
+            series={series}
+          />
+        )}
       </div>
       <div className="py-1">
-        {order && order.order_status === "in_progress" ? (
+        {order && order.orderStatus === ImagingOrderStatus.IN_PROGRESS ? (
           <FileUpload
             order={order}
             isImporting={isImporting}
@@ -125,7 +105,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             {order && (
               <div className="px-5 py-20 mx-auto flex justify-center items-center bg-[var(--background)] rounded-lg shadow-lg p-6 border border-[var(--border)]">
                 <span className="text-gray-400 italic text-s font-semibold">
-                  This order has been {order.order_status}
+                  This order has been {order.orderStatus}
                 </span>
               </div>
             )}

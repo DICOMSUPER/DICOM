@@ -3,14 +3,13 @@ import { OrderFormStatus } from '@backend/shared-enums';
 import { IsArray, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class FilterImagingOrderFormDto extends PaginationDto {
-    @IsOptional()
-    @IsString()
-    patientName?: string;
-    
-    @IsEnum(OrderFormStatus)
-    @IsOptional()
-    status?: OrderFormStatus;
+  @IsOptional()
+  @IsString()
+  patientName?: string;
 
+  @IsEnum(OrderFormStatus)
+  @IsOptional()
+  status?: OrderFormStatus;
 }
 
 export class FilterImagingOrderFormServiceDto extends PaginationDto {
@@ -22,5 +21,4 @@ export class FilterImagingOrderFormServiceDto extends PaginationDto {
   @IsOptional()
   @IsEnum(OrderFormStatus)
   status?: OrderFormStatus;
-
 }
