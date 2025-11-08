@@ -1,169 +1,121 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import {
   CreateReportTemplateDto,
-  FilterReportTemplateDto,
   ReportTemplate,
-  UpdateReportTemplateDto,
+  UpdateReportTemplateDto
 } from '@backend/shared-domain';
-import { TemplateType } from '@backend/shared-enums';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { ReportTemplateRepository } from './report-templates.repository';
 
 @Injectable()
 export class ReportTemplatesService {
   constructor(
-    @InjectRepository(ReportTemplate)
-    private readonly reportTemplateRepository: Repository<ReportTemplate>
+    @Inject()
+    private readonly reportTemplateRepository: ReportTemplateRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
+  create = async (createReportTemplateDto: CreateReportTemplateDto): Promise<ReportTemplate> => {
+    return await this.entityManager.transaction(async (em) => {
+      const existingReportTemplate = await this.reportTemplateRepository.findOne(
+        {
+          where: { templateName: createReportTemplateDto.templateName },
+        },
+        [],
+        em
+      );
 
-  async create(data: CreateReportTemplateDto) {
-    const template = this.reportTemplateRepository.create(data);
+      if (existingReportTemplate) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Report template with the same name already exists',
+          "PATIENT_SERVICE"
+        );
+      }
 
-    return await this.reportTemplateRepository.save(template);
-  }
+      return await this.reportTemplateRepository.create(createReportTemplateDto, em);
+    });
+  };
 
-  async findAll(filter?: FilterReportTemplateDto) {
-    const qb = this.reportTemplateRepository.createQueryBuilder('template');
+  findAll = async (): Promise<ReportTemplate[]> => {
+    return await this.reportTemplateRepository.findAll();
+  };
 
-    if (filter?.ownerUserId) {
-      qb.andWhere('template.ownerUserId = :ownerUserId', {
-        ownerUserId: filter.ownerUserId,
-      });
-    }
-
-    if (filter?.templateType) {
-      qb.andWhere('template.templateType = :templateType', {
-        templateType: filter.templateType,
-      });
-    }
-
-    if (filter?.isPublic !== undefined) {
-      qb.andWhere('template.isPublic = :isPublic', {
-        isPublic: filter.isPublic,
-      });
-    }
-
-    qb.orderBy('template.createdAt', 'DESC');
-
-    if (filter?.page && filter?.limit) {
-      const skip = (filter.page - 1) * filter.limit;
-      qb.skip(skip).take(filter.limit);
-    }
-
-    const [data, total] = await qb.getManyAndCount();
-
-    return {
-      data,
-      total,
-      page: filter?.page || 1,
-      limit: filter?.limit || total,
-    };
-  }
-
-  async findOne(id: string) {
-    const template = await this.reportTemplateRepository.findOne({
+  findOne = async (id: string): Promise<ReportTemplate | null> => {
+    const reportTemplate = await this.reportTemplateRepository.findOne({
       where: { reportTemplatesId: id },
     });
 
-    if (!template) {
-      throw new NotFoundException(`ReportTemplate with ID ${id} not found`);
+    if (!reportTemplate) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Report template not found',
+        "PATIENT_SERVICE"
+      );
     }
 
-    return template;
-  }
+    return reportTemplate;
+  };
 
-  async findByOwner(ownerUserId: string) {
-    return await this.reportTemplateRepository.find({
-      where: { ownerUserId },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findPublic(filter?: {
-    requestProcedureId?: string;
-    templateType?: 'custom' | 'standard';
-  }) {
-    const qb = this.reportTemplateRepository
-      .createQueryBuilder('template')
-      .where('template.isPublic = :isPublic', { isPublic: true });
-
-    if (filter?.requestProcedureId) {
-      qb.andWhere('template.requestProcedureId = :requestProcedureId', {
-        requestProcedureId: filter.requestProcedureId,
+  update = async (
+    id: string,
+    updateReportTemplateDto: UpdateReportTemplateDto
+  ): Promise<ReportTemplate | null> => {
+    return await this.entityManager.transaction(async (em) => {
+      const reportTemplate = await this.reportTemplateRepository.findOne({
+        where: { reportTemplatesId: id },
       });
-    }
 
-    if (filter?.templateType) {
-      qb.andWhere('template.templateType = :templateType', {
-        templateType: filter.templateType,
+      if (!reportTemplate) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Report template not found',
+          "PATIENT_SERVICE"
+        );
+      }
+      const existingReportTemplate = await this.reportTemplateRepository.findOne({
+        where: { templateName: updateReportTemplateDto.templateName },
       });
-    }
 
-    qb.orderBy('template.createdAt', 'DESC');
+      if (existingReportTemplate && existingReportTemplate.reportTemplatesId !== id) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Report template with the same name already exists',
+          "PATIENT_SERVICE"
+        );
+      }
 
-    return await qb.getMany();
-  }
-
-  async update(id: string, data: UpdateReportTemplateDto) {
-    const template = await this.findOne(id);
-
-    if (data.templateName !== undefined) {
-      template.templateName = data.templateName;
-    }
-    if (data.templateType !== undefined) {
-      template.templateType = data.templateType as TemplateType;
-    }
-    if (data.modalityId !== undefined) {
-      template.modalityId = data.modalityId;
-    }
-
-    if (data.isPublic !== undefined) {
-      template.isPublic = data.isPublic;
-    }
-    if (data.descriptionTemplate !== undefined) {
-      template.descriptionTemplate = data.descriptionTemplate;
-    }
-    if (data.technicalTemplate !== undefined) {
-      template.technicalTemplate = data.technicalTemplate;
-    }
-    if (data.findingsTemplate !== undefined) {
-      template.findingsTemplate = data.findingsTemplate;
-    }
-    if (data.conclusionTemplate !== undefined) {
-      template.conclusionTemplate = data.conclusionTemplate;
-    }
-    if (data.recommendationTemplate !== undefined) {
-      template.recommendationTemplate = data.recommendationTemplate;
-    }
-
-    return await this.reportTemplateRepository.save(template);
-  }
-
-  async delete(id: string) {
-    const template = await this.findOne(id);
-    await this.reportTemplateRepository.remove(template);
-    return {
-      success: true,
-      message: 'ReportTemplate deleted successfully',
-    };
-  }
-
-  async duplicate(id: string, newTemplateName: string, ownerUserId: string) {
-    const originalTemplate = await this.findOne(id);
-
-    const duplicatedTemplate = this.reportTemplateRepository.create({
-      templateName: newTemplateName,
-      templateType: originalTemplate.templateType as TemplateType,
-      ownerUserId: ownerUserId,
-      // mod: originalTemplate.requestProcedureId,
-      isPublic: false, // Duplicated templates default to private
-      descriptionTemplate: originalTemplate.descriptionTemplate,
-      technicalTemplate: originalTemplate.technicalTemplate,
-      findingsTemplate: originalTemplate.findingsTemplate,
-      conclusionTemplate: originalTemplate.conclusionTemplate,
-      recommendationTemplate: originalTemplate.recommendationTemplate,
+      return await this.reportTemplateRepository.update(id, updateReportTemplateDto);
     });
+  };
 
-    return await this.reportTemplateRepository.save(duplicatedTemplate);
-  }
+  remove = async (id: string): Promise<boolean> => {
+    return await this.entityManager.transaction(async (em) => {
+      const reportTemplate = await this.reportTemplateRepository.findOne({
+        where: { reportTemplatesId: id },
+      });
+
+      if (!reportTemplate) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Report template not found',
+          "PATIENT_SERVICE"
+        );
+      }
+
+      return await this.reportTemplateRepository.softDelete(id, 'isDeleted');
+    });
+  };
+
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<ReportTemplate>> => {
+    return await this.reportTemplateRepository.paginate(paginationDto);
+  };
 }

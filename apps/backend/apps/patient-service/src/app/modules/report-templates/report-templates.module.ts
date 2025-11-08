@@ -3,11 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportTemplate } from '@backend/shared-domain';
 import { ReportTemplatesController } from './report-templates.controller';
 import { ReportTemplatesService } from './report-templates.service';
+import { ReportTemplateRepository } from './report-templates.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ReportTemplate])],
   controllers: [ReportTemplatesController],
-  providers: [ReportTemplatesService],
+  providers: [ReportTemplatesService, ReportTemplateRepository],
   exports: [ReportTemplatesService],
 })
 export class ReportTemplatesModule {}

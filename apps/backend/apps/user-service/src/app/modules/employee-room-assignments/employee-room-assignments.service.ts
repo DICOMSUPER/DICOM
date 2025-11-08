@@ -1,99 +1,213 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
 import {
   CreateEmployeeRoomAssignmentDto,
   EmployeeRoomAssignment,
+  RoomSchedule,
+  UpdateEmployeeRoomAssignmentDto,
+  User
 } from '@backend/shared-domain';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
+import { EmployeeRoomAssignmentRepository } from './employee-room-assignments.repository';
 
 @Injectable()
 export class EmployeeRoomAssignmentsService {
   constructor(
-    @InjectRepository(EmployeeRoomAssignment)
-    private readonly employeeRoomAssignmentRepository: Repository<EmployeeRoomAssignment>
+    @Inject()
+    private readonly employeeRoomAssignmentsRepository: EmployeeRoomAssignmentRepository,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
-
-  async create(data: CreateEmployeeRoomAssignmentDto) {
-    const assignment = this.employeeRoomAssignmentRepository.create({
-       ...data,
-      isActive: data.isActive ?? true,
-    });
-    return await this.employeeRoomAssignmentRepository.save(assignment);
-  }
-
-  async findAll(filter?: {
-    employeeId?: string;
-    roomId?: string;
-    serviceId?: string;
-    isActive?: boolean;
-  }) {
-    const qb = this.employeeRoomAssignmentRepository
-      .createQueryBuilder('assignment')
-      .leftJoinAndSelect('assignment.employee', 'employee')
-      .leftJoinAndSelect('assignment.room', 'room')
-      .leftJoinAndSelect('assignment.service', 'service');
-
-    if (filter?.employeeId) {
-      qb.andWhere('employee.id = :employeeId', {
-        employeeId: filter.employeeId,
+  create = async (
+    createEmployeeRoomAssignmentDto: CreateEmployeeRoomAssignmentDto
+  ): Promise<EmployeeRoomAssignment> => {
+    return await this.entityManager.transaction(async (em) => {
+      const roomSchedule = await em.findOne(RoomSchedule, {
+        where: { room_id: createEmployeeRoomAssignmentDto.roomScheduleId },
       });
-    }
 
-    if (filter?.roomId) {
-      qb.andWhere('room.id = :roomId', { roomId: filter.roomId });
-    }
-
-    if (filter?.serviceId) {
-      qb.andWhere('service.id = :serviceId', { serviceId: filter.serviceId });
-    }
-
-    if (filter?.isActive !== undefined) {
-      qb.andWhere('assignment.isActive = :isActive', {
-        isActive: filter.isActive,
+      if (!roomSchedule) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          `Room schedule with ID ${createEmployeeRoomAssignmentDto.roomScheduleId} not found`,
+          'USER_SERVICE'
+        );
+      }
+      const employee = await em.findOne(User, {
+        where: { id: createEmployeeRoomAssignmentDto.employeeId },
       });
-    }
 
-    return await qb.getMany();
-  }
+      if (!employee) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          `Employee with ID ${createEmployeeRoomAssignmentDto.employeeId} not found`,
+          'USER_SERVICE'
+        );
+      }
+      const existingAssignment =
+        await this.employeeRoomAssignmentsRepository.findOne(
+          {
+            where: {
+              roomScheduleId: createEmployeeRoomAssignmentDto.roomScheduleId,
+              employeeId: createEmployeeRoomAssignmentDto.employeeId,
+            },
+          },
+          [],
+          em
+        );
 
-  async findOne(id: string) {
-    const assignment = await this.employeeRoomAssignmentRepository.findOne({
-      where: { id },
-      relations: ['employee', 'room', 'service'],
+      if (existingAssignment) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Employee is already assigned to this room schedule',
+          'USER_SERVICE'
+        );
+      }
+      return await this.employeeRoomAssignmentsRepository.create(
+        createEmployeeRoomAssignmentDto,
+        em
+      );
     });
+  };
 
-    if (!assignment) {
-      throw new NotFoundException(
-        `EmployeeRoomAssignment with ID ${id} not found`
+  findAll = async (): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findAll();
+  };
+
+  findOne = async (id: string): Promise<EmployeeRoomAssignment | null> => {
+    const employeeRoomAssignment =
+      await this.employeeRoomAssignmentsRepository.findOne({
+        where: { id },
+      });
+
+    if (!employeeRoomAssignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Employee room assignment not found',
+        'USER_SERVICE'
       );
     }
 
-    return assignment;
-  }
+    return employeeRoomAssignment;
+  };
 
-  async findByEmployee(employeeId: string) {
-    return await this.employeeRoomAssignmentRepository.find({
-      where: { employee: { id: employeeId } as any },
-      relations: ['employee', 'room', 'service'],
+  update = async (
+    id: string,
+    updateEmployeeRoomAssignmentDto: UpdateEmployeeRoomAssignmentDto
+  ): Promise<EmployeeRoomAssignment | null> => {
+    return await this.entityManager.transaction(async (em) => {
+      const assignment = await this.employeeRoomAssignmentsRepository.findOne({
+        where: { id },
+      });
+
+      if (!assignment) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Employee room assignment not found',
+          'USER_SERVICE'
+        );
+      }
+
+      if (
+        updateEmployeeRoomAssignmentDto.roomScheduleId &&
+        updateEmployeeRoomAssignmentDto.roomScheduleId !==
+          assignment.roomScheduleId
+      ) {
+        const roomSchedule = await em.findOne(RoomSchedule, {
+          where: { room_id: updateEmployeeRoomAssignmentDto.roomScheduleId },
+        });
+
+        if (!roomSchedule) {
+          throw ThrowMicroserviceException(
+            HttpStatus.NOT_FOUND,
+            `Room schedule with ID ${updateEmployeeRoomAssignmentDto.roomScheduleId} not found`,
+            'USER_SERVICE'
+          );
+        }
+      }
+
+      if (
+        updateEmployeeRoomAssignmentDto.employeeId &&
+        updateEmployeeRoomAssignmentDto.employeeId !== assignment.employeeId
+      ) {
+        const employee = await em.findOne(User, {
+          where: { id: updateEmployeeRoomAssignmentDto.employeeId },
+        });
+
+        if (!employee) {
+          throw ThrowMicroserviceException(
+            HttpStatus.NOT_FOUND,
+            `Employee with ID ${updateEmployeeRoomAssignmentDto.employeeId} not found`,
+            'USER_SERVICE'
+          );
+        }
+      }
+      const newRoomScheduleId =
+        updateEmployeeRoomAssignmentDto.roomScheduleId ||
+        assignment.roomScheduleId;
+      const newEmployeeId =
+        updateEmployeeRoomAssignmentDto.employeeId || assignment.employeeId;
+      if (
+        newRoomScheduleId !== assignment.roomScheduleId ||
+        newEmployeeId !== assignment.employeeId
+      ) {
+        const existingAssignment =
+          await this.employeeRoomAssignmentsRepository.findOne(
+            {
+              where: {
+                roomScheduleId: newRoomScheduleId,
+                employeeId: newEmployeeId,
+              },
+            },
+            [],
+            em
+          );
+
+        if (existingAssignment && existingAssignment.id !== id) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            'Employee is already assigned to this room schedule',
+            'USER_SERVICE'
+          );
+        }
+      }
+      return await this.employeeRoomAssignmentsRepository.update(
+        id,
+        updateEmployeeRoomAssignmentDto,
+        em
+      );
     });
-  }
+  };
+  remove = async (id: string): Promise<boolean> => {
+    return await this.entityManager.transaction(async (em) => {
+      const employeeRoomAssignment =
+        await this.employeeRoomAssignmentsRepository.findOne({
+          where: { id },
+        });
 
-  async update(id: string, data: { isActive?: boolean }) {
-    const assignment = await this.findOne(id);
+      if (!employeeRoomAssignment) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Employee room assignment not found',
+          'USER_SERVICE'
+        );
+      }
 
-    if (data.isActive !== undefined) {
-      assignment.isActive = data.isActive;
-    }
+      return await this.employeeRoomAssignmentsRepository.softDelete(
+        id,
+        'isDeleted'
+      );
+    });
+  };
 
-    return await this.employeeRoomAssignmentRepository.save(assignment);
-  }
-
-  async delete(id: string) {
-    const assignment = await this.findOne(id);
-    await this.employeeRoomAssignmentRepository.remove(assignment);
-    return {
-      success: true,
-      message: 'EmployeeRoomAssignment deleted successfully',
-    };
-  }
+  findMany = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<EmployeeRoomAssignment>> => {
+    return await this.employeeRoomAssignmentsRepository.paginate(paginationDto);
+  };
 }

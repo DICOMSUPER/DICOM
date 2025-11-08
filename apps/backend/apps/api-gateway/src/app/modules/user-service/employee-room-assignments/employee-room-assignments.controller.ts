@@ -55,7 +55,7 @@ export class EmployeeRoomAssignmentsController {
     @Body() createEmployeeRoomAssignmentDto: CreateEmployeeRoomAssignmentDto
   ) {
     try {
-      this.logger.log('🏗️ Creating employee room assignment');
+      this.logger.log('Creating employee room assignment');
       const result = await firstValueFrom(
         this.userServiceClient.send(
           'UserService.EmployeeRoomAssignments.Create',
@@ -63,10 +63,7 @@ export class EmployeeRoomAssignmentsController {
         )
       );
 
-      return {
-        data: result,
-        message: 'Gán nhân viên vào phòng thành công',
-      };
+      return result
     } catch (error) {
       this.logger.error('❌ Failed to create employee room assignment', error);
       throw handleError(error);
@@ -74,38 +71,34 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @Get()
-  @Role(Roles.SYSTEM_ADMIN, Roles.PHYSICIAN, Roles.RECEPTION_STAFF)
-  @ApiOperation({ summary: 'Get all employee room assignments' })
-  @ApiQuery({ name: 'employeeId', required: false, description: 'Filter by employee ID' })
-  @ApiQuery({ name: 'roomId', required: false, description: 'Filter by room ID' })
-  @ApiQuery({ name: 'serviceId', required: false, description: 'Filter by service ID' })
-  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lấy danh sách gán nhân viên phòng thành công',
-  })
-  async findAll(
-    @Query() filter?: FilterEmployeeRoomAssignmentDto,
+  async getEmployeeRoomAssignments() {
+    return await firstValueFrom(
+      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindAll', {})
+    );
+  }
 
+  @Get('paginated')
+  async findMany(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('searchField') searchField?: string,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
-    try {
-      this.logger.log('📋 Fetching employee room assignments');
-
-      const result = await firstValueFrom(
-        this.userServiceClient.send(
-          'UserService.EmployeeRoomAssignments.FindAll',
-          filter
-        )
-      );
-
-      return result
-    } catch (error) {
-      this.logger.error(
-        '❌ Failed to fetch employee room assignments',
-        error
-      );
-      throw handleError(error);
-    }
+    const paginationDto = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search,
+      searchField,
+      sortField,
+      order,
+    };
+    return await firstValueFrom(
+      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindMany', {
+        paginationDto,
+      })
+    );
   }
 
   @Get('employee/:employeeId')

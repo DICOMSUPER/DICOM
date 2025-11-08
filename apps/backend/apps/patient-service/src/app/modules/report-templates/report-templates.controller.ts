@@ -1,77 +1,141 @@
-import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  PaginatedResponseDto,
+  RepositoryPaginationDto,
+} from '@backend/database';
+import { CreateReportTemplateDto, ReportTemplate, UpdateReportTemplateDto } from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import {
+  Controller
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
+
 import { ReportTemplatesService } from './report-templates.service';
-import { CreateReportTemplateDto, FilterReportTemplateDto, UpdateReportTemplateDto } from '@backend/shared-domain';
+
 
 @Controller()
 export class ReportTemplatesController {
+
   constructor(
     private readonly reportTemplatesService: ReportTemplatesService
   ) {}
 
-  @MessagePattern('PatientService.ReportTemplates.Create')
+  @MessagePattern(`PatientService.ReportTemplate.Create`)
   async create(
-    @Payload()
-    data: CreateReportTemplateDto
-  ) {
-    return await this.reportTemplatesService.create(data);
-  }
+    @Payload() createReportTemplateDto: CreateReportTemplateDto
+  ): Promise<ReportTemplate> {
 
-  @MessagePattern('PatientService.ReportTemplates.FindAll')
-  async findAll(
-    @Payload()
-    filter?: FilterReportTemplateDto
-  ) {
-    return await this.reportTemplatesService.findAll(filter);
-  }
-
-  @MessagePattern('PatientService.ReportTemplates.FindOne')
-  async findOne(@Payload() id: string) {
-    return await this.reportTemplatesService.findOne(id);
-  }
-
-
-
-  @MessagePattern('PatientService.ReportTemplates.FindPublic')
-  async findPublic(
-    @Payload()
-    filter?: {
-      requestProcedureId?: string;
-      templateType?: 'custom' | 'standard';
+    try {
+      return await this.reportTemplatesService.create(
+        createReportTemplateDto
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to create report template',
+        "PATIENT_SERVICE"
+      );
     }
-  ) {
-    return await this.reportTemplatesService.findPublic(filter);
   }
 
-  @MessagePattern('PatientService.ReportTemplates.Update')
+  @MessagePattern(
+    `PatientService.ReportTemplate.FindAll`
+  )
+  async findAll(): Promise<ReportTemplate[]> {
+
+    try {
+      return await this.reportTemplatesService.findAll();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find all report templates',
+        "PATIENT_SERVICE"
+      );
+    }
+  }
+
+  @MessagePattern(
+    `PatientService.ReportTemplate.FindOne`
+  )
+  async findOne(
+    @Payload() data: { id: string }
+  ): Promise<ReportTemplate | null> {
+
+    try {
+      const { id } = data;
+      return await this.reportTemplatesService.findOne(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find report template with id: ${data.id}`,
+        "PATIENT_SERVICE"
+      );
+    }
+  }
+
+  @MessagePattern(`PatientService.ReportTemplate.Update`)
   async update(
     @Payload()
-    payload: {
+    data: {
       id: string;
-      data: UpdateReportTemplateDto
+      updateReportTemplateDto: UpdateReportTemplateDto;
     }
-  ) {
-    return await this.reportTemplatesService.update(payload.id, payload.data);
+  ): Promise<ReportTemplate | null> {
+
+    try {
+      const { id, updateReportTemplateDto } = data;
+      return await this.reportTemplatesService.update(
+        id,
+        updateReportTemplateDto
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to update for report template with this id: ${data.id}`,
+        "PATIENT_SERVICE"
+      );
+    }
   }
 
-  @MessagePattern('PatientService.ReportTemplates.Delete')
-  async delete(@Payload() id: string) {
-    return await this.reportTemplatesService.delete(id);
+  @MessagePattern(`PatientService.ReportTemplate.Delete`)
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
+
+    try {
+      const { id } = data;
+      return await this.reportTemplatesService.remove(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to delete for report template with this id: ${data.id}`,
+        "PATIENT_SERVICE"
+      );
+    }
   }
 
-  @MessagePattern('PatientService.ReportTemplates.Duplicate')
-  async duplicate(
-    @Payload()
-    payload: {
-      id: string;
-      newTemplateName: string;
-      ownerUserId: string;
+
+
+  @MessagePattern(
+    `PatientService.ReportTemplate.FindMany`
+  )
+  async findMany(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ): Promise<PaginatedResponseDto<ReportTemplate>> {
+
+    try {
+      const { paginationDto } = data;
+      return await this.reportTemplatesService.findMany({
+        page: paginationDto.page || 1,
+        limit: paginationDto.limit || 5,
+        search: paginationDto.search || '',
+        searchField: paginationDto.searchField || 'modalityName',
+        sortField: paginationDto.sortField || 'createdAt',
+        order: paginationDto.order || 'asc',
+      });
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find many report templates`,
+        "PATIENT_SERVICE"
+      );
     }
-  ) {
-    return await this.reportTemplatesService.duplicate(
-      payload.id,
-      payload.newTemplateName,
-      payload.ownerUserId
-    );
   }
 }

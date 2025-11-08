@@ -41,7 +41,6 @@ export class CreatePatientEncounterDto {
   @MaxLength(100)
   serviceRoomId?: string;
 
-
   @IsOptional()
   @IsUUID()
   assignedPhysicianId?: string;
