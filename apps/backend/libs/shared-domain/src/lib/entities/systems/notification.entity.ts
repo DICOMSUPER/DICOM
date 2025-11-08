@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { BaseEntity } from '@backend/database';
-import { NotificationType, NotificationPriority } from '@backend/shared-enums';
+import { NotificationType, NotificationPriority, RelatedEntityType } from '@backend/shared-enums';
 
 @Entity('notifications')
 export class Notification extends BaseEntity {
@@ -25,8 +25,8 @@ export class Notification extends BaseEntity {
   @Column({ type: 'enum', enum: NotificationPriority, default: NotificationPriority.LOW })
   priority!: NotificationPriority;
 
-  @Column({ name: 'related_entity_type', nullable: true })
-  relatedEntityType?: string;
+  @Column({ name: 'related_entity_type', type: 'enum', enum: RelatedEntityType, nullable: true })
+  relatedEntityType?: RelatedEntityType;
 
   @Column({ name: 'related_entity_id', nullable: true })
   relatedEntityId?: string;

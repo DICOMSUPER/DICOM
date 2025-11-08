@@ -5,11 +5,11 @@ import {
   CreateEmployeeRoomAssignmentDto,
   EmployeeRoomAssignment,
 } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from 'libs/shared-utils/src';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
-} from 'libs/database/src';
+} from '@backend/database';
 
 @Controller()
 export class EmployeeRoomAssignmentsController {

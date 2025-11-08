@@ -79,7 +79,7 @@ import { PatientServiceClientModule } from '@backend/shared-client';
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,
-    // BackendRedisModule,
+    BackendRedisModule,
     PatientServiceClientModule
   ],
   controllers: [AppController],

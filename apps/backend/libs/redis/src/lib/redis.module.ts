@@ -16,24 +16,22 @@ import KeyvRedis from '@keyv/redis';
           const host = configService.get('REDIS_HOST');
           const port = configService.get('REDIS_PORT');
           const masked = `rediss://:****@${host}:${port}`;
-          const redisUrl = `rediss://:${configService.get('REDIS_PASSWORD')}@${host}:${port}`;
+          const redisUrl = `rediss://:${configService.get(
+            'REDIS_PASSWORD'
+          )}@${host}:${port}`;
           logger.log(`Connecting to Redis via KeyvRedis: ${masked}`);
-
-          // Tạo adapter
-          const redisStore = new KeyvRedis(redisUrl);
-
-          // Bắt lỗi của adapter (để không crash server)
+          const redisStore = new KeyvRedis({
+            url: redisUrl,
+            pingInterval: 10000,
+          });
           redisStore.on('error', (err: any) => {
             logger.warn(`Redis store error (non-fatal): ${err.message}`);
           });
-
-          // Tạo Keyv instance
           const keyv = new Keyv({
             store: redisStore,
             namespace: '',
+            
           });
-
-          // Bắt lỗi của Keyv
           keyv.on('error', (err) => {
             logger.warn(`Keyv Redis connection error: ${err.message}`);
           });
@@ -43,8 +41,7 @@ import KeyvRedis from '@keyv/redis';
           return keyv;
         } catch (error) {
           logger.error('Failed to create Keyv instance', error as Error);
-          // Không throw lỗi để app vẫn chạy (Redis fail không nên crash server)
-          return new Keyv(); // tạo cache in-memory tạm
+          return new Keyv();
         }
       },
       inject: [ConfigService],
