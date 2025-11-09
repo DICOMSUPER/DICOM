@@ -24,6 +24,7 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
+import { FindFilterAnnotation } from './image-annotations.repository';
 
 const moduleName = 'ImageAnnotations';
 @Controller('image-annotations')
@@ -169,7 +170,7 @@ export class ImageAnnotationsController {
     @Payload()
     data: {
       id: string;
-      type: 'instance' | 'annotator';
+      type: FindFilterAnnotation;
       paginationDto: RepositoryPaginationDto;
     }
   ): Promise<PaginatedResponseDto<ImageAnnotation>> {
