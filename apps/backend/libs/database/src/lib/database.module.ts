@@ -49,7 +49,12 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
-            ssl: { rejectUnauthorized: false }
+            ssl: { rejectUnauthorized: false },
+             extra: {
+    max: 20,
+    min: 2,
+    idleTimeoutMillis: 30000,
+  },
           }),
         }),
       ],
