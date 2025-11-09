@@ -36,9 +36,6 @@ export class CreateImageAnnotationDto {
   @IsOptional()
   colorCode?: string;
 
-  //   @Column({ name: 'line_thickness', type: 'int', nullable: true })
-  //   lineThickness?: number;
-
   @IsEnum(AnnotationStatus)
   annotationStatus!: AnnotationStatus;
 

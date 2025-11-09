@@ -27,6 +27,7 @@ import { useViewer } from "@/contexts/ViewerContext";
 import { useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import { extractApiData } from "@/utils/api";
+import { AnnotationStatus } from "@/enums/image-dicom.enum";
 import type {
   Annotation,
   AnnotationEventDetail,
@@ -45,7 +46,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const viewportIndex = viewportId ? parseInt(viewportId) : 0;
   
   if (isNaN(viewportIndex)) {
-    console.error('❌ Invalid viewportIndex:', viewportIndex, 'from viewportId:', viewportId);
     return null;
   }
   const { getViewportId, setViewportId, getRenderingEngineId, setRenderingEngineId } = useViewer();
@@ -69,6 +69,12 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const [currentInstances, setCurrentInstances] = useState<any[]>([]);
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
   const [createAnnotation] = useCreateAnnotationMutation();
+  const viewportListenersRef = useRef<{
+    imageRendered?: (event: Event) => void;
+    annotationCompleted?: (event: CustomEvent<AnnotationEventDetail>) => void;
+    segmentationModified?: (event: Event) => void;
+  }>({});
+  const imageIdInstanceMapRef = useRef<Record<string, string>>({});
 
   const resolvedViewportId = getViewportId(viewportIndex);
   const resolvedRenderingEngineId = getRenderingEngineId(viewportIndex);
@@ -83,7 +89,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         return JSON.parse(userCookie);
       }
     } catch (error) {
-      console.error("Failed to parse user from cookie:", error);
+      
     }
     return null;
   };
@@ -100,7 +106,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       }
       
       return 1;
-    } catch (error) {
+    } catch (_error) {
       return 1;
     }
   };
@@ -109,11 +115,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const loadSeriesInstances = async (seriesId: string) => {
     // Check cache first
     if (seriesInstancesCache[seriesId]) {
-      console.log('📋 Using cached instances for series:', seriesId, `(${seriesInstancesCache[seriesId].length} instances)`);
       return seriesInstancesCache[seriesId];
     }
-
-    console.log('🔄 Loading instances for series:', seriesId);
     try {
       const instancesResponse = await fetchInstancesByReference({
         id: seriesId,
@@ -132,11 +135,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       // Store current instances for annotation mapping
       setCurrentInstances(instances);
 
-      console.log('✅ Cached instances for series:', seriesId, `(${instances.length} instances)`);
-      console.log('📊 Cache status:', Object.keys(seriesInstancesCache).length + 1, 'series cached');
       return instances;
-    } catch (error) {
-      console.error('❌ Failed to load instances for series:', seriesId, error);
+    } catch (_error) {
       return [];
     }
   };
@@ -153,25 +153,16 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       for (let i = startIndex + 1; i < endIndex; i += 1) {
         const imageId = imageIds[i];
         if (!imageId) continue;
-        console.debug(
-          "[Prefetch] queue image",
-          imageId,
-          "index",
-          i,
-          "startIndex",
-          startIndex
-        );
         loadPromises.push(
           imageLoader
             .loadAndCacheImage(imageId)
-            .catch((error) => console.warn("Prefetch image failed:", imageId, error))
+            .catch(() => undefined)
         );
       }
 
       if (loadPromises.length) {
         try {
           await Promise.all(loadPromises);
-          console.debug("[Prefetch] completed up to index", endIndex - 1);
         } catch {
           // individual errors already logged
         }
@@ -183,7 +174,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const goToFrame = useCallback(
     (frameIndex: number) => {
       if (!viewport || typeof viewport.getImageIds !== 'function') {
-        console.warn('Viewport is not properly initialized');
         return;
       }
 
@@ -203,12 +193,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           typeof viewport.setImageIdIndex === 'function' &&
           typeof viewport.render === 'function'
         ) {
-          console.debug(
-            `[Viewport ${viewportIndex}] switching to frame`,
-            newFrame,
-            "of",
-            stackData.length
-          );
           viewport.setImageIdIndex(newFrame);
           viewport.render();
           const imageIds = viewport.getImageIds?.();
@@ -220,21 +204,12 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             typeof viewport.getCurrentImageId === "function"
               ? viewport.getCurrentImageId()
               : imageIds?.[newFrame];
-          if (currentImageId) {
-            console.debug(
-              `[Viewport ${viewportIndex}] active imageId`,
-              currentImageId
-            );
-          }
-
           const validFrame = Math.max(0, newFrame);
           currentFrameRef.current = validFrame;
           setCurrentFrame(validFrame);
         } else {
-          console.error('Viewport methods are not available');
         }
-      } catch (error) {
-        console.error('Error navigating to frame:', newFrame, error);
+      } catch (_error) {
       }
     },
     [viewport]
@@ -242,7 +217,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
   const nextFrame = useCallback(() => {
     if (!viewport || typeof viewport.getImageIds !== 'function') {
-      console.warn('Viewport is not properly initialized for nextFrame');
       return;
     }
 
@@ -259,7 +233,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
   const prevFrame = useCallback(() => {
     if (!viewport || typeof viewport.getImageIds !== 'function') {
-      console.warn('Viewport is not properly initialized for prevFrame');
       return;
     }
 
@@ -276,7 +249,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!viewport || typeof viewport.getImageIds !== 'function') {
-      console.warn('Viewport is not properly initialized for keyboard navigation');
       return;
     }
     const stackData = viewport.getImageIds();
@@ -320,7 +292,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
       // Clear cache if study changed
       if (selectedStudy && selectedStudy.id !== currentStudyId) {
-        console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
         setSeriesInstancesCache({});
         setCurrentStudyId(selectedStudy.id);
       }
@@ -349,8 +320,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             setViewportReady(false);
             setLoadedSeriesId(null);
           }
-        } catch (error) {
-          console.warn('Error destroying rendering engine for rebuild:', error);
+        } catch (_error) {
         }
       }
       
@@ -365,8 +335,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             setViewportReady(false);
             setLoadedSeriesId(null);
           }
-        } catch (error) {
-          console.warn('Error destroying rendering engine for viewport 0:', error);
+        } catch (_error) {
         }
       }
       if (existingRenderingEngineId && loadedSeriesId !== selectedSeries.id) {
@@ -383,6 +352,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                 const instances = await loadSeriesInstances(selectedSeries.id);
 
                 if (instances && instances.length > 0) {
+                  const imageIdToInstance: Record<string, string> = {};
                   const imageIdsPromises = instances.map(async (instance: any) => {
                     if (!instance.filePath) return [];
                     const resolvedUrl = resolveDicomImageUrl(
@@ -396,19 +366,29 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                     try {
                       const numberOfFrames = await getTotalFrames(instanceBaseId);
                       const validFrames = numberOfFrames && typeof numberOfFrames === 'number' && numberOfFrames > 0 ? numberOfFrames : 1;
-                      return validFrames > 1 
-                        ? Array.from({ length: validFrames }, (_, index) => {
-                            const frameNumber = index + 1;
-                            return `${instanceBaseId}?frame=${frameNumber}`;
-                          }).filter(id => id !== null)
-                        : [`${instanceBaseId}?frame=1`];
-                    } catch (error) {
-                      return [`${instanceBaseId}?frame=1`];
+                      const ids =
+                        validFrames > 1
+                          ? Array.from({ length: validFrames }, (_, index) => {
+                              const frameNumber = index + 1;
+                              return `${instanceBaseId}?frame=${frameNumber}`;
+                            }).filter(id => id !== null)
+                          : [`${instanceBaseId}?frame=1`];
+                      ids.forEach((id) => {
+                        if (id) {
+                          imageIdToInstance[id] = instance.id;
+                        }
+                      });
+                      return ids;
+                    } catch (_error) {
+                      const fallbackId = `${instanceBaseId}?frame=1`;
+                      imageIdToInstance[fallbackId] = instance.id;
+                      return [fallbackId];
                     }
                   });
 
                   const imageIdsArrays = await Promise.all(imageIdsPromises);
                   const imageIds = imageIdsArrays.flat().filter((id: string) => id && id.length > 0);
+                  imageIdInstanceMapRef.current = imageIds.length > 0 ? imageIdToInstance : {};
                   
                   if (imageIds.length > 0) {
                     await vp.setStack(imageIds, 0);
@@ -418,7 +398,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                     try {
                       existingRenderingEngine.renderViewports([actualViewportId]);
                     } catch (renderError) {
-                      console.error('Error rendering viewport:', renderError);
                       vp.render();
                     }
 
@@ -426,7 +405,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                     setViewportReady(true);
                     setCurrentFrame(0);
                     setLoadedSeriesId(selectedSeries.id);
-                    console.log('✅ Series updated successfully:', selectedSeries.id);
                     running.current = false;
                     if (forceRebuild) {
                       setForceRebuild(false);
@@ -435,8 +413,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                   }
                 }
               }
-            } catch (error) {
-              console.error('Error updating series in existing viewport:', error);
+            } catch (_error) {
               // Fall through to full setup
             }
           }
@@ -468,6 +445,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           setLoadingProgress(30);
           
           if (instances && instances.length > 0) {
+            const imageIdToInstance: Record<string, string> = {};
             const imageIdsPromises = instances.map(async (instance: any) => {
               if (!instance.filePath) {
                 return [];
@@ -496,30 +474,39 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
                       return `${instanceBaseId}?frame=${frameNumber}`;
                     }
                   ).filter(id => id !== null);
-                  
+                  frameIds.forEach((id) => {
+                    if (id) {
+                      imageIdToInstance[id] = instance.id;
+                    }
+                  });
                   return frameIds;
                 } else {
-                  return [`${instanceBaseId}?frame=1`];
+                  const frameId = `${instanceBaseId}?frame=1`;
+                  imageIdToInstance[frameId] = instance.id;
+                  return [frameId];
                 }
-              } catch (error) {
-                return [`${instanceBaseId}?frame=1`];
+              } catch (_error) {
+                const frameId = `${instanceBaseId}?frame=1`;
+                imageIdToInstance[frameId] = instance.id;
+                return [frameId];
               }
             });
 
             const imageIdsArrays = await Promise.all(imageIdsPromises);
             
             imageIds = imageIdsArrays.flat().filter((id: string) => id && id.length > 0);
+            imageIdInstanceMapRef.current = imageIdToInstance;
             
             setLoadingProgress(40);
             
           } else {
           }
           
-        } catch (error) {
-          console.error('Error loading series:', error);
+        } catch (_error) {
         }
 
         if (imageIds.length === 0) {
+          imageIdInstanceMapRef.current = {};
           setIsLoading(false);
           if (forceRebuild) {
             setForceRebuild(false);
@@ -590,14 +577,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         );
         
         if (!readyViewport) {
-          console.error('❌ Failed to initialize viewport for rendering engine:', renderingEngineId);
-          console.error('❌ Rendering engine ID:', renderingEngineId);
           throw new Error(`Failed to create viewport for id: ${currentViewportId}`);
         }
-        
-        console.log('✅ Viewport retrieved successfully:', currentViewportId);
-        
-        console.log('✅ Viewport created successfully:', currentViewportId);
 
         elementRef.current.setAttribute('data-enabled-element', currentViewportId);
         
@@ -610,20 +591,15 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             if (currentImageIds && currentImageIds.length > 0) {
               readyViewport.resetCamera();
               readyViewport.render();
-              console.log(`Reset camera for viewport ${viewportId}`);
             } else {
-              console.warn(`No image data available for viewport ${viewportId}`);
             }
           } catch (error) {
-            console.error('Error resetting camera:', error);
             try {
               readyViewport.render();
             } catch (renderError) {
-              console.error('Error rendering viewport:', renderError);
             }
           }
         } else {
-          console.error('Viewport is not properly initialized or resetCamera method is not available');
         }
         
         setLoadingProgress(60);
@@ -632,10 +608,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         setViewportReady(true);
         
         setCurrentFrame(0);
-        console.log(`Total frames: ${imageIds.length}, Current: 0`);
         
         if (currentFrame < 0) {
-          console.warn(`⚠️ currentFrame is negative: ${currentFrame}, resetting to 0`);
           setCurrentFrame(0);
         }
 
@@ -658,6 +632,11 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
         // Helper function to extract instance ID from imageId
         const getInstanceIdFromImageId = (imageId: string): string | null => {
+          const mappedInstanceId = imageIdInstanceMapRef.current[imageId];
+          if (mappedInstanceId) {
+            return mappedInstanceId;
+          }
+
           // Try to find instance by matching imageId with instance filePath or URL
           // ImageId format might be: "wadouri:https://..." or similar
           // We need to match it with instances in the cache
@@ -702,17 +681,14 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
           // Get instance ID
           let instanceId = getInstanceIdFromImageId(currentImageId);
-          if (!instanceId) {
-            console.warn("Could not determine instance ID from imageId:", currentImageId);
-            // Try to get from current frame
-            const currentIndex = readyViewport.getCurrentImageIdIndex();
-            const instances = seriesInstancesCache[selectedSeries.id] || currentInstances;
-            if (currentIndex >= 0 && instances[currentIndex]) {
-              instanceId = instances[currentIndex].id;
-              console.log("Using fallback instance ID:", instanceId);
-            } else {
-              throw new Error("Could not determine instance ID for annotation.");
-            }
+        if (!instanceId) {
+          const currentIndex = readyViewport.getCurrentImageIdIndex();
+          const instances = seriesInstancesCache[selectedSeries.id] || currentInstances;
+          if (currentIndex >= 0 && instances[currentIndex]) {
+            instanceId = instances[currentIndex].id;
+          } else {
+            throw new Error("Could not determine instance ID for annotation.");
+          }
           }
 
           // Extract tool name from metadata
@@ -747,7 +723,7 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             measurementUnit,
             textContent,
             colorCode: annotation.metadata?.segmentColor || undefined,
-            annotationStatus: "draft", // Default to draft
+            annotationStatus: AnnotationStatus.DRAFT,
             annotatorId: user.id,
             annotationDate: new Date(),
             notes: undefined,
@@ -762,11 +738,9 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             const { annotation } = evt.detail;
             
             if (!annotation) {
-              console.warn("Annotation event received but no annotation data");
               return;
             }
-
-            console.log("📝 Annotation completed:", annotation);
+            console.log("📝 Annotation completed event received");
             
             // Map annotation to DTO format
             const annotationDto = await mapAnnotationToDto(annotation);
@@ -774,16 +748,21 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             // Save to backend
             const response = await createAnnotation(annotationDto).unwrap();
             
-            if (response.success) {
-              console.log("✅ Annotation saved successfully:", response.data);
-            } else {
-              console.error("❌ Failed to save annotation:", response);
+            if (!response.success) {
+              // Optionally show user-friendly error message
+              // You could use a toast notification here
             }
           } catch (error: any) {
-            console.error("❌ Error creating annotation:", error);
             // Optionally show user-friendly error message
             // You could use a toast notification here
           }
+        };
+
+        const handleSegmentationModified = (evt: Event) => {
+          const customEvent = evt as CustomEvent;
+          const { segmentationId, modifiedSlicesToUse } = customEvent.detail || {};
+          void segmentationId;
+          void modifiedSlicesToUse;
         };
 
         eventTarget.addEventListener(
@@ -793,19 +772,21 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
         eventTarget.addEventListener(
           ToolEnums.Events.SEGMENTATION_DATA_MODIFIED,
-          async (evt: any) => {
-            const { segmentationId, modifiedSlicesToUse } = evt.detail || {};
-          }
+          handleSegmentationModified
         );
+
+        viewportListenersRef.current = {
+          imageRendered: updateFrameIndex,
+          annotationCompleted: handleAnnotationCompleted,
+          segmentationModified: handleSegmentationModified,
+        };
 
         readyViewport.render();
         setLoadingProgress(100);
         setIsLoading(false);
         setLoadedSeriesId(selectedSeries.id);
         setViewportReady(true);
-        console.log('DICOM viewer initialized successfully');
       } catch (error) {
-        console.error("Error setting up DICOM viewer:", error);
         setIsLoading(false);
         setLoadingProgress(0);
       } finally {
@@ -820,13 +801,31 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
     return () => {
       if (isFirstLoad.current) {
-        console.log('🚫 Skipping cleanup on first load');
         isFirstLoad.current = false;
         return;
       }
-      
-      console.log('🧹 Cleaning up viewport:', viewportId, 'viewportIndex:', viewportIndex);
+
       try {
+        const { imageRendered, annotationCompleted, segmentationModified } = viewportListenersRef.current || {};
+
+        if (imageRendered && elementRef.current) {
+          elementRef.current.removeEventListener(Enums.Events.IMAGE_RENDERED, imageRendered);
+        }
+
+        if (annotationCompleted) {
+          eventTarget.removeEventListener(Events.ANNOTATION_COMPLETED, annotationCompleted);
+        }
+
+        if (segmentationModified) {
+          eventTarget.removeEventListener(
+            ToolEnums.Events.SEGMENTATION_DATA_MODIFIED,
+            segmentationModified
+          );
+        }
+
+        viewportListenersRef.current = {};
+        imageIdInstanceMapRef.current = {};
+
         if (elementRef.current) {
           elementRef.current.removeAttribute('data-enabled-element');
         }
@@ -850,7 +849,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
               try {
                 engine.disableElement(actualViewportId);
               } catch (disableError) {
-                console.warn('Failed to disable element during cleanup:', disableError);
               }
               const remainingViewports = engine.getViewports?.() ?? {};
               if (!remainingViewports || Object.keys(remainingViewports).length === 0) {
@@ -859,12 +857,9 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
             }
           }
         } catch (engineCleanupError) {
-          console.warn('Error destroying rendering engine during cleanup:', engineCleanupError);
         }
         
-        console.log('✅ Viewport cleanup completed (rendering engine preserved)');
       } catch (error) {
-        console.warn('Cleanup error:', error);
       }
     };
   }, [selectedSeries, forceRebuild]);
@@ -872,7 +867,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   // Clear cache when study changes
   useEffect(() => {
     if (selectedStudy && selectedStudy.id !== currentStudyId) {
-      console.log('🧹 Clearing instances cache for new study:', selectedStudy.id);
       setSeriesInstancesCache({});
       setCurrentStudyId(selectedStudy.id);
     }
@@ -897,7 +891,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       e.preventDefault(); // Prevent page scroll
       
       if (!viewport || typeof viewport.getImageIds !== 'function') {
-        console.warn('Viewport is not properly initialized for wheel scroll');
         return;
       }
       const stackData = viewport.getImageIds();
@@ -1007,7 +1000,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
 
     // Add refresh handler to force rebuild viewport
     const handleRefresh = () => {
-      console.log('🔄 Refresh triggered - forcing viewport rebuild');
       setForceRebuild(true);
     };
 
@@ -1041,6 +1033,44 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
     nextFrame,
     prevFrame,
   ]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !viewport) {
+      return;
+    }
+
+    let resizeFrame: number | null = null;
+
+    const handleResize = () => {
+      if (!viewport) return;
+
+      try {
+        viewport.resize?.();
+        viewport.render?.();
+      } catch (error) {
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
+      resizeFrame = requestAnimationFrame(handleResize);
+    });
+
+    observer.observe(container);
+
+    // Trigger initial resize to ensure correct aspect ratio
+    handleResize();
+
+    return () => {
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
+      observer.disconnect();
+    };
+  }, [viewport]);
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
