@@ -10,10 +10,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { EmployeeSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 
 interface ScheduleDetailModalProps {
-  schedule: EmployeeSchedule | null;
+  schedule: RoomSchedule | null;
   isOpen: boolean;
   onClose: () => void;
   getStatusColor: (status: string) => string;

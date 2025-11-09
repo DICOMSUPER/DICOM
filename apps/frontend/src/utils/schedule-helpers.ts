@@ -1,4 +1,4 @@
-import { format, parse, isValid, isAfter, isBefore, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { format, parse, isValid, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 
 // Time utilities
 export const formatTime = (time: string, format24Hour: boolean = false): string => {

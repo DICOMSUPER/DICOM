@@ -5,7 +5,7 @@ import {
   Enums,
   type Types,
   eventTarget,
-  volumeLoader,
+
   imageLoader,
   utilities as csUtilities,
   getRenderingEngine,
@@ -17,21 +17,10 @@ import {
   ToolGroupManager,
   Enums as ToolEnums,
   segmentation,
-  WindowLevelTool,
-  PanTool,
-  ZoomTool,
-  StackScrollTool,
-  ProbeTool,
-  RectangleROITool,
-  annotation,
-  // Segmentation tools
-  BrushTool,
-  CircleScissorsTool,
-  RectangleScissorsTool,
-  SphereScissorsTool,
+ 
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
-import { MouseBindings, Events } from "@cornerstonejs/tools/enums";
+import { Events } from "@cornerstonejs/tools/enums";
 import { imagingApi } from "@/services/imagingApi";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
 import { useViewer } from "@/contexts/ViewerContext";

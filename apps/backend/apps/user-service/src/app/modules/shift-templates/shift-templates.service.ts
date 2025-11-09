@@ -173,12 +173,12 @@ export class ShiftTemplateService {
       let success = 0;
       let failed = 0;
 
-      // This would integrate with EmployeeScheduleService
+      // This would integrate with RoomScheduleService
       // For now, we'll return a mock response
       for (const date of dates) {
         for (const employeeId of employeeIds) {
           try {
-            // Here we would call EmployeeScheduleService.createBulk
+            // Here we would call RoomScheduleService.createBulk
             // with schedules created from the template
             success++;
           } catch (error) {
@@ -217,7 +217,7 @@ export class ShiftTemplateService {
       for (const date of dates) {
         for (const employeeId of employeeIds) {
           try {
-            // Here we would call EmployeeScheduleService.createBulk
+            // Here we would call RoomScheduleService.createBulk
             // with schedules created from the template for each date/employee
             success++;
           } catch (error) {

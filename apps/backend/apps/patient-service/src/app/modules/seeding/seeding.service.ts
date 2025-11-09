@@ -1,28 +1,25 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom, timeout } from 'rxjs';
 import {
+  DiagnosesReport,
   Patient,
   PatientCondition,
   PatientEncounter,
-  QueueAssignment,
-  DiagnosesReport,
 } from '@backend/shared-domain';
 import {
-  Gender,
   BloodType,
-  EncounterType,
-  QueueStatus,
-  QueuePriorityLevel,
   ClinicalStatus,
   ConditionVerificationStatus,
-  DiagnosisType,
   DiagnosisStatus,
-  Severity,
+  DiagnosisType,
+  EncounterType,
+  Gender,
   Roles,
+  Severity
 } from '@backend/shared-enums';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { InjectRepository } from '@nestjs/typeorm';
+import { firstValueFrom, timeout } from 'rxjs';
+import { DataSource, Repository } from 'typeorm';
 
 @Injectable()
 export class SeedingService {
@@ -35,8 +32,6 @@ export class SeedingService {
     private readonly patientConditionRepository: Repository<PatientCondition>,
     @InjectRepository(PatientEncounter)
     private readonly patientEncounterRepository: Repository<PatientEncounter>,
-    @InjectRepository(QueueAssignment)
-    private readonly queueAssignmentRepository: Repository<QueueAssignment>,
     @InjectRepository(DiagnosesReport)
     private readonly diagnosesReportRepository: Repository<DiagnosesReport>,
     // ✅ Inject microservice client instead of cross-database repositories
@@ -96,7 +91,7 @@ export class SeedingService {
       await this.seedPatients();
       await this.seedPatientEncounters();
       await this.seedPatientConditions();
-      await this.seedQueueAssignments();
+
       await this.seedDiagnosesReports();
 
       this.logger.log(
@@ -401,102 +396,6 @@ export class SeedingService {
     this.logger.log(`✅ Created ${conditionCounter} conditions in total`);
   }
 
-  async seedQueueAssignments(): Promise<void> {
-    this.logger.log('📋 Seeding queue assignments...');
-
-    const encounters = await this.patientEncounterRepository.find({
-      take: 20,
-      order: { createdAt: 'DESC' },
-    });
-
-    if (encounters.length === 0) {
-      this.logger.warn('⚠️ No encounters found, skipping queue assignment seeding');
-      return;
-    }
-
-    // ✅ Get room IDs from User Service
-    const roomIds = await this.getRoomIdsFromService(5);
-
-    if (roomIds.length === 0) {
-      this.logger.warn('⚠️ No rooms found, skipping queue assignment seeding');
-      return;
-    }
-
-    // ✅ Get reception staff ID from User Service
-    const receptionStaffIds = await this.getUserIdsByRole(Roles.RECEPTION_STAFF, 1);
-
-    const createdBy = receptionStaffIds.length > 0 ? receptionStaffIds[0] : undefined;
-
-    if (!createdBy) {
-      this.logger.warn('⚠️ No reception staff found, skipping queue assignment seeding');
-      return;
-    }
-
-    const priorities = [
-      QueuePriorityLevel.ROUTINE,
-      QueuePriorityLevel.URGENT,
-      QueuePriorityLevel.STAT,
-    ];
-
-    const statuses = [
-      QueueStatus.WAITING,
-      QueueStatus.IN_PROGRESS,
-      QueueStatus.COMPLETED,
-    ];
-
-    let queueNumber = 1;
-
-    // Create queue assignment for each encounter
-    for (let i = 0; i < Math.min(encounters.length, 15); i++) {
-      const encounter = encounters[i];
-      const roomId = roomIds[i % roomIds.length];
-      const priority = priorities[i % priorities.length];
-      const status = statuses[i % statuses.length];
-
-      const assignmentDate = new Date(encounter.encounterDate);
-      const assignmentExpiresDate = new Date(assignmentDate);
-      assignmentExpiresDate.setHours(assignmentExpiresDate.getHours() + 4);
-
-      const queueAssignment = {
-        encounterId: encounter.id,
-        queueNumber,
-        assignmentDate,
-        assignmentExpiresDate,
-        status,
-        priority,
-        roomId,
-        priorityReason:
-          priority === QueuePriorityLevel.URGENT ||
-          priority === QueuePriorityLevel.STAT
-            ? 'Trường hợp khẩn cấp'
-            : undefined,
-        estimatedWaitTime: Math.floor(Math.random() * 60) + 15,
-        calledAt:
-          status === QueueStatus.IN_PROGRESS ||
-          status === QueueStatus.COMPLETED
-            ? new Date(assignmentDate.getTime() + Math.random() * 30 * 60000)
-            : undefined,
-        calledBy:
-          status === QueueStatus.IN_PROGRESS ||
-          status === QueueStatus.COMPLETED
-            ? createdBy
-            : undefined,
-        createdBy,
-      };
-
-      const newQueue = this.queueAssignmentRepository.create(
-        queueAssignment as any
-      );
-      await this.queueAssignmentRepository.save(newQueue);
-
-      this.logger.log(
-        `✅ Created queue assignment #${queueNumber} for encounter`
-      );
-      queueNumber++;
-    }
-
-    this.logger.log(`✅ Created ${queueNumber - 1} queue assignments in total`);
-  }
 
   async seedDiagnosesReports(): Promise<void> {
     this.logger.log('📝 Seeding diagnoses reports...');

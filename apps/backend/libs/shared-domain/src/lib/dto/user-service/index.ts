@@ -6,3 +6,8 @@ export * from './user/token-response.dto';
 export * from './user/update-user.dto';
 export * from './weekly-schedule-pattern/create-weekly-schedule-pattern.dto';
 export * from './weekly-schedule-pattern/update-weekly-schedule-pattern.dto';
+export * from './services/create-services.dto';
+export * from './services/update-services.dto';
+export * from './services/filter-services.dto';
+export * from './services-rooms';
+export * from './employee-room-assignment';

@@ -41,6 +41,16 @@ export enum AnnotationType {
   RECTANGLE = 'rectangle',
   POLYGON = 'polygon',
   MEASUREMENT = 'measurement',
+  ArrowAnnotate = 'ArrowAnnotate',
+  CircleROI = 'CircleROI',
+  Length = 'Length',
+  Height = 'Height',
+  Probe = 'Probe',
+  Angle = 'Angle',
+  RectangleROI = 'RectangleROI',
+  EllipticalROI = 'EllipticalROI',
+  Bidirectional = 'Bidirectional',
+  Label = 'Label',
 }
 
 export enum AnnotationStatus {

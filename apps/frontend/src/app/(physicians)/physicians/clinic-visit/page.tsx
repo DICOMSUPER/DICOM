@@ -6,13 +6,14 @@ import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "@/lib/formatTimeDate";
-import { useGetMySchedulesByDateRangeQuery } from "@/store/employeeScheduleApi";
+
 import {
   useGetQueueAssignmentsInRoomQuery,
   useGetQueueStatsQuery,
   useSkipQueueAssignmentMutation,
   useUpdateQueueAssignmentMutation,
 } from "@/store/queueAssignmentApi";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
 import { format } from "date-fns";
 import { CheckCircle, Clock, Hash, Users } from "lucide-react";
@@ -55,12 +56,12 @@ export default function QueuePage() {
   const { data, isLoading, isFetching, error } =
     useGetQueueAssignmentsInRoomQuery({ filters: apiFilters });
 
-  const { data: employeeScheduleData } = useGetMySchedulesByDateRangeQuery({
+  const { data: RoomScheduleData } = useGetMySchedulesByDateRangeQuery({
     startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
   });
 
-  console.log("employeeScheduleData", employeeScheduleData);
+  console.log("RoomScheduleData", RoomScheduleData);
 
   const [updateQueueAssignment, { isLoading: isUpdating }] =
     useUpdateQueueAssignmentMutation();
@@ -70,10 +71,10 @@ export default function QueuePage() {
   const { data: statsData, } = useGetQueueStatsQuery(
     {
       date: format(new Date(), "yyyy-MM-dd") as string,
-      roomId: employeeScheduleData?.[0]?.room_id,
+      roomId: RoomScheduleData?.[0]?.room_id,
     },
     {
-      skip: !employeeScheduleData?.[0]?.room_id,
+      skip: !RoomScheduleData?.[0]?.room_id,
     }
   );
 

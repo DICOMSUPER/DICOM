@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { 
   Table, 
   TableBody, 
@@ -38,8 +38,8 @@ import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
 import { 
-  useGetEmployeeSchedulesQuery, 
-  useDeleteEmployeeScheduleMutation,
+  useGetRoomSchedulesQuery, 
+  useDeleteRoomScheduleMutation,
   useGetShiftTemplatesQuery,
   useGetRoomsQuery,
   useGetScheduleStatsQuery,
@@ -69,6 +69,10 @@ const statusLabels = {
   no_show: "No Show",
 };
 
+interface PageProps {
+  params?: Promise<any>;
+  searchParams?: Promise<any>;
+}
 export default function ScheduleManagementPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
@@ -82,7 +86,7 @@ export default function ScheduleManagementPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
 
   // Get current month range (fetch once per month)
   const getCurrentMonthRange = () => {
@@ -99,7 +103,7 @@ export default function ScheduleManagementPage() {
     isFetching: schedulesFetching,
     error: schedulesError,
     refetch: refetchSchedules 
-  } = useGetEmployeeSchedulesQuery({
+  } = useGetRoomSchedulesQuery({
     page: 1,
     limit: 1000, // Fetch all schedules for the month
     search: search || undefined,
@@ -147,7 +151,7 @@ export default function ScheduleManagementPage() {
     employee_id: employeeFilter !== "all" ? employeeFilter : undefined,
   });
 
-  const [deleteSchedule, { isLoading: isDeleting }] = useDeleteEmployeeScheduleMutation();
+  const [deleteSchedule, { isLoading: isDeleting }] = useDeleteRoomScheduleMutation();
 
   const allSchedules = schedulesData?.data || [];
   const total = schedulesData?.total || 0;
@@ -707,7 +711,7 @@ export default function ScheduleManagementPage() {
 
         {/* Right Panel - Schedule View */}
         <div className="lg:col-span-2 p-4 lg:p-6">
-          {/* View Mode Tabs */}
+
           <div className="mb-4 lg:mb-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
               <TabsList className="bg-gray-100 w-full grid grid-cols-4">
@@ -726,8 +730,7 @@ export default function ScheduleManagementPage() {
               </TabsList>
             </Tabs>
           </div>
-
-          {/* Error State */}
+{/* 
           {schedulesError && !isLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center max-w-md mx-auto">
@@ -751,7 +754,7 @@ export default function ScheduleManagementPage() {
                 </Button>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Content - Skeleton loading is handled within each view component */}
           {!schedulesError && (

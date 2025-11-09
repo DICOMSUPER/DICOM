@@ -3,7 +3,6 @@ import { BaseEntity } from "../base.interface";
 
 export interface EmployeeSchedule extends BaseEntity {
   schedule_id: string;
-  employee_id: string;
   room_id?: string;
   shift_template_id?: string;
   work_date: Date;

@@ -1,45 +1,77 @@
 import { BaseEntity } from '@backend/entities';
-import { EncounterType } from '@backend/shared-enums';
+import { EncounterPriorityLevel, EncounterStatus, EncounterType } from '@backend/shared-enums';
 import type { VitalSignsSimplified } from '@backend/shared-interfaces';
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Patient } from './patients.entity';
+import { ServiceRoom } from '../users';
 
 @Entity('patient_encounters')
 export class PatientEncounter extends BaseEntity {
-    @PrimaryGeneratedColumn('uuid', { name: 'encounter_id' })
-    id!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'encounter_id' })
+  id!: string;
 
-    @Index()
-    @Column({ name: 'patient_id' })
-    patientId!: string;
+  @Index()
+  @Column({ name: 'patient_id' })
+  patientId!: string;
 
-    @Index()
-    @Column({ name: 'encounter_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    encounterDate!: Date;
+  @Column({ name: 'order_number' , nullable:true})
+  orderNumber?: number;
 
-    @Index()
-    @Column({ name: 'encounter_type', type: 'enum', enum: EncounterType })
-    encounterType!: EncounterType;
+  @Index()
+  @Column({
+    name: 'encounter_date',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  encounterDate!: Date;
 
-    @Column({ name: 'chief_complaint', type: 'text', nullable: true })
-    chiefComplaint?: string;
+  @Index()
+  @Column({ name: 'encounter_type', type: 'enum', enum: EncounterType })
+  encounterType!: EncounterType;
 
-    @Column({ type: 'text', nullable: true })
-    symptoms?: string;
+  @Column({ name: 'chief_complaint', type: 'text', nullable: true })
+  chiefComplaint?: string;
 
-    @Column({ name: 'vital_signs', type: 'json', nullable: true })
-    vitalSigns?: VitalSignsSimplified;
+  @Column({ type: 'text', nullable: true })
+  symptoms?: string;
 
-    @Index()
-    @Column({ name: 'assigned_physician_id', nullable: true })
-    assignedPhysicianId?: string;
+  @Column({ name: 'vital_signs', type: 'json', nullable: true })
+  vitalSigns?: VitalSignsSimplified;
 
-    @Column({ type: 'text', nullable: true })
-    notes?: string;
+    @Column({
+    type: 'enum',
+    enum: EncounterPriorityLevel,
+    default: EncounterPriorityLevel.ROUTINE,
+  })
+  priority!: EncounterPriorityLevel;
 
+  @Column({
+    type: 'enum',
+    enum: EncounterStatus,
+    default: EncounterStatus.ARRIVED,
+  })
+  status!: EncounterStatus;
+  @Index()
+  @Column({ name: 'assigned_physician_id', nullable: true })
+  assignedPhysicianId?: string;
 
-    // Relations
-    @ManyToOne(() => Patient, patient => patient.encounters)
-    @JoinColumn({ name: 'patient_id' })
-    patient!: Patient;
-  }
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
+  // Relations
+  @ManyToOne(() => Patient, (patient) => patient.encounters)
+  @JoinColumn({ name: 'patient_id' })
+  patient!: Patient;
+
+  @Column({ name: 'service_room_id', nullable: true })
+  serviceRoomId?: string;
+
+  serviceRoom?: ServiceRoom;
+}

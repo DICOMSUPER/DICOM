@@ -50,14 +50,14 @@ export class ModalityMachinesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
   async findAll(
-    @Payload() data: { modalityId?: string }
+    @Payload() data: { modalityId?: string, roomId?:string }
   ): Promise<ModalityMachine[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
 
     try {
-      return await this.modalityMachinesService.findAll(data.modalityId);
+      return await this.modalityMachinesService.findAll(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 import { BaseEntity } from "../base.interface";
 
 export interface WeeklySchedulePattern extends BaseEntity {

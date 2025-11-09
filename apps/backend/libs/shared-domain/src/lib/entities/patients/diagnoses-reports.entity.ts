@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   Index,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { BaseEntity } from '@backend/entities';
 
@@ -13,6 +14,7 @@ import {
   Severity,
 } from '@backend/shared-enums';
 import { PatientEncounter } from './patient-encounters.entity';
+import { ReportTemplate } from './report-templates.entity';
 
 @Entity('diagnoses_reports')
 @Index(['encounterId'])
@@ -59,4 +61,12 @@ export class DiagnosesReport extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  @Column({ name: 'report_template_id', type: 'uuid', nullable: true })
+  reportTemplateId?: string;
+
+  @ManyToOne(() => ReportTemplate, (reportTemplate) => reportTemplate.diagnosisReports)
+  @JoinColumn({ name: 'report_template_id' })
+  reportTemplate?: ReportTemplate;
+
 }

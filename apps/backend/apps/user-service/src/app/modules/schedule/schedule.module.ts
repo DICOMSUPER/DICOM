@@ -1,25 +1,25 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EmployeeScheduleController } from './employee-schedule.controller';
-import { EmployeeScheduleService } from './employee-schedule.service';
-import { EmployeeScheduleRepository } from '@backend/shared-domain';
-import { EmployeeSchedule, Room, User, Department, Qualification } from '@backend/shared-domain';
+import { RoomScheduleController } from './room-schedule.controller';
+import { RoomScheduleService } from './room-schedule.service';
+import { RoomScheduleRepository } from '@backend/shared-domain';
+import { RoomSchedule, Room, User, Department, Qualification } from '@backend/shared-domain';
 import { WorkingHoursModule } from '../working-hours/working-hours.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([EmployeeSchedule, Room, User, Department, Qualification]),
+    TypeOrmModule.forFeature([RoomSchedule, Room, User, Department, Qualification]),
     WorkingHoursModule,
   ],
   controllers: [
-    EmployeeScheduleController
+    RoomScheduleController
   ],
   providers: [
-    EmployeeScheduleService,
-    EmployeeScheduleRepository
+    RoomScheduleService,
+    RoomScheduleRepository
   ],
   exports: [
-    EmployeeScheduleService
+    RoomScheduleService
   ]
 })
 export class ScheduleModule {}

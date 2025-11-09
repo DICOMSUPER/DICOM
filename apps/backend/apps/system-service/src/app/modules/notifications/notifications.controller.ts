@@ -22,6 +22,7 @@ export class NotificationsController {
   async findAll(@Payload() filter: FilterNotificationDto): Promise<PaginatedResponseDto<Notification>> {
     return this.notificationsService.findAll(filter);
   }
+  
 
   @MessagePattern('notification.findOne')
   async findOne(@Payload() data: { id: string }): Promise<Notification> {

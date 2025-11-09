@@ -1,0 +1,36 @@
+import { IsOptional, IsString, IsUUID, IsEnum, IsNumber } from 'class-validator';
+import { ScheduleStatus } from '@backend/shared-enums';
+
+export class RoomScheduleSearchFilters {
+  @IsOptional()
+  @IsUUID()
+  employeeId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  roomId?: string;
+
+  @IsOptional()
+  @IsString()
+  workDateFrom?: string;
+
+  @IsOptional()
+  @IsString()
+  workDateTo?: string;
+
+  @IsOptional()
+  @IsEnum(ScheduleStatus)
+  scheduleStatus?: ScheduleStatus;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  offset?: number;
+}

@@ -27,7 +27,7 @@ export class DicomStudy extends BaseEntity {
   @Column({ name: 'study_instance_uid', length: 255, unique: true })
   studyInstanceUid!: string;
 
-  @Column({ name: 'patient_id' })
+  @Column({ name: 'patient_id', nullable: true })
   patientId!: string;
 
   @Column({ name: 'patient_code', length: 255, nullable: true })
