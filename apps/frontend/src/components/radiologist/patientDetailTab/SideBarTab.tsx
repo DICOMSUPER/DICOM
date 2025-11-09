@@ -30,7 +30,6 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   const handleToggle = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
-  console.log("check 1 --> examstory", examHistory);
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200">

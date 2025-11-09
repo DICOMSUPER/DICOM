@@ -7,15 +7,24 @@ import { usePatientService } from "@/hooks/usePatientService";
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
 import { useGetDiagnoseByStudyIdQuery } from "@/store/diagnosisApi";
 
-export default function MedicalRecordPage() {
+
+interface MedicalRecordPageProps {
+  patientId: string;    
+
+}
+
+
+export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps) {
+
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
 
   const { getPatientById } = usePatientService();
-  const patientId = "37abf913-75c1-44a9-9104-3b8cc3edc4cd";
+ 
 
   const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
   const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({ patientId });
+
 
   const examHistory = useMemo(() => {
     const list = imagingOrdersData?.data || [];
@@ -55,11 +64,13 @@ export default function MedicalRecordPage() {
 
   return (
     <div className="flex h-screen bg-gray-50">
+    {patientData?.data && (
       <SidebarTab
         setSelectedExam={handleSelectExam}
         examHistory={examHistory}
         patient={patientData.data}
       />
+    )}
       <MedicalRecordMain
         selectedExam={selectedExam}
         selectedStudyId={selectedStudyId}

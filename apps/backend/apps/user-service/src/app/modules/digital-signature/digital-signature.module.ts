@@ -3,11 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DigitalSignatureController } from './digital-signature.controller';
 import { DigitalSignatureService } from './digital-signature.service';
 import { DigitalSignature, User } from '@backend/shared-domain';
+import { DigitalSignatureRepository } from './digital-signature.repository';
+
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DigitalSignature, User])],
+  imports: [TypeOrmModule.forFeature([DigitalSignature, User]),
+  ],
   controllers: [DigitalSignatureController],
-  providers: [DigitalSignatureService],
-  exports: [DigitalSignatureService],
+  providers: [DigitalSignatureService,DigitalSignatureRepository],
+  exports: [DigitalSignatureService,DigitalSignatureRepository],
 })
 export class DigitalSignatureModule { }
