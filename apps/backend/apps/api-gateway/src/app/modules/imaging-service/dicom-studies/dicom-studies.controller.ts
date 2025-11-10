@@ -74,6 +74,12 @@ export class DicomStudiesController {
   }
 
   @Get('reference/:id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   async getDicomStudiesByReferenceId(
     @Param('id') id: string,
     @Query('type') type: string,
@@ -132,7 +138,7 @@ export class DicomStudiesController {
         })
       );
 
-      // console.log('Studies after imaging filter:', studies.length);
+      console.log('Studies after imaging filter:', studies.length);
 
       //  Filter patients and join with studies
       const patientIds = studies.map((study: DicomStudy) => study.patientId);
@@ -146,7 +152,7 @@ export class DicomStudiesController {
         })
       );
 
-      // console.log('Patients found:', patients.length);
+      console.log('Patients found:', patients.length);
 
       // Only keep studies whose patients match the filter criteria
       const foundPatientIds = patients.map((patient: Patient) => patient.id);
@@ -160,7 +166,7 @@ export class DicomStudiesController {
         patient: patients.find((p: Patient) => p.id === study.patientId),
       }));
 
-      // console.log('Studies after patient filter:', studies.length);
+      console.log('Studies after patient filter:', studies.length);
 
       //  Get diagnosis reports for all remaining studies
       const studyIds = studies.map((study: DicomStudy) => study.id);
@@ -172,7 +178,7 @@ export class DicomStudiesController {
         })
       );
 
-      // console.log('Diagnosis reports found:', diagnosisReports.length);
+      console.log('Diagnosis reports found:', diagnosisReports.length);
 
       // CRITICAL: Only filter by report if reportStatus was explicitly provided
       // If reportStatus is "All" or undefined/null, include all studies regardless of report existence
@@ -211,7 +217,7 @@ export class DicomStudiesController {
           })
         );
 
-        // console.log('Rooms found:', rooms.length);
+        console.log('Rooms found:', rooms.length);
 
         // Join room data to studies
         studies = studies.map((study: DicomStudy) => ({
@@ -223,7 +229,7 @@ export class DicomStudiesController {
         }));
       }
 
-      // console.log('Final studies count:', studies.length);
+      console.log('Final studies count:', studies.length);
       return studies;
     } catch (error) {
       console.error('Error in getStudyWithFilter:', error);
@@ -246,8 +252,8 @@ export class DicomStudiesController {
       })
     );
   }
-  
-  @Role( Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN)
+
+  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN)
   @Patch(':id')
   async updateDicomStudy(
     @Param('id') id: string,
@@ -261,7 +267,7 @@ export class DicomStudiesController {
     );
   }
 
-  @Role( Roles.SYSTEM_ADMIN)
+  @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')
   async deleteDicomStudy(@Param('id') id: string) {
     return await firstValueFrom(
@@ -269,7 +275,7 @@ export class DicomStudiesController {
     );
   }
 
-  @Role( Roles.RADIOLOGIST)
+  @Role(Roles.RADIOLOGIST)
   @Get('order/:orderId')
   async getDicomStudiesByOrderId(@Param('orderId') orderId: string) {
     return await firstValueFrom(

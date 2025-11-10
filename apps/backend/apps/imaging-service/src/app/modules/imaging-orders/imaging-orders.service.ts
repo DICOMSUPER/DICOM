@@ -25,7 +25,7 @@ import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 
-const relation = ['procedure', 'imagingOrderForm'];
+const relation = ['procedure', 'imagingOrderForm', 'studies'];
 @Injectable()
 export class ImagingOrdersService {
   constructor(

@@ -351,14 +351,14 @@ export class AppService {
 
         instance = await this.dicomInstancesRepository.create({
           sopInstanceUid: data.SOPInstanceUID,
-          sopClassUID: data.SOPClassUID,
+          sopClassUID: data.SOPClassUID || 'NA',
           seriesId: series.id,
-          instanceNumber: instanceNumber,
+          instanceNumber: instanceNumber || 1,
           filePath: filePath,
           fileName: `${data.SOPInstanceUID}.dcm`,
-          numberOfFrame: data.NumberOfFrames,
-          rows: data.Rows,
-          columns: data.Columns,
+          numberOfFrame: data.NumberOfFrames || 1,
+          rows: data.Rows || 512,
+          columns: data.Columns || 512,
         });
         return {
           study,

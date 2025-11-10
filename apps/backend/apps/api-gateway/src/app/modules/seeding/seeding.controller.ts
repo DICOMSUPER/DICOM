@@ -1,19 +1,25 @@
-import { Controller, Post, Delete, Get, Inject } from '@nestjs/common';
+import { Controller, Post, Delete, Get, Inject, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { SeedingRoomScheduleDto } from './dto/seeding-room-schedule.dto';
+import { SeedingRoomEmployeeAssignment } from './dto/seeding-room-employee-assignment.dto';
 
 @ApiTags('Centralized Database Seeding')
 @Controller('seeding')
 export class SeedingController {
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
-    @Inject('IMAGING_SERVICE') private readonly imagingServiceClient: ClientProxy,
-    @Inject('PATIENT_SERVICE') private readonly patientServiceClient: ClientProxy,
+    @Inject('IMAGING_SERVICE')
+    private readonly imagingServiceClient: ClientProxy,
+    @Inject('PATIENT_SERVICE')
+    private readonly patientServiceClient: ClientProxy
   ) {}
 
   @Post('run')
-  @ApiOperation({ summary: 'Run centralized database seeding for all services' })
+  @ApiOperation({
+    summary: 'Run centralized database seeding for all services',
+  })
   @ApiResponse({ status: 200, description: 'Database seeded successfully' })
   async runSeeding() {
     const results: any = {
@@ -30,7 +36,11 @@ export class SeedingController {
       );
     } catch (error: any) {
       console.error('User Service Seeding Error:', error);
-      errors.userService = error.message || error.error || error.toString() || 'User Service not available';
+      errors.userService =
+        error.message ||
+        error.error ||
+        error.toString() ||
+        'User Service not available';
     }
 
     // Seed Patient Service
@@ -52,11 +62,11 @@ export class SeedingController {
     }
 
     const hasErrors = Object.keys(errors).length > 0;
-    
+
     return {
       success: !hasErrors,
-      message: hasErrors 
-        ? 'Some services failed to seed. Check errors for details.' 
+      message: hasErrors
+        ? 'Some services failed to seed. Check errors for details.'
         : 'All services seeded successfully',
       data: results,
       errors: hasErrors ? errors : undefined,
@@ -65,21 +75,26 @@ export class SeedingController {
   }
 
   @Post('reset')
-  @ApiOperation({ summary: 'Reset and seed centralized database for all services' })
-  @ApiResponse({ status: 200, description: 'Database reset and seeded successfully' })
+  @ApiOperation({
+    summary: 'Reset and seed centralized database for all services',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Database reset and seeded successfully',
+  })
   async resetAndSeed() {
     const userServiceResult = await firstValueFrom(
       this.userServiceClient.send('UserService.Seeding.ResetAndSeed', {})
     );
-    
+
     const patientServiceResult = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.ResetAndSeed', {})
     );
-    
+
     const imagingServiceResult = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.ResetAndSeed', {})
     );
-    
+
     return {
       success: true,
       message: 'All services reset and seeded successfully',
@@ -99,15 +114,15 @@ export class SeedingController {
     const userServiceResult = await firstValueFrom(
       this.userServiceClient.send('UserService.Seeding.ClearAllData', {})
     );
-    
+
     const patientServiceResult = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.ClearAllData', {})
     );
-    
+
     const imagingServiceResult = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.ClearAllData', {})
     );
-    
+
     return {
       success: true,
       message: 'All services data cleared successfully',
@@ -122,20 +137,23 @@ export class SeedingController {
 
   @Get('status')
   @ApiOperation({ summary: 'Get seeding status from all services' })
-  @ApiResponse({ status: 200, description: 'Seeding status retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Seeding status retrieved successfully',
+  })
   async getSeedingStatus() {
     const userServiceStatus = await firstValueFrom(
       this.userServiceClient.send('UserService.Seeding.GetStatus', {})
     );
-    
+
     const patientServiceStatus = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.GetStatus', {})
     );
-    
+
     const imagingServiceStatus = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.GetStatus', {})
     );
-    
+
     return {
       success: true,
       data: {
@@ -155,8 +173,8 @@ export class SeedingController {
       success: true,
       data: {
         apiGateway: { status: 'healthy' },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 
@@ -193,7 +211,11 @@ export class SeedingController {
 
   @Post('shift-templates')
   @ApiOperation({ summary: 'Seed shift templates only' })
-  @ApiResponse({ status: 200, description: 'Shift templates seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Shift templates seeded successfully',
+  })
+  @ApiResponse({ status: 500, description: 'Failed to seed shift templates' })
   async seedShiftTemplates() {
     const result = await firstValueFrom(
       this.userServiceClient.send('UserService.Seeding.SeedShiftTemplates', {})
@@ -201,13 +223,52 @@ export class SeedingController {
     return result;
   }
 
+  @Post('room-schedule2')
+  @ApiOperation({ summary: 'Seed room-schedule2' })
+  @ApiResponse({ status: 200 })
+  async seedRoomSchedule(
+    @Body() seedingRoomScheduleDto: SeedingRoomScheduleDto
+  ) {
+    const result = await firstValueFrom(
+      this.userServiceClient.send(
+        'UserService.Seeding.SeedRoomSchedules2',
+        seedingRoomScheduleDto
+      )
+    );
+
+    return result;
+  }
+
+  @Post('employee-room-assignment2')
+  @ApiOperation({ summary: 'Seed employee room assignment' })
+  @ApiResponse({
+    status: 200,
+    description: 'Seed employee room assignment based on room scheduleIds',
+  })
+  async seedEmployeeRoomAssignment(
+    @Body() seedingEmployeeRoomAssignment: SeedingRoomEmployeeAssignment
+  ) {
+    return await firstValueFrom(
+      this.userServiceClient.send(
+        'UserService.Seeding.SeedEmployeeRoomAssignment',
+        seedingEmployeeRoomAssignment
+      )
+    );
+  }
+
   // Imaging Service Seeding Endpoints
   @Post('imaging/modalities')
   @ApiOperation({ summary: 'Seed imaging modalities only' })
-  @ApiResponse({ status: 200, description: 'Imaging modalities seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging modalities seeded successfully',
+  })
   async seedModalities() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedModalities', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedModalities',
+        {}
+      )
     );
     return result;
   }
@@ -224,40 +285,64 @@ export class SeedingController {
 
   @Post('imaging/modality-machines')
   @ApiOperation({ summary: 'Seed modality machines only' })
-  @ApiResponse({ status: 200, description: 'Modality machines seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Modality machines seeded successfully',
+  })
   async seedModalityMachines() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedModalityMachines', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedModalityMachines',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/request-procedures')
   @ApiOperation({ summary: 'Seed request procedures only' })
-  @ApiResponse({ status: 200, description: 'Request procedures seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Request procedures seeded successfully',
+  })
   async seedRequestProcedures() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedRequestProcedures', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedRequestProcedures',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/orders')
   @ApiOperation({ summary: 'Seed imaging orders only' })
-  @ApiResponse({ status: 200, description: 'Imaging orders seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging orders seeded successfully',
+  })
   async seedImagingOrders() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedImagingOrders', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedImagingOrders',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/studies')
   @ApiOperation({ summary: 'Seed DICOM studies only' })
-  @ApiResponse({ status: 200, description: 'DICOM studies seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'DICOM studies seeded successfully',
+  })
   async seedDicomStudies() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedDicomStudies', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedDicomStudies',
+        {}
+      )
     );
     return result;
   }
@@ -267,34 +352,52 @@ export class SeedingController {
   @ApiResponse({ status: 200, description: 'DICOM series seeded successfully' })
   async seedDicomSeries() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedDicomSeries', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedDicomSeries',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/instances')
   @ApiOperation({ summary: 'Seed DICOM instances only' })
-  @ApiResponse({ status: 200, description: 'DICOM instances seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'DICOM instances seeded successfully',
+  })
   async seedDicomInstances() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedDicomInstances', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedDicomInstances',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/annotations')
   @ApiOperation({ summary: 'Seed image annotations only' })
-  @ApiResponse({ status: 200, description: 'Image annotations seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Image annotations seeded successfully',
+  })
   async seedAnnotations() {
     const result = await firstValueFrom(
-      this.imagingServiceClient.send('ImagingService.Seeding.SeedAnnotations', {})
+      this.imagingServiceClient.send(
+        'ImagingService.Seeding.SeedAnnotations',
+        {}
+      )
     );
     return result;
   }
 
   @Post('imaging/run')
   @ApiOperation({ summary: 'Run imaging service seeding only' })
-  @ApiResponse({ status: 200, description: 'Imaging service seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging service seeded successfully',
+  })
   async runImagingSeeding() {
     const result = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.Run', {})
@@ -304,7 +407,10 @@ export class SeedingController {
 
   @Post('imaging/reset')
   @ApiOperation({ summary: 'Reset and seed imaging service only' })
-  @ApiResponse({ status: 200, description: 'Imaging service reset and seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging service reset and seeded successfully',
+  })
   async resetImagingService() {
     const result = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.ResetAndSeed', {})
@@ -314,7 +420,10 @@ export class SeedingController {
 
   @Delete('imaging/clear')
   @ApiOperation({ summary: 'Clear imaging service data only' })
-  @ApiResponse({ status: 200, description: 'Imaging service data cleared successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging service data cleared successfully',
+  })
   async clearImagingData() {
     const result = await firstValueFrom(
       this.imagingServiceClient.send('ImagingService.Seeding.ClearAllData', {})
@@ -335,47 +444,74 @@ export class SeedingController {
 
   @Post('patient/encounters')
   @ApiOperation({ summary: 'Seed patient encounters only' })
-  @ApiResponse({ status: 200, description: 'Patient encounters seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient encounters seeded successfully',
+  })
   async seedPatientEncounters() {
     const result = await firstValueFrom(
-      this.patientServiceClient.send('PatientService.Seeding.SeedPatientEncounters', {})
+      this.patientServiceClient.send(
+        'PatientService.Seeding.SeedPatientEncounters',
+        {}
+      )
     );
     return result;
   }
 
   @Post('patient/conditions')
   @ApiOperation({ summary: 'Seed patient conditions only' })
-  @ApiResponse({ status: 200, description: 'Patient conditions seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient conditions seeded successfully',
+  })
   async seedPatientConditions() {
     const result = await firstValueFrom(
-      this.patientServiceClient.send('PatientService.Seeding.SeedPatientConditions', {})
+      this.patientServiceClient.send(
+        'PatientService.Seeding.SeedPatientConditions',
+        {}
+      )
     );
     return result;
   }
 
   @Post('patient/queue-assignments')
   @ApiOperation({ summary: 'Seed queue assignments only' })
-  @ApiResponse({ status: 200, description: 'Queue assignments seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Queue assignments seeded successfully',
+  })
   async seedQueueAssignments() {
     const result = await firstValueFrom(
-      this.patientServiceClient.send('PatientService.Seeding.SeedQueueAssignments', {})
+      this.patientServiceClient.send(
+        'PatientService.Seeding.SeedQueueAssignments',
+        {}
+      )
     );
     return result;
   }
 
   @Post('patient/diagnoses-reports')
   @ApiOperation({ summary: 'Seed diagnoses reports only' })
-  @ApiResponse({ status: 200, description: 'Diagnoses reports seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Diagnoses reports seeded successfully',
+  })
   async seedDiagnosesReports() {
     const result = await firstValueFrom(
-      this.patientServiceClient.send('PatientService.Seeding.SeedDiagnosesReports', {})
+      this.patientServiceClient.send(
+        'PatientService.Seeding.SeedDiagnosesReports',
+        {}
+      )
     );
     return result;
   }
 
   @Post('patient/run')
   @ApiOperation({ summary: 'Run patient service seeding only' })
-  @ApiResponse({ status: 200, description: 'Patient service seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient service seeded successfully',
+  })
   async runPatientSeeding() {
     const result = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.Run', {})
@@ -385,7 +521,10 @@ export class SeedingController {
 
   @Post('patient/reset')
   @ApiOperation({ summary: 'Reset and seed patient service only' })
-  @ApiResponse({ status: 200, description: 'Patient service reset and seeded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient service reset and seeded successfully',
+  })
   async resetPatientService() {
     const result = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.ResetAndSeed', {})
@@ -395,7 +534,10 @@ export class SeedingController {
 
   @Delete('patient/clear')
   @ApiOperation({ summary: 'Clear patient service data only' })
-  @ApiResponse({ status: 200, description: 'Patient service data cleared successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Patient service data cleared successfully',
+  })
   async clearPatientData() {
     const result = await firstValueFrom(
       this.patientServiceClient.send('PatientService.Seeding.ClearAllData', {})
