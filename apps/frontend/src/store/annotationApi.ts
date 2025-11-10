@@ -2,6 +2,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationStatus } from "@/enums/image-dicom.enum";
 
 type CreateAnnotationPayload = {
   instanceId: string;
@@ -12,7 +13,7 @@ type CreateAnnotationPayload = {
   measurementUnit?: string;
   textContent?: string;
   colorCode?: string;
-  annotationStatus: string;
+  annotationStatus: AnnotationStatus;
   annotatorId: string;
   annotationDate?: Date;
   reviewDate?: Date;
@@ -26,7 +27,7 @@ type UpdateAnnotationPayload = Partial<{
   measurementUnit?: string;
   textContent?: string;
   colorCode?: string;
-  annotationStatus: string;
+  annotationStatus?: AnnotationStatus;
   reviewDate?: Date;
   notes?: string;
 }>;
@@ -54,6 +55,26 @@ export const annotationApi = createApi({
     >({
       query: (instanceId) => ({
         url: `/instance/${instanceId}`,
+        method: "GET",
+      }),
+      providesTags: (result) =>
+        result?.data
+          ? result.data.map((annotation) => ({
+              type: "ImageAnnotation" as const,
+              id:
+                (annotation as any)?.id ??
+                (annotation as any)?.annotation_id ??
+                "LIST",
+            }))
+          : [],
+    }),
+
+    getAnnotationsBySeriesId: builder.query<
+      ApiResponse<ImageAnnotation[]>,
+      string
+    >({
+      query: (seriesId) => ({
+        url: `/series/${seriesId}`,
         method: "GET",
       }),
       providesTags: (result) =>
@@ -108,6 +129,8 @@ export const {
   useCreateAnnotationMutation,
   useGetAnnotationsByInstanceIdQuery,
   useLazyGetAnnotationsByInstanceIdQuery,
+  useGetAnnotationsBySeriesIdQuery,
+  useLazyGetAnnotationsBySeriesIdQuery,
   useGetAnnotationByIdQuery,
   useUpdateAnnotationMutation,
   useDeleteAnnotationMutation,

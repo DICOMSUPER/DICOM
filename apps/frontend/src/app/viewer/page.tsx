@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
@@ -16,11 +17,12 @@ import ViewerLeftSidebar from "@/components/viewer/layout/ViewerLeftSidebar";
 import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
 import ViewportGrid from "@/components/viewer/viewport/ViewportGrid";
 import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
+import { SeriesAnnotationsModal } from "@/components/viewer/modals/SeriesAnnotationsModal";
 
 // Loading component
 function ViewerLoading() {
   return (
-    <div className="h-[100vh] bg-slate-950 flex items-center justify-center">
+    <div className="h-screen bg-slate-950 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
         <div className="text-slate-400 text-lg mb-2">Loading Viewer...</div>
@@ -28,7 +30,6 @@ function ViewerLoading() {
     </div>
   );
 }
-
 // Inner component that uses ViewerContext and useSearchParams
 function ViewerPageContent() {
   const searchParams = useSearchParams();
@@ -49,6 +50,8 @@ function ViewerPageContent() {
   const [series, setSeries] = useState<DicomSeries[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
+
+  const [isAnnotationsModalOpen, setIsAnnotationsModalOpen] = useState(false);
 
   // Ensure viewport 0 is active on page load
   useEffect(() => {
@@ -88,6 +91,19 @@ function ViewerPageContent() {
     setViewportSeries(state.activeViewport, series);
   };
 
+  const handleViewAnnotations = useCallback(() => {
+    if (!selectedSeries) {
+      toast.error("Please select a series to view annotations.");
+      return;
+    }
+
+    setIsAnnotationsModalOpen(true);
+  }, [selectedSeries]);
+
+  const handleAnnotationsModalOpenChange = useCallback((open: boolean) => {
+    setIsAnnotationsModalOpen(open);
+  }, []);
+
   const handleDeleteStudy = () => {
     console.log("Delete study clicked");
   };
@@ -104,6 +120,7 @@ function ViewerPageContent() {
         const refreshedSeries = extractApiData<DicomSeries>(seriesResponse);
         setSeries(refreshedSeries);
         handleSeriesLoaded(refreshedSeries);
+        setSelectedTool("WindowLevel");
 
         // Dispatch refreshViewport event to force viewport rebuild
         window.dispatchEvent(
@@ -120,7 +137,7 @@ function ViewerPageContent() {
   };
 
   return (
-    <div className="h-[100vh] bg-slate-950 flex flex-col">
+    <div className="h-screen bg-slate-950 flex flex-col">
       {/* Header */}
       <div className="flex flex-col h-[5vh]">
         <ViewerHeader
@@ -166,6 +183,7 @@ function ViewerPageContent() {
             onSeriesLayoutChange={handleLayoutChange}
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
+            onViewAnnotations={handleViewAnnotations}
           />
         </ResizablePanel>
 
@@ -220,6 +238,12 @@ function ViewerPageContent() {
           />
         </ResizablePanel>
       </div>
+
+      <SeriesAnnotationsModal
+        open={isAnnotationsModalOpen}
+        onOpenChange={handleAnnotationsModalOpenChange}
+        series={selectedSeries}
+      />
     </div>
   );
 }

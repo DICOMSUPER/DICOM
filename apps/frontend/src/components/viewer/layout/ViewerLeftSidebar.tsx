@@ -23,6 +23,7 @@ import {
   CircleDot,
   Globe,
   Eraser,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -33,6 +34,7 @@ interface ViewerLeftSidebarProps {
   onSeriesLayoutChange: (layout: string) => void;
   selectedTool: string;
   onToolSelect: (toolId: string) => void;
+  onViewAnnotations?: () => void;
 }
 
 const seriesLayouts = [
@@ -74,6 +76,7 @@ const transformTools = [
 
 // Action tools
 const actionTools = [
+  { id: "view-annotations", icon: List, label: "View Annotations", action: "viewAnnotations" },
   { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
   { id: "clear", icon: Trash2, label: "Clear Annotations", action: "clear" },
   { id: "clear-segmentation", icon: Trash2, label: "Clear Segmentation", action: "clearSegmentation" },
@@ -115,6 +118,7 @@ export default function ViewerLeftSidebar({
   onSeriesLayoutChange,
   selectedTool,
   onToolSelect,
+  onViewAnnotations,
 }: ViewerLeftSidebarProps) {
   const { rotateViewport, flipViewport, resetView, clearAnnotations, undoAnnotation, invertViewport } = useViewer();
 
@@ -186,6 +190,9 @@ export default function ViewerLeftSidebar({
         break;
       case 'invert':
         invertViewport();
+        break;
+      case 'viewAnnotations':
+        onViewAnnotations?.();
         break;
     }
   };
@@ -405,7 +412,9 @@ export default function ViewerLeftSidebar({
                       className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
                         tool.id === 'clear'
                           ? "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300"
-                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                          : tool.id === 'view-annotations'
+                            ? "bg-linear-to-br from-teal-600 to-teal-500 text-white hover:from-teal-500 hover:to-teal-400 shadow-lg shadow-teal-500/30"
+                            : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
                       <tool.icon className="h-4 w-4" />

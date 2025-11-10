@@ -7,17 +7,7 @@ const api = axios.create({
 
 // Request Interceptor
 api.interceptors.request.use(
-  (config) => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log("🔑 Token found and added to request:", token.substring(0, 20) + "...");
-    } else {
-      console.warn("⚠️ No token found in localStorage");
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
@@ -37,7 +27,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log("🔒 Unauthorized, redirecting to login...");
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
         window.location.href = "/login";
       }
     }

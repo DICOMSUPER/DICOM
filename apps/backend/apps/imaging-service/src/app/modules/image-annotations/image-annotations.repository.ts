@@ -10,7 +10,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
-export type FindFilterAnnotation = 'annotator' | 'instance';
+export type FindFilterAnnotation = 'annotator' | 'instance' | 'series';
 
 @Injectable()
 export class ImageAnnotationsRepository extends BaseRepository<ImageAnnotation> {
@@ -39,7 +39,8 @@ export class ImageAnnotationsRepository extends BaseRepository<ImageAnnotation> 
     const safeLimit = Math.max(1, Math.min(limit, 100));
     const skip = (safePage - 1) * safeLimit;
 
-    let referenceField;
+    let referenceField: string | null = null;
+    let requiresSeriesFilter = false;
     switch (type) {
       case 'annotator':
         referenceField = 'annotatorId';
@@ -47,6 +48,9 @@ export class ImageAnnotationsRepository extends BaseRepository<ImageAnnotation> 
 
       case 'instance':
         referenceField = 'instanceId';
+        break;
+      case 'series':
+        requiresSeriesFilter = true;
         break;
       default:
         throw ThrowMicroserviceException(
@@ -58,9 +62,16 @@ export class ImageAnnotationsRepository extends BaseRepository<ImageAnnotation> 
     }
     const query = repository.createQueryBuilder('entity');
 
-    query.andWhere(`entity.${referenceField} = :referenceId`, {
-      referenceId: id,
-    });
+    if (requiresSeriesFilter) {
+      query.leftJoin('entity.instance', 'filterInstance');
+      query.andWhere('filterInstance.seriesId = :referenceId', {
+        referenceId: id,
+      });
+    } else if (referenceField) {
+      query.andWhere(`entity.${referenceField} = :referenceId`, {
+        referenceId: id,
+      });
+    }
 
     //  Search filter
     if (search && searchField) {

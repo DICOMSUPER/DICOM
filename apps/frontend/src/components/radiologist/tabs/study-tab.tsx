@@ -90,11 +90,13 @@ export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <SidebarTab
-        setSelectedExam={handleSelectExam}
-        examHistory={examHistory}
-        patient={patientData?.data}
-      />
+      {patientData?.data && (
+        <SidebarTab
+          setSelectedExam={handleSelectExam}
+          examHistory={examHistory}
+          patient={patientData?.data}
+        />
+      )}
       <MedicalRecordMain
         selectedExam={selectedExam}
         selectedStudyId={selectedStudyId}

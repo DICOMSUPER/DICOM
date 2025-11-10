@@ -117,22 +117,15 @@ export default function ViewportGrid({
       "IDs created:",
       Object.keys(newViewportIds).length
     );
-  }, [viewportCount, seriesLayout]); // Removed getViewportId and setViewportId from dependencies
+  }, [viewportCount, seriesLayout]);
 
   // Generate viewport data dynamically
   const generateViewports = () => {
     const viewports = [];
 
     for (let i = 0; i < viewportCount; i++) {
-      // Get series for this viewport - prioritize assigned series over selectedSeries fallback
       let viewportSeries = getViewportSeries(i);
 
-      // Remove auto-assignment - let user select manually
-      // if (!viewportSeries && i === 0 && selectedSeries) {
-      //   viewportSeries = selectedSeries;
-      // }
-
-      // Use local viewport ID to avoid setState during render
       const viewportId = localViewportIds[i] || i.toString();
 
       viewports.push({
@@ -148,18 +141,6 @@ export default function ViewportGrid({
   };
 
   const viewports = generateViewports();
-
-  // Remove auto-update of viewport 0 - let user select manually
-  // useEffect(() => {
-  //   if (viewportCount > 1 && selectedSeries) {
-  //     const viewport0Series = getViewportSeries(0);
-  //     // Only update if viewport 0 doesn't have a series assigned or if it's the same as selectedSeries
-  //     if (!viewport0Series || viewport0Series.id !== selectedSeries.id) {
-  //       setViewportSeries(0, selectedSeries);
-  //       console.log('Updated viewport 0 with selectedSeries:', selectedSeries.seriesDescription);
-  //     }
-  //   }
-  // }, [selectedSeries, viewportCount, getViewportSeries, setViewportSeries]);
 
   return (
     <div className={`flex-1 p-3 gap-3 ${getGridClass()} h-full`}>
@@ -202,7 +183,7 @@ export default function ViewportGrid({
           </div>
 
           <ViewPortMain
-            key={`viewport-main-${viewport.index}`} // Remove seriesLayout from key to prevent remounting
+            key={`viewport-main-${viewport.index}`}
             selectedSeries={viewport.series}
             selectedStudy={selectedStudy}
             selectedTool={selectedTool}

@@ -30,7 +30,6 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   const handleToggle = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
-  console.log("check 1 --> examstory", examHistory);
 
   if (!patient) {
     return <div>Patient not found</div>;

@@ -52,7 +52,7 @@ export class ImagingOrderFormController {
   }
 
   @Get()
-  @Role(Roles.PHYSICIAN)
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST)
   async getAllImagingOrderForms(
     @Query() filter: FilterImagingOrderFormDto,
     @Req() req: IAuthenticatedRequest
@@ -95,8 +95,8 @@ export class ImagingOrderFormController {
     );
   }
 
-  @Get('patient/:patientId')
   @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST)
+  @Get('patient/:patientId')
   async findByPatientId(
     @Param('patientId') patientId: string,
     @Query('page') page?: string,
