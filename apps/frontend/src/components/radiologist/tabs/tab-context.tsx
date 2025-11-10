@@ -1,7 +1,15 @@
-import React, { ReactNode, createContext, useContext, useState } from "react";
+"use client";
+
+import React, {
+  ReactNode,
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import BaseTab from "./base-tab";
 import Sidebar from "../side-bar";
-import StudyTab from "./study-tab";
+import MedicalRecordPage from "../tabs/study-tab";
 
 export interface TabData {
   id: string;
@@ -11,6 +19,10 @@ export interface TabData {
   hasSideBar?: boolean;
   SidebarContent?: ReactNode;
 }
+
+type SerializableTabData = Omit<TabData, "tabContent" | "SidebarContent"> & {
+  sidebarType?: string; // Add this to track sidebar type
+};
 
 interface TabContextType {
   activeTabId: string;
@@ -37,38 +49,46 @@ const TabContext = createContext<TabContextType>({
       hasSideBar: true,
       SidebarContent: <Sidebar />,
     },
-    {
-      id: "1",
-      name: "Study 1",
-      tabContent: <StudyTab />,
-      hasSideBar: false,
-    }
   ],
-  
 });
 
-export const useTabs = () => {
-  const context = useContext(TabContext);
-  if (!context) throw new Error("useTabs must be used within TabProvider");
-  return context;
+export const useTabs = () => useContext(TabContext);
+
+const recreateTab = (sTab: SerializableTabData): TabData => {
+  let tabContent: ReactNode;
+  let sidebarContent: ReactNode | undefined;
+
+  if (sTab.id === "0") {
+    tabContent = <BaseTab />;
+    // Always recreate sidebar for tab 0
+    if (sTab.hasSideBar) {
+      sidebarContent = <Sidebar />;
+    }
+  } else {
+    tabContent = <MedicalRecordPage />;
+    // StudyTab doesn't have sidebar
+    sidebarContent = undefined;
+  }
+
+  return {
+    ...sTab,
+    tabContent,
+    SidebarContent: sidebarContent,
+    hasSideBar: !!sidebarContent, // Ensure hasSideBar matches actual sidebar presence
+  };
 };
 
 export default function TabProvider({ children }: { children: ReactNode }) {
   const [activeTabId, setActiveTabId] = useState("0");
-  const [availableTabs, setAvailableTab] = useState<TabData[]>([
+  const [availableTabs, setAvailableTabs] = useState<TabData[]>([
     {
       id: "0",
       name: "Working tree",
       tabContent: <BaseTab />,
+      canNotClose: true,
       hasSideBar: true,
       SidebarContent: <Sidebar />,
     },
-    {
-      id: "1",
-      name: "Study 1",
-      tabContent: <StudyTab />,
-      hasSideBar: false,
-    }
   ]);
 
   const openTab = (
@@ -82,32 +102,83 @@ export default function TabProvider({ children }: { children: ReactNode }) {
       setActiveTabId(id);
       return;
     }
-    setActiveTabId(id);
-    setAvailableTab([
-      ...availableTabs,
+
+    setAvailableTabs((tabs) => [
+      ...tabs,
       { id, name, tabContent, hasSideBar, SidebarContent },
     ]);
+
+    setActiveTabId(id);
   };
 
+  // ✅ Tự động mở tab nếu localStorage có patientId
+  useEffect(() => {
+    const savedPatientId = localStorage.getItem("patientId");
+
+    if (savedPatientId) {
+      openTab(
+        "patient-" + savedPatientId,
+        "Hồ sơ bệnh nhân",
+        <MedicalRecordPage patientId={savedPatientId} />
+      );
+    }
+  }, []);
+
+  // ✅ ✅ ✅ HÀM closeTab ĐÃ ĐƯỢC THÊM LOGIC XOÁ patientId
   const closeTab = (id: string) => {
-    // Prevent closing the main tab
+    // Không cho đóng tab chính
     if (id === "0") return;
 
-    setAvailableTab((prevTabs) => {
-      const tabIndex = prevTabs.findIndex((tab) => tab.id === id);
-      if (tabIndex === -1) return prevTabs;
+    // Nếu tab dạng "patient-xxx" nghĩa là MedicalRecord
+    if (id.startsWith("patient-")) {
+      localStorage.removeItem("patientId");
+    }
 
-      // Remove the closed tab
-      const updatedTabs = prevTabs.filter((tab) => tab.id !== id);
+    // Xóa tab khỏi danh sách
+    setAvailableTabs((prev) => {
+      const updated = prev.filter((tab) => tab.id !== id);
 
-      // Determine which tab should become active
-      const newActiveTab = updatedTabs[tabIndex - 1] ||
-        updatedTabs[0] || { id: "0" };
+      // chọn tab khác làm active
+      if (activeTabId === id) {
+        const nextActive =
+          updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
+        setActiveTabId(nextActive.id);
+      }
 
-      setActiveTabId(newActiveTab.id);
-      return updatedTabs;
+      return updated;
     });
   };
+
+  React.useEffect(() => {
+    try {
+      const storedTabs = sessionStorage.getItem("browser-tabs");
+      const storedActiveId = sessionStorage.getItem("browser-active-tab");
+
+      if (storedTabs) {
+        const parsedTabs: SerializableTabData[] = JSON.parse(storedTabs);
+
+        if (Array.isArray(parsedTabs) && parsedTabs.length > 0) {
+          const recreatedTabs = parsedTabs.map(recreateTab);
+          setAvailableTabs(recreatedTabs);
+          setActiveTabId(storedActiveId || parsedTabs[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load tabs from storage:", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const serializableTabs = availableTabs.map(
+        ({ tabContent, SidebarContent, ...rest }) => rest
+      );
+      sessionStorage.setItem("browser-tabs", JSON.stringify(serializableTabs));
+      sessionStorage.setItem("browser-active-tab", activeTabId);
+    } catch (error) {
+      console.error("Failed to save tabs to storage:", error);
+    }
+  }, [availableTabs, activeTabId]);
 
   return (
     <TabContext.Provider

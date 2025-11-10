@@ -28,7 +28,7 @@ export const uploadFileToCloudinary = async (
           folder: folder,
           public_id: `dicom_${Date.now()}_${Math.random()
             .toString(36)
-            .substring(2)}`,
+            .substring(2)}.DCM`,
         },
         (error, result) => {
           if (error) {

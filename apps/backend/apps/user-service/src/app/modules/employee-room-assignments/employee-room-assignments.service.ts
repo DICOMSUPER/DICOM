@@ -7,7 +7,7 @@ import {
   EmployeeRoomAssignment,
   RoomSchedule,
   UpdateEmployeeRoomAssignmentDto,
-  User
+  User,
 } from '@backend/shared-domain';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
@@ -209,5 +209,21 @@ export class EmployeeRoomAssignmentsService {
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<EmployeeRoomAssignment>> => {
     return await this.employeeRoomAssignmentsRepository.paginate(paginationDto);
+  };
+
+  findCurrentEmployeeAssignment = async (
+    userId: string
+  ): Promise<EmployeeRoomAssignment | null> => {
+    return await this.employeeRoomAssignmentsRepository.findCurrentEmployeeRoomAssignment(
+      userId
+    );
+  };
+
+  findByEmployee = async (
+    employeeId: string
+  ): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findAll({
+      where: { employeeId: employeeId, isDeleted: false },
+    });
   };
 }

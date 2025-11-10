@@ -49,7 +49,26 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
-            ssl: { rejectUnauthorized: false }
+            ssl: { rejectUnauthorized: false },
+            // Connection pool configuration to prevent exhaustion
+            extra: {
+              max: configService.get<number>(
+                `${prefixUpper}_DB_MAX_CONNECTIONS`,
+                10
+              ), // Maximum number of connections in the pool
+              min: configService.get<number>(
+                `${prefixUpper}_DB_MIN_CONNECTIONS`,
+                5
+              ), // Minimum number of connections in the pool
+              idleTimeoutMillis: configService.get<number>(
+                `${prefixUpper}_DB_IDLE_TIMEOUT`,
+                30000
+              ), // Close idle connections after 30 seconds
+              connectionTimeoutMillis: configService.get<number>(
+                `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
+                2000
+              ), // Wait 2 seconds for a connection from the pool
+            },
           }),
         }),
       ],
@@ -57,7 +76,10 @@ export class DatabaseModule {
         {
           provide: `${prefixUpper}_DB_CONNECT_LOGGER`,
           inject: [DataSource, ConfigService],
-          useFactory: async (dataSource: DataSource, configService: ConfigService) => {
+          useFactory: async (
+            dataSource: DataSource,
+            configService: ConfigService
+          ) => {
             const logger = new Logger(`${prefixUpper} Database`);
             const shouldLog = configService.get<boolean>(
               `${prefixUpper}_DB_LOG_ON_CONNECT`,
@@ -67,15 +89,30 @@ export class DatabaseModule {
               return true;
             }
             try {
-              const host = configService.get<string>(`${prefixUpper}_DB_HOST`, 'localhost');
-              const port = configService.get<number>(`${prefixUpper}_DB_PORT`, 5432);
+              const host = configService.get<string>(
+                `${prefixUpper}_DB_HOST`,
+                'localhost'
+              );
+              const port = configService.get<number>(
+                `${prefixUpper}_DB_PORT`,
+                5432
+              );
               const database = configService.get<string>(
                 `${prefixUpper}_DB_NAME`,
                 defaultDbName || `${prefix.toLowerCase()}_service`
               );
-              const username = configService.get<string>(`${prefixUpper}_DB_USERNAME`, 'postgres');
-              const loggingEnabled = configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false);
-              const syncEnabled = configService.get<boolean>(`${prefixUpper}_DB_SYNC`, true);
+              const username = configService.get<string>(
+                `${prefixUpper}_DB_USERNAME`,
+                'postgres'
+              );
+              const loggingEnabled = configService.get<boolean>(
+                `${prefixUpper}_DB_LOGGING`,
+                false
+              );
+              const syncEnabled = configService.get<boolean>(
+                `${prefixUpper}_DB_SYNC`,
+                true
+              );
               const sslRejectUnauthorized = false; // matches ssl: { rejectUnauthorized: false }
 
               const start = Date.now();

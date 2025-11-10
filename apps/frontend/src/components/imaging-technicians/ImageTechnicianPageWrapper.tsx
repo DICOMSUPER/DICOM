@@ -4,11 +4,11 @@ import FilterBar from "./filter-bar";
 import DataTable from "./data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetImagingOrderByRoomIdFilterQuery } from "@/store/imagingOrderApi";
-import { format } from "date-fns";
-import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
+import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
 import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus from "./current-status";
+import Cookies from "js-cookie";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
@@ -26,51 +26,24 @@ export default function ImageTechnicianPageWrapper() {
     };
   }, [searchParams]);
 
-  const { data: RoomScheduleData, isLoading: isLoadingSchedule } =
-    useGetMySchedulesByDateRangeQuery({
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      endDate: format(new Date(), "yyyy-MM-dd"),
-    });
+  // Parse user from cookies - must be done before hooks
+  const userString = typeof window !== "undefined" ? Cookies.get("user") : null;
+  const user = userString ? JSON.parse(userString) : null;
+  const userId = user?.id;
 
-  console.log("Schedule:", RoomScheduleData);
+  // Call hooks before any conditional returns
+  const {
+    data: currentEmployeeSchedule,
+    isLoading: isLoadingCurrentEmployeeSchedule,
+  } = useGetCurrentEmployeeRoomAssignmentQuery(userId || "", {
+    skip: !userId,
+  });
 
-  // Helper function to get the current active schedule based on time
-  const getCurrentSchedule = () => {
-    if (
-      !RoomScheduleData ||
-      !Array.isArray(RoomScheduleData) ||
-      RoomScheduleData.length === 0
-    ) {
-      return null;
-    }
+  // Extract roomId from the response: data.roomSchedule.room_id
+  const currentRoomId =
+    currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;
 
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
-
-    // Try to find a schedule where current time is within the time range
-    const activeSchedule = RoomScheduleData.find((schedule) => {
-      if (!schedule.actual_start_time || !schedule.actual_end_time)
-        return false;
-
-      const [startHour, startMin] = schedule.actual_start_time
-        .split(":")
-        .map(Number);
-      const [endHour, endMin] = schedule.actual_end_time.split(":").map(Number);
-
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
-
-      return currentTime >= startMinutes && currentTime <= endMinutes;
-    });
-
-    // If no active schedule found, return the first one
-    return activeSchedule || RoomScheduleData[0];
-  };
-
-  const currentSchedule = getCurrentSchedule();
-  const currentRoomId = currentSchedule?.room_id;
-
-  //filter order by roomId
+  // Filter order by roomId
   const {
     data: orderData,
     isLoading: isLoadingStudy,
@@ -92,15 +65,20 @@ export default function ImageTechnicianPageWrapper() {
       },
     },
     {
-      skip: isLoadingSchedule || !currentRoomId,
+      skip: isLoadingCurrentEmployeeSchedule || !currentRoomId,
     }
   );
 
-  if (isLoadingSchedule) {
+  // Early returns after all hooks are called
+  if (!userId) {
+    return <>No user in cookies</>;
+  }
+
+  if (isLoadingCurrentEmployeeSchedule) {
     return <Loading />;
   }
 
-  if (!RoomScheduleData || RoomScheduleData.length === 0) {
+  if (!currentEmployeeSchedule?.data?.roomSchedule.room_id) {
     return <>No working schedule yet</>;
   }
 

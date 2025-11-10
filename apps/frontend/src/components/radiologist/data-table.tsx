@@ -46,6 +46,8 @@ export default function DataTable({
 }) {
   const { openTab } = useTabs();
 
+  console.log("check studies  " , studies)
+
   const tableData = studies || [];
 
   if (isLoading) {
@@ -147,8 +149,8 @@ export default function DataTable({
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.patient?.dateOfBirth && row.patient?.gender
                       ? `${row.patient.gender
-                          .charAt(0)
-                          .toUpperCase()}, ${calculateAge(
+                        .charAt(0)
+                        .toUpperCase()}, ${calculateAge(
                           row.patient?.dateOfBirth as unknown as string
                         )}`
                       : "NA"}
@@ -180,16 +182,17 @@ export default function DataTable({
                   <td className="px-4 py-2 text-gray-600 text-xs">
                     <button
                       className="text-blue-500 cursor-pointer"
-                      onClick={() =>
+                      onClick={() => {
+                        localStorage.setItem("patientId", row.patient?.id as string);
+
                         openTab?.(
                           row.studyInstanceUid,
-                          `${row.patient?.lastName} ${
-                            row.patient?.firstName
-                          } - (${row.studyDate.toString()})`,
-                          <StudyTab studyUID={row.studyInstanceUid} />
-                        )
-                      }
+                          `${row.patient?.lastName} ${row.patient?.firstName} - (${row.studyDate.toString()})`,
+                          <StudyTab patientId={row.patient?.id as string} />
+                        );
+                      }}
                     >
+
                       View
                     </button>
                   </td>

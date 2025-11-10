@@ -4,65 +4,41 @@ import { DigitalSignatureService } from './digital-signature.service';
 
 @Controller()
 export class DigitalSignatureController {
-  private readonly logger = new Logger('DigitalSignatureController');
+  private readonly logger = new Logger(DigitalSignatureController.name);
 
-  constructor(
-    private readonly digitalSignatureService: DigitalSignatureService,
-  ) {}
+  constructor(private readonly digitalSignatureService: DigitalSignatureService) {}
 
+  /** Health check */
   @MessagePattern('digital-signature.check-health')
   async checkHealth() {
     this.logger.log('Health check for Digital Signature service');
     return { status: 'ok', service: 'digital-signature' };
   }
 
-  /** 🖋️ Ký dữ liệu - tạo signature mới */
-  @MessagePattern('digital-signature.create')
-  async signData(@Payload() payload: { userId: string; content: string }) {
+  /** 🛠️ Setup chữ ký lần đầu cho user */
+  @MessagePattern('digital-signature.setup')
+  async setupSignature(@Payload() payload: { userId: string; pin: string }) {
+    this.logger.log(`Setting up signature for userId=${payload.userId}`);
+    const result = await this.digitalSignatureService.setupSignature(payload.userId, payload.pin);
+    return result;
+  }
+
+  /** 🖋️ User ký dữ liệu */
+  @MessagePattern('digital-signature.sign')
+  async signData(@Payload() payload: { userId: string; pin: string; data: string }) {
     this.logger.log(`Signing data for userId=${payload.userId}`);
-    const result = await this.digitalSignatureService.signData(
-      payload.userId,
-      payload.content,
-    );
+    const result = await this.digitalSignatureService.signData(payload.userId, payload.pin, payload.data);
     return {
       message: 'Data signed successfully',
       signature: result.signature,
-      publicKey: result.publicKeyPem,
-    };
-  }
-
-  /** 📋 Lấy tất cả signatures của user */
-  @MessagePattern('digital-signature.findAll')
-  async findAll(@Payload() payload: { userId: string }) {
-    this.logger.log(`Finding all signatures for userId=${payload.userId}`);
-    // Service chưa có method này, cần thêm vào service
-    return {
-      message: 'Feature not implemented yet',
-      data: [],
-    };
-  }
-
-  /** 🔍 Lấy một signature cụ thể */
-  @MessagePattern('digital-signature.findOne')
-  async findOne(@Payload() payload: { id: string; userId: string }) {
-    this.logger.log(`Finding signature id=${payload.id}`);
-    // Service chưa có method này, cần thêm vào service
-    return {
-      message: 'Feature not implemented yet',
-      data: null,
+      publicKey: result.publicKey,
     };
   }
 
   /** ✅ Xác minh chữ ký */
   @MessagePattern('digital-signature.verify')
   async verifySignature(
-    @Payload() payload: {
-      id?: string;
-      data: string;
-      signature: string;
-      publicKey: string;
-      userId?: string;
-    },
+    @Payload() payload: { data: string; signature: string; publicKey: string },
   ) {
     this.logger.log(`Verifying signature`);
     const result = await this.digitalSignatureService.verifySignature(
@@ -70,31 +46,11 @@ export class DigitalSignatureController {
       payload.signature,
       payload.publicKey,
     );
-
     return {
       message: result.isValid ? 'Signature is valid' : 'Invalid signature',
       isValid: result.isValid,
     };
   }
 
-  /** 🗑️ Xóa signature */
-  @MessagePattern('digital-signature.remove')
-  async remove(@Payload() payload: { id: string; userId: string }) {
-    this.logger.log(`Removing signature id=${payload.id}`);
-    // Service chưa có method này, cần thêm vào service
-    return {
-      message: 'Feature not implemented yet',
-    };
-  }
 
-  /** 🔑 Lấy public key */
-  @MessagePattern('digital-signature.getPublicKey')
-  async getPublicKey(@Payload() payload: { id: string }) {
-    this.logger.log(`Getting public key for id=${payload.id}`);
-    // Service chưa có method này, cần thêm vào service
-    return {
-      message: 'Feature not implemented yet',
-      publicKey: null,
-    };
-  }
 }
