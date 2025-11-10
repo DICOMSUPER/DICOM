@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { 
   CreateAiAnalysisDto, 
   FilterAiAnalysisDto, 
   UpdateAiAnalysisDto 
 } from '@backend/shared-domain';
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 
 @Controller('ai-analyses')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class AiAnalysisController {
   constructor(
     @Inject('SYSTEM_SERVICE') private readonly systemService: ClientProxy

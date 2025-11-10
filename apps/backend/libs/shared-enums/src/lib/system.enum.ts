@@ -4,6 +4,13 @@ export enum NotificationType {
   ASSIGNMENT = 'assignment',
 }
 
+export enum RelatedEntityType {
+  REPORT = 'Report',
+  ORDER = 'Order',
+  STUDY = 'Study',
+  ENCOUNTER = 'Encounter',
+}
+
 export enum NotificationPriority {
   LOW = 'low',
   MEDIUM = 'medium',

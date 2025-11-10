@@ -124,7 +124,7 @@ export default function DicomImageLoader({
       // Initialize Cornerstone Core, Tools, and DICOM Loader
       await csRenderInit();
       await csToolsInit();
-      dicomImageLoaderInit({ maxWebWorkers: 1 });
+      dicomImageLoaderInit({ maxWebWorkers: 4 });
 
       let numberOfFrame = 1;
       if (!isThumbnail && hasFrameNavigation) {

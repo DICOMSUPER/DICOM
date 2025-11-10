@@ -25,11 +25,14 @@ export const modalityMachineApi = createApi({
   reducerPath: "ModalityMachine",
   tagTypes: ["Modality", "ModalityMachine"],
   endpoints: (builder) => ({
-    getAllModalityMachine: builder.query<ApiResponse<GetAll>, string | void>({
-      query: (modalityId?: string) => ({
+    getAllModalityMachine: builder.query<
+      ApiResponse<ModalityMachine[]>,
+      { modalityId?: string; roomId?: string }
+    >({
+      query: ({ modalityId, roomId }) => ({
         url: "",
         method: "GET",
-        params: modalityId ? { modalityId } : {},
+        params: { modalityId, roomId },
       }),
     }),
 

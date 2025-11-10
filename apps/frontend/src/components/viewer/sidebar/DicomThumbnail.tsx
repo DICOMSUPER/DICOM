@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { RenderingEngine, Enums, type Types, metaData } from "@cornerstonejs/core";
 import { init as csRenderInit, imageLoader } from "@cornerstonejs/core";
 import { init as csToolsInit } from "@cornerstonejs/tools";
@@ -17,9 +17,57 @@ interface DicomThumbnailProps {
  * Lightweight DICOM thumbnail component for sidebar previews
  * Optimized for displaying series thumbnails without tools or navigation
  */
+declare global {
+  interface Window {
+    cornerstoneInitialized?: boolean;
+    cornerstoneInitPromise?: Promise<boolean>;
+    thumbnailRenderingEngine?: RenderingEngine | null;
+    thumbnailRenderingEngineRefs?: number;
+  }
+}
+
+const ensureCornerstoneInitialized = async () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!window.cornerstoneInitPromise) {
+    window.cornerstoneInitPromise = (async () => {
+      if (!window.cornerstoneInitialized) {
+        await csRenderInit();
+        await csToolsInit();
+          dicomImageLoaderInit({ maxWebWorkers: 4 });
+        window.cornerstoneInitialized = true;
+      }
+      return true;
+    })();
+  }
+
+  try {
+    await window.cornerstoneInitPromise;
+  } catch (error) {
+    window.cornerstoneInitPromise = undefined;
+    throw error;
+  }
+};
+
+const getSharedThumbnailEngine = async (): Promise<RenderingEngine> => {
+  await ensureCornerstoneInitialized();
+
+  if (!window.thumbnailRenderingEngine) {
+    window.thumbnailRenderingEngine = new RenderingEngine("thumbnail-shared-engine");
+    window.thumbnailRenderingEngineRefs = 0;
+  }
+
+  window.thumbnailRenderingEngineRefs =
+    (window.thumbnailRenderingEngineRefs ?? 0) + 1;
+
+  return window.thumbnailRenderingEngine;
+};
+
 export default function DicomThumbnail({ 
   imageId, 
-  size = 48, 
+  size,
   className = "",
   alt = "DICOM Thumbnail"
 }: DicomThumbnailProps) {
@@ -28,6 +76,7 @@ export default function DicomThumbnail({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const renderingEngineRef = useRef<RenderingEngine | null>(null);
 
   // Early return for SSR
   if (typeof window === 'undefined') {
@@ -45,8 +94,6 @@ export default function DicomThumbnail({
 
   useEffect(() => {
     let mounted = true;
-    let renderingEngine: RenderingEngine | null = null;
-
     const loadThumbnail = async () => {
       if (!elementRef.current || !imageId || typeof window === 'undefined') return;
 
@@ -54,19 +101,10 @@ export default function DicomThumbnail({
         setIsLoading(true);
         setHasError(false);
 
-        // Initialize Cornerstone only once globally
-        if (!(window as any).cornerstoneInitialized) {
-          await csRenderInit();
-          await csToolsInit();
-          dicomImageLoaderInit({ maxWebWorkers: 1 });
-          (window as any).cornerstoneInitialized = true;
-        }
+        const renderingEngine = await getSharedThumbnailEngine();
+        renderingEngineRef.current = renderingEngine;
 
         if (!mounted) return;
-
-        // Create unique rendering engine for this thumbnail
-        const engineId = `thumbnail-engine-${viewportIdRef.current}`;
-        renderingEngine = new RenderingEngine(engineId);
 
         // Load the first frame only for thumbnail
         let thumbnailImageId = imageId;
@@ -84,7 +122,7 @@ export default function DicomThumbnail({
             
             if (numFrames > 1) {
               // Multi-frame: load first frame
-              thumbnailImageId = `${imageId}?frame=0`;
+              thumbnailImageId = `${imageId}?frame=1`;
             }
           } catch (err) {
             // If metadata check fails, just use the imageId as-is
@@ -93,6 +131,13 @@ export default function DicomThumbnail({
         }
 
         if (!mounted) return;
+
+        // Disable any existing viewport with the same id before re-enabling
+        try {
+          renderingEngine.disableElement(viewportIdRef.current);
+        } catch {
+          // ignore if viewport wasn't enabled yet
+        }
 
         // Enable the element as a stack viewport
         renderingEngine.enableElement({
@@ -104,17 +149,31 @@ export default function DicomThumbnail({
           },
         });
 
-        const viewport = renderingEngine.getViewport(viewportIdRef.current) as Types.IStackViewport;
+        const viewport = renderingEngine.getViewport(
+          viewportIdRef.current
+        ) as Types.IStackViewport;
         
-        // Set single image stack
-        await viewport.setStack([thumbnailImageId]);
-        
-        // Fit to window
-        viewport.render();
+        try {
+          if (!elementRef.current) {
+            throw new Error("Thumbnail element is not available");
+          }
+          await viewport.setStack([thumbnailImageId]);
+          viewport.resetCamera?.();
+          viewport.render();
 
-        if (mounted) {
-          setIsLoading(false);
-          setInitialized(true);
+          if (mounted) {
+            setIsLoading(false);
+            setInitialized(true);
+          }
+        } catch (renderError) {
+          console.error(
+            "Error rendering DICOM thumbnail viewport:",
+            renderError
+          );
+          if (mounted) {
+            setHasError(true);
+            setIsLoading(false);
+          }
         }
 
       } catch (error) {
@@ -131,20 +190,44 @@ export default function DicomThumbnail({
     // Cleanup
     return () => {
       mounted = false;
-      if (renderingEngine) {
+      if (renderingEngineRef.current) {
         try {
-          renderingEngine.destroy();
+          renderingEngineRef.current.disableElement(viewportIdRef.current);
         } catch (err) {
-          console.warn('Error destroying thumbnail rendering engine:', err);
+          console.warn('Error disabling thumbnail viewport:', err);
         }
       }
+
+      if (typeof window !== "undefined") {
+        const currentRefs = (window.thumbnailRenderingEngineRefs ?? 1) - 1;
+        window.thumbnailRenderingEngineRefs = Math.max(0, currentRefs);
+
+        if (window.thumbnailRenderingEngineRefs === 0 && window.thumbnailRenderingEngine) {
+          try {
+            window.thumbnailRenderingEngine.destroy();
+          } catch (destroyError) {
+            console.warn("Error destroying shared thumbnail rendering engine:", destroyError);
+          } finally {
+            window.thumbnailRenderingEngine = null;
+          }
+        }
+      }
+
+      renderingEngineRef.current = null;
     };
   }, [imageId]);
+
+  const containerStyle: CSSProperties = {};
+
+  if (typeof size === "number") {
+    containerStyle.width = size;
+    containerStyle.height = size;
+  }
 
   return (
     <div 
       className={`relative bg-gray-900 rounded overflow-hidden ${className}`}
-      style={{ width: size, height: size }}
+      style={containerStyle}
     >
       {/* DICOM viewport element */}
       <div 

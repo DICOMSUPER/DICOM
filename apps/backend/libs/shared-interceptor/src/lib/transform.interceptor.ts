@@ -28,7 +28,7 @@ export class TransformInterceptor<T>
 
   intercept(
     context: ExecutionContext,
-    next: CallHandler,
+    next: CallHandler
   ): Observable<StandardResponse<T>> {
     if (context.getType() !== 'http') {
       return next.handle();
@@ -48,14 +48,14 @@ export class TransformInterceptor<T>
         const duration = Date.now() - startTime;
 
         const message =
-          typeof data === 'object' && data?.message
+          typeof data === 'object' && data !== null && data?.message
             ? data.message
             : 'Success';
 
         const payload =
-          typeof data === 'object' && 'message' in data
+          typeof data === 'object' && data !== null && 'message' in data
             ? Object.fromEntries(
-                Object.entries(data).filter(([k]) => k !== 'message'),
+                Object.entries(data).filter(([k]) => k !== 'message')
               )
             : data;
 
@@ -71,7 +71,7 @@ export class TransformInterceptor<T>
         };
 
         this.logger.log(
-          `[${method}] ${path} - ${response.statusCode} (${duration}ms) traceId=${traceId}`,
+          `[${method}] ${path} - ${response.statusCode} (${duration}ms) traceId=${traceId}`
         );
 
         return result;
@@ -91,11 +91,11 @@ export class TransformInterceptor<T>
 
         this.logger.error(
           `[${method}] ${path} - ${errResponse.statusCode} (${duration}ms) traceId=${traceId}`,
-          (error as any)?.stack,
+          (error as any)?.stack
         );
 
         return throwError(() => errResponse);
-      }),
+      })
     );
   }
 }

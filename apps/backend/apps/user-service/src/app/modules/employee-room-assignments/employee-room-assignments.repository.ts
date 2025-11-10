@@ -17,6 +17,7 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
   async findCurrentEmployeeRoomAssignment(
     userId: string
   ): Promise<EmployeeRoomAssignment | null> {
+    console.log('userId', userId);
     const now = moment();
     const currentDate = now.format('YYYY-MM-DD');
     const yesterdayDate = now.clone().subtract(1, 'day').format('YYYY-MM-DD');

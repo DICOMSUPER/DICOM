@@ -8,6 +8,7 @@ import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAs
 import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus from "./current-status";
+import Cookies from "js-cookie";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
@@ -25,9 +26,8 @@ export default function ImageTechnicianPageWrapper() {
     };
   }, [searchParams]);
 
-  // Parse user from localStorage - must be done before hooks
-  const userString =
-    typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  // Parse user from cookies - must be done before hooks
+  const userString = typeof window !== "undefined" ? Cookies.get("user") : null;
   const user = userString ? JSON.parse(userString) : null;
   const userId = user?.id;
 
@@ -71,14 +71,14 @@ export default function ImageTechnicianPageWrapper() {
 
   // Early returns after all hooks are called
   if (!userId) {
-    return <>No user in localStorage</>;
+    return <>No user in cookies</>;
   }
 
   if (isLoadingCurrentEmployeeSchedule) {
     return <Loading />;
   }
 
-  if (!currentEmployeeSchedule?.data?.roomSchedule) {
+  if (!currentEmployeeSchedule?.data?.roomSchedule.room_id) {
     return <>No working schedule yet</>;
   }
 

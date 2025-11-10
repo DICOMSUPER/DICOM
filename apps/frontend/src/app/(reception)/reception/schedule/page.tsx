@@ -16,7 +16,7 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { 
   useGetMySchedulesByDateRangeQuery,
   useGetMySchedulesByDateQuery,
-} from "@/store/RoomScheduleApi";
+} from "@/store/roomScheduleApi";
 import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 
 // Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)

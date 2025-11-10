@@ -1,5 +1,5 @@
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { DicomSeries } from "@/services/imagingApi";
+import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 
 interface ViewportControlsProps {
   isPlaying: boolean;
@@ -54,8 +54,8 @@ export default function ViewportControls({
 
         {/* Metadata Info */}
         <div className="flex gap-2 text-xs text-slate-400 flex-wrap">
-          <span>Patient ID: {selectedSeries?.study?.patientId || 'N/A'}</span>
-          <span>Study Date: {selectedSeries?.study?.studyDate || 'N/A'}</span>
+          <span>Patient ID: {selectedSeries?.studyId || 'N/A'}</span>
+          <span>Study Date: {selectedSeries?.seriesDate || 'N/A'}</span>
         </div>
       </div>
     </div>

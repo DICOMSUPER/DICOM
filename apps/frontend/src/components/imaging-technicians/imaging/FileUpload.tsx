@@ -3,16 +3,9 @@
 import { Upload, X, File, CheckCircle, Loader2 } from "lucide-react";
 import type React from "react";
 import { useState, useEffect } from "react";
-import { toast } from "@/components/common/Toast";
+import { toast } from "sonner";
 import type { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
-
-// Sample machine data - replace with actual data source
-const MACHINES = [
-  { id: "machine-1", name: "CT Scanner - Room A" },
-  { id: "machine-2", name: "X-Ray - Room B" },
-  { id: "machine-3", name: "MRI - Room C" },
-  { id: "machine-4", name: "Ultrasound - Room D" },
-];
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 
 export default function FileUpload({
   fileInputRef,
@@ -21,62 +14,41 @@ export default function FileUpload({
   setIsImporting,
   importProgress,
   setImportProgress,
-  files,
-  setFiles,
+  file,
+  setFile,
+  machines,
+  isLoadingModalityMachines,
+  onUpload,
 }: {
   enabled: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   order: ImagingOrder;
   isImporting: boolean;
   setIsImporting: (isImporting: boolean) => void;
   importProgress: number;
   setImportProgress: (fileNumber: number) => void;
-  files: File[];
-  setFiles: (files: File[]) => void;
+  file: File | null;
+  setFile: (files: File | null) => void;
+  machines: ModalityMachine[];
+  isLoadingModalityMachines: boolean;
+  onUpload: (dicomFile: File, modalityMachineId: string) => void;
 }) {
   const [selectedMachine, setSelectedMachine] = useState<string>("");
-  const [showNotification, setShowNotification] = useState(false);
-  const [countdown, setCountdown] = useState(10);
   const [isComplete, setIsComplete] = useState(false);
-
-  const roomId = order?.imagingOrderForm?.roomId;
 
   useEffect(() => {
     if (importProgress === 100 && isImporting) {
       setIsComplete(true);
-      toast("Import complete! File has been successfully imported.", {
-        type: "success",
-        durationSeconds: 5,
-        tapToClose: true,
+      toast.success("Import Complete", {
+        description: "File has been successfully imported.",
+        duration: 5000,
       });
-      setTimeout(() => {
-        setShowNotification(true);
-        setCountdown(10);
-      }, 500);
     }
   }, [importProgress, isImporting]);
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (showNotification && countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-    } else if (countdown === 0) {
-      handleCloseNotification();
-    }
-    return () => clearTimeout(timer);
-  }, [showNotification, countdown]);
-
-  const handleCloseNotification = () => {
-    setShowNotification(false);
-    setIsComplete(false);
-    setCountdown(10);
-  };
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (isImporting || files.length > 0) return;
+    if (isImporting || file) return;
 
     const droppedFiles = Array.from(e.dataTransfer.files).filter(
       (file) =>
@@ -85,7 +57,16 @@ export default function FileUpload({
     );
 
     if (droppedFiles.length > 0) {
-      setFiles([droppedFiles[0]]);
+      setFile(droppedFiles[0]);
+      toast.success("File Added", {
+        description: `${droppedFiles[0].name} is ready to import`,
+        duration: 3000,
+      });
+    } else {
+      toast.error("Invalid File", {
+        description: "Please upload a valid DICOM file (.dcm or .dicom)",
+        duration: 4000,
+      });
     }
   };
 
@@ -94,7 +75,7 @@ export default function FileUpload({
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (files.length > 0) return;
+    if (file) return;
 
     const selectedFiles = Array.from(e.target.files || []).filter(
       (file) =>
@@ -103,20 +84,33 @@ export default function FileUpload({
     );
 
     if (selectedFiles.length > 0) {
-      setFiles([selectedFiles[0]]);
+      setFile(selectedFiles[0]);
+      toast.success("File Selected", {
+        description: `${selectedFiles[0].name} is ready to import`,
+        duration: 3000,
+      });
+    } else {
+      toast.error("Invalid File", {
+        description: "Please select a valid DICOM file (.dcm or .dicom)",
+        duration: 4000,
+      });
     }
     e.target.value = "";
   };
 
   const removeFile = () => {
-    setFiles([]);
+    setFile(null);
+    toast.info("File Removed", {
+      description: "You can select another file to import",
+      duration: 2000,
+    });
   };
 
   const handleUpload = async () => {
-    if (files.length === 0 || !selectedMachine) {
-      toast("Please select a machine and ensure a file is selected.", {
-        type: "error",
-        durationSeconds: 5,
+    if (!file || !selectedMachine) {
+      toast.warning("Missing Information", {
+        description: "Please select a machine and ensure a file is selected.",
+        duration: 4000,
       });
       return;
     }
@@ -125,24 +119,48 @@ export default function FileUpload({
       setIsImporting(true);
       setIsComplete(false);
 
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setImportProgress(i);
-      }
+      toast.info("Starting Import", {
+        description: "Processing your DICOM file...",
+        duration: 2000,
+      });
 
-      setFiles([]);
+      await onUpload(file, selectedMachine);
+
+      setFile(null);
       setSelectedMachine("");
       setTimeout(() => {
         setImportProgress(0);
         setIsImporting(false);
       }, 2000);
-    } catch (err) {
-      toast("Import failed. Please try again.", {
-        type: "error",
-        durationSeconds: 6,
+      toast.success("Import Complete", {
+        description: "File has been successfully imported.",
+        duration: 5000,
       });
+    } catch (err: any) {
+      console.error("Upload error:", err);
+
+      // Extract error message from different error formats
+      let errorMessage = "Please try again.";
+
+      if (err?.data?.message) {
+        // Axios error format
+        errorMessage = err.data.message;
+      } else if (err?.message) {
+        // Standard Error object
+        errorMessage = err.message;
+      } else if (typeof err === "string") {
+        // String error
+        errorMessage = err;
+      }
+
+      toast.error("Import Failed", {
+        description: errorMessage,
+        duration: 6000,
+      });
+
       setIsImporting(false);
       setIsComplete(false);
+      setImportProgress(0);
     }
   };
 
@@ -158,36 +176,39 @@ export default function FileUpload({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Select Machine
           </label>
-          <select
-            value={selectedMachine}
-            onChange={(e) => setSelectedMachine(e.target.value)}
-            disabled={isImporting}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-900 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-          >
-            <option value="">-- Select a machine --</option>
-            {MACHINES.map((machine) => (
-              <option key={machine.id} value={machine.id}>
-                {machine.name}
-              </option>
-            ))}
-          </select>
+          {!isLoadingModalityMachines ? (
+            <select
+              value={selectedMachine}
+              onChange={(e) => setSelectedMachine(e.target.value)}
+              disabled={isImporting}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-900 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+            >
+              <option value="">-- Select a machine --</option>
+              {machines.map((machine) => (
+                <option key={machine.id} value={machine.id}>
+                  {machine.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading machines...
+            </div>
+          )}
         </div>
 
         {/* File Upload Area */}
         <div
-          onDrop={isImporting || files.length > 0 ? () => {} : handleDrop}
-          onDragOver={
-            isImporting || files.length > 0 ? () => {} : handleDragOver
-          }
+          onDrop={isImporting || file ? () => {} : handleDrop}
+          onDragOver={isImporting || file ? () => {} : handleDragOver}
           className={`border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all cursor-pointer ${
-            files.length > 0 || isImporting
+            file || isImporting
               ? "bg-gray-50 border-gray-300 cursor-not-allowed opacity-60"
               : "hover:border-gray-400 hover:bg-gray-50"
           }`}
           onClick={
-            isImporting || files.length > 0
-              ? () => {}
-              : () => fileInputRef.current?.click()
+            isImporting || file ? () => {} : () => fileInputRef.current?.click()
           }
         >
           {isImporting ? (
@@ -224,22 +245,22 @@ export default function FileUpload({
             ref={fileInputRef}
             type="file"
             accept=".dcm,.dicom"
-            onChange={handleFileInput}
             className="hidden"
+            onChange={handleFileInput}
           />
         </div>
 
         {/* Selected File */}
-        {files.length > 0 && !isImporting && (
+        {file && !isImporting && (
           <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
               <File className="w-4 h-4 text-gray-500" />
               <div className="text-left">
                 <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
-                  {files[0].name}
+                  {file.name}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {(files[0].size / 1024 / 1024).toFixed(2)} MB
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
             </div>
@@ -275,7 +296,7 @@ export default function FileUpload({
         )}
 
         {/* Upload Button */}
-        {files.length > 0 && !isImporting && (
+        {file && !isImporting && (
           <div className="mt-4">
             <button
               onClick={handleUpload}
@@ -287,47 +308,6 @@ export default function FileUpload({
           </div>
         )}
       </div>
-
-      {/* Success Notification */}
-      {showNotification && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm">
-          <div
-            onClick={handleCloseNotification}
-            className="bg-white border border-gray-200 rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-sm text-gray-900">
-                  Import Successful!
-                </h4>
-                <p className="text-xs text-gray-500 mt-1">
-                  DICOM file imported successfully
-                </p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">
-                    Click to dismiss
-                  </span>
-                  <span className="text-xs font-medium text-gray-700">
-                    Auto-close in {countdown}s
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCloseNotification();
-                }}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

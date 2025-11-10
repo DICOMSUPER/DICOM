@@ -37,7 +37,7 @@ import { ServicesModule } from './modules/services/services.module';
     WeeklySchedulePatternsModule,
     OtpsModule,
     WorkingHoursModule,
-    // SeedingModule,
+    SeedingModule,
     DigitalSignatureModule,
     ServiceRoomsModule,
     EmployeeRoomAssignmentsModule,

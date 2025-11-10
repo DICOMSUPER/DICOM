@@ -11,8 +11,10 @@ import { init as csRenderInit } from "@cornerstonejs/core";
 import { init as csToolsInit } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { viewportSyncService } from "@/services/ViewportSyncService";
-import { smartSort, extractSortingMetadata, type DicomInstance } from "@/utils/dicom/sortInstances";
-import { imagingApi } from "@/services/imagingApi";
+import type { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
+import { smartSort, extractSortingMetadata } from "@/utils/dicom/sortInstances";
+import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
+import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
 
 interface MPRViewportProps {
   selectedSeries?: any;
@@ -42,6 +44,7 @@ export default function MPRViewport({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [viewports, setViewports] = useState<Record<string, Types.IVolumeViewport | null>>({});
   const running = useRef(false);
+  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
 
   useEffect(() => {
     const setup = async () => {
@@ -60,7 +63,7 @@ export default function MPRViewport({
         // Init Cornerstone
         await csRenderInit();
         await csToolsInit();
-        dicomImageLoaderInit({ maxWebWorkers: 1 });
+        dicomImageLoaderInit({ maxWebWorkers: 4 });
         setLoadingProgress(10);
 
         let imageIds: string[] = [];
@@ -68,29 +71,38 @@ export default function MPRViewport({
         // Load instances
         if (selectedSeries) {
           try {
-            const instancesResponse = await imagingApi.getInstancesByReferenceId(
-              selectedSeries.id,
-              'series',
-              { page: 1, limit: 100 }
-            );
+            const instancesResponse = await fetchInstancesByReference({
+              id: selectedSeries.id,
+              type: "series",
+              params: { page: 1, limit: 100 },
+            }).unwrap();
 
             setLoadingProgress(30);
 
-            if (instancesResponse.data && instancesResponse.data.length > 0) {
-              const instancesWithMetadata: DicomInstance[] = instancesResponse.data
-                .filter(instance => !!instance.filePath)
-                .map(instance => extractSortingMetadata(instance) as DicomInstance);
+            const instanceData: DicomInstance[] =
+              instancesResponse.data?.data ?? [];
+
+            if (instanceData.length > 0) {
+              const instancesWithMetadata: DicomInstance[] = instanceData
+                .filter((instance) => !!resolveDicomImageUrl(instance.filePath, instance.fileName))
+                .map((instance) =>
+                  extractSortingMetadata(instance) as DicomInstance
+                );
 
               const sortedInstances = smartSort(instancesWithMetadata);
-              
-              imageIds = sortedInstances.map(instance => {
-                const path = instance.filePath.startsWith('http')
-                  ? instance.filePath
-                  : `${instance.filePath}/${instance.fileName}`;
-                return `wadouri:${path}`;
-              });
 
-              console.log('✅ Sorted and loaded', imageIds.length, 'images for MPR');
+              imageIds = sortedInstances
+                .map((instance) =>
+                  resolveDicomImageUrl(instance.filePath, instance.fileName)
+                )
+                .filter((path): path is string => Boolean(path))
+                .map((path) => `wadouri:${path}`);
+
+              console.log(
+                "✅ Sorted and loaded",
+                imageIds.length,
+                "images for MPR"
+              );
             }
           } catch (error) {
             console.error('❌ Failed to load series instances:', error);
@@ -201,7 +213,7 @@ export default function MPRViewport({
         console.warn('Cleanup error:', error);
       }
     };
-  }, [selectedSeries, renderingEngineId]);
+  }, [selectedSeries, renderingEngineId, fetchInstancesByReference]);
 
   return (
     <div ref={containerRef} className="w-full h-full bg-gray-900 grid grid-cols-3 gap-1">

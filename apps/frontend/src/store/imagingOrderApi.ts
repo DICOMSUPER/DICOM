@@ -6,7 +6,7 @@ import {
   ImagingOrder,
   UpdateImagingOrderDto,
 } from "@/interfaces/image-dicom/imaging-order.interface";
-import { ApiResponse } from "@/services/imagingApi";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 
 export interface RoomFilter {
@@ -33,12 +33,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.map((r) => ({
-              type: "ImagingOrder" as const,
-              id: r.id,
-            })),
-            { type: "ImagingOrder", id: "LIST" },
-          ]
+              ...result.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
@@ -57,12 +57,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.data.map((r) => ({
-              type: "ImagingOrder" as const,
-              id: r.id,
-            })),
-            { type: "ImagingOrder", id: "LIST" },
-          ]
+              ...result.data.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
@@ -84,16 +84,16 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.data.map((r) => ({
-              type: "ImagingOrder" as const,
-              id: r.id,
-            })),
-            { type: "ImagingOrder", id: "LIST" },
-          ]
+              ...result.data.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
 
-    getImagingOrderById: builder.query<ImagingOrder, string>({
+    getImagingOrderById: builder.query<ApiResponse<ImagingOrder>, string>({
       query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "ImagingOrder", id }],
     }),
@@ -134,12 +134,12 @@ export const imagingOrderApi = createApi({
       providesTags: (result) =>
         result
           ? [
-            ...result.data.map((r) => ({
-              type: "ImagingOrder" as const,
-              id: r.id,
-            })),
-            { type: "ImagingOrder", id: "LIST" },
-          ]
+              ...result.data.map((r) => ({
+                type: "ImagingOrder" as const,
+                id: r.id,
+              })),
+              { type: "ImagingOrder", id: "LIST" },
+            ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
     getImagingOrderByRoomIdFilter: builder.query<
@@ -159,7 +159,6 @@ export const imagingOrderApi = createApi({
       }),
     }),
   }),
-
 });
 
 export const {

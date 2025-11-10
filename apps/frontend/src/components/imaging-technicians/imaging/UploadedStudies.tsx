@@ -1,31 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import SmallBreadCrumb from "@/components/common/SmallBreadCrumb";
 import { Folder, File } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
+import StudyLevel from "./study-level";
+import SeriesLevel from "./series-level";
+import InstancesLevel from "./instance-level";
+import { toast } from "sonner";
+interface UploadedStudiesProps {
+  studies: DicomStudy[];
+  series: DicomSeries[];
+  instances: DicomInstance[];
+  selectedStudy: DicomStudy | null;
+  selectedSeries: DicomSeries | null;
+  onStudySelect: (study: DicomStudy | null) => void;
+  onSeriesSelect: (series: DicomSeries | null) => void;
+}
 
 export default function UploadedStudies({
-  currentLevel,
-  setCurrentLevel,
   studies,
   series,
   instances,
-}: {
-  currentLevel: "studies" | "series" | "instances";
-  setCurrentLevel: (level: "studies" | "series" | "instances") => void;
-  studies?: DicomStudy[];
-  series?: DicomSeries[];
-  instances?: DicomInstance[];
-}) {
-  // Navigation state
-
-  const [selectedStudy, setSelectedStudy] = useState<any>(null);
-  const [selectedSeries, setSelectedSeries] = useState<any>(null);
+  selectedStudy,
+  selectedSeries,
+  onStudySelect,
+  onSeriesSelect,
+}: UploadedStudiesProps) {
+  // Derive current level from selections
+  const currentLevel = selectedSeries
+    ? "instances"
+    : selectedStudy
+    ? "series"
+    : "studies";
 
   // Generate breadcrumb items
   const getBreadcrumbItems = () => {
@@ -33,20 +43,17 @@ export default function UploadedStudies({
       {
         label: "Studies",
         customOnclick: () => {
-          setCurrentLevel("studies");
-          setSelectedStudy(null);
-          setSelectedSeries(null);
+          onStudySelect(null);
+          onSeriesSelect(null);
         },
       },
     ];
 
     if (selectedStudy) {
       items.push({
-        label:
-          selectedStudy.study_description || `Study ${selectedStudy.study_id}`,
+        label: selectedStudy.studyDescription || `Study ${selectedStudy.id}`,
         customOnclick: () => {
-          setCurrentLevel("series");
-          setSelectedSeries(null);
+          onSeriesSelect(null);
         },
       });
     }
@@ -54,111 +61,49 @@ export default function UploadedStudies({
     if (selectedSeries) {
       items.push({
         label:
-          selectedSeries.series_description ||
-          `Series ${selectedSeries.series_id}`,
-        customOnclick: () => setCurrentLevel("instances"),
+          selectedSeries.seriesDescription || `Series ${selectedSeries.id}`,
+        customOnclick: () => {}, // Already at instances level
       });
     }
 
     return items;
   };
 
-  // Handle navigation
-  const handleStudyClick = (study: any) => {
-    setSelectedStudy(study);
-    setCurrentLevel("series");
-    setSelectedSeries(null);
+  // Handle study click
+  const handleStudyClick = (study: DicomStudy) => {
+    onStudySelect(study);
+    onSeriesSelect(null); // Reset series when selecting a new study
   };
 
-  const handleSeriesClick = (series: any) => {
-    setSelectedSeries(series);
-    setCurrentLevel("instances");
+  // Handle series click
+  const handleSeriesClick = (series: DicomSeries) => {
+    onSeriesSelect(series);
   };
 
   // Render current level content
   const renderCurrentLevel = () => {
     if (currentLevel === "studies") {
       return (
-        <div className="space-y-2">
-          {studies && studies.length > 0 ? (
-            studies.map((study) => (
-              <div
-                key={study.study_id}
-                className="group flex items-center cursor-pointer p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] hover:border-[var(--primary)] hover:shadow-md transition-all duration-200 ease-in-out"
-                onClick={() => handleStudyClick(study)}
-              >
-                <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
-                  <Folder className="w-5 h-5 text-blue-500" />
-                </div>
-                <span
-                  className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200"
-                  title={`${study.studyInstanceUid} - [${study.studyDate}]`}
-                >
-                  {study.studyDescription ||
-                    `Study ...${study.studyInstanceUid.slice(-7)}`}
-                </span>
-                <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
-                  {study.series.length} series
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="bg-[var(--surface)] rounded-lg shadow p-6 border border-[var(--border)] cursor-not-allowed border-dashed">
-              <h6 className="italic text-center font-semibold text-[var(--neutral)]">
-                No studies uploaded yet
-              </h6>
-            </div>
-          )}
-        </div>
+        <StudyLevel studies={studies} handleStudyClick={handleStudyClick} />
       );
     }
 
     if (currentLevel === "series" && selectedStudy) {
       return (
-        <div className="space-y-2">
-          {selectedStudy.series.map((series: any) => (
-            <div
-              key={series.series_id}
-              className="group flex items-center cursor-pointer p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] hover:border-[var(--primary)] hover:shadow-md transition-all duration-200 ease-in-out"
-              onClick={() => handleSeriesClick(series)}
-            >
-              <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
-                <Folder className="w-5 h-5 text-blue-500" />
-              </div>
-              <span className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200">
-                {series.series_description || `Series ${series.series_id}`}
-              </span>
-              <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
-                {series.instances.length} instances
-              </span>
-            </div>
-          ))}
-        </div>
+        <SeriesLevel
+          series={series}
+          handleSeriesClick={handleSeriesClick}
+        ></SeriesLevel>
       );
     }
 
     if (currentLevel === "instances" && selectedSeries) {
       return (
-        <div className="space-y-2 cursor-pointer">
-          {selectedSeries.instances.map((instance: any) => (
-            <Link
-              href={`/viewer2?StudyInstanceUIDs=${instance.sop_instance_uid}`}
-              key={instance.instance_id}
-            >
-              <div className="flex items-center p-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
-                <div className="text-[var(--neutral)]">
-                  <File className="w-5 h-5 text-blue-500" />
-                </div>
-                <span className="ml-2 text-[var(--foreground)]">
-                  {instance.file_name || `Instance ${instance.instance_id}`}
-                </span>
-                <span className="ml-auto text-sm text-[var(--neutral)]">
-                  {instance.rows}x{instance.columns}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <InstancesLevel
+          instances={instances}
+          selectedSeries={selectedSeries}
+          selectedStudy={selectedStudy}
+        />
       );
     }
 

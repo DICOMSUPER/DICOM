@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { 
   CreateNotificationDto, 
   FilterNotificationDto, 
   UpdateNotificationDto 
 } from '@backend/shared-domain';
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 
 @Controller('notifications')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class NotificationsController {
   constructor(
     @Inject('SYSTEM_SERVICE') private readonly systemService: ClientProxy

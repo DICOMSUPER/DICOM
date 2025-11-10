@@ -5,6 +5,7 @@ import { SeedingController } from './seeding.controller';
 import {
   ImagingModality,
   ImagingOrder,
+  ImagingOrderForm,
   DicomStudy,
   DicomSeries,
   DicomInstance,
@@ -25,6 +26,7 @@ import {
       ModalityMachine,
       BodyPart,
       RequestProcedure,
+      ImagingOrderForm,
       ImagingOrder,
       DicomStudy,
       DicomSeries,

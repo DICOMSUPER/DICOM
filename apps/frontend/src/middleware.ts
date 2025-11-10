@@ -6,10 +6,10 @@ import { Roles } from "@/enums/user.enum";
 // ====================== ROLE MAPPING ======================
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.SYSTEM_ADMIN]: [/^\/admin/],
-  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/],
-  [Roles.RADIOLOGIST]: [/^\/radiologist/],
+  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/, /^\/viewer/],
+  [Roles.RADIOLOGIST]: [/^\/radiologist/, /^\/viewer/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
-  [Roles.PHYSICIAN]: [/^\/physicians/],
+  [Roles.PHYSICIAN]: [/^\/physicians/, /^\/viewer/],
 };
 
 // ====================== FIND ALLOWED ROLES ======================
@@ -97,12 +97,13 @@ export async function middleware(req: NextRequest) {
 // ====================== CONFIG ======================
 export const config = {
   matcher: [
-    "/login",  // ✅ Add /login to matcher
+    "/login",
     "/admin/:path*",
     "/imaging-technicians/:path*",
     "/radiologist/:path*",
     "/reception/:path*",
     "/physicians/:path*",
+    "/viewer/:path*",
   ],
   runtime: "nodejs",
 };

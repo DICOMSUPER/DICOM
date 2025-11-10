@@ -3,7 +3,7 @@ import React from 'react';
 import { GripVertical, Activity, ImageIcon, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomSeries } from '@/services/imagingApi';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import dynamic from 'next/dynamic';
 
 const DicomThumbnail = dynamic(() => import('./DicomThumbnail'), {
@@ -41,30 +41,41 @@ export default function SeriesCard({
       <div 
         className={`flex items-center gap-3 p-3 rounded cursor-move transition-all duration-200 ${
           isSelected
-            ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50'
-            : 'bg-gradient-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md'
+            ? 'bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50'
+            : 'bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md'
         } border-l-4 ${
           isSelected ? 'border-slate-400' : 'border-slate-600'
         } group hover:border-slate-400`}
         onClick={() => onSeriesClick(series)}
       >
         {/* Thumbnail */}
-        <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden">
+        <div className="shrink-0 w-12 aspect-square rounded overflow-hidden">
           {loadingThumbnail ? (
-            <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+            <div className="w-full h-full bg-linear-to-br from-slate-900 to-slate-800 flex items-center justify-center">
               <Loader2 className="w-4 h-4 text-teal-400 animate-spin" />
             </div>
           ) : finalThumbnailPath ? (
             <DicomThumbnail 
               imageId={`wadouri:${finalThumbnailPath}`}
-              size={48}
+              className="w-full h-full"
               alt={series.seriesDescription}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-              <div className="text-lg font-bold text-slate-400">
-                {series.seriesNumber || '?'}
-              </div>
+            <div className="w-full h-full bg-linear-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              {series.numberOfInstances ? (
+                <div className="text-lg font-bold text-slate-400">
+                  {series.seriesNumber || '?'}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-center px-2">
+                  <span className="text-xs font-semibold text-teal-300 tracking-wide uppercase">
+                    No Instances
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-1">
+                    Series is empty
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -96,7 +107,7 @@ export default function SeriesCard({
 
         {/* Selected indicator */}
         {isSelected && (
-          <div className="flex-shrink-0 w-3 h-3 bg-teal-400 rounded-full animate-pulse shadow-lg shadow-teal-400/50"></div>
+          <div className="shrink-0 w-3 h-3 bg-teal-400 rounded-full animate-pulse shadow-lg shadow-teal-400/50"></div>
         )}
       </div>
     );
@@ -107,8 +118,8 @@ export default function SeriesCard({
     <div
       className={`rounded cursor-move transition-all duration-200 ${
         isSelected
-          ? 'bg-gradient-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50'
-          : 'bg-gradient-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md'
+          ? 'bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50'
+          : 'bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md'
       } p-4 mb-2 border-l-4 ${
         isSelected ? 'border-slate-400' : 'border-slate-600'
       } group hover:border-slate-400`}
@@ -135,32 +146,42 @@ export default function SeriesCard({
       </div>
 
       {/* DICOM Thumbnail */}
-      <div className={`rounded-lg overflow-hidden mb-3 border-2 ${
+      <div className={`rounded-lg overflow-hidden mb-3 border-2 aspect-square ${
         isSelected ? 'border-teal-400' : 'border-slate-600'
       } relative group/preview transition-all duration-200`}>
         {loadingThumbnail ? (
-          <div className="flex items-center justify-center h-24 bg-gradient-to-br from-slate-900 to-slate-800">
+          <div className="flex items-center justify-center w-full h-full bg-linear-to-br from-slate-900 to-slate-800">
             <Loader2 className="w-6 h-6 text-teal-400 animate-spin" />
             <span className="ml-2 text-xs text-slate-400">Loading preview...</span>
           </div>
         ) : finalThumbnailPath ? (
           <DicomThumbnail 
             imageId={`wadouri:${finalThumbnailPath}`}
-            size={96}
-            className="w-full h-24"
+            className="w-full h-full"
             alt={series.seriesDescription}
           />
         ) : (
-          <div className="flex items-center justify-center h-24 bg-gradient-to-br from-slate-900 to-slate-800">
-            <div className="flex flex-col items-center justify-center text-center p-4">
-              <div className={`text-4xl font-bold mb-1 ${isSelected ? 'text-teal-400' : 'text-slate-400'}`}>
-                {series.seriesNumber || '?'}
+          <div className="flex items-center justify-center w-full h-full bg-linear-to-br from-slate-900 to-slate-800">
+            {series.numberOfInstances ? (
+              <div className="flex flex-col items-center justify-center text-center p-4">
+                <div className={`text-4xl font-bold mb-1 ${isSelected ? 'text-teal-400' : 'text-slate-400'}`}>
+                  {series.seriesNumber || '?'}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <ImageIcon size={14} />
+                  <span>{series.numberOfInstances || 0} images</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <ImageIcon size={14} />
-                <span>{series.numberOfInstances || 0} images</span>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center px-4">
+                <span className="text-sm font-semibold text-teal-300 uppercase tracking-wide">
+                  No Instances Found
+                </span>
+                <span className="text-xs text-slate-400 mt-2">
+                  This series does not contain any images.
+                </span>
               </div>
-            </div>
+            )}
           </div>
         )}
         
@@ -169,11 +190,6 @@ export default function SeriesCard({
         {isSelected && (
           <div className="absolute top-2 right-2 w-3 h-3 bg-teal-400 rounded-full animate-pulse shadow-lg shadow-teal-400/50"></div>
         )}
-        
-        {/* Image count badge */}
-        <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium">
-          {series.numberOfInstances || 0} imgs
-        </div>
       </div>
 
       {/* Always visible metadata */}

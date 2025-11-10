@@ -21,8 +21,7 @@ export class NotificationsService {
 
     const notification = this.notificationRepository.create({
       ...createNotificationDto,
-      isRead: createNotificationDto.isRead || false,
-      createdAt: new Date(),
+      isRead: false,
     });
 
     const savedNotification = await this.notificationRepository.save(notification);

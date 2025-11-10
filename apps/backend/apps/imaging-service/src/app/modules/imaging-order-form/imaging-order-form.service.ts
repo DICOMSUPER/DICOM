@@ -27,7 +27,6 @@ import { RedisService } from '@backend/redis';
 import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
-import { instanceToPlain } from 'class-transformer';
 
 export interface OrderFormStats {
   totalOrders: number;
@@ -86,99 +85,6 @@ export class ImagingOrderFormService {
     );
   }
 
-  // async findAll(
-  //   filter: FilterImagingOrderFormDto
-  // ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
-  //   const { page = 1, limit = 10, patientName, status } = filter;
-
-  //   const keyName = createCacheKey.system(
-  //     'imaging_order_forms',
-  //     undefined,
-  //     'filter_imaging_order_forms',
-  //     { ...filter }
-  //   );
-
-  //   const cachedService = await this.redisService.get<
-  //     PaginatedResponseDto<ImagingOrderForm>
-  //   >(keyName);
-  //   if (cachedService) {
-  //     console.log('📦 ImagingOrderForms retrieved from cache');
-  //     return cachedService;
-  //   }
-
-  //   const skip = (page - 1) * limit;
-
-  //   const queryBuilder = this.orderFormRepository
-  //     .createQueryBuilder('orderForm')
-  //     .where('orderForm.isDeleted = :isDeleted', { isDeleted: false });
-
-  //   // Apply filters
-  //   if (patientName) {
-  //     const patientIds: string[] = [];
-  //     const patients = await firstValueFrom(
-  //       this.patientService.send('PatientService.Patient.FindByName', {
-  //         patientName,
-  //       })
-  //     );
-  //     console.log('patient list', patients);
-  //     patients.data.forEach((patient: Patient) => patientIds.push(patient.id));
-  //     queryBuilder.andWhere('orderForm.patientId IN (:...patientIds)', {
-  //       patientIds,
-  //     });
-  //     // get patient detail list by patientIDs
-
-  //     const patientByIds = await firstValueFrom(
-  //       this.patientService.send('PatientService.Patient.Filter', {
-  //         patientIds,
-  //       })
-  //     );
-  //     console.log('patient by IDs', patientByIds);
-  //     patientByIds.data.forEach((patient: Patient) => {
-  //       const order = form.imagingOrders.find(
-  //         (order : ImagingOrderForm) => order.patientId === patient.id
-  //       );
-  //       if (order) {
-  //         order.patient = patient;
-  //       }
-  //     });
-  //   }
-
-  //   if (status) {
-  //     queryBuilder.andWhere('orderForm.orderFormStatus = :status', { status });
-  //   }
-
-  //   queryBuilder.orderBy('orderForm.createdAt', 'DESC');
-
-  //   const [data, total] = await queryBuilder
-  //     .skip(skip)
-  //     .take(limit)
-  //     .getManyAndCount();
-
-  //   const totalPages = Math.ceil(total / limit);
-  //   await this.redisService.set(
-  //     keyName,
-  //     new PaginatedResponseDto(
-  //       data,
-  //       total,
-  //       page,
-  //       limit,
-  //       totalPages,
-  //       page < totalPages,
-  //       page > 1
-  //     ),
-  //     1800
-  //   );
-
-  //   return new PaginatedResponseDto(
-  //     data,
-  //     total,
-  //     page,
-  //     limit,
-  //     totalPages,
-  //     page < totalPages,
-  //     page > 1
-  //   );
-  // }
 
   async findAll(
     filter: FilterImagingOrderFormDto,
@@ -186,20 +92,20 @@ export class ImagingOrderFormService {
   ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
     const { page = 1, limit = 10, patientName, status } = filter;
 
-    // const keyName = createCacheKey.system(
-    //   'imaging_order_forms',
-    //   undefined,
-    //   'filter_imaging_order_forms',
-    //   { ...filter }
-    // );
+    const keyName = createCacheKey.system(
+      'imaging_order_forms',
+      undefined,
+      'filter_imaging_order_forms',
+      { ...filter }
+    );
 
-    // const cachedService = await this.redisService.get<
-    //   PaginatedResponseDto<ImagingOrderForm>
-    // >(keyName);
-    // if (cachedService) {
-    //   console.log('📦 ImagingOrderForms retrieved from cache');
-    //   return cachedService;
-    // }
+    const cachedService = await this.redisService.get<
+      PaginatedResponseDto<ImagingOrderForm>
+    >(keyName);
+    if (cachedService) {
+      console.log('📦 ImagingOrderForms retrieved from cache');
+      return cachedService;
+    }
 
     const skip = (page - 1) * limit;
 
@@ -291,7 +197,7 @@ export class ImagingOrderFormService {
     );
 
     // Disable cache for now
-    // await this.redisService.set(keyName, response, 1800);
+    await this.redisService.set(keyName, response, 1800);
 
     return response;
   }

@@ -222,9 +222,9 @@ const getAllKeyboardShortcuts = (): Record<string, string> => {
 };
 
 interface CornerstoneToolManagerProps {
-  toolGroupId: string;
-  renderingEngineId: string;
-  viewportId: string;
+  toolGroupId?: string;
+  renderingEngineId?: string;
+  viewportId?: string;
   selectedTool: string;
   onToolChange?: (toolName: string) => void;
   // Add viewport reference for custom operations
@@ -531,135 +531,121 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
   };
 
   useEffect(() => {
-    // Wait a bit for the rendering engine to be initialized
-    const initTimeout = setTimeout(() => {
+    if (!toolGroupId || !renderingEngineId || !viewportId || !viewportReady) {
+      return;
+    }
+
+    let initialized = false;
+
+    try {
+      // Initialize all available tools (only once)
+      const nonCustomTools = Object.values(TOOL_MAPPINGS)
+        .filter(mapping => mapping.category !== 'custom' && mapping.toolClass)
+        .map(mapping => mapping.toolClass);
+
+      nonCustomTools.forEach(toolClass => {
+        addTool(toolClass);
+      });
+
+      console.log(`Initialized ${nonCustomTools.length} tools successfully`);
+    } catch (error) {
+      console.log('Tools already initialized or some tools failed to initialize:', error);
+    }
+
+    // Create or get tool group
+    let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (!toolGroup) {
+      toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+    }
+
+    if (!toolGroup) {
+      console.error('Failed to create or get tool group:', toolGroupId);
+      return;
+    }
+
+    toolGroupRef.current = toolGroup;
+
+    // Add all tools to the group using mappings
+    const toolNames = Object.values(TOOL_MAPPINGS)
+      .filter(mapping => mapping.category !== 'custom' && mapping.toolClass)
+      .map(mapping => mapping.toolName);
+
+    toolNames.forEach(toolName => {
+      if (toolGroup && !toolGroup.hasTool(toolName)) {
+        try {
+          toolGroup.addTool(toolName);
+        } catch (error) {
+          console.warn(`Failed to add tool ${toolName}:`, error);
+        }
+      }
+    });
+
+    // Set up mouse bindings using TOOL_BINDINGS configuration
+    if (toolGroup && typeof toolGroup.setToolActive === 'function') {
       try {
-        // Initialize all available tools (only once)
-        const initializeTools = () => {
-          try {
-            // Get all non-custom tools from mappings
-            const nonCustomTools = Object.values(TOOL_MAPPINGS)
-              .filter(mapping => mapping.category !== 'custom' && mapping.toolClass)
-              .map(mapping => mapping.toolClass);
-            
-            // Add all tools
-            nonCustomTools.forEach(toolClass => {
-              addTool(toolClass);
-            });
-            
-            console.log(`Initialized ${nonCustomTools.length} tools successfully`);
-          } catch (error) {
-            // Tools might already be added, ignore error
-            console.log('Tools already initialized or some tools failed to initialize:', error);
-          }
-        };
-
-        initializeTools();
-
-        // Create or get tool group
-        let toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-        if (!toolGroup) {
-          toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-        }
-
-        if (!toolGroup) {
-          console.error('Failed to create or get tool group:', toolGroupId);
-          return;
-        }
-
-        toolGroupRef.current = toolGroup;
-
-        // Add all tools to the group using mappings
-        const toolNames = Object.values(TOOL_MAPPINGS)
-          .filter(mapping => mapping.category !== 'custom' && mapping.toolClass)
-          .map(mapping => mapping.toolName);
-
-        toolNames.forEach(toolName => {
-          if (toolGroup && !toolGroup.hasTool(toolName)) {
-            try {
-              toolGroup.addTool(toolName);
-            } catch (error) {
-              console.warn(`Failed to add tool ${toolName}:`, error);
-            }
-          }
+        toolGroup.setToolActive(WindowLevelTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }]
         });
 
-        // Set up mouse bindings using TOOL_BINDINGS configuration
-        if (toolGroup && typeof toolGroup.setToolActive === 'function') {
-          try {
-            // Explicitly set up each tool binding to avoid conflicts
-            
-            // WindowLevel - Left click only
-            toolGroup.setToolActive(WindowLevelTool.toolName, {
-              bindings: [{ mouseButton: MouseBindings.Primary }]
-            });
-            
-            // Pan - Middle click only  
-            toolGroup.setToolActive(PanTool.toolName, {
-              bindings: [{ mouseButton: MouseBindings.Auxiliary }]
-            });
-            
-            // Zoom - Right click only (NO WHEEL)
-            toolGroup.setToolActive(ZoomTool.toolName, {
-              bindings: [{ mouseButton: MouseBindings.Secondary }]
-            });
-            
-            // StackScroll - Wheel only (for image navigation)
-            toolGroup.setToolActive(StackScrollTool.toolName, {
-              bindings: [{ mouseButton: MouseBindings.Wheel }]
-            });
-            
-            // PlanarRotate - Ctrl + Wheel only
-            toolGroup.setToolActive(PlanarRotateTool.toolName, {
-              bindings: [
-                { mouseButton: MouseBindings.Wheel, modifierKey: ToolEnums.KeyboardBindings.Ctrl }
-              ]
-            });
-            
-            console.log('Mouse bindings configured successfully - Zoom separated from wheel');
-          } catch (error) {
-            console.warn('Error setting up mouse bindings:', error);
-          }
-        }
+        toolGroup.setToolActive(PanTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Auxiliary }]
+        });
 
-        // Try to add viewport to tool group
-        if (toolGroup && typeof toolGroup.addViewport === 'function') {
-          try {
-            toolGroup.addViewport(viewportId, renderingEngineId);
-          } catch (error) {
-            console.warn('Failed to add viewport to tool group, will retry:', error);
-            // Viewport might not be ready yet, that's okay
-          }
-        }
+        toolGroup.setToolActive(ZoomTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Secondary }]
+        });
+
+        toolGroup.setToolActive(StackScrollTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Wheel }]
+        });
+
+        toolGroup.setToolActive(PlanarRotateTool.toolName, {
+          bindings: [
+            { mouseButton: MouseBindings.Wheel, modifierKey: ToolEnums.KeyboardBindings.Ctrl }
+          ]
+        });
+
+        console.log('Mouse bindings configured successfully - Zoom separated from wheel');
       } catch (error) {
-        console.error('Error initializing tools:', error);
+        console.warn('Error setting up mouse bindings:', error);
       }
-    }, 500); // Wait 500ms for rendering engine to initialize
+    }
+
+    // Try to add viewport to tool group
+    if (toolGroup && typeof toolGroup.addViewport === 'function') {
+      try {
+        toolGroup.addViewport(viewportId, renderingEngineId);
+        initialized = true;
+      } catch (error) {
+        console.warn('Failed to add viewport to tool group:', error);
+      }
+    }
 
     return () => {
-      clearTimeout(initTimeout);
-      // Cleanup - remove all viewports from tool group
-      const toolGroup = toolGroupRef.current;
-      if (toolGroup) {
+      const toolGroupInstance = toolGroupRef.current;
+      if (toolGroupInstance) {
         try {
-          toolGroup.removeViewports(renderingEngineId, viewportId);
+          toolGroupInstance.removeViewports(renderingEngineId, viewportId);
         } catch (error) {
           // Ignore cleanup errors
         }
       }
+      if (initialized) {
+        toolGroupRef.current = null;
+      }
     };
-  }, [toolGroupId, renderingEngineId, viewportId]);
+  }, [toolGroupId, renderingEngineId, viewportId, viewportReady]);
 
   useEffect(() => {
-    // Add a small delay to ensure tool group is initialized
-    const toolTimeout = setTimeout(() => {
-      if (!toolGroupRef.current || !selectedTool) {
+    if (!toolGroupRef.current || !selectedTool || !viewportReady) {
+      if (!selectedTool) {
         console.warn('Tool group not ready or no selected tool:', { 
           toolGroupReady: !!toolGroupRef.current, 
           selectedTool 
         });
-        return;
       }
+      return;
+    }
 
     // Check if it's a custom tool using helper function
     if (isCustomTool(selectedTool as ToolType)) {
@@ -671,20 +657,20 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
 
     // Handle Cornerstone.js tools using mapping
     const actualToolName = getToolName(selectedTool as ToolType);
-    if (actualToolName && toolGroupRef.current && toolGroupRef.current.hasTool && toolGroupRef.current.hasTool(actualToolName)) {
+    if (actualToolName && toolGroupRef.current.hasTool && toolGroupRef.current.hasTool(actualToolName)) {
       // Set all tools to passive first using mappings
-      if (toolGroupRef.current && typeof toolGroupRef.current.setToolPassive === 'function') {
+      if (typeof toolGroupRef.current.setToolPassive === 'function') {
         const allToolNames = Object.values(TOOL_MAPPINGS)
           .filter(mapping => mapping.category !== 'custom' && mapping.toolClass)
           .map(mapping => mapping.toolName);
         
         allToolNames.forEach(toolName => {
-          toolGroupRef.current.setToolPassive(toolName);
+          toolGroupRef.current!.setToolPassive(toolName);
         });
       }
 
       // Activate selected tool
-      if (toolGroupRef.current && typeof toolGroupRef.current.setToolActive === 'function') {
+      if (typeof toolGroupRef.current.setToolActive === 'function') {
         toolGroupRef.current.setToolActive(actualToolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
@@ -706,12 +692,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     } else {
       console.warn('Tool not found or not available:', selectedTool);
     }
-    }, 100); // Small delay to ensure tool group is ready
-
-    return () => {
-      clearTimeout(toolTimeout);
-    };
-  }, [selectedTool, onToolChange]);
+  }, [selectedTool, onToolChange, viewportReady]);
 
   // Keyboard event listener
   useEffect(() => {

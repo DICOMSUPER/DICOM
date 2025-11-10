@@ -8,6 +8,8 @@ import {
   Room,
   User,
   RoomSchedule,
+  Services,
+  ServiceRoom,
   EmployeeRoomAssignment,
 } from '@backend/shared-domain';
 
@@ -19,6 +21,8 @@ import {
       Room,
       User,
       RoomSchedule,
+      Services,
+      ServiceRoom,
       EmployeeRoomAssignment,
     ]),
   ],

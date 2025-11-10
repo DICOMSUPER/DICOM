@@ -1,4 +1,4 @@
-import { NotificationPriority, NotificationType } from '@backend/shared-enums';
+import { NotificationPriority, NotificationType, RelatedEntityType } from '@backend/shared-enums';
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateNotificationDto {
@@ -27,8 +27,8 @@ export class CreateNotificationDto {
   priority?: NotificationPriority;
 
   @IsOptional()
-  @IsString()
-  relatedEntityType?: string;
+  @IsEnum(RelatedEntityType)
+  relatedEntityType?: RelatedEntityType;
 
   @IsOptional()
   @IsString()

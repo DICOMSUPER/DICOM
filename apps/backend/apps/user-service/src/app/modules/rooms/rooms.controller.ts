@@ -216,13 +216,11 @@ export class RoomsController {
         isActive,
       });
 
-      // Ensure result.data is an array
-      const rooms = Array.isArray(result.data)
-        ? result.data
-        : result.data
-        ? [result.data]
-        : [];
-      const roomIds = rooms.map((r: Room) => r.id);
+      const roomsPayload = result?.data?.data;
+      const rooms = Array.isArray(roomsPayload) ? roomsPayload : [];
+      const roomIds = rooms
+        .map((room: Room) => room.id)
+        .filter((id): id is string => Boolean(id));
 
       this.logger.log(`Returning ${roomIds.length} room IDs`);
 

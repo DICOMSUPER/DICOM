@@ -35,22 +35,25 @@ export enum Severity {
 }
 
 export enum AnnotationType {
-  TEXT = 'text',
-  ARROW = 'arrow',
-  CIRCLE = 'circle',
-  RECTANGLE = 'rectangle',
-  POLYGON = 'polygon',
-  MEASUREMENT = 'measurement',
-  ArrowAnnotate = 'ArrowAnnotate',
-  CircleROI = 'CircleROI',
-  Length = 'Length',
-  Height = 'Height',
-  Probe = 'Probe',
-  Angle = 'Angle',
-  RectangleROI = 'RectangleROI',
-  EllipticalROI = 'EllipticalROI',
-  Bidirectional = 'Bidirectional',
-  Label = 'Label',
+  // Measurement tools
+  LENGTH = 'Length',
+  HEIGHT = 'Height',
+  ANGLE = 'Angle',
+  COBB_ANGLE = 'CobbAngle',
+  BIDIRECTIONAL = 'Bidirectional',
+  SEGMENT_BIDIRECTIONAL = 'SegmentBidirectional',
+
+  // ROI (Region of Interest) tools
+  CIRCLE_ROI = 'CircleROI',
+  ELLIPTICAL_ROI = 'EllipticalROI',
+  RECTANGLE_ROI = 'RectangleROI',
+  SPLINE_ROI = 'SplineROI',
+
+  // Annotation tools
+  ARROW_ANNOTATE = 'ArrowAnnotate',
+  LABEL = 'Label',
+  PROBE = 'Probe',
+  DRAG_PROBE = 'DragProbe',
 }
 
 export enum AnnotationStatus {

@@ -9,10 +9,10 @@ import {
 } from 'typeorm';
 import { ImagingOrder } from './imaging-order.entity';
 import { Patient } from '../patients';
-@Entity('imaging_order_form')
+@Entity('imaging_order_forms')
 @Index(['patientId'])
 export class ImagingOrderForm extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid', { name: 'order_id' })
+  @PrimaryGeneratedColumn('uuid', { name: 'order_form_id' })
   id!: string;
 
   @Column({ name: 'patient_id', type: 'uuid' })
