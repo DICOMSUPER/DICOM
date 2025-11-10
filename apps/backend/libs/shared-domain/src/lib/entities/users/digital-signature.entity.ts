@@ -30,7 +30,7 @@ export class DigitalSignature {
   @Column({ type: 'text', nullable: true, select: false })
   privateKeyEncrypted?: string;
 
-  @Column({ nullable: true, select: false })
+  @Column({ nullable: false, select: false })
   pinHash?: string;
 
   @CreateDateColumn()

@@ -44,7 +44,7 @@ export class DigitalSignatureController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
-  ) {}
+  ) { }
 
   @Public()
   @Get('health')
@@ -83,6 +83,7 @@ export class DigitalSignatureController {
 
     return {
       message: 'Data signed successfully',
+      signatureId: result.signatureId,
       signature: result.signature,
       publicKey: result.publicKey,
     };

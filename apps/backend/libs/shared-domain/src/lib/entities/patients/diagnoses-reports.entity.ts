@@ -22,6 +22,7 @@ import { ReportTemplate } from './report-templates.entity';
 @Index(['diagnosisDate'])
 @Index(['diagnosisStatus'])
 @Index(['diagnosedBy'])
+
 export class DiagnosesReport extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
@@ -69,4 +70,6 @@ export class DiagnosesReport extends BaseEntity {
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;
 
+  @Column({ name: 'signature_id', type: 'uuid', nullable: true })
+  signatureId?: string;
 }

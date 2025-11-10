@@ -7,7 +7,7 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class DigitalSignatureController {
   private readonly logger = new Logger(DigitalSignatureController.name);
 
-  constructor(private readonly digitalSignatureService: DigitalSignatureService) {}
+  constructor(private readonly digitalSignatureService: DigitalSignatureService) { }
 
   @MessagePattern('digital-signature.check-health')
   async checkHealth() {
@@ -45,6 +45,7 @@ export class DigitalSignatureController {
       );
       return {
         message: 'Data signed successfully',
+        signatureId: result.signatureId,
         signature: result.signature,
         publicKey: result.publicKey,
       };

@@ -12,11 +12,14 @@ import {
   SigningFailedException,
   VerificationFailedException,
   UserNotFoundException,
-} from '@backend/shared-exception'; 
+  ResourceNotFoundException,
+  AuthenticationException,
+  BusinessLogicException,
+} from '@backend/shared-exception';
 
 @Injectable()
 export class DigitalSignatureService {
-  constructor(private readonly repo: DigitalSignatureRepository) {}
+  constructor(private readonly repo: DigitalSignatureRepository) { }
 
   private readonly logger = new Logger(DigitalSignatureService.name);
 
@@ -94,7 +97,6 @@ export class DigitalSignatureService {
 
     return { message: 'Digital signature has been created successfully' };
   }
-
   async signData(userId: string, pin: string, data: string) {
     const record = await this.repo.findSignatureWithPrivateKey(userId);
     if (!record) throw new DigitalSignatureNotFoundException(userId);
@@ -109,15 +111,19 @@ export class DigitalSignatureService {
       sign.update(data);
       const signature = sign.sign(privateKeyPem, 'base64');
 
-      record.signedData = signature;
-      await this.repo.saveSignature(record);
 
-      return { signature, publicKey: record.publicKey };
+
+      return {
+        signatureId: record.id,
+        signature,
+        publicKey: record.publicKey,
+      };
     } catch (error: any) {
       this.logger.error('Failed to sign data', error.stack);
       throw new SigningFailedException({ originalError: error.message });
     }
   }
+
 
   async verifySignature(data: string, signature: string, publicKey: string) {
     try {
