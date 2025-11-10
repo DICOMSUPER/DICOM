@@ -249,6 +249,10 @@ useEffect(() => {
       seriesInstances[s.id]?.[0]?.fileName
     );
     const thumbnailPath = thumbnailPaths[s.id] ?? resolvedFallback ?? undefined;
+    const isLoadingThumbnail =
+      (loading || loadingInstances.has(s.id)) &&
+      !thumbnailPath &&
+      (s.numberOfInstances ?? 0) > 0;
 
     return (
       <SeriesCard
@@ -258,7 +262,7 @@ useEffect(() => {
         viewMode={viewMode}
         onSeriesClick={handleSeriesClick}
         thumbnailPath={thumbnailPath}
-        loadingThumbnail={!thumbnailPath}
+        loadingThumbnail={isLoadingThumbnail}
       />
     );
   };
