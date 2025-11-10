@@ -44,9 +44,7 @@ export const dicomInstanceApi = createApi({
         url: `/${id}`,
         method: "GET",
       }),
-      providesTags: (result, error, id) => [
-        { type: "DicomInstance", id },
-      ],
+      providesTags: (result, error, id) => [{ type: "DicomInstance", id }],
     }),
 
     getInstancesByReference: builder.query<
@@ -72,6 +70,6 @@ export const dicomInstanceApi = createApi({
 export const {
   useGetDicomInstancesPaginatedQuery,
   useGetDicomInstanceByIdQuery,
+  useGetInstancesByReferenceQuery,
   useLazyGetInstancesByReferenceQuery,
 } = dicomInstanceApi;
-

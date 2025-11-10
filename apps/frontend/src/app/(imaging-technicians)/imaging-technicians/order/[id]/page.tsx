@@ -1,11 +1,10 @@
-// "use client"; // nếu bạn dùng hook client
+import ImagingPageWrapper from "@/components/imaging-technicians/imaging/ImagingPageWrapper";
 
-// import ImagingPageWrapper from "@/components/imaging-technicians/imaging/ImagingPageWrapper";
+interface PageProps {
+  params: { id: string };
+}
 
-// interface PageProps {
-//   params: { id: string };
-// }
-
-// export default function Page({ params }: PageProps) {
-//   return <ImagingPageWrapper order_id={params.id} />;
-// }
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
+  return <ImagingPageWrapper order_id={id} />;
+}

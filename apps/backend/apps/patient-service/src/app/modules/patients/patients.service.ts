@@ -108,7 +108,9 @@ export class PatientService {
   };
 
   findPatientByName = async (patientName: string): Promise<Patient[]> => {
-    const patients = await this.patientRepository.filterPatientName(patientName);
+    const patients = await this.patientRepository.filterPatientName(
+      patientName
+    );
     if (!patients) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
@@ -157,9 +159,9 @@ export class PatientService {
     return await this.patientRepository.softDelete(id, 'isDeleted');
   };
 
-  restore = async (id: string): Promise<Patient | null> => {
+  restore = async (id: string): Promise<boolean> => {
     await this.checkPatient(id);
-    return await this.patientRepository.restore(id);
+    return await this.patientRepository.restorePatient(id);
   };
 
   filter = async (

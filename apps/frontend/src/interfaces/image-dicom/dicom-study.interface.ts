@@ -9,6 +9,7 @@ import {
   Patient,
 } from "../patient/patient-workflow.interface";
 import { ModalityMachine } from "./modality-machine.interface";
+import { PaginatedQuery } from "../pagination/pagination.interface";
 
 export interface DicomStudyFilterQuery {
   studyStatus?: DicomStudyStatus;
@@ -25,15 +26,15 @@ export interface DicomStudyFilterQuery {
 }
 
 export interface CreateDiagnosisPayload {
-  encounterId: string;        
-  studyId: string;           
-  diagnosisName: string;      
-  description: string;        
-  diagnosisType: "primary" | "secondary" | "other"; 
-  severity: "mild" | "moderate" | "severe";        
-  diagnosisDate: string;    
-  diagnosedBy: string;       
-  notes?: string;            
+  encounterId: string;
+  studyId: string;
+  diagnosisName: string;
+  description: string;
+  diagnosisType: "primary" | "secondary" | "other";
+  severity: "mild" | "moderate" | "severe";
+  diagnosisDate: string;
+  diagnosedBy: string;
+  notes?: string;
 }
 
 export interface DicomStudy extends BaseEntity {
@@ -60,4 +61,10 @@ export interface DicomStudy extends BaseEntity {
   series?: DicomSeries[]; // Included for filter API
   report?: DiagnosesReport; // Included for filter API
   room?: Room; // Included for filter API
+}
+
+export default interface DicomStudyReferenceQuery
+  extends Partial<PaginatedQuery> {
+  id: string;
+  type: string;
 }
