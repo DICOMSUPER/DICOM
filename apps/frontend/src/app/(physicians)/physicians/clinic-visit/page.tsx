@@ -1,38 +1,44 @@
 "use client";
-import { QueueFiltersSection } from "@/components/physicians/queue/queue-filters";
-import { QueueTable } from "@/components/physicians/queue/queue-table";
-import { QueueStatus } from "@/enums/patient.enum";
+import ModalTransferPhysician from "@/components/physicians/patient-encounter/modal-transfer-physician";
+import { PatientEncounterFiltersSection } from "@/components/physicians/patient-encounter/patient-encounter-filters";
+import { PatientEncounterTable } from "@/components/physicians/patient-encounter/patient-encounter-table";
+import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
+import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "@/lib/formatTimeDate";
-
 import {
-  useGetQueueAssignmentsInRoomQuery,
-  useGetQueueStatsQuery,
-  useSkipQueueAssignmentMutation,
-  useUpdateQueueAssignmentMutation,
-} from "@/store/queueAssignmentApi";
-import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
+  useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
+  useGetEmployeeRoomAssignmentsQuery,
+} from "@/store/employeeRoomAssignmentApi";
+import {
+  useGetPatientEncountersInRoomQuery,
+  useGetStatsInDateRangeQuery,
+  useSkipEncounterMutation,
+  useUpdatePatientEncounterMutation,
+} from "@/store/patientEncounterApi";
+
 import { prepareApiFilters } from "@/utils/filter-utils";
 import { format } from "date-fns";
-import { CheckCircle, Clock, Hash, Users } from "lucide-react";
+import { CheckCircle, Clock, Users } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function QueuePage() {
-  const [filters, setFilters] = useState<QueueFilters>({
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<string>("");
+  const [filters, setFilters] = useState<PatientEncounterFilters>({
     encounterId: "",
     status: "all",
     priority: "all",
-    roomId: "",
+    roomCode: "",
     createdBy: "",
-    patientId: "",
+    patientName: "",
     assignmentDateFrom: "",
     assignmentDateTo: "",
-    queueNumber: undefined,
+    orderNumber: undefined,
   });
 
   const [pagination, setPagination] = useState<PaginationParams>({
@@ -50,31 +56,42 @@ export default function QueuePage() {
   });
 
   const apiFilters = prepareApiFilters(filters, pagination, {
-    dateFields: ["assignmentDateFrom", "assignmentDateTo"],
+    dateFields: ["encounterDateFrom", "encounterDateTo"],
   });
 
   const { data, isLoading, isFetching, error } =
-    useGetQueueAssignmentsInRoomQuery({ filters: apiFilters });
+    useGetPatientEncountersInRoomQuery({ filters: apiFilters });
 
-  const { data: RoomScheduleData } = useGetMySchedulesByDateRangeQuery({
-    startDate: format(new Date(), "yyyy-MM-dd"),
-    endDate: format(new Date(), "yyyy-MM-dd"),
-  });
+  const { data: currentRoom } =
+    useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
+  const roomId = currentRoom?.[0]?.roomSchedule?.room_id;
+  console.log("RoomScheduleData", currentRoom);
 
-  console.log("RoomScheduleData", RoomScheduleData);
-
-  const [updateQueueAssignment, { isLoading: isUpdating }] =
-    useUpdateQueueAssignmentMutation();
-  const [skipQueueAssignment, { isLoading: isSkipping }] =
-    useSkipQueueAssignmentMutation();
-
-  const { data: statsData, } = useGetQueueStatsQuery(
+  const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
-      date: format(new Date(), "yyyy-MM-dd") as string,
-      roomId: RoomScheduleData?.[0]?.room_id,
+      filter: { roomScheduleId: currentRoom?.[0]?.id },
     },
     {
-      skip: !RoomScheduleData?.[0]?.room_id,
+      skip: !currentRoom?.[0]?.id,
+    }
+  );
+  console.log("assignment", employeeAssignInRoom);
+  const anotherEmployeeAssignInRoom = employeeAssignInRoom?.filter(
+    (assignment) => assignment.employeeId !== currentRoom?.[0]?.employeeId
+  );
+  console.log("another assignment", anotherEmployeeAssignInRoom);
+
+  const [updatePatientEncounter, { isLoading: isUpdating }] =
+    useUpdatePatientEncounterMutation();
+
+  const { data: statsData } = useGetStatsInDateRangeQuery(
+    {
+      dateFrom: format(new Date(), "yyyy-MM-dd") as string,
+      dateTo: format(new Date(), "yyyy-MM-dd") as string,
+      roomId: roomId,
+    },
+    {
+      skip: !roomId,
     }
   );
 
@@ -101,84 +118,56 @@ export default function QueuePage() {
 
   const handleStartServing = async (id: string) => {
     try {
-      const queueItem = data?.data.find((item) => item.id === id);
-
-      if (!queueItem) {
+      const encounterItem = data?.data.find((item) => item.id === id);
+      if (!encounterItem) {
         toast.error("Queue item not found");
         return;
       }
-
       const inProgressQueue = data?.data.find(
-        (item) => item.status === QueueStatus.IN_PROGRESS
+        (item) => item.status === EncounterStatus.ARRIVED
       );
-
-      if (inProgressQueue && inProgressQueue.id !== id) {
-        toast.error(
-          `Please complete queue #${inProgressQueue.queueNumber} before starting a new one`
-        );
-        return;
-      }
-
-      // Update queue status to IN_PROGRESS
-      await updateQueueAssignment({
+      await updatePatientEncounter({
         id,
         data: {
-          status: QueueStatus.IN_PROGRESS,
+          status: EncounterStatus.ARRIVED,
+          assignedPhysicianId: currentRoom?.[0]?.employeeId,
         },
       }).unwrap();
-
-      toast.success(
-        `Started serving Queue #${queueItem.queueNumber} - ${queueItem.encounter?.patient?.firstName} ${queueItem.encounter?.patient?.lastName}`
-      );
-
-      // Optional: Navigate to patient details or encounter page
-      // router.push(`/physicians/clinic-visit/${id}`);
     } catch (error) {
       console.error("Failed to start serving:", error);
       toast.error("Failed to start serving. Please try again.");
     }
   };
-
   const handleComplete = async (id: string) => {
     try {
-      const queueItem = data?.data.find((item) => item.id === id);
+      const encounterItem = data?.data.find((item) => item.id === id);
 
-      if (!queueItem) {
+      if (!encounterItem) {
         toast.error("Queue item not found");
         return;
       }
 
-      await updateQueueAssignment({
+      await updatePatientEncounter({
         id,
         data: {
-          status: QueueStatus.COMPLETED,
+          status: EncounterStatus.FINISHED,
         },
       }).unwrap();
-
-      toast.success(`Completed Queue #${queueItem.queueNumber}`);
     } catch (error) {
       console.error("Failed to complete queue:", error);
       toast.error("Failed to complete queue. Please try again.");
     }
   };
 
-  const handleSkip = async (id: string) => {
-    try {
-      const queueItem = data?.data.find((item) => item.id === id);
-
-      if (!queueItem) {
-        toast.error("Queue item not found");
-        return;
-      }
-      await skipQueueAssignment(id).unwrap();
-      toast.success(`Skipped Queue #${queueItem.queueNumber}`);
-    } catch (error) {
-      console.error("Failed to complete queue:", error);
-      toast.error("Failed to complete queue. Please try again.");
+  const handleOpenTransferModal = (encounterId: string) => {
+    const encounter = data?.data.find((item) => item.id === encounterId);
+    if (encounter) {
+      setSelectedEncounterId(encounterId);
+      setTransferModalOpen(true);
     }
   };
 
-  const handleFiltersChange = (newFilters: QueueFilters) => {
+  const handleFiltersChange = (newFilters: PatientEncounterFilters) => {
     setFilters(newFilters);
     setPagination({ ...pagination, page: 1 });
   };
@@ -187,12 +176,8 @@ export default function QueuePage() {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-  const handleLimitChange = (newLimit: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      limit: newLimit,
-      page: 1,
-    }));
+  const handleTransferPhysician = (id: string) => {
+    router.push(`/physicians/clinic-visit/transfer-physician/${id}`);
   };
 
   const handleReset = () => {
@@ -200,12 +185,12 @@ export default function QueuePage() {
       encounterId: "",
       status: "all",
       priority: "all",
-      roomId: "",
+      roomCode: "",
       createdBy: "",
-      patientId: "",
+      patientName: "",
       assignmentDateFrom: "",
       assignmentDateTo: "",
-      queueNumber: undefined,
+      orderNumber: undefined,
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
@@ -232,47 +217,52 @@ export default function QueuePage() {
                 {/* Total Visited */}
                 <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
                   <Users size={16} />
-                  <span className="text-sm font-semibold">Visited: {statsData?.total || 0}</span>
+                  <span className="text-sm font-semibold">
+                    Visited: {statsData?.totalArrivedEncounters || 0}
+                  </span>
                 </div>
 
                 {/* Waiting */}
                 <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
                   <Clock size={16} />
-                  <span className="text-sm font-semibold">Waiting: {statsData?.waiting || 0}</span>
+                  <span className="text-sm font-semibold">
+                    Waiting: {statsData?.totalArrivedEncounters || 0}
+                  </span>
                 </div>
 
                 {/* Completed */}
                 <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
                   <CheckCircle size={16} />
-                  <span className="text-sm font-semibold">Completed: {statsData?.completed || 0}</span>
+                  <span className="text-sm font-semibold">
+                    Completed: {statsData?.totalCompletedEncounters || 0}
+                  </span>
                 </div>
-
-                {/* Current Token */}
-                {/* <div className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg shadow-sm hover:bg-purple-200 transition">
-                  <Hash size={16} />
-                  <span className="text-sm font-semibold">Next queue</span>
-                </div> */}
               </div>
             </div>
           </div>
         </div>
-
-        <QueueFiltersSection
+        <PatientEncounterFiltersSection
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onReset={handleReset}
         />
-
-        <QueueTable
-          queueItems={data?.data || []}
+        <PatientEncounterTable
+          employeeId={currentRoom?.[0]?.employeeId as string}
+          encounterItems={data?.data || []}
           onStartServing={handleStartServing}
           onComplete={handleComplete}
-          onSkip={handleSkip}
           onViewDetails={handleViewDetails}
           pagination={paginationMeta}
           onPageChange={handlePageChange}
           isUpdating={isUpdating}
           isLoading={isLoading || isFetching}
+          onTransferPhysician={handleTransferPhysician}
+        />
+        <ModalTransferPhysician
+          open={transferModalOpen}
+          onClose={() => setTransferModalOpen(false)}
+          encounterId={selectedEncounterId}
+          availablePhysicians={anotherEmployeeAssignInRoom}
         />
       </div>
     </div>

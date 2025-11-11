@@ -1,5 +1,6 @@
 import { Roles } from "@/enums/user.enum";
-import { BaseEntity } from "../base.interface";
+import { BaseEntity } from "../patient/patient-workflow.interface";
+
 
 
 

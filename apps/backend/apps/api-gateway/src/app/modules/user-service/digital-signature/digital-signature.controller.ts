@@ -5,19 +5,21 @@ import {
   Body,
   Param,
   Delete,
-  Request,
   HttpCode,
   HttpStatus,
   Logger,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { Public } from '@backend/shared-decorators';
-import { Role } from '@backend/shared-decorators';
+import { Public, Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 
-// DTOs
 class SetupSignatureDto {
   pin!: string;
   userId!: string;
@@ -36,6 +38,7 @@ class VerifySignatureDto {
 }
 
 @Controller('digital-signature')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DigitalSignatureController {
   private readonly logger = new Logger(DigitalSignatureController.name);
 
@@ -43,7 +46,6 @@ export class DigitalSignatureController {
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
   ) { }
 
-  /** Health check */
   @Public()
   @Get('health')
   async checkHealth() {
@@ -51,7 +53,6 @@ export class DigitalSignatureController {
     return { status: 'ok', service: 'digital-signature' };
   }
 
-  /** 🛠️ Setup chữ ký lần đầu cho user */
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
   @Post('setup')
   async setupSignature(@Body() dto: SetupSignatureDto) {
@@ -66,7 +67,6 @@ export class DigitalSignatureController {
     );
   }
 
-  /** 🖋️ User ký dữ liệu */
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
   @Post('sign')
   @HttpCode(HttpStatus.OK)
@@ -83,12 +83,12 @@ export class DigitalSignatureController {
 
     return {
       message: 'Data signed successfully',
+      signatureId: result.signatureId,
       signature: result.signature,
       publicKey: result.publicKey,
     };
   }
 
-  /** ✅ Xác minh chữ ký */
   @Public()
   @Post('verify')
   @HttpCode(HttpStatus.OK)
@@ -108,7 +108,6 @@ export class DigitalSignatureController {
     };
   }
 
-  /** 🔑 Lấy public key của user */
   @Get('public-key/:userId')
   async getPublicKey(@Param('userId') userId: string) {
     this.logger.log(`Getting public key for userId=${userId}`);
@@ -119,7 +118,17 @@ export class DigitalSignatureController {
     return { message: result.message, publicKey: result.publicKey };
   }
 
-  /** 🗑️ Xóa signature */
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    this.logger.log(`Getting digital signature by id=${id}`);
+    const record = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getById', { id }),
+    );
+    return record;
+  }
+
+
   @Delete(':userId')
   async remove(@Param('userId') userId: string) {
     this.logger.log(`Removing signature for userId=${userId}`);

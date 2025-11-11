@@ -5,25 +5,44 @@ import {
 } from '@backend/database';
 import {
   CreatePatientEncounterDto,
+  FilterPatientEncounterDto,
   PatientEncounter,
   PatientEncounterRepository,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
+import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+  Roles,
+} from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
+import { Between, In, Raw, Repository } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class PatientEncounterService {
   constructor(
     @Inject() private readonly encounterRepository: PatientEncounterRepository,
-    private readonly paginationService: PaginationService
+    private readonly paginationService: PaginationService,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
   ) {}
 
   create = async (
     createPatientEncounterDto: CreatePatientEncounterDto
   ): Promise<PatientEncounter> => {
-    return await this.encounterRepository.create(createPatientEncounterDto);
+    return await this.encounterRepository.create({
+      ...createPatientEncounterDto,
+      status: EncounterStatus.WAITING,
+    });
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {
@@ -86,4 +105,211 @@ export class PatientEncounterService {
       }
     );
   };
+  async getAllInRoom(
+    filterEncounter: FilterPatientEncounterDto,
+    userId: string
+  ): Promise<PaginatedResponseDto<PatientEncounter>> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      priority,
+      encounterDateFrom,
+      encounterDateTo,
+      patientName,
+      orderNumber,
+      roomId,
+    } = filterEncounter;
+
+    const whereConditions: any = {};
+
+    const user = await firstValueFrom(
+      this.userService.send('UserService.Users.findOne', { userId })
+    );
+
+    if (user.role !== Roles.PHYSICIAN && user.role !== Roles.SYSTEM_ADMIN) {
+      throw new NotFoundException(
+        `User with ID ${userId} is not authorized to view room assignments`
+      );
+    }
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    if (priority) {
+      whereConditions.priority = priority;
+    }
+
+    if (patientName) {
+      whereConditions.patient = {
+        // PostgreSQL
+        firstName: Raw(
+          (alias: string) =>
+            `(${alias} || ' ' || last_name) ILIKE :patientName OR 
+         (last_name || ' ' || ${alias}) ILIKE :patientName OR 
+         ${alias} ILIKE :patientName OR 
+         last_name ILIKE :patientName`,
+          { patientName: `%${patientName}%` }
+        ),
+      };
+    }
+
+    if (orderNumber !== undefined) {
+      whereConditions.orderNumber = orderNumber;
+    }
+    // let fromDate: Date;
+    // let toDate: Date;
+
+    // if (encounterDateFrom) {
+    //   fromDate = new Date(encounterDateFrom);
+    // } else {
+    //   fromDate = new Date();
+    //   fromDate.setHours(0, 0, 0, 0);
+    // }
+
+    // if (encounterDateTo) {
+    //   toDate = new Date(encounterDateTo);
+    //   toDate.setHours(23, 59, 59, 999);
+    // } else {
+    //   toDate = new Date();
+    //   toDate.setHours(23, 59, 59, 999);
+    // }
+
+    // whereConditions.assignmentDate = Between(fromDate, toDate);
+
+    if (roomId) {
+      const serviceRooms = await firstValueFrom(
+        this.userService.send('UserService.ServiceRooms.FindByRoom', {
+          roomId,
+        })
+      );
+
+      if (serviceRooms && serviceRooms.length > 0) {
+        const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
+        whereConditions.serviceRoomId = In(serviceRoomIds);
+      } else {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        };
+      }
+    }
+
+    // Date range
+    // let fromDate = encounterDateFrom ? new Date(encounterDateFrom) : new Date();
+    // fromDate.setHours(0, 0, 0, 0);
+
+    // let toDate = encounterDateTo ? new Date(encounterDateTo) : new Date();
+    // toDate.setHours(23, 59, 59, 999);
+
+    // whereConditions.encounterDate = Between(fromDate, toDate);
+
+    return this.paginationService.paginate(
+      PatientEncounter,
+      { page, limit },
+      {
+        where: whereConditions,
+        order: {
+          orderNumber: 'ASC',
+        },
+        relations: {
+          patient: true,
+        },
+      }
+    );
+  }
+  skipEncounterAssignment = async (
+    id: string
+  ): Promise<PatientEncounter | null> => {
+    const assignment = await this.findOne(id);
+
+    if (!assignment) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Queue Assignment not found',
+        PATIENT_SERVICE
+      );
+    }
+
+    if (assignment.status !== EncounterStatus.WAITING) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Only waiting assignments can be skipped',
+        PATIENT_SERVICE
+      );
+    }
+
+    return await this.encounterRepository.update(id, {
+      // skippedAt: new Date(),
+      updatedAt: new Date(),
+    });
+  };
+  getStatsInDateRange = async (
+    dateFrom: string,
+    dateTo: string,
+    roomId?: string
+  ): Promise<any> => {
+    if (roomId) {
+      const serviceRooms = await firstValueFrom(
+        this.userService.send('UserService.ServiceRooms.FindByRoom', {
+          roomId,
+        })
+      );
+      if (serviceRooms && serviceRooms.length > 0) {
+        const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
+        return await this.encounterRepository.getStatsInDateRange(
+          dateFrom,
+          dateTo,
+          serviceRoomIds
+        );
+      }
+    }
+
+    return await this.encounterRepository.getStatsInDateRange(dateFrom, dateTo);
+  };
+
+   async autoMarkLeavedEncounters(): Promise<{
+    updatedCount: number;
+    encounters: PatientEncounter[];
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const waitingEncounters = await this.encounterRepository.findAll({
+      where: {
+        encounterDate: Between(today, endOfDay),
+        status: In([EncounterStatus.WAITING]),
+        isDeleted: false,
+      },
+      relations: ['patient'],
+    });
+
+    if (waitingEncounters.length === 0) {
+      return { updatedCount: 0, encounters: [] };
+    }
+
+    // Update all to UNARRIVED
+    const updatePromises = waitingEncounters.map((encounter) =>
+      this.encounterRepository.update(encounter.id, {
+        status: EncounterStatus.LEAVED,
+        updatedAt: new Date(),
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    return {
+      updatedCount: waitingEncounters.length,
+      encounters: waitingEncounters,
+    };
+  }
+
 }
