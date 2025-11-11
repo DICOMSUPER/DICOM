@@ -9,7 +9,7 @@ export const employeeRoomAssignmentApi = createApi({
   tagTypes: ["EmployeeRoomAssignment", "employeeRoom"],
   endpoints: (builder) => ({
     getEmployeeRoomAssignmentsInCurrentSession: builder.query<
-      EmployeeRoomAssignment[],
+      ApiResponse<EmployeeRoomAssignment[]>,
       void
     >({
       query: () => ({
@@ -19,7 +19,7 @@ export const employeeRoomAssignmentApi = createApi({
       providesTags: ["EmployeeRoomAssignment"],
     }),
     getEmployeeRoomAssignments: builder.query<
-      EmployeeRoomAssignment[],
+      ApiResponse<EmployeeRoomAssignment[]>,
       {filter: FilterEmployeeRoomAssignment}
     >({
       query: ({ filter }) => ({

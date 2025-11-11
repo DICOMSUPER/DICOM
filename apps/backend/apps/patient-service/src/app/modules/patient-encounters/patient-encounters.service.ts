@@ -11,9 +11,8 @@ import {
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
 import {
-  EncounterPriorityLevel,
   EncounterStatus,
-  Roles,
+  Roles
 } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import {
@@ -24,7 +23,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
-import { Between, In, Raw, Repository } from 'typeorm';
+import { Between, In, Raw } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
@@ -157,25 +156,26 @@ export class PatientEncounterService {
     if (orderNumber !== undefined) {
       whereConditions.orderNumber = orderNumber;
     }
-    // let fromDate: Date;
-    // let toDate: Date;
+    let fromDate: Date;
+    let toDate: Date;
 
-    // if (encounterDateFrom) {
-    //   fromDate = new Date(encounterDateFrom);
-    // } else {
-    //   fromDate = new Date();
-    //   fromDate.setHours(0, 0, 0, 0);
-    // }
+    if (encounterDateFrom) {
+      fromDate = new Date(encounterDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+    } else {
+      fromDate = new Date();
+      fromDate.setHours(0, 0, 0, 0);
+    }
 
-    // if (encounterDateTo) {
-    //   toDate = new Date(encounterDateTo);
-    //   toDate.setHours(23, 59, 59, 999);
-    // } else {
-    //   toDate = new Date();
-    //   toDate.setHours(23, 59, 59, 999);
-    // }
+    if (encounterDateTo) {
+      toDate = new Date(encounterDateTo);
+      toDate.setHours(23, 59, 59, 999);
+    } else {
+      toDate = new Date();
+      toDate.setHours(23, 59, 59, 999);
+    }
 
-    // whereConditions.assignmentDate = Between(fromDate, toDate);
+    whereConditions.encounterDate = Between(fromDate, toDate);
 
     if (roomId) {
       const serviceRooms = await firstValueFrom(
@@ -273,7 +273,7 @@ export class PatientEncounterService {
     return await this.encounterRepository.getStatsInDateRange(dateFrom, dateTo);
   };
 
-   async autoMarkLeavedEncounters(): Promise<{
+  async autoMarkLeavedEncounters(): Promise<{
     updatedCount: number;
     encounters: PatientEncounter[];
   }> {
@@ -311,5 +311,4 @@ export class PatientEncounterService {
       encounters: waitingEncounters,
     };
   }
-
 }

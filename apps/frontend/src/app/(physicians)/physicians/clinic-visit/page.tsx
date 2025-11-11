@@ -6,6 +6,8 @@ import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { RoomSchedule } from "@/interfaces/user/room-schedule.interface";
 import { formatDate } from "@/lib/formatTimeDate";
 import {
   useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
@@ -59,25 +61,36 @@ export default function QueuePage() {
     dateFields: ["encounterDateFrom", "encounterDateTo"],
   });
 
-  const { data, isLoading, isFetching, error } =
-    useGetPatientEncountersInRoomQuery({ filters: apiFilters });
-
-  const { data: currentRoom } =
+  const { data: currentRoom, isLoading: isCurrentRoomLoading } =
     useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
-  const roomId = currentRoom?.[0]?.roomSchedule?.room_id;
-  console.log("RoomScheduleData", currentRoom);
+  const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
+  console.log("RoomScheduleData", currentRoom?.data as EmployeeRoomAssignment[]);
+  console.log("RoomId", roomId);
+
+  const { data, isLoading, isFetching, error } =
+    useGetPatientEncountersInRoomQuery(
+      {
+        filters: {
+          ...apiFilters,
+          roomId: roomId,
+        },
+      },
+      {
+        skip: !roomId,
+      }
+    );
 
   const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
-      filter: { roomScheduleId: currentRoom?.[0]?.id },
+      filter: { roomScheduleId: currentRoom?.data?.[0]?.id },
     },
     {
-      skip: !currentRoom?.[0]?.id,
+      skip: !currentRoom?.data?.[0]?.id,
     }
   );
   console.log("assignment", employeeAssignInRoom);
-  const anotherEmployeeAssignInRoom = employeeAssignInRoom?.filter(
-    (assignment) => assignment.employeeId !== currentRoom?.[0]?.employeeId
+  const anotherEmployeeAssignInRoom = employeeAssignInRoom?.data.filter(
+    (assignment) => assignment.employeeId !== currentRoom?.data?.[0]?.employeeId
   );
   console.log("another assignment", anotherEmployeeAssignInRoom);
 
@@ -130,7 +143,7 @@ export default function QueuePage() {
         id,
         data: {
           status: EncounterStatus.ARRIVED,
-          assignedPhysicianId: currentRoom?.[0]?.employeeId,
+          assignedPhysicianId: currentRoom?.data?.[0]?.employeeId,
         },
       }).unwrap();
     } catch (error) {
@@ -247,7 +260,7 @@ export default function QueuePage() {
           onReset={handleReset}
         />
         <PatientEncounterTable
-          employeeId={currentRoom?.[0]?.employeeId as string}
+          employeeId={currentRoom?.data?.[0]?.employeeId as string}
           encounterItems={data?.data || []}
           onStartServing={handleStartServing}
           onComplete={handleComplete}
@@ -255,7 +268,8 @@ export default function QueuePage() {
           pagination={paginationMeta}
           onPageChange={handlePageChange}
           isUpdating={isUpdating}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading || isCurrentRoomLoading}
+          isFetching={isFetching}
           onTransferPhysician={handleTransferPhysician}
         />
         <ModalTransferPhysician

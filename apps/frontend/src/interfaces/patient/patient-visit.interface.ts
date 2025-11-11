@@ -5,7 +5,7 @@ export interface PatientEncounterFilters extends QueryParams {
   encounterId?: string;
   status?: EncounterStatus | "all";
   priority?: EncounterPriorityLevel | "all";
-  roomCode?: string;
+  roomId?: string;
   createdBy?: string;
   patientCode?: string;
   patientName?: string;
