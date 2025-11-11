@@ -17,14 +17,11 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
   async findByEmployeeInCurrentSession(
     employeeId: string
   ): Promise<EmployeeRoomAssignment[]> {
-    const currentDate = new Date();
+    // const currentDate = new Date();
     console.log('employee id', employeeId);
 
-    // Format date: "2025-11-19"
-    const currentDateString = currentDate.toISOString().split('T')[0];
-
-    // Format time: "21:06:12"
-    const currentTimeString = currentDate.toTimeString().split(' ')[0];
+    const currentDateString = moment().format('YYYY-MM-DD');
+    const currentTimeString = moment().format('HH:mm:ss');
 
     console.log('Current date:', currentDateString);
     console.log('Current time:', currentTimeString);
@@ -45,7 +42,7 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
       })
       .getMany();
   }
-  
+
   async findCurrentEmployeeRoomAssignment(
     userId: string
   ): Promise<EmployeeRoomAssignment | null> {

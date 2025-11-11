@@ -133,12 +133,23 @@ export default function QueuePage() {
     try {
       const encounterItem = data?.data.find((item) => item.id === id);
       if (!encounterItem) {
-        toast.error("Queue item not found");
+        toast.error("Encounter item not found");
         return;
       }
-      const inProgressQueue = data?.data.find(
-        (item) => item.status === EncounterStatus.ARRIVED
+    const arrivedEncounter = data?.data.find(
+      (item) => 
+        item.status === EncounterStatus.ARRIVED && 
+        item.assignedPhysicianId === currentRoom?.data?.[0]?.employeeId &&
+          item.id !== id 
       );
+
+    if (arrivedEncounter) {
+      toast.warning(
+        `You are currently serving another patient (${arrivedEncounter.patient?.firstName} ${arrivedEncounter.patient?.lastName}). Please complete or transfer them first.`,
+        { duration: 5000 }
+      );
+      return;
+    }
       await updatePatientEncounter({
         id,
         data: {
@@ -146,6 +157,7 @@ export default function QueuePage() {
           assignedPhysicianId: currentRoom?.data?.[0]?.employeeId,
         },
       }).unwrap();
+      toast.success("Started serving patient");
     } catch (error) {
       console.error("Failed to start serving:", error);
       toast.error("Failed to start serving. Please try again.");

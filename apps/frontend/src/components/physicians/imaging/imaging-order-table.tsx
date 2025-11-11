@@ -40,6 +40,12 @@ import Pagination, {
 } from "@/components/common/PaginationV1";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   IImagingOrderForm,
   OrderFormStatus,
 } from "@/interfaces/image-dicom/imaging-order-form.interface";
@@ -148,22 +154,48 @@ export function ImagingOrderFormTable({
       },
     }),
 
-    columnHelper.accessor("notes", {
-      header: () => (
-        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Notes
-        </div>
-      ),
-      cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className="bg-slate-100 text-slate-700 border-slate-200 font-medium"
-        >
-          {row.original.notes?.trim() || "—"}
-        </Badge>
-      ),
-    }),
+columnHelper.accessor("notes", {
+  header: () => (
+    <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+      Notes
+    </div>
+  ),
+  cell: ({ row }) => {
+    const notes = row.original.notes?.trim() || "—";
+    const maxLength = 50;
+    const truncated =
+      notes.length > maxLength
+        ? `${notes.substring(0, maxLength)}...`
+        : notes;
 
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant="outline"
+              className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
+            >
+              {truncated}
+            </Badge>
+          </TooltipTrigger>
+          {notes.length > maxLength && (
+            <TooltipContent 
+              side="top"
+              align="start"
+              className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
+              sideOffset={5}
+            >
+              <p className="text-sm whitespace-pre-wrap break-words">
+                {notes}
+              </p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
+    );
+  },
+}),
     columnHelper.display({
       id: "orderFormStatus",
       header: () => (
