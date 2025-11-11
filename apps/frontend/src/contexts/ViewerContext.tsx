@@ -149,7 +149,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const setViewportId = useCallback((viewport: number, viewportId: string) => {
     setState(prev => {
       const newViewportIds = new Map(prev.viewportIds);
-      newViewportIds.set(viewport, viewportId);
+
+      if (!viewportId) {
+        newViewportIds.delete(viewport);
+      } else {
+        newViewportIds.set(viewport, viewportId);
+      }
+
       return { ...prev, viewportIds: newViewportIds };
     });
   }, []);

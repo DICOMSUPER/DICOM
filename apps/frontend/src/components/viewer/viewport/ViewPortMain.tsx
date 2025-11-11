@@ -19,19 +19,13 @@ import {
   segmentation,
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
-import { Events } from "@cornerstonejs/tools/enums";
-import { useCreateAnnotationMutation } from "@/store/annotationApi";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
 import { useViewer } from "@/contexts/ViewerContext";
 import { useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import { extractApiData } from "@/utils/api";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
-import type {
-  Annotation,
-  AnnotationEventDetail,
-} from "@/types/Annotation";
+import type { Annotation } from "@/types/Annotation";
 import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
 
 interface ViewPortMainProps {
@@ -54,7 +48,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const running = useRef(false);
   const isFirstLoad = useRef(true);
   const mounted = useRef(true);
-  const [activeTool, setActiveTool] = useState("WindowLevel");
   const [currentFrame, setCurrentFrame] = useState(0);
   const currentFrameRef = useRef(0);
   const [viewport, setViewport] = useState<Types.IStackViewport | null>(null);
@@ -68,10 +61,8 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
   const toolManagerRef = useRef<any>(null);
   const [currentInstances, setCurrentInstances] = useState<any[]>([]);
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
-  const [createAnnotation] = useCreateAnnotationMutation();
   const viewportListenersRef = useRef<{
     imageRendered?: (event: Event) => void;
-    annotationCompleted?: (event: CustomEvent<AnnotationEventDetail>) => void;
     segmentationModified?: (event: Event) => void;
   }>({});
   const imageIdInstanceMapRef = useRef<Record<string, string>>({});
@@ -664,100 +655,6 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
           return null;
         };
 
-        // Helper function to map Cornerstone annotation to DTO
-        const mapAnnotationToDto = async (
-          annotation: Annotation
-        ): Promise<any> => {
-          const user = getUser();
-          if (!user?.id) {
-            throw new Error("User not authenticated. Cannot create annotation.");
-          }
-
-          // Get current imageId from viewport
-          const currentImageId = readyViewport.getCurrentImageId();
-          if (!currentImageId) {
-            throw new Error("No image loaded in viewport. Cannot create annotation.");
-          }
-
-          // Get instance ID
-          let instanceId = getInstanceIdFromImageId(currentImageId);
-        if (!instanceId) {
-          const currentIndex = readyViewport.getCurrentImageIdIndex();
-          const instances = seriesInstancesCache[selectedSeries.id] || currentInstances;
-          if (currentIndex >= 0 && instances[currentIndex]) {
-            instanceId = instances[currentIndex].id;
-          } else {
-            throw new Error("Could not determine instance ID for annotation.");
-          }
-          }
-
-          // Extract tool name from metadata
-          const toolName = annotation.metadata?.toolName || "Unknown";
-          
-          // Extract measurement data from cachedStats
-          let measurementValue: number | undefined;
-          let measurementUnit: string | undefined;
-          
-          if (annotation.data?.cachedStats && currentImageId) {
-            const stats = annotation.data.cachedStats[`imageId:${currentImageId}`];
-            if (stats) {
-              measurementValue = stats.length || stats.area || stats.volume;
-              measurementUnit = stats.unit;
-            }
-          }
-
-          // Extract coordinates from handles
-          const coordinates = annotation.data?.handles?.points 
-            ? { points: annotation.data.handles.points }
-            : undefined;
-
-          // Extract text content
-          const textContent = annotation.data?.label || undefined;
-
-          return {
-            instanceId,
-            annotationType: toolName, // This should match AnnotationType enum values
-            annotationData: annotation, // Store full Cornerstone annotation
-            coordinates,
-            measurementValue,
-            measurementUnit,
-            textContent,
-            colorCode: annotation.metadata?.segmentColor || undefined,
-            annotationStatus: AnnotationStatus.DRAFT,
-            annotatorId: user.id,
-            annotationDate: new Date(),
-            notes: undefined,
-          };
-        };
-
-        // Annotation creation handler
-        const handleAnnotationCompleted = async (
-          evt: CustomEvent<AnnotationEventDetail>
-        ) => {
-          try {
-            const { annotation } = evt.detail;
-            
-            if (!annotation) {
-              return;
-            }
-            console.log("📝 Annotation completed event received");
-            
-            // Map annotation to DTO format
-            const annotationDto = await mapAnnotationToDto(annotation);
-            
-            // Save to backend
-            const response = await createAnnotation(annotationDto).unwrap();
-            
-            if (!response.success) {
-              // Optionally show user-friendly error message
-              // You could use a toast notification here
-            }
-          } catch (error: any) {
-            // Optionally show user-friendly error message
-            // You could use a toast notification here
-          }
-        };
-
         const handleSegmentationModified = (evt: Event) => {
           const customEvent = evt as CustomEvent;
           const { segmentationId, modifiedSlicesToUse } = customEvent.detail || {};
@@ -766,18 +663,12 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
         };
 
         eventTarget.addEventListener(
-          Events.ANNOTATION_COMPLETED,
-          handleAnnotationCompleted
-        );
-
-        eventTarget.addEventListener(
           ToolEnums.Events.SEGMENTATION_DATA_MODIFIED,
           handleSegmentationModified
         );
 
         viewportListenersRef.current = {
           imageRendered: updateFrameIndex,
-          annotationCompleted: handleAnnotationCompleted,
           segmentationModified: handleSegmentationModified,
         };
 
@@ -806,14 +697,10 @@ const ViewPortMain = ({ selectedSeries, selectedStudy, selectedTool = "windowLev
       }
 
       try {
-        const { imageRendered, annotationCompleted, segmentationModified } = viewportListenersRef.current || {};
+        const { imageRendered, segmentationModified } = viewportListenersRef.current || {};
 
         if (imageRendered && elementRef.current) {
           elementRef.current.removeEventListener(Enums.Events.IMAGE_RENDERED, imageRendered);
-        }
-
-        if (annotationCompleted) {
-          eventTarget.removeEventListener(Events.ANNOTATION_COMPLETED, annotationCompleted);
         }
 
         if (segmentationModified) {

@@ -49,7 +49,26 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
-            ssl: { rejectUnauthorized: false }
+            ssl: { rejectUnauthorized: false },
+            // Connection pool configuration to prevent exhaustion
+            extra: {
+              max: configService.get<number>(
+                `${prefixUpper}_DB_MAX_CONNECTIONS`,
+                10
+              ), // Maximum number of connections in the pool
+              min: configService.get<number>(
+                `${prefixUpper}_DB_MIN_CONNECTIONS`,
+                5
+              ), // Minimum number of connections in the pool
+              idleTimeoutMillis: configService.get<number>(
+                `${prefixUpper}_DB_IDLE_TIMEOUT`,
+                30000
+              ), // Close idle connections after 30 seconds
+              connectionTimeoutMillis: configService.get<number>(
+                `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
+                2000
+              ), // Wait 2 seconds for a connection from the pool
+            },
           }),
         }),
       ],
