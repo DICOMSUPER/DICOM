@@ -93,7 +93,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
 
     //  Search filter, only support main entity for now
     if (search && searchField) {
-      query.andWhere(`entity.${searchField} LIKE :search`, {
+      query.andWhere(`${searchField} LIKE :search`, {
         search: `%${search}%`,
       });
     }

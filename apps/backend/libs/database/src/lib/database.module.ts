@@ -49,12 +49,7 @@ export class DatabaseModule {
               false
             ),
             autoLoadEntities: true,
-            ssl: { rejectUnauthorized: false },
-             extra: {
-    max: 20,
-    min: 2,
-    idleTimeoutMillis: 30000,
-  },
+            ssl: { rejectUnauthorized: false }
           }),
         }),
       ],
@@ -62,7 +57,10 @@ export class DatabaseModule {
         {
           provide: `${prefixUpper}_DB_CONNECT_LOGGER`,
           inject: [DataSource, ConfigService],
-          useFactory: async (dataSource: DataSource, configService: ConfigService) => {
+          useFactory: async (
+            dataSource: DataSource,
+            configService: ConfigService
+          ) => {
             const logger = new Logger(`${prefixUpper} Database`);
             const shouldLog = configService.get<boolean>(
               `${prefixUpper}_DB_LOG_ON_CONNECT`,
@@ -72,15 +70,30 @@ export class DatabaseModule {
               return true;
             }
             try {
-              const host = configService.get<string>(`${prefixUpper}_DB_HOST`, 'localhost');
-              const port = configService.get<number>(`${prefixUpper}_DB_PORT`, 5432);
+              const host = configService.get<string>(
+                `${prefixUpper}_DB_HOST`,
+                'localhost'
+              );
+              const port = configService.get<number>(
+                `${prefixUpper}_DB_PORT`,
+                5432
+              );
               const database = configService.get<string>(
                 `${prefixUpper}_DB_NAME`,
                 defaultDbName || `${prefix.toLowerCase()}_service`
               );
-              const username = configService.get<string>(`${prefixUpper}_DB_USERNAME`, 'postgres');
-              const loggingEnabled = configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false);
-              const syncEnabled = configService.get<boolean>(`${prefixUpper}_DB_SYNC`, true);
+              const username = configService.get<string>(
+                `${prefixUpper}_DB_USERNAME`,
+                'postgres'
+              );
+              const loggingEnabled = configService.get<boolean>(
+                `${prefixUpper}_DB_LOGGING`,
+                false
+              );
+              const syncEnabled = configService.get<boolean>(
+                `${prefixUpper}_DB_SYNC`,
+                true
+              );
               const sslRejectUnauthorized = false; // matches ssl: { rejectUnauthorized: false }
 
               const start = Date.now();

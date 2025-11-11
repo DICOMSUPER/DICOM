@@ -44,7 +44,7 @@ export class DigitalSignatureController {
 
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
-  ) {}
+  ) { }
 
   @Public()
   @Get('health')
@@ -83,6 +83,7 @@ export class DigitalSignatureController {
 
     return {
       message: 'Data signed successfully',
+      signatureId: result.signatureId,
       signature: result.signature,
       publicKey: result.publicKey,
     };
@@ -116,6 +117,17 @@ export class DigitalSignatureController {
 
     return { message: result.message, publicKey: result.publicKey };
   }
+
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    this.logger.log(`Getting digital signature by id=${id}`);
+    const record = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getById', { id }),
+    );
+    return record;
+  }
+
 
   @Delete(':userId')
   async remove(@Param('userId') userId: string) {

@@ -7,9 +7,6 @@ export class AuthController {
   private readonly logger = new Logger('AuthController');
 
   constructor(
-    @Inject('AuthService') private readonly authClient: ClientProxy,
+    @Inject('AuthService') private readonly authClient: ClientProxy
   ) {}
-
-  
-  
 }

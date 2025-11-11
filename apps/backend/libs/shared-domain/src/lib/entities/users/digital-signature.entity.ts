@@ -27,10 +27,10 @@ export class DigitalSignature {
   @Column({ type: 'text', nullable: true })
   publicKey?: string;
 
-  @Column({ type: 'text', nullable: true, select: false })
+  @Column({ type: 'text', nullable: true })
   privateKeyEncrypted?: string;
 
-  @Column({ nullable: true, select: false })
+  @Column({ nullable: false })
   pinHash?: string;
 
   @CreateDateColumn()

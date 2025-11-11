@@ -7,7 +7,7 @@ import { handleErrorFromMicroservices } from '@backend/shared-utils';
 export class DigitalSignatureController {
   private readonly logger = new Logger(DigitalSignatureController.name);
 
-  constructor(private readonly digitalSignatureService: DigitalSignatureService) {}
+  constructor(private readonly digitalSignatureService: DigitalSignatureService) { }
 
   @MessagePattern('digital-signature.check-health')
   async checkHealth() {
@@ -45,6 +45,7 @@ export class DigitalSignatureController {
       );
       return {
         message: 'Data signed successfully',
+        signatureId: result.signatureId,
         signature: result.signature,
         publicKey: result.publicKey,
       };
@@ -79,6 +80,25 @@ export class DigitalSignatureController {
         error,
         'Failed to verify signature',
         'DigitalSignatureController.verifySignature'
+      );
+    }
+  }
+
+  @MessagePattern('digital-signature.getById')
+  async getById(@Payload() payload: { id: string }) {
+    try {
+      this.logger.log(`Getting digital signature by id=${payload.id}`);
+      const record = await this.digitalSignatureService.getById(payload.id);
+      return {
+        message: 'Digital signature retrieved successfully',
+        signature: record,
+      };
+    } catch (error) {
+      this.logger.error(`Get by ID error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get digital signature by ID',
+        'DigitalSignatureController.getById'
       );
     }
   }
