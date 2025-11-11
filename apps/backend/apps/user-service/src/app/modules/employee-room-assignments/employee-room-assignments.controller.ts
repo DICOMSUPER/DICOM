@@ -4,6 +4,7 @@ import { EmployeeRoomAssignmentsService } from './employee-room-assignments.serv
 import {
   CreateEmployeeRoomAssignmentDto,
   EmployeeRoomAssignment,
+  FilterEmployeeRoomAssignmentDto,
 } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
@@ -26,13 +27,34 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @MessagePattern('UserService.EmployeeRoomAssignments.FindAll')
-  async findAll(): Promise<EmployeeRoomAssignment[]> {
+  async findAll(
+    data: { filter?: FilterEmployeeRoomAssignmentDto }
+  ): Promise<EmployeeRoomAssignment[]> {
     try {
-      return await this.employeeRoomAssignmentsService.findAll();
+      return await this.employeeRoomAssignmentsService.findAll(data.filter);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find all employee room assignments',
+        'USER_SERVICE'
+      );
+    }
+  }
+
+  @MessagePattern(
+    'UserService.EmployeeRoomAssignments.FindByEmployeeInCurrentSession'
+  )
+  async findByEmployeeInCurrentSession(
+    @Payload() employeeId: string
+  ): Promise<EmployeeRoomAssignment[]> {
+    try {
+      return await this.employeeRoomAssignmentsService.findByEmployeeInCurrentSession(
+        employeeId
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find employee room assignments in current session',
         'USER_SERVICE'
       );
     }
@@ -66,11 +88,6 @@ export class EmployeeRoomAssignmentsController {
   async findOne(@Payload() id: string) {
     return await this.employeeRoomAssignmentsService.findOne(id);
   }
-
-  // @MessagePattern('UserService.EmployeeRoomAssignments.FindByEmployee')
-  // async findByEmployee(@Payload() employeeId: string) {
-  //   return await this.employeeRoomAssignmentsService.findByEmployee(employeeId);
-  // }
 
   @MessagePattern('UserService.EmployeeRoomAssignments.Update')
   async update(

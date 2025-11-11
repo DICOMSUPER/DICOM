@@ -9,39 +9,39 @@ import {
 } from "@/components/ui/select";
 import { Search, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
+import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
 import useDebounce from "@/hooks/useDebounce";
-import { QueueStatus } from "@/enums/patient.enum";
+import { EncounterStatus } from "@/enums/patient-workflow.enum";
 
-interface QueueFiltersSectionProps {
-  filters: QueueFilters;
-  onFiltersChange: (filters: QueueFilters) => void;
+interface PatientEncounterFiltersSectionProps {
+  filters: PatientEncounterFilters;
+  onFiltersChange: (filters: PatientEncounterFilters) => void;
   onReset: () => void;
 }
 
-export function QueueFiltersSection({
+export function PatientEncounterFiltersSection({
   filters,
   onFiltersChange,
   onReset,
-}: QueueFiltersSectionProps) {
+}: PatientEncounterFiltersSectionProps) {
   const [searchInputs, setSearchInputs] = useState({
     encounterId: filters.encounterId || "",
-    patientId: filters.patientId || "",
+    patientName: filters.patientName || "",
     createdBy: filters.createdBy || "",
   });
 
   const debouncedEncounterId = useDebounce(searchInputs.encounterId, 500);
-  const debouncedPatientId = useDebounce(searchInputs.patientId, 500);
+  const debouncedPatientName = useDebounce(searchInputs.patientName, 500);
   const debouncedCreatedBy = useDebounce(searchInputs.createdBy, 500);
 
   useEffect(() => {
     onFiltersChange({
       ...filters,
       encounterId: debouncedEncounterId || "",
-      patientId: debouncedPatientId || "",
+      patientName: debouncedPatientName || "",
       createdBy: debouncedCreatedBy || "",
     });
-  }, [debouncedEncounterId, debouncedPatientId, debouncedCreatedBy]);
+  }, [debouncedEncounterId, debouncedPatientName, debouncedCreatedBy]);
 
   const handleInputChange = (
     field: keyof typeof searchInputs,
@@ -53,7 +53,7 @@ export function QueueFiltersSection({
     }));
   };
 
-  const handleSelectChange = (key: keyof QueueFilters, value: string) => {
+  const handleSelectChange = (key: keyof PatientEncounterFilters, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value === "all" ? "" : value,
@@ -64,14 +64,14 @@ export function QueueFiltersSection({
     const num = value === "" ? undefined : parseInt(value);
     onFiltersChange({
       ...filters,
-      queueNumber: num,
+      orderNumber: num,
     });
   };
 
   const handleReset = () => {
     setSearchInputs({
       encounterId: "",
-      patientId: "",
+      patientName: "",
       createdBy: "",
     });
     onReset();
@@ -85,8 +85,8 @@ export function QueueFiltersSection({
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
       {/* Row 1: Search Inputs, Status, Priority, Queue Number */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-        <div className="relative">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        {/* <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search Encounter ID"
@@ -95,15 +95,15 @@ export function QueueFiltersSection({
             onChange={(e) => handleInputChange("encounterId", e.target.value)}
             className="pl-10"
           />
-        </div>
+        </div> */}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Search Patient ID"
-            name="patientId"
-            value={searchInputs.patientId}
-            onChange={(e) => handleInputChange("patientId", e.target.value)}
+            placeholder="Search Patient Name"
+            name="patientName"
+            value={searchInputs.patientName}
+            onChange={(e) => handleInputChange("patientName", e.target.value)}
             className="pl-10"
           />
         </div>
@@ -118,9 +118,9 @@ export function QueueFiltersSection({
           <SelectContent
           >
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value={QueueStatus.WAITING}>Waiting</SelectItem>
-            <SelectItem value={QueueStatus.IN_PROGRESS}>In Progress</SelectItem>
-            <SelectItem value={QueueStatus.COMPLETED}>Completed</SelectItem>
+            <SelectItem value={EncounterStatus.WAITING}>Waiting</SelectItem>
+            <SelectItem value={EncounterStatus.ARRIVED}>Arrived</SelectItem>
+            <SelectItem value={EncounterStatus.FINISHED}>Completed</SelectItem>
           </SelectContent>
         </Select>
 
@@ -141,8 +141,8 @@ export function QueueFiltersSection({
 
         <Input
           type="number"
-          placeholder="Queue Number"
-          value={filters.queueNumber || ""}
+          placeholder="Order Number"
+          value={filters.orderNumber || ""}
           onChange={(e) => handleNumberChange(e.target.value)}
           min="0"
         />

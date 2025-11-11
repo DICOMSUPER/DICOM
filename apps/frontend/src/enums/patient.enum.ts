@@ -1,15 +1,11 @@
-export enum QueueStatus {
-  WAITING = "waiting",
-  IN_PROGRESS = "in_progress",
-  COMPLETED = "completed",
-  EXPIRED = "expired",
-}
 
-export enum QueuePriorityLevel {
-  ROUTINE = "Routine",
-  URGENT = "Urgent",
-  STAT = "Stat",
-}
+
+// convert queue to patient encounter
+// export enum QueuePriorityLevel {
+//   ROUTINE = "Routine",
+//   URGENT = "Urgent",
+//   STAT = "Stat",
+// }
 export enum VisitType {
   OUTPATIENT = "outpatient",
   INPATIENT = "inpatient",

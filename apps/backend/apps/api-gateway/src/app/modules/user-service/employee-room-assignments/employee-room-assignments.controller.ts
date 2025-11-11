@@ -10,6 +10,7 @@ import {
   Delete,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -29,6 +30,7 @@ import {
 import { Roles } from '@backend/shared-enums';
 import { Public, Role } from '@backend/shared-decorators';
 import { CreateEmployeeRoomAssignmentDto, FilterEmployeeRoomAssignmentDto, UpdateEmployeeRoomAssignmentDto } from '@backend/shared-domain';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 
 @ApiTags('Employee Room Assignments')
@@ -71,11 +73,18 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @Get()
-  async getEmployeeRoomAssignments() {
+  @Public()
+  async getEmployeeRoomAssignments(
+    @Query() filter?: FilterEmployeeRoomAssignmentDto
+  ) {
     return await firstValueFrom(
-      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindAll', {})
+      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindAll', {
+        filter,
+      })
     );
   }
+
+
 
   @Get('paginated')
   async findMany(
@@ -101,28 +110,30 @@ export class EmployeeRoomAssignmentsController {
     );
   }
 
-  @Get('employee/:employeeId')
-  @Role(Roles.SYSTEM_ADMIN, Roles.PHYSICIAN, Roles.RECEPTION_STAFF)
+  @Get('current-session')
+  @Role(Roles.PHYSICIAN, Roles.RECEPTION_STAFF,Roles.IMAGING_TECHNICIAN, Roles.RADIOLOGIST)
   @ApiOperation({ summary: 'Get room assignments by employee ID' })
   @ApiParam({ name: 'employeeId', description: 'Employee ID' })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách gán phòng theo nhân viên thành công',
   })
-  async findByEmployee(@Param('employeeId') employeeId: string) {
+  async findByEmployeeInCurrentSession(@Req()req: IAuthenticatedRequest) {
     try {
+      const employeeId = req.userInfo.userId;
+      console.log("employee apigate way",employeeId);
+      
       this.logger.log(`📋 Fetching room assignments for employee: ${employeeId}`);
       const result = await firstValueFrom(
         this.userServiceClient.send(
-          'UserService.EmployeeRoomAssignments.FindByEmployee',
+          'UserService.EmployeeRoomAssignments.FindByEmployeeInCurrentSession',
           employeeId
         )
       );
-
       return result
     } catch (error) {
       this.logger.error(
-        `❌ Failed to fetch room assignments for employee: ${employeeId}`,
+        `❌ Failed to fetch room assignments for employee: ${req.userInfo.userId}`,
         error
       );
       throw handleError(error);

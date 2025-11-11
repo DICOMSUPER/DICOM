@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PatientEncounterService } from './patient-encounters.service';
 import {
   CreatePatientEncounterDto,
+  FilterPatientEncounterDto,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
 import { PatientEncounter } from '@backend/shared-domain';
@@ -85,6 +86,30 @@ export class PatientEncounterController {
     }
   }
 
+  // PatientService.Encounter.GetStatsInDateRange
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStatsInDateRange`)
+  async getStatsInDateRange(
+    @Payload() data: { dateFrom: string; dateTo: string; roomId?: string }
+  ) {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStatsInDateRange`
+    );
+    try {
+      const { dateFrom, dateTo, roomId } = data;
+      return await this.patientEncounterService.getStatsInDateRange(
+        dateFrom,
+        dateTo,
+        roomId
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to get encounter stats in date range`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
     @Payload()
@@ -112,7 +137,7 @@ export class PatientEncounterController {
   }
   // PatientService.Encounter.Create
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string,  }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<boolean> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
@@ -126,6 +151,20 @@ export class PatientEncounterController {
         PATIENT_SERVICE
       );
     }
+  }
+
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY_IN_ROOM}`
+  )
+  findByRoom(
+    @Payload() data: { filterQueue: FilterPatientEncounterDto; userId: string }
+  ) {
+    console.log("dataa",data);
+    
+    return this.patientEncounterService.getAllInRoom(
+      data.filterQueue,
+      data.userId
+    );
   }
 
   @MessagePattern(
@@ -171,9 +210,7 @@ export class PatientEncounterController {
   }
 
   // get encounters by patient ID
-  @MessagePattern(
-    `${PATIENT_SERVICE}.${moduleName}.FindByPatientId`
-  )
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.FindByPatientId`)
   async findByPatientId(
     @Payload() data: { patientId: string; pagination: RepositoryPaginationDto }
   ): Promise<PaginatedResponseDto<PatientEncounter>> {
@@ -183,7 +220,10 @@ export class PatientEncounterController {
     try {
       const { patientId, pagination } = data;
 
-      return await this.patientEncounterService.findByPatientId(patientId, pagination);
+      return await this.patientEncounterService.findByPatientId(
+        patientId,
+        pagination
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
