@@ -23,7 +23,7 @@ import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 import { AnnotationStatus, AnnotationType } from "@/enums/image-dicom.enum";
 import { useViewer } from "@/contexts/ViewerContext";
-import { Annotation, Annotations } from "@cornerstonejs/tools/types";
+import { Annotation } from "@cornerstonejs/tools/types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useSelector } from "react-redux";
@@ -127,6 +127,37 @@ export function DraftAnnotationsModal({
   const [createAnnotation, { isLoading: isCreatingAnnotation }] =
     useCreateAnnotationMutation();
 
+  const resolveViewportElement = useCallback(
+    (viewportId: string, viewportIndex: number) => {
+      const viewportSeries = state.viewportSeries.get(viewportIndex);
+      if (!viewportSeries || viewportSeries.id !== series?.id) {
+        return null;
+      }
+
+      const renderingEngineId = state.renderingEngineIds.get(viewportIndex);
+      if (!renderingEngineId) {
+        return null;
+      }
+
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      const viewport = renderingEngine?.getViewport(viewportId) as
+        | Types.IStackViewport
+        | undefined;
+
+      const element =
+        viewport?.element ??
+        (typeof document !== "undefined"
+          ? (document.querySelector(
+              `[data-enabled-element="${viewportId}"]`
+            ) as HTMLDivElement | null)
+          : null);
+
+      return element ?? null;
+    },
+    [series?.id, state.renderingEngineIds, state.viewportSeries]
+  );
+
   const collectDraftAnnotations = useCallback(() => {
     if (!series) {
       return {
@@ -146,91 +177,69 @@ export function DraftAnnotationsModal({
 
       matchedViewport = true;
 
-      const renderingEngineId = state.renderingEngineIds.get(viewportIndex);
-      if (!renderingEngineId) {
-        return;
-      }
-
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-
-      const viewport = renderingEngine?.getViewport(viewportId) as
-        | Types.IStackViewport
-        | undefined;
-
-      const element =
-        viewport?.element ??
-        (typeof document !== "undefined"
-          ? (document.querySelector(
-              `[data-enabled-element="${viewportId}"]`
-            ) as HTMLDivElement | null)
-          : null);
-
+      const element = resolveViewportElement(viewportId, viewportIndex);
       if (!element) {
         return;
       }
 
-      let result: Annotations = [];
       Object.values(AnnotationType).forEach((type) => {
-        const annotations = annotation.state.getAnnotations(
-            type,
-            element
-          );
-        result = [...result, ...annotations];
-      });
-
-      result.forEach((annotationItem: Annotation) => {
-        if (!annotationItem) return;
-
-        const sliceIndex = annotationItem.metadata?.sliceIndex ?? 0;
-        let matchedInstance: DicomInstance | undefined;
-
-        if (
-          typeof sliceIndex === "number" &&
-          Array.isArray(series.instances) &&
-          series.instances[sliceIndex]
-        ) {
-          matchedInstance = series.instances[sliceIndex];
+        const annotationsForType = annotation.state.getAnnotations(type, element);
+        if (!annotationsForType || annotationsForType.length === 0) {
+          return;
         }
 
-        const referencedImageId = annotationItem.metadata?.referencedImageId
-          ? String(annotationItem.metadata.referencedImageId)
-          : undefined;
+        annotationsForType.forEach((annotationItem: Annotation) => {
+          if (!annotationItem) return;
 
-        if (
-          !matchedInstance &&
-          referencedImageId &&
-          Array.isArray(series.instances)
-        ) {
-          matchedInstance = series.instances.find((candidate) => {
-            const candidateUid = candidate.sopInstanceUid;
-            const candidateId = candidate.id;
-            const candidateFile = candidate.fileName;
-            return (
-              (!!candidateUid && referencedImageId.includes(candidateUid)) ||
-              (!!candidateId && referencedImageId.includes(candidateId)) ||
-              (!!candidateFile && referencedImageId.includes(candidateFile))
-            );
+          const sliceIndex = annotationItem.metadata?.sliceIndex ?? 0;
+          let matchedInstance: DicomInstance | undefined;
+
+          if (
+            typeof sliceIndex === "number" &&
+            Array.isArray(series.instances) &&
+            series.instances[sliceIndex]
+          ) {
+            matchedInstance = series.instances[sliceIndex];
+          }
+
+          const referencedImageId = annotationItem.metadata?.referencedImageId
+            ? String(annotationItem.metadata.referencedImageId)
+            : undefined;
+
+          if (
+            !matchedInstance &&
+            referencedImageId &&
+            Array.isArray(series.instances)
+          ) {
+            matchedInstance = series.instances.find((candidate) => {
+              const candidateUid = candidate.sopInstanceUid;
+              const candidateId = candidate.id;
+              const candidateFile = candidate.fileName;
+              return (
+                (!!candidateUid && referencedImageId.includes(candidateUid)) ||
+                (!!candidateId && referencedImageId.includes(candidateId)) ||
+                (!!candidateFile && referencedImageId.includes(candidateFile))
+              );
+            });
+          }
+
+          entries.push({
+            id:
+              annotationItem.annotationUID ??
+              `${type ?? "annotation"}-${viewportIndex + 1}-${entries.length + 1}`,
+            annotation: annotationItem,
+            instance: matchedInstance,
+            status: AnnotationStatus.DRAFT,
+            annotationType: type,
+            textContent: annotationItem.data?.label,
+            colorCode: resolveColorCode(annotationItem.metadata?.segmentColor),
+            metadata: {
+              sliceIndex,
+              referencedImageId,
+              viewportIndex,
+              viewportId,
+            },
           });
-        }
-
-        entries.push({
-          id:
-            annotationItem.annotationUID ??
-            `${annotationItem.metadata?.toolName ?? "annotation"}-${
-              viewportIndex + 1
-            }-${entries.length + 1}`,
-          annotation: annotationItem,
-          instance: matchedInstance,
-          status: AnnotationStatus.DRAFT,
-          annotationType: annotationItem.metadata?.toolName ?? "Unknown",
-          textContent: annotationItem.data?.label,
-          colorCode: resolveColorCode(annotationItem.metadata?.segmentColor),
-          metadata: {
-            sliceIndex,
-            referencedImageId,
-            viewportIndex,
-            viewportId,
-          },
         });
       });
     });
@@ -241,6 +250,7 @@ export function DraftAnnotationsModal({
     state.viewportIds,
     state.viewportSeries,
     state.renderingEngineIds,
+    resolveViewportElement,
   ]);
 
   const refreshAnnotations = useCallback(() => {
@@ -429,8 +439,18 @@ export function DraftAnnotationsModal({
 
     setIsSubmitting(true);
 
-    const submissions: Promise<unknown>[] = [];
+    const submissionJobs: {
+      entry: DraftAnnotationEntry;
+      promise: Promise<unknown>;
+    }[] = [];
+    const submissionGroups = new Map<
+      string,
+      { total: number; success: number; entries: DraftAnnotationEntry[] }
+    >();
     let skippedCount = 0;
+
+    const buildGroupKey = (entry: DraftAnnotationEntry) =>
+      `${entry.annotationType}::${entry.metadata.viewportId}::${entry.metadata.viewportIndex}`;
 
     draftAnnotations.forEach((entry) => {
       const instanceId = entry.instance?.id;
@@ -469,23 +489,35 @@ export function DraftAnnotationsModal({
           ? (measurementUnitCandidate as string)
           : undefined;
 
-      submissions.push(
-        createAnnotation({
-          instanceId,
-          annotationType,
-          annotationData: annotationPayload,
-          coordinates: coordinatePayload,
-          measurementValue,
-          measurementUnit,
-          textContent: entry.textContent,
-          colorCode: entry.colorCode,
-          annotationStatus: selectedStatus,
-          annotatorId: user.id,
-        }).unwrap()
-      );
+      const promise = createAnnotation({
+        instanceId,
+        annotationType,
+        annotationData: annotationPayload,
+        coordinates: coordinatePayload,
+        measurementValue,
+        measurementUnit,
+        textContent: entry.textContent,
+        colorCode: entry.colorCode,
+        annotationStatus: selectedStatus,
+        annotatorId: user.id,
+      }).unwrap();
+
+      submissionJobs.push({ entry, promise });
+
+      const groupKey = buildGroupKey(entry);
+      const existingGroup = submissionGroups.get(groupKey) ?? {
+        total: 0,
+        success: 0,
+        entries: [] as DraftAnnotationEntry[],
+      };
+
+      existingGroup.total += 1;
+      existingGroup.entries.push(entry);
+
+      submissionGroups.set(groupKey, existingGroup);
     });
 
-    if (submissions.length === 0) {
+    if (submissionJobs.length === 0) {
       setIsSubmitting(false);
       toast.error(
         skippedCount > 0
@@ -496,12 +528,60 @@ export function DraftAnnotationsModal({
     }
 
     try {
-      const results = await Promise.allSettled(submissions);
+      const results = await Promise.allSettled(
+        submissionJobs.map((job) => job.promise)
+      );
 
       const successCount = results.filter(
         (result) => result.status === "fulfilled"
       ).length;
       const failureCount = results.length - successCount;
+
+      results.forEach((result, index) => {
+        const job = submissionJobs[index];
+        if (!job) return;
+
+        const groupKey = buildGroupKey(job.entry);
+        const group = submissionGroups.get(groupKey);
+        if (!group) return;
+
+        if (result.status === "fulfilled") {
+          group.success += 1;
+        }
+      });
+
+      submissionGroups.forEach((group, key) => {
+        if (group.success === group.total && group.success > 0) {
+          const sampleEntry = group.entries[0];
+          if (!sampleEntry) {
+            return;
+          }
+
+          const { viewportId, viewportIndex } = sampleEntry.metadata;
+          if (viewportId === undefined || viewportIndex === undefined) {
+            return;
+          }
+
+          const element = resolveViewportElement(viewportId, viewportIndex);
+          if (!element) {
+            return;
+          }
+
+          try {
+            annotation.state.removeAnnotations(sampleEntry.annotationType, element);
+          } catch (removeError) {
+            console.error(
+              "Failed to remove submitted draft annotations from viewport:",
+              {
+                error: removeError,
+                tool: sampleEntry.annotationType,
+                viewportId,
+                viewportIndex,
+              }
+            );
+          }
+        }
+      });
 
       if (successCount > 0) {
         toast.success(
@@ -541,6 +621,7 @@ export function DraftAnnotationsModal({
     createAnnotation,
     selectedStatus,
     refreshAnnotations,
+    resolveViewportElement,
   ]);
 
   const submissionDisabled =
