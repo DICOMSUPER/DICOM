@@ -42,7 +42,7 @@ export class DicomStudiesService {
     @Inject()
     private readonly imagingOrdersRepository: ImagingOrderRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
-  ) {}
+  ) { }
   private checkDicomStudy = async (
     id: string,
     em?: EntityManager
@@ -226,18 +226,19 @@ export class DicomStudiesService {
   };
 
   findByOrderId = async (orderId: string): Promise<DicomStudy[]> => {
-    const imagingOrder = await this.checkImagingOrder(orderId);
-    if (!imagingOrder) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Imaging Order not found for given orderId',
-        IMAGING_SERVICE
-      );
-    }
+    const imagingOrder = await this.imagingOrdersRepository.findOne({
+      where: { id: orderId },
+    });
 
-    return await this.dicomStudiesRepository.findAll(
+    if (!imagingOrder) {
+      return [];
+    }
+    const studies = await this.dicomStudiesRepository.findAll(
       { where: { orderId } },
       relation
     );
+    return studies ?? [];
   };
+
+
 }

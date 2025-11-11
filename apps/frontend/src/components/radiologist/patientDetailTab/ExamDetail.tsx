@@ -13,12 +13,9 @@ export const ExamItemDetail = React.memo(
     );
 
     const study = data?.data?.[0];
-  
 
     if (error) {
-      return (
-        <div className="border rounded"> </div>
-      )
+      return <div className="border rounded"> </div>;
     }
 
     return (
@@ -34,7 +31,6 @@ export const ExamItemDetail = React.memo(
         {shouldFetch && (
           <div className="px-3 py-2 bg-gray-50 text-xs space-y-2">
             {isLoading && <div>Đang tải dữ liệu...</div>}
-
 
             {study && (
               <>
@@ -54,7 +50,10 @@ export const ExamItemDetail = React.memo(
                     // Lấy luôn studyId + encounterId
                     setSelectedExam(study ? study.id : null);
                     if (study) {
-                      handleToggle(study.id, study?.imagingOrder?.imagingOrderForm?.encounterId);
+                      handleToggle(
+                        study.id,
+                        study?.imagingOrder?.imagingOrderForm?.encounterId
+                      );
                     }
                   }}
                   className="text-blue-600 hover:underline text-xs"
@@ -73,3 +72,5 @@ export const ExamItemDetail = React.memo(
     );
   }
 );
+
+ExamItemDetail.displayName = "ExamItemDetail";

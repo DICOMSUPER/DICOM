@@ -65,7 +65,7 @@ export class EmployeeRoomAssignmentsController {
         )
       );
 
-      return result
+      return result;
     } catch (error) {
       this.logger.error('❌ Failed to create employee room assignment', error);
       throw handleError(error);
@@ -104,9 +104,12 @@ export class EmployeeRoomAssignmentsController {
       order,
     };
     return await firstValueFrom(
-      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindMany', {
-        paginationDto,
-      })
+      this.userServiceClient.send(
+        'UserService.EmployeeRoomAssignments.FindMany',
+        {
+          paginationDto,
+        }
+      )
     );
   }
 
@@ -172,7 +175,16 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
-  
+  @Get('/:id/user')
+  async getCurrentEmployeeRoomAssignment(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.userServiceClient.send(
+        'UserService.EmployeeRoomAssignments.FindCurrent',
+        { id }
+      )
+    );
+  }
+
   @Get(':id')
   @Role(Roles.SYSTEM_ADMIN, Roles.PHYSICIAN, Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get employee room assignment by ID' })
@@ -191,7 +203,7 @@ export class EmployeeRoomAssignmentsController {
         )
       );
 
-      return result
+      return result;
     } catch (error) {
       this.logger.error(
         `❌ Failed to fetch employee room assignment: ${id}`,
@@ -217,10 +229,13 @@ export class EmployeeRoomAssignmentsController {
     try {
       this.logger.log(`🛠️ Updating employee room assignment: ${id}`);
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeRoomAssignments.Update', {
-          id,
-          data: updateEmployeeRoomAssignmentDto,
-        })
+        this.userServiceClient.send(
+          'UserService.EmployeeRoomAssignments.Update',
+          {
+            id,
+            data: updateEmployeeRoomAssignmentDto,
+          }
+        )
       );
 
       return {

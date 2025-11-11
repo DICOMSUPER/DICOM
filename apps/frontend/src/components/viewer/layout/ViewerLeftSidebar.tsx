@@ -2,15 +2,15 @@ import {
   Layout,
   Grid,
   Maximize2,
-  Search, 
-  Move, 
-  ScanLine, 
-  Ruler, 
-  Circle, 
-  Square, 
-  RotateCw, 
+  Search,
+  Move,
+  ScanLine,
+  Ruler,
+  Circle,
+  Square,
+  RotateCw,
   RotateCcw,
-  FlipHorizontal, 
+  FlipHorizontal,
   FlipVertical,
   RefreshCw,
   Trash2,
@@ -23,7 +23,8 @@ import {
   CircleDot,
   Globe,
   Eraser,
-  List,
+  FileText,
+  FileClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,7 +35,9 @@ interface ViewerLeftSidebarProps {
   onSeriesLayoutChange: (layout: string) => void;
   selectedTool: string;
   onToolSelect: (toolId: string) => void;
-  onViewAnnotations?: () => void;
+  onViewAllAnnotations?: () => void;
+  onViewDraftAnnotations?: () => void;
+  activeAnnotationView?: "all" | "draft" | null;
 }
 
 const seriesLayouts = [
@@ -76,11 +79,32 @@ const transformTools = [
 
 // Action tools
 const actionTools = [
-  { id: "view-annotations", icon: List, label: "View Annotations", action: "viewAnnotations" },
+  {
+    id: "view-all-annotations",
+    icon: FileText,
+    label: "View All Annotations",
+    action: "viewAllAnnotations",
+  },
+  {
+    id: "view-draft-annotations",
+    icon: FileClock,
+    label: "View Draft Annotations",
+    action: "viewDraftAnnotations",
+  },
   { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
   { id: "clear", icon: Trash2, label: "Clear Annotations", action: "clear" },
-  { id: "clear-segmentation", icon: Trash2, label: "Clear Segmentation", action: "clearSegmentation" },
-  { id: "undo-annotation", icon: Undo, label: "Undo Annotation", action: "undoAnnotation" },
+  {
+    id: "clear-segmentation",
+    icon: Trash2,
+    label: "Clear Segmentation",
+    action: "clearSegmentation",
+  },
+  {
+    id: "undo-annotation",
+    icon: Undo,
+    label: "Undo Annotation",
+    action: "undoAnnotation",
+  },
   { id: "invert", icon: MousePointer, label: "Invert Colors", action: "invert" },
 ];
 
@@ -118,7 +142,9 @@ export default function ViewerLeftSidebar({
   onSeriesLayoutChange,
   selectedTool,
   onToolSelect,
-  onViewAnnotations,
+  onViewAllAnnotations,
+  onViewDraftAnnotations,
+  activeAnnotationView,
 }: ViewerLeftSidebarProps) {
   const { rotateViewport, flipViewport, resetView, clearAnnotations, undoAnnotation, invertViewport } = useViewer();
 
@@ -185,16 +211,39 @@ export default function ViewerLeftSidebar({
         console.log('Clear segmentation action triggered');
         // This will be handled by the tool manager
         break;
+      case 'viewAllAnnotations':
+        onViewAllAnnotations?.();
+        break;
+      case 'viewDraftAnnotations':
+        onViewDraftAnnotations?.();
+        break;
       case 'undoAnnotation':
         undoAnnotation();
         break;
       case 'invert':
         invertViewport();
         break;
-      case 'viewAnnotations':
-        onViewAnnotations?.();
-        break;
     }
+  };
+
+  const getActionButtonClasses = (toolId: string) => {
+    if (toolId === 'clear') {
+      return "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300";
+    }
+
+    if (toolId === 'view-all-annotations') {
+      return activeAnnotationView === 'all'
+        ? "bg-linear-to-br from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/30"
+        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
+    }
+
+    if (toolId === 'view-draft-annotations') {
+      return activeAnnotationView === 'draft'
+        ? "bg-linear-to-br from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/30"
+        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
+    }
+
+    return "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
   };
   return (
     <TooltipProvider>
@@ -241,14 +290,18 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
                         selectedTool === getToolDisplayName(tool.id)
                           ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                           : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -276,14 +329,18 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
                         selectedTool === getToolDisplayName(tool.id)
                           ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                           : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -311,10 +368,14 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleTransformAction(tool.action, tool.id)}
-                      className="h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                      className="h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -339,14 +400,18 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
                         selectedTool === getToolDisplayName(tool.id)
                           ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                           : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -374,14 +439,18 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
                         selectedTool === getToolDisplayName(tool.id)
                           ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                           : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -409,16 +478,14 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleTransformAction(tool.action, tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
-                        tool.id === 'clear'
-                          ? "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300"
-                          : tool.id === 'view-annotations'
-                            ? "bg-linear-to-br from-teal-600 to-teal-500 text-white hover:from-teal-500 hover:to-teal-400 shadow-lg shadow-teal-500/30"
-                            : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
-                      }`}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${getActionButtonClasses(tool.id)}`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
@@ -444,14 +511,18 @@ export default function ViewerLeftSidebar({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex items-center gap-2 ${
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
                         selectedTool === getToolDisplayName(tool.id)
                           ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                           : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
                       }`}
                     >
-                      <tool.icon className="h-4 w-4" />
-                      <span className="text-xs">{tool.label}</span>
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">

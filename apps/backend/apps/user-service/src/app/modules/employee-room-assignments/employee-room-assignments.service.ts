@@ -228,4 +228,20 @@ export class EmployeeRoomAssignmentsService {
   ): Promise<PaginatedResponseDto<EmployeeRoomAssignment>> => {
     return await this.employeeRoomAssignmentsRepository.paginate(paginationDto);
   };
+
+  findCurrentEmployeeAssignment = async (
+    userId: string
+  ): Promise<EmployeeRoomAssignment | null> => {
+    return await this.employeeRoomAssignmentsRepository.findCurrentEmployeeRoomAssignment(
+      userId
+    );
+  };
+
+  findByEmployee = async (
+    employeeId: string
+  ): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findAll({
+      where: { employeeId: employeeId, isDeleted: false },
+    });
+  };
 }

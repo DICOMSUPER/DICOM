@@ -18,7 +18,6 @@ import { ServiceRoomsModule } from './modules/service-rooms/service-rooms.module
 import { EmployeeRoomAssignmentsModule } from './modules/employee-room-assignments/employee-room-assignments.module';
 import { ServicesModule } from './modules/services/services.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,9 +41,9 @@ import { ServicesModule } from './modules/services/services.module';
     DigitalSignatureModule,
     ServiceRoomsModule,
     EmployeeRoomAssignmentsModule,
-    ServicesModule
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

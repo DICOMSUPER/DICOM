@@ -1,19 +1,15 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
-import { PaginatedResponse } from "./scheduleApi";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { FilterEmployeeRoomAssignment, IEmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { FilterEmployeeRoomAssignment, EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
 
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",
   baseQuery: axiosBaseQuery("/employee-room-assignments"),
-  tagTypes: ["EmployeeRoomAssignment"],
+  tagTypes: ["EmployeeRoomAssignment", "employeeRoom"],
   endpoints: (builder) => ({
-
-    // 
     getEmployeeRoomAssignmentsInCurrentSession: builder.query<
-     IEmployeeRoomAssignment[],
+      EmployeeRoomAssignment[],
       void
     >({
       query: () => ({
@@ -23,7 +19,7 @@ export const employeeRoomAssignmentApi = createApi({
       providesTags: ["EmployeeRoomAssignment"],
     }),
     getEmployeeRoomAssignments: builder.query<
-      IEmployeeRoomAssignment[],
+      EmployeeRoomAssignment[],
       {filter: FilterEmployeeRoomAssignment}
     >({
       query: ({ filter }) => ({
@@ -33,10 +29,20 @@ export const employeeRoomAssignmentApi = createApi({
       }),
       providesTags: ["EmployeeRoomAssignment"],
     }),
+    getCurrentEmployeeRoomAssignment: builder.query<
+      ApiResponse<EmployeeRoomAssignment>,
+      string
+    >({
+      query: (id) => ({
+        url: `/${id}/user`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
 export const {
   useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
   useGetEmployeeRoomAssignmentsQuery,
+  useGetCurrentEmployeeRoomAssignmentQuery,
 } = employeeRoomAssignmentApi;

@@ -17,6 +17,7 @@ import ViewerLeftSidebar from "@/components/viewer/layout/ViewerLeftSidebar";
 import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
 import ViewportGrid from "@/components/viewer/viewport/ViewportGrid";
 import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
+import { DraftAnnotationsModal } from "@/components/viewer/modals/DraftAnnotationsModal";
 import { SeriesAnnotationsModal } from "@/components/viewer/modals/SeriesAnnotationsModal";
 
 // Loading component
@@ -51,7 +52,7 @@ function ViewerPageContent() {
   const [loading, setLoading] = useState(false);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
 
-  const [isAnnotationsModalOpen, setIsAnnotationsModalOpen] = useState(false);
+  const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<"all" | "draft" | null>(null);
 
   // Ensure viewport 0 is active on page load
   useEffect(() => {
@@ -91,18 +92,30 @@ function ViewerPageContent() {
     setViewportSeries(state.activeViewport, series);
   };
 
-  const handleViewAnnotations = useCallback(() => {
+  const handleViewAllAnnotations = useCallback(() => {
     if (!selectedSeries) {
       toast.error("Please select a series to view annotations.");
       return;
     }
 
-    setIsAnnotationsModalOpen(true);
+    setActiveAnnotationsModal("all");
   }, [selectedSeries]);
 
-  const handleAnnotationsModalOpenChange = useCallback((open: boolean) => {
-    setIsAnnotationsModalOpen(open);
-  }, []);
+  const handleViewDraftAnnotations = useCallback(() => {
+    if (!selectedSeries) {
+      toast.error("Please select a series to view annotations.");
+      return;
+    }
+
+    setActiveAnnotationsModal("draft");
+  }, [selectedSeries]);
+
+  const handleAnnotationModalOpenChange = useCallback(
+    (type: "all" | "draft") => (open: boolean) => {
+      setActiveAnnotationsModal(open ? type : null);
+    },
+    []
+  );
 
   const handleDeleteStudy = () => {
     console.log("Delete study clicked");
@@ -183,7 +196,9 @@ function ViewerPageContent() {
             onSeriesLayoutChange={handleLayoutChange}
             selectedTool={selectedTool}
             onToolSelect={setSelectedTool}
-            onViewAnnotations={handleViewAnnotations}
+            onViewAllAnnotations={handleViewAllAnnotations}
+            onViewDraftAnnotations={handleViewDraftAnnotations}
+            activeAnnotationView={activeAnnotationsModal}
           />
         </ResizablePanel>
 
@@ -240,8 +255,13 @@ function ViewerPageContent() {
       </div>
 
       <SeriesAnnotationsModal
-        open={isAnnotationsModalOpen}
-        onOpenChange={handleAnnotationsModalOpenChange}
+        open={activeAnnotationsModal === "all"}
+        onOpenChange={handleAnnotationModalOpenChange("all")}
+        series={selectedSeries}
+      />
+      <DraftAnnotationsModal
+        open={activeAnnotationsModal === "draft"}
+        onOpenChange={handleAnnotationModalOpenChange("draft")}
         series={selectedSeries}
       />
     </div>

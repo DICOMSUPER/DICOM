@@ -15,10 +15,10 @@ import { UserServiceModule } from './modules/user-service/user-service.module';
 import { AuthGuard } from '@backend/shared-guards';
 import { RoleGuard } from '@backend/shared-guards';
 import { SeedingModule } from './modules/seeding/seeding.module';
-import { 
+import {
   UserServiceClientModule,
   PatientServiceClientModule,
-  ImagingServiceClientModule 
+  ImagingServiceClientModule,
 } from '@backend/shared-client';
 dotenv.config();
 

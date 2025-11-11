@@ -30,12 +30,19 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
 
-      // Save to localStorage and cookies
+      // Save to cookies with expiration (7 days)
       if (typeof window !== "undefined") {
-        // localStorage.setItem("token", action.payload.token);
-        // localStorage.setItem("user", JSON.stringify(action.payload.user));
-        Cookies.set("accessToken", action.payload.token);
-        Cookies.set("user", JSON.stringify(action.payload.user));
+        const expiresInDays = 7;
+        Cookies.set("accessToken", action.payload.token, {
+          expires: expiresInDays,
+          path: "/",
+          sameSite: "strict",
+        });
+        Cookies.set("user", JSON.stringify(action.payload.user), {
+          expires: expiresInDays,
+          path: "/",
+          sameSite: "strict",
+        });
       }
     },
     logout: (state) => {
@@ -52,24 +59,22 @@ const authSlice = createSlice({
     },
     loadTokenFromStorage: (state) => {
       if (typeof window !== "undefined") {
-        const token = localStorage.getItem("token");
-        const user = localStorage.getItem("user");
+        // Load from cookies (not localStorage since we're using cookies)
+        const token = Cookies.get("accessToken");
+        const userString = Cookies.get("user");
 
         if (token) {
           state.token = token;
-          Cookies.set("accessToken", token);
         }
 
-        if (user) {
+        if (userString) {
           try {
-            const userData = JSON.parse(user);
+            const userData = JSON.parse(userString);
             state.user = userData;
-            Cookies.set("user", user);
           } catch (error) {
-            console.error(
-              "Failed to parse user data from localStorage:",
-              error
-            );
+            console.error("Failed to parse user data from cookies:", error);
+            // Clear invalid cookie
+            Cookies.remove("user");
           }
         }
       }

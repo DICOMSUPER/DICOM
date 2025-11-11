@@ -5,98 +5,137 @@ import {
   Body,
   Param,
   Delete,
-  Request,
   HttpCode,
   HttpStatus,
+  Logger,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { Public } from '@backend/shared-decorators';
+import { Public, Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
+import {
+  TransformInterceptor,
+  RequestLoggingInterceptor,
+} from '@backend/shared-interceptor';
 
-// DTOs để validate input
-class CreateSignatureDto {
-  content!: string; // Dữ liệu cần ký
+class SetupSignatureDto {
+  pin!: string;
+  userId!: string;
+}
+
+class SignDataDto {
+  pin!: string;
+  data!: string;
+  userId!: string;
 }
 
 class VerifySignatureDto {
-  data!: string;       // Dữ liệu gốc
-  signature!: string;  // Chữ ký cần verify
-  publicKey!: string;  // Public key để verify
+  data!: string;
+  signature!: string;
+  publicKey!: string;
 }
 
 @Controller('digital-signature')
+@UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DigitalSignatureController {
+  private readonly logger = new Logger(DigitalSignatureController.name);
+
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
-  ) {}
+  ) { }
 
-  /** 🖋️ Tạo chữ ký mới cho dữ liệu */
   @Public()
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createDto: CreateSignatureDto, @Request() req: any) {
+  @Get('health')
+  async checkHealth() {
+    this.logger.log('Health check for Digital Signature service');
+    return { status: 'ok', service: 'digital-signature' };
+  }
+
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Post('setup')
+  async setupSignature(@Body() dto: SetupSignatureDto) {
+    this.logger.log(`Payload received: ${JSON.stringify(dto)}`);
+    this.logger.log(`Setting up signature for userId=${dto.userId}`);
+
     return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.create', {
-        userId: req.user?.id,
-        content: createDto.content,
+      this.userServiceClient.send('digital-signature.setup', {
+        userId: dto.userId,
+        pin: dto.pin,
       }),
     );
   }
 
-  /** 📋 Lấy tất cả signatures của user hiện tại */
-  @Get()
-  async findAll(@Request() req: any) {
-    return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.findAll', {
-        userId: req.user?.id,
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Post('sign')
+  @HttpCode(HttpStatus.OK)
+  async signData(@Body() dto: SignDataDto) {
+    this.logger.log(`Signing data for userId=${dto.userId}`);
+
+    const result = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.sign', {
+        userId: dto.userId,
+        pin: dto.pin,
+        data: dto.data,
       }),
     );
+
+    return {
+      message: 'Data signed successfully',
+      signatureId: result.signatureId,
+      signature: result.signature,
+      publicKey: result.publicKey,
+    };
   }
 
-  /** 🔍 Lấy một signature cụ thể */
-  @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req: any) {
-    return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.findOne', {
-        id,
-        userId: req.user?.id,
-      }),
-    );
-  }
-
-  /** ✅ Verify chữ ký */
   @Public()
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async verify(@Body() verifyDto: VerifySignatureDto, @Request() req: any) {
-    return await firstValueFrom(
+  async verifySignature(@Body() dto: VerifySignatureDto) {
+    this.logger.log(`Verifying signature`);
+    const result = await firstValueFrom(
       this.userServiceClient.send('digital-signature.verify', {
-        data: verifyDto.data,
-        signature: verifyDto.signature,
-        publicKey: verifyDto.publicKey,
-        userId: req.user?.id,
+        data: dto.data,
+        signature: dto.signature,
+        publicKey: dto.publicKey,
       }),
     );
+
+    return {
+      message: result.isValid ? 'Signature is valid' : 'Invalid signature',
+      isValid: result.isValid,
+    };
   }
 
-  /** 🗑️ Xóa signature */
-  @Delete(':id')
-  async remove(@Param('id') id: string, @Request() req: any) {
-    return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.remove', {
-        id,
-        userId: req.user?.id,
-      }),
+  @Get('public-key/:userId')
+  async getPublicKey(@Param('userId') userId: string) {
+    this.logger.log(`Getting public key for userId=${userId}`);
+    const result = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getPublicKey', { userId }),
     );
+
+    return { message: result.message, publicKey: result.publicKey };
   }
 
-  /** 🔑 Lấy public key của một signature */
-  @Public()
-  @Get(':id/public-key')
-  async getPublicKey(@Param('id') id: string) {
-    return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.getPublicKey', { id }),
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    this.logger.log(`Getting digital signature by id=${id}`);
+    const record = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getById', { id }),
     );
+    return record;
+  }
+
+
+  @Delete(':userId')
+  async remove(@Param('userId') userId: string) {
+    this.logger.log(`Removing signature for userId=${userId}`);
+    const result = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.remove', { userId }),
+    );
+
+    return { message: result.message };
   }
 }

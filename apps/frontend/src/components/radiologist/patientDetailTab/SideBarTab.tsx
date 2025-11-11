@@ -17,7 +17,7 @@ export interface ExamItem {
 export interface SidebarTabProps {
   setSelectedExam: (examId: string) => void;
   examHistory: ExamItem[];
-  patient: Patient;
+  patient?: Patient;
 }
 
 const SidebarTab: React.FC<SidebarTabProps> = ({
@@ -30,8 +30,10 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   const handleToggle = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
-  console.log("check 1 --> examstory", examHistory);
 
+  if (!patient) {
+    return <div>Patient not found</div>;
+  }
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
       {/* --- Header --- */}

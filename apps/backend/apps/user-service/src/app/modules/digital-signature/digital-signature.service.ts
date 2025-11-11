@@ -1,117 +1,145 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { DigitalSignature, User } from '@backend/shared-domain';
+import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { DigitalSignatureRepository } from './digital-signature.repository';
+import {
+  DigitalSignatureNotFoundException,
+  DigitalSignatureAlreadyExistsException,
+  InvalidPinException,
+  KeyGenerationFailedException,
+  EncryptionFailedException,
+  DecryptionFailedException,
+  SigningFailedException,
+  VerificationFailedException,
+  UserNotFoundException,
+  ResourceNotFoundException,
+  AuthenticationException,
+  BusinessLogicException,
+} from '@backend/shared-exception';
 
 @Injectable()
 export class DigitalSignatureService {
+  constructor(private readonly repo: DigitalSignatureRepository) { }
+
   private readonly logger = new Logger(DigitalSignatureService.name);
-  private readonly encryptionSecret = process.env.KEY_ENCRYPTION_SECRET || 'default-secret'; // 🔒 nên set trong .env
 
-  constructor(
-    @InjectRepository(DigitalSignature)
-    private readonly signatureRepo: Repository<DigitalSignature>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-  ) {}
-
-  /** 🔐 Sinh cặp khóa RSA (2048 bit) cho user, lưu vào DB */
   private generateKeyPair() {
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-    });
-
-    const publicKeyPem = publicKey.export({ type: 'pkcs1', format: 'pem' }).toString();
-    const privateKeyPem = privateKey.export({ type: 'pkcs1', format: 'pem' }).toString();
-
-    return { publicKeyPem, privateKeyPem };
-  }
-
-  /** 🔒 Mã hoá private key bằng AES-256-CBC */
-  private encryptPrivateKey(privateKey: string): string {
-    const iv = crypto.randomBytes(16);
-    const key = crypto.createHash('sha256').update(this.encryptionSecret).digest();
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-    let encrypted = cipher.update(privateKey, 'utf8', 'base64');
-    encrypted += cipher.final('base64');
-
-    return iv.toString('base64') + ':' + encrypted;
-  }
-
-  /** 🔓 Giải mã private key */
-  private decryptPrivateKey(encrypted: string): string {
-    const [ivBase64, encryptedData] = encrypted.split(':');
-    const iv = Buffer.from(ivBase64, 'base64');
-    const key = crypto.createHash('sha256').update(this.encryptionSecret).digest();
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-
-    let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
-  }
-
-  /** 🖋️ Ký dữ liệu và lưu chữ ký vào DB */
-  async signData(userId: string, data: string) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-
-    // 🔎 Kiểm tra user đã có keypair chưa
-    let signatureRecord = await this.signatureRepo.findOne({
-      where: { user: { id: userId } },
-      relations: ['user'],
-    });
-
-    let privateKeyPem: string;
-    let publicKeyPem: string;
-
-    if (!signatureRecord) {
-      // 🔐 Chưa có -> sinh mới
-      const { publicKeyPem: pub, privateKeyPem: priv } = this.generateKeyPair();
-      privateKeyPem = priv;
-      publicKeyPem = pub;
-
-      const encryptedPrivateKey = this.encryptPrivateKey(privateKeyPem);
-
-      signatureRecord = this.signatureRepo.create({
-        signedData: '', // Chưa ký
-        certificateSerial: 'USER_CERT_' + userId,
-        algorithm: 'RSA-SHA256',
-        publicKey: publicKeyPem,
-        privateKeyEncrypted: encryptedPrivateKey,
-        user,
+    try {
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,
       });
 
-      await this.signatureRepo.save(signatureRecord);
-    } else {
-      // 🔓 Lấy lại private key đã mã hoá
-      privateKeyPem = this.decryptPrivateKey(signatureRecord.privateKeyEncrypted!);
-      publicKeyPem = signatureRecord.publicKey!;
+      return {
+        publicKeyPem: publicKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
+        privateKeyPem: privateKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
+      };
+    } catch (error: any) {
+      this.logger.error('Failed to generate RSA key pair', error.stack);
+      throw new KeyGenerationFailedException({ originalError: error.message });
     }
-
-    // 🧾 Ký dữ liệu
-    const sign = crypto.createSign('SHA256');
-    sign.update(data);
-    const signature = sign.sign(privateKeyPem, 'base64');
-
-    // ✅ Lưu chữ ký mới vào DB
-    signatureRecord.signedData = signature;
-    await this.signatureRepo.save(signatureRecord);
-
-    this.logger.log(`User ${userId} signed data successfully.`);
-    return {
-      signature,
-      publicKeyPem,
-    };
   }
 
-  /** ✅ Xác minh chữ ký */
-  async verifySignature(data: string, signature: string, publicKeyPem: string) {
-    const verify = crypto.createVerify('SHA256');
-    verify.update(data);
-    const isValid = verify.verify(publicKeyPem, signature, 'base64');
-    return { isValid };
+  private encryptPrivateKeyWithPin(privateKey: string, pin: string): string {
+    try {
+      const iv = crypto.randomBytes(16);
+      const key = crypto.createHash('sha256').update(pin).digest();
+      const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+      let encrypted = cipher.update(privateKey, 'utf8', 'base64');
+      encrypted += cipher.final('base64');
+
+      return iv.toString('base64') + ':' + encrypted;
+    } catch (error: any) {
+      this.logger.error('Failed to encrypt private key', error.stack);
+      throw new EncryptionFailedException({ originalError: error.message });
+    }
   }
+
+  private decryptPrivateKeyWithPin(encrypted: string, pin: string): string {
+    try {
+      const [ivBase64, encryptedData] = encrypted.split(':');
+      const iv = Buffer.from(ivBase64, 'base64');
+      const key = crypto.createHash('sha256').update(pin).digest();
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+
+      let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error: any) {
+      this.logger.error('Failed to decrypt private key', error.stack);
+      throw new DecryptionFailedException({ originalError: error.message });
+    }
+  }
+
+  async setupSignature(userId: string, pin: string) {
+    const user = await this.repo.findUserById(userId);
+    if (!user) throw new UserNotFoundException(userId);
+
+    const exists = await this.repo.findSignatureByUserId(userId);
+    if (exists) throw new DigitalSignatureAlreadyExistsException(userId);
+
+    const pinHash = await bcrypt.hash(pin, 10);
+    const { publicKeyPem, privateKeyPem } = this.generateKeyPair();
+    const encryptedPrivateKey = this.encryptPrivateKeyWithPin(privateKeyPem, pin);
+
+    const record = this.repo.createSignature({
+      user,
+      publicKey: publicKeyPem,
+      privateKeyEncrypted: encryptedPrivateKey,
+      pinHash,
+      certificateSerial: `USER_CERT_${userId}`,
+      algorithm: 'RSA-SHA256',
+      signedData: '',
+    });
+
+    await this.repo.saveSignature(record);
+
+    return { message: 'Digital signature has been created successfully' };
+  }
+  async signData(userId: string, pin: string, data: string) {
+    const record = await this.repo.findSignatureWithPrivateKey(userId);
+    if (!record) throw new DigitalSignatureNotFoundException(userId);
+
+    const isPinMatch = await bcrypt.compare(pin, record.pinHash!);
+    if (!isPinMatch) throw new InvalidPinException();
+
+    const privateKeyPem = this.decryptPrivateKeyWithPin(record.privateKeyEncrypted!, pin);
+
+    try {
+      const sign = crypto.createSign('SHA256');
+      sign.update(data);
+      const signature = sign.sign(privateKeyPem, 'base64');
+
+
+
+      return {
+        signatureId: record.id,
+        signature,
+        publicKey: record.publicKey,
+      };
+    } catch (error: any) {
+      this.logger.error('Failed to sign data', error.stack);
+      throw new SigningFailedException({ originalError: error.message });
+    }
+  }
+
+
+  async verifySignature(data: string, signature: string, publicKey: string) {
+    try {
+      const verify = crypto.createVerify('SHA256');
+      verify.update(data);
+      return { isValid: verify.verify(publicKey, signature, 'base64') };
+    } catch (error: any) {
+      this.logger.error('Signature verification failed', error.stack);
+      throw new VerificationFailedException({ originalError: error.message });
+    }
+  }
+  async getById(id: string) {
+    if (!id) throw new BusinessLogicException('ID must be provided');
+    const record = await this.repo.getById(id);
+    if (!record) throw new ResourceNotFoundException('DigitalSignature', id);
+    return record;
+  }
+
 }

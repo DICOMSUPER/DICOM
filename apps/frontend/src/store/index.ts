@@ -18,11 +18,12 @@ import { imagingOrderApi } from "./imagingOrderApi";
 import { modalityMachineApi } from "./modalityMachineApi";
 import { imagingOrderFormApi } from "./imagingOrderFormApi";
 import { diagnosisApi } from "./diagnosisApi";
+import { dicomSeriesApi } from "./dicomSeriesApi";
 import { RoomScheduleApi } from "./roomScheduleApi";
 import { dicomInstanceApi } from "./dicomInstanceApi";
-import { dicomSeriesApi } from "./dicomSeriesApi";
 import { annotationApi } from "./annotationApi";
 import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
+import { imagingApi } from "./imagingApi";
 
 export const store = configureStore({
   reducer: {
@@ -45,11 +46,13 @@ export const store = configureStore({
     [imagingOrderApi.reducerPath]: imagingOrderApi.reducer,
     [imagingOrderFormApi.reducerPath]: imagingOrderFormApi.reducer,
     [diagnosisApi.reducerPath]: diagnosisApi.reducer,
-    [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [dicomSeriesApi.reducerPath]: dicomSeriesApi.reducer,
+    [employeeRoomAssignmentApi.reducerPath]: employeeRoomAssignmentApi.reducer,
+    [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
     [employeeRoomAssignmentApi.reducerPath]: employeeRoomAssignmentApi.reducer,
    
+    [imagingApi.reducerPath]: imagingApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -70,10 +73,11 @@ export const store = configureStore({
       .concat(imagingOrderApi.middleware)
       .concat(diagnosisApi.middleware)
       .concat(imagingOrderFormApi.middleware)
-      .concat(dicomInstanceApi.middleware)
       .concat(dicomSeriesApi.middleware)
+      .concat(employeeRoomAssignmentApi.middleware)
+      .concat(dicomInstanceApi.middleware)
       .concat(annotationApi.middleware)
-      .concat(employeeRoomAssignmentApi.middleware),
+      .concat(imagingApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
