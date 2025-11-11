@@ -70,6 +70,6 @@ export class DiagnosesReport extends BaseEntity {
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;
 
-  @Column({ name: 'signature_id', type: 'uuid', nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   signatureId?: string;
 }

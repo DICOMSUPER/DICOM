@@ -83,4 +83,23 @@ export class DigitalSignatureController {
       );
     }
   }
+
+  @MessagePattern('digital-signature.getById')
+  async getById(@Payload() payload: { id: string }) {
+    try {
+      this.logger.log(`Getting digital signature by id=${payload.id}`);
+      const record = await this.digitalSignatureService.getById(payload.id);
+      return {
+        message: 'Digital signature retrieved successfully',
+        signature: record,
+      };
+    } catch (error) {
+      this.logger.error(`Get by ID error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get digital signature by ID',
+        'DigitalSignatureController.getById'
+      );
+    }
+  }
 }

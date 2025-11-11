@@ -135,4 +135,11 @@ export class DigitalSignatureService {
       throw new VerificationFailedException({ originalError: error.message });
     }
   }
+  async getById(id: string) {
+    if (!id) throw new BusinessLogicException('ID must be provided');
+    const record = await this.repo.getById(id);
+    if (!record) throw new ResourceNotFoundException('DigitalSignature', id);
+    return record;
+  }
+
 }

@@ -118,6 +118,17 @@ export class DigitalSignatureController {
     return { message: result.message, publicKey: result.publicKey };
   }
 
+  @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
+  @Get(':id')
+  async getById(@Param('id') id: string) {
+    this.logger.log(`Getting digital signature by id=${id}`);
+    const record = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getById', { id }),
+    );
+    return record;
+  }
+
+
   @Delete(':userId')
   async remove(@Param('userId') userId: string) {
     this.logger.log(`Removing signature for userId=${userId}`);

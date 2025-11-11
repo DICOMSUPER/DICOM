@@ -15,11 +15,11 @@ export enum EncounterType {
 }
 
 export enum DiagnosisType {
-  PRIMARY = "PRIMARY",
-  SECONDARY = "SECONDARY",
-  DIFFERENTIAL = "DIFFERENTIAL",
-  RULE_OUT = "RULE_OUT",
-  PROVISIONAL = "PROVISIONAL",
+  PRIMARY = "primary",
+  SECONDARY = "secondary",
+  DIFFERENTIAL = "differential",
+  RULE_OUT = "rule_out",
+  PROVISIONAL = "provisional",
 }
 
 export enum DiagnosisStatus {
@@ -30,10 +30,10 @@ export enum DiagnosisStatus {
 }
 
 export enum Severity {
-  LOW = "LOW",
-  MODERATE = "MODERATE",
-  HIGH = "HIGH",
-  CRITICAL = "CRITICAL",
+  LOW = "low",
+  MODERATE = "moderate",
+  HIGH = "high",
+  CRITICAL = "critical",
 }
 
 export enum Gender {

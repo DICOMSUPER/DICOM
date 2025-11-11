@@ -24,6 +24,7 @@ import {
     DiagnosisType,
     Severity,
 } from "@/interfaces/patient/patient-workflow.interface";
+import PinDialog from "./PinDialog";
 
 const MedicalRecordMain = ({
     selectedStudyId,
@@ -32,17 +33,22 @@ const MedicalRecordMain = ({
     encounterId,
 }: any) => {
     const [createDiagnosis, { isLoading: isCreating }] = useCreateDiagnosisMutation();
-
-    // 🔹 State lưu nội dung chẩn đoán
     const [description, setDescription] = useState("");
+    const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
+    const [signatureType, setSignatureType] = useState<"signer" | "tech" | null>(null);
 
-    const handleSaveDiagnosis = async () => {
+    const handleOpenPinDialog = (type: "signer" | "tech") => {
+        setSignatureType(type);
+        setIsPinDialogOpen(true);
+    };
+
+    const handleConfirmPin = async (pin: string) => {
         if (!selectedStudyId || !encounterId) {
             alert("Thiếu study hoặc encounter ID!");
             return;
         }
 
-        const payload: CreateDiagnosisReportDto = {
+        const payload: CreateDiagnosisReportDto & { idSignature: string } = {
             encounterId,
             studyId: selectedStudyId,
             diagnosisName: `Huy Nguyen (${new Date().toISOString().slice(0, 10)})`,
@@ -52,22 +58,21 @@ const MedicalRecordMain = ({
             diagnosisDate: new Date().toISOString().slice(0, 10),
             diagnosedBy: "50a3d136-9b24-448f-8f87-e794de84bd10",
             notes: "Patient to receive diabetic education before discharge.",
+            idSignature: pin,
         };
-            console.log("payload",payload);
+
         try {
-            const result = await createDiagnosis(payload);
-            console.log("check payload ",payload)
-            console.log("check",result);
-            console.log("✅ Tạo chẩn đoán thành công:", result);
+            await createDiagnosis(payload).unwrap();
             alert("Đã lưu chẩn đoán thành công!");
-            setDescription(""); // clear form sau khi lưu
+            setDescription("");
         } catch (err) {
-            console.error("❌ Lỗi khi tạo chẩn đoán:", err);
+            console.error(err);
             alert("Lưu thất bại, vui lòng thử lại.");
+        } finally {
+            setIsPinDialogOpen(false);
         }
     };
 
-    // Khi chưa chọn Study
     if (!selectedStudyId) {
         return (
             <main className="flex-1 flex items-center justify-center">
@@ -84,7 +89,7 @@ const MedicalRecordMain = ({
         );
     }
 
-    const hasDiagnosis = diagnosisData?.data && diagnosisData?.data.length > 0;
+    const hasDiagnosis = diagnosisData?.data?.length > 0;
     const diagnosis = diagnosisData?.data?.[0];
 
     return (
@@ -120,7 +125,6 @@ const MedicalRecordMain = ({
             <ScrollArea className="flex-1 p-6">
                 <Card className="p-6 mx-auto">
                     {!hasDiagnosis ? (
-                        // 🩺 Nếu chưa có chẩn đoán → form nhập mới
                         <div className="bg-white shadow-sm min-h-[80vh] p-10">
                             <h1 className="text-lg font-semibold mb-6 text-center">CHẨN ĐOÁN MỚI</h1>
 
@@ -137,7 +141,12 @@ const MedicalRecordMain = ({
                                 <div>
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="font-medium text-sm">Người ký (Alt + 1):</span>
-                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 w-7 p-0"
+                                            onClick={() => handleOpenPinDialog("signer")}
+                                        >
                                             <span className="text-xs">📋</span>
                                         </Button>
                                     </div>
@@ -147,51 +156,47 @@ const MedicalRecordMain = ({
                                 <div>
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="font-medium text-sm">Kỹ thuật viên (Alt + 2):</span>
-                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 w-7 p-0"
+                                            onClick={() => handleOpenPinDialog("tech")}
+                                        >
                                             <span className="text-xs">📋</span>
                                         </Button>
                                     </div>
                                     <div className="border border-gray-300 rounded h-24 bg-gray-50"></div>
                                 </div>
                             </div>
-
-                            <div className="flex justify-end mt-6">
-                                <Button
-                                    className="bg-blue-600 text-white hover:bg-blue-700"
-                                    onClick={handleSaveDiagnosis}
-                                    disabled={isCreating}
-                                >
-                                    {isCreating ? "Đang lưu..." : "💾 Lưu chẩn đoán"}
-                                </Button>
-                            </div>
                         </div>
                     ) : (
-                        // 🩺 Nếu đã có chẩn đoán → hiển thị nội dung
                         <div className="space-y-6">
                             <p className="whitespace-pre-line">{diagnosis?.description}</p>
 
                             <Separator className="my-6" />
 
-                            <div className="grid grid-cols-2 gap-8">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="font-medium text-sm">Người ký (Alt + 1):</span>
-                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
-                                            <span className="text-xs">📋</span>
-                                        </Button>
-                                    </div>
-                                    <div className="border border-gray-300 rounded h-24 bg-gray-50"></div>
-                                </div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="font-medium text-sm">Người ký (Alt + 1):</span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => handleOpenPinDialog("signer")}
+                                >
+                                    <span className="text-xs">📋</span>
+                                </Button>
+                            </div>
 
-                                <div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="font-medium text-sm">Kỹ thuật viên (Alt + 2):</span>
-                                        <Button variant="outline" size="sm" className="h-7 w-7 p-0">
-                                            <span className="text-xs">📋</span>
-                                        </Button>
-                                    </div>
-                                    <div className="border border-gray-300 rounded h-24 bg-gray-50"></div>
-                                </div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="font-medium text-sm">Kỹ thuật viên (Alt + 2):</span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => handleOpenPinDialog("tech")}
+                                >
+                                    <span className="text-xs">📋</span>
+                                </Button>
                             </div>
 
                             <div className="flex justify-end pt-4">
@@ -202,6 +207,13 @@ const MedicalRecordMain = ({
                         </div>
                     )}
                 </Card>
+
+                {/* Dialog nhập PIN */}
+                <PinDialog
+                    open={isPinDialogOpen}
+                    onClose={() => setIsPinDialogOpen(false)}
+                    onConfirm={handleConfirmPin}
+                />
             </ScrollArea>
         </main>
     );
