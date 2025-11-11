@@ -9,36 +9,30 @@ import { useGetDiagnoseByStudyIdQuery } from "@/store/diagnosisApi";
 import { DicomStudyFilterQuery } from "@/interfaces/image-dicom/dicom-study.interface";
 import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
 
-<<<<<<< HEAD
 
 interface MedicalRecordPageProps {
-  patientId: string;    
+  patientId: string;   
+  studyUID?: string; 
 
 }
 
 
-export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps) {
+export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecordPageProps) {
 
-=======
-export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
+
   const {
     data: studyData,
     isLoading: isLoadingStudy,
     refetch: refetchStudy,
     error: studyError,
   } = useGetDicomStudiesFilteredQuery({ studyUID });
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
 
-  let patientId = "37abf913-75c1-44a9-9104-3b8cc3edc4cd";
   if (!isLoadingStudy && !studyError)
     patientId = studyData?.data[0]?.patientId ?? patientId;
   const { getPatientById } = usePatientService();
-<<<<<<< HEAD
- 
-=======
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
+
 
   const {
     data: patientData,
@@ -107,7 +101,7 @@ export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-<<<<<<< HEAD
+
     {patientData?.data && (
       <SidebarTab
         setSelectedExam={handleSelectExam}
@@ -115,7 +109,7 @@ export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
         patient={patientData.data}
       />
     )}
-=======
+
       {patientData?.data && (
         <SidebarTab
           setSelectedExam={handleSelectExam}
@@ -123,7 +117,7 @@ export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
           patient={patientData?.data}
         />
       )}
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
+
       <MedicalRecordMain
         selectedExam={selectedExam}
         selectedStudyId={selectedStudyId}
@@ -134,3 +128,4 @@ export default function MedicalRecordPage({ studyUID }: { studyUID?: string }) {
     </div>
   );
 }
+

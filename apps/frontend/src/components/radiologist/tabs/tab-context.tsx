@@ -20,9 +20,7 @@ export interface TabData {
   SidebarContent?: ReactNode;
 }
 
-type SerializableTabData = Omit<TabData, "tabContent" | "SidebarContent"> & {
-  sidebarType?: string; // Add this to track sidebar type
-};
+type SerializableTabData = Omit<TabData, "tabContent" | "SidebarContent">;
 
 interface TabContextType {
   activeTabId: string;
@@ -53,33 +51,24 @@ const TabContext = createContext<TabContextType>({
 });
 
 export const useTabs = () => useContext(TabContext);
-<<<<<<< HEAD
-=======
 
+// ✅ Hàm build lại tab từ storage
 const recreateTab = (sTab: SerializableTabData): TabData => {
-  let tabContent: ReactNode;
+  let tabContent: ReactNode = <MedicalRecordPage patientId="" />;
   let sidebarContent: ReactNode | undefined;
 
   if (sTab.id === "0") {
     tabContent = <BaseTab />;
-    // Always recreate sidebar for tab 0
-    if (sTab.hasSideBar) {
-      sidebarContent = <Sidebar />;
-    }
-  } else {
-    tabContent = <MedicalRecordPage />;
-    // StudyTab doesn't have sidebar
-    sidebarContent = undefined;
+    sidebarContent = <Sidebar />;
   }
 
   return {
     ...sTab,
     tabContent,
     SidebarContent: sidebarContent,
-    hasSideBar: !!sidebarContent, // Ensure hasSideBar matches actual sidebar presence
+    hasSideBar: !!sidebarContent,
   };
 };
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
 
 export default function TabProvider({ children }: { children: ReactNode }) {
   const [activeTabId, setActiveTabId] = useState("0");
@@ -94,6 +83,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     },
   ]);
 
+  // ✅ Sửa đúng cú pháp openTab
   const openTab = (
     id: string,
     name: string,
@@ -106,11 +96,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-<<<<<<< HEAD
-    setAvailableTab((tabs) => [
-=======
     setAvailableTabs((tabs) => [
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
       ...tabs,
       { id, name, tabContent, hasSideBar, SidebarContent },
     ]);
@@ -118,7 +104,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     setActiveTabId(id);
   };
 
-  // ✅ Tự động mở tab nếu localStorage có patientId
+  // ✅ Tự động mở tab từ localStorage
   useEffect(() => {
     const savedPatientId = localStorage.getItem("patientId");
 
@@ -131,67 +117,54 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ✅ ✅ ✅ HÀM closeTab ĐÃ ĐƯỢC THÊM LOGIC XOÁ patientId
+  // ✅ Sửa đúng cú pháp closeTab
   const closeTab = (id: string) => {
-    // Không cho đóng tab chính
     if (id === "0") return;
 
-    // Nếu tab dạng "patient-xxx" nghĩa là MedicalRecord
     if (id.startsWith("patient-")) {
       localStorage.removeItem("patientId");
     }
 
-    // Xóa tab khỏi danh sách
-<<<<<<< HEAD
-    setAvailableTab((prev) => {
-=======
     setAvailableTabs((prev) => {
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
       const updated = prev.filter((tab) => tab.id !== id);
 
-      // chọn tab khác làm active
       if (activeTabId === id) {
-<<<<<<< HEAD
-        const nextActive = updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
-=======
-        const nextActive =
-          updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
->>>>>>> 26a9b02e5d7f005808fd2c8c4ff2b45729bd6e5e
-        setActiveTabId(nextActive.id);
+        const next = updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
+        setActiveTabId(next.id);
       }
 
       return updated;
     });
   };
 
-  React.useEffect(() => {
+  // ✅ Restore tab từ sessionStorage
+  useEffect(() => {
     try {
       const storedTabs = sessionStorage.getItem("browser-tabs");
       const storedActiveId = sessionStorage.getItem("browser-active-tab");
 
       if (storedTabs) {
-        const parsedTabs: SerializableTabData[] = JSON.parse(storedTabs);
+        const parsed: SerializableTabData[] = JSON.parse(storedTabs);
 
-        if (Array.isArray(parsedTabs) && parsedTabs.length > 0) {
-          const recreatedTabs = parsedTabs.map(recreateTab);
-          setAvailableTabs(recreatedTabs);
-          setActiveTabId(storedActiveId || parsedTabs[0].id);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const recreated = parsed.map(recreateTab);
+          setAvailableTabs(recreated);
+          setActiveTabId(storedActiveId || parsed[0].id);
         }
       }
-    } catch (error) {
-      console.error("Failed to load tabs from storage:", error);
+    } catch {
+      console.error("Failed to load tabs");
     }
   }, []);
 
-  React.useEffect(() => {
+  // ✅ Lưu tabs vào sessionStorage
+  useEffect(() => {
     try {
-      const serializableTabs = availableTabs.map(
-        ({ tabContent, SidebarContent, ...rest }) => rest
-      );
-      sessionStorage.setItem("browser-tabs", JSON.stringify(serializableTabs));
+      const serializable = availableTabs.map(({ tabContent, SidebarContent, ...rest }) => rest);
+      sessionStorage.setItem("browser-tabs", JSON.stringify(serializable));
       sessionStorage.setItem("browser-active-tab", activeTabId);
-    } catch (error) {
-      console.error("Failed to save tabs to storage:", error);
+    } catch {
+      console.error("Failed to save tabs");
     }
   }, [availableTabs, activeTabId]);
 
