@@ -236,8 +236,8 @@ export function SeriesAnnotationsModal({
 
           {annotationsError && (
             <Alert variant="destructive" className="shrink-0 border-red-500/40 bg-red-500/10 text-red-200">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-red-300" />
+              <div className="flex gap-4 items-center">
+                <AlertTriangle className="mt-1 h-8 w-8 shrink-0 text-red-300" />
                 <div>
                   <AlertTitle>Unable to load annotations</AlertTitle>
                   <AlertDescription>{annotationsError}</AlertDescription>
