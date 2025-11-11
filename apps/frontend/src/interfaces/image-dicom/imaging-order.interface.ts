@@ -3,6 +3,7 @@ import { BaseEntity, Patient } from "../patient/patient-workflow.interface";
 import { ImagingModality } from "./imaging_modality.interface";
 import { RequestProcedure } from "./request-procedure.interface";
 import { User } from "../user/user.interface";
+import { ImagingOrderForm } from "./imaging-order-form.interface";
 
 export interface CreateImagingOrderDto {
   // patientId: string;
@@ -27,6 +28,8 @@ export interface ImagingOrder extends BaseEntity {
   procedureId?: string;
   procedure?: RequestProcedure;
   orderStatus?: ImagingOrderStatus;
+  imagingOrderForm?: ImagingOrderForm;
+  imagingOrderFormId?: string;
   bodyPart?: string;
   completedDate?: Date;
   clinicalIndication?: string;

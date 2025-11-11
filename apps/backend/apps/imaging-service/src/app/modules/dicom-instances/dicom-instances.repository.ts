@@ -50,7 +50,7 @@ export class DicomInstancesRepository extends BaseRepository<DicomInstance> {
       default:
         throw ThrowMicroserviceException(
           HttpStatus.BAD_REQUEST,
-          'Invalid type find by referenceId for ImagingOrder',
+          'Invalid type find by referenceId for DicomInstance',
           IMAGING_SERVICE
         );
         break;

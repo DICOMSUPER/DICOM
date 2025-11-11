@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
@@ -191,11 +192,14 @@ export function SeriesAnnotationsModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-[80vw] border border-slate-800 bg-slate-950/95 text-slate-100 shadow-2xl shadow-teal-500/10 backdrop-blur-md sm:max-w-[1200px]">
-        <div className="flex max-h-[80vh] flex-col gap-5">
+        <div className="flex h-[85vh] max-h-[85vh] flex-col gap-5">
           <DialogHeader className="shrink-0 rounded-xl bg-slate-900/80 px-6 py-5 shadow-inner shadow-slate-950/40">
             <DialogTitle className="text-2xl font-semibold text-white">
               {modalTitle}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detailed list of annotations stored for the selected DICOM series.
+            </DialogDescription>
             <div className="space-y-1 text-sm text-slate-300">
               <p>{modalSubtitle}</p>
               {series && (
@@ -232,21 +236,26 @@ export function SeriesAnnotationsModal({
 
           {annotationsError && (
             <Alert variant="destructive" className="shrink-0 border-red-500/40 bg-red-500/10 text-red-200">
-              <AlertTitle>Unable to load annotations</AlertTitle>
-              <AlertDescription>{annotationsError}</AlertDescription>
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-red-300" />
+                <div>
+                  <AlertTitle>Unable to load annotations</AlertTitle>
+                  <AlertDescription>{annotationsError}</AlertDescription>
+                </div>
+              </div>
             </Alert>
           )}
 
           {!annotationsLoading && !annotationsError && seriesAnnotations.length > 0 && (
-            <div className="shrink-0 rounded-xl border border-slate-800 bg-slate-900/70 p-5 shadow-inner shadow-slate-950/30">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="rounded-lg border border-slate-700/60 bg-slate-900/85 px-4 py-3 shadow-sm">
+           
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                <div className="rounded-lg bg-slate-900/85 px-4 py-3 shadow-sm">
                   <p className="text-[11px] uppercase tracking-wide text-slate-400">
                     Total Annotations
                   </p>
                   <p className="text-2xl font-semibold text-white">{annotationSummary.total}</p>
                 </div>
-                <div className="rounded-lg border border-slate-700/60 bg-slate-900/85 px-4 py-3 shadow-sm">
+                <div className="rounded-lg bg-slate-900/85 px-4 py-3 shadow-sm">
                   <p className="text-[11px] uppercase tracking-wide text-slate-400">
                     Unique Instances
                   </p>
@@ -257,7 +266,7 @@ export function SeriesAnnotationsModal({
                 {annotationStatuses.map((status) => (
                   <div
                     key={status}
-                    className="rounded-lg border border-slate-700/60 bg-slate-900/85 px-4 py-3 shadow-sm"
+                    className="rounded-lg bg-slate-900/85 px-4 py-3 shadow-sm"
                   >
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">
                       {formatStatusLabel(status)}
@@ -268,7 +277,7 @@ export function SeriesAnnotationsModal({
                   </div>
                 ))}
               </div>
-            </div>
+            
           )}
 
           <div className="flex-1 overflow-y-auto rounded-xl bg-slate-900/40 px-4 py-4">
@@ -278,11 +287,15 @@ export function SeriesAnnotationsModal({
                 Loading annotations...
               </div>
             ) : seriesAnnotations.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center text-slate-400">
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-slate-400">
+                <Inbox className="h-10 w-10 text-slate-500" />
                 <p className="text-sm">No annotations found for this series.</p>
               </div>
             ) : (
               <div className="space-y-4">
+                <p className="text-2xl font-semibold text-white">
+                  Series Annotations
+                </p>
                 {seriesAnnotations.map(({ annotation, instance }) => {
                   const annotationData: Annotation = annotation.annotationData;
                   const metadata = annotationData.metadata;
@@ -291,11 +304,7 @@ export function SeriesAnnotationsModal({
 
                   return (
                   <div
-                    key={
-                      annotation.id ||
-                      (annotation as unknown as { annotationId?: string }).annotationId ||
-                      (annotation as unknown as { annotation_id?: string }).annotation_id
-                    }
+                    key={annotation.id}
                     className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/25"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

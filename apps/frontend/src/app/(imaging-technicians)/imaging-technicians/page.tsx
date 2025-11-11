@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import ImageTechnicianPageWrapper from "@/components/imaging-technicians/ImageTechnicianPageWrapper";
 // ...existing imports...
 
 // Loading component
@@ -16,23 +17,11 @@ function ImagingTechniciansLoading() {
   );
 }
 
-// Inner component that uses useSearchParams
-function ImagingTechniciansContent() {
-  const searchParams = useSearchParams();
-  // ...existing code that uses searchParams...
-  
-  return (
-    <div>
-      {/* Your existing JSX content */}
-    </div>
-  );
-}
-
 // Main page component
 export default function ImagingTechniciansPage() {
   return (
     <Suspense fallback={<ImagingTechniciansLoading />}>
-      <ImagingTechniciansContent />
+      <ImageTechnicianPageWrapper />
     </Suspense>
   );
 }

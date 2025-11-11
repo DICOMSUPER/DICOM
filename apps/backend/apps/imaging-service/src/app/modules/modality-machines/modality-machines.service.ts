@@ -14,7 +14,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { EntityManager, FindOptionsWhere } from 'typeorm';
 
 const relations = ['modality'];
 
@@ -97,10 +97,20 @@ export class ModalityMachinesService {
     });
   };
 
-  findAll = async (modalityId?: string): Promise<ModalityMachine[]> => {
-    const query = modalityId
+  findAll = async (data: {
+    modalityId?: string;
+    roomId?: string;
+  }): Promise<ModalityMachine[]> => {
+    let whereClause: FindOptionsWhere<ModalityMachine> = { isDeleted: false };
+
+    if (data.modalityId)
+      whereClause = { ...whereClause, modalityId: data.modalityId };
+
+    if (data.roomId) whereClause = { ...whereClause, roomId: data.roomId };
+
+    const query = data.modalityId
       ? {
-          where: { modalityId: modalityId, isDeleted: false },
+          where: whereClause,
           relations: relations,
         }
       : { relations };

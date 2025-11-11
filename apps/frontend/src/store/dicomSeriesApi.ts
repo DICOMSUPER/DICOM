@@ -2,7 +2,10 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { PaginatedQuery, PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import {
+  PaginatedQuery,
+  PaginatedResponse,
+} from "@/interfaces/pagination/pagination.interface";
 
 export type SeriesReferenceType =
   | "study"
@@ -22,7 +25,7 @@ export const dicomSeriesApi = createApi({
   tagTypes: ["DicomSeries", "DicomSeriesList"],
   endpoints: (builder) => ({
     getDicomSeriesPaginated: builder.query<
-      ApiResponse<PaginatedResponse<DicomSeries[]>>,
+      ApiResponse<PaginatedResponse<DicomSeries>>,
       PaginatedQuery | void
     >({
       query: (params) => ({
@@ -30,16 +33,18 @@ export const dicomSeriesApi = createApi({
         method: "GET",
         params,
       }),
-      providesTags: (result) =>
-        result?.data?.data
+      providesTags: (result) => {
+        const seriesList = result?.data?.data;
+        return seriesList
           ? [
-              ...result.data.data.map((series) => ({
+              ...seriesList.map((series) => ({
                 type: "DicomSeries" as const,
                 id: series.id,
               })),
               { type: "DicomSeriesList", id: "LIST" },
             ]
-          : [{ type: "DicomSeriesList", id: "LIST" }],
+          : [{ type: "DicomSeriesList", id: "LIST" }];
+      },
     }),
 
     getDicomSeriesById: builder.query<ApiResponse<DicomSeries>, string>({
@@ -51,7 +56,7 @@ export const dicomSeriesApi = createApi({
     }),
 
     getDicomSeriesByReference: builder.query<
-      ApiResponse<PaginatedResponse<DicomSeries[]>>,
+      ApiResponse<PaginatedResponse<DicomSeries>>,
       SeriesReferenceArgs
     >({
       query: ({ id, type, params }) => ({
@@ -59,13 +64,15 @@ export const dicomSeriesApi = createApi({
         method: "GET",
         params: { type, ...(params || {}) },
       }),
-      providesTags: (result) =>
-        result?.data?.data
-          ? result.data.data.map((series) => ({
+      providesTags: (result) => {
+        const seriesList = result?.data?.data;
+        return seriesList
+          ? seriesList.map((series) => ({
               type: "DicomSeries" as const,
               id: series.id,
             }))
-          : [],
+          : [];
+      },
     }),
   }),
 });
@@ -73,6 +80,6 @@ export const dicomSeriesApi = createApi({
 export const {
   useGetDicomSeriesPaginatedQuery,
   useGetDicomSeriesByIdQuery,
+  useGetDicomSeriesByReferenceQuery,
   useLazyGetDicomSeriesByReferenceQuery,
 } = dicomSeriesApi;
-

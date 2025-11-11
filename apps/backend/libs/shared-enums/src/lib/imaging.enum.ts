@@ -42,13 +42,13 @@ export enum AnnotationType {
   COBB_ANGLE = 'CobbAngle',
   BIDIRECTIONAL = 'Bidirectional',
   SEGMENT_BIDIRECTIONAL = 'SegmentBidirectional',
-  
+
   // ROI (Region of Interest) tools
   CIRCLE_ROI = 'CircleROI',
   ELLIPTICAL_ROI = 'EllipticalROI',
   RECTANGLE_ROI = 'RectangleROI',
   SPLINE_ROI = 'SplineROI',
-  
+
   // Annotation tools
   ARROW_ANNOTATE = 'ArrowAnnotate',
   LABEL = 'Label',
