@@ -4,13 +4,15 @@ import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.int
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
-
 export const requestProcedureApi = createApi({
   reducerPath: "requestProcedureApi",
   baseQuery: axiosBaseQuery("/request-procedure"),
   tagTypes: ["RequestProcedure"],
   endpoints: (builder) => ({
-    getAllRequestProcedures: builder.query<ApiResponse<RequestProcedure[]>, { bodyPartId?: string; modalityId?: string } | void>({
+    getAllRequestProcedures: builder.query<
+      ApiResponse<RequestProcedure[]>,
+      { bodyPartId?: string; modalityId?: string } | void
+    >({
       query: (filters) => ({
         url: "",
         method: "GET",
@@ -18,7 +20,13 @@ export const requestProcedureApi = createApi({
       }),
       providesTags: (result) =>
         result
-          ? [...result.data.map((r) => ({ type: "RequestProcedure" as const, id: r.id })), { type: "RequestProcedure", id: "LIST" }]
+          ? [
+              ...result.data.map((r) => ({
+                type: "RequestProcedure" as const,
+                id: r.id,
+              })),
+              { type: "RequestProcedure", id: "LIST" },
+            ]
           : [{ type: "RequestProcedure", id: "LIST" }],
     }),
 
@@ -33,7 +41,13 @@ export const requestProcedureApi = createApi({
       }),
       providesTags: (result) =>
         result
-          ? [...result.data.map((r) => ({ type: "RequestProcedure" as const, id: r.id })), { type: "RequestProcedure", id: "LIST" }]
+          ? [
+              ...result.data.map((r) => ({
+                type: "RequestProcedure" as const,
+                id: r.id,
+              })),
+              { type: "RequestProcedure", id: "LIST" },
+            ]
           : [{ type: "RequestProcedure", id: "LIST" }],
     }),
 
@@ -42,19 +56,31 @@ export const requestProcedureApi = createApi({
       providesTags: (result, error, id) => [{ type: "RequestProcedure", id }],
     }),
 
-    createRequestProcedure: builder.mutation<RequestProcedure, Partial<RequestProcedure>>({
+    createRequestProcedure: builder.mutation<
+      RequestProcedure,
+      Partial<RequestProcedure>
+    >({
       query: (body) => ({ url: "", method: "POST", body }),
       invalidatesTags: [{ type: "RequestProcedure", id: "LIST" }],
     }),
 
-    updateRequestProcedure: builder.mutation<RequestProcedure, { id: string; body: Partial<RequestProcedure> }>({
+    updateRequestProcedure: builder.mutation<
+      RequestProcedure,
+      { id: string; body: Partial<RequestProcedure> }
+    >({
       query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
-      invalidatesTags: (result, error, { id }) => [{ type: "RequestProcedure", id }, { type: "RequestProcedure", id: "LIST" }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "RequestProcedure", id },
+        { type: "RequestProcedure", id: "LIST" },
+      ],
     }),
 
     deleteRequestProcedure: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({ url: `${id}`, method: "DELETE" }),
-      invalidatesTags: (result, error, id) => [{ type: "RequestProcedure", id }, { type: "RequestProcedure", id: "LIST" }],
+      invalidatesTags: (result, error, id) => [
+        { type: "RequestProcedure", id },
+        { type: "RequestProcedure", id: "LIST" },
+      ],
     }),
   }),
 });

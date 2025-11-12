@@ -2,10 +2,10 @@
 import axios from "axios";
 import { Camera } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import OrderInfo from "./OrderInfo";
+import OrderInfo from "./order-info";
 import Loading from "@/components/common/Loading";
-import UploadedStudies from "./UploadedStudies";
-import FileUpload from "./FileUpload";
+import UploadedStudies from "./upload-studies";
+import FileUpload from "./file-upload";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { useGetImagingOrderByIdQuery } from "@/store/imagingOrderApi";
 import { useUseGetDicomStudyByReferenceIdQuery } from "@/store/dicomStudyApi";
@@ -17,6 +17,12 @@ import Cookies from "js-cookie";
 import { useGetAllModalityMachineQuery } from "@/store/modalityMachineApi";
 import { useGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import { useUploadDicomFileMutation } from "@/store/imagingApi";
+import { useGetPatientByIdQuery } from "@/store/patientApi";
+import { useGetUserByIdQuery } from "@/store/userApi";
+import PatientInfo from "./patient-info";
+import PhysicianInfo from "./physician-info";
+import ProcedureInfo from "./procedure-info";
+import { MachineStatus } from "@/enums/machine-status.enum";
 
 export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   const [file, setFile] = useState<File | null>(null);
@@ -48,6 +54,14 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
       { skip: !orderData?.data?.id }
     );
 
+  //get patient related to this order
+  const { data: patientData, isLoading: isLoadingPatient } =
+    useGetPatientByIdQuery(
+      orderData?.data?.imagingOrderForm?.patientId as string,
+      {
+        skip: !orderData?.data?.imagingOrderForm?.patientId,
+      }
+    );
   //get series if a study is selected
   const { data: seriesData, refetch: refetchSeries } =
     useGetDicomSeriesByReferenceQuery(
@@ -55,6 +69,14 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
       { skip: !selectedStudy?.id }
     );
 
+  //get physician related to this order
+  const { data: physicianData, isLoading: isLoadingPhysician } =
+    useGetUserByIdQuery(
+      orderData?.data?.imagingOrderForm?.orderingPhysicianId as string,
+      {
+        skip: !orderData?.data?.imagingOrderForm?.orderingPhysicianId,
+      }
+    );
   //get instances if a series is selected
   const { data: instanceData, refetch: refetchInstance } =
     useGetInstancesByReferenceQuery(
@@ -71,6 +93,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
       {
         modalityId: orderData?.data?.procedure?.modalityId as string,
         roomId: currentRoomId as string,
+        status: MachineStatus.ACTIVE,
       },
       {
         skip: !orderData?.data?.procedure?.modalityId || !currentRoomId,
@@ -78,6 +101,14 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     );
 
   const [uploadDicomFile] = useUploadDicomFileMutation();
+
+  // Store orderId in localStorage when order page loads
+  useEffect(() => {
+    if (order_id) {
+      localStorage.setItem("imagingOrderId", order_id);
+    }
+  }, [order_id]);
+
   if (isLoadingOrder) return <Loading />;
 
   const order = orderData?.data;
@@ -92,6 +123,11 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     ? modalityMachinesData.data
     : [];
 
+  const patient = patientData?.data;
+
+  const physician = physicianData?.data;
+
+  const procedure = order?.procedure;
   const handleUploadDicomFile = async (
     dicomFile: File,
     modalityMachineId: string
@@ -104,12 +140,19 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     }).unwrap();
 
     refetchStudy();
+    if (selectedStudy) refetchSeries();
+    if (selectedSeries) refetchInstance();
   };
   return (
     <div>
       <div className="py-1">
         {!isLoadingOrder && orderData && (
-          <OrderInfo order={orderData.data}></OrderInfo>
+          <OrderInfo
+            order={orderData.data}
+            patient={patient}
+            physician={physician}
+            procedure={procedure}
+          ></OrderInfo>
         )}
       </div>
       <div className="py-1">
@@ -130,6 +173,8 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
           <FileUpload
             enabled={
               modalityMachines.length > 0 && !isLoadingModalityMachines && order
+                ? true
+                : false
             }
             order={order}
             isImporting={isImporting}

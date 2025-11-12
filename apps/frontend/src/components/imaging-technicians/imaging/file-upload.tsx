@@ -166,13 +166,15 @@ export default function FileUpload({
 
   return (
     <div className="relative">
-      <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-        <h3 className="text-base font-semibold mb-6 text-gray-900">
-          Import DICOM Images
-        </h3>
+      <div className="bg-white rounded-md shadow-sm border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-base font-semibold text-gray-900">
+            Import DICOM Images
+          </h3>
+        </div>
 
         {/* Machine Selection */}
-        <div className="mb-6">
+        <div className="mb-6 p-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Select Machine
           </label>
@@ -202,7 +204,7 @@ export default function FileUpload({
         <div
           onDrop={isImporting || file ? () => {} : handleDrop}
           onDragOver={isImporting || file ? () => {} : handleDragOver}
-          className={`border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all cursor-pointer ${
+          className={`border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all cursor-pointer mx-6 my-2 ${
             file || isImporting
               ? "bg-gray-50 border-gray-300 cursor-not-allowed opacity-60"
               : "hover:border-gray-400 hover:bg-gray-50"
@@ -212,7 +214,7 @@ export default function FileUpload({
           }
         >
           {isImporting ? (
-            <div className="mx-auto">
+            <div className="mx-auto mx-6">
               <div className="flex justify-center mb-4">
                 {!isComplete ? (
                   <Loader2 className="h-10 w-10 text-gray-400 animate-spin" />
@@ -230,7 +232,11 @@ export default function FileUpload({
               </p>
             </div>
           ) : (
-            <>
+            <div
+              className={`mx-6 ${
+                file ? "cursor-not-allowed" : "cursor-pointer"
+              }`}
+            >
               <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
               <h4 className="text-sm font-medium text-gray-900">
                 Drop {order?.procedure?.modality?.modalityName || "DICOM"} file
@@ -239,7 +245,7 @@ export default function FileUpload({
               <p className="text-xs text-gray-500 mt-1">
                 Or click to browse for a DICOM file (.dcm, .dicom)
               </p>
-            </>
+            </div>
           )}
           <input
             ref={fileInputRef}
@@ -252,7 +258,7 @@ export default function FileUpload({
 
         {/* Selected File */}
         {file && !isImporting && (
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between mx-6">
             <div className="flex items-center gap-2">
               <File className="w-4 h-4 text-gray-500" />
               <div className="text-left">
@@ -297,7 +303,7 @@ export default function FileUpload({
 
         {/* Upload Button */}
         {file && !isImporting && (
-          <div className="mt-4">
+          <div className="mt-4 mx-6">
             <button
               onClick={handleUpload}
               disabled={!selectedMachine}
