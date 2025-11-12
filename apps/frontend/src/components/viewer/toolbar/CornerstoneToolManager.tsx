@@ -44,6 +44,8 @@ import {
   SphereScissorsTool,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
+import { eventTarget, getRenderingEngine, type Types } from "@cornerstonejs/core";
+import { AnnotationType } from "@/enums/image-dicom.enum";
 
 // Tool type definitions
 type NavigationTool = 'WindowLevel' | 'Pan' | 'Zoom' | 'StackScroll' | 'Probe' | 'TrackballRotate' | 'MIPJumpToClick';
@@ -51,7 +53,15 @@ type MeasurementTool = 'Length' | 'Height' | 'CircleROI' | 'EllipticalROI' | 'Re
 type AdvancedTool = 'PlanarRotate' | 'Magnify' | 'ETDRSGrid' | 'ReferenceLines' | 'OrientationMarker' | 'OverlayGrid';
 type AnnotationTool = 'KeyImage' | 'Label' | 'DragProbe' | 'PaintFill' | 'Eraser';
 type SegmentationTool = 'Brush' | 'CircleScissors' | 'RectangleScissors' | 'SphereScissors';
-type CustomTool = 'Rotate' | 'Flip' | 'Invert' | 'ClearAnnotations' | 'ClearSegmentation' | 'UndoAnnotation' | 'Reset';
+type CustomTool =
+  | "Rotate"
+  | "Flip"
+  | "Invert"
+  | "ClearAnnotations"
+  | "ClearViewportAnnotations"
+  | "ClearSegmentation"
+  | "UndoAnnotation"
+  | "Reset";
 type ToolType = NavigationTool | MeasurementTool | AdvancedTool | AnnotationTool | SegmentationTool | CustomTool;
 
 // Tool mapping interfaces
@@ -102,6 +112,7 @@ const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
   'Flip': { toolName: 'Flip', toolClass: null, category: 'custom' },
   'Invert': { toolName: 'Invert', toolClass: null, category: 'custom' },
   'ClearAnnotations': { toolName: 'ClearAnnotations', toolClass: null, category: 'custom' },
+  'ClearViewportAnnotations': { toolName: 'ClearViewportAnnotations', toolClass: null, category: 'custom' },
   'ClearSegmentation': { toolName: 'ClearSegmentation', toolClass: null, category: 'custom' },
   'UndoAnnotation': { toolName: 'UndoAnnotation', toolClass: null, category: 'custom' },
   'Reset': { toolName: 'Reset', toolClass: null, category: 'custom' },
@@ -186,15 +197,11 @@ const getToolClass = (toolType: ToolType): any | null => {
   return mapping?.toolClass || null;
 };
 
-const getToolsByCategory = (category: 'navigation' | 'measurement' | 'advanced' | 'annotation' | 'segmentation' | 'custom'): ToolType[] => {
-  return Object.keys(TOOL_MAPPINGS).filter(toolType => 
-    TOOL_MAPPINGS[toolType as ToolType].category === category
-  ) as ToolType[];
-};
-
 const isCustomTool = (toolType: ToolType): boolean => {
   return getToolMapping(toolType)?.category === 'custom';
 };
+
+const annotationToolNames = Object.values(AnnotationType);
 
 // Keyboard shortcut helpers
 const getToolByKeyboardShortcut = (key: string): string | null => {
@@ -290,6 +297,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
       
       case 'ClearAnnotations':
         handleClearAnnotations();
+        break;
+
+      case 'ClearViewportAnnotations':
+        handleClearViewportAnnotations();
         break;
       
       case 'ClearSegmentation':
@@ -401,36 +412,34 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
   const handleClearAnnotations = () => {
     if (!viewport || !viewportReady) return;
     
-    try {
-      console.log(`Clearing annotations for viewport ${viewportId}`);
-      
-      if (viewport) {
-        const measurementTools = getToolsByCategory('measurement');
-        measurementTools.forEach(toolType => {
-          const toolName = getToolName(toolType);
-          if (toolName) {
-            try {              
-              const annotations = annotation.state.getAnnotations(toolName, viewport.element);
-              while (annotations.length > 0) {
-                annotation.state.removeAnnotation(annotations[0].annotationUID as string);
-              }
-            } catch (error) {
-              console.warn(`Failed to get annotations for ${toolName}:`, error);
-            }
-          }
-        });
-      }
-
-      setTimeout(() => {
-        if (viewport && typeof viewport.render === 'function') {
-          viewport.render();
-        }
-      }, 100);
+    try {            
+      annotation.state.removeAllAnnotations();
       
       console.log(`Successfully cleared annotations for viewport ${viewportId}`);
     } catch (error) {
       console.error('Error clearing annotations:', error);
     }
+  };
+
+  const handleClearViewportAnnotations = () => {
+    if (!viewport || !viewportReady) return;
+
+    const element = viewport.element as HTMLDivElement | null;
+    if (!element) {
+      console.warn("Unable to resolve viewport element for clearing annotations.");
+      return;
+    }
+
+    annotationToolNames.forEach((toolName) => {
+      try {
+        annotation.state.removeAnnotations(toolName, element);
+      } catch (error) {
+        console.warn(
+          `Failed to remove annotations for tool ${toolName} on viewport ${viewportId}:`,
+          error
+        );
+      }
+    });
   };
 
   // Clear segmentation handler
@@ -488,24 +497,19 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
         let lastAnnotationToolName = null;
         
         // Get all measurement tools and find the last annotation
-        const measurementTools = getToolsByCategory('measurement');
-        
         // Simple approach: get the last annotation from the last tool that has annotations
-        for (let i = measurementTools.length - 1; i >= 0; i--) {
-          const toolType = measurementTools[i];
-          const toolName = getToolName(toolType);
-          if (toolName) {
-            try {
-              const annotations = annotation.state.getAnnotations(toolName, viewport.element);
-              if (annotations && annotations.length > 0) {
-                // Get the last annotation from this tool
-                lastAnnotation = annotations[annotations.length - 1];
-                lastAnnotationToolName = toolName;
-                break; // Found the most recent annotation
-              }
-            } catch (error) {
-              console.warn(`Failed to get annotations for ${toolName}:`, error);
+        for (let i = annotationToolNames.length - 1; i >= 0; i--) {
+          const toolName = annotationToolNames[i];
+          try {
+            const annotations = annotation.state.getAnnotations(toolName, viewport.element);
+            if (annotations && annotations.length > 0) {
+              // Get the last annotation from this tool
+              lastAnnotation = annotations[annotations.length - 1];
+              lastAnnotationToolName = toolName;
+              break; // Found the most recent annotation
             }
+          } catch (error) {
+            console.warn(`Failed to get annotations for ${toolName}:`, error);
           }
         }
         
@@ -529,6 +533,51 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
       console.error('Error undoing annotation:', error);
     }
   };
+
+  useEffect(() => {
+    if (!viewport || !viewportReady) {
+      return;
+    }
+
+    const relevantEvents = [
+      ToolEnums.Events.ANNOTATION_COMPLETED,
+      ToolEnums.Events.ANNOTATION_MODIFIED,
+      ToolEnums.Events.ANNOTATION_REMOVED,
+    ];
+
+    const handleAnnotationEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        viewportId?: string;
+        annotation?: { metadata?: Record<string, unknown> };
+      }>;
+
+      const eventViewportId =
+        customEvent.detail?.viewportId ??
+        (customEvent.detail?.annotation?.metadata?.viewportId as string | undefined);
+
+      if (viewportId && eventViewportId && eventViewportId !== viewportId) {
+        return;
+      }
+
+      if (typeof viewport.render === "function") {
+        try {
+          viewport.render();
+        } catch (renderError) {
+          console.error("Error rendering viewport after annotation event:", renderError);
+        }
+      }
+    };
+
+    relevantEvents.forEach((eventName) => {
+      eventTarget.addEventListener(eventName, handleAnnotationEvent as EventListener);
+    });
+
+    return () => {
+      relevantEvents.forEach((eventName) => {
+        eventTarget.removeEventListener(eventName, handleAnnotationEvent as EventListener);
+      });
+    };
+  }, [viewport, viewportReady, viewportId]);
 
   useEffect(() => {
     if (!toolGroupId || !renderingEngineId || !viewportId || !viewportReady) {
@@ -604,8 +653,6 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
             { mouseButton: MouseBindings.Wheel, modifierKey: ToolEnums.KeyboardBindings.Ctrl }
           ]
         });
-
-        console.log('Mouse bindings configured successfully - Zoom separated from wheel');
       } catch (error) {
         console.warn('Error setting up mouse bindings:', error);
       }
@@ -652,6 +699,21 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
       console.log('Handling custom tool:', selectedTool);
       handleCustomTool(selectedTool);
       onToolChange?.(selectedTool);
+      return;
+    }
+
+    const viewportsInfo =
+      (toolGroupRef.current.getViewportsInfo?.() as Types.IViewportId[] | undefined) ?? [];
+    if (viewportsInfo.length === 0) {
+      console.warn('Tool group has no registered viewports; skipping tool activation.');
+      return;
+    }
+    const hasMissingEngine = viewportsInfo.some(({ renderingEngineId, viewportId }) => {
+      const engine = getRenderingEngine(renderingEngineId);
+      return !engine || !engine.getViewport?.(viewportId);
+    });
+    if (hasMissingEngine) {
+      console.warn('Rendering engine/viewport missing for tool group; defer tool activation.');
       return;
     }
 
@@ -717,6 +779,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     resetView: handleResetView,
     invertColorMap: handleInvertColorMap,
     clearAnnotations: handleClearAnnotations,
+    clearViewportAnnotations: handleClearViewportAnnotations,
     clearSegmentation: handleClearSegmentation,
     undoAnnotation: handleUndoAnnotation,
   });
@@ -740,7 +803,6 @@ export {
   getToolMapping,
   getToolName,
   getToolClass,
-  getToolsByCategory,
   isCustomTool,
   // Export keyboard shortcut functions
   getToolByKeyboardShortcut,

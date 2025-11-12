@@ -92,7 +92,13 @@ const actionTools = [
     action: "viewDraftAnnotations",
   },
   { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
-  { id: "clear", icon: Trash2, label: "Clear Annotations", action: "clear" },
+  { id: "clear", icon: Trash2, label: "Clear All Annotations", action: "clear" },
+  {
+    id: "clear-viewport",
+    icon: Trash2,
+    label: "Clear Active Viewport",
+    action: "clearViewport",
+  },
   {
     id: "clear-segmentation",
     icon: Trash2,
@@ -146,7 +152,15 @@ export default function ViewerLeftSidebar({
   onViewDraftAnnotations,
   activeAnnotationView,
 }: ViewerLeftSidebarProps) {
-  const { rotateViewport, flipViewport, resetView, clearAnnotations, undoAnnotation, invertViewport } = useViewer();
+  const {
+    rotateViewport,
+    flipViewport,
+    resetView,
+    clearAnnotations,
+    clearViewportAnnotations,
+    undoAnnotation,
+    invertViewport,
+  } = useViewer();
 
   // Map tool names for display
   const getToolDisplayName = (toolId: string) => {
@@ -206,6 +220,9 @@ export default function ViewerLeftSidebar({
       case 'clear':
         clearAnnotations();
         break;
+      case 'clearViewport':
+        clearViewportAnnotations();
+        break;
       case 'clearSegmentation':
         // Clear segmentation action
         console.log('Clear segmentation action triggered');
@@ -229,6 +246,10 @@ export default function ViewerLeftSidebar({
   const getActionButtonClasses = (toolId: string) => {
     if (toolId === 'clear') {
       return "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300";
+    }
+
+    if (toolId === 'clear-viewport') {
+      return "bg-slate-800 text-slate-400 hover:bg-orange-900/30 hover:text-orange-300";
     }
 
     if (toolId === 'view-all-annotations') {

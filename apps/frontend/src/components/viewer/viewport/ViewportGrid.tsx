@@ -2,7 +2,7 @@ import dynamic from "next/dynamic";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { useViewer } from "@/contexts/ViewerContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ViewPortMain = dynamic(
   () => import("@/components/viewer/viewport/ViewPortMain"),
@@ -32,6 +32,31 @@ export default function ViewportGrid({
     setViewportId,
     setViewportSeries,
   } = useViewer();
+
+  // Assign selected series to active viewport when series changes
+  const prevSelectedSeriesIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedSeries) {
+      prevSelectedSeriesIdRef.current = null;
+      return;
+    }
+
+    const selectedId = selectedSeries.id;
+    const activeViewport = state.activeViewport;
+    const selectedChanged = prevSelectedSeriesIdRef.current !== selectedId;
+
+    if (selectedChanged) {
+      setViewportSeries(activeViewport, selectedSeries);
+      console.log(
+        "🔗 Assigned series to active viewport:",
+        activeViewport,
+        selectedSeries.seriesDescription
+      );
+    }
+
+    prevSelectedSeriesIdRef.current = selectedId;
+  }, [selectedSeries, state.activeViewport, getViewportSeries, setViewportSeries]);
 
   // Local state to track viewport IDs to avoid setState during render
   const [localViewportIds, setLocalViewportIds] = useState<
@@ -159,15 +184,24 @@ export default function ViewportGrid({
             <div className="flex items-center justify-between text-xs text-white">
               {/* Left: VP Badge + Body Part + Series Description */}
               <div className="flex items-center gap-2">
-                <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-bold border border-blue-400">
+                <div className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
+                  viewport.isActive 
+                    ? 'bg-blue-600/90 text-white border-blue-400' 
+                    : 'bg-slate-700/90 text-slate-300 border-slate-600'
+                }`}>
                   VP {viewport.index + 1}
                 </div>
                 <span className="bg-gradient-to-r from-teal-600 to-teal-500 text-white px-2 py-1 rounded text-xs font-bold border border-teal-400/30">
                   {viewport.series?.bodyPartExamined || "N/A"}
                 </span>
-                <span className="text-teal-100 font-medium">
-                  {viewport.series?.seriesDescription || "Drop series here"}
+                <span className="text-teal-100 font-medium truncate max-w-[200px]" title={viewport.series?.seriesDescription}>
+                  {viewport.series?.seriesDescription || "No series loaded"}
                 </span>
+                {viewport.isActive && viewport.series && (
+                  <span className="ml-2 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-semibold rounded border border-green-500/40">
+                    ACTIVE
+                  </span>
+                )}
               </div>
 
               {/* Right: Series Info */}
