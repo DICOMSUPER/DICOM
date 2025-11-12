@@ -47,6 +47,7 @@ import {
   EncounterPriorityLevel,
   EncounterStatus,
 } from "@/enums/patient-workflow.enum";
+import { is } from "date-fns/locale";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -57,6 +58,7 @@ interface PatientEncounterTableProps {
   onPageChange: (page: number) => void;
   isUpdating: boolean;
   isLoading: boolean;
+  isFetching: boolean;
   employeeId: string;
   onTransferPhysician: (encounter: string) => void;
 }
@@ -72,6 +74,7 @@ export function PatientEncounterTable({
   onPageChange,
   isUpdating,
   isLoading,
+  isFetching,
   employeeId,
   onTransferPhysician,
 }: PatientEncounterTableProps) {
@@ -361,7 +364,28 @@ export function PatientEncounterTable({
     pageCount: pagination.totalPages,
   });
 
-  if (encounterItems.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gradient-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200">
+              {columns.map((_, index) => (
+                <TableHead key={index} className="px-6 py-4">
+                  <div className="h-4 bg-slate-200 rounded animate-pulse" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableSkeleton rows={5} columns={columns.length} />
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
+  if (encounterItems.length === 0 && !isLoading && !isFetching) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
         <div className="flex flex-col items-center justify-center">
@@ -404,27 +428,25 @@ export function PatientEncounterTable({
               ))}
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableSkeleton rows={5} columns={columns.length} />
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className={getRowClassName(
-                      row.original.priority as EncounterPriorityLevel
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-6 py-4">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={`${getRowClassName(
+                    row.original.priority as EncounterPriorityLevel
+                  )} ${
+                    isFetching ? "opacity-60" : "opacity-100"
+                  } transition-opacity`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-6 py-4">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

@@ -6,6 +6,8 @@ import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { RoomSchedule } from "@/interfaces/user/room-schedule.interface";
 import { formatDate } from "@/lib/formatTimeDate";
 import {
   useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
@@ -59,25 +61,36 @@ export default function QueuePage() {
     dateFields: ["encounterDateFrom", "encounterDateTo"],
   });
 
-  const { data, isLoading, isFetching, error } =
-    useGetPatientEncountersInRoomQuery({ filters: apiFilters });
-
-  const { data: currentRoom } =
+  const { data: currentRoom, isLoading: isCurrentRoomLoading } =
     useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
-  const roomId = currentRoom?.[0]?.roomSchedule?.room_id;
-  console.log("RoomScheduleData", currentRoom);
+  const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
+  console.log("RoomScheduleData", currentRoom?.data as EmployeeRoomAssignment[]);
+  console.log("RoomId", roomId);
+
+  const { data, isLoading, isFetching, error } =
+    useGetPatientEncountersInRoomQuery(
+      {
+        filters: {
+          ...apiFilters,
+          roomId: roomId,
+        },
+      },
+      {
+        skip: !roomId,
+      }
+    );
 
   const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
-      filter: { roomScheduleId: currentRoom?.[0]?.id },
+      filter: { roomScheduleId: currentRoom?.data?.[0]?.id },
     },
     {
-      skip: !currentRoom?.[0]?.id,
+      skip: !currentRoom?.data?.[0]?.id,
     }
   );
   console.log("assignment", employeeAssignInRoom);
-  const anotherEmployeeAssignInRoom = employeeAssignInRoom?.filter(
-    (assignment) => assignment.employeeId !== currentRoom?.[0]?.employeeId
+  const anotherEmployeeAssignInRoom = employeeAssignInRoom?.data.filter(
+    (assignment) => assignment.employeeId !== currentRoom?.data?.[0]?.employeeId
   );
   console.log("another assignment", anotherEmployeeAssignInRoom);
 
@@ -120,19 +133,31 @@ export default function QueuePage() {
     try {
       const encounterItem = data?.data.find((item) => item.id === id);
       if (!encounterItem) {
-        toast.error("Queue item not found");
+        toast.error("Encounter item not found");
         return;
       }
-      const inProgressQueue = data?.data.find(
-        (item) => item.status === EncounterStatus.ARRIVED
+    const arrivedEncounter = data?.data.find(
+      (item) => 
+        item.status === EncounterStatus.ARRIVED && 
+        item.assignedPhysicianId === currentRoom?.data?.[0]?.employeeId &&
+          item.id !== id 
       );
+
+    if (arrivedEncounter) {
+      toast.warning(
+        `You are currently serving another patient (${arrivedEncounter.patient?.firstName} ${arrivedEncounter.patient?.lastName}). Please complete or transfer them first.`,
+        { duration: 5000 }
+      );
+      return;
+    }
       await updatePatientEncounter({
         id,
         data: {
           status: EncounterStatus.ARRIVED,
-          assignedPhysicianId: currentRoom?.[0]?.employeeId,
+          assignedPhysicianId: currentRoom?.data?.[0]?.employeeId,
         },
       }).unwrap();
+      toast.success("Started serving patient");
     } catch (error) {
       console.error("Failed to start serving:", error);
       toast.error("Failed to start serving. Please try again.");
@@ -247,7 +272,7 @@ export default function QueuePage() {
           onReset={handleReset}
         />
         <PatientEncounterTable
-          employeeId={currentRoom?.[0]?.employeeId as string}
+          employeeId={currentRoom?.data?.[0]?.employeeId as string}
           encounterItems={data?.data || []}
           onStartServing={handleStartServing}
           onComplete={handleComplete}
@@ -255,7 +280,8 @@ export default function QueuePage() {
           pagination={paginationMeta}
           onPageChange={handlePageChange}
           isUpdating={isUpdating}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading || isCurrentRoomLoading}
+          isFetching={isFetching}
           onTransferPhysician={handleTransferPhysician}
         />
         <ModalTransferPhysician
