@@ -163,6 +163,9 @@ export class ImagingOrdersController {
         userIds: physicianIds,
       })
     );
+    const hasPatientFilter = Boolean(
+      patientFirstName || patientLastName || mrn
+    );
     if ((patientFirstName || patientLastName || mrn) && patients.length === 0) {
       return [];
     }
@@ -179,7 +182,9 @@ export class ImagingOrdersController {
       };
     });
 
-    return combined;
+    return hasPatientFilter
+      ? combined.filter((orderWithPatient) => Boolean(orderWithPatient.patient))
+      : combined;
   }
 
   @Get(':id/room-stats')
@@ -223,11 +228,9 @@ export class ImagingOrdersController {
   @Get('patient/:patientId')
   async getImagingOrdersByPatientId(@Param('patientId') patientId: string) {
     return await firstValueFrom(
-      this.imagingService.send(
-        'ImagingService.ImagingOrders.FindByPatientId',
-        { patientId }
-      )
+      this.imagingService.send('ImagingService.ImagingOrders.FindByPatientId', {
+        patientId,
+      })
     );
   }
-  
 }

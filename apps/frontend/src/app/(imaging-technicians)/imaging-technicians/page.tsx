@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import ImageTechnicianPageWrapper from "@/components/imaging-technicians/ImageTechnicianPageWrapper";
+import ImageTechnicianPageWrapper from "@/components/imaging-technicians/imaging-technician-page-wrapper";
 // ...existing imports...
 
 // Loading component

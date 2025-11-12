@@ -1,45 +1,48 @@
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { Folder } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import React from "react";
 
 export default function StudyLevel({
-  studies,
-  handleStudyClick,
+  study,
+  isExpanded,
+  onToggle,
+  name,
+  date,
+  seriesCount,
+  isLast,
 }: {
-  studies: DicomStudy[];
-  handleStudyClick: (study: DicomStudy) => void;
+  study: DicomStudy;
+  isExpanded: boolean;
+  onToggle: (studyId: string) => void;
+  name: string;
+  date: string | undefined;
+  seriesCount: number;
+  isLast: boolean;
 }) {
   return (
-    <div className="space-y-2">
-      {studies && studies.length > 0 ? (
-        studies.map((study) => (
-          <div
-            key={study.id}
-            className="group flex items-center cursor-pointer p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] hover:border-[var(--primary)] hover:shadow-md transition-all duration-200 ease-in-out"
-            onClick={() => handleStudyClick(study)}
-          >
-            <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
-              <Folder className="w-5 h-5 text-blue-500" />
-            </div>
-            <span
-              className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200"
-              title={`${study.studyInstanceUid} - [${study.studyDate}]`}
-            >
-              {study.studyDescription ||
-                `Study ...${study.studyInstanceUid.slice(-7)}`}
-            </span>
-            <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
-              {study.series?.length || 0} series
-            </span>
-          </div>
-        ))
-      ) : (
-        <div className="bg-[var(--surface)] rounded-lg shadow p-6 border border-[var(--border)] cursor-not-allowed border-dashed">
-          <h6 className="italic text-center font-semibold text-[var(--neutral)]">
-            No studies uploaded yet
-          </h6>
+    <button
+      onClick={() => onToggle(study.id)}
+      disabled={study.series?.length === 0}
+      className={`w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors ${
+        study.series?.length === 0 ? "cursor-not-allowed" : "cursor-pointer"
+      } ${isLast ? "rounded-e-lg hover:rounded-e-lg" : ""}`}
+    >
+      <div className={`flex items-center space-x-4 flex-1 text-left`}>
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform ${
+            isExpanded ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+        <div>
+          <p className="text-sm font-medium text-gray-900" title={name}>
+            Study {name.slice(0, 5)}...{name.slice(-5)}
+          </p>
+          <p className="text-xs text-gray-500">{date}</p>
         </div>
-      )}
-    </div>
+      </div>
+      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        {seriesCount} series
+      </span>
+    </button>
   );
 }

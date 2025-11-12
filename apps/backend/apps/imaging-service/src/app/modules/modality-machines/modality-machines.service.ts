@@ -14,7 +14,8 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, FindOptionsWhere } from 'typeorm';
+import { EntityManager, FindOptionsWhere, ILike } from 'typeorm';
+import { MachineStatus } from '@backend/shared-enums';
 
 const relations = ['modality'];
 
@@ -100,6 +101,11 @@ export class ModalityMachinesService {
   findAll = async (data: {
     modalityId?: string;
     roomId?: string;
+    status?: MachineStatus;
+    machineName?: string;
+    manufacturer?: string;
+    serialNumber?: string;
+    model?: string;
   }): Promise<ModalityMachine[]> => {
     let whereClause: FindOptionsWhere<ModalityMachine> = { isDeleted: false };
 
@@ -108,12 +114,27 @@ export class ModalityMachinesService {
 
     if (data.roomId) whereClause = { ...whereClause, roomId: data.roomId };
 
-    const query = data.modalityId
-      ? {
-          where: whereClause,
-          relations: relations,
-        }
-      : { relations };
+    if (data.status) whereClause = { ...whereClause, status: data.status };
+
+    if (data.machineName)
+      whereClause = { ...whereClause, name: ILike(`%${data.machineName}%`) };
+
+    if (data.manufacturer)
+      whereClause = {
+        ...whereClause,
+        manufacturer: ILike(`%${data.manufacturer}%`),
+      };
+
+    if (data.serialNumber)
+      whereClause = {
+        ...whereClause,
+        serialNumber: ILike(`%${data.serialNumber}%`),
+      };
+
+    if (data.model)
+      whereClause = { ...whereClause, model: ILike(`%${data.model}%`) };
+
+    const query = { where: whereClause, relations: relations };
 
     return await this.modalityMachinesRepository.findAll(query);
   };

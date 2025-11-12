@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FilterBar from "./filter-bar";
 import DataTable from "./data-table";
 import { useSearchParams } from "next/navigation";
@@ -12,7 +12,8 @@ import Cookies from "js-cookie";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
-
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const initial = useMemo(() => {
     const p = new URLSearchParams(searchParams.toString());
     return {
@@ -27,9 +28,19 @@ export default function ImageTechnicianPageWrapper() {
   }, [searchParams]);
 
   // Parse user from cookies - must be done before hooks
-  const userString = typeof window !== "undefined" ? Cookies.get("user") : null;
-  const user = userString ? JSON.parse(userString) : null;
-  const userId = user?.id;
+  useEffect(() => {
+    setIsClient(true);
+    const userString = Cookies.get("user");
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setUserId(user?.id || null);
+      } catch (error) {
+        console.error("Error parsing user cookie:", error);
+        setUserId(null);
+      }
+    }
+  }, []);
 
   // Call hooks before any conditional returns
   const {
@@ -47,7 +58,7 @@ export default function ImageTechnicianPageWrapper() {
   const {
     data: orderData,
     isLoading: isLoadingStudy,
-    refetch: refetchStudy,
+    refetch: refetchOrder,
     error: studyError,
   } = useGetImagingOrderByRoomIdFilterQuery(
     {
@@ -78,7 +89,7 @@ export default function ImageTechnicianPageWrapper() {
     return <Loading />;
   }
 
-  if (!currentEmployeeSchedule?.data?.roomSchedule.room_id) {
+  if (!currentEmployeeSchedule?.data?.roomSchedule?.room_id) {
     return <>No working schedule yet</>;
   }
 
@@ -95,14 +106,14 @@ export default function ImageTechnicianPageWrapper() {
         )}
       </div>
       <FilterBar
-        onRefetch={refetchStudy}
+        onRefetch={refetchOrder}
         caseNumber={(orderData?.data || []).length}
         maxCases={(orderData?.data || []).length}
       />
       <DataTable
         orders={orderData?.data || []}
         isLoading={isLoadingStudy}
-        refetch={refetchStudy}
+        refetch={refetchOrder}
         error={!!studyError}
       />
     </div>

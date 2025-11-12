@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EncounterType } from "@/enums/patient-workflow.enum";
-import { QueuePriorityLevel } from "@/enums/patient.enum";
 import {
   useCreatePatientEncounterMutation,
   useDeletePatientEncounterMutation,
@@ -73,18 +72,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
     setEncounterInfo({ ...encounterInfo, [field]: value });
   };
 
-  const onChangeQueueInfo = (
-    field:
-      | "encounterId"
-      | "priority"
-      | "roomId"
-      | "priorityReason"
-      | "createdBy",
-    value: string | QueuePriorityLevel
-  ) => {
-    setQueueInfo({ ...queueInfo, [field]: value });
-  };
-
   //RTK hook
   const {
     data: departmentsData,
@@ -131,7 +118,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
       refetchDepartment();
     }
     setSelectedRoom(null);
-    onChangeQueueInfo("roomId", "");
   }, [
     departmentSearch,
     departmentsData,
@@ -194,7 +180,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
       console.log(err);
     }
   };
-  const PriorityLevelArray = [...Object.values(QueuePriorityLevel)];
+
   const EncounterTypeArray = [...Object.values(EncounterType)];
   return (
     <Card className="border-border">
@@ -256,73 +242,76 @@ export function PatientForward({ patientId }: { patientId: string }) {
                 </div>
               )}
 
-            {!isLoadingRoom && roomData && roomData.data.length > 0 && (
-              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
-                {roomData.data.map((room: Room) => {
-                  const isSelected = queueInfo.roomId === room.id;
+            {!isLoadingRoom &&
+              roomData &&
+              Array.isArray(roomData.data) &&
+              roomData.data.length > 0 && (
+                <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+                  {(roomData.data as Room[]).map((room, idx, arr) => {
+                    const isSelected = queueInfo.roomId === room.id;
 
-                  // calculate queue percentage based on queueStats
-                  const currentQueue =
-                    room?.queueStats?.currentInProgress?.queueNumber || 0;
-                  const maxQueue =
-                    room?.queueStats?.maxWaiting?.queueNumber || 0;
-                  const queuePercentage =
-                    maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
-                  return (
-                    <button
-                      key={room.id}
-                      onClick={() => {
-                        setQueueInfo({
-                          ...queueInfo,
-                          roomId: room.id,
-                        });
-                      }}
-                      type="button"
-                      aria-pressed={isSelected}
-                      className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                          : "border-border bg-background hover:border-muted"
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Room {room.roomCode}
-                        </h3>
-                      </div>
-
-                      <div className="flex justify-between items-end text-sm">
-                        <div>
-                          <span className="text-foreground">Current: </span>
-                          <span className="font-semibold text-foreground">
-                            {currentQueue}
-                          </span>
+                    // calculate queue percentage based on queueStats
+                    const currentQueue =
+                      room?.queueStats?.currentInProgress?.queueNumber || 0;
+                    const maxQueue =
+                      room?.queueStats?.maxWaiting?.queueNumber || 0;
+                    const queuePercentage =
+                      maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
+                    return (
+                      <button
+                        key={room.id}
+                        onClick={() => {
+                          setQueueInfo({
+                            ...queueInfo,
+                            roomId: room.id,
+                          });
+                        }}
+                        type="button"
+                        aria-pressed={isSelected}
+                        className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                            : "border-border bg-background hover:border-muted"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-lg font-semibold text-foreground">
+                            Room {room.roomCode}
+                          </h3>
                         </div>
-                        <div>
-                          <span className="text-foreground">Max: </span>
-                          <span className="font-semibold text-foreground">
-                            {maxQueue}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="mt-2 w-full bg-muted/60 rounded-full h-1.5">
-                        <div
-                          className={`h-1.5 rounded-full transition-all ${
-                            queuePercentage > 80
-                              ? "bg-red-500"
-                              : queuePercentage > 50
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                          }`}
-                          style={{ width: `${queuePercentage}%` }}
-                        />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        <div className="flex justify-between items-end text-sm">
+                          <div>
+                            <span className="text-foreground">Current: </span>
+                            <span className="font-semibold text-foreground">
+                              {currentQueue}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-foreground">Max: </span>
+                            <span className="font-semibold text-foreground">
+                              {maxQueue}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 w-full bg-muted/60 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${
+                              queuePercentage > 80
+                                ? "bg-red-500"
+                                : queuePercentage > 50
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                            }`}
+                            style={{ width: `${queuePercentage}%` }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
           </div>
 
           <div className="space-y-2">
@@ -352,35 +341,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
                     }}
                   >
                     {type}
-                  </Button>
-                ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Priority Level
-            </label>
-            <div className="flex items-center space-x-2 max-w-[30vw] overflow-x-auto whitespace-nowrap snap-x snap-mandatory pb-1">
-              {PriorityLevelArray &&
-                PriorityLevelArray.map((level) => (
-                  <Button
-                    key={level}
-                    type="button"
-                    aria-pressed={queueInfo.priority === level}
-                    size="sm"
-                    className={`shrink-0 snap-start ${
-                      queueInfo.priority === level
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border bg-background text-foreground hover:bg-muted"
-                    }`}
-                    variant={
-                      queueInfo.priority === level ? "default" : "outline"
-                    }
-                    onClick={() => {
-                      onChangeQueueInfo("priority", level);
-                    }}
-                  >
-                    {level}
                   </Button>
                 ))}
             </div>

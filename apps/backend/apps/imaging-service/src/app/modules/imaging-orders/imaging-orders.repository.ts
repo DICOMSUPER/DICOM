@@ -270,7 +270,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     }
 
     if (data.bodyPart) {
-      qb.andWhere('bodyPart.name LIKE :bodyPart', {
+      qb.andWhere('bodyPart.name ILIKE :bodyPart', {
         bodyPart: `%${data.bodyPart.trim()}%`,
       });
     }

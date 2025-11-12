@@ -1,29 +1,19 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import DatePickerDropdown from "./../radiologist/date-picker";
-import { DicomStudyStatus, ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
-import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
+import { MachineStatus } from "@/enums/machine-status.enum";
 
-const formatDateISO = (date: Date | undefined) => {
-  if (!date) return undefined;
-  return date.toISOString().split("T")[0];
-};
-
-export default function FilterBar({
+export default function MachineFilterBar({
   onRefetch,
-  caseNumber,
-  maxCases,
+  machineNumber,
+  maxMachines,
 }: {
   onRefetch: () => void;
-  caseNumber: number;
-  maxCases: number;
+  machineNumber: number;
+  maxMachines: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,13 +22,12 @@ export default function FilterBar({
   const initial = useMemo(() => {
     const p = new URLSearchParams(searchParams.toString());
     return {
-      mrn: p.get("mrn") ?? "",
-      patientFirstName: p.get("patientFirstName") ?? "",
-      patientLastName: p.get("patientLastName") ?? "",
-      bodyPart: p.get("bodyPart") ?? "",
+      machineName: p.get("machineName") ?? "",
       modalityId: p.get("modalityId") ?? "",
-      orderStatus: p.get("orderStatus") ?? "",
-      procedureId: p.get("procedureId") ?? "",
+      manufacturer: p.get("manufacturer") ?? "",
+      status: p.get("status") ?? "",
+      serialNumber: p.get("serialNumber") ?? "",
+      model: p.get("model") ?? "",
     };
   }, [searchParams]);
 
@@ -50,22 +39,13 @@ export default function FilterBar({
   const modalities = modalityData?.data || [];
 
   //search query
-  const [mrn, setMrn] = useState(initial.mrn);
-  const [patientFirstName, setPatientFirstName] = useState(
-    initial.patientFirstName
-  );
-  const [patientLastName, setPatientLastName] = useState(
-    initial.patientLastName
-  );
-
-  const [bodyPart, setBodyPart] = useState(initial.bodyPart);
-
+  const [machineName, setMachineName] = useState(initial.machineName);
+  const [manufacturer, setManufacturer] = useState(initial.manufacturer);
+  const [serialNumber, setSerialNumber] = useState(initial.serialNumber);
+  const [model, setModel] = useState(initial.model);
   const [modalityId, setModalityId] = useState(initial.modalityId);
-  const [orderStatus, setOrderStatus] = useState(initial.orderStatus);
-  const [procedureId, setProcedureId] = useState(initial.procedureId);
+  const [status, setStatus] = useState(initial.status);
 
-  const { data: procedureData, isLoading: isLoadingProcedure } =
-    useGetAllRequestProceduresQuery();
   const pushWithParams = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(updates).forEach(([k, v]) => {
@@ -76,29 +56,22 @@ export default function FilterBar({
   };
 
   const handleToggleAdvance = () => {
-    if (!advancedToggled === false) {
+    if (advancedToggled) {
       setModalityId("");
-      setOrderStatus("All");
+      setStatus("");
     }
 
     setAdvancedToggled(!advancedToggled);
   };
-  const studyStatusArray = Object.values(DicomStudyStatus).filter(
-    (status) => status !== DicomStudyStatus.SCANNED
-  );
-  const DiagnosisStatusArray = Object.values(DiagnosisStatus);
-  const orderStatusArray = Object.values(ImagingOrderStatus);
 
-  const procedures = procedureData?.data;
   const handleRefresh = () => {
     const params = {
-      mrn,
-      patientFirstName,
-      patientLastName,
-      bodyPart,
+      machineName,
+      manufacturer,
+      serialNumber,
+      model,
       modalityId: modalityId === "" ? undefined : modalityId,
-      orderStatus: orderStatus === "All" ? undefined : orderStatus,
-      procedureId: procedureId === "" ? undefined : procedureId,
+      status: status === "" ? undefined : status,
     };
 
     pushWithParams(params);
@@ -109,7 +82,7 @@ export default function FilterBar({
     <div className="bg-white border-b border-gray-300 p-4 space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="text-sm font-semibold text-gray-700">
-          Displaying {caseNumber} of {maxCases} order
+          Displaying {machineNumber} of {maxMachines} machines
         </h3>
       </div>
 
@@ -117,14 +90,14 @@ export default function FilterBar({
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1 min-w-[140px] flex-1 max-w-[200px]">
           <Label className="text-xs font-semibold text-gray-700">
-            Patient Last Name
+            Machine Name
           </Label>
           <Input
             type="text"
-            placeholder="nguyen"
-            value={patientLastName}
+            placeholder="X-Ray Machine"
+            value={machineName}
             onChange={(e) => {
-              setPatientLastName(e.target.value);
+              setMachineName(e.target.value);
             }}
             className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
           />
@@ -132,27 +105,14 @@ export default function FilterBar({
 
         <div className="flex flex-col gap-1 min-w-[140px] flex-1 max-w-[200px]">
           <Label className="text-xs font-semibold text-gray-700">
-            Patient First Name
+            Manufacturer
           </Label>
           <Input
             type="text"
-            placeholder="thi hoa"
-            value={patientFirstName}
+            placeholder="GE Healthcare"
+            value={manufacturer}
             onChange={(e) => {
-              setPatientFirstName(e.target.value);
-            }}
-            className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1 min-w-[140px] flex-1 max-w-[200px]">
-          <Label className="text-xs font-semibold text-gray-700">MRN</Label>
-          <Input
-            type="text"
-            placeholder="PA##############"
-            value={mrn}
-            onChange={(e) => {
-              setMrn(e.target.value);
+              setManufacturer(e.target.value);
             }}
             className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
           />
@@ -160,14 +120,27 @@ export default function FilterBar({
 
         <div className="flex flex-col gap-1 min-w-[140px] flex-1 max-w-[200px]">
           <Label className="text-xs font-semibold text-gray-700">
-            Body Part
+            Serial Number
           </Label>
           <Input
             type="text"
-            placeholder="CHEST"
-            value={bodyPart}
+            placeholder="SN-123456"
+            value={serialNumber}
             onChange={(e) => {
-              setBodyPart(e.target.value);
+              setSerialNumber(e.target.value);
+            }}
+            className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1 min-w-[140px] flex-1 max-w-[200px]">
+          <Label className="text-xs font-semibold text-gray-700">Model</Label>
+          <Input
+            type="text"
+            placeholder="Optima 580"
+            value={model}
+            onChange={(e) => {
+              setModel(e.target.value);
             }}
             className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
           />
@@ -195,6 +168,26 @@ export default function FilterBar({
         <div className="flex flex-wrap gap-3 items-end pt-2 border-t border-gray-200">
           <div className="flex flex-col gap-1 min-w-[180px]">
             <Label className="text-xs font-semibold text-gray-700">
+              Status
+            </Label>
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+              }}
+              className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
+            >
+              <option value="">All</option>
+              {Object.values(MachineStatus).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1 min-w-[180px]">
+            <Label className="text-xs font-semibold text-gray-700">
               Modality
             </Label>
             <select
@@ -210,47 +203,6 @@ export default function FilterBar({
                   {modality.modalityName}
                 </option>
               ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1 min-w-[120px]">
-            <Label className="text-xs font-semibold text-gray-700">
-              Order Status
-            </Label>
-            <select
-              value={orderStatus}
-              onChange={(e) => {
-                setOrderStatus(e.target.value);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-            >
-              <option>All</option>
-              {orderStatusArray.map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1 min-w-[180px]">
-            <Label className="text-xs font-semibold text-gray-700">
-              Procedure ID
-            </Label>
-
-            <select
-              value={procedureId}
-              onChange={(e) => {
-                setProcedureId(e.target.value);
-              }}
-              className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-            >
-              <option value={""}>All</option>
-              {!isLoadingProcedure &&
-                procedures &&
-                procedures.map((procedure) => (
-                  <option key={procedure.id} value={procedure.id}>
-                    {procedure.name}
-                  </option>
-                ))}
             </select>
           </div>
         </div>

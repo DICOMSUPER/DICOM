@@ -210,28 +210,16 @@ export const roleNavigation: RoleNavigation = {
       description: "Imaging overview",
     },
     {
-      href: "/imaging-technicians/imaging",
+      href: "/imaging-technicians/order",
       label: "Imaging",
       icon: Camera,
       description: "DICOM image management",
     },
     {
-      href: "/imaging-technicians/patients",
-      label: "Patients",
-      icon: Users,
-      description: "Patient imaging records",
-    },
-    {
-      href: "/imaging-technicians/queue",
-      label: "Imaging Queue",
-      icon: Clock,
-      description: "Pending imaging studies",
-    },
-    {
-      href: "/imaging-technicians/equipment",
-      label: "Equipment",
+      href: "/imaging-technicians/machines",
+      label: "Machines",
       icon: Activity,
-      description: "Imaging equipment status",
+      description: "Imaging machines status",
     },
     {
       href: "/imaging-technicians/settings",
