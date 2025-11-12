@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Logger,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
@@ -55,29 +56,31 @@ export class DigitalSignatureController {
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
   @Post('setup')
-  async setupSignature(@Body() dto: SetupSignatureDto) {
-    this.logger.log(`Payload received: ${JSON.stringify(dto)}`);
-    this.logger.log(`Setting up signature for userId=${dto.userId}`);
+  async setupSignature(@Req() req: any, @Body() dto: SetupSignatureDto) {
+    const userId = req.userInfo.userId; // lấy từ token cookie
+    const pin = dto.pin;
 
     return await firstValueFrom(
-      this.userServiceClient.send('digital-signature.setup', {
-        userId: dto.userId,
-        pin: dto.pin,
-      }),
+      this.userServiceClient.send('digital-signature.setup', { userId, pin })
     );
   }
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
   @Post('sign')
   @HttpCode(HttpStatus.OK)
-  async signData(@Body() dto: SignDataDto) {
-    this.logger.log(`Signing data for userId=${dto.userId}`);
+  async signData(@Req() req: any, @Body() dto: SignDataDto) {
+    // Lấy userId trực tiếp từ token đã verify trong AuthGuard
+    const userId = req.userInfo.userId;
+    const { pin, data } = dto;
+
+    this.logger.log(`Received payload FE → pin=${pin}, data=${data}`);
+    this.logger.log(`Signing data for userId=${userId}`);
 
     const result = await firstValueFrom(
       this.userServiceClient.send('digital-signature.sign', {
-        userId: dto.userId,
-        pin: dto.pin,
-        data: dto.data,
+        userId, // dùng userId từ token
+        pin,
+        data,
       }),
     );
 

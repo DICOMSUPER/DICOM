@@ -110,13 +110,6 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
       />
     )}
 
-      {patientData?.data && (
-        <SidebarTab
-          setSelectedExam={handleSelectExam}
-          examHistory={examHistory}
-          patient={patientData?.data}
-        />
-      )}
 
       <MedicalRecordMain
         selectedExam={selectedExam}

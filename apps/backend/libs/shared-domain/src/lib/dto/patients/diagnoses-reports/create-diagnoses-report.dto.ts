@@ -54,4 +54,8 @@ export class CreateDiagnosesReportDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+
+  @IsUUID()
+  @IsOptional()
+  idSignature?: string;
 }
