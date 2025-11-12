@@ -5,6 +5,7 @@ import {
 import {
   CreateEmployeeRoomAssignmentDto,
   EmployeeRoomAssignment,
+  FilterEmployeeRoomAssignmentDto,
   RoomSchedule,
   UpdateEmployeeRoomAssignmentDto,
   User,
@@ -28,7 +29,7 @@ export class EmployeeRoomAssignmentsService {
   ): Promise<EmployeeRoomAssignment> => {
     return await this.entityManager.transaction(async (em) => {
       const roomSchedule = await em.findOne(RoomSchedule, {
-        where: { room_id: createEmployeeRoomAssignmentDto.roomScheduleId },
+        where: { schedule_id: createEmployeeRoomAssignmentDto.roomScheduleId },
       });
 
       if (!roomSchedule) {
@@ -75,10 +76,27 @@ export class EmployeeRoomAssignmentsService {
     });
   };
 
-  findAll = async (): Promise<EmployeeRoomAssignment[]> => {
-    return await this.employeeRoomAssignmentsRepository.findAll();
-  };
+  findAll = async (
+    filter?: FilterEmployeeRoomAssignmentDto
+  ): Promise<EmployeeRoomAssignment[]> => {
+    const { roomScheduleId, employeeId } = filter || {};
+    const where: any = {};
+    if (roomScheduleId) {
+      where.roomScheduleId = roomScheduleId;
+    }
+    if (employeeId) {
+      where.employeeId = employeeId;
+    }
 
+    return await this.employeeRoomAssignmentsRepository.findAll({ where },["employee","roomSchedule"]);
+  };
+  findByEmployeeInCurrentSession = async (
+    employeeId: string
+  ): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findByEmployeeInCurrentSession(
+      employeeId
+    );
+  };
   findOne = async (id: string): Promise<EmployeeRoomAssignment | null> => {
     const employeeRoomAssignment =
       await this.employeeRoomAssignmentsRepository.findOne({

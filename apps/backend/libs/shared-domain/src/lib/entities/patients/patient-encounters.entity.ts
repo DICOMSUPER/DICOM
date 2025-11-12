@@ -1,5 +1,9 @@
 import { BaseEntity } from '@backend/entities';
-import { EncounterPriorityLevel, EncounterStatus, EncounterType } from '@backend/shared-enums';
+import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+  EncounterType,
+} from '@backend/shared-enums';
 import type { VitalSignsSimplified } from '@backend/shared-interfaces';
 import {
   Column,
@@ -21,8 +25,8 @@ export class PatientEncounter extends BaseEntity {
   @Column({ name: 'patient_id' })
   patientId!: string;
 
-  @Column({ name: 'order_number' , nullable:true})
-  orderNumber?: number;
+  @Column({ name: 'order_number', nullable: true })
+  orderNumber!: number;
 
   @Index()
   @Column({
@@ -45,7 +49,7 @@ export class PatientEncounter extends BaseEntity {
   @Column({ name: 'vital_signs', type: 'json', nullable: true })
   vitalSigns?: VitalSignsSimplified;
 
-    @Column({
+  @Column({
     type: 'enum',
     enum: EncounterPriorityLevel,
     default: EncounterPriorityLevel.ROUTINE,
@@ -58,6 +62,7 @@ export class PatientEncounter extends BaseEntity {
     default: EncounterStatus.ARRIVED,
   })
   status!: EncounterStatus;
+
   @Index()
   @Column({ name: 'assigned_physician_id', nullable: true })
   assignedPhysicianId?: string;
@@ -72,6 +77,9 @@ export class PatientEncounter extends BaseEntity {
 
   @Column({ name: 'service_room_id', nullable: true })
   serviceRoomId?: string;
+
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
 
   serviceRoom?: ServiceRoom;
 }

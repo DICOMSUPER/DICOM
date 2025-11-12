@@ -1,15 +1,17 @@
-import { QueuePriorityLevel, QueueStatus } from "@/enums/patient.enum";
+import { EncounterPriorityLevel, EncounterStatus } from "@/enums/patient-workflow.enum";
+import { QueryParams } from "../pagination/pagination.interface";
 
-export interface QueueFilters {
+export interface PatientEncounterFilters extends QueryParams {
   encounterId?: string;
-  status?: QueueStatus | "all";
-  priority?: QueuePriorityLevel | "all";
+  status?: EncounterStatus | "all";
+  priority?: EncounterPriorityLevel | "all";
   roomId?: string;
   createdBy?: string;
-  patientId?: string;
+  patientCode?: string;
+  patientName?: string;
   assignmentDateFrom?: string;
   assignmentDateTo?: string;
-  queueNumber?: number;
+  orderNumber?: number;
 }
 
 export interface QueueStats {

@@ -14,6 +14,35 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
     super(EmployeeRoomAssignment, entityManager);
   }
 
+  async findByEmployeeInCurrentSession(
+    employeeId: string
+  ): Promise<EmployeeRoomAssignment[]> {
+    // const currentDate = new Date();
+    console.log('employee id', employeeId);
+
+    const currentDateString = moment().format('YYYY-MM-DD');
+    const currentTimeString = moment().format('HH:mm:ss');
+
+    console.log('Current date:', currentDateString);
+    console.log('Current time:', currentTimeString);
+
+    return await this.entityManager
+      .createQueryBuilder(EmployeeRoomAssignment, 'era')
+      .leftJoinAndSelect('era.roomSchedule', 'rs')
+      .leftJoinAndSelect('rs.room', 'room')
+      .leftJoinAndSelect('rs.shift_template', 'shiftTemplate')
+      .where('era.employeeId = :employeeId', { employeeId })
+      .andWhere('era.isActive = :isActive', { isActive: true })
+      .andWhere('rs.work_date = :workDate', { workDate: currentDateString })
+      .andWhere('rs.actual_start_time::TIME <= :currentTime::TIME', {
+        currentTime: currentTimeString,
+      })
+      .andWhere('rs.actual_end_time::TIME >= :currentTime::TIME', {
+        currentTime: currentTimeString,
+      })
+      .getMany();
+  }
+
   async findCurrentEmployeeRoomAssignment(
     userId: string
   ): Promise<EmployeeRoomAssignment | null> {

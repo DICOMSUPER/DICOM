@@ -20,9 +20,9 @@ import { imagingOrderFormApi } from "./imagingOrderFormApi";
 import { diagnosisApi } from "./diagnosisApi";
 import { dicomSeriesApi } from "./dicomSeriesApi";
 import { RoomScheduleApi } from "./roomScheduleApi";
-import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
 import { dicomInstanceApi } from "./dicomInstanceApi";
 import { annotationApi } from "./annotationApi";
+import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
 import { imagingApi } from "./imagingApi";
 import { digitalSignatureApi } from "./digitalSignatureApi";
 
@@ -51,6 +51,8 @@ export const store = configureStore({
     [employeeRoomAssignmentApi.reducerPath]: employeeRoomAssignmentApi.reducer,
     [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
+    [employeeRoomAssignmentApi.reducerPath]: employeeRoomAssignmentApi.reducer,
+   
     [imagingApi.reducerPath]: imagingApi.reducer,
     [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
   },

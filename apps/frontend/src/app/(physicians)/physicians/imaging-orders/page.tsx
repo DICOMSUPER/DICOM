@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/formatTimeDate";
 import { useGetImagingOrderFormPaginatedQuery } from "@/store/imagingOrderFormApi";
 import {
   useSkipQueueAssignmentMutation,
-  useUpdateQueueAssignmentMutation
+  useUpdateQueueAssignmentMutation,
 } from "@/store/queueAssignmentApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
 
@@ -49,11 +49,6 @@ export default function ImagingOrderFormPage() {
   // });
 
   // console.log("RoomScheduleData", RoomScheduleData);
-
-  const [updateQueueAssignment, { isLoading: isUpdating }] =
-    useUpdateQueueAssignmentMutation();
-  const [skipQueueAssignment, { isLoading: isSkipping }] =
-    useSkipQueueAssignmentMutation();
 
   useEffect(() => {
     if (data) {
@@ -130,8 +125,9 @@ export default function ImagingOrderFormPage() {
           onViewDetails={handleViewDetails}
           pagination={paginationMeta}
           onPageChange={handlePageChange}
-          isUpdating={isUpdating}
-          isLoading={isLoading || isFetching}
+          isFetching={isFetching}
+          // isUpdating={isUpdating}
+          isLoading={isLoading}
         />
       </div>
     </div>

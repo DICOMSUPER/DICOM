@@ -5,10 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { PatientEncounter, PatientEncounterRepository, Patient, DiagnosesReport } from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
+import { UserServiceClientModule } from '@backend/shared-client';
+import { PatientEncounterCronService } from './patient-encounter.cron';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PatientEncounter, Patient, DiagnosesReport])
+    TypeOrmModule.forFeature([PatientEncounter, Patient, DiagnosesReport]),
+    UserServiceClientModule
   ],
   controllers: [PatientEncounterController],
   providers: [
@@ -19,7 +22,8 @@ import { PaginationService } from '@backend/database';
         new PatientEncounterRepository(entityManager),
       inject: [EntityManager],
     },
-    PaginationService
+    PaginationService,
+    PatientEncounterCronService
   ],
   exports: [PatientEncounterService, PatientEncounterRepository],
 })

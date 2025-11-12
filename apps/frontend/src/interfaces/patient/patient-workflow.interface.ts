@@ -12,11 +12,14 @@ import {
   PatientViewMode,
   PatientSortBy,
   PatientFilterType,
+  EncounterStatus,
+  EncounterPriorityLevel,
 } from "@/enums/patient-workflow.enum";
 import {
   PatientCondition,
   CreatePatientConditionDto,
 } from "./patient-condition.interface";
+import { ServiceRoom } from "../user/service-room.interface";
 
 // Re-export enums for convenience
 export {
@@ -68,19 +71,23 @@ export interface Patient extends BaseEntity {
 export interface PatientEncounter extends BaseEntity {
   patientId: string;
   encounterDate: Date;
+  orderNumber?: number;
   encounterType: EncounterType;
   chiefComplaint?: string;
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
   notes?: string;
-  status?: string;
-  priority?: string;
+  status: EncounterStatus;
+  priority?: EncounterPriorityLevel;
   roomId?: string;
   roomFloor?: string;
   physicianSpecialty?: string;
   patient?: Patient;
   diagnosesCount?: number;
+  serviceRoomId?: string;
+  serviceRoom: ServiceRoom
+  
 }
 
 export interface VitalSignMeasurement {
@@ -190,6 +197,7 @@ export interface UpdatePatientEncounterDto {
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
   notes?: string;
+  status?: EncounterStatus;
 }
 
 export interface CreateDiagnosisReportDto {
@@ -299,6 +307,8 @@ export interface PatientStats {
   deletedPatients: number;
   newPatientsThisMonth: number;
 }
+
+
 
 export interface EncounterStats {
   totalEncounters: number;
@@ -443,4 +453,10 @@ export interface ApiError {
 export interface PatientOverview {
   recentVitalSigns: VitalSignsSimplified;
   recentConditions: PatientCondition[];
+}
+
+export interface EncounterStatsInDateRange {
+  totalEncounters: number;
+  totalCompletedEncounters: number;
+  totalArrivedEncounters: number;
 }

@@ -8,6 +8,7 @@ export enum PatientStatus {
   DELETED = "DELETED",
 }
 
+
 export enum EncounterType {
   OUTPATIENT = "outpatient",
   INPATIENT = "inpatient",
@@ -191,11 +192,14 @@ export enum ConditionVerificationStatus {
 }
 
 export enum EncounterStatus {
-  PLANNED = "planned",
+  WAITING = "waiting",
   ARRIVED = "arrived",
-  TRIAGED = "triaged",
-  IN_PROGRESS = "in-progress",
-  ONLEAVE = "onleave",
+  // TRIAGED = "triaged",
+  // IN_PROGRESS = "in-progress",
   FINISHED = "finished",
-  CANCELLED = "cancelled",
+}
+export enum EncounterPriorityLevel {
+  ROUTINE = "Routine",     
+  URGENT = "Urgent",   
+  STAT = "Stat",      
 }

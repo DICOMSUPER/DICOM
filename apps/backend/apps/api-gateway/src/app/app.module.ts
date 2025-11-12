@@ -10,7 +10,7 @@ import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analys
 import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
 import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
 import { APP_GUARD } from '@nestjs/core';
-
+import { ScheduleModule } from '@nestjs/schedule';
 import { UserServiceModule } from './modules/user-service/user-service.module';
 import { AuthGuard } from '@backend/shared-guards';
 import { RoleGuard } from '@backend/shared-guards';
@@ -28,6 +28,7 @@ dotenv.config();
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
+    ScheduleModule.forRoot(),
 
     // Client Modules for Microservices Communication
     UserServiceClientModule,

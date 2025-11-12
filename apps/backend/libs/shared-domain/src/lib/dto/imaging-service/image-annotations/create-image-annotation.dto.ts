@@ -6,6 +6,7 @@ import {
   IsJSON,
   IsDecimal,
   IsDate,
+  IsIn,
 } from 'class-validator';
 export class CreateImageAnnotationDto {
   @IsString()
@@ -37,6 +38,7 @@ export class CreateImageAnnotationDto {
   colorCode?: string;
 
   @IsEnum(AnnotationStatus)
+  @IsIn([AnnotationStatus.DRAFT, AnnotationStatus.FINAL])
   annotationStatus!: AnnotationStatus;
 
   //   imaging_technician
@@ -47,9 +49,6 @@ export class CreateImageAnnotationDto {
   @IsOptional()
   annotationDate: Date = new Date();
 
-  //   //   physician
-  //   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })
-  //   reviewedBy?: string;
   @IsDate()
   @IsOptional()
   reviewDate?: Date;

@@ -13,6 +13,7 @@ import {
   Logger,
   BadRequestException,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -21,13 +22,18 @@ import {
   CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
-import type { EncounterSearchFilters } from '@backend/shared-domain';
+import type {
+  EncounterSearchFilters,
+  FilterPatientEncounterDto,
+} from '@backend/shared-domain';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
 import { RepositoryPaginationDto } from '@backend/database';
-
+import { Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @Controller('encounters')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -51,6 +57,42 @@ export class PatientEncounterController {
       );
     } catch (error) {
       this.logger.error('Error creating encounter:', error);
+      throw error;
+    }
+  }
+
+  @Get('in-room')
+  @Role(Roles.PHYSICIAN)
+  async findAllInRoom(
+    @Req() req: IAuthenticatedRequest,
+    @Query() filterQueue?: FilterPatientEncounterDto
+  ) {
+    try {
+      const validatedParams = ValidationUtils.validatePaginationParams(
+        filterQueue?.page,
+        filterQueue?.limit
+      );
+
+      console.log('validatedParams', validatedParams);
+      const payload = {
+        ...filterQueue,
+        ...validatedParams,
+      };
+      console.log("Payload", payload);
+      
+      const userId = req.userInfo.userId;
+      console.log("User id", userId);
+      
+      const result = await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.FindManyInRoom', {
+          filterQueue: payload,
+          userId,
+        })
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error finding all patient encounters in room:', error);
       throw error;
     }
   }
@@ -84,11 +126,29 @@ export class PatientEncounterController {
     }
   }
 
+  @Get('stats-in-date-range')
+  async getStatsInDateRange(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('roomId') roomId?: string
+  ) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.GetStatsInDateRange', {
+          dateFrom, dateTo, roomId
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error fetching encounter stats:', error);
+      throw error;
+    }
+  }
+
   @Get('stats')
   async getStats() {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.PatientEncounter.GetStats', {})
+        this.patientService.send('PatientService.Encounter.GetStats', {})
       );
     } catch (error) {
       this.logger.error('Error fetching encounter stats:', error);

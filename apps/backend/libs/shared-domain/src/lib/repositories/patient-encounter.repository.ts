@@ -5,7 +5,11 @@ import { RepositoryPaginationDto } from '@backend/database';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { Patient } from '../entities/patients/patients.entity';
 import { DiagnosesReport } from '../entities/patients/diagnoses-reports.entity';
-import { EncounterType } from '@backend/shared-enums';
+import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+  EncounterType,
+} from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
 
 export interface EncounterSearchFilters {
@@ -287,4 +291,150 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       ['patient']
     );
   }
+
+  async getStatsInDateRange(
+    dateFrom: string,
+    dateTo: string,
+    serviceRoomIds?: string[]
+  ): Promise<any> {
+    const startDate = new Date(dateFrom);
+    const endDate = new Date(dateTo);
+    endDate.setHours(23, 59, 59, 999);
+    const queryBuilder = await this.getRepository()
+      .createQueryBuilder('encounter')
+      .select('COUNT(*)', 'totalEncounters')
+      .addSelect(
+        `COUNT(CASE WHEN encounter.status = '${EncounterStatus.FINISHED}' THEN 1 END)`,
+        'totalCompletedEncounters'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN encounter.status = '${EncounterStatus.ARRIVED}' THEN 1 END)`,
+        'totalArrivedEncounters'
+      )
+      .where('encounter.encounterDate BETWEEN :dateFrom AND :dateTo', {
+        dateFrom: startDate,
+        dateTo: endDate,
+      })
+      .andWhere('encounter.isDeleted = :isDeleted', { isDeleted: false });
+
+    if (serviceRoomIds && serviceRoomIds.length > 0) {
+      queryBuilder.andWhere('encounter.serviceRoomId IN (:...serviceRoomIds)', {
+        serviceRoomIds,
+      });
+    }
+    const result = await queryBuilder.getRawOne();
+
+    return {
+      totalEncounters: parseInt(result.totalEncounters, 10),
+      totalCompletedEncounters: parseInt(result.totalCompletedEncounters, 10),
+      totalArrivedEncounters: parseInt(result.totalArrivedEncounters, 10),
+    };
+  }
+// async findInRoomWithFilters(filters: {
+//   page: number;
+//   limit: number;
+//   fromDate: Date;
+//   toDate: Date;
+//   status?: EncounterStatus;
+//   priority?: EncounterPriorityLevel;
+//   orderNumber?: number;
+//   patientName?: string;
+//   serviceRoomIds?: string[];
+// }): Promise<{ data: PatientEncounter[]; total: number }> {
+//   const {
+//     page,
+//     limit,
+//     fromDate,
+//     toDate,
+//     status,
+//     priority,
+//     orderNumber,
+//     patientName,
+//     serviceRoomIds,
+//   } = filters;
+
+//   const queryBuilder = this.getRepository()
+//     .createQueryBuilder('encounter')
+//     .leftJoinAndSelect('encounter.patient', 'patient');
+
+//   // ✅ Apply filters
+//   queryBuilder.andWhere(
+//     'encounter.encounter_date BETWEEN :fromDate AND :toDate',
+//     { fromDate, toDate }
+//   );
+
+//   if (status) {
+//     queryBuilder.andWhere('encounter.status = :status', { status });
+//   }
+
+//   if (priority) {
+//     queryBuilder.andWhere('encounter.priority = :priority', { priority });
+//   }
+
+//   if (orderNumber) {
+//     queryBuilder.andWhere('encounter.order_number = :orderNumber', {
+//       orderNumber,
+//     });
+//   }
+
+//   if (patientName) {
+//     queryBuilder.andWhere(
+//       `(patient.first_name || ' ' || patient.last_name) ILIKE :patientName`,
+//       { patientName: `%${patientName}%` }
+//     );
+//   }
+
+//   if (serviceRoomIds && serviceRoomIds.length > 0) {
+//     queryBuilder.andWhere(
+//       'encounter.service_room_id IN (:...serviceRoomIds)',
+//       { serviceRoomIds }
+//     );
+//   }
+
+//   queryBuilder.andWhere('encounter.is_deleted = :isDeleted', {
+//     isDeleted: false,
+//   });
+
+
+//   queryBuilder
+//     .addSelect(
+//       `CASE 
+//         WHEN encounter.status = '${EncounterStatus.ARRIVED}' THEN 0
+//         WHEN encounter.status = '${EncounterStatus.WAITING}' THEN 1
+//         WHEN encounter.status = '${EncounterStatus.FINISHED}' THEN 3
+//         ELSE 2
+//       END`,
+//       'status_priority'
+//     )
+//     .addSelect(
+//       `CASE 
+//         WHEN encounter.status = '${EncounterStatus.WAITING}' AND encounter.skipped_at IS NOT NULL THEN 1
+//         ELSE 0
+//       END`,
+//       'is_skipped'
+//     )
+//     .addSelect(
+//       `CASE 
+//         WHEN encounter.priority = '${EncounterPriorityLevel.STAT}' THEN 0
+//         WHEN encounter.priority = '${EncounterPriorityLevel.URGENT}' THEN 1
+//         WHEN encounter.priority = '${EncounterPriorityLevel.ROUTINE}' THEN 2
+//         ELSE 3
+//       END`,
+//       'priority_value'
+//     );
+
+//   queryBuilder
+//     .orderBy('status_priority', 'ASC')
+//     .addOrderBy('is_skipped', 'ASC')
+//     .addOrderBy('priority_value', 'ASC')
+//     .addOrderBy('encounter.order_number', 'ASC');
+
+//   const skip = (page - 1) * limit;
+//   queryBuilder.skip(skip).take(limit);
+
+//   const total = await queryBuilder.getCount();
+//   const data = await queryBuilder.getMany();
+
+//   return { data, total };
+// }
 }

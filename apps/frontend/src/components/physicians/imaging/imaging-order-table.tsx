@@ -40,6 +40,12 @@ import Pagination, {
 } from "@/components/common/PaginationV1";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   IImagingOrderForm,
   OrderFormStatus,
 } from "@/interfaces/image-dicom/imaging-order-form.interface";
@@ -50,8 +56,9 @@ interface ImagingOrderFormTableProps {
   onViewDetails: (id: string) => void;
   pagination: PaginationMeta;
   onPageChange: (page: number) => void;
-  isUpdating: boolean;
+  isUpdating?: boolean;
   isLoading: boolean;
+  isFetching: boolean;
 }
 
 const columnHelper = createColumnHelper<IImagingOrderForm>();
@@ -62,6 +69,7 @@ export function ImagingOrderFormTable({
   pagination,
   onPageChange,
   isUpdating,
+  isFetching,
   isLoading,
 }: ImagingOrderFormTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -146,22 +154,48 @@ export function ImagingOrderFormTable({
       },
     }),
 
-    columnHelper.accessor("notes", {
-      header: () => (
-        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Notes
-        </div>
-      ),
-      cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className="bg-slate-100 text-slate-700 border-slate-200 font-medium"
-        >
-         {(row.original.notes?.trim() || "—")}
-        </Badge>
-      ),
-    }),
+columnHelper.accessor("notes", {
+  header: () => (
+    <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+      Notes
+    </div>
+  ),
+  cell: ({ row }) => {
+    const notes = row.original.notes?.trim() || "—";
+    const maxLength = 50;
+    const truncated =
+      notes.length > maxLength
+        ? `${notes.substring(0, maxLength)}...`
+        : notes;
 
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant="outline"
+              className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
+            >
+              {truncated}
+            </Badge>
+          </TooltipTrigger>
+          {notes.length > maxLength && (
+            <TooltipContent 
+              side="top"
+              align="start"
+              className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
+              sideOffset={5}
+            >
+              <p className="text-sm whitespace-pre-wrap break-words">
+                {notes}
+              </p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
+    );
+  },
+}),
     columnHelper.display({
       id: "orderFormStatus",
       header: () => (
@@ -183,17 +217,17 @@ export function ImagingOrderFormTable({
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
-         cell: ({ row }) => (
-           <div className="space-y-1 ml-6 ">
-             <span className="font-semibold text-slate-900 text-sm">
-               {formatDate(row.original.createdAt)}
-             </span>
-             <div className="flex items-center gap-4 text-xs text-slate-500">
-               <Clock className="w-3.5 h-3.5" />
-               <span>{formatTime(row.original.createdAt)}</span>
-             </div>
-           </div>
-          ),
+      cell: ({ row }) => (
+        <div className="space-y-1 ml-6 ">
+          <span className="font-semibold text-slate-900 text-sm">
+            {formatDate(row.original.createdAt)}
+          </span>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{formatTime(row.original.createdAt)}</span>
+          </div>
+        </div>
+      ),
     }),
 
     columnHelper.display({
@@ -245,7 +279,28 @@ export function ImagingOrderFormTable({
     pageCount: pagination.totalPages,
   });
 
-  if (imagingOrderForm.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gradient-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200">
+              {columns.map((_, index) => (
+                <TableHead key={index} className="px-6 py-4">
+                  <div className="h-4 bg-slate-200 rounded animate-pulse" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableSkeleton rows={5} columns={columns.length} />
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
+  if (imagingOrderForm.length === 0 && !isLoading) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
         <div className="flex flex-col items-center justify-center">
@@ -253,7 +308,7 @@ export function ImagingOrderFormTable({
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No order items found
+            No queue items found
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters
@@ -288,22 +343,23 @@ export function ImagingOrderFormTable({
               ))}
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableSkeleton rows={5} columns={columns.length} />
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="px-6 py-4">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={`${
+                    isFetching ? "opacity-60" : "opacity-100"
+                  } transition-opacity`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-6 py-4">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

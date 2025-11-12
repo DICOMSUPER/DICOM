@@ -8,8 +8,11 @@ import {
   EncounterStats,
   ApiResponse,
   PaginationParams,
+  EncounterStatsInDateRange,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
+import { PaginatedResponse as PaginationResponse } from "@/interfaces/pagination/pagination.interface";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
@@ -136,6 +139,45 @@ export const patientEncounterApi = createApi({
       }),
       invalidatesTags: ["PatientEncounter"],
     }),
+    getPatientEncountersInRoom: builder.query<
+      PaginationResponse<PatientEncounter>,
+      { filters?: PatientEncounterFilters }
+    >({
+      query: ({ filters }) => ({
+        url: "/in-room",
+        method: "GET",
+        params: {
+          ...filters,
+        },
+      }),
+      providesTags: ["PatientEncounter"],
+    }),
+
+    getStatsInDateRange: builder.query<
+      EncounterStatsInDateRange,
+      { dateFrom: string; dateTo: string; roomId?: string }
+    >({
+      query: ({ dateFrom, dateTo, roomId }) => ({
+        url: "/stats-in-date-range",
+        method: "GET",
+        params: {
+          dateFrom,
+          dateTo,
+          roomId,
+        },
+      }),
+      providesTags: ["PatientEncounter"],
+    }),
+    skipEncounter: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${id}/skip`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "PatientEncounter", id },
+        "PatientEncounter",
+      ],
+    }),
   }),
 });
 
@@ -149,4 +191,7 @@ export const {
   useCreatePatientEncounterMutation,
   useUpdatePatientEncounterMutation,
   useDeletePatientEncounterMutation,
+  useGetPatientEncountersInRoomQuery,
+  useGetStatsInDateRangeQuery,
+  useSkipEncounterMutation,
 } = patientEncounterApi;
