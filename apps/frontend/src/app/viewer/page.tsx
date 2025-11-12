@@ -44,7 +44,6 @@ function ViewerPageContent() {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
-  const [autoOpen, setAutoOpen] = useState(false);
 
   // Data State
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
@@ -117,10 +116,6 @@ function ViewerPageContent() {
     []
   );
 
-  const handleDeleteStudy = () => {
-    console.log("Delete study clicked");
-  };
-
   const handleRefresh = async () => {
     if (studyId) {
       setLoading(true);
@@ -152,15 +147,8 @@ function ViewerPageContent() {
   return (
     <div className="h-screen bg-slate-950 flex flex-col">
       {/* Header */}
-      <div className="flex flex-col h-[5vh]">
+      <div className="flex flex-col shrink-0">
         <ViewerHeader
-          selectedTool={selectedTool}
-          onToolSelect={setSelectedTool}
-          autoOpen={autoOpen}
-          onAutoOpenChange={setAutoOpen}
-          onDeleteStudy={handleDeleteStudy}
-          layout={seriesLayout}
-          onLayoutChange={handleLayoutChange}
           isCollapsed={headerCollapsed}
           onToggleCollapse={() => setHeaderCollapsed(!headerCollapsed)}
           loading={loading}
@@ -181,7 +169,7 @@ function ViewerPageContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex h-[95vh]">
+      <div className="flex-1 flex min-h-0">
         {/* Left Sidebar */}
         <ResizablePanel
           side="left"
@@ -257,12 +245,10 @@ function ViewerPageContent() {
       <SeriesAnnotationsModal
         open={activeAnnotationsModal === "all"}
         onOpenChange={handleAnnotationModalOpenChange("all")}
-        series={selectedSeries}
       />
       <DraftAnnotationsModal
         open={activeAnnotationsModal === "draft"}
         onOpenChange={handleAnnotationModalOpenChange("draft")}
-        series={selectedSeries}
       />
     </div>
   );
