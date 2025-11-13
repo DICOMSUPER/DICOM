@@ -3,6 +3,7 @@ import {
   Patient,
   PatientCondition,
   PatientEncounter,
+  ReportTemplate,
 } from '@backend/shared-domain';
 import {
   BloodType,
@@ -13,7 +14,8 @@ import {
   EncounterType,
   Gender,
   Roles,
-  Severity
+  Severity,
+  TemplateType,
 } from '@backend/shared-enums';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -34,6 +36,8 @@ export class SeedingService {
     private readonly patientEncounterRepository: Repository<PatientEncounter>,
     @InjectRepository(DiagnosesReport)
     private readonly diagnosesReportRepository: Repository<DiagnosesReport>,
+    @InjectRepository(ReportTemplate)
+    private readonly reportTemplateRepository: Repository<ReportTemplate>,
     // ✅ Inject microservice client instead of cross-database repositories
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
@@ -62,28 +66,6 @@ export class SeedingService {
     }
   }
 
-  // ✅ Helper method to get room IDs from User Service
-  private async getRoomIdsFromService(take = 5): Promise<string[]> {
-    try {
-      const response = await firstValueFrom(
-        this.userServiceClient
-          .send('UserService.Rooms.GetIds', { take, isActive: true })
-          .pipe(timeout(5000))
-      );
-      
-      if (response.success && response.data) {
-        this.logger.log(`📊 Retrieved ${response.count} room IDs from User Service`);
-        return response.data;
-      }
-      
-      this.logger.warn('⚠️ No room IDs returned from User Service');
-      return [];
-    } catch (error: any) {
-      this.logger.error(`❌ Failed to get room IDs: ${error.message}`);
-      return [];
-    }
-  }
-
   async runSeeding(): Promise<void> {
     this.logger.log('🌱 Starting Patient Service database seeding...');
 
@@ -91,6 +73,7 @@ export class SeedingService {
       await this.seedPatients();
       await this.seedPatientEncounters();
       await this.seedPatientConditions();
+      await this.seedReportTemplates();
 
       await this.seedDiagnosesReports();
 
@@ -396,6 +379,94 @@ export class SeedingService {
     this.logger.log(`✅ Created ${conditionCounter} conditions in total`);
   }
 
+  async seedReportTemplates(): Promise<void> {
+    this.logger.log('📄 Seeding report templates...');
+
+    const radiologistIds = await this.getUserIdsByRole(Roles.RADIOLOGIST, 3);
+    const ownerUserId = radiologistIds[0];
+
+    if (!ownerUserId) {
+      this.logger.warn(
+        '⚠️ No radiologist IDs available, skipping report template seeding'
+      );
+      return;
+    }
+
+    const templates: Array<Partial<ReportTemplate>> = [
+      {
+        templateName: 'Standard Chest X-ray Report',
+        templateType: TemplateType.STANDARD,
+        descriptionTemplate:
+          'Chest X-ray performed with PA and lateral views. Heart size within normal limits.',
+        technicalTemplate:
+          'PA and lateral chest radiographs obtained with patient in upright position.',
+        findingsTemplate:
+          'Lungs are clear without focal consolidation. No pleural effusion or pneumothorax identified.',
+        conclusionTemplate: 'No acute cardiopulmonary abnormality detected.',
+        recommendationTemplate:
+          'Continue routine monitoring as clinically indicated.',
+      },
+      {
+        templateName: 'Abdominal Ultrasound Report',
+        templateType: TemplateType.STANDARD,
+        descriptionTemplate:
+          'Comprehensive abdominal ultrasound including liver, gallbladder, pancreas, spleen, and kidneys.',
+        technicalTemplate:
+          'Real-time sonographic evaluation performed using curvilinear transducer.',
+        findingsTemplate:
+          'Liver with homogeneous echotexture. Gallbladder without stones or wall thickening. No hydronephrosis.',
+        conclusionTemplate: 'No significant abdominal abnormalities identified.',
+        recommendationTemplate:
+          'Follow-up ultrasound in 12 months or sooner if symptoms recur.',
+      },
+      {
+        templateName: 'Brain MRI Report',
+        templateType: TemplateType.STANDARD,
+        descriptionTemplate:
+          'MRI of the brain performed with multiplanar, multisequence technique before and after contrast administration.',
+        technicalTemplate:
+          'Sequences include T1, T2, FLAIR, DWI, and post-contrast T1-weighted images.',
+        findingsTemplate:
+          'No acute infarct or intracranial hemorrhage. Ventricles and sulci appropriate for age.',
+        conclusionTemplate: 'Normal MRI of the brain.',
+        recommendationTemplate:
+          'No additional imaging required at this time.',
+      },
+    ].map((template) => ({
+      ...template,
+      ownerUserId,
+      modalityId: undefined,
+      bodyPartId: undefined,
+      isPublic: true,
+    }));
+
+    let createdCount = 0;
+    for (const template of templates) {
+      const existing = await this.reportTemplateRepository.findOne({
+        where: { templateName: template.templateName! },
+      });
+
+      if (existing) {
+        this.logger.log(
+          `ℹ️ Report template already exists: ${template.templateName}`
+        );
+        continue;
+      }
+
+      const newTemplate = this.reportTemplateRepository.create(
+        template as ReportTemplate
+      );
+      await this.reportTemplateRepository.save(newTemplate);
+      createdCount++;
+      this.logger.log(`✅ Created report template: ${template.templateName}`);
+    }
+
+    if (createdCount === 0) {
+      this.logger.log('ℹ️ No new report templates were created');
+    } else {
+      this.logger.log(`✅ Created ${createdCount} report templates`);
+    }
+  }
 
   async seedDiagnosesReports(): Promise<void> {
     this.logger.log('📝 Seeding diagnoses reports...');
@@ -416,6 +487,16 @@ export class SeedingService {
     if (physicianIds.length === 0) {
       this.logger.warn('⚠️ No physicians found, skipping diagnoses report seeding');
       return;
+    }
+
+    const reportTemplates = await this.reportTemplateRepository.find({
+      where: { isDeleted: false },
+    });
+
+    if (reportTemplates.length === 0) {
+      this.logger.warn(
+        '⚠️ No report templates available, diagnoses reports will be created without template references'
+      );
     }
 
     // Mock study IDs - in real scenario, these would come from imaging service
@@ -458,12 +539,17 @@ export class SeedingService {
           studyId: mockStudyIds[diagnosisCounter % mockStudyIds.length],
           diagnosisName: diagnosis.name,
           description: diagnosis.description,
-          diagnosisType: diagnosisTypes[i],
+          diagnosisType: diagnosisTypes[i % diagnosisTypes.length],
           diagnosisStatus: DiagnosisStatus.ACTIVE,
           severity: severities[diagnosisCounter % severities.length],
           diagnosisDate: new Date(encounter.encounterDate),
           diagnosedBy: physicianIds[diagnosisCounter % physicianIds.length],
           notes: `Chẩn đoán ${i === 0 ? 'chính' : 'phụ'} cho bệnh nhân`,
+          reportTemplateId:
+            reportTemplates.length > 0
+              ? reportTemplates[diagnosisCounter % reportTemplates.length]
+                  .reportTemplatesId
+              : undefined,
         };
 
         const newDiagnosis = this.diagnosesReportRepository.create(
