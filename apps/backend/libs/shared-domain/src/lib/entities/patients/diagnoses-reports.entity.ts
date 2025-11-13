@@ -22,7 +22,6 @@ import { ReportTemplate } from './report-templates.entity';
 @Index(['diagnosisDate'])
 @Index(['diagnosisStatus'])
 @Index(['diagnosedBy'])
-
 export class DiagnosesReport extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
@@ -66,7 +65,10 @@ export class DiagnosesReport extends BaseEntity {
   @Column({ name: 'report_template_id', type: 'uuid', nullable: true })
   reportTemplateId?: string;
 
-  @ManyToOne(() => ReportTemplate, (reportTemplate) => reportTemplate.diagnosisReports)
+  @ManyToOne(
+    () => ReportTemplate,
+    (reportTemplate) => reportTemplate.diagnosisReports
+  )
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;
 
