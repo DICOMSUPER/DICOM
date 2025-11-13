@@ -13,5 +13,19 @@ export class ServicesRepository extends BaseRepository<Services> {
     super(Services, entityManager);
   }
 
-  
+  async getAllServiceProvidedByADepartment(
+    departmentId: string
+  ): Promise<Services[]> {
+    const repository = this.getRepository();
+
+    const qb = repository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.serviceRooms', 'serviceRooms')
+      .leftJoinAndSelect('serviceRooms.room', 'room')
+      .andWhere('room.departmentId = :departmentId', { departmentId })
+      .andWhere('service.isActive = :isActive', { isActive: true })
+      .andWhere('service.isDeleted = :notDeleted', { notDeleted: false });
+
+    return await qb.getMany();
+  }
 }

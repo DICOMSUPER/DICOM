@@ -115,12 +115,12 @@ export const roleNavigation: RoleNavigation = {
       icon: BarChart3,
       description: "Daily overview",
     },
-    // {
-    //   href: "/reception/patients",
-    //   label: "Patients",
-    //   icon: Users,
-    //   description: "Patient registration and search",
-    // },
+    {
+      href: "/reception/patients",
+      label: "Patients",
+      icon: Users,
+      description: "Patient registration and search",
+    },
     {
       href: "/reception/registration",
       label: "Register Patient",
@@ -133,18 +133,18 @@ export const roleNavigation: RoleNavigation = {
       icon: Search,
       description: "Search and filter patient encounters",
     },
-    {
-      href: "/reception/queue",
-      label: "Queue",
-      icon: Clock,
-      description: "Waiting room management",
-    },
-    {
-      href: "/reception/assignments",
-      label: "Assignments",
-      icon: UserCheck,
-      description: "Patient assignments",
-    },
+    // {
+    //   href: "/reception/queue",
+    //   label: "Queue",
+    //   icon: Clock,
+    //   description: "Waiting room management",
+    // },
+    // {
+    //   href: "/reception/assignments",
+    //   label: "Assignments",
+    //   icon: UserCheck,
+    //   description: "Patient assignments",
+    // },
     {
       href: "/reception/schedule",
       label: "Schedule",

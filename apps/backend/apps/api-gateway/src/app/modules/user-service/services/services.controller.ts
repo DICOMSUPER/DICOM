@@ -13,7 +13,10 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 
 import { firstValueFrom } from 'rxjs';
-import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import { CreateServiceDto, UpdateServiceDto } from '@backend/shared-domain';
 import { Public } from '@backend/shared-decorators';
 
@@ -56,6 +59,15 @@ export class ServicesController {
     );
   }
 
+  @Get(':id/department')
+  async getAllServiceProvidedByADepartment(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.userService.send('UserService.Services.GetByDepartmentId', {
+        departmentId: id,
+      })
+    );
+  }
+
   @Get(':id')
   async getServiceById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -69,10 +81,7 @@ export class ServicesController {
   @Public()
   async createService(@Body() createServiceDto: CreateServiceDto) {
     return await firstValueFrom(
-      this.userService.send(
-        'UserService.Services.Create',
-        createServiceDto
-      )
+      this.userService.send('UserService.Services.Create', createServiceDto)
     );
   }
 

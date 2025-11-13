@@ -116,7 +116,7 @@ export default function EncountersPage() {
   };
 
   const filteredEncounters =
-    encounters?.filter((encounter) => {
+    encounters?.data?.filter((encounter: PatientEncounter) => {
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase();
       return (
