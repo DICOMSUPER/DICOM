@@ -515,6 +515,7 @@ export class UsersService {
     try {
       const user = await this.userRepository.findOne({
         where: { id, isActive: true },
+        relations: ['department'],
       });
       if (!user) {
         throw new UserNotFoundException('Không tìm thấy người dùng');

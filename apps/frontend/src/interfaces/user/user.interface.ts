@@ -1,8 +1,6 @@
 import { Roles } from "@/enums/user.enum";
 import { BaseEntity } from "../patient/patient-workflow.interface";
-
-
-
+import { Department } from "./department.interface";
 
 export interface User extends BaseEntity {
   username: string;
@@ -16,5 +14,6 @@ export interface User extends BaseEntity {
   role?: Roles;
   departmentId?: string;
   isActive?: boolean;
-}
 
+  department?: Department;
+}

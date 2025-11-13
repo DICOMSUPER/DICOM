@@ -1,3 +1,4 @@
+import { MachineStatus } from "@/enums/machine-status.enum";
 import {
   CreateModalityMachineDto,
   ModalityMachine,
@@ -27,13 +28,47 @@ export const modalityMachineApi = createApi({
   endpoints: (builder) => ({
     getAllModalityMachine: builder.query<
       ApiResponse<ModalityMachine[]>,
-      { modalityId?: string; roomId?: string }
+      {
+        modalityId?: string;
+        roomId?: string;
+        status?: MachineStatus;
+        machineName?: string;
+        manufacturer?: string;
+        serialNumber?: string;
+        model?: string;
+      }
     >({
-      query: ({ modalityId, roomId }) => ({
+      query: ({
+        modalityId,
+        roomId,
+        status,
+        machineName,
+        manufacturer,
+        serialNumber,
+        model,
+      }) => ({
         url: "",
         method: "GET",
-        params: { modalityId, roomId },
+        params: {
+          modalityId,
+          roomId,
+          status,
+          machineName,
+          manufacturer,
+          serialNumber,
+          model,
+        },
       }),
+      providesTags: (result) =>
+        result && Array.isArray(result.data)
+          ? [
+              ...result.data.map((machine) => ({
+                type: "ModalityMachine" as const,
+                id: machine.id,
+              })),
+              { type: "ModalityMachine", id: "LIST" },
+            ]
+          : [{ type: "ModalityMachine", id: "LIST" }],
     }),
 
     getModalityMachineById: builder.query<ApiResponse<GetOne>, string>({
@@ -41,6 +76,7 @@ export const modalityMachineApi = createApi({
         url: `/${id}`,
         method: "GET",
       }),
+      providesTags: (_result, _error, id) => [{ type: "ModalityMachine", id }],
     }),
 
     getModalityMachinePaginated: builder.query<
@@ -52,6 +88,18 @@ export const modalityMachineApi = createApi({
         method: "GET",
         params: query,
       }),
+      providesTags: (result) => {
+        const machines = result?.data?.data ?? [];
+        return machines.length > 0
+          ? [
+              ...machines.map((machine: ModalityMachine) => ({
+                type: "ModalityMachine" as const,
+                id: machine.id,
+              })),
+              { type: "ModalityMachine", id: "LIST" },
+            ]
+          : [{ type: "ModalityMachine", id: "LIST" }];
+      },
     }),
 
     createModalityMachine: builder.mutation<
@@ -63,6 +111,7 @@ export const modalityMachineApi = createApi({
         method: "POST",
         data,
       }),
+      invalidatesTags: () => [{ type: "ModalityMachine", id: "LIST" }],
     }),
 
     updateModalityMachine: builder.mutation<
@@ -74,12 +123,22 @@ export const modalityMachineApi = createApi({
         method: "PATCH",
         data,
       }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "ModalityMachine", id },
+        { type: "ModalityMachine", id: "LIST" },
+      ],
     }),
 
     deleteModalityMachine: builder.mutation<
       ApiResponse<boolean>,
       { id: string }
-    >({ query: (id) => ({ url: `/${id}`, method: "DELETE" }) }),
+    >({
+      query: ({ id }) => ({ url: `/${id}`, method: "DELETE" }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "ModalityMachine", id },
+        { type: "ModalityMachine", id: "LIST" },
+      ],
+    }),
 
     getModalitiesInRoom: builder.query<GetAll, string>({
       query: (id) => ({ url: `/room/${id}`, method: "GET" }),

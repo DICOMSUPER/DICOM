@@ -4,6 +4,7 @@ import { ImagingModality } from "./imaging_modality.interface";
 import { RequestProcedure } from "./request-procedure.interface";
 import { User } from "../user/user.interface";
 import { ImagingOrderForm } from "./imaging-order-form.interface";
+import { DicomStudy } from "./dicom-study.interface";
 
 export interface CreateImagingOrderDto {
   // patientId: string;
@@ -37,6 +38,7 @@ export interface ImagingOrder extends BaseEntity {
   specialInstructions?: string;
   roomId?: string;
   notes?: string;
+  studies?: DicomStudy[] | [];
 
   //from filter
   patient: Patient;

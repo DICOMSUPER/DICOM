@@ -9,10 +9,39 @@ import { usePathname } from "next/navigation";
 export function SidebarNav() {
   const pathname = usePathname();
   const userRole = detectRoleFromPath(pathname);
-  const navItems = getNavigationForRole(userRole).map(item => ({
-    ...item,
-    active: pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
-  }));
+  const allNavItems = getNavigationForRole(userRole);
+
+  // Sort by href length (longer = more specific) to prioritize specific matches
+  const sortedNavItems = [...allNavItems].sort(
+    (a, b) => b.href.length - a.href.length
+  );
+
+  const navItems = allNavItems.map((item) => {
+    // Check if this item should be active
+    const isExactMatch = pathname === item.href;
+    const isPrefixMatch =
+      item.href !== "/" && pathname.startsWith(item.href + "/");
+
+    // If it's a prefix match, check if there's a more specific nav item that also matches
+    let isActive = isExactMatch;
+    if (isPrefixMatch) {
+      // Check if any more specific nav item also matches this pathname
+      const moreSpecificMatch = sortedNavItems.find(
+        (otherItem) =>
+          otherItem.href !== item.href &&
+          otherItem.href.startsWith(item.href + "/") &&
+          (pathname === otherItem.href ||
+            pathname.startsWith(otherItem.href + "/"))
+      );
+      // Only active if no more specific match exists
+      isActive = !moreSpecificMatch;
+    }
+
+    return {
+      ...item,
+      active: isActive,
+    };
+  });
 
   return (
     <nav className="p-4">
@@ -21,11 +50,11 @@ export function SidebarNav() {
           const Icon = item.icon;
           return (
             <Link href={item.href} key={item.href} className="block">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className={`w-full justify-start hover:bg-slate-100 hover:text-slate-700 transition-colors ${
-                  item.active 
-                    ? "bg-slate-100 text-slate-700 font-medium" 
+                  item.active
+                    ? "bg-slate-100 text-slate-700 font-medium"
                     : "text-slate-600"
                 }`}
               >

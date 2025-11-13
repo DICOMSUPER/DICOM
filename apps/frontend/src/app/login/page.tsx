@@ -17,15 +17,11 @@ export default function LoginPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const handleLogin = async (
-    email: string,
-    password: string,
-
-  ) => {
+  const handleLogin = async (email: string, password: string) => {
     try {
       console.log("🔵 Attempting login with:", { email, password: "***" });
 
-      const res = await fetch("http://localhost:2001/api/user/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
