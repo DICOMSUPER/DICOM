@@ -6,11 +6,10 @@ import {
   PatientOverview,
   PatientSearchFilters,
   PatientStats,
-  UpdatePatientDto
+  UpdatePatientDto,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
-
 
 export interface IRepositoryPagination {
   page?: number;
@@ -18,7 +17,7 @@ export interface IRepositoryPagination {
   searchField?: string;
   search?: string;
   sortField?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
   relation?: string[];
 }
 
@@ -128,7 +127,7 @@ export const patientApi = createApi({
       invalidatesTags: ["Patient", "Stats"],
     }),
 
-    getPatientStats: builder.query<PatientStats, void>({
+    getPatientStats: builder.query<ApiResponse<PatientStats>, void>({
       query: () => ({ url: "/stats", method: "GET" }),
       providesTags: ["Stats"],
     }),

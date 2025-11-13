@@ -17,7 +17,7 @@ export default function ReceptionDashboard() {
   const [notificationCount] = useState(3);
 
   // Fetch real data
-  const { data: patientStats, isLoading: patientStatsLoading } =
+  const { data: patientStatsData, isLoading: patientStatsLoading } =
     useGetPatientStatsQuery();
   const { data: encounterStats, isLoading: encounterStatsLoading } =
     useGetPatientEncounterStatsQuery(undefined);
@@ -28,6 +28,7 @@ export default function ReceptionDashboard() {
       sortOrder: "desc",
     });
 
+  const patientStats = patientStatsData?.data;
   // Calculate stats from real data
   const stats = {
     patientsWaiting: patientStats?.totalPatients || 0,
