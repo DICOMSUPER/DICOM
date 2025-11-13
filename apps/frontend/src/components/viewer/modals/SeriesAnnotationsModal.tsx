@@ -28,11 +28,13 @@ type SeriesAnnotationEntry = {
 interface SeriesAnnotationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  cachedSeriesList?: DicomSeries[];
 }
 
 export function SeriesAnnotationsModal({
   open,
   onOpenChange,
+  cachedSeriesList,
 }: SeriesAnnotationsModalProps) {
   const { state } = useViewer();
   const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
@@ -71,12 +73,21 @@ export function SeriesAnnotationsModal({
       }
     });
 
-    const seriesList = Array.from(uniqueSeries.values());
-    setLoadedSeriesList(seriesList);
-    setExpandedSeriesIds(new Set(seriesList.map((series) => series.id)));
+    if (uniqueSeries.size === 0 && cachedSeriesList?.length) {
+      cachedSeriesList.forEach((seriesCandidate) => {
+        if (seriesCandidate?.id) {
+          uniqueSeries.set(seriesCandidate.id, seriesCandidate);
+        }
+      });
+    }
 
-    if (seriesList.length === 0) {
-      setAnnotationsError("No series are currently loaded in any viewport.");
+    const resolvedSeriesList = Array.from(uniqueSeries.values());
+    setLoadedSeriesList(resolvedSeriesList);
+    setExpandedSeriesIds(new Set(resolvedSeriesList.map((series) => series.id)));
+
+    if (resolvedSeriesList.length === 0) {
+      setAnnotationsError(null);
+      setAnnotationsLoading(false);
       setSeriesGroups([]);
       return;
     }
@@ -88,7 +99,7 @@ export function SeriesAnnotationsModal({
       setAnnotationsError(null);
 
       const results = await Promise.allSettled(
-        seriesList.map(async (seriesItem) => {
+        resolvedSeriesList.map(async (seriesItem) => {
           const response = await fetchAnnotationsBySeries(seriesItem.id).unwrap();
           const annotations = extractApiData<ImageAnnotation>(response);
           const entries = annotations.map((annotation) => ({
@@ -114,7 +125,7 @@ export function SeriesAnnotationsModal({
           nextGroups.push(result.value);
         } else {
           hadError = true;
-          const seriesItem = seriesList[index];
+          const seriesItem = resolvedSeriesList[index];
           console.error(
             "Failed to load annotations for series:",
             seriesItem?.id,
@@ -125,13 +136,9 @@ export function SeriesAnnotationsModal({
 
       setSeriesGroups(nextGroups);
 
-      const hasAnnotations = nextGroups.some((group) => group.entries.length > 0);
-
       if (hadError) {
         setAnnotationsError("Some series failed to load annotations.");
         toast.error("Some series failed to load annotations.");
-      } else if (!hasAnnotations) {
-        setAnnotationsError("No annotations found for the loaded series.");
       } else {
         setAnnotationsError(null);
       }
@@ -144,7 +151,7 @@ export function SeriesAnnotationsModal({
     return () => {
       cancelled = true;
     };
-  }, [open, state.viewportSeries, fetchAnnotationsBySeries]);
+  }, [open, state.viewportSeries, fetchAnnotationsBySeries, cachedSeriesList]);
 
   const annotationStatuses = useMemo(() => Object.values(AnnotationStatus), []);
 
@@ -192,6 +199,14 @@ export function SeriesAnnotationsModal({
     return date.toLocaleString();
   }, []);
 
+  const emptyStateMessage = useMemo(() => {
+    if (loadedSeriesList.length === 0) {
+      return "No annotations available yet.";
+    }
+
+    return "No annotations found for the loaded series.";
+  }, [loadedSeriesList.length]);
+
   const statusBadgeStyle = useCallback((status: string | undefined) => {
     switch ((status || "").toLowerCase()) {
       case "final":
@@ -214,16 +229,9 @@ export function SeriesAnnotationsModal({
       .join(" ");
   }, []);
 
-  const modalTitle = useMemo(() => {
-    if (loadedSeriesList.length === 0) {
-      return "Series Annotations";
-    }
-    return `Series Annotations (${loadedSeriesList.length})`;
-  }, [loadedSeriesList]);
-
   const modalSubtitle = useMemo(() => {
     if (loadedSeriesList.length === 0) {
-      return "Load a series in any viewport to review stored annotations.";
+      return "Review annotations across your workspace.";
     }
     const labels = loadedSeriesList
       .map(
@@ -245,7 +253,7 @@ export function SeriesAnnotationsModal({
         <div className="flex h-[85vh] max-h-[85vh] flex-col gap-5">
           <DialogHeader className="shrink-0 rounded-xl bg-slate-900/80 px-6 py-5 shadow-inner shadow-slate-950/40">
             <DialogTitle className="text-2xl font-semibold text-white">
-              {modalTitle}
+              Series Annotations
             </DialogTitle>
             <DialogDescription className="sr-only">
               Detailed list of annotations stored across the loaded DICOM series.
@@ -325,7 +333,7 @@ export function SeriesAnnotationsModal({
               </div>
             )}
 
-          <div className="flex-1 overflow-y-auto rounded-xl bg-slate-900/40 px-4 py-4">
+          <div className="flex-1 overflow-y-auto rounded-xl bg-slate-900/40">
             {annotationsLoading ? (
               <div className="flex h-full items-center justify-center text-slate-300">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -334,23 +342,15 @@ export function SeriesAnnotationsModal({
             ) : flattenedAnnotations.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-slate-400">
                 <Inbox className="h-10 w-10 text-slate-500" />
-                <p className="text-sm">
-                  No annotations found for the loaded series.
-                </p>
+                <p className="text-sm">{emptyStateMessage}</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-2xl font-semibold text-white">
-                  Series Annotations
-                </p>
                 {seriesGroups.map(({ series, entries }) => {
                   const isExpanded = expandedSeriesIds.has(series.id);
                   const seriesMeta: string[] = [];
                   if (series.seriesInstanceUid) {
                     seriesMeta.push(series.seriesInstanceUid);
-                  }
-                  if (series.seriesNumber) {
-                    seriesMeta.push(`Series #${series.seriesNumber}`);
                   }
                   if (series.bodyPartExamined) {
                     seriesMeta.push(`Body Part: ${series.bodyPartExamined}`);
@@ -368,14 +368,12 @@ export function SeriesAnnotationsModal({
                   return (
                     <div
                       key={series.id}
-                      className="rounded-2xl border border-slate-800/70 bg-slate-900/80 shadow-lg shadow-slate-950/25"
+                      className="group relative rounded-2xl border border-slate-800/80 bg-slate-900/85 shadow-lg shadow-slate-950/25 transition-all duration-200 ease-in-out hover:border-emerald-400/40 hover:shadow-emerald-500/10"
                     >
-                      <div className="flex items-start justify-between gap-3 px-5 py-4">
+                      <div className="sticky top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-transparent bg-slate-900 px-5 py-4 transition-colors duration-200 group-hover:border-emerald-400/30 group-hover:bg-slate-900/95">
                         <div>
                           <p className="text-lg font-semibold text-white">
-                            {series.seriesDescription ||
-                              series.seriesInstanceUid ||
-                              series.id}
+                            Series #{series.seriesNumber}: {series.seriesDescription || series.id}
                           </p>
                           <p className="text-xs text-slate-400">
                             {entries.length} annotation
@@ -397,13 +395,14 @@ export function SeriesAnnotationsModal({
                             })
                           }
                           aria-expanded={isExpanded}
+                          data-expanded={isExpanded}
                           aria-label={`Toggle series ${series.seriesDescription ?? series.id}`}
-                          className="rounded-md border border-slate-700/60 bg-slate-900/60 p-1 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                          className="rounded-md border border-slate-700/60 bg-slate-900/60 p-1 text-slate-300 transition-all duration-200 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 data-[expanded=true]:border-emerald-400/40"
                         >
                           {isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                           ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4 transition-transform duration-200" />
                           )}
                         </button>
                       </div>
@@ -437,7 +436,7 @@ export function SeriesAnnotationsModal({
                               return (
                                 <div
                                   key={annotation.id}
-                                  className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-sm shadow-slate-950/20"
+                                  className="group/annotation rounded-2xl border border-slate-700/70 bg-slate-900/85 p-5 shadow-md shadow-slate-950/20 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-emerald-500/10"
                                 >
                                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="space-y-1.5">
@@ -456,7 +455,7 @@ export function SeriesAnnotationsModal({
                                         </span>
                                         <Badge
                                           variant="outline"
-                                          className={`px-3 py-1 text-xs capitalize ${statusBadgeStyle(
+                                          className={`px-3 py-1 text-xs capitalize transition-colors duration-200 ${statusBadgeStyle(
                                             annotation.annotationStatus
                                           )}`}
                                         >

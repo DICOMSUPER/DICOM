@@ -58,6 +58,7 @@ type SeriesDraftGroup = {
 interface DraftAnnotationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  cachedSeriesList?: DicomSeries[];
 }
 
 const resolveColorCode = (color: unknown): string | undefined => {
@@ -118,6 +119,7 @@ const toSerializable = (value: unknown) => {
 export function DraftAnnotationsModal({
   open,
   onOpenChange,
+  cachedSeriesList,
 }: DraftAnnotationsModalProps) {
   const { state } = useViewer();
   const user = useSelector((candidateState: RootState) => candidateState.auth.user);
@@ -298,11 +300,7 @@ export function DraftAnnotationsModal({
     const groups = Array.from(groupsMap.values());
     const entries = groups.flatMap((group) => group.entries);
     return { groups, entries };
-  }, [
-    state.viewportIds,
-    state.viewportSeries,
-    resolveViewportElement,
-  ]);
+  }, [state.viewportIds, state.viewportSeries, resolveViewportElement]);
 
   const refreshAnnotations = useCallback(() => {
     if (!open) {
@@ -313,7 +311,13 @@ export function DraftAnnotationsModal({
 
     const { groups, entries } = collectDraftAnnotations();
     const newSeriesList = groups.map((group) => group.series);
-    const newSeriesIdSet = new Set(newSeriesList.map((series) => series.id));
+    const effectiveSeriesList =
+      newSeriesList.length > 0
+        ? newSeriesList
+        : cachedSeriesList?.filter((series) => series?.id) ?? [];
+    const newSeriesIdSet = new Set(
+      effectiveSeriesList.map((series) => series.id)
+    );
     const previouslyLoadedIds = new Set(
       loadedSeriesRef.current.map((series) => series.id)
     );
@@ -326,7 +330,7 @@ export function DraftAnnotationsModal({
         }
       });
       let added = false;
-      newSeriesList.forEach((series) => {
+      effectiveSeriesList.forEach((series) => {
         if (!previouslyLoadedIds.has(series.id)) {
           next.add(series.id);
           added = true;
@@ -345,7 +349,7 @@ export function DraftAnnotationsModal({
           next.delete(id);
         }
       });
-      newSeriesList.forEach((series) => {
+      effectiveSeriesList.forEach((series) => {
         if (!prev.has(series.id)) {
           next.add(series.id);
         }
@@ -356,21 +360,25 @@ export function DraftAnnotationsModal({
       return next;
     });
 
-    setLoadedSeriesList(newSeriesList);
-    loadedSeriesRef.current = newSeriesList;
+    setLoadedSeriesList(effectiveSeriesList);
+    loadedSeriesRef.current = effectiveSeriesList;
 
     const groupsWithEntries = groups.filter((group) => group.entries.length > 0);
     setSeriesDraftGroups(groupsWithEntries);
     setDraftAnnotations(entries);
 
     if (groupsWithEntries.length === 0) {
-      setAnnotationsError("No series are currently loaded in any viewport.");
+      if (effectiveSeriesList.length === 0) {
+        setAnnotationsError("No series are currently loaded in any viewport.");
+      } else {
+        setAnnotationsError("No draft annotations found for the cached series.");
+      }
     } else {
       setAnnotationsError(null);
     }
 
     setAnnotationsLoading(false);
-  }, [collectDraftAnnotations, open]);
+  }, [collectDraftAnnotations, open, cachedSeriesList]);
 
   useEffect(() => {
     if (!open) {
@@ -934,7 +942,6 @@ export function DraftAnnotationsModal({
                   {seriesDraftGroups.map(({ series, entries }) => {
                     const seriesMeta: string[] = [];
                     if (series.seriesInstanceUid) seriesMeta.push(series.seriesInstanceUid);
-                    if (series.seriesNumber) seriesMeta.push(`Series #${series.seriesNumber}`);
                     if (series.bodyPartExamined) seriesMeta.push(`Body Part: ${series.bodyPartExamined}`);
                     if (series.protocolName) seriesMeta.push(`Protocol: ${series.protocolName}`);
                     if (series.seriesDate) seriesMeta.push(`Date: ${series.seriesDate}`);
@@ -954,11 +961,11 @@ export function DraftAnnotationsModal({
                     return (
                       <div
                         key={series.id}
-                        className={`rounded-2xl border ${
-                          isSeriesSelected ? "border-emerald-500/40" : "border-slate-800/60"
-                        } bg-slate-900/80 shadow-lg shadow-slate-950/25 transition`}
+                        className={`group relative rounded-2xl border bg-slate-900/85 shadow-lg shadow-slate-950/25 transition-all duration-300 hover:border-emerald-400/40 hover:shadow-emerald-500/10 ${
+                          isSeriesSelected ? "border-emerald-500/40 shadow-emerald-500/10" : "border-slate-800/70"
+                        }`}
                       >
-                        <div className="flex items-start justify-between gap-3 px-5 py-4">
+                        <div className="sticky top-0 left-0 right-0 z-10 flex items-start justify-between gap-3 rounded-2xl border border-transparent bg-slate-900 px-5 py-4 transition-colors duration-200 group-hover:border-emerald-400/30 group-hover:bg-slate-900/95">
                           <div className="flex items-start gap-3">
                             <Checkbox
                               checked={isSeriesSelected}
@@ -966,12 +973,11 @@ export function DraftAnnotationsModal({
                                 toggleSeriesSelection(series.id, checked === true)
                               }
                               aria-label={`Select series ${series.seriesDescription ?? series.id}`}
+                              className="transition-transform duration-200 data-[state=checked]:scale-110 data-[state=checked]:border-emerald-400 data-[state=checked]:shadow-[0_0_12px_rgba(16,185,129,0.35)] data-[state=checked]:ring-emerald-400/40"
                             />
                             <div>
                               <p className="text-lg font-semibold text-white">
-                                {series.seriesDescription ||
-                                  series.seriesInstanceUid ||
-                                  series.id}
+                                Series #{series.seriesNumber}: {series.seriesDescription || series.id}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {draftsLabel} · {instancesLabel}
@@ -988,13 +994,14 @@ export function DraftAnnotationsModal({
                               type="button"
                               onClick={() => toggleSeriesExpansion(series.id)}
                               aria-expanded={isSeriesExpanded}
+                              data-expanded={isSeriesExpanded}
                               aria-label={`Toggle series ${series.seriesDescription ?? series.id}`}
-                              className="rounded-md border border-slate-700/60 bg-slate-900/60 p-1 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                              className="rounded-md border border-slate-700/60 bg-slate-900/60 p-1 text-slate-300 transition-all duration-200 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 data-[expanded=true]:border-emerald-400/40"
                             >
                               {isSeriesExpanded ? (
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                               ) : (
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-4 w-4 transition-transform duration-200" />
                               )}
                             </button>
                           </div>
@@ -1002,7 +1009,7 @@ export function DraftAnnotationsModal({
                         {isSeriesExpanded && (
                           <div
                             className={`space-y-4 border-t border-slate-800/70 px-5 py-4 ${
-                              !isSeriesSelected ? "opacity-70" : ""
+                              !isSeriesSelected ? "opacity-70" : "opacity-100"
                             }`}
                           >
                             {seriesMeta.length > 0 && (
@@ -1044,7 +1051,7 @@ export function DraftAnnotationsModal({
                               return (
                                 <div
                                   key={entry.id}
-                                  className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-sm shadow-slate-950/20"
+                                  className="group/draft rounded-2xl border border-slate-700/70 bg-slate-900/85 p-5 shadow-md shadow-slate-950/20 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-emerald-500/10"
                                 >
                                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="space-y-1.5">
@@ -1070,7 +1077,7 @@ export function DraftAnnotationsModal({
                                         </span>
                                         <Badge
                                           variant="outline"
-                                          className={`px-3 py-1 text-xs capitalize ${statusBadgeStyle(
+                                          className={`px-3 py-1 text-xs capitalize transition-colors duration-200 ${statusBadgeStyle(
                                             entry.status
                                           )}`}
                                         >

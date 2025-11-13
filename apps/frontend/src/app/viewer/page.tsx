@@ -92,22 +92,12 @@ function ViewerPageContent() {
   };
 
   const handleViewAllAnnotations = useCallback(() => {
-    if (!selectedSeries) {
-      toast.error("Please select a series to view annotations.");
-      return;
-    }
-
     setActiveAnnotationsModal("all");
-  }, [selectedSeries]);
+  }, []);
 
   const handleViewDraftAnnotations = useCallback(() => {
-    if (!selectedSeries) {
-      toast.error("Please select a series to view annotations.");
-      return;
-    }
-
     setActiveAnnotationsModal("draft");
-  }, [selectedSeries]);
+  }, []);
 
   const handleAnnotationModalOpenChange = useCallback(
     (type: "all" | "draft") => (open: boolean) => {
@@ -245,10 +235,12 @@ function ViewerPageContent() {
       <SeriesAnnotationsModal
         open={activeAnnotationsModal === "all"}
         onOpenChange={handleAnnotationModalOpenChange("all")}
+        cachedSeriesList={series}
       />
       <DraftAnnotationsModal
         open={activeAnnotationsModal === "draft"}
         onOpenChange={handleAnnotationModalOpenChange("draft")}
+        cachedSeriesList={series}
       />
     </div>
   );

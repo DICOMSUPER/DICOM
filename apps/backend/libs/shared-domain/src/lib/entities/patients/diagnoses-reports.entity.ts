@@ -6,7 +6,6 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { BaseEntity } from '@backend/entities';
 
 import {
   DiagnosisType,
@@ -15,6 +14,8 @@ import {
 } from '@backend/shared-enums';
 import { PatientEncounter } from './patient-encounters.entity';
 import { ReportTemplate } from './report-templates.entity';
+import { BaseEntity } from '@backend/database';
+import { User } from '../users';
 
 @Entity('diagnoses_reports')
 @Index(['encounterId'])
@@ -50,6 +51,7 @@ export class DiagnosesReport extends BaseEntity {
     default: DiagnosisStatus.ACTIVE,
   })
   diagnosisStatus!: DiagnosisStatus;
+  
   @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
   severity!: Severity;
 
@@ -71,6 +73,9 @@ export class DiagnosesReport extends BaseEntity {
   )
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;
+
+  @Column({ name: 'verified_by', type: 'uuid', nullable: true })
+  verifiedById?: string;
 
   @Column({ type: 'uuid', nullable: true })
   signatureId?: string;
