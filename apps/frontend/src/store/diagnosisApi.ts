@@ -6,6 +6,9 @@ import {
   DiagnosisSearchFilters,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 export const diagnosisApi = createApi({
   reducerPath: "diagnosisApi",
@@ -23,7 +26,7 @@ export const diagnosisApi = createApi({
     }),
 
     // Get diagnosis by ID
-    getDiagnosisById: builder.query<DiagnosisReport, string>({
+    getDiagnosisById: builder.query<ApiResponse<DiagnosisReport>, string>({
       query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "Diagnosis", id }],
     }),
@@ -129,7 +132,6 @@ export const diagnosisApi = createApi({
       ],
     }),
 
-
     // Update diagnosis
     updateDiagnosis: builder.mutation<
       DiagnosisReport,
@@ -154,6 +156,23 @@ export const diagnosisApi = createApi({
       }),
       invalidatesTags: ["Diagnosis"],
     }),
+
+    getDiagnosisReportWithFilter: builder.query<
+      PaginatedResponse<DiagnosisReport>,
+      { filters?: FilterDiagnosesReport }
+    >({
+      query: ({ filters }) => ({ url: "/with-filter", method: "GET", params: filters }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "Diagnosis" as const,
+                id: r.id,
+              })),
+              { type: "Diagnosis", id: "LIST" },
+            ]
+          : [{ type: "Diagnosis", id: "LIST" }],
+    }),
   }),
 });
 
@@ -170,4 +189,5 @@ export const {
   useUpdateDiagnosisMutation,
   useDeleteDiagnosisMutation,
   useGetDiagnoseByStudyIdQuery,
+  useGetDiagnosisReportWithFilterQuery,
 } = diagnosisApi;

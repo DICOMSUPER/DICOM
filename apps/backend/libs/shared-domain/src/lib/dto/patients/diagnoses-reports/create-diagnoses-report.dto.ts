@@ -1,20 +1,16 @@
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsUUID,
-  IsDateString,
-  IsArray,
-  ValidateNested,
-  MaxLength,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import {
   DiagnosisStatus,
   DiagnosisType,
   Severity,
 } from '@backend/shared-enums';
-import { DiagnosisDto } from './diagnosis.dto';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength
+} from 'class-validator';
 
 export class CreateDiagnosesReportDto {
   @IsUUID()

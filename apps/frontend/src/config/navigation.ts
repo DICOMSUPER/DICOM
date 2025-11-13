@@ -1,22 +1,21 @@
 import {
-  BarChart3,
-  Users,
-  Clock,
-  UserCheck,
-  Settings,
-  Stethoscope,
-  Camera,
-  FileText,
-  Search,
-  Bell,
-  Database,
-  Shield,
   Activity,
+  BarChart3,
   BookOpen,
-  Monitor,
+  Camera,
+  Clock,
   Cog,
-  Timer,
+  Database,
+  FileText,
   Logs,
+  Monitor,
+  Search,
+  Settings,
+  Shield,
+  Stethoscope,
+  Timer,
+  UserCheck,
+  Users
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -156,17 +155,11 @@ export const roleNavigation: RoleNavigation = {
   // Physician - Patient care and medical records
   Physician: [
     {
-      href: "/physicians",
+      href: "/physicians/dashboard",
 
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient overview",
-    },
-    {
-      href: "/physicians/patients",
-      label: "My Patients",
-      icon: Users,
-      description: "Assigned patients",
     },
     {
       href: "/physicians/clinic-visit",
@@ -182,8 +175,8 @@ export const roleNavigation: RoleNavigation = {
       description: "Patient diagnoses management",
     },
     {
-      href: "/physicians/diagnoses-reports",
-      label: "Diagnoses Reports",
+      href: "/physicians/diagnosis-report",
+      label: "Diagnosis Reports",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },

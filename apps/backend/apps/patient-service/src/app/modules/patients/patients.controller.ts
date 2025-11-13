@@ -233,7 +233,7 @@ export class PatientController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Restore`)
-  async restore(@Payload() data: { id: string }): Promise<Patient | null> {
+  async restore(@Payload() data: { id: string }) {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Restore`);
     try {
       const { id } = data;

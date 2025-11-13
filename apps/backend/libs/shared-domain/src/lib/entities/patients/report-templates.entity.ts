@@ -44,7 +44,7 @@ export class ReportTemplate extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   recommendationTemplate!: string;
 
-  //   relation
+
   @OneToMany(
     () => DiagnosesReport,
     (diagnosisReport) => diagnosisReport.reportTemplate

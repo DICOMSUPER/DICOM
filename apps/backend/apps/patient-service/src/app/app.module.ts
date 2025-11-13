@@ -10,7 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm/dist';
 import { SeedingModule } from './modules/seeding/seeding.module';
 import { ReportTemplatesModule } from './modules/report-templates/report-templates.module';
-
+import { BackendRedisModule } from '@backend/redis';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,6 +28,7 @@ import { ReportTemplatesModule } from './modules/report-templates/report-templat
     }),
     TypeOrmModule,
     SeedingModule,
+    BackendRedisModule
   ],
   controllers: [AppController],
   providers: [AppService],

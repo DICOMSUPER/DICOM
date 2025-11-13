@@ -1,5 +1,8 @@
 "use client";
 
+import Pagination, {
+  type PaginationMeta,
+} from "@/components/common/PaginationV1";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import {
+  DiagnosisStatus,
+  EncounterPriorityLevel,
+  EncounterStatus,
+} from "@/enums/patient-workflow.enum";
+import {
+  DiagnosisReport,
+  PatientEncounter,
+} from "@/interfaces/patient/patient-workflow.interface";
+import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import {
   createColumnHelper,
   flexRender,
@@ -25,81 +39,63 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
+  AlertCircle,
   ArrowUpDown,
   CheckCircle2,
   Clock,
   Eye,
   MoreHorizontal,
+  Phone,
   User,
   Zap,
 } from "lucide-react";
 import React from "react";
 
-import Pagination, {
-  type PaginationMeta,
-} from "@/components/common/PaginationV1";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  IImagingOrderForm,
-  OrderFormStatus,
-} from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
-
-interface ImagingOrderFormTableProps {
-  imagingOrderForm: IImagingOrderForm[];
+interface DiagnosisReportTableProps {
+  reportItems: DiagnosisReport[];
   onViewDetails: (id: string) => void;
   pagination: PaginationMeta;
   onPageChange: (page: number) => void;
-  isUpdating?: boolean;
   isLoading: boolean;
   isFetching: boolean;
 }
 
-const columnHelper = createColumnHelper<IImagingOrderForm>();
+const columnHelper = createColumnHelper<DiagnosisReport>();
 
-export function ImagingOrderFormTable({
-  imagingOrderForm,
+export function DiagnosisReportTable({
+  reportItems,
   onViewDetails,
   pagination,
   onPageChange,
-  isUpdating,
-  isFetching,
   isLoading,
-}: ImagingOrderFormTableProps) {
+  isFetching,
+}: DiagnosisReportTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const getStatusBadge = (status: OrderFormStatus) => {
+  const getStatusBadge = (status: DiagnosisStatus) => {
     switch (status) {
-      case OrderFormStatus.IN_PROGRESS:
+      case DiagnosisStatus.ACTIVE:
         return (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-blue-700">
-              In Progress
-            </span>
+            <span className="text-sm font-medium text-blue-700">Active</span>
           </div>
         );
-      case OrderFormStatus.COMPLETED:
+      case DiagnosisStatus.RESOLVED:
         return (
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span className="text-sm font-medium text-emerald-700">
-              Completed
+              Resolved
             </span>
           </div>
         );
-      case OrderFormStatus.CANCELLED:
+      case DiagnosisStatus.RULED_OUT:
         return (
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-600" />
             <span className="text-sm font-medium text-amber-700">
-              Cancelled
+              Ruled Out
             </span>
           </div>
         );
@@ -113,6 +109,23 @@ export function ImagingOrderFormTable({
     }
   };
 
+  const getRowClassName = (priority: EncounterPriorityLevel) => {
+    const baseClass = "transition-all duration-200 hover:shadow-md";
+
+    switch (priority) {
+      case EncounterPriorityLevel.URGENT:
+        return `bg-gradient-to-r from-amber-50 to-transparent hover:from-amber-100 hover:to-transparent border-l-4 border-amber-500 ${baseClass}`;
+      case EncounterPriorityLevel.STAT:
+        return `bg-gradient-to-r from-red-50 to-transparent hover:from-red-100 hover:to-transparent border-l-4 border-red-500 ${baseClass}`;
+      case EncounterPriorityLevel.ROUTINE:
+        return `hover:bg-slate-50 border-l-4 border-transparent ${baseClass}`;
+      default:
+        return `hover:bg-slate-50 border-l-4 border-transparent ${baseClass}`;
+    }
+  };
+
+
+
   const columns = [
     columnHelper.accessor("id", {
       header: ({ column }) => (
@@ -121,13 +134,30 @@ export function ImagingOrderFormTable({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Order ID
+          ID
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="text-base ml-6 text-slate-900 ">
-          {row.original.id.slice(-6).toUpperCase()}
+        <div className="font-bold text-lg text-slate-900 text-center">
+          {row.original.id.substring(0, 5)}
+        </div>
+      ),
+    }),
+
+    columnHelper.accessor("diagnosisName", {
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Diagnosis Name
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-900">
+              {row.original.diagnosisName}
+            </span>
+          </div>
         </div>
       ),
     }),
@@ -136,12 +166,12 @@ export function ImagingOrderFormTable({
       id: "patient",
       header: () => (
         <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Name
+          Patient
         </div>
       ),
-
       cell: ({ row }) => {
-        const patient = row.original.patient;
+        const encounter = row.original.encounter;
+        const patient = encounter?.patient;
         return (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -154,120 +184,89 @@ export function ImagingOrderFormTable({
       },
     }),
 
-    columnHelper.accessor("notes", {
-      header: () => (
-        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Notes
-        </div>
-      ),
-      cell: ({ row }) => {
-        const notes = row.original.notes?.trim() || "—";
-        const maxLength = 50;
-        const truncated =
-          notes.length > maxLength
-            ? `${notes.substring(0, maxLength)}...`
-            : notes;
-
-        return (
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
-                >
-                  {truncated}
-                </Badge>
-              </TooltipTrigger>
-              {notes.length > maxLength && (
-                <TooltipContent
-                  side="top"
-                  align="start"
-                  className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
-                  sideOffset={5}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">
-                    {notes}
-                  </p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
-    }),
-    // columnHelper.display({
-    //   id: "orderFormStatus",
-    //   header: () => (
-    //     <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-    //       Status
-    //     </div>
-    //   ),
-    //   cell: ({ row }) => getStatusBadge(row.original.orderFormStatus),
-    // }),
-
-    columnHelper.accessor("createdAt", {
+    columnHelper.accessor("diagnosisDate", {
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-center font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Create Date
+          Diagnosis Date
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1 ml-6 ">
+        <div className="space-y-1 text-center">
           <span className="font-semibold text-slate-900 text-sm">
-            {formatDate(row.original.createdAt)}
+            {formatDate(row.original.diagnosisDate)}
           </span>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(row.original.createdAt)}</span>
-          </div>
         </div>
       ),
+    }),
+
+    columnHelper.accessor("diagnosisType", {
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Type
+        </div>
+      ),
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="bg-slate-100 text-slate-700 border-slate-200 font-medium"
+        >
+          {row.original.diagnosisType}
+        </Badge>
+      ),
+    }),
+
+    columnHelper.accessor("diagnosisStatus", {
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Status
+        </div>
+      ),
+      cell: ({ row }) => getStatusBadge(row.original.diagnosisStatus),
     }),
 
     columnHelper.display({
-      id: "actions",
-      header: () => (
-        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Actions
-        </div>
-      ),
-      cell: ({ row }) => {
-        const orderFormItem = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-8 w-8 p-0 hover:bg-slate-100 transition-colors"
-                >
-                  <MoreHorizontal className="h-4 w-4 text-slate-600" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => onViewDetails(orderFormItem.id)}
-                  className="cursor-pointer"
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Details
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        id: "actions",
+        header: () => (
+          <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+            Actions
           </div>
-        );
-      },
-    }),
+        ),
+        cell: ({ row }) => {
+          const reportItem = row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0 hover:bg-slate-100 transition-colors"
+                  >
+                    <MoreHorizontal className="h-4 w-4 text-slate-600" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => onViewDetails(reportItem.id)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      }),
   ];
 
   const table = useReactTable({
-    data: imagingOrderForm,
+    data: reportItems,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -300,7 +299,7 @@ export function ImagingOrderFormTable({
     );
   }
 
-  if (imagingOrderForm.length === 0 && !isLoading) {
+  if (reportItems.length === 0 && !isLoading && !isFetching) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
         <div className="flex flex-col items-center justify-center">
@@ -308,7 +307,7 @@ export function ImagingOrderFormTable({
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No order forms items found
+            No diagnosis reports found
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters
@@ -346,9 +345,9 @@ export function ImagingOrderFormTable({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={`${
+                  className={`hover:bg-slate-50 transition-all duration-200 ${
                     isFetching ? "opacity-60" : "opacity-100"
-                  } transition-opacity`}
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-6 py-4">

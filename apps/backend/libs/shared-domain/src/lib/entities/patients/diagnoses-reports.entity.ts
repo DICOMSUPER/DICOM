@@ -1,21 +1,20 @@
 import {
-  Entity,
   Column,
-  PrimaryGeneratedColumn,
+  Entity,
   Index,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
+import { BaseEntity } from '@backend/database';
 import {
-  DiagnosisType,
   DiagnosisStatus,
+  DiagnosisType,
   Severity,
 } from '@backend/shared-enums';
 import { PatientEncounter } from './patient-encounters.entity';
 import { ReportTemplate } from './report-templates.entity';
-import { BaseEntity } from '@backend/database';
-import { User } from '../users';
 
 @Entity('diagnoses_reports')
 @Index(['encounterId'])
@@ -26,10 +25,12 @@ import { User } from '../users';
 export class DiagnosesReport extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'diagnosis_id' })
   id!: string;
+
   @Column({ name: 'encounter_id', type: 'uuid' })
   encounterId!: string;
 
-  @ManyToOne(() => PatientEncounter)
+  @ManyToOne(() => PatientEncounter, { nullable: false })
+  @JoinColumn({ name: 'encounter_id' })
   encounter!: PatientEncounter;
 
   @Column({ name: 'study_id', type: 'uuid' })
@@ -51,7 +52,7 @@ export class DiagnosesReport extends BaseEntity {
     default: DiagnosisStatus.ACTIVE,
   })
   diagnosisStatus!: DiagnosisStatus;
-  
+
   @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
   severity!: Severity;
 
@@ -74,8 +75,8 @@ export class DiagnosesReport extends BaseEntity {
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;
 
-  @Column({ name: 'verified_by', type: 'uuid', nullable: true })
-  verifiedById?: string;
+  // @Column({ name: 'verified_by', type: 'uuid', nullable: true })
+  // verifiedById?: string;
 
   @Column({ type: 'uuid', nullable: true })
   signatureId?: string;

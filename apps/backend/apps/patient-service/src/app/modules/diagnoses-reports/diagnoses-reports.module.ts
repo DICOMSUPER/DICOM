@@ -10,10 +10,12 @@ import {
   Patient,
   PatientEncounterRepository,
 } from '@backend/shared-domain';
+import { BackendRedisModule } from '@backend/redis';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DiagnosesReport, PatientEncounter, Patient]),
+    BackendRedisModule
   ],
   controllers: [DiagnosesReportController],
   providers: [

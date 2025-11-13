@@ -154,7 +154,7 @@ export const patientEncounterApi = createApi({
     }),
 
     getStatsInDateRange: builder.query<
-      EncounterStatsInDateRange,
+      ApiResponse<EncounterStatsInDateRange>,
       { dateFrom: string; dateTo: string; roomId?: string }
     >({
       query: ({ dateFrom, dateTo, roomId }) => ({

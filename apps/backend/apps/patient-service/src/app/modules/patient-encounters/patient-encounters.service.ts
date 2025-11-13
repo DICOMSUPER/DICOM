@@ -10,10 +10,7 @@ import {
   PatientEncounterRepository,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
-import {
-  EncounterStatus,
-  Roles
-} from '@backend/shared-enums';
+import { EncounterStatus, Roles } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import {
   HttpStatus,
@@ -119,12 +116,15 @@ export class PatientEncounterService {
       orderNumber,
       roomId,
     } = filterEncounter;
+    console.log('filter', filterEncounter);
 
     const whereConditions: any = {};
 
     const user = await firstValueFrom(
-      this.userService.send('UserService.Users.findOne', { userId })
+      this.userService.send('UserService.Users.findOne', { id:userId })
     );
+
+    console.log('user', user);
 
     if (user.role !== Roles.PHYSICIAN && user.role !== Roles.SYSTEM_ADMIN) {
       throw new NotFoundException(
@@ -141,7 +141,6 @@ export class PatientEncounterService {
 
     if (patientName) {
       whereConditions.patient = {
-        // PostgreSQL
         firstName: Raw(
           (alias: string) =>
             `(${alias} || ' ' || last_name) ILIKE :patientName OR 
@@ -177,12 +176,14 @@ export class PatientEncounterService {
 
     whereConditions.encounterDate = Between(fromDate, toDate);
 
+    console.log('roomid', roomId);
     if (roomId) {
+      console.log('anhsapper findby room');
+
       const serviceRooms = await firstValueFrom(
-        this.userService.send('UserService.ServiceRooms.FindByRoom', {
-          roomId,
-        })
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
       );
+      console.log('serviceRooms', serviceRooms);
 
       if (serviceRooms && serviceRooms.length > 0) {
         const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
@@ -223,43 +224,28 @@ export class PatientEncounterService {
       }
     );
   }
-  skipEncounterAssignment = async (
-    id: string
-  ): Promise<PatientEncounter | null> => {
-    const assignment = await this.findOne(id);
 
-    if (!assignment) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Queue Assignment not found',
-        PATIENT_SERVICE
-      );
-    }
-
-    if (assignment.status !== EncounterStatus.WAITING) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Only waiting assignments can be skipped',
-        PATIENT_SERVICE
-      );
-    }
-
-    return await this.encounterRepository.update(id, {
-      // skippedAt: new Date(),
-      updatedAt: new Date(),
-    });
-  };
   getStatsInDateRange = async (
     dateFrom: string,
     dateTo: string,
     roomId?: string
   ): Promise<any> => {
+      const startDate = new Date(dateFrom);
+  const endDate = new Date(dateTo);
+
+ 
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new Error('Invalid date format. Expected format: YYYY-MM-DD');
+  }
+
+  if (startDate > endDate) {
+    throw new Error('dateFrom cannot be greater than dateTo');
+  }
     if (roomId) {
       const serviceRooms = await firstValueFrom(
-        this.userService.send('UserService.ServiceRooms.FindByRoom', {
-          roomId,
-        })
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
       );
+      console.log("getStatsInDateRange serviceRooms", serviceRooms);
       if (serviceRooms && serviceRooms.length > 0) {
         const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
         return await this.encounterRepository.getStatsInDateRange(
