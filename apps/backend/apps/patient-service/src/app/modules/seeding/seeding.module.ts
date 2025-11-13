@@ -6,7 +6,9 @@ import {
   Patient,
   PatientCondition,
   PatientEncounter,
+
   DiagnosesReport,
+  ReportTemplate,
 } from '@backend/shared-domain';
 import { UserServiceClientModule } from '@backend/shared-client';
 
@@ -18,6 +20,7 @@ import { UserServiceClientModule } from '@backend/shared-client';
       PatientEncounter,
 
       DiagnosesReport,
+      ReportTemplate,
     ]),
     UserServiceClientModule,
   ],

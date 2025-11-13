@@ -155,4 +155,12 @@ export class ServicesService {
   ): Promise<PaginatedResponseDto<Services>> => {
     return await this.servicesRepository.paginate(paginationDto);
   };
+
+  getAllServiceProvidedByADepartment = async (
+    departmentId: string
+  ): Promise<Services[]> => {
+    return await this.servicesRepository.getAllServiceProvidedByADepartment(
+      departmentId
+    );
+  };
 }

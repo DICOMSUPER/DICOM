@@ -25,7 +25,6 @@ import {
   Enums as ToolEnums,
   segmentation,
 } from '@cornerstonejs/tools';
-import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
 import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
 import { extractApiData } from '@/utils/api';
@@ -743,7 +742,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       cornerstoneInitPromiseRef.current = (async () => {
         await csRenderInit();
         await csToolsInit();
-        dicomImageLoaderInit({ maxWebWorkers: 4 });
+        const { init: dicomImageLoaderInit } = await import('@cornerstonejs/dicom-image-loader');
+        const maxWorkers =
+          typeof navigator !== 'undefined' && typeof navigator.hardwareConcurrency === 'number'
+            ? Math.min(Math.max(navigator.hardwareConcurrency - 1, 1), 6)
+            : 4;
+        dicomImageLoaderInit({ maxWebWorkers: maxWorkers });
         cornerstoneInitializedRef.current = true;
       })().catch(error => {
         cornerstoneInitializedRef.current = false;

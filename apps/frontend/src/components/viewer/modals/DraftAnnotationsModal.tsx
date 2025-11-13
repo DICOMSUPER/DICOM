@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, ChevronDown, ChevronRight, Info } from "lucide-react";
 import { annotation, Enums as ToolEnums } from "@cornerstonejs/tools";
 import {
   eventTarget,
@@ -58,6 +58,7 @@ type SeriesDraftGroup = {
 interface DraftAnnotationsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  cachedSeriesList?: DicomSeries[];
 }
 
 const resolveColorCode = (color: unknown): string | undefined => {
@@ -118,6 +119,7 @@ const toSerializable = (value: unknown) => {
 export function DraftAnnotationsModal({
   open,
   onOpenChange,
+  cachedSeriesList,
 }: DraftAnnotationsModalProps) {
   const { state } = useViewer();
   const user = useSelector((candidateState: RootState) => candidateState.auth.user);
@@ -298,11 +300,7 @@ export function DraftAnnotationsModal({
     const groups = Array.from(groupsMap.values());
     const entries = groups.flatMap((group) => group.entries);
     return { groups, entries };
-  }, [
-    state.viewportIds,
-    state.viewportSeries,
-    resolveViewportElement,
-  ]);
+  }, [state.viewportIds, state.viewportSeries, resolveViewportElement]);
 
   const refreshAnnotations = useCallback(() => {
     if (!open) {
@@ -313,7 +311,13 @@ export function DraftAnnotationsModal({
 
     const { groups, entries } = collectDraftAnnotations();
     const newSeriesList = groups.map((group) => group.series);
-    const newSeriesIdSet = new Set(newSeriesList.map((series) => series.id));
+    const effectiveSeriesList =
+      newSeriesList.length > 0
+        ? newSeriesList
+        : cachedSeriesList?.filter((series) => series?.id) ?? [];
+    const newSeriesIdSet = new Set(
+      effectiveSeriesList.map((series) => series.id)
+    );
     const previouslyLoadedIds = new Set(
       loadedSeriesRef.current.map((series) => series.id)
     );
@@ -325,16 +329,6 @@ export function DraftAnnotationsModal({
           next.add(id);
         }
       });
-      let added = false;
-      newSeriesList.forEach((series) => {
-        if (!previouslyLoadedIds.has(series.id)) {
-          next.add(series.id);
-          added = true;
-        }
-      });
-      if (prev.size === 0 && next.size === 0) {
-        newSeriesList.forEach((series) => next.add(series.id));
-      }
       return next;
     });
 
@@ -345,7 +339,7 @@ export function DraftAnnotationsModal({
           next.delete(id);
         }
       });
-      newSeriesList.forEach((series) => {
+      effectiveSeriesList.forEach((series) => {
         if (!prev.has(series.id)) {
           next.add(series.id);
         }
@@ -356,21 +350,25 @@ export function DraftAnnotationsModal({
       return next;
     });
 
-    setLoadedSeriesList(newSeriesList);
-    loadedSeriesRef.current = newSeriesList;
+    setLoadedSeriesList(effectiveSeriesList);
+    loadedSeriesRef.current = effectiveSeriesList;
 
     const groupsWithEntries = groups.filter((group) => group.entries.length > 0);
     setSeriesDraftGroups(groupsWithEntries);
     setDraftAnnotations(entries);
 
     if (groupsWithEntries.length === 0) {
-      setAnnotationsError("No series are currently loaded in any viewport.");
+      if (effectiveSeriesList.length === 0) {
+        setAnnotationsError("No series are currently loaded in any viewport.");
+      } else {
+        setAnnotationsError("No draft annotations found for the cached series.");
+      }
     } else {
       setAnnotationsError(null);
     }
 
     setAnnotationsLoading(false);
-  }, [collectDraftAnnotations, open]);
+  }, [collectDraftAnnotations, open, cachedSeriesList]);
 
   useEffect(() => {
     if (!open) {
@@ -546,6 +544,7 @@ export function DraftAnnotationsModal({
   }, []);
 
   const handleSubmit = useCallback(async () => {
+    console.log(user)
     if (!user?.id) {
       toast.error("You must be signed in to submit annotations.");
       return;
@@ -804,7 +803,7 @@ export function DraftAnnotationsModal({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <div className="flex h-full flex-1 flex-col gap-5">
             <div className="flex flex-col items-stretch gap-5 md:flex-row md:justify-between">
-              <DialogHeader className="flex-1 rounded-xl bg-slate-900/80 px-6 py-5 shadow-inner shadow-slate-950/40">
+              <DialogHeader className="flex-1 rounded-xl bg-slate-900/95 px-6 py-5 shadow-inner shadow-slate-950/40">
                 <DialogTitle className="text-2xl font-semibold text-white">
                   {modalTitle}
                 </DialogTitle>
@@ -826,7 +825,7 @@ export function DraftAnnotationsModal({
                         {chipSeries.slice(0, 4).map((series) => (
                           <span
                             key={series.id}
-                            className="rounded-md border border-slate-700/60 bg-slate-900/70 px-2 py-1"
+                            className="rounded-md border border-slate-700/60 bg-slate-900/90 px-2 py-1"
                           >
                             {series.seriesDescription ||
                               series.seriesInstanceUid ||
@@ -834,7 +833,7 @@ export function DraftAnnotationsModal({
                           </span>
                         ))}
                         {chipSeries.length > 4 && (
-                          <span className="rounded-md border border-slate-700/60 bg-slate-900/70 px-2 py-1">
+                          <span className="rounded-md border border-slate-700/60 bg-slate-900/90 px-2 py-1">
                             +{chipSeries.length - 4} more
                           </span>
                         )}
@@ -845,7 +844,7 @@ export function DraftAnnotationsModal({
               </DialogHeader>
               {!annotationsLoading && draftAnnotations.length > 0 && (
                 <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-slate-900/85 px-4 py-4 text-center shadow-sm">
+                  <div className="flex flex-col gap-2 items-center justify-center rounded-lg bg-slate-900/95 px-4 py-4 text-center shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">
                       Total Drafts
                     </p>
@@ -853,7 +852,7 @@ export function DraftAnnotationsModal({
                       {annotationSummary.total}
                     </p>
                   </div>
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-slate-900/85 px-4 py-4 text-center shadow-sm">
+                  <div className="flex flex-col gap-2 items-center justify-center rounded-lg bg-slate-900/95 px-4 py-4 text-center shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">
                       Selected Drafts
                     </p>
@@ -861,7 +860,7 @@ export function DraftAnnotationsModal({
                       {selectedDraftCount}
                     </p>
                   </div>
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-slate-900/85 px-4 py-4 text-center shadow-sm">
+                  <div className="flex flex-col gap-2 items-center justify-center rounded-lg bg-slate-900/95 px-4 py-4 text-center shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">
                       Series in Drafts
                     </p>
@@ -869,7 +868,7 @@ export function DraftAnnotationsModal({
                       {draftSeriesCount}
                     </p>
                   </div>
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-slate-900/85 px-4 py-4 text-center shadow-sm">
+                  <div className="flex flex-col gap-2 items-center justify-center rounded-lg bg-slate-900/95 px-4 py-4 text-center shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-slate-400">
                       Series Selected
                     </p>
@@ -897,20 +896,26 @@ export function DraftAnnotationsModal({
               !annotationsLoading &&
               draftAnnotations.length > 0 &&
               selectedDraftCount === 0 && (
-                <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-200">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-5 w-5 shrink-0 text-amber-300" />
-                    <div>
-                      <AlertTitle>Select series to submit</AlertTitle>
-                      <AlertDescription>
+              <Alert className="border-emerald-500/60 bg-emerald-500/10 text-emerald-100">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="rounded-full bg-emerald-500/20 p-2 text-emerald-300">
+                      <Info className="h-4 w-4" />
+                    </span>
+                    <div className="space-y-1">
+                      <AlertTitle className="text-sm font-semibold text-emerald-100">
+                        Select series to submit
+                      </AlertTitle>
+                      <AlertDescription className="text-xs text-emerald-50/80">
                         Check at least one series from the list below to mark its draft annotations for submission.
                       </AlertDescription>
                     </div>
                   </div>
-                </Alert>
+                </div>
+              </Alert>
               )}
 
-            <div className="flex-1 h-full overflow-y-auto rounded-xl bg-slate-900/40 px-4 py-4">
+            <div className="flex-1 h-full overflow-y-auto rounded-xl ">
               {annotationsLoading ? (
                 <div className="flex h-full items-center justify-center text-slate-300">
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -928,13 +933,9 @@ export function DraftAnnotationsModal({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <p className="text-2xl font-semibold text-white">
-                    Draft Annotations
-                  </p>
                   {seriesDraftGroups.map(({ series, entries }) => {
                     const seriesMeta: string[] = [];
                     if (series.seriesInstanceUid) seriesMeta.push(series.seriesInstanceUid);
-                    if (series.seriesNumber) seriesMeta.push(`Series #${series.seriesNumber}`);
                     if (series.bodyPartExamined) seriesMeta.push(`Body Part: ${series.bodyPartExamined}`);
                     if (series.protocolName) seriesMeta.push(`Protocol: ${series.protocolName}`);
                     if (series.seriesDate) seriesMeta.push(`Date: ${series.seriesDate}`);
@@ -954,33 +955,32 @@ export function DraftAnnotationsModal({
                     return (
                       <div
                         key={series.id}
-                        className={`rounded-2xl border ${
-                          isSeriesSelected ? "border-emerald-500/40" : "border-slate-800/60"
-                        } bg-slate-900/80 shadow-lg shadow-slate-950/25 transition`}
+                        className={`group relative rounded-2xl border bg-slate-900 shadow-lg shadow-slate-950/25 transition-all duration-300 hover:border-emerald-400/40 hover:shadow-emerald-500/10 ${
+                          isSeriesSelected ? "border-emerald-500/40 shadow-emerald-500/10" : "border-slate-800/70"
+                        }`}
                       >
-                        <div className="flex items-start justify-between gap-3 px-5 py-4">
-                          <div className="flex items-start gap-3">
+                        <div className="sticky top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-transparent bg-slate-900 px-5 py-4 transition-colors duration-200 group-hover:border-emerald-400/30 group-hover:bg-slate-900">
+                          <div className="flex items-center gap-4">
                             <Checkbox
                               checked={isSeriesSelected}
                               onCheckedChange={(checked) =>
                                 toggleSeriesSelection(series.id, checked === true)
                               }
                               aria-label={`Select series ${series.seriesDescription ?? series.id}`}
+                              className="h-8 w-8 transition-transform duration-200 data-[state=checked]:scale-110 data-[state=checked]:border-emerald-400 data-[state=checked]:shadow-[0_0_12px_rgba(16,185,129,0.35)] data-[state=checked]:ring-emerald-400/40"
                             />
                             <div>
                               <p className="text-lg font-semibold text-white">
-                                {series.seriesDescription ||
-                                  series.seriesInstanceUid ||
-                                  series.id}
+                                Series #{series.seriesNumber}: {series.seriesDescription || series.id}
                               </p>
                               <p className="text-xs text-slate-400">
                                 {draftsLabel} · {instancesLabel}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center  gap-3">
                             {!isSeriesSelected && (
-                              <span className="rounded-full border border-slate-700/70 bg-slate-900/60 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-400">
+                              <span className="rounded-full border border-slate-700/70 bg-slate-900/90 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-400">
                                 Not selected
                               </span>
                             )}
@@ -988,13 +988,14 @@ export function DraftAnnotationsModal({
                               type="button"
                               onClick={() => toggleSeriesExpansion(series.id)}
                               aria-expanded={isSeriesExpanded}
+                              data-expanded={isSeriesExpanded}
                               aria-label={`Toggle series ${series.seriesDescription ?? series.id}`}
-                              className="rounded-md border border-slate-700/60 bg-slate-900/60 p-1 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                              className="rounded-md border border-slate-700/60 bg-slate-900/90 p-1 text-slate-300 transition-all duration-200 hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 data-[expanded=true]:border-emerald-400/40"
                             >
                               {isSeriesExpanded ? (
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
                               ) : (
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-4 w-4 transition-transform duration-200" />
                               )}
                             </button>
                           </div>
@@ -1002,15 +1003,15 @@ export function DraftAnnotationsModal({
                         {isSeriesExpanded && (
                           <div
                             className={`space-y-4 border-t border-slate-800/70 px-5 py-4 ${
-                              !isSeriesSelected ? "opacity-70" : ""
+                              !isSeriesSelected ? "opacity-70" : "opacity-100"
                             }`}
                           >
                             {seriesMeta.length > 0 && (
-                              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                                <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                                 {seriesMeta.map((meta, index) => (
                                   <span
                                     key={`${series.id}-meta-${index}`}
-                                    className="rounded-md border border-slate-700/60 bg-slate-900/60 px-2 py-1"
+                                      className="rounded-md border border-slate-700/60 bg-slate-900/90 px-2 py-1"
                                   >
                                     {meta}
                                   </span>
@@ -1044,7 +1045,7 @@ export function DraftAnnotationsModal({
                               return (
                                 <div
                                   key={entry.id}
-                                  className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-sm shadow-slate-950/20"
+                                  className="group/draft rounded-2xl border border-slate-700/70 bg-slate-900/95 p-5 shadow-md shadow-slate-950/20 transition-all duration-300 hover:border-emerald-400/50 hover:shadow-emerald-500/10"
                                 >
                                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="space-y-1.5">
@@ -1070,7 +1071,7 @@ export function DraftAnnotationsModal({
                                         </span>
                                         <Badge
                                           variant="outline"
-                                          className={`px-3 py-1 text-xs capitalize ${statusBadgeStyle(
+                                          className={`px-3 py-1 text-xs capitalize transition-colors duration-200 ${statusBadgeStyle(
                                             entry.status
                                           )}`}
                                         >
@@ -1082,7 +1083,7 @@ export function DraftAnnotationsModal({
                                           <span className="text-[10px] uppercase tracking-wide text-slate-500">
                                             Color
                                           </span>
-                                          <span className="flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/80 px-2 py-1 text-xs text-slate-200">
+                                          <span className="flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/95 px-2 py-1 text-xs text-slate-200">
                                             <span
                                               className="h-3 w-3 rounded-full border border-slate-800"
                                               style={{ backgroundColor: entry.colorCode }}
@@ -1095,14 +1096,14 @@ export function DraftAnnotationsModal({
                                   </div>
 
                                   {entry.textContent && (
-                                    <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/70 px-4 py-3 text-sm text-slate-200">
+                                    <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/90 px-4 py-3 text-sm text-slate-200">
                                       Annotation Text Content: {entry.textContent}
                                     </div>
                                   )}
 
                                   <div className="mt-4 grid gap-4 text-xs text-slate-300 md:grid-cols-2">
                                     {referencedImageId && (
-                                      <div className="col-span-2 rounded-lg border border-slate-800/50 bg-slate-900/70 px-4 py-3">
+                                      <div className="col-span-2 rounded-lg border border-slate-800/50 bg-slate-900/90 px-4 py-3">
                                         <span className="block text-[10px] uppercase tracking-wide text-slate-500">
                                           Referenced Image ID
                                         </span>
@@ -1111,7 +1112,7 @@ export function DraftAnnotationsModal({
                                         </p>
                                       </div>
                                     )}
-                                    <div className="rounded-lg border border-slate-800/50 bg-slate-900/70 px-4 py-3">
+                                    <div className="rounded-lg border border-slate-800/50 bg-slate-900/90 px-4 py-3">
                                       <span className="block text-[10px] uppercase tracking-wide text-slate-500">
                                         Slice Index
                                       </span>
@@ -1119,7 +1120,7 @@ export function DraftAnnotationsModal({
                                         {sliceIndex !== undefined && sliceIndex}
                                       </p>
                                     </div>
-                                    <div className="rounded-lg border border-slate-800/50 bg-slate-900/70 px-4 py-3">
+                                    <div className="rounded-lg border border-slate-800/50 bg-slate-900/90 px-4 py-3">
                                       <span className="block text-[10px] uppercase tracking-wide text-slate-500">
                                         Frame No
                                       </span>
@@ -1141,17 +1142,17 @@ export function DraftAnnotationsModal({
             </div>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 left-0 right-0 border-t border-slate-800/70 bg-slate-950/95 px-6 py-4">
-          <div className="flex w-full flex-col gap-4">
+        <DialogFooter className="sticky bottom-0 left-0 right-0 border-t border-slate-800/70 bg-slate-950 px-6 py-4">
+          <div className="flex w-full flex-row gap-4 justify-end items-center">
             {isFinalSelection && (
-              <div className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+              <div className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-red-300" />
                 <span>Final annotations become read-only after submission.</span>
               </div>
             )}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold uppercase text-slate-400">
+                <span className="text-xs font-bold uppercase text-slate-400">
                   Draft
                 </span>
                 <Switch
@@ -1160,12 +1161,13 @@ export function DraftAnnotationsModal({
                   aria-label="Toggle annotation submission status"
                   className="data-[state=unchecked]:bg-emerald-500 data-[state=unchecked]:hover:bg-emerald-400 data-[state=checked]:bg-red-500 data-[state=checked]:hover:bg-red-600"
                 />
-                <span className="text-xs font-semibold uppercase text-slate-200">
+                <span className="text-xs font-bold uppercase text-slate-200">
                   Final
                 </span>
               </div>
-              <label
-                className={`flex items-center gap-2 text-xs ${
+            </div>
+            <label
+                className={`flex items-center gap-2 text-sm ${
                   selectedDraftCount === 0 ? "text-slate-500" : "text-slate-200"
                 }`}
               >
@@ -1174,11 +1176,10 @@ export function DraftAnnotationsModal({
                   onCheckedChange={(checked) => setConfirmSubmission(checked === true)}
                   disabled={selectedDraftCount === 0}
                   aria-label="Confirm submission of selected series"
+                  className="h-5 w-5"
                 />
                 <span>Confirm submission of selected series</span>
               </label>
-            </div>
-            <div className="flex items-center justify-end">
               <Button
                 onClick={handleSubmit}
                 disabled={submissionDisabled}
@@ -1195,7 +1196,7 @@ export function DraftAnnotationsModal({
                 {selectedDraftCount === 1 ? "" : "s"} as{" "}
                 {formatStatusLabel(selectedStatus)}
               </Button>
-            </div>
+            
           </div>
         </DialogFooter>
       </DialogContent>

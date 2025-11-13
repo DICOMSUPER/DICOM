@@ -46,7 +46,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
   const [queueInfo, setQueueInfo] = useState({
     encounterId: "",
-    priority: QueuePriorityLevel.ROUTINE,
     roomId: "",
     priorityReason: "",
     createdBy: "",
@@ -97,21 +96,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
     }
   );
 
-  // const {
-  //   data: physicians,
-  //   isLoading: isLoadingPhysicians,
-  //   refetch: refetchPhysicians,
-  // } = useGetUsersByRoomQuery(
-  //   { roomId: selectedRoom?.id || "", role: "physician", search: "" },
-  //   {
-  //     skip: !selectedRoom?.id,
-  //   }
-  // );
-
   const [createEncounter] = useCreatePatientEncounterMutation();
-  const [createQueueAssignment] = useCreateQueueAssignmentMutation();
-  const [deleteEncounter] = useDeletePatientEncounterMutation();
-  const [deleteQueueAssignment] = useDeleteQueueAssignmentMutation();
 
   useEffect(() => {
     if (!departmentsData && !isLoadingDepartment) {
@@ -162,8 +147,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
           createdBy: user.id,
         };
 
-        queue = await createQueueAssignment(queueData).unwrap();
-
         toast.success("Forward patient successfully");
 
         router.push(`/reception/queue-paper/${queue.data.id}`);
@@ -173,11 +156,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
         // );
       }
     } catch (err) {
-      if (encounter && encounter.data.id)
-        await deleteEncounter(encounter.data.id);
-      if (queue && queue.data.id) await deleteQueueAssignment(queue.data.id);
-      window.alert("Internal server error");
-      console.log(err);
+      toast.error("Failed to forward patient");
     }
   };
 

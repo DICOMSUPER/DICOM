@@ -474,6 +474,22 @@ export class SeedingController {
     return result;
   }
 
+  @Post('patient/report-templates')
+  @ApiOperation({ summary: 'Seed report templates only' })
+  @ApiResponse({
+    status: 200,
+    description: 'Report templates seeded successfully',
+  })
+  async seedReportTemplates() {
+    const result = await firstValueFrom(
+      this.patientServiceClient.send(
+        'PatientService.Seeding.SeedReportTemplates',
+        {}
+      )
+    );
+    return result;
+  }
+
   @Post('patient/queue-assignments')
   @ApiOperation({ summary: 'Seed queue assignments only' })
   @ApiResponse({
