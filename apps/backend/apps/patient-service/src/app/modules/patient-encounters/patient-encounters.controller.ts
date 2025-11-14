@@ -164,6 +164,8 @@ export class PatientEncounterController {
   ) {
     console.log('dataa', data);
 
+    console.log('data', data);
+
     return this.patientEncounterService.getAllInRoom(
       data.filterQueue,
       data.userId

@@ -1,4 +1,4 @@
-import { Department, DigitalSignature, Qualification, WeeklySchedulePattern } from '@backend/shared-domain';
+import { Department, DiagnosesReport, DigitalSignature, Qualification, WeeklySchedulePattern } from '@backend/shared-domain';
 import { Roles } from '@backend/shared-enums';
 import {
   Column,
@@ -81,7 +81,8 @@ export class User {
     (employeeRoomAssignment) => employeeRoomAssignment.employee
   )
   employeeRoomAssignments!: EmployeeRoomAssignment[];
-
   @OneToMany(() => DigitalSignature, (sig) => sig.user)
   digitalSignatures!: DigitalSignature[];
+  
+  diagnosisReports!: DiagnosesReport[];
 }

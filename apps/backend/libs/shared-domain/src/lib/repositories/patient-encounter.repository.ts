@@ -312,39 +312,78 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     dateTo: string,
     serviceRoomIds?: string[]
   ): Promise<any> {
-    const startDate = new Date(dateFrom);
-    const endDate = new Date(dateTo);
-    endDate.setHours(23, 59, 59, 999);
-    const queryBuilder = await this.getRepository()
+    const startDate = new Date(dateFrom + 'T00:00:00');
+    const endDate = new Date(dateTo + 'T23:59:59.999');
+    const queryBuilder = this.getRepository()
       .createQueryBuilder('encounter')
       .select('COUNT(*)', 'totalEncounters')
       .addSelect(
-        `COUNT(CASE WHEN encounter.status = '${EncounterStatus.FINISHED}' THEN 1 END)`,
+        `COUNT(CASE WHEN encounter.status = :finishedStatus THEN 1 END)`,
         'totalCompletedEncounters'
       )
       .addSelect(
-        `COUNT(CASE WHEN encounter.status = '${EncounterStatus.ARRIVED}' THEN 1 END)`,
+        `COUNT(CASE WHEN encounter.status = :arrivedStatus THEN 1 END)`,
         'totalArrivedEncounters'
       )
-      .where('encounter.encounterDate BETWEEN :dateFrom AND :dateTo', {
+
+      .where('encounter.encounter_date >= :dateFrom', {
         dateFrom: startDate,
+      })
+      .andWhere('encounter.encounter_date <= :dateTo', {
         dateTo: endDate,
       })
-      .andWhere('encounter.isDeleted = :isDeleted', { isDeleted: false });
+      .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
+      .setParameter('finishedStatus', EncounterStatus.FINISHED)
+      .setParameter('arrivedStatus', EncounterStatus.ARRIVED);
 
     if (serviceRoomIds && serviceRoomIds.length > 0) {
-      queryBuilder.andWhere('encounter.serviceRoomId IN (:...serviceRoomIds)', {
-        serviceRoomIds,
-      });
+      queryBuilder.andWhere(
+        'encounter.service_room_id IN (:...serviceRoomIds)',
+        {
+          serviceRoomIds,
+        }
+      );
     }
+
+    console.log('🔍 SQL:', queryBuilder.getSql());
+    console.log('🔍 Params:', queryBuilder.getParameters());
+
     const result = await queryBuilder.getRawOne();
 
     return {
-      totalEncounters: parseInt(result.totalEncounters, 10),
-      totalCompletedEncounters: parseInt(result.totalCompletedEncounters, 10),
-      totalArrivedEncounters: parseInt(result.totalArrivedEncounters, 10),
+      totalEncounters: parseInt(result?.totalEncounters || '0', 10),
+      totalCompletedEncounters: parseInt(
+        result?.totalCompletedEncounters || '0',
+        10
+      ),
+      totalArrivedEncounters: parseInt(
+        result?.totalArrivedEncounters || '0',
+        10
+      ),
     };
   }
+  // async findInRoomWithFilters(filters: {
+  //   page: number;
+  //   limit: number;
+  //   fromDate: Date;
+  //   toDate: Date;
+  //   status?: EncounterStatus;
+  //   priority?: EncounterPriorityLevel;
+  //   orderNumber?: number;
+  //   patientName?: string;
+  //   serviceRoomIds?: string[];
+  // }): Promise<{ data: PatientEncounter[]; total: number }> {
+  //   const {
+  //     page,
+  //     limit,
+  //     fromDate,
+  //     toDate,
+  //     status,
+  //     priority,
+  //     orderNumber,
+  //     patientName,
+  //     serviceRoomIds,
+  //   } = filters;
 
   async getLatestEncounterInDate(
     servicesRoomIds: string[]

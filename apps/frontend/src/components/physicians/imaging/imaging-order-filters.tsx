@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import useDebounce from "@/hooks/useDebounce";
 import { ImagingOrderFormFilters, OrderFormStatus } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { QueueFilters } from "@/interfaces/patient/patient-visit.interface";
+
 import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -51,7 +51,7 @@ export function ImagingOrderFormFiltersSection({
     }));
   };
 
-  const handleSelectChange = (key: keyof QueueFilters, value: string) => {
+  const handleSelectChange = (key: keyof ImagingOrderFormFilters, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value === "all" ? "" : value,
@@ -83,7 +83,7 @@ export function ImagingOrderFormFiltersSection({
     <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
       {/* Row 1: Search Inputs, Status, Priority, Queue Number */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-        <div className="relative col-span-4">
+        <div className="relative col-span-5">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search Patient Name"
@@ -105,7 +105,7 @@ export function ImagingOrderFormFiltersSection({
           />
         </div> */}
 
-        <Select
+        {/* <Select
           value={filters.status || "all"}
           onValueChange={(value) => handleSelectChange("status", value)}
         >
@@ -119,7 +119,7 @@ export function ImagingOrderFormFiltersSection({
             <SelectItem value={OrderFormStatus.IN_PROGRESS}>In Progress</SelectItem>
             <SelectItem value={OrderFormStatus.COMPLETED}>Completed</SelectItem>
           </SelectContent>
-        </Select>
+        </Select> */}
 
         {/* <Select
           value={filters.priority || "all"}

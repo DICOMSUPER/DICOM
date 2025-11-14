@@ -5,6 +5,7 @@ import { ReceptionFilters } from "@/components/reception/reception-filters";
 import { PatientStatsCards } from "@/components/reception/patient-stats-cards";
 import { PatientTable } from "@/components/reception/patient-table";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -132,9 +133,7 @@ export default function ReceptionPage() {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
+        <ErrorAlert title="Failed to load patients" message={error} className="mb-4" />
       )}
 
       {/* Stats Cards */}

@@ -1,7 +1,8 @@
+import { BaseEntity } from "../base.interface";
 import { PaginatedQuery } from "../pagination/pagination.interface";
 import { ServiceRoom } from "./service-room.interface";
 
-export interface Services {
+export interface Services extends BaseEntity {
   id: string;
   serviceCode: string;
   serviceName: string;
@@ -11,7 +12,7 @@ export interface Services {
 }
 
 export interface CreateServiceDto {
-  serviceCode: string;
+  serviceCode?: string;
   serviceName: string;
   description?: string;
   isActive?: boolean;

@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { DiagnosisType } from '@backend/shared-enums';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class DiagnosisDto {
   @IsString()

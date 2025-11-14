@@ -46,6 +46,8 @@ import {
 import { MouseBindings } from "@cornerstonejs/tools/enums";
 import { eventTarget, getRenderingEngine, type Types } from "@cornerstonejs/core";
 import { AnnotationType } from "@/enums/image-dicom.enum";
+import { useViewer, type AnnotationHistoryEntry } from "@/contexts/ViewerContext";
+import type { Annotation } from "@/types/Annotation";
 
 // Tool type definitions
 type NavigationTool = 'WindowLevel' | 'Pan' | 'Zoom' | 'StackScroll' | 'Probe' | 'TrackballRotate' | 'MIPJumpToClick';
@@ -203,6 +205,77 @@ const isCustomTool = (toolType: ToolType): boolean => {
 
 const annotationToolNames = Object.values(AnnotationType);
 
+const structuredCloneAdapter =
+  (globalThis as unknown as { structuredClone?: <T>(value: T) => T }).structuredClone;
+
+const cloneAnnotationPayload = <T,>(value: T): T => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (typeof structuredCloneAdapter === 'function') {
+    return structuredCloneAdapter(value);
+  }
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return value;
+  }
+};
+
+const resolveToolNameFromAnnotation = (
+  annotationPayload?: Annotation | Record<string, unknown>
+): string | undefined => {
+  if (!annotationPayload) {
+    return undefined;
+  }
+  const payloadWithMetadata = annotationPayload as Annotation & {
+    metadata?: Record<string, unknown>;
+  };
+  const metadata = payloadWithMetadata.metadata as Record<string, unknown> | undefined;
+  return (
+    (metadata?.toolName as string | undefined) ??
+    (metadata?.annotationType as string | undefined) ??
+    (annotationPayload as { toolName?: string }).toolName
+  );
+};
+
+const isDatabaseAnnotation = (annotationCandidate?: Annotation | null) => {
+  const metadataRecord = annotationCandidate?.metadata as Record<string, unknown> | undefined;
+  if (!metadataRecord) {
+    return false;
+  }
+  const sourceValue =
+    typeof metadataRecord['source'] === 'string'
+      ? (metadataRecord['source'] as string).toLowerCase()
+      : undefined;
+  return sourceValue === 'db';
+};
+
+const removeDraftAnnotationsFromElement = (element: HTMLDivElement | null) => {
+  if (!element) {
+    return;
+  }
+
+  annotationToolNames.forEach((toolName) => {
+    try {
+      const annotationsForTool = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
+      if (!annotationsForTool?.length) {
+        return;
+      }
+      annotationsForTool.forEach((annotationItem) => {
+        if (isDatabaseAnnotation(annotationItem)) {
+          return;
+        }
+        if (annotationItem?.annotationUID) {
+          annotation.state.removeAnnotation(annotationItem.annotationUID);
+        }
+      });
+    } catch (error) {
+      console.warn(`Failed to remove annotations for tool ${toolName}:`, error);
+    }
+  });
+};
+
 // Keyboard shortcut helpers
 const getToolByKeyboardShortcut = (key: string): string | null => {
   for (const [toolName, bindings] of Object.entries(TOOL_BINDINGS)) {
@@ -237,6 +310,7 @@ interface CornerstoneToolManagerProps {
   // Add viewport reference for custom operations
   viewport?: any;
   viewportReady?: boolean;
+  viewportIndex?: number;
 }
 
 const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
@@ -247,8 +321,16 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
   onToolChange,
   viewport,
   viewportReady,
+  viewportIndex,
 }, ref) => {
   const toolGroupRef = useRef<any>(null);
+  const pendingUndoAnnotationsRef = useRef<Set<string>>(new Set());
+  const {
+    recordAnnotationHistoryEntry,
+    updateAnnotationHistoryEntry,
+    removeAnnotationHistoryEntry,
+  } = useViewer();
+  const safeViewportIndex = viewportIndex ?? 0;
 
   // Keyboard shortcut handler
   const handleKeyboardShortcut = (event: KeyboardEvent) => {
@@ -413,9 +495,12 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     if (!viewport || !viewportReady) return;
     
     try {            
-      annotation.state.removeAllAnnotations();
-      
-      console.log(`Successfully cleared annotations for viewport ${viewportId}`);
+      const element = viewport.element as HTMLDivElement | null;
+      removeDraftAnnotationsFromElement(element);
+      setTimeout(() => {
+        viewport.render?.();
+      }, 50);
+      console.log(`Cleared draft annotations for viewport ${viewportId}`);
     } catch (error) {
       console.error('Error clearing annotations:', error);
     }
@@ -430,16 +515,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
       return;
     }
 
-    annotationToolNames.forEach((toolName) => {
-      try {
-        annotation.state.removeAnnotations(toolName, element);
-      } catch (error) {
-        console.warn(
-          `Failed to remove annotations for tool ${toolName} on viewport ${viewportId}:`,
-          error
-        );
-      }
-    });
+    removeDraftAnnotationsFromElement(element);
+    setTimeout(() => {
+      viewport.render?.();
+    }, 50);
   };
 
   // Clear segmentation handler
@@ -485,42 +564,71 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     }
   };
 
+  const getAnnotationByUID = (
+    element: HTMLDivElement | null,
+    toolName?: string | null,
+    annotationUID?: string | null
+  ): Annotation | null => {
+    if (!element || !toolName || !annotationUID) {
+      return null;
+    }
+    try {
+      const annotations = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
+      return annotations?.find((item) => item.annotationUID === annotationUID) ?? null;
+    } catch (error) {
+      console.warn(`Failed to get annotations for ${toolName}:`, error);
+      return null;
+    }
+  };
+
   // Undo annotation handler - removes the last annotation created
-  const handleUndoAnnotation = () => {
+  const handleUndoAnnotation = (historyEntry?: AnnotationHistoryEntry) => {
     if (!viewport || !viewportReady) return;
-    
+
+    const element = viewport.element as HTMLDivElement | null;
+    if (!element) {
+      console.warn("Unable to resolve viewport element for undo.");
+      return;
+    }
+
     try {
       console.log(`Undoing last annotation for viewport ${viewportId}`);
+      let lastAnnotation: any = null;
+      let lastAnnotationToolName: string | null = null;
+
+      if (historyEntry?.annotationUID) {
+        pendingUndoAnnotationsRef.current.add(historyEntry.annotationUID);
+        lastAnnotation = getAnnotationByUID(element, historyEntry.toolName ?? null, historyEntry.annotationUID);
+        lastAnnotationToolName = historyEntry.toolName ?? null;
+      }
       
-      if (viewport) {
-        let lastAnnotation = null;
-        let lastAnnotationToolName = null;
-        
-        // Get all measurement tools and find the last annotation
-        // Simple approach: get the last annotation from the last tool that has annotations
+      if (!lastAnnotation) {
         for (let i = annotationToolNames.length - 1; i >= 0; i--) {
           const toolName = annotationToolNames[i];
           try {
-            const annotations = annotation.state.getAnnotations(toolName, viewport.element);
+            const annotations = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
             if (annotations && annotations.length > 0) {
-              // Get the last annotation from this tool
-              lastAnnotation = annotations[annotations.length - 1];
-              lastAnnotationToolName = toolName;
-              break; // Found the most recent annotation
+              const draftAnnotations = annotations.filter((annotationItem) => !isDatabaseAnnotation(annotationItem));
+              if (draftAnnotations.length > 0) {
+                lastAnnotation = draftAnnotations[draftAnnotations.length - 1];
+                lastAnnotationToolName = toolName;
+                break;
+              }
             }
           } catch (error) {
             console.warn(`Failed to get annotations for ${toolName}:`, error);
           }
         }
-        
-        // If we found an annotation, remove it
-        if (lastAnnotation && lastAnnotationToolName && lastAnnotation.annotationUID) {
-          console.log(`Removing last annotation:`, lastAnnotation.annotationUID, 'from tool:', lastAnnotationToolName);
-          annotation.state.removeAnnotation(lastAnnotation.annotationUID);
-          console.log(`Successfully undone annotation for viewport ${viewportId}`);
-        } else {
-          console.log(`No annotations found to undo for viewport ${viewportId}`);
-        }
+      }
+
+      if (lastAnnotation && lastAnnotationToolName && lastAnnotation.annotationUID) {
+        console.log(
+          `Removing annotation ${lastAnnotation.annotationUID} from tool ${lastAnnotationToolName}`
+        );
+        annotation.state.removeAnnotation(lastAnnotation.annotationUID);
+        console.log(`Successfully undone annotation for viewport ${viewportId}`);
+      } else {
+        console.log(`No annotations found to undo for viewport ${viewportId}`);
       }
 
       setTimeout(() => {
@@ -528,9 +636,52 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
           viewport.render();
         }
       }, 100);
-      
     } catch (error) {
       console.error('Error undoing annotation:', error);
+    }
+  };
+
+  const handleRedoAnnotation = (historyEntry?: AnnotationHistoryEntry) => {
+    if (!viewport || !viewportReady || !historyEntry) {
+      return;
+    }
+
+    const element = viewport.element as HTMLDivElement | null;
+    if (!element) {
+      console.warn("Unable to resolve viewport element for redo.");
+      return;
+    }
+
+    const addAnnotationApi = (annotation.state as unknown as {
+      addAnnotation?: (annotation: unknown, element: HTMLDivElement) => void;
+    }).addAnnotation;
+
+    if (typeof addAnnotationApi !== 'function') {
+      console.warn('annotation.state.addAnnotation is not available; redo is not supported.');
+      return;
+    }
+
+    const existing = getAnnotationByUID(
+      element,
+      historyEntry.toolName ?? null,
+      historyEntry.annotationUID ?? null
+    );
+    if (existing) {
+      console.log('Annotation already exists; skipping redo.');
+      return;
+    }
+
+    try {
+      const payload = cloneAnnotationPayload(historyEntry.snapshot);
+      addAnnotationApi(payload, element);
+      setTimeout(() => {
+        if (viewport && typeof viewport.render === 'function') {
+          viewport.render();
+        }
+      }, 100);
+      console.log(`Successfully redone annotation for viewport ${viewportId}`);
+    } catch (error) {
+      console.error('Error redoing annotation:', error);
     }
   };
 
@@ -548,22 +699,62 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     const handleAnnotationEvent = (event: Event) => {
       const customEvent = event as CustomEvent<{
         viewportId?: string;
-        annotation?: { metadata?: Record<string, unknown> };
+        annotation?: Annotation;
       }>;
 
       const eventViewportId =
         customEvent.detail?.viewportId ??
-        (customEvent.detail?.annotation?.metadata?.viewportId as string | undefined);
+        ((customEvent.detail?.annotation?.metadata as Record<string, unknown> | undefined)?.viewportId as
+          string | undefined);
 
       if (viewportId && eventViewportId && eventViewportId !== viewportId) {
         return;
       }
 
-      if (typeof viewport.render === "function") {
+      const annotationPayload = customEvent.detail?.annotation;
+      const annotationUID = annotationPayload?.annotationUID;
+      const annotationSource =
+        typeof annotationPayload?.metadata?.source === 'string'
+          ? annotationPayload.metadata.source.toLowerCase()
+          : undefined;
+      const databaseAnnotation = annotationSource === 'db';
+
+      if (
+        event.type === ToolEnums.Events.ANNOTATION_COMPLETED &&
+        annotationPayload &&
+        annotationUID &&
+        !databaseAnnotation
+      ) {
+        recordAnnotationHistoryEntry(safeViewportIndex, {
+          annotationUID,
+          toolName: resolveToolNameFromAnnotation(annotationPayload) ?? AnnotationType.LABEL,
+          snapshot: cloneAnnotationPayload(annotationPayload) as Annotation,
+          viewportId,
+        });
+      } else if (
+        event.type === ToolEnums.Events.ANNOTATION_MODIFIED &&
+        annotationPayload &&
+        annotationUID &&
+        !databaseAnnotation
+      ) {
+        updateAnnotationHistoryEntry(
+          safeViewportIndex,
+          annotationUID,
+          cloneAnnotationPayload(annotationPayload) as Annotation
+        );
+      } else if (event.type === ToolEnums.Events.ANNOTATION_REMOVED && annotationUID) {
+        if (pendingUndoAnnotationsRef.current.has(annotationUID)) {
+          pendingUndoAnnotationsRef.current.delete(annotationUID);
+        } else if (!databaseAnnotation) {
+          removeAnnotationHistoryEntry(safeViewportIndex, annotationUID);
+        }
+      }
+
+      if (typeof viewport.render === 'function') {
         try {
           viewport.render();
         } catch (renderError) {
-          console.error("Error rendering viewport after annotation event:", renderError);
+          console.error('Error rendering viewport after annotation event:', renderError);
         }
       }
     };
@@ -577,7 +768,16 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
         eventTarget.removeEventListener(eventName, handleAnnotationEvent as EventListener);
       });
     };
-  }, [viewport, viewportReady, viewportId]);
+  }, [
+    viewport,
+    viewportReady,
+    viewportId,
+    pendingUndoAnnotationsRef,
+    recordAnnotationHistoryEntry,
+    removeAnnotationHistoryEntry,
+    safeViewportIndex,
+    updateAnnotationHistoryEntry,
+  ]);
 
   useEffect(() => {
     if (!toolGroupId || !renderingEngineId || !viewportId || !viewportReady) {
@@ -782,6 +982,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     clearViewportAnnotations: handleClearViewportAnnotations,
     clearSegmentation: handleClearSegmentation,
     undoAnnotation: handleUndoAnnotation,
+     redoAnnotation: handleRedoAnnotation,
   });
 
   // Expose methods via ref

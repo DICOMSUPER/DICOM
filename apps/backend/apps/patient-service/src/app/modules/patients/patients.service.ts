@@ -3,7 +3,7 @@ import {
   CreatePatientDto,
   UpdatePatientDto,
   Patient,
-  PatientStatsDto,
+  // PatientStatsDto,
   PatientRepository,
   DiagnosisReportRepository,
   PatientCondition,
@@ -142,7 +142,7 @@ export class PatientService {
     return patientOverview;
   };
 
-  getPatientStats = async (): Promise<PatientStatsDto> => {
+  getPatientStats = async () => {
     return await this.patientRepository.getPatientStats();
   };
 

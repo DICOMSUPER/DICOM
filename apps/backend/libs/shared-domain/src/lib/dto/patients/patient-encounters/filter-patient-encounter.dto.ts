@@ -34,7 +34,7 @@ export class FilterPatientEncounterDto extends PaginationDto {
 
   @ApiPropertyOptional({ description: 'Room id' })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   roomId?: string;
 
   @ApiPropertyOptional({ description: 'Room code' })

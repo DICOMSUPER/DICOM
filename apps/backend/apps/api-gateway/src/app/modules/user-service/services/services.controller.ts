@@ -30,6 +30,7 @@ export class ServicesController {
 
   @Public()
   @Get()
+  @Public()
   async getServices() {
     return await firstValueFrom(
       this.userService.send('UserService.Services.FindAll', {})
@@ -37,6 +38,7 @@ export class ServicesController {
   }
 
   @Get('paginated')
+  @Public()
   async findMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -87,6 +89,7 @@ export class ServicesController {
   }
 
   @Patch(':id')
+  @Public()
   async updateService(
     @Param('id') id: string,
     @Body() updateServiceDto: UpdateServiceDto
@@ -100,6 +103,7 @@ export class ServicesController {
   }
 
   @Delete(':id')
+  @Public()
   async deleteService(@Param('id') id: string) {
     return await firstValueFrom(
       this.userService.send('UserService.Services.Delete', {

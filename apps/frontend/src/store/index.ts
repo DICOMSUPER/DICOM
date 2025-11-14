@@ -52,7 +52,6 @@ export const store = configureStore({
     [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
     [serviceApi.reducerPath]: serviceApi.reducer,
-
     [imagingApi.reducerPath]: imagingApi.reducer,
   },
   middleware: (getDefault) =>
@@ -78,8 +77,8 @@ export const store = configureStore({
       .concat(employeeRoomAssignmentApi.middleware)
       .concat(dicomInstanceApi.middleware)
       .concat(annotationApi.middleware)
-      .concat(serviceApi.middleware)
-      .concat(imagingApi.middleware),
+      .concat(imagingApi.middleware)
+      .concat(serviceApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

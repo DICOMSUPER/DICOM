@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ReceptionTable } from "@/components/reception/reception-table";
+import { DataTable } from "@/components/ui/data-table";
 import { TableRowEnhanced, TableCellEnhanced } from "@/components/ui/table-enhanced";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -73,7 +73,7 @@ export function EncounterTable({
   ];
 
   return (
-    <ReceptionTable
+    <DataTable
       headers={headers}
       isLoading={isLoading}
       isEmpty={encounters.length === 0}
@@ -161,6 +161,6 @@ export function EncounterTable({
           </TableCellEnhanced>
         </TableRowEnhanced>
       ))}
-    </ReceptionTable>
+    </DataTable>
   );
 }

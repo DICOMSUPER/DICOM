@@ -1,7 +1,6 @@
 "use client";
 
-import { ReceptionTable } from "./reception-table";
-import { TableRowEnhanced, TableCellEnhanced } from "@/components/ui/table-enhanced";
+import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -67,106 +66,118 @@ export function QueueTable({
     }
   };
 
-  const headers = [
-    "Queue #",
-    "Patient",
-    "Priority",
-    "Room",
-    "Assigned Time",
-    showWaitTime ? "Wait Time" : showCompletedTime ? "Completed Time" : "Status",
-    "Actions"
-  ];
-
   return (
-    <ReceptionTable
-      headers={headers}
+    <DataTable<QueueAssignment>
+      columns={[
+        {
+          header: "Queue #",
+          cell: (assignment) => `#${assignment.queueNumber}`,
+          className: "font-medium",
+        },
+        {
+          header: "Patient",
+          cell: (assignment) => (
+            <div className="flex flex-col">
+              <span className="font-medium">
+                {assignment.encounter.patient.firstName}{" "}
+                {assignment.encounter.patient.lastName}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ID: {assignment.encounter.patient.patientCode}
+              </span>
+            </div>
+          ),
+        },
+        {
+          header: "Priority",
+          cell: (assignment) => (
+            <PriorityBadge priority={assignment.priority as PriorityLevel} />
+          ),
+        },
+        {
+          header: "Room",
+          cell: (assignment) => assignment.roomId || "Unassigned",
+        },
+        {
+          header: "Assigned Time",
+          cell: (assignment) => formatTime(assignment.assignmentDate),
+        },
+        {
+          header: showWaitTime
+            ? "Wait Time"
+            : showCompletedTime
+            ? "Completed Time"
+            : "Status",
+          cell: (assignment) => {
+            if (showWaitTime) {
+              return (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span>{getWaitTime(assignment.priority)}</span>
+                </div>
+              );
+            }
+
+            if (showCompletedTime) {
+              return (
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span>{formatTime(assignment.assignmentDate)}</span>
+                </div>
+              );
+            }
+
+            return <StatusBadge status="in-progress" />;
+          },
+        },
+        {
+          header: "Actions",
+          cell: (assignment) => (
+            <div className="flex justify-end gap-2">
+              {onViewDetails && (
+                <Button variant="ghost" size="sm" onClick={() => onViewDetails(assignment)}>
+                  <Eye className="w-4 h-4 text-teal-600" />
+                </Button>
+              )}
+              {onEditAssignment && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEditAssignment(assignment)}>
+                      <Edit className="w-4 h-4 mr-2 text-teal-600" />
+                      Edit
+                    </DropdownMenuItem>
+                    {onRemoveFromQueue && (
+                      <DropdownMenuItem
+                        onClick={() => onRemoveFromQueue(assignment)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Remove from Queue
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          ),
+        },
+      ]}
+      data={assignments}
       isLoading={isLoading}
-      isEmpty={assignments.length === 0}
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
-    >
-      {assignments.map((assignment) => (
-        <TableRowEnhanced 
-          key={assignment.id}
-          className={HIGH_PRIORITY_LEVELS.includes(assignment.priority?.toLowerCase() as PriorityLevel) ? 'bg-red-50 border-l-4 border-l-red-500 hover:bg-red-100' : ''}
-        >
-          <TableCellEnhanced className="font-medium">
-            #{assignment.queueNumber}
-          </TableCellEnhanced>
-          <TableCellEnhanced>
-            <div>
-              <div className="font-medium">
-                {assignment.encounter.patient.firstName} {assignment.encounter.patient.lastName}
-              </div>
-              <div className="text-sm text-foreground">
-                {assignment.encounter.patient.patientCode}
-              </div>
-            </div>
-          </TableCellEnhanced>
-          <TableCellEnhanced>
-            <PriorityBadge priority={assignment.priority} />
-          </TableCellEnhanced>
-          <TableCellEnhanced>
-            <div className="text-foreground">
-              {assignment.roomId || 'Unassigned'}
-            </div>
-          </TableCellEnhanced>
-          <TableCellEnhanced>
-            <div className="text-foreground">
-              {formatTime(assignment.assignmentDate)}
-            </div>
-          </TableCellEnhanced>
-          <TableCellEnhanced>
-            <div className="text-foreground">
-              {showWaitTime ? getWaitTime(assignment.priority) : 
-               showCompletedTime ? formatTime(assignment.assignmentDate) : 
-               assignment.priority}
-            </div>
-          </TableCellEnhanced>
-          <TableCellEnhanced isLast>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {onViewDetails && (
-                  <DropdownMenuItem onClick={() => onViewDetails(assignment)}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    View Details
-                  </DropdownMenuItem>
-                )}
-                {onEditAssignment && (
-                  <DropdownMenuItem onClick={() => onEditAssignment(assignment)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Assignment
-                  </DropdownMenuItem>
-                )}
-                {onStartTreatment && (
-                  <DropdownMenuItem onClick={() => onStartTreatment(assignment)}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Start Treatment
-                  </DropdownMenuItem>
-                )}
-                {onMarkComplete && (
-                  <DropdownMenuItem onClick={() => onMarkComplete(assignment)}>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark Complete
-                  </DropdownMenuItem>
-                )}
-                {onRemoveFromQueue && (
-                  <DropdownMenuItem onClick={() => onRemoveFromQueue(assignment)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove from Queue
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TableCellEnhanced>
-        </TableRowEnhanced>
-      ))}
-    </ReceptionTable>
+      rowClassName={(assignment) =>
+        HIGH_PRIORITY_LEVELS.includes(assignment.priority?.toLowerCase() as PriorityLevel)
+          ? "bg-red-50 border-l-4 border-l-red-500 hover:bg-red-100"
+          : undefined
+      }
+      rowKey={(assignment) => assignment.id}
+    />
   );
 }
