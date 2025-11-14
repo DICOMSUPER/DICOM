@@ -79,8 +79,6 @@ export class ServicesService {
           'UserService'
         );
       }
-
-      // ✅ Kiểm tra serviceCode nếu có thay đổi
       if (
         updateServiceDto.serviceCode &&
         updateServiceDto.serviceCode !== service.serviceCode

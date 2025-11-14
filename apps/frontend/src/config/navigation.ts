@@ -63,10 +63,10 @@ export const roleNavigation: RoleNavigation = {
       description: "Configure system settings",
     },
     {
-      href: "/admin/configurations",
-      label: "System Configurations",
+      href: "/admin/service",
+      label: "Service Management",
       icon: Cog,
-      description: "Advanced system configurations",
+      description: "Manage clinic services and offerings",
     },
     {
       href: "/admin/reports",

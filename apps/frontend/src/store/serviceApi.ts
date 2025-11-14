@@ -36,7 +36,7 @@ export const serviceApi = createApi({
 
     // Get paginated services
     getServicesPaginated: builder.query<
-      ApiResponse<PaginatedResponse<Services>>,
+      PaginatedResponse<Services>,
       PaginatedQuery | void
     >({
       query: (params = {}) => ({
@@ -52,9 +52,9 @@ export const serviceApi = createApi({
         },
       }),
       providesTags: (result) =>
-        result?.data?.data
+        result?.data
           ? [
-              ...result.data.data.map(({ id }) => ({
+              ...result.data.map(({ id }) => ({
                 type: "Service" as const,
                 id,
               })),
@@ -63,7 +63,6 @@ export const serviceApi = createApi({
           : [{ type: "ServiceList" as const, id: "PAGINATED" }],
     }),
 
-    // Get active services by department ID
     getActiveServicesByDepartmentId: builder.query<
       ApiResponse<Services[]>,
       string

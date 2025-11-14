@@ -1,7 +1,8 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ImagingProcedurePDF } from "@/app/(physicians)/physicians/create-imaging-order/page";
+
 import logo from "../../../public/assets/logo2.webp";
+import { ImagingProcedurePDF } from "../patients/detail/create-order-form";
 
 export interface ImagingOrderPDFProps {
   imagingProcedurePDF: ImagingProcedurePDF;
