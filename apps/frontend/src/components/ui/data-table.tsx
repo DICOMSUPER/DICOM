@@ -13,70 +13,94 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import type { ReactNode } from "react";
 
+interface DataTableColumn<T> {
+  header: ReactNode;
+  cell: (row: T) => ReactNode;
+  className?: string;
+  headerClassName?: string;
+}
+
 interface DataTableProps<T> {
-  columns: {
-    header: string;
-    cell: (row: T) => ReactNode;
-    className?: string;
-    headerClassName?: string;
-  }[];
-  data: T[];
+  columns?: DataTableColumn<T>[];
+  data?: T[];
+  children?: ReactNode;
   isLoading: boolean;
   emptyStateIcon: ReactNode;
   emptyStateTitle: string;
   emptyStateDescription: string;
   className?: string;
   skeletonRows?: number;
+  skeletonColumns?: number;
+  rowClassName?: (row: T, index: number) => string | undefined;
+  rowKey?: (row: T, index: number) => React.Key;
+  isEmpty?: boolean;
 }
 
 export function DataTable<T>({
   columns,
   data,
+  children,
   isLoading,
   emptyStateIcon,
   emptyStateTitle,
   emptyStateDescription,
   className = "",
   skeletonRows = 5,
+  skeletonColumns = 4,
+  rowClassName,
+  rowKey,
+  isEmpty,
 }: DataTableProps<T>) {
+  const useColumns = Array.isArray(columns) && Array.isArray(data);
+  const resolvedColumnCount = useColumns ? columns!.length : skeletonColumns;
+  const resolvedRows = useColumns ? data || [] : [];
+  const showEmptyState = !isLoading && (useColumns ? resolvedRows.length === 0 : Boolean(isEmpty));
+
   return (
     <Card className={`border-border p-0 ${className}`}>
       <CardContent className="p-0">
         <TableEnhanced>
           <TableHeaderEnhanced>
             <TableRowEnhanced isHeader>
-              {columns.map((column, index) => (
-                <TableHeadEnhanced
-                  key={column.header}
-                  isLast={index === columns.length - 1}
-                  className={column.headerClassName}
-                >
-                  {column.header}
-                </TableHeadEnhanced>
-              ))}
+              {useColumns && columns
+                ? columns.map((column, index) => (
+                    <TableHeadEnhanced
+                      key={`header-${index}`}
+                      isLast={index === columns.length - 1}
+                      className={column.headerClassName}
+                    >
+                      {column.header}
+                    </TableHeadEnhanced>
+                  ))
+                : null}
             </TableRowEnhanced>
           </TableHeaderEnhanced>
           <TableBodyEnhanced>
             {isLoading ? (
-              <TableSkeleton rows={skeletonRows} columns={columns.length} />
+              <TableSkeleton rows={skeletonRows} columns={resolvedColumnCount} />
             ) : (
-              data.map((row, rowIndex) => (
-                <TableRowEnhanced key={rowIndex}>
-                  {columns.map((column, colIndex) => (
-                    <TableCellEnhanced
-                      key={`${rowIndex}-${colIndex}`}
-                      isLast={colIndex === columns.length - 1}
-                      className={column.className}
+              (useColumns && columns
+                ? resolvedRows.map((row, rowIndex) => (
+                    <TableRowEnhanced
+                      key={rowKey ? rowKey(row, rowIndex) : rowIndex}
+                      className={rowClassName?.(row, rowIndex)}
                     >
-                      {column.cell(row)}
-                    </TableCellEnhanced>
-                  ))}
-                </TableRowEnhanced>
-              ))
+                      {columns.map((column, colIndex) => (
+                        <TableCellEnhanced
+                          key={`${rowIndex}-${colIndex}`}
+                          isLast={colIndex === columns.length - 1}
+                          className={column.className}
+                        >
+                          {column.cell(row)}
+                        </TableCellEnhanced>
+                      ))}
+                    </TableRowEnhanced>
+                  ))
+                : children)
             )}
           </TableBodyEnhanced>
         </TableEnhanced>
-        {!isLoading && data.length === 0 && (
+        {showEmptyState && (
           <EmptyState
             icon={emptyStateIcon}
             title={emptyStateTitle}

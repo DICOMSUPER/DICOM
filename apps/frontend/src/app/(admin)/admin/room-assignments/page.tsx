@@ -7,15 +7,15 @@ import { useGetAllUsersQuery } from '@/store/userApi';
 import { extractApiData } from '@/utils/api';
 import { toast } from 'sonner';
 import { EmployeeRoomAssignment } from '@/interfaces/user/employee-room-assignment.interface';
-import { RoomAssignmentsHeader } from '@/components/admin/room-assignments/RoomAssignmentsHeader';
-import { RoomAssignmentsTable } from '@/components/admin/room-assignments/RoomAssignmentsTable';
+import { RoomAssignmentsHeader } from '@/components/admin/room-assignments/room-assignments-header';
+import { RoomAssignmentsTable } from '@/components/admin/room-assignments/room-assignments-table';
 import {
   RoomAssignmentDialog,
   RoomAssignmentFormState,
-} from '@/components/admin/room-assignments/RoomAssignmentDialog';
-import { RoomAssignmentStats } from '@/components/admin/room-assignments/RoomAssignmentStats';
-import { RoomAssignmentFilters } from '@/components/admin/room-assignments/RoomAssignmentFilters';
-import { RoomAssignmentQuickActions } from '@/components/admin/room-assignments/RoomAssignmentQuickActions';
+} from '@/components/admin/room-assignments/room-assignment-dialog';
+import { RoomAssignmentStats } from '@/components/admin/room-assignments/room-assignment-stats';
+import { RoomAssignmentFilters } from '@/components/admin/room-assignments/room-assignment-filters';
+import { RoomAssignmentQuickActions } from '@/components/admin/room-assignments/room-assignment-quick-actions';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 
