@@ -2,7 +2,8 @@
 import { ServiceFiltersSection } from "@/components/admin/service/service-filters";
 import { ServiceTable } from "@/components/admin/service/service-table";
 
-import { Button } from "@/components/ui/button";
+import { ModalServiceForm } from "@/components/admin/service/modal-create-service";
+import { ModalServiceDetail } from "@/components/admin/service/modal-service-detail";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,27 +14,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   PaginatedQuery,
   PaginationMeta,
 } from "@/interfaces/pagination/pagination.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate } from "@/lib/formatTimeDate";
-import {
-  useGetServicesPaginatedQuery,
-  useCreateServiceMutation,
-  useUpdateServiceMutation,
-  useDeleteServiceMutation,
-} from "@/store/serviceApi";
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   CreateServiceDto,
   UpdateServiceDto,
 } from "@/interfaces/user/service.interface";
-import { ModalServiceDetail } from "@/components/admin/service/modal-service-detail";
-import { ModalServiceForm } from "@/components/admin/service/modal-create-service";
+import { formatDate } from "@/lib/formatTimeDate";
+import {
+  useCreateServiceMutation,
+  useDeleteServiceMutation,
+  useGetServicesPaginatedQuery,
+  useUpdateServiceMutation,
+} from "@/store/serviceApi";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function ServicePage() {
   const [filters, setFilters] = useState<PaginatedQuery>({

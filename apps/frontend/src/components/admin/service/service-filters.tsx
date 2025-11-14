@@ -1,22 +1,9 @@
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, RotateCcw } from "lucide-react";
-import { useEffect, useState } from "react";
-import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
+import { Input } from "@/components/ui/input";
 import useDebounce from "@/hooks/useDebounce";
-import {
-  DiagnosisStatus,
-  DiagnosisType,
-  EncounterStatus,
-} from "@/enums/patient-workflow.enum";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
+import { RotateCcw, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
 
 interface ServiceFiltersSectionProps {

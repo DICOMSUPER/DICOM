@@ -5,9 +5,12 @@ import { Services } from '@backend/shared-domain';
 import { ServicesController } from './services.controller';
 import { ServicesRepository } from './services.repository';
 import { ServicesService } from './services.service';
+import { ServiceRoomsModule } from '../service-rooms/service-rooms.module';
 
 @Module({
-  imports: [BackendEntitiesModule.forFeature([Services])],
+  imports: [BackendEntitiesModule.forFeature([Services]),
+  ServiceRoomsModule
+],
   controllers: [ServicesController],
   providers: [ServicesService, ServicesRepository],
   exports: [BackendEntitiesModule, ServicesRepository],

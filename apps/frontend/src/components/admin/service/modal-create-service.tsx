@@ -19,29 +19,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { CreateServiceDto } from "@/interfaces/user/service.interface";
 import { useGetServiceByIdQuery } from "@/store/serviceApi";
-import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 const serviceFormSchema = z.object({
-  serviceCode: z.string().min(1, "Service code is required"),
+  serviceCode: z.string().optional(),
   serviceName: z.string().min(1, "Service name is required"),
   description: z.string().optional(),
-  departmentId: z.string().min(1, "Department is required"),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -65,15 +56,12 @@ export function ModalServiceForm({
     skip: !serviceId,
   });
 
-  const { data: departmentsData } = useGetDepartmentsQuery();
-
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: {
       serviceCode: "",
       serviceName: "",
       description: "",
-      departmentId: "",
       isActive: true,
     },
   });
@@ -84,7 +72,6 @@ export function ModalServiceForm({
         serviceCode: serviceData.data.serviceCode,
         serviceName: serviceData.data.serviceName,
         description: serviceData.data.description || "",
-        departmentId: serviceData.data.departmentId,
         isActive: serviceData.data.isActive,
       });
     } else if (!serviceId) {
@@ -92,7 +79,6 @@ export function ModalServiceForm({
         serviceCode: "",
         serviceName: "",
         description: "",
-        departmentId: "",
         isActive: true,
       });
     }
@@ -122,27 +108,28 @@ export function ModalServiceForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="serviceCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Service Code</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="SVC-001"
-                      {...field}
-                      disabled={!!serviceId}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Unique identifier for the service
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
+            
+              <FormField
+                control={form.control}
+                name="serviceCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Code (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="SVC-001"
+                        {...field}
+                        // disabled={!!serviceId}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
             <FormField
               control={form.control}
@@ -153,35 +140,6 @@ export function ModalServiceForm({
                   <FormControl>
                     <Input placeholder="General Consultation" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="departmentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departmentsData?.data?.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
-                          {dept.departmentName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

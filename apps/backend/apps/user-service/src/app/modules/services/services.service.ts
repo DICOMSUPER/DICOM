@@ -13,16 +13,49 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, Not } from 'typeorm';
 import { ServicesRepository } from './services.repository';
+import { ServiceRoomsService } from '../service-rooms/service-rooms.service';
 
 @Injectable()
 export class ServicesService {
   constructor(
     @Inject()
     private readonly servicesRepository: ServicesRepository,
-    @InjectEntityManager() private readonly entityManager: EntityManager
+    @InjectEntityManager() private readonly entityManager: EntityManager,
+    private readonly serviceRoomsService: ServiceRoomsService,
   ) {}
+
+  private async generateUniqueServiceCode(
+    em: EntityManager,
+    prefix = 'SVC',
+    maxAttempts = 5
+  ): Promise<string> {
+    const generate = () =>
+      `${prefix}-${new Date()
+        .toISOString()
+        .slice(0, 10)
+        .replace(/-/g, '')}-${Math.random()
+        .toString(36)
+        .slice(2, 6)
+        .toUpperCase()}`;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const candidate = generate();
+      const existing = await this.servicesRepository.findOne(
+        { where: { serviceCode: candidate } },
+        [],
+        em
+      );
+      if (!existing) return candidate;
+    }
+
+    return `${prefix}-${Date.now()}`;
+  }
+
   create = async (createServiceDto: CreateServiceDto): Promise<Services> => {
     return await this.entityManager.transaction(async (em) => {
+      if (!createServiceDto.serviceCode) {
+        createServiceDto.serviceCode = await this.generateUniqueServiceCode(em);
+      }
       const existingService = await this.servicesRepository.findOne(
         {
           where: { serviceCode: createServiceDto.serviceCode },
@@ -35,6 +68,44 @@ export class ServicesService {
         throw ThrowMicroserviceException(
           HttpStatus.CONFLICT,
           'Service with the same code already exists',
+          'UserService'
+        );
+      }
+
+      // check for service name uniqueness
+      const existingByName = await this.servicesRepository.findOne(
+        {
+          where: { serviceName: createServiceDto.serviceName },
+        },
+        [],
+        em
+      );
+
+      if (existingByName) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Service with the same name already exists',
+          'UserService'
+        );
+      }
+
+      // exist service code and name
+
+      const existingByNameAndCode = await this.servicesRepository.findOne(
+        {
+          where: {
+            serviceName: createServiceDto.serviceName,
+            serviceCode: createServiceDto.serviceCode,
+          },
+        },
+        [],
+        em
+      );
+
+      if (existingByNameAndCode) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Service with the same name and code already exists',
           'UserService'
         );
       }
@@ -87,7 +158,7 @@ export class ServicesService {
           {
             where: {
               serviceCode: updateServiceDto.serviceCode,
-              id: Not(id), // Loại trừ bản ghi hiện tại
+              id: Not(id), // Exclude the current record
             },
           },
           [],
@@ -140,6 +211,16 @@ export class ServicesService {
         throw ThrowMicroserviceException(
           HttpStatus.NOT_FOUND,
           'Service not found',
+          'UserService'
+        );
+      }
+      const assignedRooms = await this.serviceRoomsService.findAllWithoutPagination({
+        serviceId: id,
+      });
+      if (assignedRooms.length > 0) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Cannot delete service with assigned rooms',
           'UserService'
         );
       }

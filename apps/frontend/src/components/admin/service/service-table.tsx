@@ -31,7 +31,14 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Eye, MoreHorizontal, User } from "lucide-react";
+import {
+  ArrowUpDown,
+  Eye,
+  MoreHorizontal,
+  Pen,
+  Trash,
+  User,
+} from "lucide-react";
 import React from "react";
 
 interface ServiceTableProps {
@@ -74,12 +81,12 @@ export function ServiceTable({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          ID
+          Service code
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="font-bold text-lg text-slate-900 text-center">
+        <div className="font-bold text-base text-slate-900 text-center">
           {row.original.serviceCode}
         </div>
       ),
@@ -179,14 +186,15 @@ export function ServiceTable({
                   onClick={() => onEdit(serviceItem.id)}
                   className="cursor-pointer"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
+                  <Pen className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
+                <Separator />
                 <DropdownMenuItem
                   onClick={() => onDelete(serviceItem.id)}
                   className="cursor-pointer"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
+                  <Trash className="mr-2 h-4 w-4" />
                   Delete Service
                 </DropdownMenuItem>
               </DropdownMenuContent>

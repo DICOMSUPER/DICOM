@@ -68,12 +68,12 @@ export function ModalServiceDetail({
               <p className="text-base">{service.description || "N/A"}</p>
             </div>
 
-            <div>
+            {/* <div>
               <p className="text-sm font-medium text-gray-500">Department</p>
               <p className="text-base font-semibold">
                 {service.department?.departmentName || "N/A"}
               </p>
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

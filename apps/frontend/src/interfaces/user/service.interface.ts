@@ -12,7 +12,7 @@ export interface Services extends BaseEntity {
 }
 
 export interface CreateServiceDto {
-  serviceCode: string;
+  serviceCode?: string;
   serviceName: string;
   description?: string;
   isActive?: boolean;
