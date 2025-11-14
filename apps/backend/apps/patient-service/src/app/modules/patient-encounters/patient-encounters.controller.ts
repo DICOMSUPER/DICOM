@@ -1,6 +1,9 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { PatientEncounterService } from './patient-encounters.service';
+import {
+  PatientEncounterService,
+  RoomEncounterFilters,
+} from './patient-encounters.service';
 import {
   CreatePatientEncounterDto,
   FilterPatientEncounterDto,
@@ -159,8 +162,8 @@ export class PatientEncounterController {
   findByRoom(
     @Payload() data: { filterQueue: FilterPatientEncounterDto; userId: string }
   ) {
-    console.log("dataa",data);
-    
+    console.log('dataa', data);
+
     return this.patientEncounterService.getAllInRoom(
       data.filterQueue,
       data.userId
@@ -229,6 +232,28 @@ export class PatientEncounterController {
         error,
         `Failed to find patient encounters for patient ID: ${data.patientId}`,
         PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(
+    'PatientService.PatientEncounter.GetEncounterStatsFromRoomIds'
+  )
+  async getEncounterStatsFromRoomIds(@Payload() data: RoomEncounterFilters[]) {
+    this.logger.log(
+      'Using pattern: PatientService.PatientEncounter.GetEncounterStatsFromRoomIds'
+    );
+    try {
+      return await this.patientEncounterService.getEncounterStatsFromRoomIdsInDate(
+        data
+      );
+    } catch (error) {
+      console.log(error);
+      this.logger.error('Error getting encounter stats for roomIds', error);
+      throw handleErrorFromMicroservices(
+        error,
+        'Error getting encounter stats for roomIds',
+        'PatientService'
       );
     }
   }

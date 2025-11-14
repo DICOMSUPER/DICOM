@@ -432,4 +432,71 @@ export class RoomsService {
       throw new DatabaseException('Lỗi khi lọc danh sách phòng');
     }
   }
+
+  async getRoomsByDepartmentAndServiceId(
+    departmentId: string,
+    serviceId: string,
+    role?: Roles
+  ): Promise<Room[]> {
+    try {
+      const today = new Date();
+      const todayDate = today.toISOString().split('T')[0];
+      const todayTime = today.toTimeString().split(' ')[0];
+
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const yesterdayDate = yesterday.toISOString().split('T')[0];
+
+      const qb = this.roomRepository
+        .createQueryBuilder('room')
+
+        //join room & department &
+        .leftJoinAndSelect('room.department', 'department')
+        .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
+        .leftJoinAndSelect('room.schedules', 'schedules')
+        .leftJoinAndSelect(
+          'schedules.employeeRoomAssignments',
+          'employeeRoomAssignments'
+        )
+        .leftJoin('employeeRoomAssignments.employee', 'employee')
+
+        //filter correct department_id, service_id
+        .where('room.department_id = :departmentId', { departmentId })
+        .andWhere('serviceRooms.service_id = :serviceId', { serviceId })
+
+        //active room & active service
+        .andWhere('room.is_active = true')
+        .andWhere('serviceRooms.is_active = true')
+
+        //filter, get room with schedule & employee in schedule
+        .andWhere(
+          `EXISTS (
+            SELECT 1 FROM room_schedules rs
+            LEFT JOIN employee_room_assignments era ON era.room_schedule_id = rs.schedule_id
+            WHERE rs.room_id = room.room_id
+            AND era.is_active = true
+            AND (
+              -- Case 1: Same day shift (start_time < end_time)
+              (rs.work_date = :todayDate AND rs.actual_start_time <= rs.actual_end_time 
+               AND rs.actual_start_time <= :todayTime AND rs.actual_end_time >= :todayTime)
+              OR
+              -- Case 2: Overnight shift (start_time > end_time) 
+              (rs.work_date = :yesterdayDate AND rs.actual_start_time > rs.actual_end_time 
+               AND :todayTime <= rs.actual_end_time)
+            )
+          )`,
+          { todayDate, todayTime, yesterdayDate }
+        );
+
+      if (role) qb.andWhere('employee.role = :role', { role });
+      return await qb.getMany();
+    } catch (error) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `Failed to get rooms by department_id and service_id: ${
+          (error as Error).message || error
+        }`,
+        'UserService'
+      );
+    }
+  }
 }

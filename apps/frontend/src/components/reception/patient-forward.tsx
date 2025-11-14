@@ -7,14 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EncounterType } from "@/enums/patient-workflow.enum";
-import {
-  useCreatePatientEncounterMutation,
-  useDeletePatientEncounterMutation,
-} from "@/store/patientEncounterApi";
-import {
-  useCreateQueueAssignmentMutation,
-  useDeleteQueueAssignmentMutation,
-} from "@/store/queueAssignmentApi";
+import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
+
 import { Stethoscope, CheckCircle } from "lucide-react";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -24,12 +18,18 @@ import type { SingleValue } from "react-select";
 import Cookies from "js-cookie";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { Department } from "@/interfaces/user/department.interface";
-import { Room, User } from "@/store/scheduleApi";
-import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
+import { User } from "@/store/scheduleApi";
+import {
+  useGetRoomsByDepartmentAndServiceQuery,
+  useGetRoomsByDepartmentIdQuery,
+} from "@/store/roomsApi";
 import { useGetUsersByRoomQuery } from "@/store/userApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Roles } from "@/enums/user.enum";
+import { useGetActiveServicesByDepartmentIdQuery } from "@/store/serviceApi";
+import { Services } from "@/interfaces/user/service.interface";
+import { Room } from "@/interfaces/user/room.interface";
 
 type DepartmentOption = Department & { value: string; label: string };
 
@@ -54,6 +54,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
+  const [selectedService, setSelectedService] = useState<Services | null>(null);
   const [rooms, setRooms] = useState<Room[] | []>();
   const [roomSearch, setRoomSearch] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -81,34 +82,40 @@ export function PatientForward({ patientId }: { patientId: string }) {
   });
 
   const {
-    data: roomData,
+    data: ServicesData,
+    isLoading: isLoadingServices,
+    refetch: refetchServices,
+  } = useGetActiveServicesByDepartmentIdQuery(selectedDepartment?.id || "", {
+    skip: !selectedDepartment?.id,
+  });
+
+  const {
+    data: RoomData,
     isLoading: isLoadingRoom,
-    refetch: refetchRooms,
-  } = useGetRoomsByDepartmentIdQuery(
+    refetch: refetchRoom,
+  } = useGetRoomsByDepartmentAndServiceQuery(
     {
-      id: selectedDepartment?.id || "",
-      search: roomSearch,
-      applyScheduleFilter: true,
+      serviceId: selectedService?.id ?? "",
+      departmentId: selectedDepartment?.id ?? "",
       role: Roles.PHYSICIAN,
     },
-    {
-      skip: !selectedDepartment?.id,
-    }
+    { skip: !selectedService?.id || !selectedDepartment?.id }
   );
-
   const [createEncounter] = useCreatePatientEncounterMutation();
 
+  // console.log("roomData.data:", RoomData?.data);
   useEffect(() => {
     if (!departmentsData && !isLoadingDepartment) {
       refetchDepartment();
     }
+
     setSelectedRoom(null);
   }, [
     departmentSearch,
     departmentsData,
     isLoadingDepartment,
     refetchDepartment,
-    refetchRooms,
+    refetchServices,
   ]);
 
   // Transform departments data for react-select
@@ -119,15 +126,9 @@ export function PatientForward({ patientId }: { patientId: string }) {
       ...dept,
     })) || [];
 
-  const roomOptions = roomData?.data.map((room) => ({
-    value: room.id,
-    label: room.roomCode,
-    ...room,
-  }));
   //submit
   const onSubmit = async () => {
     let encounter;
-    let queue;
     try {
       const encounterData = {
         ...encounterInfo,
@@ -136,20 +137,9 @@ export function PatientForward({ patientId }: { patientId: string }) {
       encounter = await createEncounter(encounterData).unwrap();
 
       if (encounter) {
-        const userRaw = Cookies.get("user");
-        const user = userRaw ? JSON.parse(userRaw) : null;
-        if (!user) throw new Error("User session not found");
-
-        const queueData = {
-          ...queueInfo,
-          roomId: queueInfo.roomId,
-          encounterId: encounter?.data.id,
-          createdBy: user.id,
-        };
-
         toast.success("Forward patient successfully");
 
-        router.push(`/reception/queue-paper/${queue.data.id}`);
+        router.push(`/reception/queue-paper/1`); //dummy, fix when fix encounter id
 
         // router.push(
         //   `/reception/queue-paper/${queue.data.id}?doctor=${encounter.data.assignedPhysicianId}`
@@ -206,85 +196,136 @@ export function PatientForward({ patientId }: { patientId: string }) {
             />
           </div>
 
-          <div className="space-y-2 h-[50vh] overflow-y-auto">
+          <div className="space-y-2 ">
+            <label className="text-sm font-medium text-foreground">
+              Select Service
+            </label>
+            {isLoadingServices && (
+              <div className="text-foreground text-sm">Loading services...</div>
+            )}
+
+            {!isLoadingServices &&
+              ServicesData &&
+              Array.isArray(ServicesData?.data) &&
+              ServicesData?.data?.length > 0 && (
+                <div className="grid grid-cols-1 gap-3 max-h-20 overflow-y-auto">
+                  {(ServicesData?.data as Services[]).map(
+                    (service, idx, arr) => {
+                      const isSelected = selectedService?.id === service.id;
+
+                      return (
+                        <button
+                          key={service.id}
+                          onClick={() => {
+                            setSelectedService(service);
+                          }}
+                          type="button"
+                          aria-pressed={isSelected}
+                          className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
+                            isSelected
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                              : "border-border bg-background hover:border-muted"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-lg font-semibold text-foreground">
+                              {service.serviceName}
+                            </h3>
+                          </div>
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+              )}
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Select Room
             </label>
             {isLoadingRoom && (
               <div className="text-foreground text-sm">Loading rooms...</div>
             )}
-
             {!isLoadingRoom &&
-              (!roomData?.data.length || roomData.data.length === 0) && (
-                <div className="text-foreground text-sm">
-                  No room available in this department.
-                </div>
-              )}
+              RoomData &&
+              Array.isArray(RoomData?.data) &&
+              RoomData?.data?.length > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {RoomData.data.map((room) => {
+                    {
+                      /* CHANGE: Calculate room utilization percentage */
+                    }
+                    const maxCapacity =
+                      room.roomStats?.maxWaiting || room.capacity || 1;
+                    const currentOccupancy =
+                      room.roomStats?.currentInProgress || 0;
+                    const utilizationPercent = Math.min(
+                      (currentOccupancy / maxCapacity) * 100,
+                      100
+                    );
 
-            {!isLoadingRoom &&
-              roomData &&
-              Array.isArray(roomData.data) &&
-              roomData.data.length > 0 && (
-                <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
-                  {(roomData.data as Room[]).map((room, idx, arr) => {
-                    const isSelected = queueInfo.roomId === room.id;
+                    {
+                      /* CHANGE: Determine color based on utilization */
+                    }
+                    const getUtilizationColor = (percent: number) => {
+                      if (percent >= 90) return "bg-red-500";
+                      if (percent >= 70) return "bg-yellow-500";
+                      if (percent >= 40) return "bg-blue-500";
+                      return "bg-green-500";
+                    };
 
-                    // calculate queue percentage based on queueStats
-                    const currentQueue =
-                      room?.queueStats?.currentInProgress?.queueNumber || 0;
-                    const maxQueue =
-                      room?.queueStats?.maxWaiting?.queueNumber || 0;
-                    const queuePercentage =
-                      maxQueue > 0 ? (currentQueue / maxQueue) * 100 : 0;
                     return (
                       <button
                         key={room.id}
-                        onClick={() => {
-                          setQueueInfo({
-                            ...queueInfo,
-                            roomId: room.id,
-                          });
-                        }}
+                        onClick={() => setSelectedRoom(room)}
                         type="button"
-                        aria-pressed={isSelected}
-                        className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
-                          isSelected
+                        className={`p-4 border rounded-lg text-left transition-all ${
+                          selectedRoom?.id === room.id
                             ? "border-primary bg-primary/5 ring-2 ring-primary/30"
                             : "border-border bg-background hover:border-muted"
                         }`}
                       >
-                        <div className="flex justify-between items-start mb-3">
+                        <div className="flex justify-between items-start mb-2">
                           <h3 className="text-lg font-semibold text-foreground">
-                            Room {room.roomCode}
+                            {room.roomCode}
                           </h3>
+                          {/* CHANGE: Display current occupancy numbers */}
+                          <span className="text-sm text-muted-foreground">
+                            {currentOccupancy}/{maxCapacity}
+                          </span>
                         </div>
 
-                        <div className="flex justify-between items-end text-sm">
-                          <div>
-                            <span className="text-foreground">Current: </span>
-                            <span className="font-semibold text-foreground">
-                              {currentQueue}
+                        {/* CHANGE: Add progress bar to show room utilization */}
+                        <div className="space-y-1">
+                          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ${getUtilizationColor(
+                                utilizationPercent
+                              )}`}
+                              style={{ width: `${utilizationPercent}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              {utilizationPercent.toFixed(0)}% utilized
+                            </span>
+                            <span
+                              className={
+                                utilizationPercent >= 90
+                                  ? "text-red-500 font-medium"
+                                  : ""
+                              }
+                            >
+                              {utilizationPercent >= 90
+                                ? "Near capacity"
+                                : utilizationPercent >= 70
+                                ? "Busy"
+                                : utilizationPercent >= 40
+                                ? "Moderate"
+                                : "Available"}
                             </span>
                           </div>
-                          <div>
-                            <span className="text-foreground">Max: </span>
-                            <span className="font-semibold text-foreground">
-                              {maxQueue}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-2 w-full bg-muted/60 rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full transition-all ${
-                              queuePercentage > 80
-                                ? "bg-red-500"
-                                : queuePercentage > 50
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
-                            }`}
-                            style={{ width: `${queuePercentage}%` }}
-                          />
                         </div>
                       </button>
                     );

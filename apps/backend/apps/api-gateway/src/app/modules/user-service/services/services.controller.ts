@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, pluck } from 'rxjs';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
@@ -28,6 +28,7 @@ export class ServicesController {
     private readonly userService: ClientProxy
   ) {}
 
+  @Public()
   @Get()
   async getServices() {
     return await firstValueFrom(

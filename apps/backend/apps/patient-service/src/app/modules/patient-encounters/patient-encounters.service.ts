@@ -8,17 +8,16 @@ import {
   FilterPatientEncounterDto,
   PatientEncounter,
   PatientEncounterRepository,
+  ServiceRoom,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
-import {
-  EncounterStatus,
-  Roles
-} from '@backend/shared-enums';
+import { EncounterStatus, Roles } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -26,6 +25,17 @@ import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
 import { Between, In, Raw } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
+export interface QueueInfo {
+  [roomId: string]: {
+    maxWaiting: number;
+    currentInProgress: number;
+  };
+}
+
+export interface RoomEncounterFilters {
+  roomId: string;
+  serviceRoomIds: string[];
+}
 @Injectable()
 export class PatientEncounterService {
   constructor(
@@ -35,11 +45,41 @@ export class PatientEncounterService {
     private readonly userService: ClientProxy
   ) {}
 
+  getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
+    const serviceRoom: ServiceRoom = await firstValueFrom(
+      this.userService.send('UserService.ServiceRooms.FindOne', {
+        serviceRoomId,
+      })
+    );
+
+    const serviceRooms = await firstValueFrom(
+      this.userService.send(
+        'UserService.ServiceRooms.FindAllWithoutPagination',
+        { roomId: serviceRoom.roomId }
+      )
+    );
+
+    const serviceRoomIds = serviceRooms.map((serviceRoom: ServiceRoom) => {
+      return serviceRoom.id;
+    });
+
+    const encounter = await this.encounterRepository.getLatestEncounterInDate(
+      serviceRoomIds
+    );
+
+    if (!encounter) return 1;
+    return encounter.orderNumber + 1;
+  };
+
   create = async (
     createPatientEncounterDto: CreatePatientEncounterDto
   ): Promise<PatientEncounter> => {
+    const orderNumber = await this.getOrderNumberInDate(
+      createPatientEncounterDto?.serviceRoomId as string
+    );
     return await this.encounterRepository.create({
       ...createPatientEncounterDto,
+      orderNumber,
       status: EncounterStatus.WAITING,
     });
   };
@@ -249,6 +289,7 @@ export class PatientEncounterService {
       updatedAt: new Date(),
     });
   };
+
   getStatsInDateRange = async (
     dateFrom: string,
     dateTo: string,
@@ -310,5 +351,69 @@ export class PatientEncounterService {
       updatedCount: waitingEncounters.length,
       encounters: waitingEncounters,
     };
+  }
+
+  async getEncounterStatsFromRoomIdsInDate(
+    data: RoomEncounterFilters[]
+  ): Promise<QueueInfo> {
+    const flattenedServiceRoomIds = data.reduce<string[]>(
+      (acc, d) => [...acc, ...d.serviceRoomIds],
+      []
+    );
+
+    if (flattenedServiceRoomIds.length === 0) {
+      const logger = new Logger('PatientService');
+      logger.debug('Room not have any service, fall back to 0');
+      return {
+        roomStats: {
+          maxWaiting: 0,
+          currentInProgress: 0,
+        },
+      };
+    }
+    const encounters =
+      await this.encounterRepository.getEncounterStatsByServiceRoomIdsInDate(
+        flattenedServiceRoomIds
+      );
+
+    const QueueInfo: QueueInfo = {};
+    data.forEach((room) => {
+      const serviceRoomIds = room.serviceRoomIds;
+
+      const roomEncounter =
+        encounters.filter((encounter) =>
+          serviceRoomIds.includes(encounter.serviceRoomId as string)
+        ) || [];
+
+      const WaitingEncounter =
+        roomEncounter.filter(
+          (encounter) => encounter.status === EncounterStatus.WAITING
+        ) || [];
+
+      const ArrivedEncounter =
+        roomEncounter.filter(
+          (encounter) => encounter.status === EncounterStatus.ARRIVED
+        ) || [];
+
+      const FinishedEncounter =
+        roomEncounter.filter(
+          (encounter) => encounter.status === EncounterStatus.FINISHED
+        ) || [];
+
+      const LeavedEncounter =
+        roomEncounter.filter(
+          (encounter) => encounter.status === EncounterStatus.LEAVED
+        ) || [];
+
+      QueueInfo[room.roomId] = {
+        maxWaiting:
+          WaitingEncounter.length +
+          FinishedEncounter.length +
+          ArrivedEncounter.length,
+        currentInProgress: FinishedEncounter.length + ArrivedEncounter.length,
+      };
+    });
+
+    return QueueInfo;
   }
 }

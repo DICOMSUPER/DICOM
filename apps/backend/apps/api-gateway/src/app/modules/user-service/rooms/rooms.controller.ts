@@ -18,6 +18,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -168,6 +169,55 @@ export class RoomsController {
       });
 
       return combinedRooms;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)
+  @Get('by-department-and-service')
+  @ApiOperation({ summary: 'Get rooms by Department ID' })
+  @ApiQuery({ name: 'departmentId', description: 'Department ID' })
+  @ApiQuery({ name: 'serviceId', description: 'Service ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo khoa thành công',
+  })
+  async getRoomByDepartmentAndServiceId(
+    @Query('serviceId') serviceId: string,
+    @Query('departmentId') departmentId: string,
+    @Query('role') role?: Roles
+  ) {
+    try {
+      const rooms = await firstValueFrom(
+        this.roomClient.send(
+          'UserService.Room.GetRoomsByDepartmentAndServiceId',
+          { serviceId, departmentId, role }
+        )
+      );
+
+      const roomItems = rooms.map((room: Room) => {
+        return {
+          roomId: room.id,
+          serviceRoomIds: room.serviceRooms.map((roomService) => {
+            return roomService.id;
+          }),
+        };
+      });
+
+      const roomStats = await firstValueFrom(
+        this.patientClient.send(
+          'PatientService.PatientEncounter.GetEncounterStatsFromRoomIds',
+          roomItems
+        )
+      );
+
+      const combined = rooms.map((room: Room) => {
+        return { ...room, roomStats: roomStats[room.id] };
+      });
+
+      return combined;
     } catch (error) {
       console.log(error);
       throw error;
