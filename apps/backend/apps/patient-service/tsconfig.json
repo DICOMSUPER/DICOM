@@ -4,16 +4,19 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared-interfaces"
+    },
+    {
       "path": "../../libs/shared-client"
     },
     {
       "path": "../../libs/shared-enums"
     },
     {
-      "path": "../../libs/shared-interfaces"
+      "path": "../../libs/shared-domain"
     },
     {
-      "path": "../../libs/shared-domain"
+      "path": "../../libs/redis"
     },
     {
       "path": "../../libs/database"

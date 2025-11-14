@@ -1,29 +1,37 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import {
-  CreateDiagnosesReportDto,
-  PatientEncounter,
-  PatientEncounterRepository,
-  UpdateDiagnosesReportDto,
-} from '@backend/shared-domain';
-import {
-  DiagnosisReportRepository,
-  DiagnosesReport,
-} from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
+import { RedisService } from '@backend/redis';
+import {
+  CreateDiagnosesReportDto,
+  DiagnosesReport,
+  DiagnosisReportRepository,
+  FilterDiagnosesReportDto,
+  PatientEncounter,
+  PatientEncounterRepository,
+  UpdateDiagnosesReportDto
+} from '@backend/shared-domain';
 import { DiagnosisStatus } from '@backend/shared-enums';
+import {
+  createCacheKey,
+  ThrowMicroserviceException,
+} from '@backend/shared-utils';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class DiagnosesReportService {
   constructor(
     @Inject()
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
-    private readonly encounterRepository: PatientEncounterRepository
-  ) { }
+    private readonly encounterRepository: PatientEncounterRepository,
+    @InjectRepository(DiagnosesReport)
+    private readonly reportRepository: Repository<DiagnosesReport>,
+    private readonly redisService: RedisService
+  ) {}
 
   private checkDiagnosesReport = async (
     id: string
@@ -82,7 +90,7 @@ export class DiagnosesReportService {
   };
 
   findOne = async (id: string): Promise<DiagnosesReport | null> => {
-    const report = await this.diagnosisReportRepository.findById(id);
+    const report = await this.diagnosisReportRepository.findById(id,["encounter", "encounter.patient"]);
     if (!report) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
@@ -162,12 +170,124 @@ export class DiagnosesReportService {
       },
       ['encounter', 'encounter.patient']
     );
-
-    // ✅ Nếu không có dữ liệu thì trả về mảng rỗng thay vì ném lỗi
     if (!reports || reports.length === 0) {
       return [];
     }
 
     return reports;
+  }
+  async findAllWithFilter(
+    filter: FilterDiagnosesReportDto,
+    userInfo: { userId: string; role: string }
+  ): Promise<PaginatedResponseDto<DiagnosesReport>> {
+    const {
+      page = 1,
+      limit = 10,
+      patientName,
+      diagnosisName,
+      diagnosedBy,
+      diagnosisDateFrom,
+      diagnosisDateTo,
+      diagnosisType,
+    } = filter;
+
+
+    const keyName = createCacheKey.system(
+      'diagnoses_reports',
+      undefined,
+      'filter_diagnoses_reports',
+      { ...filter }
+    );
+
+    const cachedService = await this.redisService.get<
+      PaginatedResponseDto<DiagnosesReport>
+    >(keyName);
+    if (cachedService) {
+      console.log('📦 DiagnosesReports retrieved from cache');
+      return cachedService;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.reportRepository
+      .createQueryBuilder('diagnosisReport')
+      .where('diagnosisReport.isDeleted = :isDeleted', { isDeleted: false })
+      .leftJoinAndSelect('diagnosisReport.encounter', 'encounter')
+      .leftJoinAndSelect('encounter.patient', 'patient')
+
+
+    if (patientName) {
+      queryBuilder.andWhere(
+        `CONCAT(patient.firstName, ' ', patient.lastName) ILIKE :patientName OR 
+       CONCAT(patient.lastName, ' ', patient.firstName) ILIKE :patientName`,
+        { patientName: `%${patientName}%` }
+      );
+    }
+    if (diagnosisName) {
+      queryBuilder.andWhere(
+        'diagnosisReport.diagnosisName ILIKE :diagnosisName',
+        {
+          diagnosisName: `%${diagnosisName}%`,
+        }
+      );
+    }
+
+    if (diagnosedBy) {
+      queryBuilder.andWhere('diagnosisReport.diagnosedBy = :diagnosedBy', {
+        diagnosedBy,
+      });
+    }
+
+    if (diagnosisType) {
+      queryBuilder.andWhere('diagnosisReport.diagnosisType = :diagnosisType', {
+        diagnosisType,
+      });
+    }
+
+    if (diagnosisDateFrom) {
+      const fromDate = new Date(diagnosisDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+
+      queryBuilder.andWhere(
+        'diagnosisReport.diagnosisDate >= :diagnosisDateFrom',
+        { diagnosisDateFrom: fromDate }
+      );
+    }
+    if (diagnosisDateTo) {
+      const toDate = new Date(diagnosisDateTo);
+      toDate.setHours(23, 59, 59, 999);
+
+      queryBuilder.andWhere(
+        'diagnosisReport.diagnosisDate <= :diagnosisDateTo',
+        { diagnosisDateTo: toDate }
+      );
+    }
+    if (userInfo.role === 'physician') {
+      queryBuilder.andWhere('encounter.assignedPhysicianId = :userId', {
+        userId: userInfo.userId,
+      });
+    }
+
+    queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+    const response = new PaginatedResponseDto(
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      page < totalPages,
+      page > 1
+    );
+
+    await this.redisService.set(keyName, response, 1800);
+
+    return response;
   }
 }

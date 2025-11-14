@@ -1,5 +1,8 @@
 "use client";
 
+import Pagination, {
+  type PaginationMeta,
+} from "@/components/common/PaginationV1";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -16,6 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Services } from "@/interfaces/user/service.interface";
+import { formatDate } from "@/lib/formatTimeDate";
 import {
   createColumnHelper,
   flexRender,
@@ -26,185 +33,96 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  CheckCircle2,
-  Clock,
   Eye,
   MoreHorizontal,
+  Pen,
+  Trash,
   User,
-  Zap,
 } from "lucide-react";
 import React from "react";
 
-import Pagination, {
-  type PaginationMeta,
-} from "@/components/common/PaginationV1";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  IImagingOrderForm,
-  OrderFormStatus,
-} from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
-
-interface ImagingOrderFormTableProps {
-  imagingOrderForm: IImagingOrderForm[];
+interface ServiceTableProps {
+  serviceItems: Services[];
   onViewDetails: (id: string) => void;
+  onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
   pagination: PaginationMeta;
   onPageChange: (page: number) => void;
-  isUpdating?: boolean;
   isLoading: boolean;
   isFetching: boolean;
 }
 
-const columnHelper = createColumnHelper<IImagingOrderForm>();
+const columnHelper = createColumnHelper<Services>();
 
-export function ImagingOrderFormTable({
-  imagingOrderForm,
+export function ServiceTable({
+  serviceItems,
   onViewDetails,
+  onDelete,
+  onEdit,
   pagination,
   onPageChange,
-  isUpdating,
-  isFetching,
   isLoading,
-}: ImagingOrderFormTableProps) {
+  isFetching,
+}: ServiceTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const getStatusBadge = (status: OrderFormStatus) => {
-    switch (status) {
-      case OrderFormStatus.IN_PROGRESS:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-blue-700">
-              In Progress
-            </span>
-          </div>
-        );
-      case OrderFormStatus.COMPLETED:
-        return (
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-700">
-              Completed
-            </span>
-          </div>
-        );
-      case OrderFormStatus.CANCELLED:
-        return (
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-700">
-              Cancelled
-            </span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-slate-400 rounded-full" />
-            <span className="text-sm font-medium text-slate-600">{status}</span>
-          </div>
-        );
+  const getStatusBadge = (isActive: boolean) => {
+    if (isActive) {
+      return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+    } else {
+      return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
     }
   };
-
   const columns = [
-    columnHelper.accessor("id", {
+    columnHelper.accessor("serviceCode", {
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Order ID
+          Service code
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="text-base ml-6 text-slate-900 ">
-          {row.original.id.slice(-6).toUpperCase()}
+        <div className="font-bold text-base text-slate-900 text-center">
+          {row.original.serviceCode}
         </div>
       ),
     }),
 
-    columnHelper.display({
-      id: "patient",
+    columnHelper.accessor("serviceName", {
       header: () => (
         <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Name
+          Service Name
         </div>
       ),
-
-      cell: ({ row }) => {
-        const patient = row.original.patient;
-        return (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-900">
-                {patient?.firstName} {patient?.lastName}
-              </span>
-            </div>
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-900">
+              {row.original.serviceName}
+            </span>
           </div>
-        );
-      },
-    }),
-
-    columnHelper.accessor("notes", {
-      header: () => (
-        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Notes
         </div>
       ),
-      cell: ({ row }) => {
-        const notes = row.original.notes?.trim() || "—";
-        const maxLength = 50;
-        const truncated =
-          notes.length > maxLength
-            ? `${notes.substring(0, maxLength)}...`
-            : notes;
-
-        return (
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
-                >
-                  {truncated}
-                </Badge>
-              </TooltipTrigger>
-              {notes.length > maxLength && (
-                <TooltipContent
-                  side="top"
-                  align="start"
-                  className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
-                  sideOffset={5}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">
-                    {notes}
-                  </p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
     }),
-    // columnHelper.display({
-    //   id: "orderFormStatus",
-    //   header: () => (
-    //     <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-    //       Status
-    //     </div>
-    //   ),
-    //   cell: ({ row }) => getStatusBadge(row.original.orderFormStatus),
-    // }),
+    // description column
+    columnHelper.accessor("description", {
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Description
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <span className="text-slate-700 text-sm">
+            {row.original.description || "-"}
+          </span>
+        </div>
+      ),
+    }),
 
     columnHelper.accessor("createdAt", {
       header: ({ column }) => (
@@ -213,21 +131,26 @@ export function ImagingOrderFormTable({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-center font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Create Date
+          Created At
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1 ml-6 ">
+        <div className="space-y-1 text-center">
           <span className="font-semibold text-slate-900 text-sm">
             {formatDate(row.original.createdAt)}
           </span>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(row.original.createdAt)}</span>
-          </div>
         </div>
       ),
+    }),
+
+    columnHelper.accessor("isActive", {
+      header: () => (
+        <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+          Status
+        </div>
+      ),
+      cell: ({ row }) => getStatusBadge(row.original.isActive),
     }),
 
     columnHelper.display({
@@ -238,7 +161,7 @@ export function ImagingOrderFormTable({
         </div>
       ),
       cell: ({ row }) => {
-        const orderFormItem = row.original;
+        const serviceItem = row.original;
         return (
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -252,11 +175,27 @@ export function ImagingOrderFormTable({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() => onViewDetails(orderFormItem.id)}
+                  onClick={() => onViewDetails(serviceItem.id)}
                   className="cursor-pointer"
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   View Details
+                </DropdownMenuItem>
+                <Separator />
+                <DropdownMenuItem
+                  onClick={() => onEdit(serviceItem.id)}
+                  className="cursor-pointer"
+                >
+                  <Pen className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <Separator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(serviceItem.id)}
+                  className="cursor-pointer"
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete Service
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -267,7 +206,7 @@ export function ImagingOrderFormTable({
   ];
 
   const table = useReactTable({
-    data: imagingOrderForm,
+    data: serviceItems,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -300,7 +239,7 @@ export function ImagingOrderFormTable({
     );
   }
 
-  if (imagingOrderForm.length === 0 && !isLoading) {
+  if (serviceItems.length === 0 && !isLoading && !isFetching) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
         <div className="flex flex-col items-center justify-center">
@@ -308,7 +247,7 @@ export function ImagingOrderFormTable({
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No order forms items found
+            No services found
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters
@@ -346,9 +285,9 @@ export function ImagingOrderFormTable({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={`${
+                  className={`hover:bg-slate-50 transition-all duration-200 ${
                     isFetching ? "opacity-60" : "opacity-100"
-                  } transition-opacity`}
+                  }`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-6 py-4">

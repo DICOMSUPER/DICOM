@@ -99,12 +99,10 @@ const ImagingOrderFormDetail = ({
     <div>
       <div className="w-full ">
         <div className="mb-6">
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-4xl font-bold text-gray-900">
             Imaging Order Form Details
           </div>
-          <div className="text-gray-600">
-            Complete information about this imaging order form
-          </div>
+
         </div>
 
         {!imagingOrderForm ? (
@@ -132,7 +130,7 @@ const ImagingOrderFormDetail = ({
                       </span>
                     </div>
                   )}
-                  {getStatusBadge(imagingOrderForm.orderFormStatus)}
+                  {/* {getStatusBadge(imagingOrderForm.orderFormStatus)} */}
                 </div>
               </div>
               <Separator className="my-3" />

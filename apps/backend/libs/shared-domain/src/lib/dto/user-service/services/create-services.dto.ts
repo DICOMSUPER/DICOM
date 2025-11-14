@@ -8,7 +8,7 @@ import {
 export class CreateServiceDto {
   @IsString()
   @MaxLength(20)
-  serviceCode!: string;
+  serviceCode?: string;
 
   @IsString()
   @MaxLength(100)

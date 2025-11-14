@@ -201,9 +201,6 @@ export default function QueuePage() {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-  const handleTransferPhysician = (id: string) => {
-    router.push(`/physicians/clinic-visit/transfer-physician/${id}`);
-  };
 
   const handleReset = () => {
     setFilters({
@@ -243,15 +240,15 @@ export default function QueuePage() {
                 <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
                   <Users size={16} />
                   <span className="text-sm font-semibold">
-                    Visited: {statsData?.totalArrivedEncounters || 0}
+                    Visited: {statsData?.data.totalArrivedEncounters || 0}
                   </span>
                 </div>
 
-                {/* Waiting */}
+                {/* Total */}
                 <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
                   <Clock size={16} />
                   <span className="text-sm font-semibold">
-                    Waiting: {statsData?.totalArrivedEncounters || 0}
+                    Total: {statsData?.data.totalEncounters || 0}
                   </span>
                 </div>
 
@@ -259,7 +256,7 @@ export default function QueuePage() {
                 <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
                   <CheckCircle size={16} />
                   <span className="text-sm font-semibold">
-                    Completed: {statsData?.totalCompletedEncounters || 0}
+                    Completed: {statsData?.data.totalCompletedEncounters || 0}
                   </span>
                 </div>
               </div>
@@ -282,7 +279,7 @@ export default function QueuePage() {
           isUpdating={isUpdating}
           isLoading={isLoading || isCurrentRoomLoading}
           isFetching={isFetching}
-          onTransferPhysician={handleTransferPhysician}
+          onTransferPhysician={handleOpenTransferModal}
         />
         <ModalTransferPhysician
           open={transferModalOpen}

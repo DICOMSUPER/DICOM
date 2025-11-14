@@ -45,22 +45,6 @@ export class PatientEncounterController {
     private readonly patientService: ClientProxy
   ) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createPatientEncounterDto: CreatePatientEncounterDto) {
-    try {
-      return await firstValueFrom(
-        this.patientService.send(
-          'PatientService.Encounter.Create',
-          createPatientEncounterDto
-        )
-      );
-    } catch (error) {
-      this.logger.error('Error creating encounter:', error);
-      throw error;
-    }
-  }
-
   @Get('in-room')
   @Role(Roles.PHYSICIAN)
   async findAllInRoom(
@@ -78,21 +62,38 @@ export class PatientEncounterController {
         ...filterQueue,
         ...validatedParams,
       };
-      console.log("Payload", payload);
-      
+      console.log('Payload', payload);
+
       const userId = req.userInfo.userId;
-      console.log("User id", userId);
-      
+      console.log('User id', userId);
+
       const result = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindManyInRoom', {
           filterQueue: payload,
           userId,
         })
       );
+      console.log('result', result);
 
       return result;
     } catch (error) {
       this.logger.error('Error finding all patient encounters in room:', error);
+      throw error;
+    }
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createPatientEncounterDto: CreatePatientEncounterDto) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send(
+          'PatientService.Encounter.Create',
+          createPatientEncounterDto
+        )
+      );
+    } catch (error) {
+      this.logger.error('Error creating encounter:', error);
       throw error;
     }
   }
@@ -134,9 +135,14 @@ export class PatientEncounterController {
   ) {
     try {
       return await firstValueFrom(
-        this.patientService.send('PatientService.Encounter.GetStatsInDateRange', {
-          dateFrom, dateTo, roomId
-        })
+        this.patientService.send(
+          'PatientService.Encounter.GetStatsInDateRange',
+          {
+            dateFrom,
+            dateTo,
+            roomId,
+          }
+        )
       );
     } catch (error) {
       this.logger.error('Error fetching encounter stats:', error);

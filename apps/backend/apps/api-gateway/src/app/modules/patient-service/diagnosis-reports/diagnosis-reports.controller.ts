@@ -1,3 +1,15 @@
+import { Role } from '@backend/shared-decorators';
+import {
+  CreateDiagnosesReportDto,
+  FilterDiagnosesReportDto,
+  UpdateDiagnosesReportDto,
+} from '@backend/shared-domain';
+import { Roles } from '@backend/shared-enums';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import {
   Body,
   Controller,
@@ -9,21 +21,11 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  CreateDiagnosesReportDto,
-  UpdateAiAnalysisDto,
-  UpdateDiagnosesReportDto,
-} from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
-import { Role } from '@backend/shared-decorators';
-import { Roles } from '@backend/shared-enums';
-import {
-  RequestLoggingInterceptor,
-  TransformInterceptor,
-} from '@backend/shared-interceptor';
 
 @Controller('diagnosis-reports')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -55,7 +57,7 @@ export class DiagnosisReportsController {
   @Patch(':id')
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   async updateDiagnoseReport(
-    @Param() id: string,
+    @Param("id") id: string,
     @Body() updateDiagnosesReportDto: UpdateDiagnosesReportDto
   ) {
     try {
@@ -125,6 +127,20 @@ export class DiagnosisReportsController {
     }
   }
 
+  @Get("with-filter")
+  @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
+  async getAllDiagnoses(
+    @Query() filter: FilterDiagnosesReportDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    return await firstValueFrom(
+      this.patientService.send(
+        'PatientService.DiagnosesReport.FindAllWithFilter',
+        { filter, userInfo: req.userInfo }
+      )
+    );
+  }
+
   @Get(':id')
   @Role(
     Roles.RADIOLOGIST,
@@ -132,7 +148,7 @@ export class DiagnosisReportsController {
     Roles.SYSTEM_ADMIN,
     Roles.IMAGING_TECHNICIAN
   )
-  async getDiagnosesReport(@Param() id: string) {
+  async getDiagnosesReport(@Param("id") id: string) {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindOne', {
@@ -165,7 +181,7 @@ export class DiagnosisReportsController {
     }
   }
 
- @Get('studyId/:studyId')
+  @Get('studyId/:studyId')
   @Role(
     Roles.RADIOLOGIST,
     Roles.PHYSICIAN,
@@ -176,7 +192,8 @@ export class DiagnosisReportsController {
     try {
       return await firstValueFrom(
         this.patientService.send(
-          'PatientService.DiagnosesReport.FindByStudyId', {
+          'PatientService.DiagnosesReport.FindByStudyId',
+          {
             studyId,
           }
         )

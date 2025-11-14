@@ -1,4 +1,4 @@
-import { getAvailableRoles } from "@/config/navigation";
+// import { getAvailableRoles } from "@/config/navigation";
 
 /**
  * Detects the user role based on the current pathname

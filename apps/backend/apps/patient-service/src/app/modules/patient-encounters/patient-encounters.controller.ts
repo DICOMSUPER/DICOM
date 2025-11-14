@@ -159,7 +159,7 @@ export class PatientEncounterController {
   findByRoom(
     @Payload() data: { filterQueue: FilterPatientEncounterDto; userId: string }
   ) {
-    console.log("dataa",data);
+    console.log("data",data);
     
     return this.patientEncounterService.getAllInRoom(
       data.filterQueue,

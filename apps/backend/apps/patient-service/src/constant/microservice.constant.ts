@@ -10,5 +10,6 @@ export const MESSAGE_PATTERNS = {
   FIND_MANY: 'FindMany',
   FIND_MANY_IN_ROOM: 'FindManyInRoom',
   GET_PATIENT_OVERVIEW: 'GetPatientOverview',
+  FIND_ALL_WITH_FILTER: 'FindAllWithFilter',
 
 } as const;

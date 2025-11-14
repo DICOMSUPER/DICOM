@@ -123,7 +123,7 @@ if (roomCode) {
 }
 
 async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoom[]> {
-  const { roomCode, serviceName, isActive } = filter;
+  const { roomId,roomCode, serviceName, isActive } = filter;
 
   const qb = this.serviceRoomRepository
     .createQueryBuilder('sr')
@@ -134,6 +134,11 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   if (serviceName) {
     qb.andWhere('service.serviceName LIKE :serviceName', { 
       serviceName: `%${serviceName}%` 
+    });
+  }
+  if (roomId) {
+    qb.andWhere('room.id = :roomId', { 
+      roomId
     });
   }
 

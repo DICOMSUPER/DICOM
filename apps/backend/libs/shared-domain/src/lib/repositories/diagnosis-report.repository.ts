@@ -373,4 +373,5 @@ export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
 
     return qb.getMany();
   }
+
 }
