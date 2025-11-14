@@ -24,9 +24,9 @@ export interface Room {
   createdAt: string;
   updatedAt: string;
   department: Department;
-  queueStats?: {
-    currentInProgress?: { queueNumber: number | null };
-    maxWaiting?: { queueNumber: number | null };
+  roomStats?: {
+    currentInProgress?: number;
+    maxWaiting?: number;
   };
 }
 

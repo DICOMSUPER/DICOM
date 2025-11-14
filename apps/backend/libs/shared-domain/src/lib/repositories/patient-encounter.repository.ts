@@ -12,6 +12,21 @@ import {
 } from '@backend/shared-enums';
 import type { VitalSignsCollection } from '@backend/shared-interfaces';
 
+export interface QueueInfo {
+  [roomId: string]: {
+    maxWaiting: { queueNumber: number; entity?: PatientEncounter } | null;
+    currentInProgress: {
+      queueNumber: number;
+      entity?: PatientEncounter;
+    } | null;
+  };
+}
+
+export interface RoomEncounterFilters {
+  roomId: string;
+  serviceRoomIds: string[];
+}
+
 export interface EncounterSearchFilters {
   patientId?: string;
   encounterType?: EncounterType;
@@ -292,157 +307,239 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     );
   }
 
- async getStatsInDateRange(
-  dateFrom: string,
-  dateTo: string,
-  serviceRoomIds?: string[]
-): Promise<any> {
-  const startDate = new Date(dateFrom + 'T00:00:00');  
-  const endDate = new Date(dateTo + 'T23:59:59.999');  
-  const queryBuilder = this.getRepository()
-    .createQueryBuilder('encounter')
-    .select('COUNT(*)', 'totalEncounters')
-    .addSelect(
-      `COUNT(CASE WHEN encounter.status = :finishedStatus THEN 1 END)`,
-      'totalCompletedEncounters'
-    )
-    .addSelect(
-      `COUNT(CASE WHEN encounter.status = :arrivedStatus THEN 1 END)`,
-      'totalArrivedEncounters'
-    )
+  async getStatsInDateRange(
+    dateFrom: string,
+    dateTo: string,
+    serviceRoomIds?: string[]
+  ): Promise<any> {
+    const startDate = new Date(dateFrom + 'T00:00:00');
+    const endDate = new Date(dateTo + 'T23:59:59.999');
+    const queryBuilder = this.getRepository()
+      .createQueryBuilder('encounter')
+      .select('COUNT(*)', 'totalEncounters')
+      .addSelect(
+        `COUNT(CASE WHEN encounter.status = :finishedStatus THEN 1 END)`,
+        'totalCompletedEncounters'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN encounter.status = :arrivedStatus THEN 1 END)`,
+        'totalArrivedEncounters'
+      )
 
-    .where('encounter.encounter_date >= :dateFrom', {
-      dateFrom: startDate,
-    })
-    .andWhere('encounter.encounter_date <= :dateTo', {
-      dateTo: endDate,
-    })
-    .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
-    .setParameter('finishedStatus', EncounterStatus.FINISHED)
-    .setParameter('arrivedStatus', EncounterStatus.ARRIVED);
+      .where('encounter.encounter_date >= :dateFrom', {
+        dateFrom: startDate,
+      })
+      .andWhere('encounter.encounter_date <= :dateTo', {
+        dateTo: endDate,
+      })
+      .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
+      .setParameter('finishedStatus', EncounterStatus.FINISHED)
+      .setParameter('arrivedStatus', EncounterStatus.ARRIVED);
 
-  if (serviceRoomIds && serviceRoomIds.length > 0) {
-    queryBuilder.andWhere('encounter.service_room_id IN (:...serviceRoomIds)', {
-      serviceRoomIds,
-    });
+    if (serviceRoomIds && serviceRoomIds.length > 0) {
+      queryBuilder.andWhere(
+        'encounter.service_room_id IN (:...serviceRoomIds)',
+        {
+          serviceRoomIds,
+        }
+      );
+    }
+
+    console.log('🔍 SQL:', queryBuilder.getSql());
+    console.log('🔍 Params:', queryBuilder.getParameters());
+
+    const result = await queryBuilder.getRawOne();
+
+    return {
+      totalEncounters: parseInt(result?.totalEncounters || '0', 10),
+      totalCompletedEncounters: parseInt(
+        result?.totalCompletedEncounters || '0',
+        10
+      ),
+      totalArrivedEncounters: parseInt(
+        result?.totalArrivedEncounters || '0',
+        10
+      ),
+    };
+  }
+  // async findInRoomWithFilters(filters: {
+  //   page: number;
+  //   limit: number;
+  //   fromDate: Date;
+  //   toDate: Date;
+  //   status?: EncounterStatus;
+  //   priority?: EncounterPriorityLevel;
+  //   orderNumber?: number;
+  //   patientName?: string;
+  //   serviceRoomIds?: string[];
+  // }): Promise<{ data: PatientEncounter[]; total: number }> {
+  //   const {
+  //     page,
+  //     limit,
+  //     fromDate,
+  //     toDate,
+  //     status,
+  //     priority,
+  //     orderNumber,
+  //     patientName,
+  //     serviceRoomIds,
+  //   } = filters;
+
+  async getLatestEncounterInDate(
+    servicesRoomIds: string[]
+  ): Promise<PatientEncounter | null> {
+    const repository = this.getRepository();
+
+    const startOfDate = new Date();
+    startOfDate.setHours(0, 0, 0, 0);
+
+    const endOfDate = new Date();
+    endOfDate.setHours(23, 59, 59, 999);
+
+    const qb = repository
+      .createQueryBuilder('encounter')
+      .where('encounter.serviceRoomId IN (:...servicesRoomIds)', {
+        servicesRoomIds,
+      })
+      .andWhere('encounter.created_at BETWEEN :startOfDate AND :endOfDate', {
+        startOfDate: startOfDate.toISOString(),
+        endOfDate: endOfDate.toISOString(),
+      })
+      .orderBy('encounter.order_number', 'DESC')
+      .limit(1);
+
+    return qb.getOne();
   }
 
-  console.log('🔍 SQL:', queryBuilder.getSql());
-  console.log('🔍 Params:', queryBuilder.getParameters());
+  // async findInRoomWithFilters(filters: {
+  //   page: number;
+  //   limit: number;
+  //   fromDate: Date;
+  //   toDate: Date;
+  //   status?: EncounterStatus;
+  //   priority?: EncounterPriorityLevel;
+  //   orderNumber?: number;
+  //   patientName?: string;
+  //   serviceRoomIds?: string[];
+  // }): Promise<{ data: PatientEncounter[]; total: number }> {
+  //   const {
+  //     page,
+  //     limit,
+  //     fromDate,
+  //     toDate,
+  //     status,
+  //     priority,
+  //     orderNumber,
+  //     patientName,
+  //     serviceRoomIds,
+  //   } = filters;
 
-  const result = await queryBuilder.getRawOne();
+  //   const queryBuilder = this.getRepository()
+  //     .createQueryBuilder('encounter')
+  //     .leftJoinAndSelect('encounter.patient', 'patient');
 
-  return {
-    totalEncounters: parseInt(result?.totalEncounters || '0', 10),
-    totalCompletedEncounters: parseInt(result?.totalCompletedEncounters || '0', 10),
-    totalArrivedEncounters: parseInt(result?.totalArrivedEncounters || '0', 10),
-  };
-}
-// async findInRoomWithFilters(filters: {
-//   page: number;
-//   limit: number;
-//   fromDate: Date;
-//   toDate: Date;
-//   status?: EncounterStatus;
-//   priority?: EncounterPriorityLevel;
-//   orderNumber?: number;
-//   patientName?: string;
-//   serviceRoomIds?: string[];
-// }): Promise<{ data: PatientEncounter[]; total: number }> {
-//   const {
-//     page,
-//     limit,
-//     fromDate,
-//     toDate,
-//     status,
-//     priority,
-//     orderNumber,
-//     patientName,
-//     serviceRoomIds,
-//   } = filters;
+  //   // ✅ Apply filters
+  //   queryBuilder.andWhere(
+  //     'encounter.encounter_date BETWEEN :fromDate AND :toDate',
+  //     { fromDate, toDate }
+  //   );
 
-//   const queryBuilder = this.getRepository()
-//     .createQueryBuilder('encounter')
-//     .leftJoinAndSelect('encounter.patient', 'patient');
+  //   if (status) {
+  //     queryBuilder.andWhere('encounter.status = :status', { status });
+  //   }
 
-//   // ✅ Apply filters
-//   queryBuilder.andWhere(
-//     'encounter.encounter_date BETWEEN :fromDate AND :toDate',
-//     { fromDate, toDate }
-//   );
+  //   if (priority) {
+  //     queryBuilder.andWhere('encounter.priority = :priority', { priority });
+  //   }
 
-//   if (status) {
-//     queryBuilder.andWhere('encounter.status = :status', { status });
-//   }
+  //   if (orderNumber) {
+  //     queryBuilder.andWhere('encounter.order_number = :orderNumber', {
+  //       orderNumber,
+  //     });
+  //   }
 
-//   if (priority) {
-//     queryBuilder.andWhere('encounter.priority = :priority', { priority });
-//   }
+  //   if (patientName) {
+  //     queryBuilder.andWhere(
+  //       `(patient.first_name || ' ' || patient.last_name) ILIKE :patientName`,
+  //       { patientName: `%${patientName}%` }
+  //     );
+  //   }
 
-//   if (orderNumber) {
-//     queryBuilder.andWhere('encounter.order_number = :orderNumber', {
-//       orderNumber,
-//     });
-//   }
+  //   if (serviceRoomIds && serviceRoomIds.length > 0) {
+  //     queryBuilder.andWhere(
+  //       'encounter.service_room_id IN (:...serviceRoomIds)',
+  //       { serviceRoomIds }
+  //     );
+  //   }
 
-//   if (patientName) {
-//     queryBuilder.andWhere(
-//       `(patient.first_name || ' ' || patient.last_name) ILIKE :patientName`,
-//       { patientName: `%${patientName}%` }
-//     );
-//   }
+  //   queryBuilder.andWhere('encounter.is_deleted = :isDeleted', {
+  //     isDeleted: false,
+  //   });
 
-//   if (serviceRoomIds && serviceRoomIds.length > 0) {
-//     queryBuilder.andWhere(
-//       'encounter.service_room_id IN (:...serviceRoomIds)',
-//       { serviceRoomIds }
-//     );
-//   }
+  //   queryBuilder
+  //     .addSelect(
+  //       `CASE
+  //         WHEN encounter.status = '${EncounterStatus.ARRIVED}' THEN 0
+  //         WHEN encounter.status = '${EncounterStatus.WAITING}' THEN 1
+  //         WHEN encounter.status = '${EncounterStatus.FINISHED}' THEN 3
+  //         ELSE 2
+  //       END`,
+  //       'status_priority'
+  //     )
+  //     .addSelect(
+  //       `CASE
+  //         WHEN encounter.status = '${EncounterStatus.WAITING}' AND encounter.skipped_at IS NOT NULL THEN 1
+  //         ELSE 0
+  //       END`,
+  //       'is_skipped'
+  //     )
+  //     .addSelect(
+  //       `CASE
+  //         WHEN encounter.priority = '${EncounterPriorityLevel.STAT}' THEN 0
+  //         WHEN encounter.priority = '${EncounterPriorityLevel.URGENT}' THEN 1
+  //         WHEN encounter.priority = '${EncounterPriorityLevel.ROUTINE}' THEN 2
+  //         ELSE 3
+  //       END`,
+  //       'priority_value'
+  //     );
 
-//   queryBuilder.andWhere('encounter.is_deleted = :isDeleted', {
-//     isDeleted: false,
-//   });
+  //   queryBuilder
+  //     .orderBy('status_priority', 'ASC')
+  //     .addOrderBy('is_skipped', 'ASC')
+  //     .addOrderBy('priority_value', 'ASC')
+  //     .addOrderBy('encounter.order_number', 'ASC');
 
+  //   const skip = (page - 1) * limit;
+  //   queryBuilder.skip(skip).take(limit);
 
-//   queryBuilder
-//     .addSelect(
-//       `CASE 
-//         WHEN encounter.status = '${EncounterStatus.ARRIVED}' THEN 0
-//         WHEN encounter.status = '${EncounterStatus.WAITING}' THEN 1
-//         WHEN encounter.status = '${EncounterStatus.FINISHED}' THEN 3
-//         ELSE 2
-//       END`,
-//       'status_priority'
-//     )
-//     .addSelect(
-//       `CASE 
-//         WHEN encounter.status = '${EncounterStatus.WAITING}' AND encounter.skipped_at IS NOT NULL THEN 1
-//         ELSE 0
-//       END`,
-//       'is_skipped'
-//     )
-//     .addSelect(
-//       `CASE 
-//         WHEN encounter.priority = '${EncounterPriorityLevel.STAT}' THEN 0
-//         WHEN encounter.priority = '${EncounterPriorityLevel.URGENT}' THEN 1
-//         WHEN encounter.priority = '${EncounterPriorityLevel.ROUTINE}' THEN 2
-//         ELSE 3
-//       END`,
-//       'priority_value'
-//     );
+  //   const total = await queryBuilder.getCount();
+  //   const data = await queryBuilder.getMany();
 
-//   queryBuilder
-//     .orderBy('status_priority', 'ASC')
-//     .addOrderBy('is_skipped', 'ASC')
-//     .addOrderBy('priority_value', 'ASC')
-//     .addOrderBy('encounter.order_number', 'ASC');
+  //   return { data, total };
+  // }
 
-//   const skip = (page - 1) * limit;
-//   queryBuilder.skip(skip).take(limit);
+  async getEncounterStatsByServiceRoomIdsInDate(
+    serviceRoomIds: string[]
+  ): Promise<PatientEncounter[]> {
+    const startOfDate = new Date();
+    startOfDate.setHours(0, 0, 0, 0);
 
-//   const total = await queryBuilder.getCount();
-//   const data = await queryBuilder.getMany();
+    const endOfDate = new Date();
+    endOfDate.setHours(23, 59, 59, 999);
 
-//   return { data, total };
-// }
+    const repository = await this.getRepository();
+
+    const qb = repository
+      .createQueryBuilder('encounter')
+      .leftJoinAndSelect('encounter.patient', 'patient')
+      .where('encounter.service_room_id IN (:...serviceRoomIds)', {
+        serviceRoomIds,
+      })
+      .andWhere('encounter.createdAt BETWEEN :startOfDate AND :endOfDate', {
+        startOfDate,
+        endOfDate,
+      });
+
+    return qb.getMany();
+  }
 }

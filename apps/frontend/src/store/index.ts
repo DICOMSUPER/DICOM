@@ -52,7 +52,6 @@ export const store = configureStore({
     [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
     [serviceApi.reducerPath]: serviceApi.reducer,
-   
     [imagingApi.reducerPath]: imagingApi.reducer,
   },
   middleware: (getDefault) =>

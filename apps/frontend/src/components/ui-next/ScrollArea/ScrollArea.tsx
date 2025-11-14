@@ -1,17 +1,18 @@
-import * as React from 'react';
-import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
+import * as React from "react";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 
-import { cn } from '../../../lib/utils';
-import { Icons } from '../Icons';
+import { cn } from "../../../lib/utils";
+import { Icons } from "../Icons";
 
 /**
  * Props interface for the ScrollArea component.
  * Extends Radix UI ScrollArea root props.
  */
-interface ScrollAreaProps extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
+interface ScrollAreaProps
+  extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
   /** Flag to show/hide scroll indicator arrows at top and bottom */
   showArrows?: boolean;
-  type?: 'auto' | 'always' | 'scroll';
+  type?: "auto" | "always" | "scroll";
 }
 
 /**
@@ -42,21 +43,27 @@ const ScrollArea = React.forwardRef<
   const checkScroll = React.useCallback(() => {
     if (viewportRef.current) {
       const { scrollHeight, clientHeight, scrollTop } = viewportRef.current;
-      setShowBottomArrow(scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight);
+      setShowBottomArrow(
+        scrollHeight > clientHeight && scrollTop < scrollHeight - clientHeight
+      );
       setShowTopArrow(scrollTop > 0);
     }
   }, []);
 
   React.useEffect(() => {
     checkScroll();
-    window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
   }, [checkScroll]);
 
   return (
     <ScrollAreaPrimitive.Root
       ref={ref}
-      className={cn('relative h-full overflow-hidden', className, '[&>div>div]:!block')}
+      className={cn(
+        "relative h-full overflow-hidden",
+        className,
+        "[&>div>div]:!block"
+      )}
       type={props.type}
       {...props}
     >
@@ -102,14 +109,16 @@ ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 const ScrollBar = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
->(({ className, orientation = 'vertical', ...props }, ref) => (
+>(({ className, orientation = "vertical", ...props }, ref) => (
   <ScrollAreaPrimitive.ScrollAreaScrollbar
     ref={ref}
     orientation={orientation}
     className={cn(
-      'flex touch-none select-none transition-colors',
-      orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent p-[2px]',
-      orientation === 'horizontal' && 'h-2 flex-col border-t border-t-transparent p-[1px]',
+      "flex touch-none select-none transition-colors",
+      orientation === "vertical" &&
+        "h-full w-2.5 border-l border-l-transparent p-[2px]",
+      orientation === "horizontal" &&
+        "h-2 flex-col border-t border-t-transparent p-[1px]",
       className
     )}
     {...props}
