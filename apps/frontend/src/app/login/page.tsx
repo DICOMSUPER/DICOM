@@ -40,7 +40,6 @@ export default function LoginPage() {
           errorMessage = `${errorMessage}: ${res.statusText}`;
         }
         toast.error(errorMessage);
-        throw new Error(errorMessage);
       }
 
       const data = await res.json();
@@ -55,7 +54,6 @@ export default function LoginPage() {
       const role = decoded.role;
       if (!role) {
         toast.error("Không tìm thấy role trong token");
-        throw new Error("Không tìm thấy role trong token");
       }
 
       // Dispatch credentials with user info

@@ -60,5 +60,4 @@ export enum AnnotationStatus {
   DRAFT = "draft",
   FINAL = "final",
   REVIEWED = "reviewed",
-  ARCHIVED = "archived",
 }

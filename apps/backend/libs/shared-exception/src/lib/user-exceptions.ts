@@ -28,10 +28,12 @@ export class UserAlreadyExistsException extends RpcException {
 }
 
 export class UserNotFoundException extends RpcException {
-  constructor(userId?: string) {
+  constructor(userId?: string, message?: string) {
+    console.log(userId)
+    console.log(message)
     super({
       statusCode: HttpStatus.NOT_FOUND,
-      message: `User${userId ? ` '${userId}'` : ''} not found`,
+      message: message ?? `User${userId ? ` '${userId}'` : ''} not found`,
       errorCode: 'USER_NOT_FOUND',
       details: { userId },
     });

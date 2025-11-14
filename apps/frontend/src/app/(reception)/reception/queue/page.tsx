@@ -10,6 +10,7 @@ import { QueueStatsCards } from "@/components/reception/queue-stats-cards";
 import { QueueTable } from "@/components/reception/queue-table";
 import { TabsContent } from "@/components/ui/tabs";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import { Clock, Users, CheckCircle } from "lucide-react";
 
 import {
@@ -188,9 +189,7 @@ export default function QueuePage() {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
+        <ErrorAlert title="Failed to load queue data" message={error} className="mb-4" />
       )}
 
       {/* Stats Cards */}

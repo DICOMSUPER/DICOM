@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionTable } from "./reception-table";
+import { DataTable } from "@/components/ui/data-table";
 import { TableRowEnhanced, TableCellEnhanced } from "@/components/ui/table-enhanced";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -72,7 +72,7 @@ export function AssignmentsTable({
   ];
 
   return (
-    <ReceptionTable
+    <DataTable
       headers={headers}
       isLoading={isLoading}
       isEmpty={assignments.length === 0}
@@ -161,6 +161,6 @@ export function AssignmentsTable({
           </TableCellEnhanced>
         </TableRowEnhanced>
       ))}
-    </ReceptionTable>
+    </DataTable>
   );
 }
