@@ -26,6 +26,7 @@ import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
 import { imagingApi } from "./imagingApi";
 import { serviceApi } from "./serviceApi";
 import { reportTemplateApi } from "./reportTemplateApi";
+import serviceRoomApi from "./serviceRoomApi";
 
 export const store = configureStore({
   reducer: {
@@ -55,6 +56,7 @@ export const store = configureStore({
     [serviceApi.reducerPath]: serviceApi.reducer,
     [imagingApi.reducerPath]: imagingApi.reducer,
     [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
+    [serviceRoomApi.reducerPath]: serviceRoomApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -81,7 +83,8 @@ export const store = configureStore({
       .concat(annotationApi.middleware)
       .concat(imagingApi.middleware)
       .concat(serviceApi.middleware)
-      .concat(reportTemplateApi.middleware),
+      .concat(reportTemplateApi.middleware)
+      .concat(serviceRoomApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
