@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
-import { useViewer } from "@/contexts/ViewerContext";
+import { useViewer, type AnnotationHistoryEntry } from "@/contexts/ViewerContext";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -219,12 +219,25 @@ const ViewPortMain = ({
     };
 
     const handleUndoAnnotation = (event?: Event) => {
+      let historyEntry: AnnotationHistoryEntry | undefined;
       if (event) {
-        const customEvent = event as CustomEvent;
+        const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
         const { activeViewportId } = customEvent.detail || {};
         if (activeViewportId && activeViewportId !== viewportId) return;
+        historyEntry = customEvent.detail?.entry;
       }
-      toolManagerRef.current?.getToolHandlers?.()?.undoAnnotation?.();
+      toolManagerRef.current?.getToolHandlers?.()?.undoAnnotation?.(historyEntry);
+    };
+
+    const handleRedoAnnotation = (event?: Event) => {
+      let historyEntry: AnnotationHistoryEntry | undefined;
+      if (event) {
+        const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
+        const { activeViewportId } = customEvent.detail || {};
+        if (activeViewportId && activeViewportId !== viewportId) return;
+        historyEntry = customEvent.detail?.entry;
+      }
+      toolManagerRef.current?.getToolHandlers?.()?.redoAnnotation?.(historyEntry);
     };
 
     const handleInvertColorMap = () => {
@@ -244,6 +257,7 @@ const ViewPortMain = ({
     window.addEventListener("clearAnnotations", handleClearAnnotations as EventListener);
     window.addEventListener("clearViewportAnnotations", handleClearViewportAnnotations as EventListener);
     window.addEventListener("undoAnnotation", handleUndoAnnotation as EventListener);
+    window.addEventListener("redoAnnotation", handleRedoAnnotation as EventListener);
     window.addEventListener("refreshViewport", handleRefresh);
 
     return () => {
@@ -256,6 +270,7 @@ const ViewPortMain = ({
       window.removeEventListener("clearAnnotations", handleClearAnnotations as EventListener);
       window.removeEventListener("clearViewportAnnotations", handleClearViewportAnnotations as EventListener);
       window.removeEventListener("undoAnnotation", handleUndoAnnotation as EventListener);
+      window.removeEventListener("redoAnnotation", handleRedoAnnotation as EventListener);
       window.removeEventListener("refreshViewport", handleRefresh);
     };
   }, [viewportIndex, viewportId, viewportReady, handleKeyDown, getViewportId, nextFrame, prevFrame, refreshViewport]);
@@ -347,6 +362,7 @@ const ViewPortMain = ({
           onToolChange={onToolChange}
           viewport={viewport}
           viewportReady={viewportReady}
+          viewportIndex={viewportIndex}
         />
       )}
 

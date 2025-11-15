@@ -1,6 +1,14 @@
 import { BaseEntity } from '@backend/database';
 import { ScheduleStatus } from '@backend/shared-enums';
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { EmployeeRoomAssignment } from './employee-room-assignments.entity';
 import { Room } from './room.entity';
 import { ShiftTemplate } from './shift-templates.entity';
@@ -31,7 +39,11 @@ export class RoomSchedule extends BaseEntity {
   @Column({ type: 'time', nullable: true })
   actual_end_time?: string;
 
-  @Column({ type: 'enum', enum: ScheduleStatus, default: ScheduleStatus.SCHEDULED })
+  @Column({
+    type: 'enum',
+    enum: ScheduleStatus,
+    default: ScheduleStatus.SCHEDULED,
+  })
   schedule_status!: ScheduleStatus;
 
   @Column({ type: 'text', nullable: true })
@@ -43,7 +55,10 @@ export class RoomSchedule extends BaseEntity {
   @Column({ type: 'uuid', nullable: true })
   created_by?: string;
 
-  @OneToMany(() => EmployeeRoomAssignment, (assignment) => assignment.roomSchedule)
+  @OneToMany(
+    () => EmployeeRoomAssignment,
+    (assignment) => assignment.roomSchedule
+  )
   employeeRoomAssignments!: EmployeeRoomAssignment[];
 
   @ManyToOne(() => Room)

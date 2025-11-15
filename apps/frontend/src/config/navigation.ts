@@ -104,6 +104,12 @@ export const roleNavigation: RoleNavigation = {
       icon: Monitor,
       description: "Manage clinic rooms and resources",
     },
+    {
+      href: "/admin/room-assignments",
+      label: "Room Assignments",
+      icon: UserCheck,
+      description: "Assign employees to room schedules",
+    },
   ],
 
   // Reception Staff - Patient registration and queue management

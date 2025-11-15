@@ -96,6 +96,17 @@ export const roomApi = createApi({
       }),
       invalidatesTags: ["Room"],
     }),
+
+    getRoomsByDepartmentAndService: builder.query<
+      ApiResponse<Room[]>,
+      { serviceId: string; departmentId: string; role?: Roles }
+    >({
+      query: ({ serviceId, departmentId, role }) => ({
+        url: "/by-department-and-service",
+        method: "GET",
+        params: { serviceId, departmentId, role },
+      }),
+    }),
   }),
 });
 
@@ -107,4 +118,5 @@ export const {
   useCreateRoomMutation,
   useUpdateRoomMutation,
   useDeleteRoomMutation,
+  useGetRoomsByDepartmentAndServiceQuery,
 } = roomApi;

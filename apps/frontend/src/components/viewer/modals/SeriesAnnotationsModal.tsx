@@ -8,7 +8,22 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Inbox, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  AlertTriangle,
+  Inbox,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Lock,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
@@ -16,7 +31,10 @@ import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interfac
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import { extractApiData } from "@/utils/api";
 import { AnnotationStatus } from "@/enums/image-dicom.enum";
-import { useLazyGetAnnotationsBySeriesIdQuery } from "@/store/annotationApi";
+import {
+  useLazyGetAnnotationsBySeriesIdQuery,
+  useUpdateAnnotationMutation,
+} from "@/store/annotationApi";
 import { Annotation } from "@/types/Annotation";
 import { useViewer } from "@/contexts/ViewerContext";
 
@@ -38,6 +56,7 @@ export function SeriesAnnotationsModal({
 }: SeriesAnnotationsModalProps) {
   const { state } = useViewer();
   const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
+  const [updateAnnotation] = useUpdateAnnotationMutation();
 
   const [annotationsLoading, setAnnotationsLoading] = useState(false);
   const [annotationsError, setAnnotationsError] = useState<string | null>(null);
@@ -48,6 +67,10 @@ export function SeriesAnnotationsModal({
   const [expandedSeriesIds, setExpandedSeriesIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [finalizationConfirmations, setFinalizationConfirmations] = useState<
+    Record<string, boolean>
+  >({});
+  const [finalizingAnnotationId, setFinalizingAnnotationId] = useState<string | null>(null);
 
   const handleClose = useCallback(
     (nextOpen: boolean) => {
@@ -213,8 +236,6 @@ export function SeriesAnnotationsModal({
         return "border-emerald-500/30 bg-emerald-500/15 text-emerald-200";
       case "reviewed":
         return "border-blue-500/30 bg-blue-500/15 text-blue-200";
-      case "archived":
-        return "border-slate-500/30 bg-slate-500/15 text-slate-200";
       default:
         return "border-slate-600/60 bg-slate-800 text-slate-200";
     }
@@ -247,10 +268,53 @@ export function SeriesAnnotationsModal({
     return `${labels.length} series loaded${preview ? `: ${preview}${extra}` : ""}`;
   }, [loadedSeriesList]);
 
+  const handleFinalizeAnnotation = useCallback(
+    async (annotationId: string) => {
+      setFinalizingAnnotationId(annotationId);
+      try {
+        await updateAnnotation({
+          id: annotationId,
+          data: { annotationStatus: AnnotationStatus.FINAL },
+        }).unwrap();
+
+        setSeriesGroups((prev) =>
+          prev.map((group) => ({
+            ...group,
+            entries: group.entries.map((entry) =>
+              entry.annotation.id === annotationId
+                ? {
+                    ...entry,
+                    annotation: {
+                      ...entry.annotation,
+                      annotationStatus: AnnotationStatus.FINAL,
+                    },
+                  }
+                : entry
+            ),
+          }))
+        );
+
+        setFinalizationConfirmations((prev) => ({
+          ...prev,
+          [annotationId]: false,
+        }));
+
+        toast.success("Annotation marked as final.");
+      } catch (error) {
+        console.error("Failed to finalize annotation", error);
+        toast.error("Unable to finalize annotation. Please try again.");
+      } finally {
+        setFinalizingAnnotationId(null);
+      }
+    },
+    [updateAnnotation, setSeriesGroups, setFinalizationConfirmations]
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[80vw] border border-slate-800 bg-slate-950/95 text-slate-100 shadow-2xl shadow-teal-500/10 backdrop-blur-md sm:max-w-[1200px]">
-        <div className="flex h-[85vh] max-h-[85vh] flex-col gap-5">
+      <TooltipProvider delayDuration={200}>
+        <DialogContent className="max-w-[80vw] border border-slate-800 bg-slate-950/95 text-slate-100 shadow-2xl shadow-teal-500/10 backdrop-blur-md sm:max-w-[1200px]">
+          <div className="flex h-[85vh] max-h-[85vh] flex-col gap-5">
           <DialogHeader className="shrink-0 rounded-xl bg-slate-900/95 px-6 py-5 shadow-inner shadow-slate-950/40">
             <DialogTitle className="text-2xl font-semibold text-white">
               Series Annotations
@@ -432,6 +496,16 @@ export function SeriesAnnotationsModal({
                               const sliceIndex = metadata?.sliceIndex;
                               const referencedImageId =
                                 metadata?.referencedImageId || undefined;
+                              const currentStatus =
+                                annotation.annotationStatus || AnnotationStatus.DRAFT;
+                              const isDraftStatus =
+                                currentStatus === AnnotationStatus.DRAFT;
+                              const isFinalStatus =
+                                currentStatus === AnnotationStatus.FINAL;
+                              const finalizationConfirmed =
+                                finalizationConfirmations[annotation.id] ?? false;
+                              const isFinalizing =
+                                finalizingAnnotationId === annotation.id;
 
                               return (
                                 <div
@@ -461,6 +535,19 @@ export function SeriesAnnotationsModal({
                                         >
                                           {formatStatusLabel(annotation.annotationStatus)}
                                         </Badge>
+                                        {isFinalStatus && (
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200">
+                                                <Lock className="h-3.5 w-3.5" />
+                                                <span>Locked</span>
+                                              </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom" className="text-slate-100">
+                                              Final annotations are read-only.
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
                                       </div>
                                       {annotation.colorCode && (
                                         <div className="flex flex-col items-end gap-1">
@@ -478,6 +565,48 @@ export function SeriesAnnotationsModal({
                                       )}
                                     </div>
                                   </div>
+
+                                  {isDraftStatus && (
+                                    <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm text-amber-100">
+                                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                        <div className="flex flex-1 items-start gap-3">
+                                          <Checkbox
+                                            id={`finalize-${annotation.id}`}
+                                            checked={finalizationConfirmed}
+                                            onCheckedChange={(checked) =>
+                                              setFinalizationConfirmations((prev) => ({
+                                                ...prev,
+                                                [annotation.id]: Boolean(checked),
+                                              }))
+                                            }
+                                            className="mt-0.5 border-amber-400/60 text-amber-300"
+                                          />
+                                          <label
+                                            htmlFor={`finalize-${annotation.id}`}
+                                            className="text-xs leading-tight text-amber-100"
+                                          >
+                                            I confirm this annotation is complete and ready to be
+                                            marked as final. This action cannot be reverted.
+                                          </label>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="border-amber-400/60 bg-amber-500/10 text-amber-100 hover:bg-amber-500/20"
+                                          disabled={!finalizationConfirmed || isFinalizing}
+                                          onClick={() => handleFinalizeAnnotation(annotation.id)}
+                                        >
+                                          {isFinalizing && (
+                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                          )}
+                                          Mark as Final
+                                        </Button>
+                                      </div>
+                                      <p className="mt-2 text-[11px] text-amber-200/80">
+                                        Final annotations are locked for editing.
+                                      </p>
+                                    </div>
+                                  )}
 
                                   {annotation.textContent && (
                                     <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/90 px-4 py-3 text-sm text-slate-200">
@@ -543,8 +672,9 @@ export function SeriesAnnotationsModal({
               </div>
             )}
           </div>
-        </div>
-      </DialogContent>
+          </div>
+        </DialogContent>
+      </TooltipProvider>
     </Dialog>
   );
 }

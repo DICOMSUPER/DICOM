@@ -41,6 +41,7 @@ import {
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 
 export default function EncountersPage() {
@@ -165,11 +166,11 @@ export default function EncountersPage() {
 
       {/* Error Display */}
       {Boolean(error) && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">
-            An error occurred while loading encounters
-          </p>
-        </div>
+        <ErrorAlert
+          className="mb-4"
+          title="Failed to load encounters"
+          message="An error occurred while loading encounters."
+        />
       )}
 
       {/* Stats Cards */}

@@ -1,17 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { AppHeader } from "@/components/app-header";
 import { useBreadcrumb } from "@/hooks/use-breadcrumb";
 import { cn } from "@/lib/utils";
-import { logout } from "@/store/authSlice";
-import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RootState } from "@/store";
+import { useLogout } from "@/hooks/use-logout";
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode;
@@ -32,17 +30,11 @@ export function WorkspaceLayout({
 }: WorkspaceLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const breadcrumbItems = useBreadcrumb();
-  const router = useRouter();
-  const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
+  const { logout: triggerLogout } = useLogout();
 
   const handleLogout = () => {
-    dispatch(logout());
-    toast.success("Logged out successfully");
-    // Small delay to show toast before redirect
-    setTimeout(() => {
-      router.push("/login");
-    }, 500);
+    triggerLogout();
   };
   const sideBarClassName = sideBarClass
     ? `flex-1 overflow-y-auto ${sideBarClass}`

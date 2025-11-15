@@ -24,11 +24,15 @@ import {
   init as csToolsInit,
   Enums as ToolEnums,
   segmentation,
+  annotation,
 } from '@cornerstonejs/tools';
 import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
 import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
+import { useLazyGetAnnotationsBySeriesIdQuery } from '@/store/annotationApi';
 import { extractApiData } from '@/utils/api';
 import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
+import { ImageAnnotation } from '@/interfaces/image-dicom/image-annotation.interface';
+import { Annotation } from '@/types/Annotation';
 
 export type ToolType = 
   | 'WindowLevel'
@@ -104,6 +108,18 @@ export interface ViewerState {
   historyIndex: number;
 }
 
+export interface AnnotationHistoryEntry {
+  annotationUID: string;
+  toolName: string;
+  snapshot: Annotation;
+  viewportId?: string;
+}
+
+interface AnnotationHistoryStacks {
+  undoStack: AnnotationHistoryEntry[];
+  redoStack: AnnotationHistoryEntry[];
+}
+
 export interface ViewerContextType {
   state: ViewerState;
   setActiveTool: (tool: ToolType) => void;
@@ -116,6 +132,14 @@ export interface ViewerContextType {
   clearAnnotations: () => void;
   clearViewportAnnotations: () => void;
   undoAnnotation: () => void;
+  redoAnnotation: () => void;
+  recordAnnotationHistoryEntry: (viewport: number, entry: AnnotationHistoryEntry) => void;
+  updateAnnotationHistoryEntry: (
+    viewport: number,
+    annotationUID: string,
+    snapshot: Annotation
+  ) => void;
+  removeAnnotationHistoryEntry: (viewport: number, annotationUID: string) => void;
   setViewportSeries: (viewport: number, series: DicomSeries) => void;
   getViewportSeries: (viewport: number) => DicomSeries | undefined;
   getViewportTransform: (viewport: number) => ViewportTransform;
@@ -366,6 +390,61 @@ const viewerReducer = (state: ViewerState, action: ViewerAction): ViewerState =>
   }
 };
 
+const globalClone =
+  (globalThis as unknown as { structuredClone?: <T>(value: T) => T }).structuredClone;
+
+const cloneSnapshot = <T,>(value: T): T => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (typeof globalClone === 'function') {
+    return globalClone(value);
+  }
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return value;
+  }
+};
+
+const cloneHistoryEntry = (entry: AnnotationHistoryEntry): AnnotationHistoryEntry => ({
+  ...entry,
+  snapshot: cloneSnapshot(entry.snapshot),
+});
+
+const buildDatabaseAnnotationPayload = (
+  record: ImageAnnotation,
+  seriesId: string,
+  viewportId?: string
+): Annotation | null => {
+  if (!record?.annotationData) {
+    return null;
+  }
+  const baseAnnotation = cloneSnapshot(record.annotationData) as Annotation | undefined;
+  if (!baseAnnotation) {
+    return null;
+  }
+  const metadata = {
+    ...(baseAnnotation.metadata ?? {}),
+    source: 'db',
+    dbAnnotationId: record.id,
+    annotationId: record.annotationId ?? record.id,
+    instanceId: record.instanceId,
+    seriesId,
+    viewportId: viewportId ?? baseAnnotation.metadata?.viewportId,
+  };
+  baseAnnotation.metadata = metadata;
+  baseAnnotation.annotationUID =
+    baseAnnotation.annotationUID ||
+    (baseAnnotation.metadata?.annotationUID as string | undefined) ||
+    record.annotationData?.annotationUID ||
+    record.id;
+  if (typeof baseAnnotation.isLocked !== 'boolean') {
+    baseAnnotation.isLocked = true;
+  }
+  return baseAnnotation;
+};
+
 const ViewerContext = createContext<ViewerContextType | undefined>(undefined);
 
 const hasRenderAsync = (
@@ -432,6 +511,7 @@ const canReuseViewportStack = (
 export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(viewerReducer, defaultState);
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
+  const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
   const viewportElementsRef = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const viewportRefs = useRef<Map<number, Types.IStackViewport>>(new Map());
   const viewportListenersRef = useRef<
@@ -440,6 +520,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const abortControllersRef = useRef<Map<number, AbortController>>(new Map());
   const currentInstancesRef = useRef<Map<number, any[]>>(new Map());
   const imageIdInstanceMapRef = useRef<Map<number, Record<string, string>>>(new Map());
+  const dbAnnotationsRenderedRef = useRef<Map<number, Set<string>>>(new Map());
+  const annotationHistoryRef = useRef<Map<number, AnnotationHistoryStacks>>(new Map());
   const seriesInstancesCacheRef = useRef<LRUCache<string, Record<string, any[]>>>(
     new LRUCache(SERIES_CACHE_MAX_ENTRIES)
   );
@@ -452,6 +534,187 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       mountedRef.current = false;
     };
   }, []);
+
+  const ensureDbAnnotationTracker = useCallback((viewport: number): Set<string> => {
+    if (!dbAnnotationsRenderedRef.current.has(viewport)) {
+      dbAnnotationsRenderedRef.current.set(viewport, new Set());
+    }
+    return dbAnnotationsRenderedRef.current.get(viewport)!;
+  }, []);
+
+  const clearDbAnnotationsForViewport = useCallback((viewport: number) => {
+    dbAnnotationsRenderedRef.current.delete(viewport);
+  }, []);
+
+  const ensureAnnotationHistoryStacks = useCallback(
+    (viewport: number): AnnotationHistoryStacks => {
+      if (!annotationHistoryRef.current.has(viewport)) {
+        annotationHistoryRef.current.set(viewport, { undoStack: [], redoStack: [] });
+      }
+      return annotationHistoryRef.current.get(viewport)!;
+    },
+    []
+  );
+
+  const recordAnnotationHistoryEntry = useCallback(
+    (viewport: number, entry: AnnotationHistoryEntry) => {
+      if (!entry.annotationUID) {
+        return;
+      }
+      const stacks = ensureAnnotationHistoryStacks(viewport);
+      const sanitizedEntry = cloneHistoryEntry(entry);
+      const existingIndex = stacks.undoStack.findIndex(
+        candidate => candidate.annotationUID === sanitizedEntry.annotationUID
+      );
+      if (existingIndex !== -1) {
+        stacks.undoStack.splice(existingIndex, 1);
+      }
+      stacks.undoStack.push(sanitizedEntry);
+      stacks.redoStack = [];
+    },
+    [ensureAnnotationHistoryStacks]
+  );
+
+  const updateAnnotationHistoryEntry = useCallback(
+    (viewport: number, annotationUID: string, snapshot: Annotation) => {
+      if (!annotationUID) {
+        return;
+      }
+      const stacks = ensureAnnotationHistoryStacks(viewport);
+      const applyUpdate = (stack: AnnotationHistoryEntry[]) => {
+        const index = stack.findIndex(candidate => candidate.annotationUID === annotationUID);
+        if (index !== -1) {
+          stack[index] = {
+            ...stack[index],
+            snapshot: cloneSnapshot(snapshot),
+          };
+        }
+      };
+      applyUpdate(stacks.undoStack);
+      applyUpdate(stacks.redoStack);
+    },
+    [ensureAnnotationHistoryStacks]
+  );
+
+  const removeAnnotationHistoryEntry = useCallback(
+    (viewport: number, annotationUID: string) => {
+      if (!annotationUID) {
+        return;
+      }
+      const stacks = ensureAnnotationHistoryStacks(viewport);
+      const removeFromStack = (stack: AnnotationHistoryEntry[]) => {
+        const index = stack.findIndex(candidate => candidate.annotationUID === annotationUID);
+        if (index !== -1) {
+          stack.splice(index, 1);
+        }
+      };
+      removeFromStack(stacks.undoStack);
+      removeFromStack(stacks.redoStack);
+    },
+    [ensureAnnotationHistoryStacks]
+  );
+
+  const clearAnnotationHistoryForViewport = useCallback((viewport: number) => {
+    annotationHistoryRef.current.delete(viewport);
+  }, []);
+
+  const consumeUndoEntry = useCallback(
+    (viewport: number): AnnotationHistoryEntry | null => {
+      const stacks = annotationHistoryRef.current.get(viewport);
+      if (!stacks || stacks.undoStack.length === 0) {
+        return null;
+      }
+      const entry = stacks.undoStack.pop() ?? null;
+      if (entry) {
+        stacks.redoStack.push(entry);
+        return entry;
+      }
+      return null;
+    },
+    []
+  );
+
+  const consumeRedoEntry = useCallback(
+    (viewport: number): AnnotationHistoryEntry | null => {
+      const stacks = annotationHistoryRef.current.get(viewport);
+      if (!stacks || stacks.redoStack.length === 0) {
+        return null;
+      }
+      const entry = stacks.redoStack.pop() ?? null;
+      if (entry) {
+        stacks.undoStack.push(entry);
+        return entry;
+      }
+      return null;
+    },
+    []
+  );
+
+  const loadDatabaseAnnotationsForViewport = useCallback(
+    async ({
+      viewport,
+      seriesId,
+      viewportId,
+      viewportElement,
+      bailIfStale,
+    }: {
+      viewport: number;
+      seriesId: string;
+      viewportId?: string;
+      viewportElement: HTMLDivElement | null;
+      bailIfStale?: () => boolean;
+    }) => {
+      if (!viewportElement || !seriesId) {
+        return;
+      }
+
+      if (bailIfStale?.()) {
+        return;
+      }
+
+      try {
+        const response = await fetchAnnotationsBySeries(seriesId).unwrap();
+        if (bailIfStale?.()) {
+          return;
+        }
+        const annotations = extractApiData<ImageAnnotation>(response);
+        if (!Array.isArray(annotations) || annotations.length === 0) {
+          return;
+        }
+
+        const addAnnotationApi = (annotation.state as unknown as {
+          addAnnotation?: (annotation: Annotation, element: HTMLDivElement) => void;
+        }).addAnnotation;
+
+        if (typeof addAnnotationApi !== 'function') {
+          return;
+        }
+
+        const tracker = ensureDbAnnotationTracker(viewport);
+
+        annotations.forEach((record) => {
+          if (!record?.id || tracker.has(record.id)) {
+            return;
+          }
+          const payload = buildDatabaseAnnotationPayload(record, seriesId, viewportId);
+          if (!payload || bailIfStale?.()) {
+            return;
+          }
+          try {
+            addAnnotationApi(payload, viewportElement);
+            tracker.add(record.id);
+          } catch (addError) {
+            console.error('Failed to render annotation', record.id, addError);
+          }
+        });
+      } catch (error) {
+        if (!bailIfStale?.()) {
+          console.error('Failed to load annotations for series', seriesId, error);
+        }
+      }
+    },
+    [ensureDbAnnotationTracker, fetchAnnotationsBySeries]
+  );
 
   const getViewportRuntimeState = useCallback(
     (viewport: number): ViewportRuntimeState => {
@@ -804,6 +1067,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
       setRenderingEngineId(viewport, '');
       setViewportId(viewport, '');
+      clearAnnotationHistoryForViewport(viewport);
+      clearDbAnnotationsForViewport(viewport);
     },
     [
       getRenderingEngineId,
@@ -811,6 +1076,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       removeViewportListeners,
       setRenderingEngineId,
       setViewportId,
+      clearAnnotationHistoryForViewport,
+      clearDbAnnotationsForViewport,
     ]
   );
 
@@ -923,15 +1190,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       series?: DicomSeries | null,
       options?: { studyId?: string | null; forceRebuild?: boolean }
     ) => {
-      console.log("test")
       const studyId = options?.studyId ?? null;
       const forceRebuild = options?.forceRebuild ?? false;
       const seriesId = series?.id;
 
       if (!seriesId) {
+        clearAnnotationHistoryForViewport(viewport);
+        clearDbAnnotationsForViewport(viewport);
         disposeViewport(viewport);
         return;
       }
+
+      clearDbAnnotationsForViewport(viewport);
 
       const element = viewportElementsRef.current.get(viewport);
       if (!element) {
@@ -939,6 +1209,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       }
 
       setViewportSeries(viewport, series);
+      clearAnnotationHistoryForViewport(viewport);
 
       const currentRuntime = getViewportRuntimeState(viewport);
       if (studyId && currentRuntime.studyId && currentRuntime.studyId !== studyId) {
@@ -1080,6 +1351,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                   ? existingViewport.getCurrentImageIdIndex()
                   : 0;
               prefetchImages(imageIds, currentIndex);
+              void loadDatabaseAnnotationsForViewport({
+                viewport,
+                seriesId,
+                viewportId: currentViewportId,
+                viewportElement: existingViewport.element as HTMLDivElement | null,
+                bailIfStale,
+              });
               safeUpdateRuntime(prev => ({
                 ...prev,
                 seriesId,
@@ -1109,6 +1387,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
             addViewportListeners(viewport, existingViewport);
             prefetchImages(imageIds, 0);
+            void loadDatabaseAnnotationsForViewport({
+              viewport,
+              seriesId,
+              viewportId: currentViewportId,
+              viewportElement: existingViewport.element as HTMLDivElement | null,
+              bailIfStale,
+            });
 
             safeUpdateRuntime(prev => ({
               ...prev,
@@ -1181,6 +1466,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         
         addViewportListeners(viewport, readyViewport);
         prefetchImages(imageIds, 0);
+        void loadDatabaseAnnotationsForViewport({
+          viewport,
+          seriesId,
+          viewportId: currentViewportId,
+          viewportElement: readyViewport.element as HTMLDivElement | null,
+          bailIfStale,
+        });
 
         safeUpdateRuntime(prev => ({
           ...prev,
@@ -1221,6 +1513,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       setViewportId,
       setViewportRuntimeState,
       setViewportSeries,
+      clearAnnotationHistoryForViewport,
+      clearDbAnnotationsForViewport,
+      loadDatabaseAnnotationsForViewport,
     ]
   );
 
@@ -1295,6 +1590,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const clearAnnotations = () => {
     console.log('Clear annotations requested from context');
+    clearAnnotationHistoryForViewport(state.activeViewport);
     // Dispatch custom event that ViewPortMain will listen to
     // Include active viewport ID to target specific viewport or fallback to Cornerstone.js standard ID
     const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
@@ -1305,6 +1601,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const clearViewportAnnotations = () => {
     console.log('Clear viewport annotations requested from context');
+    clearAnnotationHistoryForViewport(state.activeViewport);
     const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
     window.dispatchEvent(new CustomEvent('clearViewportAnnotations', {
       detail: { activeViewportId }
@@ -1313,12 +1610,35 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const undoAnnotation = () => {
     console.log('Undo annotation requested from context');
-    // Dispatch custom event that ViewPortMain will listen to
-    // Include active viewport ID to target specific viewport or fallback to Cornerstone.js standard ID
-    const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
-    window.dispatchEvent(new CustomEvent('undoAnnotation', {
-      detail: { activeViewportId }
-    }));
+    const viewportIndex = state.activeViewport;
+    const activeViewportId = state.viewportIds.get(viewportIndex) || viewportIndex.toString();
+    const historyEntry = consumeUndoEntry(viewportIndex);
+    window.dispatchEvent(
+      new CustomEvent('undoAnnotation', {
+        detail: {
+          activeViewportId,
+          entry: historyEntry ? cloneHistoryEntry(historyEntry) : undefined,
+        },
+      })
+    );
+  };
+
+  const redoAnnotation = () => {
+    console.log('Redo annotation requested from context');
+    const viewportIndex = state.activeViewport;
+    const activeViewportId = state.viewportIds.get(viewportIndex) || viewportIndex.toString();
+    const historyEntry = consumeRedoEntry(viewportIndex);
+    if (!historyEntry) {
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent('redoAnnotation', {
+        detail: {
+          activeViewportId,
+          entry: cloneHistoryEntry(historyEntry),
+        },
+      })
+    );
   };
 
   const value: ViewerContextType = {
@@ -1333,6 +1653,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     clearAnnotations,
     clearViewportAnnotations,
     undoAnnotation,
+    redoAnnotation,
+    recordAnnotationHistoryEntry,
+    updateAnnotationHistoryEntry,
+    removeAnnotationHistoryEntry,
     setViewportSeries,
     getViewportSeries,
     getViewportTransform,

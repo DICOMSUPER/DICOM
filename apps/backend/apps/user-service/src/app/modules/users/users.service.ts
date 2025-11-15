@@ -58,7 +58,7 @@ export class UsersService {
       const user = await this.findByEmail(email);
       if (!user) {
         throw new UserNotFoundException(
-          'Không tìm thấy người dùng với email này'
+          undefined, 'Không tìm thấy người dùng với email này'
         );
       }
 
@@ -300,7 +300,7 @@ export class UsersService {
 
       const user = await this.findByEmail(email);
       if (!user) {
-        throw new UserNotFoundException('Không tìm thấy người dùng');
+        throw new UserNotFoundException(undefined,'Không tìm thấy người dùng');
       }
 
       const { passwordHash, ...userWithoutPassword } = user;
@@ -518,13 +518,13 @@ export class UsersService {
         relations: ['department'],
       });
       if (!user) {
-        throw new UserNotFoundException('Không tìm thấy người dùng');
+        throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
       }
       const { passwordHash, ...userWithoutPassword } = user;
       if (userWithoutPassword) {
         return userWithoutPassword;
       }
-      throw new UserNotFoundException('Người dùng đã bị xóa');
+      throw new UserNotFoundException(undefined, 'Người dùng đã bị xóa');
     } catch (error) {
       throw new DatabaseException('Lỗi khi lấy người dùng');
     }

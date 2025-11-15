@@ -37,7 +37,7 @@ export default function OrderPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            <AlertCircle className="h-5 w-5 text-foreground" />
             <CardTitle>No Order Selected</CardTitle>
           </div>
           <CardDescription>
@@ -45,7 +45,7 @@ export default function OrderPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-foreground">
             Navigate to an order from the dashboard or search to view its
             imaging information.
           </p>

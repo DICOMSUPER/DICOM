@@ -242,6 +242,14 @@ export function DraftAnnotationsModal({
 
         annotationsForType.forEach((annotationItem: Annotation) => {
           if (!annotationItem) return;
+          const metadataRecord = annotationItem.metadata as Record<string, unknown> | undefined;
+          const sourceValue =
+            typeof metadataRecord?.["source"] === "string"
+              ? (metadataRecord["source"] as string).toLowerCase()
+              : undefined;
+          if (sourceValue === "db") {
+            return;
+          }
 
           const sliceIndex = annotationItem.metadata?.sliceIndex ?? 0;
           let matchedInstance: DicomInstance | undefined;
@@ -523,8 +531,6 @@ export function DraftAnnotationsModal({
         return "border-emerald-500/30 bg-emerald-500/15 text-emerald-200";
       case "reviewed":
         return "border-blue-500/30 bg-blue-500/15 text-blue-200";
-      case "archived":
-        return "border-slate-500/30 bg-slate-500/15 text-slate-200";
       default:
         return "border-slate-600/60 bg-slate-800 text-slate-200";
     }

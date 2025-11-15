@@ -13,7 +13,10 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
-import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 
 @Controller('body-part')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)

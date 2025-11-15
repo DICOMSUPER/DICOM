@@ -11,7 +11,7 @@ import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
 // import { RoomSchedule } from './room-schedules.entity';
 import { ServiceRoom } from './services-rooms.entity';
-
+import { RoomSchedule } from './room-schedules.entity';
 
 export enum RoomStatus {
   AVAILABLE = 'AVAILABLE',
@@ -94,10 +94,9 @@ export class Room extends BaseEntity {
   @JoinColumn({ name: 'department_id' })
   department?: Department;
 
-  // @OneToMany(() => RoomSchedule, (schedule) => schedule.room)
-  // schedules!: RoomSchedule[];
+  @OneToMany(() => RoomSchedule, (schedule) => schedule.room)
+  schedules!: RoomSchedule[];
 
   @OneToMany(() => ServiceRoom, (serviceRoom) => serviceRoom.room)
   serviceRooms!: ServiceRoom[];
-
 }

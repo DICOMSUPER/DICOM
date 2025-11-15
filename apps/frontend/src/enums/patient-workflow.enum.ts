@@ -8,11 +8,11 @@ export enum PatientStatus {
   DELETED = "DELETED",
 }
 
-
 export enum EncounterType {
   OUTPATIENT = "outpatient",
   INPATIENT = "inpatient",
   EMERGENCY = "emergency",
+  FOLLOW_UP = "follow_up",
 }
 
 export enum DiagnosisType {
@@ -199,7 +199,7 @@ export enum EncounterStatus {
   FINISHED = "finished",
 }
 export enum EncounterPriorityLevel {
-  ROUTINE = "Routine",     
-  URGENT = "Urgent",   
-  STAT = "Stat",      
+  ROUTINE = "Routine",
+  URGENT = "Urgent",
+  STAT = "Stat",
 }
