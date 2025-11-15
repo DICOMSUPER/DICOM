@@ -1,4 +1,5 @@
-import { ImagingProcedure } from "@/app/(physicians)/physicians/create-imaging-order/page";
+
+import { ImagingProcedure } from "@/components/patients/detail/create-order-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {

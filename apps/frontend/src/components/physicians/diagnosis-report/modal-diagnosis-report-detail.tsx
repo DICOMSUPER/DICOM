@@ -7,10 +7,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
+import { TemplateType } from "@/enums/report-template.enum";
+import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
+import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import {
+  FilterReportTemplate,
+  ReportTemplate,
+} from "@/interfaces/patient/report-template.interface";
 import { formatDate } from "@/lib/formatTimeDate";
+import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDiagnosisByIdQuery } from "@/store/diagnosisApi";
+import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
+import {
+  useGetAllReportTemplatesQuery,
+  useGetReportTemplateByIdQuery,
+} from "@/store/reportTemplateApi";
 import {
   AlertCircle,
   Calendar,
@@ -18,7 +39,10 @@ import {
   Download,
   FileText,
   Image,
+  Notebook,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;
@@ -31,9 +55,122 @@ export function ModalDiagnosisReportDetail({
   onClose,
   reportId,
 }: ModalDiagnosisReportDetailProps) {
+  const [filtersReportTemplate, setFiltersReportTemplate] =
+    useState<FilterReportTemplate>({
+      modalityId: "",
+      templateType: TemplateType.STANDARD,
+      bodyPartId: "",
+    });
   const { data: report, isLoading } = useGetDiagnosisByIdQuery(reportId, {
     skip: !reportId || !open,
   });
+
+  const [selectedReportTemplateId, setSelectedReportTemplateId] =
+    useState<string>("");
+
+  const [isEditDescriptionOpen, setIsEditDescriptionOpen] = useState(false);
+  const [editedDescription, setEditedDescription] = useState<string>("");
+  const [editedReportDescription, setEditedReportDescription] =
+    useState<string>("");
+
+  const { data: imagingModalitiesData, isLoading: isImagingModalitiesLoading } =
+    useGetAllImagingModalityQuery(undefined, {
+      skip: !open || isEditDescriptionOpen === false,
+    });
+  const { data: bodyPartsData, isLoading: isBodyPartsLoading } =
+    useGetAllBodyPartsQuery(undefined, {
+      skip: !open || isEditDescriptionOpen === false,
+    });
+
+  const { data: reportTemplatesData, isLoading: isReportTemplatesLoading } =
+    useGetAllReportTemplatesQuery(filtersReportTemplate, {
+      skip: !open || isEditDescriptionOpen === false,
+    });
+
+  // get template by id
+  const {
+    data: selectedReportTemplate,
+    isLoading: isSelectedReportTemplateLoading,
+  } = useGetReportTemplateByIdQuery(selectedReportTemplateId, {
+    skip: !selectedReportTemplateId || !open || isEditDescriptionOpen === false,
+  });
+
+  const router = useRouter();
+
+  // Auto-load template content when selecting a template
+  useEffect(() => {
+    if (selectedReportTemplate?.data) {
+      const template = selectedReportTemplate.data;
+      const sections = [
+        template.technicalTemplate && `Technical:\n${template.technicalTemplate}`,
+        template.descriptionTemplate &&
+          `Description:\n${template.descriptionTemplate}`,
+        template.findingsTemplate && `Findings:\n${template.findingsTemplate}`,
+        template.conclusionTemplate &&
+          `Conclusion:\n${template.conclusionTemplate}`,
+        template.recommendationTemplate &&
+          `Recommendation:\n${template.recommendationTemplate}`,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
+      setEditedDescription(sections);
+    }
+  }, [selectedReportTemplate]);
+
+  // Initialize editedReportDescription with report data when opening
+  useEffect(() => {
+    if (report?.data?.description && isEditDescriptionOpen) {
+      setEditedReportDescription(report.data.description);
+    }
+  }, [report, isEditDescriptionOpen]);
+
+  const handleEditDescriptionOpen = () => {
+    setIsEditDescriptionOpen(true);
+  };
+
+  const handleSelectChange = (
+    key: keyof FilterReportTemplate,
+    value: string
+  ) => {
+    setFiltersReportTemplate({
+      ...filtersReportTemplate,
+      [key]: value,
+    });
+  };
+
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedReportTemplateId(templateId);
+  };
+
+  const handleEditDescriptionClose = () => {
+    setIsEditDescriptionOpen(false);
+    setEditedDescription("");
+    setSelectedReportTemplateId("");
+  };
+
+  const handleApplyTemplate = () => {
+    // Move content from Template Preview to Description textarea
+    setEditedReportDescription(editedDescription);
+  };
+
+  const handleSaveDescription = async () => {
+    try {
+      // TODO: Call API update diagnosis
+      // await updateDiagnosisMutation({ id: reportId, description: editedReportDescription });
+      console.log("Saving description:", editedReportDescription);
+
+      // Close edit mode
+      setIsEditDescriptionOpen(false);
+      setSelectedReportTemplateId("");
+      setEditedDescription("");
+
+      // Refetch report
+      // refetch();
+    } catch (error) {
+      console.error("Failed to save description:", error);
+    }
+  };
 
   const getStatusBadge = (status: DiagnosisStatus) => {
     switch (status) {
@@ -62,9 +199,12 @@ export function ModalDiagnosisReportDetail({
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
   const handleApprove = () => {};
-  const handleViewImage = () => {};
-  const handleDownloadReport = () => {}
+  const handleViewImage = () => {
+    router.push(`/viewer?study=${report?.data.studyId}`);
+  };
+  const handleDownloadReport = () => {};
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -157,19 +297,157 @@ export function ModalDiagnosisReportDetail({
                   {report.data.severity || "N/A"}
                 </Badge>
               </div>
-
-              {/* Status Card */}
             </div>
-
             <Separator className="my-2 bg-slate-200/50" />
 
-            {report.data.description && (
+            {!isEditDescriptionOpen ? (
+              <Button className="w-full" onClick={handleEditDescriptionOpen}>
+                <div className="flex items-center justify-center">
+                  <Notebook className="w-4 h-4 mr-2" />
+                  Edit Report Description
+                </div>
+              </Button>
+            ) : (
+              <Button className="w-full" onClick={handleEditDescriptionClose}>
+                <div className="flex items-center justify-center">
+                  <Notebook className="w-4 h-4 mr-2" />
+                  Close Edit Mode
+                </div>
+              </Button>
+            )}
+
+            {/* Display standard report template of diagnosis including selector and textarea */}
+            {isEditDescriptionOpen && (
+              <div className="space-y-4">
+                <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                  <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                    <FileText className="w-4 h-4 text-teal-600" />
+                    Choose Template
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <Select
+                      value={filtersReportTemplate.bodyPartId}
+                      onValueChange={(value) =>
+                        handleSelectChange("bodyPartId", value)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Body Parts" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bodyPartsData?.data.map((bodyPart: BodyPart) => (
+                          <SelectItem key={bodyPart.id} value={bodyPart.id}>
+                            {bodyPart.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={filtersReportTemplate.modalityId}
+                      onValueChange={(value) =>
+                        handleSelectChange("modalityId", value)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="All Modalities" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imagingModalitiesData?.data.map(
+                          (modality: ImagingModality) => (
+                            <SelectItem key={modality.id} value={modality.id}>
+                              {modality.modalityName}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={selectedReportTemplateId}
+                      onValueChange={handleSelectTemplate}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={
+                            isReportTemplatesLoading
+                              ? "Loading..."
+                              : "Select report template"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {reportTemplatesData?.data.map(
+                          (report: ReportTemplate) => (
+                            <SelectItem key={report.id} value={report.id}>
+                              {report.templateName}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Template Preview */}
+                <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
+                      <FileText className="w-4 h-4 text-teal-600" />
+                      Template Preview
+                    </div>
+                    <Button
+                      onClick={handleApplyTemplate}
+                      disabled={!editedDescription.trim()}
+                      className="bg-gradient-to-r from-teal-600 to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Notebook className="w-4 h-4 mr-2" />
+                      Apply to Description
+                    </Button>
+                  </div>
+                  <Textarea
+                    className="w-full min-h-[300px] text-slate-900 font-medium"
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="Select a template above to preview content here..."
+                  />
+                </div>
+
+                {/* Description Textarea */}
+                <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
+                      <FileText className="w-4 h-4 text-teal-600" />
+                      Description
+                    </div>
+                    <Button
+                      onClick={handleSaveDescription}
+                      disabled={!editedReportDescription.trim()}
+                      className="bg-gradient-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Save Description
+                    </Button>
+                  </div>
+                  <Textarea
+                    className="w-full min-h-[300px] text-slate-900 font-medium"
+                    value={editedReportDescription}
+                    onChange={(e) => setEditedReportDescription(e.target.value)}
+                    placeholder="Click 'Apply to Description' to load template content here, or type directly..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Display existing description when not in edit mode */}
+            {!isEditDescriptionOpen && report.data.description && (
               <div className="bg-white border border-slate-200/60 rounded-xl p-6">
                 <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
                   <FileText className="w-4 h-4 text-teal-600" />
                   Description
                 </div>
-                <div className="text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">
+                <div className="text-slate-900 whitespace-pre-wrap leading-relaxed">
                   {report.data.description}
                 </div>
               </div>
@@ -209,7 +487,10 @@ export function ModalDiagnosisReportDetail({
                 <Image className="w-4 h-4 mr-2" />
                 View Image
               </Button>
-              <Button onClick={handleDownloadReport} className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium">
+              <Button
+                onClick={handleDownloadReport}
+                className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Download Report
               </Button>

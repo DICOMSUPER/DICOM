@@ -25,6 +25,7 @@ import { annotationApi } from "./annotationApi";
 import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
 import { imagingApi } from "./imagingApi";
 import { serviceApi } from "./serviceApi";
+import { reportTemplateApi } from "./reportTemplateApi";
 
 export const store = configureStore({
   reducer: {
@@ -52,8 +53,8 @@ export const store = configureStore({
     [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
     [serviceApi.reducerPath]: serviceApi.reducer,
-   
     [imagingApi.reducerPath]: imagingApi.reducer,
+    [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -79,7 +80,8 @@ export const store = configureStore({
       .concat(dicomInstanceApi.middleware)
       .concat(annotationApi.middleware)
       .concat(imagingApi.middleware)
-      .concat(serviceApi.middleware),
+      .concat(serviceApi.middleware)
+      .concat(reportTemplateApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

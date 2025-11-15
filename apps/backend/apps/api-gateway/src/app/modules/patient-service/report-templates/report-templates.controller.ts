@@ -1,5 +1,12 @@
-import { CreateReportTemplateDto, UpdateReportTemplateDto } from '@backend/shared-domain';
-import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  CreateReportTemplateDto,
+  FilterReportTemplateDto,
+  UpdateReportTemplateDto,
+} from '@backend/shared-domain';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -10,10 +17,14 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Role } from '@backend/shared-decorators';
 import { firstValueFrom } from 'rxjs';
+import { Roles } from '@backend/shared-enums';
+import type { IAuthenticatedRequest } from 'libs/shared-interfaces/src';
 
 @Controller('report-templates')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -24,9 +35,13 @@ export class ReportTemplatesController {
   ) {}
 
   @Get()
-  async getReportTemplates() {
+  async getReportTemplates(
+    @Query() filterReportTemplateDto: FilterReportTemplateDto
+  ) {
     return await firstValueFrom(
-      this.patientService.send('PatientService.ReportTemplate.FindAll', {})
+      this.patientService.send('PatientService.ReportTemplate.FindAll', {
+        filterReportTemplateDto,
+      })
     );
   }
 
@@ -47,8 +62,8 @@ export class ReportTemplatesController {
       sortField,
       order,
     };
-      return await firstValueFrom(
-        this.patientService.send('PatientService.ReportTemplate.FindMany', {
+    return await firstValueFrom(
+      this.patientService.send('PatientService.ReportTemplate.FindMany', {
         paginationDto,
       })
     );
@@ -64,12 +79,19 @@ export class ReportTemplatesController {
   }
 
   @Post()
-  async createReportTemplate(@Body() createReportTemplateDto: CreateReportTemplateDto) {
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  async createReportTemplate(
+    @Body() createReportTemplateDto: CreateReportTemplateDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    console.log("create report template", createReportTemplateDto);
+    console.log("user info", req.userInfo);
+    
     return await firstValueFrom(
-      this.patientService.send(
-        'PatientService.ReportTemplate.Create',
-        createReportTemplateDto
-      )
+      this.patientService.send('PatientService.ReportTemplate.Create', {
+        createReportTemplateDto,
+        userInfo: req.userInfo,
+      })
     );
   }
 

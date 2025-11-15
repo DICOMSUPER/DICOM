@@ -22,14 +22,12 @@ import {
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import {
   DiagnosisStatus,
-  EncounterPriorityLevel,
-  EncounterStatus,
+  EncounterPriorityLevel
 } from "@/enums/patient-workflow.enum";
 import {
-  DiagnosisReport,
-  PatientEncounter,
+  DiagnosisReport
 } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDate } from "@/lib/formatTimeDate";
 import {
   createColumnHelper,
   flexRender,
@@ -39,15 +37,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  AlertCircle,
   ArrowUpDown,
   CheckCircle2,
-  Clock,
   Eye,
   MoreHorizontal,
-  Phone,
   User,
-  Zap,
+  Zap
 } from "lucide-react";
 import React from "react";
 

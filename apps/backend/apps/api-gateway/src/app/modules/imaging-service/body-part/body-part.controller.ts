@@ -15,7 +15,7 @@ import { CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
 import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-interceptor';
 
-@Controller('services')
+@Controller('body-part')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class BodyPartController {
   constructor(
