@@ -47,9 +47,7 @@ export class PatientEncounterService {
 
   getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
     const serviceRoom: ServiceRoom = await firstValueFrom(
-      this.userService.send('UserService.ServiceRooms.FindOne', {
-        serviceRoomId,
-      })
+      this.userService.send('UserService.ServiceRooms.FindOne', serviceRoomId)
     );
 
     const serviceRooms = await firstValueFrom(
@@ -77,11 +75,15 @@ export class PatientEncounterService {
     const orderNumber = await this.getOrderNumberInDate(
       createPatientEncounterDto?.serviceRoomId as string
     );
-    return await this.encounterRepository.create({
+
+    const data = {
       ...createPatientEncounterDto,
       orderNumber,
       status: EncounterStatus.WAITING,
-    });
+    };
+
+    console.log('create body:', data);
+    return await this.encounterRepository.create(data);
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {

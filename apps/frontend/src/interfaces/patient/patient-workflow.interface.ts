@@ -172,6 +172,7 @@ export interface CreatePatientEncounterDto {
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string | null;
+  serviceRoomId: string;
   notes?: string;
 }
 
