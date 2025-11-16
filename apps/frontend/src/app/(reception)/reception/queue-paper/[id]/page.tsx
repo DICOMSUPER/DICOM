@@ -263,7 +263,7 @@ export default function Page({
                 Encounter Details
               </h2>
               <div className="border border-gray-300 p-3">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs font-semibold text-gray-600 mb-1">
                       Encounter Type
@@ -278,6 +278,14 @@ export default function Page({
                     </div>
                     <div className="text-sm">
                       {formatDate(encounter?.encounterDate)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-600 mb-1">
+                      Note
+                    </div>
+                    <div className="text-sm capitalize font-medium">
+                      {encounter.notes || "N/A"}
                     </div>
                   </div>
                   <div>

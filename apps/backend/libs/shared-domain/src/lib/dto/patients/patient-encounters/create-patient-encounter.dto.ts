@@ -48,4 +48,8 @@ export class CreatePatientEncounterDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  createdBy?: string;
 }
