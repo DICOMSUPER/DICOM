@@ -165,6 +165,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             selectedSeries={selectedSeries}
             onStudySelect={setSelectedStudy}
             onSeriesSelect={setSelectedSeries}
+            refetchStudy={refetchStudy}
           />
         )}
       </div>
