@@ -84,13 +84,18 @@ export class PatientEncounterController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createPatientEncounterDto: CreatePatientEncounterDto) {
+  async create(
+    @Body() createPatientEncounterDto: CreatePatientEncounterDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
     try {
+      const userId = req.userInfo.userId;
+      createPatientEncounterDto.createdBy = userId;
       return await firstValueFrom(
-        this.patientService.send(
-          'PatientService.Encounter.Create',
-          createPatientEncounterDto
-        )
+        this.patientService.send('PatientService.Encounter.Create', {
+          ...createPatientEncounterDto,
+          createdBy: userId,
+        })
       );
     } catch (error) {
       this.logger.error('Error creating encounter:', error);

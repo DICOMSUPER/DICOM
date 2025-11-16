@@ -9,21 +9,15 @@ import {
 import { EncounterType } from "@/enums/patient-workflow.enum";
 import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
-import { Stethoscope, CheckCircle } from "lucide-react";
+import { Stethoscope, CheckCircle, AlertCircle, Users } from "lucide-react";
 import { useEffect, useState, type ChangeEvent } from "react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import React from "react";
 import Select from "react-select";
 import type { SingleValue } from "react-select";
-import Cookies from "js-cookie";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { Department } from "@/interfaces/user/department.interface";
-import { User } from "@/store/scheduleApi";
-import {
-  useGetRoomsByDepartmentAndServiceQuery,
-  useGetRoomsByDepartmentIdQuery,
-} from "@/store/roomsApi";
-import { useGetUsersByRoomQuery } from "@/store/userApi";
+import { useGetRoomsByDepartmentAndServiceQuery } from "@/store/roomsApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Roles } from "@/enums/user.enum";
@@ -31,6 +25,9 @@ import { useGetActiveServicesByDepartmentIdQuery } from "@/store/serviceApi";
 import { Services } from "@/interfaces/user/service.interface";
 import { Room } from "@/interfaces/user/room.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import StepIndicator from "./patient/forward/step-indicator";
+import ServiceSelection from "./patient/forward/service-selection";
+import RoomSelection from "./patient/forward/room-selection";
 
 type DepartmentOption = Department & { value: string; label: string };
 
@@ -48,9 +45,8 @@ export function PatientForward({ patientId }: { patientId: string }) {
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
   const [selectedService, setSelectedService] = useState<Services | null>(null);
-  const [rooms, setRooms] = useState<Room[] | []>();
-  const [roomSearch, setRoomSearch] = useState("");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   //on changes
   const onChangeEncounterInfo = (
@@ -82,21 +78,17 @@ export function PatientForward({ patientId }: { patientId: string }) {
     skip: !selectedDepartment?.id,
   });
 
-  const {
-    data: RoomData,
-    isLoading: isLoadingRoom,
-    refetch: refetchRoom,
-  } = useGetRoomsByDepartmentAndServiceQuery(
-    {
-      serviceId: selectedService?.id ?? "",
-      departmentId: selectedDepartment?.id ?? "",
-      role: Roles.PHYSICIAN,
-    },
-    { skip: !selectedService?.id || !selectedDepartment?.id }
-  );
+  const { data: RoomData, isLoading: isLoadingRoom } =
+    useGetRoomsByDepartmentAndServiceQuery(
+      {
+        serviceId: selectedService?.id ?? "",
+        departmentId: selectedDepartment?.id ?? "",
+        role: Roles.PHYSICIAN,
+      },
+      { skip: !selectedService?.id || !selectedDepartment?.id }
+    );
   const [createEncounter] = useCreatePatientEncounterMutation();
 
-  // console.log("roomData.data:", RoomData?.data);
   useEffect(() => {
     if (!departmentsData && !isLoadingDepartment) {
       refetchDepartment();
@@ -121,10 +113,12 @@ export function PatientForward({ patientId }: { patientId: string }) {
 
   //submit
   const onSubmit = async () => {
-    let encounter;
     if (!selectedRoom || !selectedService) {
-      toast.warning("Please select a room and service");
+      toast.warning("Please select both a room and service");
+      return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const selectedServiceRoom = selectedRoom?.serviceRooms.find(
@@ -136,6 +130,8 @@ export function PatientForward({ patientId }: { patientId: string }) {
         toast.warning(
           "Service room not found in selected room for this service"
         );
+        setIsSubmitting(false);
+        return;
       }
 
       const encounterData = {
@@ -144,25 +140,24 @@ export function PatientForward({ patientId }: { patientId: string }) {
         serviceRoomId: selectedServiceRoom?.id as string,
       };
 
-      // console.log(encounterData);
-
-      encounter = await createEncounter(encounterData).unwrap();
+      const encounter = await createEncounter(encounterData).unwrap();
 
       if (encounter) {
-        toast.success("Forward patient successfully");
-
-        router.push(`/reception/queue-paper/${encounter.data.id}`); //dummy, fix when fix encounter id
-
-        // router.push(
-        //   `/reception/queue-paper/${queue.data.id}?doctor=${encounter.data.assignedPhysicianId}`
-        // );
+        toast.success("Patient forwarded successfully");
+        router.push(`/reception/queue-paper/${encounter.data.id}`);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to forward patient");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // Check if form is valid
+  const isFormValid = selectedDepartment && selectedService && selectedRoom;
+
   const EncounterTypeArray = [...Object.values(EncounterType)];
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-4">
@@ -171,13 +166,24 @@ export function PatientForward({ patientId }: { patientId: string }) {
           Forward Patient
         </CardTitle>
         <CardDescription>
-          Quick selection of specialty or physician
+          Select department, service, and room to forward the patient
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Step indicator */}
+          <StepIndicator
+            selectedDepartment={selectedDepartment}
+            selectedService={selectedService}
+            selectedRoom={selectedRoom}
+          />
+
+          {/* Department Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                1
+              </span>
               Select Department
             </label>
             <Select
@@ -196,6 +202,8 @@ export function PatientForward({ patientId }: { patientId: string }) {
                 setSelectedDepartment(
                   selectedOption ? ({ ...selectedOption } as Department) : null
                 );
+                setSelectedService(null);
+                setSelectedRoom(null);
               }}
               onInputChange={(inputValue) => {
                 setDepartmentSearch(inputValue);
@@ -208,149 +216,31 @@ export function PatientForward({ patientId }: { patientId: string }) {
             />
           </div>
 
-          <div className="space-y-2 ">
-            <label className="text-sm font-medium text-foreground">
-              Select Service
-            </label>
-            {isLoadingServices && (
-              <div className="text-foreground text-sm">Loading services...</div>
-            )}
+          {/* Service Selection */}
+          <ServiceSelection
+            selectedDepartment={selectedDepartment}
+            selectedService={selectedService}
+            setSelectedService={setSelectedService}
+            setSelectedRoom={setSelectedRoom}
+            isLoadingServices={isLoadingServices}
+            Services={(ServicesData?.data as Services[]) || []}
+          />
 
-            {!isLoadingServices &&
-              ServicesData &&
-              Array.isArray(ServicesData?.data) &&
-              ServicesData?.data?.length > 0 && (
-                <div className="grid grid-cols-1 gap-3 max-h-20 overflow-y-auto">
-                  {(ServicesData?.data as Services[]).map(
-                    (service, idx, arr) => {
-                      const isSelected = selectedService?.id === service.id;
+          {/* Room Selection */}
+          <RoomSelection
+            selectedService={selectedService}
+            selectedRoom={selectedRoom}
+            setSelectedRoom={setSelectedRoom}
+            rooms={RoomData?.data as Room[]}
+            isLoadingRoom={isLoadingRoom}
+          />
 
-                      return (
-                        <button
-                          key={service.id}
-                          onClick={() => {
-                            setSelectedService(service);
-                          }}
-                          type="button"
-                          aria-pressed={isSelected}
-                          className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
-                            isSelected
-                              ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                              : "border-border bg-background hover:border-muted"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 className="text-lg font-semibold text-foreground">
-                              {service.serviceName}
-                            </h3>
-                          </div>
-                        </button>
-                      );
-                    }
-                  )}
-                </div>
-              )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Select Room
-            </label>
-            {isLoadingRoom && (
-              <div className="text-foreground text-sm">Loading rooms...</div>
-            )}
-            {!isLoadingRoom &&
-              RoomData &&
-              Array.isArray(RoomData?.data) &&
-              RoomData?.data?.length > 0 && (
-                <div className="grid grid-cols-1 gap-3">
-                  {RoomData.data.map((room) => {
-                    {
-                      /* CHANGE: Calculate room utilization percentage */
-                    }
-                    const maxCapacity =
-                      room.roomStats?.maxWaiting || room.capacity || 1;
-                    const currentOccupancy =
-                      room.roomStats?.currentInProgress || 0;
-                    const utilizationPercent = Math.min(
-                      (currentOccupancy / maxCapacity) * 100,
-                      100
-                    );
-
-                    {
-                      /* CHANGE: Determine color based on utilization */
-                    }
-                    const getUtilizationColor = (percent: number) => {
-                      if (percent >= 90) return "bg-red-500";
-                      if (percent >= 70) return "bg-yellow-500";
-                      if (percent >= 40) return "bg-blue-500";
-                      return "bg-green-500";
-                    };
-
-                    return (
-                      <button
-                        key={room.id}
-                        onClick={() => setSelectedRoom(room)}
-                        type="button"
-                        className={`p-4 border rounded-lg text-left transition-all ${
-                          selectedRoom?.id === room.id
-                            ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                            : "border-border bg-background hover:border-muted"
-                        }`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {room.roomCode}
-                          </h3>
-                          {/* CHANGE: Display current occupancy numbers */}
-                          <span className="text-sm text-muted-foreground">
-                            {currentOccupancy}/{maxCapacity}
-                          </span>
-                        </div>
-
-                        {/* CHANGE: Add progress bar to show room utilization */}
-                        <div className="space-y-1">
-                          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                            <div
-                              className={`h-full transition-all duration-300 ${getUtilizationColor(
-                                utilizationPercent
-                              )}`}
-                              style={{ width: `${utilizationPercent}%` }}
-                            />
-                          </div>
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>
-                              {utilizationPercent.toFixed(0)}% utilized
-                            </span>
-                            <span
-                              className={
-                                utilizationPercent >= 90
-                                  ? "text-red-500 font-medium"
-                                  : ""
-                              }
-                            >
-                              {utilizationPercent >= 90
-                                ? "Near capacity"
-                                : utilizationPercent >= 70
-                                ? "Busy"
-                                : utilizationPercent >= 40
-                                ? "Moderate"
-                                : "Available"}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-          </div>
-
+          {/* Encounter Type */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Encounter Type
             </label>
-            <div className="flex items-center space-x-2 max-w-[30vw] overflow-x-auto whitespace-nowrap snap-x snap-mandatory pb-1">
+            <div className="flex items-center gap-2 flex-wrap">
               {EncounterTypeArray &&
                 EncounterTypeArray.map((type) => (
                   <Button
@@ -358,7 +248,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
                     type="button"
                     aria-pressed={encounterInfo.encounterType === type}
                     size="sm"
-                    className={`shrink-0 snap-start ${
+                    className={`${
                       encounterInfo.encounterType === type
                         ? "bg-primary text-primary-foreground border-primary"
                         : "border-border bg-background text-foreground hover:bg-muted"
@@ -378,6 +268,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
             </div>
           </div>
 
+          {/* Notes */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               Notes (Optional)
@@ -386,19 +277,37 @@ export function PatientForward({ patientId }: { patientId: string }) {
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
                 onChangeEncounterInfo("notes", e.target.value);
               }}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              value={encounterInfo.notes}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               rows={3}
               placeholder="Add any symptoms or intake notes..."
             />
           </div>
 
+          {/* Submit Button */}
           <Button
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onSubmit}
+            disabled={!isFormValid || isSubmitting}
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Forward Patient
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                Forwarding...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Forward Patient
+              </>
+            )}
           </Button>
+
+          {!isFormValid && (
+            <p className="text-xs text-muted-foreground text-center">
+              Please complete all required selections to forward the patient
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

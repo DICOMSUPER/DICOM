@@ -1,22 +1,37 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { EmptyState } from '@/components/ui/empty-state';
-import { 
-  Stethoscope, 
-  Calendar, 
-  User, 
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Stethoscope,
+  Calendar,
+  User,
   Clock,
   FileText,
   Edit,
   Trash2,
   Eye,
-  Plus
-} from 'lucide-react';
-import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interface';
+  Plus,
+  AlertCircle,
+  DoorOpen,
+} from "lucide-react";
+import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { useGetAllServiceRoomsQuery } from "@/store/serviceRoomApi";
+import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
+import {
+  getEncounterTypeBadgeVariant,
+  getPriorityColor,
+  getStatusBadgeVariant,
+} from "@/utils/patient/[id]/color";
 
 interface EncounterListProps {
   encounters: PatientEncounter[];
@@ -25,6 +40,8 @@ interface EncounterListProps {
   onDelete?: (encounterId: string) => void;
   onView?: (encounter: PatientEncounter) => void;
   onCreate?: () => void;
+  page: number;
+  totalPages: number;
 }
 
 export function EncounterList({
@@ -33,37 +50,13 @@ export function EncounterList({
   onEdit,
   onDelete,
   onView,
-  onCreate
+  onCreate,
+  page,
+  totalPages,
 }: EncounterListProps) {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-        return 'default';
-      case 'in-progress':
-        return 'secondary';
-      case 'scheduled':
-        return 'outline';
-      case 'cancelled':
-        return 'destructive';
-      default:
-        return 'outline';
-    }
-  };
-
-  const getEncounterTypeColor = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'emergency':
-        return 'destructive';
-      case 'inpatient':
-        return 'default';
-      case 'outpatient':
-        return 'secondary';
-      case 'virtual':
-        return 'outline';
-      default:
-        return 'outline';
-    }
-  };
+  //1 db query only
+  const { data: ServiceRoomData, isLoading: isLoadingServiceRooms } =
+    useGetAllServiceRoomsQuery({});
 
   if (loading) {
     return (
@@ -88,137 +81,177 @@ export function EncounterList({
     );
   }
 
-    return (
-      <div className="space-y-4">
-        {encounters.map((encounter) => (
-          <Card key={encounter.id} className="border-border hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5" />
-                  {encounter.patient ? 
-                    `${encounter.patient.firstName} ${encounter.patient.lastName}` : 
-                    'Unknown Patient'
-                  }
-                </CardTitle>
-                <CardDescription className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(encounter.encounterDate).toLocaleDateString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    {new Date(encounter.encounterDate).toLocaleTimeString()}
-                  </span>
-                  {encounter.duration && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {encounter.duration}
-                    </span>
+  return (
+    <div className="space-y-4">
+      <Card className="border-border hover:shadow-md transition-shadow px-5">
+        <h3 className="text-lg font-medium text-foreground">
+          Recent Encounters
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div className=" h-[30vh] overflow-y-auto">
+          {encounters.map((encounter) => (
+            <Card
+              key={encounter.id}
+              className="border border-border/50 hover:border-border hover:shadow-sm transition-all duration-200 overflow-hidden bg-card/50"
+            >
+              <CardContent className="p-0">
+                <div className="px-5 py-2 space-y-3">
+                  {/* Top row: Patient info and badges */}
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Date and time info */}
+                    <div className="flex items-center gap-4 text-xs text-gray-700 ">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>
+                          {encounter?.encounterDate
+                            ? new Date(encounter.encounterDate)
+                                .toISOString()
+                                .split("T")[0]
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>
+                          {encounter?.encounterDate
+                            ? new Date(encounter.encounterDate)
+                                .toISOString()
+                                .split("T")[1]
+                                .split(".")[0]
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Status and type badges */}
+                    <div className="flex flex-wrap gap-1.5 justify-end">
+                      {encounter.priority && (
+                        <Badge
+                          className={`${getPriorityColor(
+                            encounter.priority
+                          )} text-xs`}
+                        >
+                          {encounter.priority ===
+                            EncounterPriorityLevel.STAT && (
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                          )}
+                          {encounter.priority}
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={getStatusBadgeVariant(encounter.status)}
+                        className="text-xs"
+                      >
+                        {encounter.status}
+                      </Badge>
+                      <Badge
+                        variant={getEncounterTypeBadgeVariant(
+                          encounter.encounterType
+                        )}
+                        className="text-xs"
+                      >
+                        {encounter.encounterType}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 space-y-4 border-t border-border/40">
+                  {/* Room and Service - highlighted section */}
+                  {encounter.serviceRoomId && (
+                    <div className="flex items-start gap-3 p-3 bg-accent/5 rounded-md border border-accent/10 hover:bg-accent/10 transition-colors">
+                      <DoorOpen className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <div className="space-y-0.5 flex-1 flex justify-between min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {(() => {
+                            const serviceRoom = ServiceRoomData?.data.find(
+                              (sr) => sr.id === encounter.serviceRoomId
+                            );
+                            return (
+                              serviceRoom?.room?.roomCode || "No room assigned"
+                            );
+                          })()}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {(() => {
+                            const serviceRoom = ServiceRoomData?.data.find(
+                              (sr) => sr.id === encounter.serviceRoomId
+                            );
+                            return (
+                              serviceRoom?.service?.serviceCode ||
+                              "No service assigned"
+                            );
+                          })()}
+                        </p>
+                      </div>
+                    </div>
                   )}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={getStatusColor(encounter.status || '')}>
-                  {encounter.status || 'Unknown'}
-                </Badge>
-                <Badge variant={getEncounterTypeColor(encounter.encounterType || '')}>
-                  {encounter.encounterType || 'Unknown'}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {/* Chief Complaint */}
-              {encounter.chiefComplaint && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-1">Chief Complaint</h4>
-                  <p className="text-sm">{encounter.chiefComplaint}</p>
-                </div>
-              )}
 
-              {/* Symptoms */}
-              {encounter.symptoms && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-1">Symptoms</h4>
-                  <p className="text-sm">{encounter.symptoms}</p>
-                </div>
-              )}
+                  {/* Chief Complaint */}
+                  {/* <div>
+                           <h4 className="text-sm font-medium text-foreground mb-1">Chief Complaint</h4>
+                           <p className="text-sm text-muted-foreground">{encounter.chiefComplaint}</p>
+                         </div> */}
 
-              {/* Notes */}
-              {encounter.notes && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-1">Notes</h4>
-                  <p className="text-sm">{encounter.notes}</p>
-                </div>
-              )}
+                  {/* Symptoms */}
+                  {/* <div>
+                           <h4 className="text-sm font-medium text-foreground mb-1">Symptoms</h4>
+                           <p className="text-sm text-muted-foreground">{encounter.symptoms}</p>
+                         </div> */}
 
-              {/* Patient Info */}
-              {encounter.patient && (
-                <div className="flex items-center gap-4 text-sm text-foreground">
-                  <span className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    ID: {encounter.patient.patientCode}
-                  </span>
-                  <span>
-                    DOB: {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
-                  </span>
-                  <span>
-                    Gender: {encounter.patient.gender}
-                  </span>
-                </div>
-              )}
+                  {/* Physician - only show if present */}
+                  {/* {encounter.physician && (
+                           <div>
+                             <h4 className="text-sm font-medium text-foreground mb-1">Assigned Physician</h4>
+                             <p className="text-sm text-muted-foreground">{encounter.physician}</p>
+                           </div>
+                         )} */}
 
-              {/* Assigned Physician */}
-              {encounter.assignedPhysicianId && (
-                <div>
-                  <h4 className="text-sm font-medium text-foreground mb-1">Assigned Physician</h4>
-                  <p className="text-sm">{encounter.assignedPhysicianId}</p>
+                  {/* Notes */}
+                  {/* {encounter.notes && (
+                           <div>
+                             <h4 className="text-sm font-medium text-foreground mb-1">Notes</h4>
+                             <p className="text-sm text-muted-foreground">{encounter.notes}</p>
+                           </div>
+                         )} */}
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-2 border-t">
-                {onView && (
+                <div className="px-5 py-3 border-t border-border/40 flex gap-2 bg-muted/20">
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    onClick={() => onView(encounter)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-2 text-xs"
+                    onClick={() => {
+                      onView ? onView(encounter) : {};
+                    }}
                   >
-                    <Eye className="h-4 w-4" />
-                    View
+                    <Eye className="w-3.5 h-3.5" />
+                    View Details
                   </Button>
-                )}
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(encounter)}
-                    className="flex items-center gap-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit
-                  </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(encounter.id)}
-                    className="flex items-center gap-1 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+
+                  {/* <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => onEdit(encounter)}
+                           className="flex items-center gap-1"
+                         >
+                           <Edit className="h-4 w-4" />
+                           Edit
+                         </Button>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => onDelete(encounter.id)}
+                           className="flex items-center gap-1 text-destructive hover:text-destructive"
+                         >
+                           <Trash2 className="h-4 w-4" />
+                           Delete
+                         </Button> */}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

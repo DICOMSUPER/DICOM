@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -35,14 +36,26 @@ import {
   useCreatePatientEncounterMutation,
   useUpdatePatientEncounterMutation,
 } from "@/store/patientEncounterApi";
+import PatientInfo from "@/components/reception/patient/[id]/patient-info";
+import { PaginationParams } from "@/interfaces/pagination/pagination.interface";
+import {
+  PatientEncounter,
+  CreatePatientEncounterDto,
+  UpdatePatientEncounterDto,
+} from "@/interfaces/patient/patient-workflow.interface";
+import EncounterModal from "@/components/reception/patient/[id]/encounter-modal";
 
 export default function PatientDetail() {
   const params = useParams();
   const patientId = params.id as string;
   const router = useRouter();
   // State for encounter management
-  const [showEncounterForm, setShowEncounterForm] = useState(false);
-  const [editingEncounter, setEditingEncounter] = useState(null);
+  const [showEncounterForm, setShowEncounterForm] = useState<boolean>(false);
+  const [viewEncounter, setViewEncounter] = useState<PatientEncounter | null>(
+    null
+  );
+  const [editingEncounter, setEditingEncounter] =
+    useState<PatientEncounter | null>(null);
 
   // Fetch real patient data
   const {
@@ -55,15 +68,21 @@ export default function PatientDetail() {
     data: encountersData,
     isLoading: encountersLoading,
     refetch: refetchEncounters,
-  } = useGetPatientEncountersByPatientIdQuery(patientId);
+  } = useGetPatientEncountersByPatientIdQuery({
+    patientId,
+    pagination: { page: 1, limit: 3 },
+  });
+
   const {
     data: conditionsData,
     isLoading: conditionsLoading,
     refetch: refetchConditions,
   } = useGetConditionsByPatientIdQuery(patientId);
 
+  // console.log("conditionData", conditionsData);
+
   const patient = patientData?.data;
-  const encounters = encountersData?.data;
+  const encounters = encountersData?.data || [];
   const conditions = conditionsData?.data;
   // Encounter mutations
   const [createEncounter, { isLoading: isCreatingEncounter }] =
@@ -77,7 +96,7 @@ export default function PatientDetail() {
     setShowEncounterForm(true);
   };
 
-  const handleEditEncounter = (encounter) => {
+  const handleEditEncounter = (encounter: PatientEncounter) => {
     setEditingEncounter(encounter);
     setShowEncounterForm(true);
   };
@@ -87,15 +106,17 @@ export default function PatientDetail() {
     setEditingEncounter(null);
   };
 
-  const handleEncounterSubmit = async (data) => {
+  const handleEncounterSubmit = async (
+    data: CreatePatientEncounterDto | UpdatePatientEncounterDto
+  ) => {
     try {
       if (editingEncounter) {
         await updateEncounter({
           id: editingEncounter.id,
-          data: data,
+          data: data as UpdatePatientEncounterDto,
         }).unwrap();
       } else {
-        await createEncounter(data).unwrap();
+        await createEncounter(data as CreatePatientEncounterDto).unwrap();
       }
       setShowEncounterForm(false);
       setEditingEncounter(null);
@@ -165,121 +186,43 @@ export default function PatientDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Patient Information */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground">
-                Patient Information
-              </CardTitle>
-              <CardDescription>
-                Personal details and contact information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Calendar className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Date of Birth:</span>
-                    </div>
-                    <p className="font-medium text-foreground">
-                      {patient?.dateOfBirth
-                        ? new Date(patient.dateOfBirth).toLocaleDateString()
-                        : "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Activity className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Gender:</span>
-                    </div>
-                    <p className="font-medium text-foreground">
-                      {patient?.gender || "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Activity className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Blood Type:</span>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-red-100 text-red-800"
-                    >
-                      {patient?.bloodType || "Unknown"}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <Phone className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Phone:</span>
-                    </div>
-                    <p className="font-medium text-foreground">
-                      {patient?.phoneNumber || "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <MapPin className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Address:</span>
-                    </div>
-                    <p className="font-medium text-foreground">
-                      {patient?.address || "N/A"}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <FileText className="w-4 h-4 mr-2 text-foreground" />
-                      <span className="text-foreground">Insurance:</span>
-                    </div>
-                    <p className="font-medium text-foreground">
-                      {patient?.insuranceNumber || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {patient && <PatientInfo patient={patient} />}
 
           {/* Medical Encounters */}
-          {showEncounterForm ? (
-            <EncounterForm
-              encounter={editingEncounter}
-              patientId={patientId}
-              onSubmit={handleEncounterSubmit}
-              onCancel={handleCancelEncounter}
-              loading={isCreatingEncounter || isUpdatingEncounter}
-            />
-          ) : (
-            <EncounterList
-              encounters={encounters || []}
-              loading={encountersLoading}
-              onEdit={handleEditEncounter}
-              onDelete={(encounterId) =>
-                console.log("Delete encounter:", encounterId)
-              }
-              onView={(encounter) => console.log("View encounter:", encounter)}
-              onCreate={handleCreateEncounter}
-            />
-          )}
+          <EncounterList
+            encounters={encounters}
+            loading={encountersLoading}
+            onEdit={handleEditEncounter}
+            onDelete={(encounterId) =>
+              console.log("Delete encounter:", encounterId)
+            }
+            onView={(encounter) => setViewEncounter(encounter)}
+            onCreate={handleCreateEncounter}
+            page={encountersData?.page || 1}
+            totalPages={encountersData?.totalPages || 1}
+          />
 
           {/* Patient Conditions */}
           <div className="col-span-1">
-            <PatientConditionList
-              conditions={conditions || []}
-              canEdit={true}
-              onEdit={(condition) => console.log("Edit condition", condition)}
-            />
+            {!conditionsLoading && (
+              <PatientConditionList
+                conditions={conditions || []}
+                canEdit={true}
+                onEdit={(condition) => console.log("Edit condition", condition)}
+              />
+            )}
+            {conditionsLoading && (
+              <div className="flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </div>
+            )}
           </div>
         </div>
 
+        <EncounterModal
+          encounter={viewEncounter}
+          onClose={() => setViewEncounter(null)}
+        />
         {/* Patient Forwarding */}
         {patient && patient.id && <PatientForward patientId={patient?.id} />}
       </div>

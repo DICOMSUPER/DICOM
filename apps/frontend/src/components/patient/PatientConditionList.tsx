@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  PatientCondition 
-} from "@/interfaces/patient/patient-condition.interface";
-import { 
-  ClinicalStatus, 
-  ConditionVerificationStatus 
+import { PatientCondition } from "@/interfaces/patient/patient-condition.interface";
+import {
+  ClinicalStatus,
+  ConditionVerificationStatus,
 } from "@/enums/patient-workflow.enum";
-import { Edit, Calendar, MapPin, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import {
+  Edit,
+  Calendar,
+  MapPin,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { Button } from "../ui/button";
 
 interface PatientConditionListProps {
   conditions: PatientCondition[];
@@ -19,13 +31,15 @@ interface PatientConditionListProps {
   canEdit?: boolean;
 }
 
-export function PatientConditionList({ 
-  conditions, 
-  onEdit, 
+export function PatientConditionList({
+  conditions,
+  onEdit,
   onAdd,
-  canEdit = false 
+  canEdit = false,
 }: PatientConditionListProps) {
-  const [expandedCondition, setExpandedCondition] = useState<string | null>(null);
+  const [expandedCondition, setExpandedCondition] = useState<string | null>(
+    null
+  );
 
   const getStatusIcon = (status?: ClinicalStatus) => {
     switch (status) {
@@ -57,7 +71,9 @@ export function PatientConditionList({
     }
   };
 
-  const getVerificationBadgeVariant = (status?: ConditionVerificationStatus) => {
+  const getVerificationBadgeVariant = (
+    status?: ConditionVerificationStatus
+  ) => {
     switch (status) {
       case ConditionVerificationStatus.CONFIRMED:
         return "default";
@@ -77,10 +93,10 @@ export function PatientConditionList({
   };
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -110,105 +126,136 @@ export function PatientConditionList({
               Medical Conditions ({conditions.length})
             </CardTitle>
             <CardDescription>
-              Patient's recorded medical conditions and diagnoses
+              Patient&quot; recorded medical conditions and diagnoses
             </CardDescription>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {conditions.map((condition) => (
-          <Card 
-            key={condition.id} 
-            className="border border-border hover:shadow-sm transition-shadow"
-          >
-            <CardHeader 
-              className="pb-3 cursor-pointer"
-              onClick={() => setExpandedCondition(
-                expandedCondition === condition.id ? null : condition.id
-              )}
+        <div className=" h-[25vh] overflow-y-auto">
+          {conditions.map((condition) => (
+            <Card
+              key={condition.id}
+              className="border border-border hover:shadow-sm transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(condition.clinicalStatus)}
-                  <div>
-                    <h4 className="font-medium text-foreground">
-                      {condition.codeDisplay || condition.code}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {condition.code} {condition.codeSystem && `(${condition.codeSystem})`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {condition.clinicalStatus && (
-                    <Badge variant={getStatusBadgeVariant(condition.clinicalStatus)}>
-                      {condition.clinicalStatus}
-                    </Badge>
-                  )}
-                  {condition.verificationStatus && (
-                    <Badge variant={getVerificationBadgeVariant(condition.verificationStatus)}>
-                      {condition.verificationStatus.replace('-', ' ')}
-                    </Badge>
-                  )}
-                  {canEdit && onEdit && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(condition);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            {expandedCondition === condition.id && (
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {(condition.severity || condition.stageSummary || condition.bodySite) && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {condition.severity && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Severity:</span>
-                          <p className="text-sm text-foreground">{condition.severity}</p>
-                        </div>
-                      )}
-                      {condition.stageSummary && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Stage:</span>
-                          <p className="text-sm text-foreground">{condition.stageSummary}</p>
-                        </div>
-                      )}
-                      {condition.bodySite && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-foreground">{condition.bodySite}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>Recorded: {formatDate(condition.recordedDate)}</span>
-                  </div>
-
-                  {condition.notes && (
+              <CardHeader
+                className="pb-3 cursor-pointer"
+                onClick={() =>
+                  setExpandedCondition(
+                    expandedCondition === condition.id ? null : condition.id
+                  )
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(condition.clinicalStatus)}
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Notes:</span>
-                      <p className="text-sm text-foreground mt-1">{condition.notes}</p>
+                      <h4 className="font-medium text-foreground">
+                        {condition.codeDisplay || condition.code}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {condition.code}{" "}
+                        {condition.codeSystem && `(${condition.codeSystem})`}
+                      </p>
                     </div>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {condition.clinicalStatus && (
+                      <Badge
+                        variant={getStatusBadgeVariant(
+                          condition.clinicalStatus
+                        )}
+                      >
+                        {condition.clinicalStatus}
+                      </Badge>
+                    )}
+                    {condition.verificationStatus && (
+                      <Badge
+                        variant={getVerificationBadgeVariant(
+                          condition.verificationStatus
+                        )}
+                      >
+                        {condition.verificationStatus.replace("-", " ")}
+                      </Badge>
+                    )}
+                    {canEdit && onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(condition);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+              </CardHeader>
+
+              {expandedCondition === condition.id && (
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    {(condition.severity ||
+                      condition.stageSummary ||
+                      condition.bodySite) && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {condition.severity && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">
+                              Severity:
+                            </span>
+                            <p className="text-sm text-foreground">
+                              {condition.severity}
+                            </p>
+                          </div>
+                        )}
+                        {condition.stageSummary && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">
+                              Stage:
+                            </span>
+                            <p className="text-sm text-foreground">
+                              {condition.stageSummary}
+                            </p>
+                          </div>
+                        )}
+                        {condition.bodySite && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span className="text-sm text-foreground">
+                              {condition.bodySite}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        Recorded: {formatDate(condition.recordedDate)}
+                      </span>
+                    </div>
+
+                    {condition.notes && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">
+                          Notes:
+                        </span>
+                        <p className="text-sm text-foreground mt-1">
+                          {condition.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
