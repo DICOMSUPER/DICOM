@@ -30,7 +30,7 @@ const renderSegmentLabel = (segment: TimelineSegment) => {
         isBreak
           ? "border-amber-200 bg-amber-50 text-amber-800"
           : isGap
-          ? "border-dashed border-muted bg-muted/40 text-muted-foreground"
+          ? "border-dashed border-muted bg-muted/40 text-foreground"
           : "border-muted bg-background text-foreground"
       }`}
     >
