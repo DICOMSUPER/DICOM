@@ -1,6 +1,7 @@
 import { RoomType } from "@/enums/patient.enum";
 import { Department } from "./department.interface";
 import { RoomStatus } from "@/enums/room.enum";
+import { ServiceRoom } from "./service-room.interface";
 
 export interface Room {
   id: string;
@@ -28,6 +29,7 @@ export interface Room {
     currentInProgress?: number;
     maxWaiting?: number;
   };
+  serviceRooms: ServiceRoom[];
 }
 
 export interface RoomPagination {

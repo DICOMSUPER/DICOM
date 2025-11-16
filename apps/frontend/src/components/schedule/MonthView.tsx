@@ -10,9 +10,17 @@ interface MonthViewProps {
   selectedDate: Date;
   isLoading?: boolean;
   onScheduleClick?: (schedule: RoomSchedule) => void;
+  onCellGroupClick?: (schedules: RoomSchedule[]) => void;
 }
 
-export function MonthView({ calendarDays, schedules, selectedDate, isLoading = false, onScheduleClick }: MonthViewProps) {
+export function MonthView({
+  calendarDays,
+  schedules,
+  selectedDate,
+  isLoading = false,
+  onScheduleClick,
+  onCellGroupClick,
+}: MonthViewProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-7 gap-1">
@@ -48,7 +56,7 @@ export function MonthView({ calendarDays, schedules, selectedDate, isLoading = f
         const isToday = isSameDay(day, new Date());
         const isSelected = isSameDay(day, selectedDate);
         return (
-          <div key={index} className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-200 ${isSelected ? 'bg-blue-50 border-blue-200' : isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}>
+          <div key={index} className={`min-h-[60px] md:min-h-[120px] p-1 md:p-2 border border-gray-200 ${isSelected ? 'bg-blue-50 border-blue-200' : isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}>
             <div className={`text-xs md:text-sm font-medium ${isSelected ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>{format(day, 'd')}</div>
             <div className="mt-1 space-y-1">
               {daySchedules.slice(0, 2).map((schedule) => (
@@ -63,8 +71,14 @@ export function MonthView({ calendarDays, schedules, selectedDate, isLoading = f
                   </span>
                 </div>
               ))}
-              {daySchedules.length > 2 && (
-                <div className="text-xs text-gray-500">+{daySchedules.length - 2} more</div>
+              {daySchedules.length > 1 && (
+                <button
+                  type="button"
+                  className="text-[10px] uppercase tracking-wide text-blue-700 bg-blue-50/60 border border-dashed border-blue-200 rounded-full px-2 py-0.5 hover:bg-blue-100 transition"
+                  onClick={() => onCellGroupClick?.(daySchedules)}
+                >
+                  View all {daySchedules.length}
+                </button>
               )}
             </div>
           </div>

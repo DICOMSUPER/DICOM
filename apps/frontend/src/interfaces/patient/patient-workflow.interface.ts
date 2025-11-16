@@ -86,6 +86,7 @@ export interface PatientEncounter extends BaseEntity {
   physicianSpecialty?: string;
   patient?: Patient;
   diagnosesCount?: number;
+  createdBy?: string;
   serviceRoomId?: string;
   serviceRoom: ServiceRoom;
 }
@@ -172,6 +173,7 @@ export interface CreatePatientEncounterDto {
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string | null;
+  serviceRoomId: string;
   notes?: string;
 }
 

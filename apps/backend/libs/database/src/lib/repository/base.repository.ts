@@ -6,6 +6,7 @@ import {
   FindOneOptions,
   ObjectLiteral,
   FindOptionsWhere,
+  Brackets,
 } from 'typeorm';
 import { PaginatedResponseDto } from '../pagination/paginated-response.dto';
 import { RepositoryPaginationDto } from './repository-pagination.dto';
@@ -167,12 +168,11 @@ export class BaseRepository<T extends ObjectLiteral> {
   //note: this method is used to paginate the entities in the database
   async paginate(
     paginationDto: RepositoryPaginationDto,
-    _options?: FindManyOptions<T>,
+    options?: FindManyOptions<T>,
     entityManager?: EntityManager
   ): Promise<PaginatedResponseDto<T>> {
     const repository = this.getRepository(entityManager);
 
-    void _options; // intentionally unused for now
     const {
       page = 1,
       limit = 10,
@@ -189,6 +189,19 @@ export class BaseRepository<T extends ObjectLiteral> {
 
     const query = repository.createQueryBuilder('entity');
 
+    // Apply where conditions from options
+    if (options?.where) {
+      query.andWhere(
+        new Brackets((qb) => {
+          if (typeof options.where === 'object') {
+            Object.entries(options.where).forEach(([key, value]) => {
+              qb.andWhere(`entity.${key} = :${key}`, { [key]: value });
+            });
+          }
+        })
+      );
+    }
+
     // Search filter
     if (search && searchField) {
       query.andWhere(`entity.${searchField} LIKE :search`, {
@@ -201,15 +214,20 @@ export class BaseRepository<T extends ObjectLiteral> {
       relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
     }
 
-    //  Sorting
+    // Sorting - prioritize paginationDto sorting over options
     if (sortField && order) {
       query.orderBy(
         `entity.${sortField}`,
         order.toUpperCase() as 'ASC' | 'DESC'
       );
+    } else if (options?.order) {
+      // Apply order from options if no paginationDto order
+      Object.entries(options.order).forEach(([key, value]) => {
+        query.addOrderBy(`entity.${key}`, value as 'ASC' | 'DESC');
+      });
     }
 
-    //  Exclude soft-deleted
+    // Exclude soft-deleted
     if (this.hasIsDeletedColumn(entityManager)) {
       query.andWhere('entity.isDeleted = :isDeleted', { isDeleted: false });
     }

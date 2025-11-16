@@ -207,7 +207,7 @@ export default function ViewportGrid({
               {/* Right: Series Info */}
               <div className="flex items-center gap-3 font-mono">
                 <span className="text-slate-300">
-                  Se: {viewport.series?.seriesNumber || "-"}
+                  Se: {viewport.series?.seriesNumber || "—"}
                 </span>
                 <span className="text-slate-300">
                   Im: {viewport.series?.numberOfInstances || 0}

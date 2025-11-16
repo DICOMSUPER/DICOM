@@ -71,6 +71,9 @@ export class RoomsController {
       limit?: number;
       search?: string;
       isActive?: boolean;
+      status?: string;
+      type?: string;
+      departmentId?: string;
     }
   ) {
     try {

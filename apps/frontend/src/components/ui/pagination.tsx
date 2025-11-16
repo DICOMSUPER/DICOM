@@ -15,8 +15,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  if (totalPages <= 1) return null;
   const getPageNumbers = () => {
+    if (totalPages <= 0) return [1];
     const pages: number[] = [];
     const start = Math.max(1, currentPage - 2);
     const end = Math.min(totalPages, currentPage + 2);

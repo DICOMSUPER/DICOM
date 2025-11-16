@@ -12,15 +12,6 @@ import { useRouter } from "next/navigation";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [notificationCount] = useState(3);
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
 
   const handleQuickAction = (action: string) => {
     console.log(`Quick action clicked: ${action}`);

@@ -1,44 +1,127 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Building2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useGetRoomsQuery } from '@/store/roomsApi';
+import { useGetRoomsQuery, useDeleteRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { RoomTable } from '@/components/admin/room/RoomTable';
-import { DepartmentTable } from '@/components/admin/room/DepartmentTable';
-import { Pagination } from '@/components/ui/pagination';
+import { RoomStatsCards } from '@/components/admin/room/room-stats-cards';
+import { RoomFilters } from '@/components/admin/room/room-filters';
+import { RoomViewModal } from '@/components/admin/room/room-view-modal';
+import { RoomFormModal } from '@/components/admin/room/room-form-modal';
+import { RoomDeleteModal } from '@/components/admin/room/room-delete-modal';
+import { RefreshButton } from '@/components/ui/refresh-button';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { Pagination } from '@/components/common/PaginationV1';
 import { Room } from '@/interfaces/user/room.interface';
 import { RoomStatus } from '@/enums/room.enum';
 import { Department } from '@/interfaces/user/department.interface';
-import { check } from 'zod';
+import { QueryParams } from '@/interfaces/pagination/pagination.interface';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+
+interface ApiError {
+  data?: {
+    message?: string;
+  };
+}
 
 export default function Page() {
-  const router = useRouter();
   const [page, setPage] = useState(1);
   const limit = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState('all');
+  const [appliedTypeFilter, setAppliedTypeFilter] = useState('all');
+  const [appliedDepartmentFilter, setAppliedDepartmentFilter] = useState('all');
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // ✅ Query rooms với pagination
-  const { data: roomsRes, isLoading: roomsLoading } = useGetRoomsQuery({ page, limit });
-  const { data: departmentsData, isLoading: deptsLoading } = useGetDepartmentsQuery({ page, limit });
+  const queryParams: QueryParams = useMemo(() => {
+    const params: QueryParams = {
+      page,
+      limit,
+    };
+
+    if (appliedSearchTerm.trim()) {
+      params.search = appliedSearchTerm.trim();
+    }
+
+    if (appliedStatusFilter !== 'all') {
+      params.status = appliedStatusFilter;
+    }
+
+    if (appliedTypeFilter !== 'all') {
+      params.type = appliedTypeFilter;
+    }
+
+    if (appliedDepartmentFilter !== 'all') {
+      params.departmentId = appliedDepartmentFilter;
+    }
+
+    return params;
+  }, [page, limit, appliedSearchTerm, appliedStatusFilter, appliedTypeFilter, appliedDepartmentFilter]);
+
+  const {
+    data: roomsRes,
+    isLoading: roomsLoading,
+    error: roomsError,
+    refetch: refetchRooms,
+  } = useGetRoomsQuery(queryParams);
+
+  const {
+    data: departmentsData,
+    isLoading: deptsLoading,
+    refetch: refetchDepartments,
+  } = useGetDepartmentsQuery({ page: 1, limit: 100 });
+
+  const [deleteRoom, { isLoading: isDeletingRoom }] = useDeleteRoomMutation();
+
+  useEffect(() => {
+    if (roomsError) {
+      const error = roomsError as FetchBaseQueryError;
+      const errorMessage = 
+        error?.data && 
+        typeof error.data === 'object' &&
+        'message' in error.data
+          ? (error.data as { message: string }).message
+          : 'Failed to load room data. Please try again.';
+      setError(errorMessage);
+    } else {
+      setError(null);
+    }
+  }, [roomsError]);
 
   const rooms: Room[] = roomsRes?.data ?? [];
-  const paginationRoom = {
-    total: roomsRes?.total ?? 0,
-    page: roomsRes?.page ?? 1,
-    totalPages: roomsRes?.totalPages ?? 1,
-    limit: roomsRes?.limit ?? 10,
-  };
-  const paginationDepartment = {
-    total: departmentsData?.total ?? 0,
-    page: departmentsData?.page ?? 1,
-    totalPages: departmentsData?.totalPages ?? 1,
-    limit: departmentsData?.limit ?? 10,
-  };
   const departments: Department[] = departmentsData?.data ?? [];
-  console.log("check depart",departments)
+  const paginationMeta = roomsRes ? {
+    total: roomsRes.total,
+    page: roomsRes.page,
+    limit: roomsRes.limit,
+    totalPages: roomsRes.totalPages,
+    hasNextPage: roomsRes.hasNextPage,
+    hasPreviousPage: roomsRes.hasPreviousPage,
+  } : null;
+
+  const stats = useMemo(() => {
+    const total = roomsRes?.total ?? 0;
+    const available = rooms.filter((r) => r.status === RoomStatus.AVAILABLE).length;
+    const occupied = rooms.filter((r) => r.status === RoomStatus.OCCUPIED).length;
+    const maintenance = rooms.filter((r) => r.status === RoomStatus.MAINTENANCE).length;
+    return { total, available, occupied, maintenance };
+  }, [rooms, roomsRes?.total]);
+
+  const uniqueRoomTypes = useMemo(() => {
+    return [...new Set(rooms.map((r) => r.roomType))];
+  }, [rooms]);
 
   const getStatusRoomBadge = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -53,99 +136,173 @@ export default function Page() {
     }
   };
 
-  const getStatusDepartmentBadge = (isActive: boolean) => (
-    isActive
-      ? <Badge className="bg-green-100 text-green-800">Active</Badge>
-      : <Badge className="bg-red-100 text-red-800">Inactive</Badge>
-  );
+  const handleRefresh = async () => {
+    await Promise.all([refetchRooms(), refetchDepartments()]);
+  };
 
-  const tabs = [
-    {
-      key: 'departments',
-      label: 'All Departments',
+  const handleSearch = useCallback(() => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedStatusFilter(statusFilter);
+    setAppliedTypeFilter(typeFilter);
+    setAppliedDepartmentFilter(departmentFilter);
+    setPage(1);
+  }, [searchTerm, statusFilter, typeFilter, departmentFilter]);
 
-      component: (
-        <>
-          <DepartmentTable departments={departments} getStatusBadge={getStatusDepartmentBadge} />
-          <div className="flex flex-col items-center gap-2 mb-4">
-            <Pagination
-              currentPage={paginationDepartment.page}
-              totalPages={paginationDepartment.totalPages}
-              onPageChange={(p) => setPage(p)}
-            />
-          </div>
-        </>
-      ),
-      addLabel: 'Add Department',
-      addLink: '/admin/departments/add',
-    },
-    {
-      key: 'rooms',
-      label: 'All Rooms',
-      component: (
-        <>
-          <RoomTable rooms={rooms} getStatusBadge={getStatusRoomBadge} />
-          <div className="flex flex-col items-center gap-2 mb-4">
-            <Pagination
-              currentPage={paginationRoom.page}
-              totalPages={paginationRoom.totalPages}
-              onPageChange={(p) => setPage(p)}
-            />
-          </div>
-        </>
-      ),
-      addLabel: 'Add Room',
-      addLink: '/admin/rooms/add',
-    },
-  ];
+  const handleResetFilters = useCallback(() => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setTypeFilter('all');
+    setDepartmentFilter('all');
+    setAppliedSearchTerm('');
+    setAppliedStatusFilter('all');
+    setAppliedTypeFilter('all');
+    setAppliedDepartmentFilter('all');
+    setPage(1);
+  }, []);
 
-  const [activeTab, setActiveTab] = useState(tabs[0].key);
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
 
-  if (roomsLoading || deptsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
-  }
+  const handleViewDetails = (room: Room) => {
+    setSelectedRoom(room);
+    setIsViewModalOpen(true);
+  };
 
-  const activeTabData = tabs.find((tab) => tab.key === activeTab);
+  const handleEditRoom = (room: Room) => {
+    setSelectedRoom(room);
+    setIsFormModalOpen(true);
+  };
+
+  const handleCreateRoom = () => {
+    setSelectedRoom(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleDeleteRoom = (room: Room) => {
+    setSelectedRoom(room);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteRoom = async () => {
+    if (!selectedRoom) return;
+    try {
+      await deleteRoom(selectedRoom.id).unwrap();
+      toast.success(`Room ${selectedRoom.roomCode} deleted successfully`);
+      setIsDeleteModalOpen(false);
+      setSelectedRoom(null);
+      await refetchRooms();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(error?.data?.message || `Failed to delete room ${selectedRoom.roomCode}`);
+    }
+  };
+
+  const handleFormSuccess = () => {
+    refetchRooms();
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold">Management</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Room Management</h1>
+          <p className="text-foreground">Search and manage room records</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={roomsLoading || deptsLoading}
+          />
           <Button
-            onClick={() => router.push(activeTabData?.addLink || '/')}
-            className="bg-black text-white hover:bg-gray-800 flex items-center gap-2"
+            onClick={handleCreateRoom}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Plus className="h-4 w-4" /> {activeTabData?.addLabel || 'Add New'}
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Room
           </Button>
         </div>
-
-        {/* Tabs */}
-        <div className="flex gap-6 mb-4 border-b border-gray-300 mx-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`pb-2 text-sm font-medium ${activeTab === tab.key
-                ? 'text-black border-b-2 border-black'
-                : 'text-gray-500 hover:text-black'
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="bg-white rounded-lg shadow-sm p-2">
-          {activeTabData?.component}
-        </div>
       </div>
+
+      {error && (
+        <ErrorAlert title="Failed to load rooms" message={error} className="mb-4" />
+      )}
+
+      <RoomStatsCards
+        totalCount={stats.total}
+        availableCount={stats.available}
+        occupiedCount={stats.occupied}
+        maintenanceCount={stats.maintenance}
+        isLoading={roomsLoading}
+      />
+
+      <RoomFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        typeFilter={typeFilter}
+        onTypeChange={setTypeFilter}
+        departmentFilter={departmentFilter}
+        onDepartmentChange={setDepartmentFilter}
+        departments={departments}
+        roomTypes={uniqueRoomTypes}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+        isSearching={roomsLoading}
+      />
+
+      <RoomTable
+        rooms={rooms}
+        getStatusBadge={getStatusRoomBadge}
+        isLoading={roomsLoading}
+        emptyStateIcon={<Building2 className="h-12 w-12" />}
+        emptyStateTitle="No rooms found"
+        emptyStateDescription="No rooms match your search criteria. Try adjusting your filters or search terms."
+        onViewDetails={handleViewDetails}
+        onEditRoom={handleEditRoom}
+        onDeleteRoom={handleDeleteRoom}
+      />
+      {paginationMeta && (
+        <Pagination
+          pagination={paginationMeta}
+          onPageChange={handlePageChange}
+        />
+      )}
+
+      <RoomViewModal
+        room={selectedRoom}
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedRoom(null);
+        }}
+        onEdit={(room) => {
+          setIsViewModalOpen(false);
+          handleEditRoom(room);
+        }}
+      />
+
+      <RoomFormModal
+        room={selectedRoom}
+        isOpen={isFormModalOpen}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setSelectedRoom(null);
+        }}
+        onSuccess={handleFormSuccess}
+      />
+
+      <RoomDeleteModal
+        room={selectedRoom}
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedRoom(null);
+        }}
+        onConfirm={confirmDeleteRoom}
+        isDeleting={isDeletingRoom}
+      />
     </div>
   );
 }

@@ -37,8 +37,7 @@ export class CreatePatientEncounterDto {
   vitalSigns?: VitalSignsDto;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
+  @IsUUID()
   serviceRoomId?: string;
 
   @IsOptional()
@@ -49,4 +48,8 @@ export class CreatePatientEncounterDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  createdBy?: string;
 }

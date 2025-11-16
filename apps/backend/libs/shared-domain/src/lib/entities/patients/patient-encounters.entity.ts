@@ -75,7 +75,7 @@ export class PatientEncounter extends BaseEntity {
   @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 
-  @Column({ name: 'service_room_id', nullable: true })
+  @Column({ name: 'service_room_id', type: 'uuid', nullable: true })
   serviceRoomId?: string;
 
   @Column({ name: 'created_by', type: 'uuid', nullable: true })

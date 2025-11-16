@@ -17,6 +17,7 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus } from '@nestjs/common';
 import { RedisService } from '@backend/redis';
 import { Roles, RoomType } from '@backend/shared-enums';
+import { PaginatedResponseDto } from '@backend/database';
 
 @Injectable()
 export class RoomsService {
@@ -148,6 +149,9 @@ export class RoomsService {
     limit?: number;
     search?: string;
     isActive?: boolean;
+    status?: string;
+    type?: string;
+    departmentId?: string;
   }) {
     try {
       const page = query.page ?? 1;
@@ -155,22 +159,24 @@ export class RoomsService {
       const skip = (page - 1) * limit;
       const search = query.search ?? '';
       const isActive = query.isActive;
+      const status = query.status;
+      const type = query.type;
+      const departmentId = query.departmentId;
 
-      // 🔹 Tạo cache key duy nhất
       const cacheKey = `rooms:page=${page}:limit=${limit}:search=${
         search || 'none'
-      }:active=${isActive ?? 'all'}`;
+      }:active=${isActive ?? 'all'}:status=${status ?? 'all'}:type=${
+        type ?? 'all'
+      }:dept=${departmentId ?? 'all'}`;
 
-      // 🔹 Kiểm tra cache trước
       const cachedData = await this.redisService.get<any>(cacheKey);
       if (cachedData) {
-        this.logger.log(`✅ [CACHE HIT] Dữ liệu lấy từ Redis key: ${cacheKey}`);
+        this.logger.log(`[CACHE HIT] Dữ liệu lấy từ Redis key: ${cacheKey}`);
         return cachedData;
       }
 
-      this.logger.log(`⚙️ [CACHE MISS] Lấy dữ liệu từ DB, key: ${cacheKey}`);
+      this.logger.log(`[CACHE MISS] Lấy dữ liệu từ DB, key: ${cacheKey}`);
 
-      // 🔹 Query DB
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
@@ -189,23 +195,31 @@ export class RoomsService {
         qb.andWhere('room.isActive = :isActive', { isActive });
       }
 
+      if (status) {
+        qb.andWhere('room.status = :status', { status });
+      }
+
+      if (type) {
+        qb.andWhere('room.roomType = :type', { type });
+      }
+
+      if (departmentId) {
+        qb.andWhere('room.departmentId = :departmentId', { departmentId });
+      }
+
       const [data, total] = await qb.getManyAndCount();
 
-      const response = {
-        data: {
-          data,
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-          count: data.length,
-        },
-        message: 'Lấy danh sách phòng thành công',
-      };
+      const totalPages = Math.ceil(total / limit);
+      const response = new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      );
 
-      // 🔹 Lưu cache với TTL = 60 giây (tùy bạn chỉnh)
       await this.redisService.set(cacheKey, response, 60 * 1000);
 
       return response;
@@ -449,45 +463,68 @@ export class RoomsService {
       const qb = this.roomRepository
         .createQueryBuilder('room')
 
-        //join room & department &
+        //join room & department
         .leftJoinAndSelect('room.department', 'department')
         .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
-        .leftJoinAndSelect('room.schedules', 'schedules')
+        .leftJoinAndSelect(
+          'room.schedules',
+          'schedules',
+          // Filter schedules at join time
+          `(
+            (schedules.work_date = :todayDate 
+             AND schedules.actual_start_time < schedules.actual_end_time
+             AND schedules.actual_start_time <= :todayTime 
+             AND schedules.actual_end_time >= :todayTime)
+            OR
+            (schedules.work_date = :yesterdayDate 
+             AND schedules.actual_start_time > schedules.actual_end_time
+             AND :todayTime <= schedules.actual_end_time)
+            OR
+            (schedules.work_date = :todayDate 
+             AND schedules.actual_start_time > schedules.actual_end_time
+             AND :todayTime >= schedules.actual_start_time)
+          )`
+        )
         .leftJoinAndSelect(
           'schedules.employeeRoomAssignments',
-          'employeeRoomAssignments'
+          'employeeRoomAssignments',
+          'employeeRoomAssignments.is_active = true'
         )
         .leftJoin('employeeRoomAssignments.employee', 'employee')
 
-        //filter correct department_id, service_id
         .where('room.department_id = :departmentId', { departmentId })
         .andWhere('serviceRooms.service_id = :serviceId', { serviceId })
-
-        //active room & active service
         .andWhere('room.is_active = true')
         .andWhere('serviceRooms.is_active = true')
 
-        //filter, get room with schedule & employee in schedule
+        // Keep EXISTS to ensure room has at least one valid schedule
         .andWhere(
           `EXISTS (
             SELECT 1 FROM room_schedules rs
-            LEFT JOIN employee_room_assignments era ON era.room_schedule_id = rs.schedule_id
+            LEFT JOIN employee_room_assignments era 
+              ON era.room_schedule_id = rs.schedule_id
             WHERE rs.room_id = room.room_id
             AND era.is_active = true
             AND (
-              -- Case 1: Same day shift (start_time < end_time)
-              (rs.work_date = :todayDate AND rs.actual_start_time <= rs.actual_end_time 
-               AND rs.actual_start_time <= :todayTime AND rs.actual_end_time >= :todayTime)
+              (rs.work_date = :todayDate
+               AND rs.actual_start_time < rs.actual_end_time
+               AND rs.actual_start_time <= :todayTime
+               AND rs.actual_end_time >= :todayTime)
               OR
-              -- Case 2: Overnight shift (start_time > end_time) 
-              (rs.work_date = :yesterdayDate AND rs.actual_start_time > rs.actual_end_time 
+              (rs.work_date = :yesterdayDate
+               AND rs.actual_start_time > rs.actual_end_time
                AND :todayTime <= rs.actual_end_time)
+              OR
+              (rs.work_date = :todayDate
+               AND rs.actual_start_time > rs.actual_end_time
+               AND :todayTime >= rs.actual_start_time)
             )
           )`,
           { todayDate, todayTime, yesterdayDate }
         );
 
       if (role) qb.andWhere('employee.role = :role', { role });
+
       return await qb.getMany();
     } catch (error) {
       throw ThrowMicroserviceException(

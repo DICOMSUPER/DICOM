@@ -47,9 +47,7 @@ export class PatientEncounterService {
 
   getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
     const serviceRoom: ServiceRoom = await firstValueFrom(
-      this.userService.send('UserService.ServiceRooms.FindOne', {
-        serviceRoomId,
-      })
+      this.userService.send('UserService.ServiceRooms.FindOne', serviceRoomId)
     );
 
     const serviceRooms = await firstValueFrom(
@@ -77,11 +75,15 @@ export class PatientEncounterService {
     const orderNumber = await this.getOrderNumberInDate(
       createPatientEncounterDto?.serviceRoomId as string
     );
-    return await this.encounterRepository.create({
+
+    const data = {
       ...createPatientEncounterDto,
       orderNumber,
       status: EncounterStatus.WAITING,
-    });
+    };
+
+    console.log('create body:', data);
+    return await this.encounterRepository.create(data);
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {
@@ -130,7 +132,7 @@ export class PatientEncounterService {
     patientId: string,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientEncounter>> => {
-    const whereConditions = { patient: { id: patientId } };
+    const whereConditions = { patient: { id: patientId }, isDeleted: false };
     const { page, limit } = paginationDto;
 
     return await this.paginationService.paginate(
@@ -339,68 +341,95 @@ export class PatientEncounterService {
       encounters: waitingEncounters,
     };
   }
-
   async getEncounterStatsFromRoomIdsInDate(
     data: RoomEncounterFilters[]
   ): Promise<QueueInfo> {
-    const flattenedServiceRoomIds = data.reduce<string[]>(
-      (acc, d) => [...acc, ...d.serviceRoomIds],
-      []
-    );
+    // Get all unique room IDs
+    const uniqueRoomIds = [...new Set(data.map((d) => d.roomId))];
 
-    if (flattenedServiceRoomIds.length === 0) {
+    if (uniqueRoomIds.length === 0) {
       const logger = new Logger('PatientService');
-      logger.debug('Room not have any service, fall back to 0');
-      return {
-        roomStats: {
-          maxWaiting: 0,
-          currentInProgress: 0,
-        },
-      };
+      logger.debug('No rooms provided, fall back to 0');
+      return {};
     }
-    const encounters =
-      await this.encounterRepository.getEncounterStatsByServiceRoomIdsInDate(
-        flattenedServiceRoomIds
+
+    // For each unique room, we need to get ALL its service rooms, not just the filtered ones
+    const roomToAllServiceRoomIds = new Map<string, string[]>();
+
+    for (const roomId of uniqueRoomIds) {
+      // Fetch ALL service rooms for this room
+      const allServiceRooms = await firstValueFrom(
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
       );
 
-    const QueueInfo: QueueInfo = {};
-    data.forEach((room) => {
-      const serviceRoomIds = room.serviceRoomIds;
+      if (allServiceRooms && allServiceRooms.length > 0) {
+        const allServiceRoomIds = allServiceRooms.map((sr: any) => sr.id);
+        roomToAllServiceRoomIds.set(roomId, allServiceRoomIds);
+      } else {
+        roomToAllServiceRoomIds.set(roomId, []);
+      }
+    }
 
-      const roomEncounter =
+    // Flatten all service room IDs to fetch encounters
+    const allServiceRoomIds = Array.from(
+      roomToAllServiceRoomIds.values()
+    ).flat();
+
+    if (allServiceRoomIds.length === 0) {
+      const logger = new Logger('PatientService');
+      logger.debug('Rooms have no services, fall back to 0');
+      return uniqueRoomIds.reduce((acc, roomId) => {
+        acc[roomId] = {
+          maxWaiting: 0,
+          currentInProgress: 0,
+        };
+        return acc;
+      }, {} as QueueInfo);
+    }
+
+    console.log('allServiceRoomIds: ', allServiceRoomIds);
+
+    // Get all encounters for all service rooms
+    const encounters =
+      await this.encounterRepository.getEncounterStatsByServiceRoomIdsInDate(
+        allServiceRoomIds
+      );
+
+    const queueInfo: QueueInfo = {};
+
+    // Calculate stats per room using ALL service rooms in that room
+    uniqueRoomIds.forEach((roomId) => {
+      const serviceRoomIds = roomToAllServiceRoomIds.get(roomId) || [];
+
+      const roomEncounters =
         encounters.filter((encounter) =>
           serviceRoomIds.includes(encounter.serviceRoomId as string)
         ) || [];
 
-      const WaitingEncounter =
-        roomEncounter.filter(
+      const waitingEncounters =
+        roomEncounters.filter(
           (encounter) => encounter.status === EncounterStatus.WAITING
         ) || [];
 
-      const ArrivedEncounter =
-        roomEncounter.filter(
+      const arrivedEncounters =
+        roomEncounters.filter(
           (encounter) => encounter.status === EncounterStatus.ARRIVED
         ) || [];
 
-      const FinishedEncounter =
-        roomEncounter.filter(
+      const finishedEncounters =
+        roomEncounters.filter(
           (encounter) => encounter.status === EncounterStatus.FINISHED
         ) || [];
 
-      const LeavedEncounter =
-        roomEncounter.filter(
-          (encounter) => encounter.status === EncounterStatus.LEAVED
-        ) || [];
-
-      QueueInfo[room.roomId] = {
+      queueInfo[roomId] = {
         maxWaiting:
-          WaitingEncounter.length +
-          FinishedEncounter.length +
-          ArrivedEncounter.length,
-        currentInProgress: FinishedEncounter.length + ArrivedEncounter.length,
+          waitingEncounters.length +
+          finishedEncounters.length +
+          arrivedEncounters.length,
+        currentInProgress: finishedEncounters.length + arrivedEncounters.length,
       };
     });
 
-    return QueueInfo;
+    return queueInfo;
   }
 }

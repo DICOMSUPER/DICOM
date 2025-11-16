@@ -2,6 +2,7 @@ import {
   Activity,
   BarChart3,
   BookOpen,
+  Building2,
   Camera,
   Clock,
   Cog,
@@ -15,7 +16,8 @@ import {
   Stethoscope,
   Timer,
   UserCheck,
-  Users
+  Users,
+  Building
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -101,8 +103,14 @@ export const roleNavigation: RoleNavigation = {
     {
       href: "/admin/rooms",
       label: "Rooms Management",
-      icon: Monitor,
+      icon: Building2,
       description: "Manage clinic rooms and resources",
+    },
+    {
+      href: "/admin/departments",
+      label: "Departments Management",
+      icon: Building,
+      description: "Manage clinic departments and staff",
     },
     {
       href: "/admin/room-assignments",
