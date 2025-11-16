@@ -64,17 +64,17 @@ const statusBadgeClass = (status: string) => {
 };
 
 const ensureScheduleHasEmployee = (schedule: RoomSchedule): RoomSchedule | null => {
-  if ((schedule as any).employee) {
+  if (schedule.employee) {
     return schedule;
   }
-  const assignments = (schedule as any).employeeRoomAssignments as AssignmentWithMeta[] | undefined;
+  const assignments = schedule.employeeRoomAssignments as AssignmentWithMeta[] | undefined;
   const fallback = assignments?.find((assignment) => assignment.employee);
   if (!fallback?.employee) {
     return null;
   }
   return {
     ...schedule,
-    employee: fallback.employee as Employee,
+    employee: fallback.employee,
   };
 };
 
@@ -95,15 +95,10 @@ export default function RoomAssignmentsPage() {
   const [detailSchedule, setDetailSchedule] = useState<RoomSchedule | RoomSchedule[] | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const normalizeScheduleForModal = (schedule: RoomSchedule): RoomSchedule | null => {
-    const normalized = ensureScheduleHasEmployee(schedule);
-    return normalized;
-  };
-
   const openScheduleDetails = (payload: RoomSchedule | RoomSchedule[]) => {
     const payloadArray = Array.isArray(payload) ? payload : [payload];
     const normalized = payloadArray
-      .map(normalizeScheduleForModal)
+      .map(ensureScheduleHasEmployee)
       .filter((item): item is RoomSchedule => Boolean(item));
 
     if (!normalized.length) {
@@ -149,10 +144,10 @@ export default function RoomAssignmentsPage() {
 
   const calendarSchedules = useMemo(() => {
     return mergedSchedules.map((schedule) => {
-      if (schedule.employee || !schedule.employeeRoomAssignments?.length) {
+      if (schedule.employee) {
         return schedule;
       }
-      const firstAssignment = schedule.employeeRoomAssignments.find(
+      const firstAssignment = schedule.employeeRoomAssignments?.find(
         (assignment) => assignment.employee
       );
       if (!firstAssignment?.employee) {
@@ -160,7 +155,7 @@ export default function RoomAssignmentsPage() {
       }
       return {
         ...schedule,
-        employee: firstAssignment.employee as any,
+        employee: firstAssignment.employee,
       };
     });
   }, [mergedSchedules]);
@@ -180,8 +175,10 @@ export default function RoomAssignmentsPage() {
   }, [mergedSchedules, schedulesLoading, selectedScheduleId]);
 
   useEffect(() => {
-    setSelectedEmployeeId('');
-    setEmployeeSearch('');
+    if (selectedScheduleId) {
+      setSelectedEmployeeId('');
+      setEmployeeSearch('');
+    }
   }, [selectedScheduleId]);
 
   const {
@@ -191,15 +188,8 @@ export default function RoomAssignmentsPage() {
   } = useGetAvailableEmployeesQuery(
     {
       date: selectedSchedule?.work_date ?? '',
-      time: selectedSchedule?.actual_start_time && selectedSchedule.actual_start_time.trim() !== '' 
-        ? selectedSchedule.actual_start_time 
-        : undefined,
-      startTime: selectedSchedule?.actual_start_time && selectedSchedule.actual_start_time.trim() !== ''
-        ? selectedSchedule.actual_start_time
-        : undefined,
-      endTime: selectedSchedule?.actual_end_time && selectedSchedule.actual_end_time.trim() !== ''
-        ? selectedSchedule.actual_end_time
-        : undefined,
+      startTime: selectedSchedule?.actual_start_time?.trim() || undefined,
+      endTime: selectedSchedule?.actual_end_time?.trim() || undefined,
     },
     {
       skip: !selectedSchedule?.work_date,
@@ -248,9 +238,9 @@ export default function RoomAssignmentsPage() {
   const handleAssignEmployee = async () => {
     if (!selectedSchedule || !selectedEmployeeId) return;
 
-    const employee =
-      filteredEmployees.find((candidate: Employee) => candidate.id === selectedEmployeeId) ||
-      availableEmployees.find((candidate: Employee) => candidate.id === selectedEmployeeId);
+    const employee = availableEmployees.find(
+      (candidate: Employee) => candidate.id === selectedEmployeeId
+    );
 
     const tempAssignment: AssignmentWithMeta = {
       id: `temp-${Date.now()}`,
@@ -260,21 +250,19 @@ export default function RoomAssignmentsPage() {
       createdAt: new Date(),
       updatedAt: new Date(),
       isDeleted: false,
-      employee: employee as any,
+      employee: employee ? (employee as unknown as any) : undefined,
       __optimistic: true,
     };
 
+    const scheduleId = selectedSchedule.schedule_id;
     setOptimisticAssignments((prev) => ({
       ...prev,
-      [selectedSchedule.schedule_id]: [
-        ...(prev[selectedSchedule.schedule_id] ?? []),
-        tempAssignment,
-      ],
+      [scheduleId]: [...(prev[scheduleId] ?? []), tempAssignment],
     }));
     
     try {
       await createAssignment({
-        roomScheduleId: selectedSchedule.schedule_id,
+        roomScheduleId: scheduleId,
         employeeId: selectedEmployeeId,
         isActive: true,
       }).unwrap();
@@ -282,19 +270,16 @@ export default function RoomAssignmentsPage() {
       setSelectedEmployeeId('');
       await refetchSchedules();
       setOptimisticAssignments((prev) => {
-        const { [selectedSchedule.schedule_id]: _, ...rest } = prev;
+        const { [scheduleId]: _, ...rest } = prev;
         return rest;
       });
     } catch (error: any) {
-      setOptimisticAssignments((prev) => {
-        const filtered = (prev[selectedSchedule.schedule_id] ?? []).filter(
+      setOptimisticAssignments((prev) => ({
+        ...prev,
+        [scheduleId]: (prev[scheduleId] ?? []).filter(
           (assignment) => assignment.id !== tempAssignment.id
-        );
-        return {
-          ...prev,
-          [selectedSchedule.schedule_id]: filtered,
-        };
-      });
+        ),
+      }));
       toast.error(error?.data?.message || 'Failed to assign employee');
     }
   };
@@ -307,14 +292,8 @@ export default function RoomAssignmentsPage() {
   };
 
   useEffect(() => {
-    if (schedulesError) {
-      setErrorMessage('Failed to load room schedules. Please try again.');
-    } else {
-      setErrorMessage(null);
-    }
+    setErrorMessage(schedulesError ? 'Failed to load room schedules. Please try again.' : null);
   }, [schedulesError]);
-
-  const isLoading = schedulesLoading;
 
   return (
     <>
@@ -333,7 +312,10 @@ export default function RoomAssignmentsPage() {
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
               </TabsList>
             </Tabs>
-            <RefreshButton onRefresh={handleRefresh} loading={schedulesLoading || schedulesFetching || availableEmployeesLoading} />
+            <RefreshButton 
+              onRefresh={handleRefresh} 
+              loading={schedulesLoading || schedulesFetching || availableEmployeesLoading} 
+            />
           </div>
         </div>
       </div>

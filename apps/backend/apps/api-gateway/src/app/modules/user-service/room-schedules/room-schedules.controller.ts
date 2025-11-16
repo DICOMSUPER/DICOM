@@ -229,7 +229,7 @@ export class RoomSchedulesController {
           isActive: true,
         })
       );
-      return result.data || result;
+      return result;
     } catch (error) {
       this.logger.error(`❌ Failed to get available rooms`, error);
       throw handleError(error);
@@ -385,7 +385,7 @@ export class RoomSchedulesController {
           paginationDto: { page: 1, limit: 100 },
         })
       );
-      return result.data || result;
+      return result;
     } catch (error) {
       this.logger.error(`❌ Failed to get shift templates`, error);
       throw handleError(error);
