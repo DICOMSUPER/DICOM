@@ -57,7 +57,7 @@ export default function ServicePage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [toggleActiveDialogOpen, setToggleActiveDialogOpen] = useState(false);
+
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [editMode, setEditMode] = useState(false);
@@ -108,32 +108,6 @@ export default function ServicePage() {
     setFormModalOpen(true);
   };
 
-  // Confirm Toggle Active Status
-  const handleConfirmToggleActive = async () => {
-    try {
-      const service = data?.data.find((s) => s.id === selectedServiceId);
-      if (!service) {
-        toast.error("Service not found");
-        return;
-      }
-
-      await updateService({
-        id: selectedServiceId,
-        updateServiceDto: {
-          isActive: !service.isActive,
-        },
-      }).unwrap();
-
-      toast.success(
-        `Service ${service.isActive ? "deactivated" : "activated"} successfully`
-      );
-      setToggleActiveDialogOpen(false);
-      setSelectedServiceId("");
-    } catch (error: any) {
-      console.error("Failed to toggle service status:", error);
-      toast.error(error?.data?.message || "Failed to update service status");
-    }
-  };
 
   // Delete Service Handler
   const handleDelete = (id: string) => {

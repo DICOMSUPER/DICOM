@@ -134,13 +134,13 @@ export const diagnosisApi = createApi({
 
     // Update diagnosis
     updateDiagnosis: builder.mutation<
-      DiagnosisReport,
-      { id: string; data: UpdateDiagnosisReportDto }
+      ApiResponse<DiagnosisReport>,
+      { id: string; updateDiagnosis: UpdateDiagnosisReportDto }
     >({
-      query: ({ id, data }) => ({
+      query: ({ id, updateDiagnosis }) => ({
         url: `/${id}`,
         method: "PATCH",
-        body: data,
+        data: updateDiagnosis,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Diagnosis", id },

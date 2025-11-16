@@ -10,7 +10,7 @@ import {
 import { User } from './user.entity';
 
 @Entity()
-@Index('idx_user_id', ['userId']) // ✅ tạo index tên cụ thể cho dễ quản lý
+@Index('idx_user_id', ['userId']) 
 export class DigitalSignature {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
