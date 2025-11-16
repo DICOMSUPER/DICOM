@@ -27,3 +27,7 @@ export * from './body-part/update-body-part.dto';
 export * from './imaging-order-form/create-imaging-order-form.dto';
 export * from './imaging-order-form/update-imaging-order-form.dto';
 export * from './imaging-order-form/filter-imaging-order-form.dto';
+
+export * from './dicom-study-signatures/sign-study.dto';
+export * from './dicom-study-signatures/verify-study-signature.dto';
+

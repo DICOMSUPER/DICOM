@@ -19,7 +19,7 @@ import {
 
 @Injectable()
 export class DigitalSignatureService {
-  constructor(private readonly repo: DigitalSignatureRepository) { }
+  constructor(private readonly repo: DigitalSignatureRepository) {}
 
   private readonly logger = new Logger(DigitalSignatureService.name);
 
@@ -30,8 +30,12 @@ export class DigitalSignatureService {
       });
 
       return {
-        publicKeyPem: publicKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
-        privateKeyPem: privateKey.export({ type: 'pkcs1', format: 'pem' }).toString(),
+        publicKeyPem: publicKey
+          .export({ type: 'pkcs1', format: 'pem' })
+          .toString(),
+        privateKeyPem: privateKey
+          .export({ type: 'pkcs1', format: 'pem' })
+          .toString(),
       };
     } catch (error: any) {
       this.logger.error('Failed to generate RSA key pair', error.stack);
@@ -81,7 +85,10 @@ export class DigitalSignatureService {
 
     const pinHash = await bcrypt.hash(pin, 10);
     const { publicKeyPem, privateKeyPem } = this.generateKeyPair();
-    const encryptedPrivateKey = this.encryptPrivateKeyWithPin(privateKeyPem, pin);
+    const encryptedPrivateKey = this.encryptPrivateKeyWithPin(
+      privateKeyPem,
+      pin
+    );
 
     const record = this.repo.createSignature({
       user,
@@ -104,14 +111,15 @@ export class DigitalSignatureService {
     const isPinMatch = await bcrypt.compare(pin, record.pinHash!);
     if (!isPinMatch) throw new InvalidPinException();
 
-    const privateKeyPem = this.decryptPrivateKeyWithPin(record.privateKeyEncrypted!, pin);
+    const privateKeyPem = this.decryptPrivateKeyWithPin(
+      record.privateKeyEncrypted!,
+      pin
+    );
 
     try {
       const sign = crypto.createSign('SHA256');
       sign.update(data);
       const signature = sign.sign(privateKeyPem, 'base64');
-
-
 
       return {
         signatureId: record.id,
@@ -123,7 +131,6 @@ export class DigitalSignatureService {
       throw new SigningFailedException({ originalError: error.message });
     }
   }
-
 
   async verifySignature(data: string, signature: string, publicKey: string) {
     try {
@@ -142,4 +149,22 @@ export class DigitalSignatureService {
     return record;
   }
 
+  async getByUserId(userId: string) {
+    const record = await this.repo.findSignatureByUserId(userId);
+    if (!record) {
+      throw new ResourceNotFoundException(
+        'DigitalSignature',
+        `userId: ${userId}. Digital signature not found. Please setup your digital signature first.`
+      );
+    }
+
+    return {
+      id: record.id,
+      userId: record.userId,
+      certificateSerial: record.certificateSerial,
+      algorithm: record.algorithm,
+      publicKey: record.publicKey,
+      createdAt: record.createdAt,
+    };
+  }
 }

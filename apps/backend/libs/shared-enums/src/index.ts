@@ -15,3 +15,4 @@ export * from './lib/vital-signs-code.enum';
 export * from './lib/vital-signs-unit.enum';
 export * from './lib/machine-status.enum';
 export * from './lib/report-templates.enum';
+export * from './lib/study-signature-type.enum';

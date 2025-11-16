@@ -1,24 +1,26 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { Inject } from '@nestjs/common';
-import { firstValueFrom } from 'rxjs';
 import { Public, Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 import {
-  TransformInterceptor,
   RequestLoggingInterceptor,
+  TransformInterceptor,
 } from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Logger,
+  Param,
+  Post,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 class SetupSignatureDto {
   pin!: string;
@@ -43,8 +45,8 @@ export class DigitalSignatureController {
   private readonly logger = new Logger(DigitalSignatureController.name);
 
   constructor(
-    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
-  ) { }
+    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy
+  ) {}
 
   @Public()
   @Get('health')
@@ -63,7 +65,7 @@ export class DigitalSignatureController {
       this.userServiceClient.send('digital-signature.setup', {
         userId: dto.userId,
         pin: dto.pin,
-      }),
+      })
     );
   }
 
@@ -78,7 +80,7 @@ export class DigitalSignatureController {
         userId: dto.userId,
         pin: dto.pin,
         data: dto.data,
-      }),
+      })
     );
 
     return {
@@ -99,7 +101,7 @@ export class DigitalSignatureController {
         data: dto.data,
         signature: dto.signature,
         publicKey: dto.publicKey,
-      }),
+      })
     );
 
     return {
@@ -112,7 +114,7 @@ export class DigitalSignatureController {
   async getPublicKey(@Param('userId') userId: string) {
     this.logger.log(`Getting public key for userId=${userId}`);
     const result = await firstValueFrom(
-      this.userServiceClient.send('digital-signature.getPublicKey', { userId }),
+      this.userServiceClient.send('digital-signature.getPublicKey', { userId })
     );
 
     return { message: result.message, publicKey: result.publicKey };
@@ -123,19 +125,50 @@ export class DigitalSignatureController {
   async getById(@Param('id') id: string) {
     this.logger.log(`Getting digital signature by id=${id}`);
     const record = await firstValueFrom(
-      this.userServiceClient.send('digital-signature.getById', { id }),
+      this.userServiceClient.send('digital-signature.getById', { id })
     );
     return record;
   }
-
 
   @Delete(':userId')
   async remove(@Param('userId') userId: string) {
     this.logger.log(`Removing signature for userId=${userId}`);
     const result = await firstValueFrom(
-      this.userServiceClient.send('digital-signature.remove', { userId }),
+      this.userServiceClient.send('digital-signature.remove', { userId })
     );
 
     return { message: result.message };
+  }
+
+  @Get('my-signature')
+  async getMySignature(@Req() req: IAuthenticatedRequest) {
+    this.logger.log(`Getting signature for user ${req.userInfo.userId}`);
+
+    const result = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getByUserId', {
+        userId: req.userInfo.userId,
+      })
+    );
+
+    return result;
+  }
+
+  /**
+   * Check if user has digital signature
+   */
+  @Get('has-signature')
+  async hasSignature(@Req() req: IAuthenticatedRequest) {
+    this.logger.log(`Checking if user ${req.userInfo.userId} has signature`);
+
+    try {
+      await firstValueFrom(
+        this.userServiceClient.send('digital-signature.getByUserId', {
+          userId: req.userInfo.userId,
+        })
+      );
+      return { hasSignature: true };
+    } catch (error) {
+      return { hasSignature: false };
+    }
   }
 }
