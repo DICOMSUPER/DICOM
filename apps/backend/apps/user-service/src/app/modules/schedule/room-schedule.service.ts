@@ -118,37 +118,6 @@ export class RoomScheduleService {
     try {
       const schedule = await this.findOne(id);
 
-      // If updating time or date, check for conflicts
-      if (
-        (updateDto.work_date ||
-          updateDto.actual_start_time ||
-          updateDto.actual_end_time) &&
-        updateDto.employee_id !== undefined
-      ) {
-        const checkDate = updateDto.work_date || schedule.work_date;
-        const checkStartTime =
-          updateDto.actual_start_time || schedule.actual_start_time;
-        const checkEndTime =
-          updateDto.actual_end_time || schedule.actual_end_time;
-        // const checkEmployeeId = updateDto.employee_id || schedule.employee_id;
-
-        if (checkStartTime && checkEndTime) {
-          const conflictCheck = await this.checkConflict(
-            // checkEmployeeId,
-            checkDate,
-            checkStartTime,
-            checkEndTime,
-            id // Exclude current schedule from conflict check
-          );
-
-          if (conflictCheck.hasConflict) {
-            throw new BadRequestException(
-              `Schedule conflict detected on ${checkDate} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
-            );
-          }
-        }
-      }
-
       Object.assign(schedule, updateDto);
       return await this.RoomScheduleRepository.save(schedule);
     } catch (error) {
@@ -271,26 +240,6 @@ export class RoomScheduleService {
     schedules: CreateRoomScheduleDto[]
   ): Promise<RoomSchedule[]> {
     try {
-      // Validate all schedules first
-      for (const schedule of schedules) {
-        const existingSchedule =
-          await this.RoomScheduleRepository.findByEmployeeId(
-            schedule.employee_id
-          );
-
-        const conflictExists = existingSchedule.some(
-          (existing) =>
-            existing.work_date === schedule.work_date &&
-            existing.schedule_status !== ScheduleStatus.CANCELLED
-        );
-
-        if (conflictExists) {
-          throw new BadRequestException(
-            `Employee ${schedule.employee_id} already has a schedule for ${schedule.work_date}`
-          );
-        }
-      }
-
       // Create all schedules
       const createdSchedules: RoomSchedule[] = [];
       for (const schedule of schedules) {
@@ -381,7 +330,6 @@ export class RoomScheduleService {
         newDate.setDate(targetStartDate.getDate() + dayOfWeek);
 
         newSchedules.push({
-          employee_id: schedule.employee_id,
           room_id: schedule.room_id,
           shift_template_id: schedule.shift_template_id,
           work_date: newDate.toISOString().split('T')[0],
@@ -405,7 +353,7 @@ export class RoomScheduleService {
 
   // Conflict Detection
   async checkConflict(
-    // employeeId: string,
+    employeeId: string,
     date: string,
     startTime: string,
     endTime: string,

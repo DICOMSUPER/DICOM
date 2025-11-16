@@ -118,7 +118,7 @@ export function ServiceTable({
       cell: ({ row }) => (
         <div className="space-y-1">
           <span className="text-slate-700 text-sm">
-            {row.original.description || "-"}
+            {row.original.description || "—"}
           </span>
         </div>
       ),

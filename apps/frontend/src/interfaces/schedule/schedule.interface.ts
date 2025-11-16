@@ -1,3 +1,5 @@
+import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+
 // Employee Schedule Interfaces
 export interface Employee {
   id: string;
@@ -56,7 +58,7 @@ export interface ShiftTemplate {
 
 export interface RoomSchedule {
   schedule_id: string;
-  employee_id: string;
+  employee_id?: string;
   room_id?: string;
   shift_template_id?: string;
   work_date: string;
@@ -66,9 +68,10 @@ export interface RoomSchedule {
   notes?: string;
   overtime_hours: number;
   created_by?: string;
-  employee: Employee;
+  employee?: Employee;
   room?: Room;
   shift_template?: ShiftTemplate;
+  employeeRoomAssignments?: EmployeeRoomAssignment[];
 }
 
 // DTOs for API calls
@@ -135,4 +138,4 @@ export interface TimeSlot {
 }
 
 // View mode types
-export type ViewMode = 'day' | 'week' | 'month' | 'list';
+export type ViewMode = 'day' | 'week' | 'month' | 'list' | 'room';

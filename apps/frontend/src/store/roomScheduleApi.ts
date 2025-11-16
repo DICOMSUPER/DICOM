@@ -211,12 +211,18 @@ export const RoomScheduleApi = createApi({
     }),
 
     // Get available employees for scheduling
-    getAvailableEmployees: builder.query<Employee[], { date: string; time?: string }>({
-      query: ({ date, time }) => ({
-        url: "/available-employees",
-        method: "GET",
-        params: { date, time },
-      }),
+    getAvailableEmployees: builder.query<Employee[], { date: string; time?: string; startTime?: string; endTime?: string }>({
+      query: ({ date, time, startTime, endTime }) => {
+        const params: Record<string, string> = { date };
+        if (time) params.time = time;
+        if (startTime) params.startTime = startTime;
+        if (endTime) params.endTime = endTime;
+        return {
+          url: "/available-employees",
+          method: "GET",
+          params,
+        };
+      },
       providesTags: ["Employee"],
     }),
 

@@ -291,7 +291,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
                             {room.roomCode}
                           </h3>
                           {/* CHANGE: Display current occupancy numbers */}
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-sm text-foreground">
                             {currentOccupancy}/{maxCapacity}
                           </span>
                         </div>
@@ -306,7 +306,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
                               style={{ width: `${utilizationPercent}%` }}
                             />
                           </div>
-                          <div className="flex justify-between text-xs text-muted-foreground">
+                          <div className="flex justify-between text-xs text-foreground">
                             <span>
                               {utilizationPercent.toFixed(0)}% utilized
                             </span>

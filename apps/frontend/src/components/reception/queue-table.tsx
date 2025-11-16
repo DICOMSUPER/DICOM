@@ -82,7 +82,7 @@ export function QueueTable({
                 {assignment.encounter.patient.firstName}{" "}
                 {assignment.encounter.patient.lastName}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-foreground">
                 ID: {assignment.encounter.patient.patientCode}
               </span>
             </div>
@@ -112,7 +112,7 @@ export function QueueTable({
             if (showWaitTime) {
               return (
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <Clock className="w-4 h-4 text-foreground" />
                   <span>{getWaitTime(assignment.priority)}</span>
                 </div>
               );

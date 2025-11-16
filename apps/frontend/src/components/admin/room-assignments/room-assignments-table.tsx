@@ -7,6 +7,7 @@ import { EmployeeRoomAssignment } from '@/interfaces/user/employee-room-assignme
 import { DataTable } from '@/components/ui/data-table';
 import { ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { formatRole } from '@/utils/role-formatter';
 
 interface RoomAssignmentsTableProps {
   assignments: EmployeeRoomAssignment[];
@@ -34,7 +35,7 @@ export function RoomAssignmentsTable({
                 {assignment.employee?.firstName} {assignment.employee?.lastName}
               </div>
               <div className="text-xs text-foreground capitalize">
-                {assignment.employee?.role?.replace(/_/g, ' ') || 'Role unavailable'}
+                {formatRole(assignment.employee?.role)}
               </div>
             </div>
           ),

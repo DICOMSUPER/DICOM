@@ -47,15 +47,18 @@ export class RoomScheduleRepository {
 
     const queryBuilder = this.repository
       .createQueryBuilder('schedule')
-      .leftJoinAndSelect('schedule.employee', 'employee')
+      .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template');
 
     // Apply filters
     if (paginationDto.employeeId) {
-      queryBuilder.andWhere('schedule.employee_id = :employeeId', {
-        employeeId: paginationDto.employeeId,
-      });
+      queryBuilder
+        .andWhere('assignments.employeeId = :employeeId', {
+          employeeId: paginationDto.employeeId,
+        })
+        .andWhere('assignments.isActive = :isActive', { isActive: true });
     }
 
     if (paginationDto.roomId) {
@@ -121,10 +124,12 @@ export class RoomScheduleRepository {
   ): Promise<RoomSchedule[]> {
     const query = this.repository
       .createQueryBuilder('schedule')
-      .leftJoinAndSelect('schedule.employee', 'employee')
+      .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template')
-      .where('schedule.employee_id = :employeeId', { employeeId })
+      .where('assignments.employeeId = :employeeId', { employeeId })
+      .andWhere('assignments.isActive = :isActive', { isActive: true })
       .orderBy('schedule.work_date', 'DESC')
       .addOrderBy('schedule.actual_start_time', 'ASC');
 
@@ -142,7 +147,8 @@ export class RoomScheduleRepository {
   ): Promise<RoomSchedule[]> {
     const query = this.repository
       .createQueryBuilder('schedule')
-      .leftJoinAndSelect('schedule.employee', 'employee')
+      .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template')
       .where('schedule.work_date >= :startDate', { startDate })
@@ -151,7 +157,9 @@ export class RoomScheduleRepository {
       .addOrderBy('schedule.actual_start_time', 'ASC');
 
     if (employeeId) {
-      query.andWhere('schedule.employee_id = :employeeId', { employeeId });
+      query
+        .andWhere('assignments.employeeId = :employeeId', { employeeId })
+        .andWhere('assignments.isActive = :isActive', { isActive: true });
     }
 
     return await query.getMany();
@@ -163,7 +171,12 @@ export class RoomScheduleRepository {
   ): Promise<RoomSchedule[]> {
     return await this.repository.find({
       where: { room_id: roomId, work_date: workDate },
-      relations: ['employee', 'room', 'shift_template'],
+      relations: [
+        'employeeRoomAssignments',
+        'employeeRoomAssignments.employee',
+        'room',
+        'shift_template',
+      ],
       order: { actual_start_time: 'ASC' },
     });
   }
@@ -173,14 +186,17 @@ export class RoomScheduleRepository {
   ): Promise<RoomSchedule[]> {
     const query = this.repository
       .createQueryBuilder('schedule')
-      .leftJoinAndSelect('schedule.employee', 'employee')
+      .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template');
 
     if (filters.employeeId) {
-      query.andWhere('schedule.employee_id = :employeeId', {
-        employeeId: filters.employeeId,
-      });
+      query
+        .andWhere('assignments.employeeId = :employeeId', {
+          employeeId: filters.employeeId,
+        })
+        .andWhere('assignments.isActive = :isActive', { isActive: true });
     }
 
     if (filters.roomId) {
@@ -228,7 +244,14 @@ export class RoomScheduleRepository {
     const query = this.repository.createQueryBuilder('schedule');
 
     if (employeeId) {
-      query.where('schedule.employee_id = :employeeId', { employeeId });
+      query
+        .innerJoin(
+          'schedule.employeeRoomAssignments',
+          'assignments',
+          'assignments.isActive = :isActive',
+          { isActive: true }
+        )
+        .andWhere('assignments.employeeId = :employeeId', { employeeId });
     }
 
     const total = await query.getCount();
@@ -282,6 +305,8 @@ export class RoomScheduleRepository {
     // Added NULL checks and role filter on the joined employee
     const qb = this.repository
       .createQueryBuilder('schedules')
+      .leftJoinAndSelect('schedules.employeeRoomAssignments', 'assignments')
+      .leftJoinAndSelect('assignments.employee', 'employee')
       .where('schedules.room_id = :roomId', { roomId })
       .andWhere('employee.role = :role', { role }) // Filter by passed role
       .andWhere(
@@ -308,7 +333,6 @@ export class RoomScheduleRepository {
           )`,
         { currentDate, yesterdayDate, currentTime }
       )
-      .leftJoinAndSelect('schedules.employee', 'employee')
       .leftJoinAndSelect('schedules.room', 'room') // Optional
       .leftJoinAndSelect('schedules.shift_template', 'shift_template'); // Optional
 

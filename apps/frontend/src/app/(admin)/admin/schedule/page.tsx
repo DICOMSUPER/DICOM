@@ -37,10 +37,10 @@ import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
+import { RoomView } from "@/components/schedule/RoomView";
 import { 
   useGetRoomSchedulesQuery, 
   useDeleteRoomScheduleMutation,
-  useGetShiftTemplatesQuery,
   useGetRoomsQuery,
   useGetScheduleStatsQuery,
 } from "@/store/scheduleApi";
@@ -51,7 +51,8 @@ import { ScheduleStatsCards } from "@/components/admin/schedules/ScheduleStatsCa
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { ViewMode } from "@/interfaces/schedule/schedule.interface";
+import type { ViewMode, RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800",
@@ -75,7 +76,7 @@ interface PageProps {
 }
 export default function ScheduleManagementPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list">("day");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "list" | "room">("day");
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
   const [search, setSearch] = useState("");
@@ -128,12 +129,6 @@ export default function ScheduleManagementPage() {
     usersDataType: typeof usersData?.data,
     isArray: Array.isArray(usersData?.data),
     fullStructure: JSON.stringify(usersData, null, 2)
-  });
-
-  const { data: shiftTemplatesData } = useGetShiftTemplatesQuery({
-    page: 1,
-    limit: 100,
-    is_active: true,
   });
 
   const { data: roomsData } = useGetRoomsQuery({
@@ -199,8 +194,7 @@ export default function ScheduleManagementPage() {
   // Extract data arrays from paginated responses with fallback handling
   const users = Array.isArray(usersData?.data) ? usersData.data : 
                 Array.isArray(usersData) ? usersData : [];
-  const shiftTemplates = Array.isArray(shiftTemplatesData?.data) ? shiftTemplatesData.data : 
-                        Array.isArray(shiftTemplatesData) ? shiftTemplatesData : [];
+  const { shiftTemplates, shiftTemplateMap } = useShiftTemplatesDictionary();
   const rooms = Array.isArray(roomsData?.data) ? roomsData.data : 
                 Array.isArray(roomsData) ? roomsData : [];
 
@@ -213,7 +207,7 @@ export default function ScheduleManagementPage() {
     usersLoading,
     usersError,
     usersDataStructure: usersData,
-    shiftTemplatesDataStructure: shiftTemplatesData,
+    shiftTemplatesDataStructure: shiftTemplates,
     roomsDataStructure: roomsData
   });
 
@@ -329,25 +323,14 @@ export default function ScheduleManagementPage() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     // Refetch schedules and stats
-    refetchSchedules();
-    refetchStats();
+    await Promise.all([refetchSchedules(), refetchStats()]);
   };
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
     return schedules.filter((schedule: any) => schedule.work_date === dateStr);
-  };
-
-  const getScheduleForTimeSlot = (date: Date, hour: number): any => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.find(
-      (schedule: any) =>
-        schedule.work_date === dateStr &&
-        schedule.actual_start_time &&
-        parseInt(schedule.actual_start_time.split(":")[0]) === hour
-    );
   };
 
   const getStatusColor = (status: string) => {
@@ -370,9 +353,9 @@ export default function ScheduleManagementPage() {
       selectedDate={selectedDate}
       timeSlots={timeSlots}
       schedules={schedules as any}
-      getScheduleForTimeSlot={getScheduleForTimeSlot}
       getStatusColor={getStatusColor}
       isLoading={isLoading}
+      shiftTemplateMap={shiftTemplateMap}
     />
   );
 
@@ -409,7 +392,14 @@ export default function ScheduleManagementPage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={schedules as any} selectedDate={selectedDate} isLoading={isLoading} />
+        <WeekView
+          weekDays={weekDays}
+          timeSlots={timeSlots}
+          schedules={schedules as any}
+          selectedDate={selectedDate}
+          isLoading={isLoading}
+          shiftTemplateMap={shiftTemplateMap}
+        />
       </div>
     );
   };
@@ -451,6 +441,17 @@ export default function ScheduleManagementPage() {
     );
   };
 
+  const renderRoomView = () => (
+    <RoomView
+      selectedDate={selectedDate}
+      timeSlots={timeSlots}
+      schedules={schedules as any}
+      getStatusColor={getStatusColor}
+      isLoading={isLoading}
+      shiftTemplateMap={shiftTemplateMap}
+    />
+  );
+
   const renderListView = () => (
     <div className="space-y-4">
       {/* Filters */}
@@ -468,7 +469,7 @@ export default function ScheduleManagementPage() {
         </div>
         <div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-primary text-white border-0 hover:bg-primary/90">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -483,7 +484,7 @@ export default function ScheduleManagementPage() {
         </div>
         <div>
           <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-primary text-white border-0 hover:bg-primary/90">
               <SelectValue placeholder="Filter by employee" />
             </SelectTrigger>
             <SelectContent>
@@ -714,7 +715,7 @@ export default function ScheduleManagementPage() {
 
           <div className="mb-4 lg:mb-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-              <TabsList className="bg-gray-100 w-full grid grid-cols-4">
+              <TabsList className="bg-gray-100 w-full grid grid-cols-5">
                 <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
                   Day
                 </TabsTrigger>
@@ -726,6 +727,9 @@ export default function ScheduleManagementPage() {
                 </TabsTrigger>
                 <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
                   List
+                </TabsTrigger>
+                <TabsTrigger value="room" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                  Room
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -786,6 +790,18 @@ export default function ScheduleManagementPage() {
               {viewMode === "list" && (
                 <div>
                   {renderListView()}
+                </div>
+              )}
+
+              {viewMode === "room" && (
+                <div>
+                  <div className="mb-4 xl:mb-6">
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
+                    <p className="text-xs xl:text-sm text-gray-600">
+                      Schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
+                    </p>
+                  </div>
+                  {renderRoomView()}
                 </div>
               )}
             </div>
