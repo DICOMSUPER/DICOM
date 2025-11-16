@@ -6,6 +6,7 @@ import {
   PatientConditionSearchFilters,
 } from "@/interfaces/patient/patient-condition.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 
 export const patientConditionApi = createApi({
   reducerPath: "patientConditionApi",
@@ -30,11 +31,14 @@ export const patientConditionApi = createApi({
       providesTags: (result, error, id) => [{ type: "PatientCondition", id }],
     }),
 
-    getConditionsByPatientId: builder.query<PatientCondition[], string>({
+    getConditionsByPatientId: builder.query<
+      ApiResponse<PatientCondition[]>,
+      string
+    >({
       query: (patientId) => ({ url: `/patient/${patientId}`, method: "GET" }),
       providesTags: (result, error, patientId) => [
         { type: "PatientCondition", id: "LIST" },
-        ...(result || []).map(({ id }) => ({
+        ...(result?.data || []).map(({ id }) => ({
           type: "PatientCondition" as const,
           id,
         })),

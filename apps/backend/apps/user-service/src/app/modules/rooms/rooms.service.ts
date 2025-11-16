@@ -449,45 +449,68 @@ export class RoomsService {
       const qb = this.roomRepository
         .createQueryBuilder('room')
 
-        //join room & department &
+        //join room & department
         .leftJoinAndSelect('room.department', 'department')
         .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
-        .leftJoinAndSelect('room.schedules', 'schedules')
+        .leftJoinAndSelect(
+          'room.schedules',
+          'schedules',
+          // Filter schedules at join time
+          `(
+            (schedules.work_date = :todayDate 
+             AND schedules.actual_start_time < schedules.actual_end_time
+             AND schedules.actual_start_time <= :todayTime 
+             AND schedules.actual_end_time >= :todayTime)
+            OR
+            (schedules.work_date = :yesterdayDate 
+             AND schedules.actual_start_time > schedules.actual_end_time
+             AND :todayTime <= schedules.actual_end_time)
+            OR
+            (schedules.work_date = :todayDate 
+             AND schedules.actual_start_time > schedules.actual_end_time
+             AND :todayTime >= schedules.actual_start_time)
+          )`
+        )
         .leftJoinAndSelect(
           'schedules.employeeRoomAssignments',
-          'employeeRoomAssignments'
+          'employeeRoomAssignments',
+          'employeeRoomAssignments.is_active = true'
         )
         .leftJoin('employeeRoomAssignments.employee', 'employee')
 
-        //filter correct department_id, service_id
         .where('room.department_id = :departmentId', { departmentId })
         .andWhere('serviceRooms.service_id = :serviceId', { serviceId })
-
-        //active room & active service
         .andWhere('room.is_active = true')
         .andWhere('serviceRooms.is_active = true')
 
-        //filter, get room with schedule & employee in schedule
+        // Keep EXISTS to ensure room has at least one valid schedule
         .andWhere(
           `EXISTS (
             SELECT 1 FROM room_schedules rs
-            LEFT JOIN employee_room_assignments era ON era.room_schedule_id = rs.schedule_id
+            LEFT JOIN employee_room_assignments era 
+              ON era.room_schedule_id = rs.schedule_id
             WHERE rs.room_id = room.room_id
             AND era.is_active = true
             AND (
-              -- Case 1: Same day shift (start_time < end_time)
-              (rs.work_date = :todayDate AND rs.actual_start_time <= rs.actual_end_time 
-               AND rs.actual_start_time <= :todayTime AND rs.actual_end_time >= :todayTime)
+              (rs.work_date = :todayDate
+               AND rs.actual_start_time < rs.actual_end_time
+               AND rs.actual_start_time <= :todayTime
+               AND rs.actual_end_time >= :todayTime)
               OR
-              -- Case 2: Overnight shift (start_time > end_time) 
-              (rs.work_date = :yesterdayDate AND rs.actual_start_time > rs.actual_end_time 
+              (rs.work_date = :yesterdayDate
+               AND rs.actual_start_time > rs.actual_end_time
                AND :todayTime <= rs.actual_end_time)
+              OR
+              (rs.work_date = :todayDate
+               AND rs.actual_start_time > rs.actual_end_time
+               AND :todayTime >= rs.actual_start_time)
             )
           )`,
           { todayDate, todayTime, yesterdayDate }
         );
 
       if (role) qb.andWhere('employee.role = :role', { role });
+
       return await qb.getMany();
     } catch (error) {
       throw ThrowMicroserviceException(

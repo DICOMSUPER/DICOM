@@ -16,6 +16,7 @@ interface UploadedStudiesProps {
   selectedSeries: DicomSeries | null;
   onStudySelect: (study: DicomStudy | null) => void;
   onSeriesSelect: (series: DicomSeries | null) => void;
+  refetchStudy: () => void;
 }
 
 export default function UploadedStudies({
@@ -26,6 +27,7 @@ export default function UploadedStudies({
   selectedSeries,
   onStudySelect,
   onSeriesSelect,
+  refetchStudy,
 }: UploadedStudiesProps) {
   const [expandedStudies, setExpandedStudies] = useState<
     Record<string, boolean>
@@ -116,6 +118,7 @@ export default function UploadedStudies({
                 date={date}
                 seriesCount={study.numberOfSeries ?? studySeries.length}
                 isLast={isLast}
+                refetch={refetchStudy}
               />
 
               {/* Series Level - Hidden by default */}

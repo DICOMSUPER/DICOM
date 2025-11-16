@@ -87,13 +87,6 @@ export default function DataTable({
     }
   };
 
-  const changeDicomStudyStatus = async (
-    id: string,
-    status: DicomStudyStatus
-  ) => {
-    await updateDicomStudy({ id, data: { studyStatus: status } });
-  };
-
   const OnCallIn = async (id: string) => {
     await changImagingOrderStatus(id, ImagingOrderStatus.IN_PROGRESS);
   };
@@ -103,26 +96,7 @@ export default function DataTable({
   };
 
   const onMarkCompleted = async (id: string) => {
-    try {
-      await changImagingOrderStatus(id, ImagingOrderStatus.COMPLETED);
-      const order = orders.find((o) => o.id === id);
-      if (order?.studies && order?.studies.length > 0) {
-        order?.studies.forEach(async (s) => {
-          await changeDicomStudyStatus(
-            s.id,
-            DicomStudyStatus.TECHNICIAN_VERIFIED
-          );
-        });
-      }
-    } catch (error) {
-      await changImagingOrderStatus(id, ImagingOrderStatus.IN_PROGRESS);
-      const order = orders.find((o) => o.id === id);
-      if (order?.studies && order?.studies.length > 0) {
-        order?.studies.forEach(async (s) => {
-          await changeDicomStudyStatus(s.id, DicomStudyStatus.SCANNED);
-        });
-      }
-    }
+    await changImagingOrderStatus(id, ImagingOrderStatus.COMPLETED);
   };
 
   const onMarkCancelled = async (id: string) => {
