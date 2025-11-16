@@ -30,6 +30,7 @@ import { Roles } from "@/enums/user.enum";
 import { useGetActiveServicesByDepartmentIdQuery } from "@/store/serviceApi";
 import { Services } from "@/interfaces/user/service.interface";
 import { Room } from "@/interfaces/user/room.interface";
+import { ServiceRoom } from "@/interfaces/user/service-room.interface";
 
 type DepartmentOption = Department & { value: string; label: string };
 
@@ -40,15 +41,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
     patientId: patientId,
     encounterDate: "",
     encounterType: EncounterType.INPATIENT,
-    assignedPhysicianId: null,
     notes: "",
-  });
-
-  const [queueInfo, setQueueInfo] = useState({
-    encounterId: "",
-    roomId: "",
-    priorityReason: "",
-    createdBy: "",
   });
 
   const [departmentSearch, setDepartmentSearch] = useState("");
@@ -129,17 +122,36 @@ export function PatientForward({ patientId }: { patientId: string }) {
   //submit
   const onSubmit = async () => {
     let encounter;
+    if (!selectedRoom || !selectedService) {
+      toast.warning("Please select a room and service");
+    }
+
     try {
+      const selectedServiceRoom = selectedRoom?.serviceRooms.find(
+        (serviceRoom: ServiceRoom) =>
+          serviceRoom?.serviceId === selectedService?.id
+      );
+
+      if (!selectedServiceRoom) {
+        toast.warning(
+          "Service room not found in selected room for this service"
+        );
+      }
+
       const encounterData = {
         ...encounterInfo,
         encounterDate: new Date().toISOString(),
+        serviceRoomId: selectedServiceRoom?.id as string,
       };
+
+      // console.log(encounterData);
+
       encounter = await createEncounter(encounterData).unwrap();
 
       if (encounter) {
         toast.success("Forward patient successfully");
 
-        router.push(`/reception/queue-paper/1`); //dummy, fix when fix encounter id
+        router.push(`/reception/queue-paper/${encounter.data.id}`); //dummy, fix when fix encounter id
 
         // router.push(
         //   `/reception/queue-paper/${queue.data.id}?doctor=${encounter.data.assignedPhysicianId}`
