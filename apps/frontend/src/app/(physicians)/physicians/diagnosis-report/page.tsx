@@ -1,7 +1,6 @@
 "use client";
 import { DiagnosisReportFiltersSection } from "@/components/physicians/diagnosis-report/diagnosis-report-filters";
 import { DiagnosisReportTable } from "@/components/physicians/diagnosis-report/diagnosis-report-table";
-import { ModalApproveStudy } from "@/components/physicians/diagnosis-report/modal-approve-study";
 import { ModalDiagnosisReportDetail } from "@/components/physicians/diagnosis-report/modal-diagnosis-report-detail";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";

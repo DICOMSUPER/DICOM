@@ -28,21 +28,21 @@ const setUpFormSchema = z.object({
 });
 
 type SetUpFormValues = z.infer<typeof setUpFormSchema>;
-interface ModalApproveStudyProps {
+interface ModalSetUpSignatureProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (studyId: string, pin: string) => void;
-  studyId: string;
+  onConfirm: (userId: string, pin: string) => void;
+  userId: string;
   isLoading?: boolean;
 }
 
-export function ModalApproveStudy({
+export function ModalSetUpSignature({
   open,
   onClose,
   onConfirm,
-  studyId,
+  userId,
   isLoading = false,
-}: ModalApproveStudyProps) {
+}: ModalSetUpSignatureProps) {
   const [showPin, setShowPin] = useState(false);
 
   const form = useForm<SetUpFormValues>({
@@ -60,7 +60,9 @@ export function ModalApproveStudy({
   }, [open, form]);
 
   const handleSubmit = (data: SetUpFormValues) => {
-    onConfirm(studyId, data.pin);
+    console.log("user",userId);
+    
+    onConfirm(userId, data.pin);
   };
 
   const handleClose = () => {
@@ -80,10 +82,10 @@ export function ModalApproveStudy({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-green-600" />
-            Approve Study
+            Set Up Signature
           </DialogTitle>
           <DialogDescription>
-            Enter your pin to approve the study
+            Enter pin to set up your digital signature
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -100,7 +102,7 @@ export function ModalApproveStudy({
                     <div className="relative">
                       <Input
                         type={showPin ? "text" : "password"}
-                        placeholder="Enter your pin to sign"
+                        placeholder="Enter pin"
                         {...field}
                         className="pr-10"
                       />
@@ -139,12 +141,12 @@ export function ModalApproveStudy({
                 {isLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Signing...
+                    Setting Up...
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve Study
+                    Set Up Signature
                   </>
                 )}
               </Button>
