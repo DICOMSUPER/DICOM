@@ -20,7 +20,7 @@ export class ReportTemplatesService {
     @Inject()
     private readonly reportTemplateRepository: ReportTemplateRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
-  ) {}
+  ) { }
   create = async (createReportTemplateDto: CreateReportTemplateDto): Promise<ReportTemplate> => {
     return await this.entityManager.transaction(async (em) => {
       const existingReportTemplate = await this.reportTemplateRepository.findOne(
@@ -118,4 +118,16 @@ export class ReportTemplatesService {
   ): Promise<PaginatedResponseDto<ReportTemplate>> => {
     return await this.reportTemplateRepository.paginate(paginationDto);
   };
+
+  findByModaltyIdandBodyPartId = async (
+    modalityId: string,
+    bodyPartId: string
+  ): Promise<ReportTemplate[]> => {
+    return await this.reportTemplateRepository.findByModaltyIdandBodyPartId(
+      modalityId,
+      bodyPartId
+    );
+  };
+
+
 }

@@ -17,7 +17,7 @@ export class ReportTemplatesController {
 
   constructor(
     private readonly reportTemplatesService: ReportTemplatesService
-  ) {}
+  ) { }
 
   @MessagePattern(`PatientService.ReportTemplate.Create`)
   async create(
@@ -134,6 +134,27 @@ export class ReportTemplatesController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find many report templates`,
+        "PATIENT_SERVICE"
+      );
+    }
+  }
+
+  @MessagePattern(
+    `PatientService.ReportTemplate.FindByModalityIdAndBodyPartId`
+  )
+  async findByModalityIdAndBodyPartId(
+    @Payload() data: { modalityId?: string; bodyPartId?: string }
+  ): Promise<ReportTemplate[]> {
+    try {
+      const { modalityId, bodyPartId } = data;
+      return await this.reportTemplatesService.findByModaltyIdandBodyPartId(
+        modalityId ?? '',
+        bodyPartId ?? ''
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to find report templates by modalityId and bodyPartId`,
         "PATIENT_SERVICE"
       );
     }

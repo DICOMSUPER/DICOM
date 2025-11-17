@@ -6,38 +6,52 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail } from "lucide-react";
+import {
+  Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail,
+} from "lucide-react";
+
 import { useCreateDiagnosisMutation } from "@/store/diagnosisApi";
-import { CreateDiagnosisReportDto, DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
+import {
+  CreateDiagnosisReportDto,
+  DiagnosisType,
+  Severity,
+} from "@/interfaces/patient/patient-workflow.interface";
+
 import PinDialog from "./PinDialog";
-import { SignDataDto, useSignDataMutation, useGetDigitalSignatureByIdQuery } from "@/store/digitalSignatureApi";
+import {
+  SignDataDto,
+  useSignDataMutation,
+  useGetDigitalSignatureByIdQuery,
+} from "@/store/digitalSignatureApi";
+
+import RichTextEditor from "@/components/radiologist/editor/RichTextEditor";
+import SelectTemplateDialog from "./SelectTemplateDialog";
 
 const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading, encounterId }: any) => {
   const [createDiagnosis] = useCreateDiagnosisMutation();
   const [description, setDescription] = useState("");
+
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
 
   const [signerId, setSignerId] = useState<string | null>(null);
   const [signerUser, setSignerUser] = useState<any>(null);
 
   const [signData] = useSignDataMutation();
+  const { data: signerSignature } = useGetDigitalSignatureByIdQuery(
+    signerId!,
+    { skip: !signerId }
+  );
 
-
-  const { data: signerSignature } = useGetDigitalSignatureByIdQuery(signerId!, { skip: !signerId });
-
-  // Cập nhật user khi signature data load xong
+  // Cập nhật user sau khi ký
   useEffect(() => {
-    if (signerSignature?.data?.signature?.user) setSignerUser(signerSignature?.data?.signature?.user);
+    if (signerSignature?.data?.signature?.user) {
+      setSignerUser(signerSignature?.data?.signature?.user);
+    }
   }, [signerSignature]);
 
-  // Mở dialog PIN
-  const handleOpenPinDialog = () => {
-    setIsPinDialogOpen(true);
-  };
+  const handleOpenPinDialog = () => setIsPinDialogOpen(true);
 
- 
-  // Xác nhận PIN, trả về signatureId
   const handleConfirmPin = async (pin: string) => {
     try {
       const payload: SignDataDto = { pin, data: "This is the data to be signed" };
@@ -53,15 +67,18 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
     }
   };
 
-  // Tạo chẩn đoán
+  // Chọn template → đổ nội dung vào RichTextEditor
+  const handleSelectTemplate = (template: any) => {
+    setDescription(template.descriptionTemplate ?? "");
+  };
+
   const handleCreateDiagnosis = async () => {
     if (!selectedStudyId || !encounterId) return alert("Thiếu study hoặc encounter ID!");
     if (!signerId) return alert("Cần xác nhận PIN người ký!");
 
-
-    const payload: CreateDiagnosisReportDto & { idSignature: string } = {
+    const payload: CreateDiagnosisReportDto = {
       encounterId,
-      studyId: selectedStudyId,
+      studyId: selectedStudyId.id,
       diagnosisName: `Huy Nguyen (${new Date().toISOString().slice(0, 10)})`,
       description: description || "Nhập nội dung chẩn đoán...",
       diagnosisType: DiagnosisType.PRIMARY,
@@ -69,11 +86,11 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
       diagnosisDate: new Date().toISOString().slice(0, 10),
       diagnosedBy: signerUser?.id,
       notes: "Patient to receive diabetic education before discharge.",
-      idSignature: signerId,
+      signatureId: signerId,
     };
-    console.log("payload", payload)
+
     try {
-      await createDiagnosis(payload).unwrap();
+      await createDiagnosis(payload);
       alert("Đã lưu chẩn đoán thành công!");
       setDescription("");
       setSignerId(null);
@@ -84,8 +101,11 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
     }
   };
 
-  if (!selectedStudyId) return <div className="flex-1 flex items-center justify-center text-gray-500">Chưa có Study — hãy tạo mới chẩn đoán.</div>;
-  if (isDiagnosisLoading) return <div className="flex-1 flex items-center justify-center">Đang tải thông tin chẩn đoán...</div>;
+  if (!selectedStudyId)
+    return <div className="flex-1 flex items-center justify-center text-gray-500">Chưa có Study — hãy tạo mới chẩn đoán.</div>;
+
+  if (isDiagnosisLoading)
+    return <div className="flex-1 flex items-center justify-center">Đang tải thông tin chẩn đoán...</div>;
 
   const hasDiagnosis = diagnosisData?.data?.length > 0;
   const diagnosis = diagnosisData?.data?.[0];
@@ -125,12 +145,22 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
           {!hasDiagnosis ? (
             <div className="bg-white shadow-sm min-h-[80vh] p-10">
               <h1 className="text-lg font-semibold mb-6 text-center">CHẨN ĐOÁN MỚI</h1>
-              <Textarea
-                placeholder="Nhập nội dung chẩn đoán ở đây..."
-                className="w-full min-h-[50vh] border-none focus-visible:ring-0 focus-visible:outline-none text-[15px] leading-relaxed"
+
+              {/* chọn template */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsTemplateOpen(true)}
+              >
+                Choose Template
+              </Button>
+
+              <RichTextEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
+                placeholder=""
               />
+
               <Separator className="my-6" />
 
               <div className="grid grid-cols-2 gap-8">
@@ -138,7 +168,12 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="font-medium text-sm">Người ký (Alt + 1):</span>
-                    <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={handleOpenPinDialog}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={handleOpenPinDialog}
+                    >
                       <span className="text-xs">📋</span>
                     </Button>
                     {signerId && <span className="ml-2 text-green-600 text-xs">✔ Đã ký</span>}
@@ -148,7 +183,7 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
                   </div>
                 </div>
 
-                {/* Kỹ thuật viên cố định */}
+                {/* Kỹ thuật viên */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="font-medium text-sm">Kỹ thuật viên:</span>
@@ -159,7 +194,11 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
                 </div>
               </div>
 
-              <Button className="mt-6" onClick={handleCreateDiagnosis} disabled={!signerId}>
+              <Button
+                className="mt-6"
+                onClick={handleCreateDiagnosis}
+                disabled={!signerId}
+              >
                 Tạo chẩn đoán
               </Button>
             </div>
@@ -170,8 +209,21 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
           )}
         </Card>
 
+        {/* Dialog Template */}
+        <SelectTemplateDialog
+          open={isTemplateOpen}
+          onClose={() => setIsTemplateOpen(false)}
+          modalityId={selectedStudyId.modalityId}
+          bodyPartId={selectedStudyId.bodyPartId}
+          onSelect={handleSelectTemplate}
+        />
+
         {/* Dialog nhập PIN */}
-        <PinDialog open={isPinDialogOpen} onClose={() => setIsPinDialogOpen(false)} onSign={handleConfirmPin} />
+        <PinDialog
+          open={isPinDialogOpen}
+          onClose={() => setIsPinDialogOpen(false)}
+          onSign={handleConfirmPin}
+        />
       </ScrollArea>
     </main>
   );

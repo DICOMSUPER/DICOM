@@ -57,5 +57,5 @@ export class CreateDiagnosesReportDto {
 
   @IsUUID()
   @IsOptional()
-  idSignature?: string;
+  signatureId?: string;
 }

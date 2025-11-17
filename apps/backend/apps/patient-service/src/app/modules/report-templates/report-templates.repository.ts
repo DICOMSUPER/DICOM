@@ -13,5 +13,17 @@ export class ReportTemplateRepository extends BaseRepository<ReportTemplate> {
     super(ReportTemplate, entityManager);
   }
 
-  
+  findByModaltyIdandBodyPartId = async (
+    modalityId?: string,
+    bodyPartId?: string
+  ): Promise<ReportTemplate[]> => {
+    const where: any = {};
+
+    if (modalityId) where.modalityId = modalityId;
+    if (bodyPartId) where.bodyPartId = bodyPartId;
+
+    return await this.entityManager.find(ReportTemplate, { where });
+  };
+
+
 }

@@ -8,4 +8,4 @@ import { ReportTemplatesController } from './report-templates.controller';
   controllers: [ReportTemplatesController],
   exports: [PatientServiceClientModule],
 })
-export class ReportTemplatesModule {}
+export class ReportTemplatesModule { }

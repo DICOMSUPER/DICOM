@@ -87,7 +87,7 @@ export interface PatientEncounter extends BaseEntity {
   diagnosesCount?: number;
   serviceRoomId?: string;
   serviceRoom: ServiceRoom
-  
+
 }
 
 export interface VitalSignMeasurement {
@@ -213,6 +213,7 @@ export interface CreateDiagnosisReportDto {
   notes?: string;
   followupRequired?: boolean;
   followUpInstructions?: boolean;
+  signatureId?: string;
 }
 
 export interface UpdateDiagnosisReportDto {

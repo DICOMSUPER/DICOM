@@ -21,7 +21,7 @@ export class ReportTemplatesController {
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
-  ) {}
+  ) { }
 
   @Get()
   async getReportTemplates() {
@@ -47,13 +47,24 @@ export class ReportTemplatesController {
       sortField,
       order,
     };
-      return await firstValueFrom(
-        this.patientService.send('PatientService.ReportTemplate.FindMany', {
+    return await firstValueFrom(
+      this.patientService.send('PatientService.ReportTemplate.FindMany', {
         paginationDto,
       })
     );
   }
-
+  @Get('by-modality-bodypart')
+  async getReportTemplatesByModalityAndBodyPart(
+    @Query('modalityId') modalityId?: string,
+    @Query('bodyPartId') bodyPartId?: string
+  ) {
+    return await firstValueFrom(
+      this.patientService.send('PatientService.ReportTemplate.FindByModalityIdAndBodyPartId', {
+        modalityId,
+        bodyPartId,
+      })
+    );
+  }
   @Get(':id')
   async getReportTemplateById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -94,4 +105,6 @@ export class ReportTemplatesController {
       })
     );
   }
+
+
 }

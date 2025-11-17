@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
 
+
 interface PinDialogProps {
   open: boolean;
   onClose: () => void;
@@ -22,7 +23,7 @@ const PinDialog: React.FC<PinDialogProps> = ({ open, onClose, onSign }) => {
     }
     setLoading(true);
     try {
-      const signatureId = await onSign(pin); 
+      const signatureId = await onSign(pin);
       alert("PIN hợp lệ! Signature ID: " + signatureId);
       setPin("");
       onClose();

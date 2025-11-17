@@ -6,7 +6,7 @@ import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 
 export const bodyPartApi = createApi({
   reducerPath: "bodyPartApi",
-  baseQuery: axiosBaseQuery("/body-part"),
+  baseQuery: axiosBaseQuery("/body-parts/"),
   tagTypes: ["BodyPart"],
   endpoints: (builder) => ({
     // GET /body-part
@@ -30,12 +30,12 @@ export const bodyPartApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "BodyPart" as const,
-                id: r.id,
-              })),
-              { type: "BodyPart", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "BodyPart" as const,
+              id: r.id,
+            })),
+            { type: "BodyPart", id: "LIST" },
+          ]
           : [{ type: "BodyPart", id: "LIST" }],
     }),
 

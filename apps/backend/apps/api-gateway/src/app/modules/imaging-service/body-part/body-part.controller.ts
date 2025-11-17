@@ -13,15 +13,15 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
-import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-interceptor';
+import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
 
-@Controller('services')
+@Controller('body-parts')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class BodyPartController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy
-  ) {}
+  ) { }
 
   @Get()
   async getBodyParts() {

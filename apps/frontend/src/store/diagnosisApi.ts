@@ -121,7 +121,7 @@ export const diagnosisApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { encounterId }) => [
         { type: "Diagnosis", id: `encounter-${encounterId}` },
