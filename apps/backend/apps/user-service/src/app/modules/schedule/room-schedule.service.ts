@@ -27,37 +27,37 @@ export class RoomScheduleService {
   ): Promise<RoomSchedule> {
     try {
       // Check for schedule conflicts with time overlap
-      if (createDto.actual_start_time && createDto.actual_end_time) {
-        // const conflictCheck = await this.checkConflict(
-        //   // createDto.employee_id,
-        //   createDto.work_date,
-        //   createDto.actual_start_time,
-        //   createDto.actual_end_time
-        // );
+      if (createDto.employee_id && createDto.actual_start_time && createDto.actual_end_time) {
+        const conflictCheck = await this.checkConflict(
+          createDto.employee_id,
+          createDto.work_date,
+          createDto.actual_start_time,
+          createDto.actual_end_time
+        );
 
-        // if (conflictCheck.hasConflict) {
-        //   throw new BadRequestException(
-        //     `Employee already has a schedule on ${createDto.work_date} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
-        //   );
-        // }
-      } else {
+        if (conflictCheck.hasConflict) {
+          throw new BadRequestException(
+            `Employee already has a schedule on ${createDto.work_date} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+          );
+        }
+      } else if (createDto.employee_id) {
         // If no specific time, just check if employee has any schedule on that date
-        // const existingSchedule =
-        //   await this.RoomScheduleRepository.findByEmployeeId(
-        //     createDto.employee_id
-        //   );
+        const existingSchedule =
+          await this.RoomScheduleRepository.findByEmployeeId(
+            createDto.employee_id
+          );
 
-        // const conflictExists = existingSchedule.some(
-        //   (schedule) =>
-        //     schedule.work_date === createDto.work_date &&
-        //     schedule.schedule_status !== ScheduleStatus.CANCELLED
-        // );
+        const conflictExists = existingSchedule.some(
+          (schedule) =>
+            schedule.work_date === createDto.work_date &&
+            schedule.schedule_status !== ScheduleStatus.CANCELLED
+        );
 
-        // if (conflictExists) {
-        //   throw new BadRequestException(
-        //     'Employee already has a schedule for this date'
-        //   );
-        // }
+        if (conflictExists) {
+          throw new BadRequestException(
+            'Employee already has a schedule for this date'
+          );
+        }
       }
 
       const schedule = this.RoomScheduleRepository.create(createDto);
@@ -88,6 +88,17 @@ export class RoomScheduleService {
       };
     } catch (error) {
       throw new BadRequestException('Failed to fetch employee schedules');
+    }
+  }
+
+  async findAll(
+    filters?: RoomScheduleSearchFilters
+  ): Promise<RoomSchedule[]> {
+    try {
+      const schedules = await this.RoomScheduleRepository.findWithFilters(filters || {});
+      return schedules;
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch all employee schedules');
     }
   }
 

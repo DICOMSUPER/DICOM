@@ -17,19 +17,21 @@ export const RoomScheduleApi = createApi({
   reducerPath: "RoomScheduleApi",
   baseQuery: axiosBaseQuery("/room-schedules"),
   tagTypes: ["RoomSchedule", "Employee", "Room", "ShiftTemplate", "Stats"],
+  keepUnusedDataFor: 60, // Keep unused data for 60 seconds
   endpoints: (builder) => ({
-    // Get all employee schedules with filters
+    // Get all employee schedules with filters (no pagination - for calendar)
     getRoomSchedules: builder.query<RoomSchedule[], RoomScheduleSearchFilters>({
       query: (filters) => ({
-        url: "",
+        url: "/all",
         method: "GET",
         params: filters,
       }),
       transformResponse: (response: any) => {
-        // Handle both array and paginated response
+        // Handle both array and wrapped response
         return Array.isArray(response) ? response : (response?.data || []);
       },
       providesTags: ["RoomSchedule"],
+      keepUnusedDataFor: 300, // Keep calendar data for 5 minutes when not in use
     }),
 
     // Get paginated employee schedules
@@ -42,11 +44,30 @@ export const RoomScheduleApi = createApi({
       }
     >({
       query: ({ page, limit, filters }) => ({
-        url: "/paginated",
+        url: "",
         method: "GET",
         params: { page, limit, ...filters },
       }),
+      transformResponse: (response: any) => {
+        // Backend returns paginated response directly when page/limit are provided
+        if (response?.data && Array.isArray(response.data)) {
+          return response;
+        }
+        // If it's already in the right format, return as is
+        if (response?.total !== undefined) {
+          return response;
+        }
+        // Fallback: wrap array response
+        return {
+          data: Array.isArray(response) ? response : [],
+          total: Array.isArray(response) ? response.length : 0,
+          page: 1,
+          limit: Array.isArray(response) ? response.length : 10,
+          totalPages: 1,
+        };
+      },
       providesTags: ["RoomSchedule"],
+      keepUnusedDataFor: 300, // Keep paginated data for 5 minutes when not in use
     }),
 
     // Get employee schedule by ID
