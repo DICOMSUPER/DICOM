@@ -28,7 +28,7 @@ export class DicomStudySignature extends BaseEntity {
   @Column({ type: 'uuid', name: 'user_id' })
   userId!: string;
 
-  @Column({ type: 'varchar', length: 50, name: 'signature_type' })
+  @Column({ type: 'enum', enum: SignatureType, length: 50, name: 'signature_type' })
   signatureType!: SignatureType;
 
   @Column({ type: 'text', nullable: true, name: 'signed_data_hash' })
