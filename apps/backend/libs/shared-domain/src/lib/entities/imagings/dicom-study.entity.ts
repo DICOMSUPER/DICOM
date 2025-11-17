@@ -1,3 +1,4 @@
+
 import { BaseEntity } from '@backend/database';
 import { DicomStudyStatus } from '@backend/shared-enums';
 import {
@@ -12,6 +13,7 @@ import {
 import { DicomSeries } from './dicom-series.entity';
 import { ImagingOrder } from './imaging-order.entity';
 import { ModalityMachine } from './modality-machine.entity';
+import { DicomStudySignature } from './dicom-study-signatures.entity';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])
@@ -93,4 +95,7 @@ export class DicomStudy extends BaseEntity {
   @ManyToOne(() => ImagingOrder)
   @JoinColumn({ name: 'order_id' })
   imagingOrder?: ImagingOrder;
+
+  @OneToMany(() => DicomStudySignature, (signature) => signature.study)
+  studySignatures?: DicomStudySignature[];
 }

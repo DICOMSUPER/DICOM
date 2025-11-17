@@ -1,5 +1,3 @@
-
-
 import { BaseEntity, Patient } from "../patient/patient-workflow.interface";
 import { Room } from "../user/room.interface";
 import { CreateImagingOrderDto, ImagingOrder } from "./imaging-order.interface";
@@ -25,6 +23,7 @@ export interface ImagingOrderForm {
   orderingPhysicianId: string;
   imagingOrders?: ImagingOrder[]; // Optional if not always loaded
   orderFormStatus: OrderFormStatus;
+  diagnosis?: string | null;
   notes?: string;
   roomId?: string;
   createdAt?: Date;
@@ -47,7 +46,6 @@ export interface ImagingOrderFormFilters {
   status?: OrderFormStatus | "all";
   patientName?: string;
 }
-
 
 // export interface ImagingOrder {
 //   createdAt: string;

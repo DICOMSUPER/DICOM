@@ -6,7 +6,7 @@ export interface ImagingOrder {
   id: string;
   orderNumber: string;
   patientId: string;
-  orderingPhysicianId: string;
+  // orderingPhysicianId: string;
   modalityId: string;
   procedureId: string | null;
   orderStatus: string;

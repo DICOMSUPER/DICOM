@@ -253,7 +253,7 @@ export class DicomStudiesController {
     );
   }
 
-  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN)
+  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN,Roles.RADIOLOGIST,Roles.PHYSICIAN)
   @Patch(':id')
   async updateDicomStudy(
     @Param('id') id: string,

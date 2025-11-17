@@ -8,3 +8,4 @@ export { ImagingModality } from './imaging-modality.entity';
 export { RequestProcedure } from './request-procedure.entity';
 export { BodyPart } from './body-part.entity';
 export { ModalityMachine } from './modality-machine.entity';
+export { DicomStudySignature } from './dicom-study-signatures.entity';
