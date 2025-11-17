@@ -35,6 +35,7 @@ import {
 import { AuthGuard } from '@backend/shared-guards';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { Public } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 
 @ApiTags('Employee Schedule Management')
 @Controller('room-schedules')
@@ -182,6 +183,65 @@ export class RoomSchedulesController {
     }
   }
 
+  // 📋 Lấy tất cả lịch làm việc (không phân trang) - dùng cho calendar
+  @Get('all')
+  @ApiOperation({
+    summary: 'Get all employee schedules without pagination (for calendar view)',
+  })
+  @ApiQuery({
+    name: 'employee_id',
+    required: false,
+    description: 'Filter by employee ID',
+  })
+  @ApiQuery({
+    name: 'room_id',
+    required: false,
+    description: 'Filter by room ID',
+  })
+  @ApiQuery({
+    name: 'work_date_from',
+    required: false,
+    description: 'Filter from date',
+  })
+  @ApiQuery({
+    name: 'work_date_to',
+    required: false,
+    description: 'Filter to date',
+  })
+  @ApiQuery({
+    name: 'schedule_status',
+    required: false,
+    description: 'Filter by status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy tất cả lịch làm việc thành công',
+  })
+  async getAllSchedulesWithoutPagination(@Query() query: any) {
+    try {
+      this.logger.log('📋 Fetching all employee schedules (no pagination)...');
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.RoomSchedule.FindAll', {
+          filters: {
+            room_id: query.room_id,
+            work_date_from: query.work_date_from,
+            work_date_to: query.work_date_to,
+            schedule_status: query.schedule_status,
+            employee_id: query.employee_id,
+            role: query.role,
+            department_id: query.department_id,
+          },
+        })
+      );
+
+      this.logger.log(`✅ Retrieved ${Array.isArray(result) ? result.length : 0} schedules`);
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch all schedules', error);
+      throw handleError(error);
+    }
+  }
+
   @Get('/currentSchedule')
   async getMyCurrentWorkingSchedule(@Req() request: IAuthenticatedRequest) {
     try {
@@ -228,7 +288,7 @@ export class RoomSchedulesController {
           isActive: true,
         })
       );
-      return result.data || result;
+      return result;
     } catch (error) {
       this.logger.error(`❌ Failed to get available rooms`, error);
       throw handleError(error);
@@ -248,28 +308,96 @@ export class RoomSchedulesController {
     required: false,
     description: 'Time to check availability (HH:MM)',
   })
+  @ApiQuery({
+    name: 'startTime',
+    required: false,
+    description: 'Start time to check conflicts (HH:MM:SS)',
+  })
+  @ApiQuery({
+    name: 'endTime',
+    required: false,
+    description: 'End time to check conflicts (HH:MM:SS)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách employees available thành công',
   })
   async getAvailableEmployees(
     @Query('date') date: string,
-    @Query('time') time?: string
+    @Query('time') time?: string,
+    @Query('startTime') startTime?: string,
+    @Query('endTime') endTime?: string
   ) {
     try {
       this.logger.log(
         `👥 Fetching available employees for ${date}${
           time ? ' at ' + time : ''
-        }`
+        }${startTime && endTime ? ` (${startTime} - ${endTime})` : ''}`
       );
+      
+      // Define allowed roles for room assignments
+      const allowedRoles = [
+        Roles.RADIOLOGIST,
+        Roles.RECEPTION_STAFF,
+        Roles.IMAGING_TECHNICIAN,
+        Roles.PHYSICIAN,
+      ];
+      
       const result = await firstValueFrom(
-        this.userServiceClient.send('UserService.Users.findAll', {
+        this.userServiceClient.send('user.get-all-users', {
           page: 1,
-          limit: 100,
+          limit: 1000,
           isActive: true,
         })
       );
-      return result.data || result;
+      
+      // Extract users from response
+      const usersData = result.data?.data || result.data || result;
+      const users = Array.isArray(usersData) ? usersData : [];
+      
+      // Filter by allowed roles
+      let filteredUsers = users.filter((user: any) =>
+        allowedRoles.includes(user.role)
+      );
+      
+      // Check for conflicting schedules if startTime and endTime are provided
+      if (startTime && endTime) {
+        const availableUsers = [];
+        
+        for (const user of filteredUsers) {
+          try {
+            const conflictCheck = await firstValueFrom(
+              this.userServiceClient.send('UserService.RoomSchedule.CheckConflict', {
+                employeeId: user.id,
+                date,
+                startTime,
+                endTime,
+              })
+            );
+            
+            if (!conflictCheck?.hasConflict) {
+              availableUsers.push(user);
+            } else {
+              this.logger.debug(
+                `Employee ${user.id} has conflicting schedule on ${date}`
+              );
+            }
+          } catch (error) {
+            // If conflict check fails, include the user anyway to avoid breaking the flow
+            this.logger.warn(
+              `Failed to check conflict for employee ${user.id}: ${error}`
+            );
+            availableUsers.push(user);
+          }
+        }
+        
+        filteredUsers = availableUsers;
+      }
+      
+      return {
+        data: filteredUsers,
+        count: filteredUsers.length,
+      };
     } catch (error) {
       this.logger.error(`❌ Failed to get available employees`, error);
       throw handleError(error);
@@ -316,7 +444,7 @@ export class RoomSchedulesController {
           paginationDto: { page: 1, limit: 100 },
         })
       );
-      return result.data || result;
+      return result;
     } catch (error) {
       this.logger.error(`❌ Failed to get shift templates`, error);
       throw handleError(error);
@@ -332,7 +460,9 @@ export class RoomSchedulesController {
   async createSchedule(@Body() createScheduleDto: CreateRoomScheduleDto) {
     try {
       this.logger.log(
-        `🏗️ Creating schedule for employee: ${createScheduleDto.employee_id}`
+        `🏗️ Creating schedule on ${createScheduleDto.work_date} for room: ${
+          createScheduleDto.room_id || 'N/A'
+        }`
       );
       const result = await firstValueFrom(
         this.userServiceClient.send(
@@ -346,10 +476,7 @@ export class RoomSchedulesController {
         message: 'Tạo lịch làm việc thành công',
       };
     } catch (error) {
-      this.logger.error(
-        `❌ Schedule creation failed for employee: ${createScheduleDto.employee_id}`,
-        error
-      );
+      this.logger.error(`❌ Schedule creation failed`, error);
       throw handleError(error);
     }
   }

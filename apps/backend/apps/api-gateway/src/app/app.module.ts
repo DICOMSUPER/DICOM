@@ -20,6 +20,7 @@ import {
   PatientServiceClientModule,
   ImagingServiceClientModule,
 } from '@backend/shared-client';
+import { DicomStudySignaturesModule } from './modules/imaging-service/dicom-study-signatures/dicom-study-signatures.module';
 dotenv.config();
 
 @Module({
@@ -44,6 +45,7 @@ dotenv.config();
     NotificationsModule,
     PatientServiceModule,
     SeedingModule,
+    DicomStudySignaturesModule,
   ],
   controllers: [AppController],
   providers: [

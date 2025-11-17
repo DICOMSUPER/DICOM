@@ -105,7 +105,7 @@ export default function RoomSelection({
                         <CheckCircle className="w-5 h-5 text-primary" />
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1 text-sm text-foreground">
                       <Users className="w-4 h-4" />
                       <span className="font-medium">
                         {currentOccupancy}/{maxCapacity}
@@ -123,7 +123,7 @@ export default function RoomSelection({
                       />
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground">
+                      <span className="text-foreground">
                         {utilizationPercent.toFixed(0)}% utilized
                       </span>
                       <span

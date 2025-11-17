@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Department } from '@backend/shared-domain';
 import { CreateDepartmentDto } from '@backend/shared-domain';
 import { UpdateDepartmentDto } from '@backend/shared-domain';
+import { PaginatedResponseDto } from '@backend/database';
 import {
   DepartmentAlreadyExistsException,
   DepartmentCreationFailedException,
@@ -70,16 +71,16 @@ export class DepartmentsService {
 
     const [data, total] = await qb.getManyAndCount();
 
-    return {
+    const totalPages = Math.ceil(total / limit);
+    return new PaginatedResponseDto(
       data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-      count: data.length,
-    };
+      total,
+      page,
+      limit,
+      totalPages,
+      page < totalPages,
+      page > 1
+    );
   }
 
   async findOne(id: string): Promise<Department> {

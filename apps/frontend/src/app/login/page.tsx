@@ -30,19 +30,13 @@ export default function LoginPage() {
 
       console.log("🔵 Response status:", res.status, res.statusText);
 
-      if (!res.ok) {
-        let errorMessage = `Login failed (${res.status})`;
-        try {
-          const err = await res.json();
-
-          errorMessage = err.message || errorMessage;
-        } catch (parseError) {
-          errorMessage = `${errorMessage}: ${res.statusText}`;
-        }
-        toast.error(errorMessage);
-      }
-
       const data = await res.json();
+
+      if (!res.ok) {
+        const errorMessage = data.message || `Login failed (${res.status})`;
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
 
       // Lưu token
       const token = data.data.tokenResponse.accessToken;

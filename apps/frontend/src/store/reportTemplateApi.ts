@@ -1,10 +1,9 @@
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
-import { PaginatedResponse } from "./scheduleApi";
+import { TemplateType } from "@/enums/report-template.enum";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { ReportTemplate } from "@/interfaces/patient/report-template.interface";
-import { TemplateType } from "@/enums/report-template.enum";
+import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { PaginatedResponse } from "./scheduleApi";
 
 export const reportTemplateApi = createApi({
   reducerPath: "reportTemplateApi",
@@ -22,7 +21,7 @@ export const reportTemplateApi = createApi({
           ? [
               ...result.data.map((r) => ({
                 type: "ReportTemplate" as const,
-                id: r.id,
+                id: r.reportTemplatesId,
               })),
               { type: "ReportTemplate", id: "LIST" },
             ]
@@ -43,7 +42,7 @@ export const reportTemplateApi = createApi({
           ? [
               ...result.data.map((r) => ({
                 type: "ReportTemplate" as const,
-                id: r.id,
+                id: r.reportTemplatesId,
               })),
               { type: "ReportTemplate", id: "LIST" },
             ]
@@ -51,7 +50,7 @@ export const reportTemplateApi = createApi({
     }),
 
     getReportTemplateById: builder.query<ApiResponse<ReportTemplate>, string>({
-      query: (id) => ({ url: `${id}`, method: "GET" }),
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "ReportTemplate", id }],
     }),
     createReportTemplate: builder.mutation<

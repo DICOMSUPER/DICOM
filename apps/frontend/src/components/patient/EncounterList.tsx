@@ -189,20 +189,20 @@ export function EncounterList({
                   {/* Chief Complaint */}
                   {/* <div>
                            <h4 className="text-sm font-medium text-foreground mb-1">Chief Complaint</h4>
-                           <p className="text-sm text-muted-foreground">{encounter.chiefComplaint}</p>
+                           <p className="text-sm text-foreground">{encounter.chiefComplaint}</p>
                          </div> */}
 
                   {/* Symptoms */}
                   {/* <div>
                            <h4 className="text-sm font-medium text-foreground mb-1">Symptoms</h4>
-                           <p className="text-sm text-muted-foreground">{encounter.symptoms}</p>
+                           <p className="text-sm text-foreground">{encounter.symptoms}</p>
                          </div> */}
 
                   {/* Physician - only show if present */}
                   {/* {encounter.physician && (
                            <div>
                              <h4 className="text-sm font-medium text-foreground mb-1">Assigned Physician</h4>
-                             <p className="text-sm text-muted-foreground">{encounter.physician}</p>
+                             <p className="text-sm text-foreground">{encounter.physician}</p>
                            </div>
                          )} */}
 
@@ -210,7 +210,7 @@ export function EncounterList({
                   {/* {encounter.notes && (
                            <div>
                              <h4 className="text-sm font-medium text-foreground mb-1">Notes</h4>
-                             <p className="text-sm text-muted-foreground">{encounter.notes}</p>
+                             <p className="text-sm text-foreground">{encounter.notes}</p>
                            </div>
                          )} */}
                 </div>

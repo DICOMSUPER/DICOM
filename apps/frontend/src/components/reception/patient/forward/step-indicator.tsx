@@ -19,7 +19,7 @@ export default function StepIndicator({
           className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
             selectedDepartment
               ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
+              : "bg-muted text-foreground"
           }`}
         >
           1
@@ -28,7 +28,7 @@ export default function StepIndicator({
           className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
             selectedService
               ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
+              : "bg-muted text-foreground"
           }`}
         >
           2
@@ -37,7 +37,7 @@ export default function StepIndicator({
           className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
             selectedRoom
               ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
+              : "bg-muted text-foreground"
           }`}
         >
           3

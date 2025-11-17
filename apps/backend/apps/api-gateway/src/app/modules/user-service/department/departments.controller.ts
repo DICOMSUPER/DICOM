@@ -69,7 +69,7 @@ export class DepartmentsController {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(`📋 Fetching departments - Page: ${pageNum}, Limit: ${limitNum}`);
+      this.logger.log(`Fetching departments - Page: ${pageNum}, Limit: ${limitNum}`);
       
       const result = await firstValueFrom(
         this.departmentClient.send('department.get-all', {
@@ -79,11 +79,12 @@ export class DepartmentsController {
           isActive
         })
       );
+
+      this.logger.log(`Retrieved ${result?.data?.length || 0} departments (Total: ${result?.total || 0})`);
       
-      this.logger.log(`✅ Retrieved ${result.data?.length || 0} departments (Total: ${result.total || 0})`);
       return result;
     } catch (error) {
-      this.logger.error('❌ Failed to fetch departments', error);
+      this.logger.error('Failed to fetch departments', error);
       throw handleError(error);
     }
   }

@@ -1,9 +1,12 @@
 "use client";
 
-import { Clock, User, CalendarOff } from "lucide-react";
+import { Clock, CalendarOff, MapPin, DoorOpen, CalendarClock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { format } from "date-fns";
+import { formatRole } from "@/utils/role-formatter";
 
 interface ListViewProps {
   schedules: RoomSchedule[];
@@ -15,26 +18,36 @@ interface ListViewProps {
 export function ListView({ schedules, getStatusColor, isLoading = false, onScheduleClick }: ListViewProps) {
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-3 lg:p-4 shadow-sm relative">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 rounded-l-lg"></div>
-            <div className="ml-2 flex items-center justify-between gap-4">
-              <div className="flex items-center space-x-3">
-                <div>
-                  <Skeleton className="h-4 w-32 mb-2" />
-                  <div className="flex items-center space-x-1">
-                    <Skeleton className="h-3 w-3" />
-                    <Skeleton className="h-3 w-20" />
-                    <Skeleton className="h-3 w-1" />
-                    <Skeleton className="h-3 w-16" />
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="bg-white rounded-2xl border border-border p-5 lg:p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-28" />
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 ml-4">
-                <Skeleton className="w-6 h-6 md:w-8 md:h-8 rounded-full" />
-                <Skeleton className="h-3 w-24 hidden md:block" />
-                <Skeleton className="h-6 w-16 rounded-full" />
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-4 w-16" />
               </div>
             </div>
           </div>
@@ -46,7 +59,7 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
   // Empty state
   if (schedules.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4">
+      <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="p-4 bg-gray-100 rounded-full mb-4">
           <CalendarOff className="h-12 w-12 text-gray-400" />
         </div>
@@ -59,45 +72,96 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
   }
 
   return (
-    <div className="space-y-3">
-      {schedules.map((schedule) => (
-        <div 
-          key={schedule.schedule_id} 
-          className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4 shadow-sm relative cursor-pointer hover:bg-blue-100 transition-colors"
-          onClick={() => onScheduleClick?.(schedule)}
-        >
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
-          <div className="ml-2 flex items-center justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <div>
-                <h4 className="font-semibold text-gray-900 text-sm lg:text-base">
-                  {schedule.employee.firstName} {schedule.employee.lastName}
-                </h4>
-                <div className="text-xs text-gray-500 mb-1">
-                  {schedule.employee.role?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "N/A"}
+    <div className="space-y-4">
+      {schedules.map((schedule) => {
+        const employee = schedule.employee;
+        const room = schedule.room;
+        const shiftTemplate = schedule.shift_template;
+        const workDate = schedule.work_date ? format(new Date(schedule.work_date), "EEEE, MMM d, yyyy") : "N/A";
+
+        const assignedCount = schedule.employeeRoomAssignments?.length || (employee ? 1 : 0);
+
+        return (
+          <div 
+            key={schedule.schedule_id} 
+            className="bg-gray-50 rounded-2xl border border-border p-5 lg:p-6 shadow-sm hover:shadow-lg transition-all"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-4">
+                {/* Header with Shift Name */}
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    {shiftTemplate?.shift_name || "Schedule"}
+                  </h3>
+                  
+                  {/* Schedule Details in Rounded Containers */}
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {room?.roomCode || schedule.room_id || "Unassigned"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
+                      <CalendarClock className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {format(new Date(schedule.work_date), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {schedule.actual_start_time || "--:--"} - {schedule.actual_end_time || "--:--"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1 text-xs lg:text-sm text-gray-600">
-                  <Clock className="h-3 w-3" />
-                  <span>{schedule.actual_start_time} - {schedule.actual_end_time}</span>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-gray-500">{schedule.room?.roomCode || 'Consultation'}</span>
+
+                {/* Assigned Person Section */}
+                <div className="flex items-center gap-3 px-3 py-2 bg-gray-100 rounded-lg border border-border">
+                  <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-sm">
+                    {employee?.firstName?.[0] || "U"}{employee?.lastName?.[0] || ""}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 text-sm">
+                      {employee?.firstName || "Unassigned"} {employee?.lastName || ""}
+                    </h4>
+                            <p className="text-xs text-gray-600 lowercase">
+                              {formatRole(employee?.role)}
+                            </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 ml-4">
-              <div className="w-6 h-6 md:w-8 md:h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-3 w-3 md:h-4 md:w-4 text-gray-600" />
+
+              {/* Right Side: Badges and Button */}
+              <div className="flex flex-col items-end gap-3">
+                <Badge 
+                  className={`${getStatusColor(schedule.schedule_status)} border-border text-xs font-semibold uppercase`}
+                >
+                  {schedule.schedule_status.replace(/_/g, ' ')}
+                </Badge>
+                <Badge className="bg-gray-800 text-white border-border text-xs font-semibold flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  <span>{assignedCount} assigned</span>
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8 border-border hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onScheduleClick?.(schedule);
+                  }}
+                >
+                  View details
+                </Button>
               </div>
-              <span className="text-xs md:text-sm text-gray-900 hidden md:block">
-                Dr. {schedule.employee.firstName} {schedule.employee.lastName}
-              </span>
-              <Badge className={`${getStatusColor(schedule.schedule_status)} border border-blue-400 ml-auto`}>
-                {schedule.schedule_status.charAt(0).toUpperCase() + schedule.schedule_status.slice(1)}
-              </Badge>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -16,7 +16,8 @@ import {
   PATIENT_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
-import { DiagnosisStatus } from '@backend/shared-enums';
+import { DiagnosisStatus, Roles } from '@backend/shared-enums';
+import { Role } from '@backend/shared-decorators';
 
 const moduleName = 'DiagnosesReport';
 @Controller('diagnoses-reports')
@@ -85,6 +86,7 @@ export class DiagnosesReportController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
   async update(
     @Payload()
     data: {

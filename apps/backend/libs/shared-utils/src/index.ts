@@ -9,4 +9,4 @@ export * from './lib/send-mail.utils';
 export * from './lib/vital-signs-examples.util';
 export * from './lib/vital-signs-validation.util';
 export * from './lib/file-handler.utils';
-export * from './lib/formatDate.ts';
+export * from './lib/formatDate'

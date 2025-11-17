@@ -2,7 +2,31 @@
 import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
 
 export function mapApiResponse<T>(response: any): PaginatedResponse<T> {
-  // Truy cập đúng tầng chứa data và pagination
+  if (!response) {
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    };
+  }
+
+  if (response.data && Array.isArray(response.data) && typeof response.total === 'number') {
+    const totalPages = response.totalPages ?? Math.ceil((response.total ?? 0) / (response.limit ?? 10));
+    return {
+      data: response.data,
+      total: response.total,
+      page: response.page ?? 1,
+      limit: response.limit ?? 10,
+      totalPages: totalPages,
+      hasNextPage: response.hasNextPage ?? (response.page ?? 1) < totalPages,
+      hasPreviousPage: response.hasPreviousPage ?? (response.page ?? 1) > 1,
+    };
+  }
+
   const nested =
     response?.data?.data?.data ??
     response?.data?.data ??
@@ -15,24 +39,19 @@ export function mapApiResponse<T>(response: any): PaginatedResponse<T> {
     nested?.pagination ??
     {};
 
-  console.log("✅ API mapped structure ->", {
-    items: nested?.data || nested,
-    pagination,
-  });
-
   const items = nested?.data ?? nested ?? [];
 
   return {
     data: items,
-    total: pagination?.total ?? items.length,
-    page: pagination?.page ?? 1,
-    limit: pagination?.limit ?? 10,
-    totalPages: pagination?.totalPages ?? 1,
+    total: pagination?.total ?? response?.total ?? items.length,
+    page: pagination?.page ?? response?.page ?? 1,
+    limit: pagination?.limit ?? response?.limit ?? 10,
+    totalPages: pagination?.totalPages ?? response?.totalPages ?? Math.ceil((pagination?.total ?? response?.total ?? items.length) / (pagination?.limit ?? response?.limit ?? 10)),
     hasNextPage:
-      pagination?.page && pagination?.totalPages
-        ? pagination.page < pagination.totalPages
-        : false,
+      pagination?.hasNextPage ?? response?.hasNextPage ?? 
+      (pagination?.page ?? response?.page ?? 1) < (pagination?.totalPages ?? response?.totalPages ?? Math.ceil((pagination?.total ?? response?.total ?? items.length) / (pagination?.limit ?? response?.limit ?? 10))),
     hasPreviousPage:
-      pagination?.page && pagination?.page > 1 ? true : false,
+      pagination?.hasPreviousPage ?? response?.hasPreviousPage ??
+      (pagination?.page ?? response?.page ?? 1) > 1,
   };
 }

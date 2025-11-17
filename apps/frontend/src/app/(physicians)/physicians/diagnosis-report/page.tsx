@@ -1,17 +1,14 @@
 "use client";
 import { DiagnosisReportFiltersSection } from "@/components/physicians/diagnosis-report/diagnosis-report-filters";
 import { DiagnosisReportTable } from "@/components/physicians/diagnosis-report/diagnosis-report-table";
+import { ModalApproveStudy } from "@/components/physicians/diagnosis-report/modal-approve-study";
 import { ModalDiagnosisReportDetail } from "@/components/physicians/diagnosis-report/modal-diagnosis-report-detail";
-import { ImagingOrderFormFiltersSection } from "@/components/physicians/imaging/imaging-order-filters";
-import { ImagingOrderFormTable } from "@/components/physicians/imaging/imaging-order-table";
-import { ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "@/lib/formatTimeDate";
 import { useGetDiagnosisReportWithFilterQuery } from "@/store/diagnosisApi";
 
-import { useGetImagingOrderFormPaginatedQuery } from "@/store/imagingOrderFormApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
 
 import { useRouter } from "next/navigation";
@@ -30,6 +27,8 @@ export default function DiagnosisReportPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string>("");
+
+
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     total: 0,
@@ -91,6 +90,18 @@ export default function DiagnosisReportPage() {
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
+  const handleConfirmApprove = async (password: string) => {
+    // try {
+    //   await approveStudy({
+    //     reportId: selectedReportId,
+    //     password
+    //   }).unwrap();
+    //   toast.success("Study approved successfully");
+    //   setModalApproveOpen(false);
+    // } catch (error: any) {
+    //   toast.error(error?.data?.message || "Failed to approve study");
+    // }
+  };
 
   return (
     <div className="min-h-screen">
@@ -117,7 +128,6 @@ export default function DiagnosisReportPage() {
           onFiltersChange={handleFiltersChange}
           onReset={handleReset}
         />
-
         <DiagnosisReportTable
           reportItems={data?.data || []}
           onViewDetails={handleViewDetails}
@@ -127,12 +137,12 @@ export default function DiagnosisReportPage() {
           // isUpdating={isUpdating}
           isLoading={isLoading}
         />
-
         <ModalDiagnosisReportDetail
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           reportId={selectedReportId}
         />
+
       </div>
     </div>
   );

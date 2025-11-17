@@ -77,14 +77,16 @@ export class RoomsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('status') status?: string
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('departmentId') departmentId?: string
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
       this.logger.log(
-        `📋 Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
+        `Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
       );
 
       const result = await firstValueFrom(
@@ -93,22 +95,18 @@ export class RoomsController {
           limit: limitNum,
           search,
           status,
+          type,
+          departmentId,
         })
       );
 
       this.logger.log(
-        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${
-          result.total || 0
-        })`
+        `Retrieved ${result?.data?.length || 0} rooms (Total: ${result?.total || 0})`
       );
 
-      return {
-        data: result.data,
-        count: result.total || result.data?.length || 0,
-        message: 'Lấy danh sách phòng thành công',
-      };
+      return result;
     } catch (error) {
-      this.logger.error('❌ Failed to fetch rooms', error);
+      this.logger.error('Failed to fetch rooms', error);
       throw handleError(error);
     }
   }

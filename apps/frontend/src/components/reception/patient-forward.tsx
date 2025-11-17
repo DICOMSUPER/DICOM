@@ -304,7 +304,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
           </Button>
 
           {!isFormValid && (
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-foreground text-center">
               Please complete all required selections to forward the patient
             </p>
           )}
