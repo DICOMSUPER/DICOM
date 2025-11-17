@@ -5,10 +5,12 @@ import { Users, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 
 interface DashboardStatsProps {
   stats: {
-    patientsWaiting: number;
-    checkinsCompleted: number;
+    activePatient: number;
+    dailyCheckins: number;
     urgentNotifications: number;
-    totalPatientsToday: number;
+    newPatientsThisMonth: number;
+    todayEncounters: number;
+    todayStatEncounters: number;
   };
 }
 
@@ -19,15 +21,15 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-foreground">
-            Patients Waiting
+            Active Patients
           </CardTitle>
           <Users className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-foreground">
-            {stats.patientsWaiting}
+            {stats.activePatient}
           </div>
-          <p className="text-xs text-foreground">Currently in queue</p>
+          <p className="text-xs text-foreground">Registered in the system</p>
         </CardContent>
       </Card>
 
@@ -35,15 +37,15 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-foreground">
-            Check-ins Completed
+            Daily Check-ins
           </CardTitle>
           <CheckCircle className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-foreground">
-            {stats.checkinsCompleted}
+            {stats.todayEncounters}
           </div>
-          <p className="text-xs text-foreground">Today&quot; total</p>
+          <p className="text-xs text-foreground">Today&apos;s check-ins </p>
         </CardContent>
       </Card>
 
@@ -57,7 +59,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600">
-            {stats.urgentNotifications}
+            {stats.todayStatEncounters}
           </div>
           <p className="text-xs text-foreground">Require attention</p>
         </CardContent>
@@ -67,15 +69,17 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-foreground">
-            Total Today
+            Monthly New Patients
           </CardTitle>
           <Clock className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-foreground">
-            {stats.totalPatientsToday}
+            {stats.newPatientsThisMonth}
           </div>
-          <p className="text-xs text-foreground">All patients</p>
+          <p className="text-xs text-foreground">
+            Patients registerd this month
+          </p>
         </CardContent>
       </Card>
     </div>

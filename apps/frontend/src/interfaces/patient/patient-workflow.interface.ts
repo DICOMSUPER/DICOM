@@ -301,6 +301,8 @@ export interface EncounterStats {
   encountersByType: Record<string, number>;
   encountersThisMonth: number;
   averageEncountersPerPatient: number;
+  todayEncounter: number;
+  todayStatEncounter: number;
 }
 
 export interface DiagnosisStats {

@@ -53,9 +53,9 @@ const authSlice = createSlice({
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        Cookies.remove("accessToken");
+        Cookies.remove("user");
       }
-      Cookies.remove("accessToken");
-      Cookies.remove("user");
     },
     loadTokenFromStorage: (state) => {
       if (typeof window !== "undefined") {

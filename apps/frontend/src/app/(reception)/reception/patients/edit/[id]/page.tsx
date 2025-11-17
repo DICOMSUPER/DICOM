@@ -31,16 +31,14 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-background">
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        <PatientForm
-          patient={patient}
-          onSubmit={handleSubmit}
-          onCancel={() => router.back()}
-          loading={isLoading || isUpdating}
-          errors={{}}
-          className=""
-        />
-      </WorkspaceLayout>
+      <PatientForm
+        patient={patient}
+        onSubmit={handleSubmit}
+        onCancel={() => router.back()}
+        loading={isLoading || isUpdating}
+        errors={{}}
+        className=""
+      />
     </div>
   );
 }

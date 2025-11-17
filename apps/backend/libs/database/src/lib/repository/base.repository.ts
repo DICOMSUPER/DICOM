@@ -209,9 +209,29 @@ export class BaseRepository<T extends ObjectLiteral> {
       });
     }
 
-    // Relations
+    //  Relations
     if (relation?.length) {
-      relation.forEach((r) => query.leftJoinAndSelect(`entity.${r}`, r));
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'entity';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+
+          // Only join if this alias doesn’t already exist
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias; // move deeper for next iteration
+        }
+      });
     }
 
     // Sorting - prioritize paginationDto sorting over options

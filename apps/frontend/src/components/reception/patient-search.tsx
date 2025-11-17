@@ -45,6 +45,12 @@ export function PatientSearch({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [hasSearched, setHasSearched] = useState(true);
+
+  // Format gender for display
+  const formatGender = (gender: string | null | undefined): string => {
+    if (!gender) return "N/A";
+    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  };
   
   const [filters, setFilters] = useState<PatientSearchFilters>({
     firstName: '',
@@ -330,7 +336,7 @@ export function PatientSearch({
                             {patient.firstName} {patient.lastName}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ID: {patient.patientCode} • {patient.gender}
+                            ID: {patient.patientCode} • {formatGender(patient.gender)}
                           </div>
                           <div className="text-sm text-gray-600 flex items-center gap-3">
                             <span className="flex items-center gap-1">

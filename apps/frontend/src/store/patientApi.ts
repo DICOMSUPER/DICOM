@@ -45,7 +45,7 @@ export const patientApi = createApi({
       }
     >({
       query: ({ page, limit, filters }) => ({
-        url: "/paginated",
+        url: "",
         method: "GET",
         params: { page, limit, ...filters },
       }),

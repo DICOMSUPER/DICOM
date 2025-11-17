@@ -15,8 +15,12 @@ import {
   useGetPatientStatsQuery,
   useDeletePatientMutation,
 } from "@/store/patientApi";
-import { Users } from "lucide-react";
-import { Patient, PatientSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
+import { Users, UserPlus } from "lucide-react";
+import { AppHeader } from "@/components/app-header";
+import {
+  Patient,
+  PatientSearchFilters,
+} from "@/interfaces/patient/patient-workflow.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 interface ApiError {
@@ -38,15 +42,19 @@ export default function ReceptionPage() {
 
   const queryParams = useMemo(() => {
     const filters: Omit<PatientSearchFilters, "limit" | "offset"> = {};
-    
+
     if (appliedSearchTerm.trim()) {
       filters.searchTerm = appliedSearchTerm.trim();
     }
 
-    if (appliedStatusFilter !== 'all') {
-      if (appliedStatusFilter === 'active' || appliedStatusFilter === 'waiting' || appliedStatusFilter === 'in-progress') {
+    if (appliedStatusFilter !== "all") {
+      if (
+        appliedStatusFilter === "active" ||
+        appliedStatusFilter === "waiting" ||
+        appliedStatusFilter === "in-progress"
+      ) {
         filters.isActive = true;
-      } else if (appliedStatusFilter === 'completed') {
+      } else if (appliedStatusFilter === "completed") {
         filters.isActive = false;
       }
     }
@@ -78,10 +86,8 @@ export default function ReceptionPage() {
   useEffect(() => {
     if (patientsError) {
       const error = patientsError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
           ? (error.data as { message: string }).message
           : "Failed to load patient data. Please try again.";
       setError(errorMessage);
@@ -93,18 +99,20 @@ export default function ReceptionPage() {
   const patientsArray = useMemo(() => {
     return (patientsData?.data ?? []).map((patient: Patient) => ({
       id: patient.id,
-      firstName: patient.firstName || 'Unknown',
-      lastName: patient.lastName || 'Patient',
-      patientCode: patient.patientCode || 'N/A',
-      dateOfBirth: patient.dateOfBirth 
-        ? (typeof patient.dateOfBirth === 'string' ? patient.dateOfBirth : patient.dateOfBirth.toISOString())
+      firstName: patient.firstName || "Unknown",
+      lastName: patient.lastName || "Patient",
+      patientCode: patient.patientCode || "N/A",
+      dateOfBirth: patient.dateOfBirth
+        ? typeof patient.dateOfBirth === "string"
+          ? patient.dateOfBirth
+          : patient.dateOfBirth.toISOString()
         : new Date().toISOString(),
-      gender: patient.gender || 'Unknown',
+      gender: patient.gender || "Unknown",
       phoneNumber: patient.phoneNumber,
       address: patient.address,
       bloodType: patient.bloodType,
       isActive: patient.isActive ?? true,
-      priority: 'normal',
+      priority: "normal",
       lastVisit: undefined,
     }));
   }, [patientsData?.data]);
@@ -141,17 +149,29 @@ export default function ReceptionPage() {
     setPage(newPage);
   }, []);
 
-  const handleViewDetails = (patient: { id: string; firstName: string; lastName: string }) => {
+  const handleViewDetails = (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     router.push(`/reception/patients/${patient.id}`);
   };
 
-  const handleEditPatient = (patient: { id: string; firstName: string; lastName: string }) => {
+  const handleEditPatient = (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     router.push(`/reception/patients/edit/${patient.id}`);
   };
 
   const [deletePatient] = useDeletePatientMutation();
 
-  const handleDeletePatient = async (patient: { id: string; firstName: string; lastName: string }) => {
+  const handleDeletePatient = async (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     if (
       confirm(
         `Are you sure you want to delete patient ${patient.firstName} ${patient.lastName}?`
@@ -159,7 +179,9 @@ export default function ReceptionPage() {
     ) {
       try {
         await deletePatient(patient.id).unwrap();
-        toast.success(`Patient ${patient.firstName} ${patient.lastName} deleted successfully`);
+        toast.success(
+          `Patient ${patient.firstName} ${patient.lastName} deleted successfully`
+        );
         await refetchPatients();
       } catch (err) {
         const error = err as ApiError;
@@ -187,7 +209,11 @@ export default function ReceptionPage() {
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load patients" message={error} className="mb-4" />
+        <ErrorAlert
+          title="Failed to load patients"
+          message={error}
+          className="mb-4"
+        />
       )}
 
       <PatientStatsCards
