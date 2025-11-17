@@ -7,7 +7,11 @@ import { useCreateEmployeeRoomAssignmentMutation } from '@/store/employeeRoomAss
 import {
   useGetAvailableEmployeesQuery,
   useGetRoomSchedulesQuery,
+  useGetRoomSchedulesPaginatedQuery,
 } from '@/store/roomScheduleApi';
+import { useGetRoomsQuery } from '@/store/roomsApi';
+import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from '@/store/scheduleApi';
+import { format } from 'date-fns';
 
 import { RoomAssignmentsHeader } from '@/components/admin/room-assignments/room-assignments-header';
 import { RoomAssignmentStats } from '@/components/admin/room-assignments/room-assignment-stats';
@@ -18,6 +22,7 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScheduleSidebar } from '@/components/schedule/ScheduleSidebar';
+import { Pagination } from '@/components/common/PaginationV1';
 
 import { RoomSchedule, Employee } from '@/interfaces/schedule/schedule.interface';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
@@ -94,6 +99,15 @@ export default function RoomAssignmentsPage() {
   >({});
   const [detailSchedule, setDetailSchedule] = useState<RoomSchedule | RoomSchedule[] | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  // Room selection state
+  const [formDate, setFormDate] = useState<Date | undefined>(new Date());
+  const [formRoomId, setFormRoomId] = useState<string>('');
+  const [formShiftId, setFormShiftId] = useState<string>('');
+  const [formStartTime, setFormStartTime] = useState<string>('');
+  const [formEndTime, setFormEndTime] = useState<string>('');
+  // Pagination state for list mode
+  const [listPage, setListPage] = useState(1);
+  const [listLimit] = useState(10);
 
   const openScheduleDetails = (payload: RoomSchedule | RoomSchedule[]) => {
     const payloadArray = Array.isArray(payload) ? payload : [payload];
@@ -115,15 +129,67 @@ export default function RoomAssignmentsPage() {
     setDetailSchedule(null);
   };
 
+  // Fetch all schedules for calendar mode
+  // Data is cached for 5 minutes, so switching back to calendar won't refetch if data exists
   const {
-    data: schedulesData,
-    isLoading: schedulesLoading,
-    isFetching: schedulesFetching,
-    refetch: refetchSchedules,
-    error: schedulesError,
-  } = useGetRoomSchedulesQuery({});
+    data: allSchedulesData,
+    isLoading: allSchedulesLoading,
+    isFetching: allSchedulesFetching,
+    refetch: refetchAllSchedules,
+    error: allSchedulesError,
+  } = useGetRoomSchedulesQuery(
+    {}, 
+    { 
+      skip: activeView === 'list',
+      // RTK Query will use cached data if available (kept for 5 minutes)
+      // Only refetches if cache is expired or data is invalidated
+    }
+  );
+
+  // Fetch paginated schedules for list mode
+  // Data is cached per page, so switching back to list won't refetch if data exists
+  const {
+    data: paginatedSchedulesData,
+    isLoading: paginatedSchedulesLoading,
+    isFetching: paginatedSchedulesFetching,
+    refetch: refetchPaginatedSchedules,
+    error: paginatedSchedulesError,
+  } = useGetRoomSchedulesPaginatedQuery(
+    {
+      page: listPage,
+      limit: listLimit,
+      filters: {},
+    },
+    { 
+      skip: activeView === 'calendar',
+      // RTK Query will use cached data if available (kept for 5 minutes)
+      // Only refetches if cache is expired, page changes, or data is invalidated
+    }
+  );
+
+  // Use appropriate data based on view mode
+  const schedulesData = activeView === 'calendar' ? allSchedulesData : paginatedSchedulesData?.data;
+  const schedulesLoading = activeView === 'calendar' ? allSchedulesLoading : paginatedSchedulesLoading;
+  const schedulesFetching = activeView === 'calendar' ? allSchedulesFetching : paginatedSchedulesFetching;
+  const schedulesError = activeView === 'calendar' ? allSchedulesError : paginatedSchedulesError;
+  const paginationMeta = paginatedSchedulesData ? {
+    total: paginatedSchedulesData.total,
+    page: paginatedSchedulesData.page,
+    limit: listLimit,
+    totalPages: paginatedSchedulesData.totalPages,
+    hasNextPage: (paginatedSchedulesData as any).hasNextPage ?? (paginatedSchedulesData.page < paginatedSchedulesData.totalPages),
+    hasPreviousPage: (paginatedSchedulesData as any).hasPreviousPage ?? (paginatedSchedulesData.page > 1),
+  } : null;
 
   const schedules = schedulesData ?? [];
+  
+  const refetchSchedules = async () => {
+    if (activeView === 'calendar') {
+      await refetchAllSchedules();
+    } else {
+      await refetchPaginatedSchedules();
+    }
+  };
 
   const mergedSchedules = useMemo(() => {
     return schedules.map((schedule) => {
@@ -168,11 +234,7 @@ export default function RoomAssignmentsPage() {
     [mergedSchedules, selectedScheduleId]
   );
 
-  useEffect(() => {
-    if (!schedulesLoading && mergedSchedules.length > 0 && !selectedScheduleId) {
-      setSelectedScheduleId(mergedSchedules[0].schedule_id);
-    }
-  }, [mergedSchedules, schedulesLoading, selectedScheduleId]);
+  // Removed auto-select - let users choose their own schedule or create new one
 
   useEffect(() => {
     if (selectedScheduleId) {
@@ -181,18 +243,71 @@ export default function RoomAssignmentsPage() {
     }
   }, [selectedScheduleId]);
 
+  // Sync form date/room with selected schedule
+  useEffect(() => {
+    if (selectedSchedule) {
+      if (selectedSchedule.work_date) {
+        const scheduleDate = new Date(selectedSchedule.work_date);
+        if (!formDate || scheduleDate.toDateString() !== formDate.toDateString()) {
+          setFormDate(scheduleDate);
+        }
+      }
+      if (selectedSchedule.room_id && selectedSchedule.room_id !== formRoomId) {
+        setFormRoomId(selectedSchedule.room_id);
+      }
+      if (selectedSchedule.shift_template_id && selectedSchedule.shift_template_id !== formShiftId) {
+        setFormShiftId(selectedSchedule.shift_template_id);
+      }
+      if (selectedSchedule.actual_start_time && selectedSchedule.actual_start_time !== formStartTime) {
+        setFormStartTime(selectedSchedule.actual_start_time);
+      }
+      if (selectedSchedule.actual_end_time && selectedSchedule.actual_end_time !== formEndTime) {
+        setFormEndTime(selectedSchedule.actual_end_time);
+      }
+    }
+  }, [selectedSchedule]);
+
+  // Reset page to 1 when switching to list view or when search changes
+  useEffect(() => {
+    if (activeView === 'list' && listPage !== 1) {
+      setListPage(1);
+    }
+  }, [activeView, scheduleSearch]);
+
+  // Fetch rooms
+  const { data: roomsData, isLoading: loadingRooms } = useGetRoomsQuery({
+    page: 1,
+    limit: 1000,
+  });
+  const rooms = roomsData?.data ?? [];
+
+  // Fetch shift templates
+  const { data: shiftTemplatesData, isLoading: loadingShiftTemplates } = useGetShiftTemplatesQuery({});
+  const shiftTemplates = Array.isArray(shiftTemplatesData) ? shiftTemplatesData : (shiftTemplatesData?.data ?? []);
+
+  // Determine which date/time to use for available employees query
+  const employeeQueryDate = selectedSchedule?.work_date 
+    ? selectedSchedule.work_date 
+    : (formDate ? format(formDate, 'yyyy-MM-dd') : '');
+  const employeeQueryStartTime = selectedSchedule?.actual_start_time?.trim() 
+    ? selectedSchedule.actual_start_time.trim() 
+    : (formStartTime || undefined);
+  const employeeQueryEndTime = selectedSchedule?.actual_end_time?.trim() 
+    ? selectedSchedule.actual_end_time.trim() 
+    : (formEndTime || undefined);
+
   const {
     data: availableEmployeesData,
     isFetching: availableEmployeesLoading,
     refetch: refetchAvailableEmployees,
   } = useGetAvailableEmployeesQuery(
     {
-      date: selectedSchedule?.work_date ?? '',
-      startTime: selectedSchedule?.actual_start_time?.trim() || undefined,
-      endTime: selectedSchedule?.actual_end_time?.trim() || undefined,
+      date: employeeQueryDate,
+      startTime: employeeQueryStartTime,
+      endTime: employeeQueryEndTime,
     },
     {
-      skip: !selectedSchedule?.work_date,
+      skip: !employeeQueryDate,
     }
   );
 
@@ -220,6 +335,9 @@ export default function RoomAssignmentsPage() {
 
   const [createAssignment, { isLoading: isCreatingAssignment }] =
     useCreateEmployeeRoomAssignmentMutation();
+  const [createSchedule, { isLoading: isCreatingSchedule }] =
+    useCreateRoomScheduleMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const optimisticAssignmentsCount = useMemo(
     () =>
@@ -236,15 +354,68 @@ export default function RoomAssignmentsPage() {
   );
 
   const handleAssignEmployee = async () => {
-    if (!selectedSchedule || !selectedEmployeeId) return;
+    // Prevent double submission
+    if (isSubmitting || isCreatingAssignment || isCreatingSchedule) {
+      return;
+    }
 
+    if (!selectedEmployeeId) {
+      toast.warning('Please select an employee');
+      return;
+    }
+
+    setIsSubmitting(true);
+    let targetSchedule = selectedSchedule;
+    let scheduleCreated = false;
+
+    // If no schedule is selected, create one from form data
+    if (!targetSchedule && formDate && formRoomId) {
+      try {
+        const selectedShift = formShiftId ? shiftTemplates.find((s) => s.shift_template_id === formShiftId) : null;
+        const startTime = formStartTime || selectedShift?.start_time || '';
+        const endTime = formEndTime || selectedShift?.end_time || '';
+
+        const scheduleResponse = await createSchedule({
+          employee_id: '', // Will be set via assignment
+          room_id: formRoomId,
+          shift_template_id: formShiftId ? formShiftId : undefined,
+          work_date: format(formDate, 'yyyy-MM-dd'),
+          actual_start_time: startTime || undefined,
+          actual_end_time: endTime || undefined,
+          schedule_status: 'scheduled',
+        } as any).unwrap();
+
+        targetSchedule = scheduleResponse as unknown as RoomSchedule;
+        
+        if (!targetSchedule?.schedule_id) {
+          toast.error('Failed to create schedule: Invalid schedule ID returned');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        setSelectedScheduleId(targetSchedule.schedule_id);
+        scheduleCreated = true;
+      } catch (error: any) {
+        toast.error(error?.data?.message || 'Failed to create schedule');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (!targetSchedule?.schedule_id) {
+      toast.error('Please select or create a schedule');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Create employee assignment
     const employee = availableEmployees.find(
       (candidate: Employee) => candidate.id === selectedEmployeeId
     );
 
     const tempAssignment: AssignmentWithMeta = {
       id: `temp-${Date.now()}`,
-      roomScheduleId: selectedSchedule.schedule_id,
+      roomScheduleId: targetSchedule.schedule_id,
       employeeId: selectedEmployeeId,
       isActive: true,
       createdAt: new Date(),
@@ -254,7 +425,8 @@ export default function RoomAssignmentsPage() {
       __optimistic: true,
     };
 
-    const scheduleId = selectedSchedule.schedule_id;
+    const scheduleId = targetSchedule.schedule_id;
+    
     setOptimisticAssignments((prev) => ({
       ...prev,
       [scheduleId]: [...(prev[scheduleId] ?? []), tempAssignment],
@@ -266,13 +438,27 @@ export default function RoomAssignmentsPage() {
         employeeId: selectedEmployeeId,
         isActive: true,
       }).unwrap();
+      
       toast.success('Employee assigned successfully');
       setSelectedEmployeeId('');
-      await refetchSchedules();
+      
+      // Reset form if we created a new schedule
+      if (scheduleCreated) {
+        setFormDate(new Date());
+        setFormRoomId('');
+        setFormShiftId('');
+        setFormStartTime('');
+        setFormEndTime('');
+      }
+      
+      // Clear optimistic assignment and refetch to get fresh data
       setOptimisticAssignments((prev) => {
         const { [scheduleId]: _, ...rest } = prev;
         return rest;
       });
+      
+      // Force refetch to ensure calendar updates
+      await refetchSchedules();
     } catch (error: any) {
       setOptimisticAssignments((prev) => ({
         ...prev,
@@ -280,9 +466,30 @@ export default function RoomAssignmentsPage() {
           (assignment) => assignment.id !== tempAssignment.id
         ),
       }));
-      toast.error(error?.data?.message || 'Failed to assign employee');
+      
+      const errorMessage = error?.data?.message || error?.message || 'Failed to assign employee';
+      toast.error(errorMessage);
+      
+      // If assignment fails after creating schedule, the schedule is orphaned
+      // User can manually delete it or try again
+      if (scheduleCreated) {
+        toast.warning('Schedule was created but assignment failed. You may need to delete the schedule if you want to try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // Auto-fill times when shift template is selected
+  useEffect(() => {
+    if (formShiftId && shiftTemplates.length > 0) {
+      const selectedShift = shiftTemplates.find((s) => s.shift_template_id === formShiftId);
+      if (selectedShift && !formStartTime && !formEndTime) {
+        setFormStartTime(selectedShift.start_time);
+        setFormEndTime(selectedShift.end_time);
+      }
+    }
+  }, [formShiftId, shiftTemplates, formStartTime, formEndTime]);
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -333,18 +540,31 @@ export default function RoomAssignmentsPage() {
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-9 space-y-6 h-full">
+        <div className="xl:col-span-8 space-y-6 h-full">
           {activeView === 'list' ? (
-            <ScheduleAssignmentList
-              schedules={mergedSchedules}
-              selectedScheduleId={selectedScheduleId}
-              onSelectSchedule={setSelectedScheduleId}
-              scheduleSearch={scheduleSearch}
-              onScheduleSearchChange={setScheduleSearch}
-              optimisticAssignments={optimisticAssignments}
-              isLoading={schedulesLoading}
-              onScheduleDetails={openScheduleDetails}
-            />
+            <>
+              <ScheduleAssignmentList
+                schedules={mergedSchedules}
+                selectedScheduleId={selectedScheduleId}
+                onSelectSchedule={setSelectedScheduleId}
+                scheduleSearch={scheduleSearch}
+                onScheduleSearchChange={setScheduleSearch}
+                optimisticAssignments={optimisticAssignments}
+                isLoading={schedulesLoading}
+                onScheduleDetails={openScheduleDetails}
+              />
+              {paginationMeta && (
+                <Pagination
+                  pagination={paginationMeta}
+                  onPageChange={(page) => {
+                    setListPage(page);
+                    // Scroll to top when page changes
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  showInfo={true}
+                />
+              )}
+            </>
           ) : (
             <RoomAssignmentCalendar
               schedules={calendarSchedules}
@@ -357,7 +577,7 @@ export default function RoomAssignmentsPage() {
             />
           )}
         </div>
-        <div className="xl:col-span-3 space-y-6">
+        <div className="xl:col-span-4 space-y-6">
           {activeView === 'calendar' && (
             <ScheduleSidebar
               selectedDate={selectedDate}
@@ -378,7 +598,25 @@ export default function RoomAssignmentsPage() {
             selectedEmployeeId={selectedEmployeeId}
             onSelectedEmployeeChange={setSelectedEmployeeId}
             onSubmit={handleAssignEmployee}
-            submitting={isCreatingAssignment}
+            submitting={isSubmitting || isCreatingAssignment || isCreatingSchedule}
+            rooms={rooms as any}
+            loadingRooms={loadingRooms}
+            shiftTemplates={shiftTemplates as any}
+            loadingShiftTemplates={loadingShiftTemplates}
+            selectedDate={formDate}
+            onDateChange={setFormDate}
+            selectedRoomId={formRoomId}
+            onRoomChange={setFormRoomId}
+            selectedShiftId={formShiftId}
+            onShiftChange={setFormShiftId}
+            selectedStartTime={formStartTime}
+            onStartTimeChange={setFormStartTime}
+            selectedEndTime={formEndTime}
+            onEndTimeChange={setFormEndTime}
+            availableSchedules={mergedSchedules}
+            onScheduleSelect={(scheduleId) => {
+              setSelectedScheduleId(scheduleId || undefined);
+            }}
           />
           </div>
         </div>

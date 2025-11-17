@@ -47,6 +47,19 @@ export class RoomScheduleController {
     }
   }
 
+  @MessagePattern('UserService.RoomSchedule.FindAll')
+  async findAll(@Payload() data?: { filters?: any }) {
+    try {
+      return await this.RoomScheduleService.findAll(data?.filters);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to fetch all employee schedules',
+        'RoomScheduleController'
+      );
+    }
+  }
+
   @Get(':id')
   @MessagePattern('UserService.RoomSchedule.FindOne')
   async findOne(@Payload() data: { id: string }) {

@@ -192,32 +192,37 @@ export class RoomScheduleRepository {
       .leftJoinAndSelect('schedule.shift_template', 'shift_template');
 
     if (filters.employeeId) {
+      const employeeId = filters.employeeId;
       query
         .andWhere('assignments.employeeId = :employeeId', {
-          employeeId: filters.employeeId,
+          employeeId,
         })
         .andWhere('assignments.isActive = :isActive', { isActive: true });
     }
 
     if (filters.roomId) {
-      query.andWhere('schedule.room_id = :roomId', { roomId: filters.roomId });
+      const roomId = filters.roomId;
+      query.andWhere('schedule.room_id = :roomId', { roomId });
     }
 
     if (filters.workDateFrom) {
+      const workDateFrom = filters.workDateFrom;
       query.andWhere('schedule.work_date >= :workDateFrom', {
-        workDateFrom: filters.workDateFrom,
+        workDateFrom,
       });
     }
 
     if (filters.workDateTo) {
+      const workDateTo = filters.workDateTo;
       query.andWhere('schedule.work_date <= :workDateTo', {
-        workDateTo: filters.workDateTo,
+        workDateTo,
       });
     }
 
     if (filters.scheduleStatus) {
+      const scheduleStatus = filters.scheduleStatus;
       query.andWhere('schedule.schedule_status = :scheduleStatus', {
-        scheduleStatus: filters.scheduleStatus,
+        scheduleStatus,
       });
     }
 

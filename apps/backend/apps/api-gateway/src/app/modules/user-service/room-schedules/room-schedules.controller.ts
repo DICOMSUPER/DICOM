@@ -183,6 +183,65 @@ export class RoomSchedulesController {
     }
   }
 
+  // 📋 Lấy tất cả lịch làm việc (không phân trang) - dùng cho calendar
+  @Get('all')
+  @ApiOperation({
+    summary: 'Get all employee schedules without pagination (for calendar view)',
+  })
+  @ApiQuery({
+    name: 'employee_id',
+    required: false,
+    description: 'Filter by employee ID',
+  })
+  @ApiQuery({
+    name: 'room_id',
+    required: false,
+    description: 'Filter by room ID',
+  })
+  @ApiQuery({
+    name: 'work_date_from',
+    required: false,
+    description: 'Filter from date',
+  })
+  @ApiQuery({
+    name: 'work_date_to',
+    required: false,
+    description: 'Filter to date',
+  })
+  @ApiQuery({
+    name: 'schedule_status',
+    required: false,
+    description: 'Filter by status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy tất cả lịch làm việc thành công',
+  })
+  async getAllSchedulesWithoutPagination(@Query() query: any) {
+    try {
+      this.logger.log('📋 Fetching all employee schedules (no pagination)...');
+      const result = await firstValueFrom(
+        this.userServiceClient.send('UserService.RoomSchedule.FindAll', {
+          filters: {
+            room_id: query.room_id,
+            work_date_from: query.work_date_from,
+            work_date_to: query.work_date_to,
+            schedule_status: query.schedule_status,
+            employee_id: query.employee_id,
+            role: query.role,
+            department_id: query.department_id,
+          },
+        })
+      );
+
+      this.logger.log(`✅ Retrieved ${Array.isArray(result) ? result.length : 0} schedules`);
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch all schedules', error);
+      throw handleError(error);
+    }
+  }
+
   @Get('/currentSchedule')
   async getMyCurrentWorkingSchedule(@Req() request: IAuthenticatedRequest) {
     try {

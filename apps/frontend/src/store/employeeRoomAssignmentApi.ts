@@ -6,7 +6,7 @@ import { FilterEmployeeRoomAssignment, EmployeeRoomAssignment } from "@/interfac
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",
   baseQuery: axiosBaseQuery("/employee-room-assignments"),
-  tagTypes: ["EmployeeRoomAssignment", "employeeRoom"],
+  tagTypes: ["EmployeeRoomAssignment", "employeeRoom", "RoomSchedule"],
   endpoints: (builder) => ({
     getEmployeeRoomAssignmentsInCurrentSession: builder.query<
       ApiResponse<EmployeeRoomAssignment[]>,
@@ -47,7 +47,7 @@ export const employeeRoomAssignmentApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["EmployeeRoomAssignment"],
+      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
     }),
     updateEmployeeRoomAssignment: builder.mutation<
       ApiResponse<EmployeeRoomAssignment>,
@@ -71,7 +71,7 @@ export const employeeRoomAssignmentApi = createApi({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["EmployeeRoomAssignment"],
+      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
     }),
   }),
 });
