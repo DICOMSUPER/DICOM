@@ -29,6 +29,14 @@ import StepIndicator from "./patient/forward/step-indicator";
 import ServiceSelection from "./patient/forward/service-selection";
 import RoomSelection from "./patient/forward/room-selection";
 
+// Format encounter type for display
+const formatEncounterType = (type: string): string => {
+  return type
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 type DepartmentOption = Department & { value: string; label: string };
 
 export function PatientForward({ patientId }: { patientId: string }) {
@@ -236,11 +244,11 @@ export function PatientForward({ patientId }: { patientId: string }) {
           />
 
           {/* Encounter Type */}
-          <div className="space-y-2">
+          <div className="space-y-5">
             <label className="text-sm font-medium text-foreground">
               Encounter Type
             </label>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap mt-2">
               {EncounterTypeArray &&
                 EncounterTypeArray.map((type) => (
                   <Button
@@ -262,7 +270,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
                       onChangeEncounterInfo("encounterType", type);
                     }}
                   >
-                    {type}
+                    {formatEncounterType(type)}
                   </Button>
                 ))}
             </div>

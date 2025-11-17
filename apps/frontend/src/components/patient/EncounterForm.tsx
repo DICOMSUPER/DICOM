@@ -31,6 +31,14 @@ import {
 import { EncounterType } from '@/enums/patient-workflow.enum';
 import { VitalSignsForm } from './VitalSignsForm';
 
+// Format encounter type for display
+const formatEncounterType = (type: string): string => {
+  return type
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 interface EncounterFormProps {
   encounter?: PatientEncounter;
   patientId?: string;
@@ -124,8 +132,10 @@ export function EncounterForm({
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="encounterType">Encounter Type</Label>
+              <div className="space-y-3">
+                <Label htmlFor="encounterType" className="text-sm font-medium">
+                  Encounter Type
+                </Label>
                 <Select
                   value={formData.encounterType}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, encounterType: value as EncounterType }))}
@@ -136,7 +146,7 @@ export function EncounterForm({
                   <SelectContent className="border-border">
                     {Object.values(EncounterType).map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type.replace('_', ' ')}
+                        {formatEncounterType(type)}
                       </SelectItem>
                     ))}
                   </SelectContent>

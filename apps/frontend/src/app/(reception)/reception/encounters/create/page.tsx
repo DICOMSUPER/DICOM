@@ -88,20 +88,20 @@ export default function CreateEncounterPage() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={handleBack}>
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Stethoscope className="h-8 w-8" />
+                Create Patient Encounter
+              </h1>
+              <p className="text-foreground">
+                Create a new patient encounter with medical details
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Search
               </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                  <Stethoscope className="h-8 w-8" />
-                  Create Patient Encounter
-                </h1>
-                <p className="text-foreground">
-                  Create a new patient encounter with medical details
-                </p>
-              </div>
             </div>
           </div>
 

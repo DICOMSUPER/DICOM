@@ -63,6 +63,11 @@ export function PatientTable({
     return age;
   };
 
+  const formatGender = (gender: string | null | undefined): string => {
+    if (!gender) return "N/A";
+    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  };
+
   const headers = [
     "Patient",
     "Patient Code",
@@ -98,7 +103,7 @@ export function PatientTable({
         {
           header: "Age/Gender",
           cell: (patient) =>
-            `${formatAge(patient.dateOfBirth)} years • ${patient.gender}`,
+            `${formatAge(patient.dateOfBirth)} years • ${formatGender(patient.gender)}`,
         },
         {
           header: "Contact",

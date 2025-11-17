@@ -114,11 +114,11 @@ export function WorkspaceLayout({
               </div>
               <Button
                 variant="ghost"
-                className="w-full justify-between text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                className="group w-full justify-between text-red-600 hover:text-white! hover:bg-red-600! ease-in-out duration-200"
                 onClick={handleLogout}
               >
                 <span className="font-medium">Logout</span>
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
               </Button>
             </div>
           </div>
