@@ -31,24 +31,28 @@ export default function ReceptionDashboard() {
   const patientStats = patientStatsData?.data;
   // Calculate stats from real data
   const stats = {
-    patientsWaiting: patientStats?.totalPatients || 0,
-    checkinsCompleted: encounterStats?.totalEncounters || 0,
-    urgentNotifications: 0, // TODO: Implement urgent notifications
-    totalPatientsToday: patientStats?.totalPatients || 0,
+    activePatient: patientStats?.activePatients || 0,
+    dailyCheckins: encounterStats?.totalEncounters || 0,
+    urgentNotifications: 0,
+    newPatientsThisMonth: patientStats?.newPatientsThisMonth || 0,
+    todayEncounters: encounterStats?.todayEncounter || 0,
+    todayStatEncounters: encounterStats?.todayStatEncounter || 0,
   };
 
   // Transform encounters to queue format for preview (normalize to array first)
   const recentEncountersArray = Array.isArray(recentEncounters)
     ? recentEncounters
     : (recentEncounters as any)?.data || [];
-  const recentQueue = recentEncountersArray.map((encounter: any) => ({
-    id: encounter.id,
-    name: encounter.patient
-      ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
-      : "Unknown Patient",
-    time: new Date(encounter.encounterDate).toLocaleTimeString(),
-    priority: (encounter.priority || "normal") as any,
-  }));
+  // const recentEncountersMappedArray = recentEncountersArray.map(
+  //   (encounter: any) => ({
+  //     id: encounter.id,
+  //     name: encounter.patient
+  //       ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+  //       : "Unknown Patient",
+  //     time: new Date(encounter.encounterDate).toLocaleTimeString(),
+  //     priority: (encounter.priority || "normal") as any,
+  //   })
+  // );
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -60,6 +64,10 @@ export default function ReceptionDashboard() {
 
   const handleGoToPatients = () => {
     router.push("/reception/patients");
+  };
+
+  const handleGoToEncounters = () => {
+    router.push("/reception/encounters");
   };
 
   return (
@@ -77,7 +85,11 @@ export default function ReceptionDashboard() {
       {/* Key Stats Summary */}
       <DashboardStats stats={stats} />
 
-      <QueuePreview patients={recentQueue} onViewAll={handleGoToPatients} />
+      <QueuePreview
+        encounters={recentEncountersArray || []}
+        onViewAll={handleGoToPatients}
+        onViewEncounters={handleGoToEncounters}
+      />
     </div>
   );
 }

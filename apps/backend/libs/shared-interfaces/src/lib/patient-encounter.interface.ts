@@ -1,5 +1,6 @@
 import { EncounterType } from '@backend/shared-enums';
 import { VitalSignsCollection } from './vital-signs.interface';
+import { IPatientBasic } from './patient.interface';
 
 export interface IPatientEncounter {
   id: string;
@@ -18,11 +19,6 @@ export interface IPatientEncounter {
 }
 
 export interface IEncounterWithDetails extends IPatientEncounter {
-  patient?: {
-    id: string;
-    patientCode: string;
-    firstName: string;
-    lastName: string;
-  };
+  patient?: IPatientBasic;
   diagnosesCount?: number;
 }

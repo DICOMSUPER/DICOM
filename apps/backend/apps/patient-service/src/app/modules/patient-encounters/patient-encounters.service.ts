@@ -87,7 +87,10 @@ export class PatientEncounterService {
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {
-    return await this.encounterRepository.findAll({ where: {} });
+    return await this.encounterRepository.findAll(
+      { where: { isDeleted: false } },
+      ['patient']
+    );
   };
 
   findOne = async (id: string): Promise<PatientEncounter | null> => {
@@ -108,7 +111,14 @@ export class PatientEncounterService {
   findMany = async (
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientEncounter>> => {
-    return await this.encounterRepository.paginate(paginationDto);
+    const paginationWithRelations: RepositoryPaginationDto = {
+      ...paginationDto,
+      relation: Array.from(
+        new Set([...(paginationDto.relation ?? []), 'patient'])
+      ),
+    };
+
+    return await this.encounterRepository.paginate(paginationWithRelations);
   };
 
   update = async (
@@ -143,6 +153,7 @@ export class PatientEncounterService {
         order: {
           createdAt: 'DESC',
         },
+        relations: { patient: true },
       }
     );
   };
