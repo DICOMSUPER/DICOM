@@ -1,4 +1,10 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Inject,
+  ConsoleLogger,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
@@ -10,6 +16,12 @@ import {
   ResourceNotFoundException,
   BusinessLogicException,
   AuthenticationException,
+  DigitalSignatureAlreadyExistsException,
+  InvalidStudyStatusException,
+  DigitalSignatureSetupRequiredException,
+  SignatureCreationFailedException,
+  StudySignatureNotFoundException,
+  SignatureVerificationFailedException,
 } from '@backend/shared-exception';
 import { DicomStudy, DicomStudySignature } from '@backend/shared-domain';
 
@@ -22,41 +34,57 @@ export class DicomStudySignaturesService {
     private readonly studyRepo: Repository<DicomStudy>,
     @InjectRepository(DicomStudySignature)
     private readonly signatureRepo: Repository<DicomStudySignature>,
-    @Inject( process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy
   ) {}
 
-  /**
-   * Technician verify study
-   */
+  private async ensureUserHasDigitalSignature(userId: string): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.userServiceClient.send('digital-signature.getByUserId', {
+          userId,
+        })
+      );
+    } catch (error) {
+      this.logger.error(
+        `User ${userId} does not have digital signature setup`,
+        error
+      );
+      throw new DigitalSignatureSetupRequiredException(userId);
+    }
+  }
+
   async technicianVerifyStudy(userId: string, studyId: string, pin: string) {
-    // 1. Get study
+    await this.ensureUserHasDigitalSignature(userId);
+    // Get study
     const study = await this.studyRepo.findOne({
       where: { id: studyId },
       relations: ['studySignatures'],
     });
 
+    console.log('technician study', study);
+
     if (!study) {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    // 2. Validate study status
     if (study.studyStatus !== DicomStudyStatus.SCANNED) {
-      throw new BusinessLogicException(
-        'Study must be in SCANNED status to verify'
+      throw new InvalidStudyStatusException(
+        study.studyStatus,
+        DicomStudyStatus.SCANNED,
+        studyId
       );
     }
 
-    // 3. Check if already signed by technician
     const existingSignature = study.studySignatures?.find(
       (s) => s.signatureType === SignatureType.TECHNICIAN_VERIFY
     );
 
     if (existingSignature) {
-      throw new BusinessLogicException('Study already verified by technician');
+      // throw new BusinessLogicException('Study already verified by technician');
+      throw new DigitalSignatureAlreadyExistsException(userId);
     }
 
-    // 4. Sign the study
     const signature = await this.signStudy(
       userId,
       studyId,
@@ -65,11 +93,12 @@ export class DicomStudySignaturesService {
       study
     );
 
-    // 5. Update study status
-    study.studyStatus = DicomStudyStatus.TECHNICIAN_VERIFIED;
-    study.performingTechnicianId = userId;
-    await this.studyRepo.save(study);
-
+    console.log('Study signed successfully', signature);
+    // Update study status
+    await this.studyRepo.update(studyId, {
+      studyStatus: DicomStudyStatus.TECHNICIAN_VERIFIED,
+      performingTechnicianId: userId,
+    });
     this.logger.log(
       `Technician ${userId} verified study ${studyId} successfully`
     );
@@ -78,17 +107,14 @@ export class DicomStudySignaturesService {
       message: 'Study verified successfully',
       study: {
         id: study.id,
-        status: study.studyStatus,
+        // status: study.studyStatus,
         verifiedAt: signature.signedAt,
       },
     };
   }
 
-  /**
-   * Radiologist approve study
-   */
-  async radiologistApproveStudy(userId: string, studyId: string, pin: string) {
-    // 1. Get study
+  async physicianApproveStudy(userId: string, studyId: string, pin: string) {
+    await this.ensureUserHasDigitalSignature(userId);
     const study = await this.studyRepo.findOne({
       where: { id: studyId },
       relations: ['studySignatures'],
@@ -98,20 +124,20 @@ export class DicomStudySignaturesService {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    // 2. Validate study status - must be verified by technician first
     if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
-      throw new BusinessLogicException(
-        'Study must be verified by technician before approval'
+      throw new InvalidStudyStatusException(
+        study.studyStatus,
+        DicomStudyStatus.SCANNED,
+        studyId
       );
     }
 
-    // 3. Check if already approved
     const existingSignature = study.studySignatures?.find(
-      (s) => s.signatureType === SignatureType.RADIOLOGIST_APPROVE
+      (s) => s.signatureType === SignatureType.PHYSICIAN_APPROVE
     );
 
     if (existingSignature) {
-      throw new BusinessLogicException('Study already approved by radiologist');
+      throw new DigitalSignatureAlreadyExistsException(userId);
     }
 
     // 4. Sign the study
@@ -119,15 +145,14 @@ export class DicomStudySignaturesService {
       userId,
       studyId,
       pin,
-      SignatureType.RADIOLOGIST_APPROVE,
+      SignatureType.PHYSICIAN_APPROVE,
       study
     );
 
-    // 5. Update study status
-    study.studyStatus = DicomStudyStatus.APPROVED;
-    study.verifyingRadiologistId = userId;
-    await this.studyRepo.save(study);
-
+    await this.studyRepo.update(studyId, {
+      studyStatus: DicomStudyStatus.APPROVED,
+      verifyingRadiologistId: userId,
+    });
     this.logger.log(
       `Radiologist ${userId} approved study ${studyId} successfully`
     );
@@ -136,15 +161,12 @@ export class DicomStudySignaturesService {
       message: 'Study approved successfully',
       study: {
         id: study.id,
-        status: study.studyStatus,
+        // status: study.studyStatus,
         approvedAt: signature.signedAt,
       },
     };
   }
 
-  /**
-   * Core signing logic
-   */
   private async signStudy(
     userId: string,
     studyId: string,
@@ -152,9 +174,8 @@ export class DicomStudySignaturesService {
     signatureType: SignatureType,
     study: DicomStudy
   ): Promise<DicomStudySignature> {
-    // 1. Prepare data to sign
     const dataToSign = JSON.stringify({
-      studyId: study.id,
+      studyId: studyId,
       studyInstanceUid: study.studyInstanceUid,
       patientId: study.patientId,
       studyDate: study.studyDate,
@@ -162,7 +183,6 @@ export class DicomStudySignaturesService {
       timestamp: new Date().toISOString(),
     });
 
-    // 2. Call User Service to sign data
     try {
       const signResult = await firstValueFrom(
         this.userServiceClient.send('digital-signature.sign', {
@@ -173,30 +193,49 @@ export class DicomStudySignaturesService {
       );
 
       if (!signResult || !signResult.signature) {
-        throw new BusinessLogicException('Failed to sign data');
+        throw new SignatureCreationFailedException(studyId, signatureType);
       }
+      console.log('signResult', signResult);
 
-      // 3. Get digital signature info
+      //  Get digital signature info
       const digitalSignature = await firstValueFrom(
         this.userServiceClient.send('digital-signature.getById', {
           id: signResult.signatureId,
         })
       );
 
-      // 4. Create study signature record
+      console.log('digitalSignature', digitalSignature);
+      /**
+       * digitalSignature {
+          message: 'Digital signature retrieved successfully',
+          signature: {
+            id: '2db00c79-10fd-48b1-8bad-8eda2b8c61ff',
+            signedData: '',
+            certificateSerial: 'USER_CERT_34f28329-a994-4992-a91d-d8943963ed39',
+            algorithm: 'RSA-SHA256',
+       */
+
       const studySignature = this.signatureRepo.create({
-        studyId: study.id as string,
+        studyId: studyId,
         signatureId: signResult.signatureId,
+        // study,
         userId,
         signatureType,
         signedData: dataToSign,
         signatureValue: signResult.signature,
         publicKey: signResult.publicKey,
-        certificateSerial: digitalSignature.certificateSerial,
-        algorithm: digitalSignature.algorithm || 'RSA-SHA256',
+        certificateSerial: digitalSignature.signature.certificateSerial,
+        algorithm: digitalSignature.signature.algorithm || 'RSA-SHA256',
+      });
+
+      this.logger.log('Creating study signature:', {
+        studyId: studySignature.studyId,
+        signatureId: studySignature.signatureId,
+        userId: studySignature.userId,
       });
 
       await this.signatureRepo.save(studySignature);
+      this.logger.log('✅ Study signature saved successfully');
 
       return studySignature;
     } catch (error: any) {
@@ -207,32 +246,25 @@ export class DicomStudySignaturesService {
       }
 
       if (error.message?.includes('not found')) {
-        throw new BusinessLogicException(
+        throw new DigitalSignatureSetupRequiredException(
           'Digital signature not found. Please setup digital signature first.'
         );
       }
 
-      throw new BusinessLogicException(error.message || 'Failed to sign study');
+      throw new SignatureCreationFailedException(studyId, signatureType);
     }
   }
 
-  /**
-   * Verify study signature
-   */
   async verifyStudySignature(studyId: string, signatureType: SignatureType) {
     const signature = await this.signatureRepo.findOne({
       where: { studyId, signatureType },
     });
 
     if (!signature) {
-      throw new ResourceNotFoundException(
-        'Signature',
-        `${studyId}-${signatureType}`
-      );
+      throw new StudySignatureNotFoundException(studyId, signatureType);
     }
 
     try {
-      // Verify cryptographically using stored public key
       const verify = crypto.createVerify(signature.algorithm);
       verify.update(signature.signedData);
       verify.end();
@@ -266,7 +298,7 @@ export class DicomStudySignaturesService {
       };
     } catch (error: any) {
       this.logger.error('Failed to verify signature', error.stack);
-      throw new BusinessLogicException('Failed to verify signature');
+      throw new SignatureVerificationFailedException(studyId, signatureType);
     }
   }
 

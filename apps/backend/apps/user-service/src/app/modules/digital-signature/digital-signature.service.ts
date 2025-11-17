@@ -100,9 +100,10 @@ export class DigitalSignatureService {
       signedData: '',
     });
 
-    await this.repo.saveSignature(record);
-
-    return { message: 'Digital signature has been created successfully' };
+    return {
+      message: 'Digital signature has been created successfully',
+      data: await this.repo.saveSignature(record),
+    };
   }
   async signData(userId: string, pin: string, data: string) {
     const record = await this.repo.findSignatureWithPrivateKey(userId);

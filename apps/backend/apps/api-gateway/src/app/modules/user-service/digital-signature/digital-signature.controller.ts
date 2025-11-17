@@ -119,6 +119,35 @@ export class DigitalSignatureController {
 
     return { message: result.message, publicKey: result.publicKey };
   }
+  @Get('my-signature')
+  async getMySignature(@Req() req: IAuthenticatedRequest) {
+    this.logger.log(`Getting signature for user ${req.userInfo.userId}`);
+
+    const result = await firstValueFrom(
+      this.userServiceClient.send('digital-signature.getByUserId', {
+        userId: req.userInfo.userId,
+      })
+    );
+
+    return result;
+  }
+
+
+  @Get('has-signature')
+  async hasSignature(@Req() req: IAuthenticatedRequest) {
+    this.logger.log(`Checking if user ${req.userInfo.userId} has signature`);
+
+    try {
+      await firstValueFrom(
+        this.userServiceClient.send('digital-signature.getByUserId', {
+          userId: req.userInfo.userId,
+        })
+      );
+      return { hasSignature: true };
+    } catch (error) {
+      return { hasSignature: false };
+    }
+  }
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.IMAGING_TECHNICIAN)
   @Get(':id')
@@ -140,35 +169,5 @@ export class DigitalSignatureController {
     return { message: result.message };
   }
 
-  @Get('my-signature')
-  async getMySignature(@Req() req: IAuthenticatedRequest) {
-    this.logger.log(`Getting signature for user ${req.userInfo.userId}`);
-
-    const result = await firstValueFrom(
-      this.userServiceClient.send('digital-signature.getByUserId', {
-        userId: req.userInfo.userId,
-      })
-    );
-
-    return result;
-  }
-
-  /**
-   * Check if user has digital signature
-   */
-  @Get('has-signature')
-  async hasSignature(@Req() req: IAuthenticatedRequest) {
-    this.logger.log(`Checking if user ${req.userInfo.userId} has signature`);
-
-    try {
-      await firstValueFrom(
-        this.userServiceClient.send('digital-signature.getByUserId', {
-          userId: req.userInfo.userId,
-        })
-      );
-      return { hasSignature: true };
-    } catch (error) {
-      return { hasSignature: false };
-    }
-  }
+  
 }

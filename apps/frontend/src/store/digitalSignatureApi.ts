@@ -2,7 +2,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { DigitalSignature, PublicKeyResponse, SetupSignatureDto, SignatureResponse, SignDataDto,VerifyResponse, VerifySignatureDto } from "@/interfaces/user/digital-signature.interface";
+import {
+  DigitalSignature,
+  PublicKeyResponse,
+  SetupSignatureDto,
+  SignatureResponse,
+  SignDataDto,
+  VerifyResponse,
+  VerifySignatureDto,
+} from "@/interfaces/user/digital-signature.interface";
 
 // Types/Interfaces
 
@@ -71,6 +79,14 @@ export const digitalSignatureApi = createApi({
         "DigitalSignature",
       ],
     }),
+    hasSignature: builder.query<ApiResponse<{ hasSignature: boolean }>, string>(
+      {
+        query: () => ({
+          url: `/has-signature`,
+          method: "GET",
+        }),
+      }
+    ),
   }),
 });
 
@@ -81,4 +97,5 @@ export const {
   useGetPublicKeyQuery,
   useGetDigitalSignatureByIdQuery,
   useRemoveSignatureMutation,
+  useHasSignatureQuery,
 } = digitalSignatureApi;

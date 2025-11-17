@@ -14,4 +14,4 @@ import { DicomStudySignaturesController } from './dicom-study-signatures.control
   controllers: [DicomStudySignaturesController],
     
 })
-export class DigitalSignatureModule {}
+export class DicomStudySignaturesModule {}

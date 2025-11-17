@@ -59,19 +59,19 @@ export class DicomStudySignaturesController {
   }
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN)
-  @Post('radiologist-approve')
+  @Post('physician-approve')
   @HttpCode(HttpStatus.OK)
-  async radiologistApprove(
+  async physicianApprove(
     @Req() req: IAuthenticatedRequest,
     @Body() dto: SignStudyDto
   ) {
     this.logger.log(
-      `Radiologist ${req.userInfo.userId} approving study ${dto.studyId}`
+      `Physician ${req.userInfo.userId} approving study ${dto.studyId}`
     );
 
     const result = await firstValueFrom(
       this.imagingService.send(
-        'ImagingService.DicomStudySignature.RadiologistApprove',
+        'ImagingService.DicomStudySignature.PhysicianApprove',
         {
           userId: req.userInfo.userId,
           studyId: dto.studyId,

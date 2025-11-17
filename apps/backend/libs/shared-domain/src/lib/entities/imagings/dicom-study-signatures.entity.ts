@@ -19,7 +19,7 @@ export class DicomStudySignature extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', name: 'study_id' })
+  @Column({ type: 'uuid', name: 'study_id', nullable: true })
   studyId!: string;
 
   @Column({ type: 'uuid', name: 'digital_signature_id' })

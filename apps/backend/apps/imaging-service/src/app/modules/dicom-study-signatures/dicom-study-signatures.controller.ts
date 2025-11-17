@@ -27,15 +27,15 @@ export class DicomStudySignaturesController {
     );
   }
 
-  @MessagePattern('ImagingService.DicomStudySignature.RadiologistApprove')
-  async radiologistApprove(
+  @MessagePattern('ImagingService.DicomStudySignature.PhysicianApprove')
+  async physicianApprove(
     @Payload() data: { userId: string; studyId: string; pin: string }
   ) {
     this.logger.log(
-      `Processing radiologist approve: userId=${data.userId}, studyId=${data.studyId}`
+      `Processing physician approve: userId=${data.userId}, studyId=${data.studyId}`
     );
 
-    return this.signatureService.radiologistApproveStudy(
+    return this.signatureService.physicianApproveStudy(
       data.userId,
       data.studyId,
       data.pin
