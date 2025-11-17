@@ -15,6 +15,7 @@ import {
 } from "@/store/patientApi";
 import { Users, UserPlus } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
+import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 
 export default function ReceptionPage() {
   const router = useRouter();
@@ -55,7 +56,7 @@ export default function ReceptionPage() {
     : [];
 
   const filteredPatients = patientsArray
-    .filter((patient) => {
+    .filter((patient: Patient) => {
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -65,7 +66,7 @@ export default function ReceptionPage() {
         patient.phoneNumber?.toLowerCase().includes(searchLower)
       );
     })
-    .map((patient) => ({
+    .map((patient: Patient) => ({
       id: patient.id,
       firstName: patient.firstName || "Unknown",
       lastName: patient.lastName || "Patient",
@@ -133,15 +134,19 @@ export default function ReceptionPage() {
 
       {/* Error Display */}
       {error && (
-        <ErrorAlert title="Failed to load patients" message={error} className="mb-4" />
+        <ErrorAlert
+          title="Failed to load patients"
+          message={error}
+          className="mb-4"
+        />
       )}
 
       {/* Stats Cards */}
       <PatientStatsCards
-        totalCount={patientStats?.totalPatients || 0}
-        activeCount={patientStats?.activePatients || 0}
-        newThisMonthCount={patientStats?.newPatientsThisMonth || 0}
-        inactiveCount={patientStats?.inactivePatients || 0}
+        totalCount={patientStats?.data?.totalPatients || 0}
+        activeCount={patientStats?.data?.activePatients || 0}
+        newThisMonthCount={patientStats?.data?.newPatientsThisMonth || 0}
+        inactiveCount={patientStats?.data?.inactivePatients || 0}
         isLoading={statsLoading}
       />
 

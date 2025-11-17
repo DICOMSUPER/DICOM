@@ -1,4 +1,6 @@
 import { Gender, BloodType } from '@backend/shared-enums';
+import { IPatientCondition } from './patient-condition.interface';
+import { IPatientEncounter } from './patient-encounter.interface';
 
 export interface IPatient {
   id: string;

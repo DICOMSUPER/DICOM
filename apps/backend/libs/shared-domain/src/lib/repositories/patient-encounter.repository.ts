@@ -251,28 +251,51 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     encountersByType: Record<string, number>;
     encountersThisMonth: number;
     averageEncountersPerPatient: number;
+    todayEncounter: number;
+    todayStatEncounter: number;
   }> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
+    const startOfDate = new Date();
+    startOfDate.setHours(0, 0, 0, 0);
+    const endOfDate = new Date();
+    endOfDate.setHours(23, 59, 59, 999);
     const whereClause = patientId
       ? { patientId, isDeleted: false }
       : { isDeleted: false };
 
-    const [totalEncounters, encountersThisMonth, allEncounters] =
-      await Promise.all([
-        this.getRepository().count({ where: whereClause }),
-        this.getRepository().count({
-          where: {
-            ...whereClause,
-            encounterDate: Between(startOfMonth, now),
-          },
-        }),
-        this.getRepository().find({
-          where: whereClause,
-          select: ['encounterType'],
-        }),
-      ]);
+    const [
+      totalEncounters,
+      encountersThisMonth,
+      allEncounters,
+      todayEncounter,
+      todayStatEncounter,
+    ] = await Promise.all([
+      this.getRepository().count({ where: whereClause }),
+      this.getRepository().count({
+        where: {
+          ...whereClause,
+          encounterDate: Between(startOfMonth, now),
+        },
+      }),
+      this.getRepository().find({
+        where: whereClause,
+        select: ['encounterType'],
+      }),
+      this.getRepository().count({
+        where: {
+          ...whereClause,
+          createdAt: Between(startOfDate, endOfDate),
+        },
+      }),
+      this.getRepository().count({
+        where: {
+          ...whereClause,
+          createdAt: Between(startOfDate, endOfDate),
+          priority: EncounterPriorityLevel.STAT,
+        },
+      }),
+    ]);
 
     // Count encounters by type
     const encountersByType = allEncounters.reduce((acc, encounter) => {
@@ -291,6 +314,8 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       encountersByType,
       encountersThisMonth,
       averageEncountersPerPatient,
+      todayEncounter,
+      todayStatEncounter,
     };
   }
 

@@ -1,4 +1,8 @@
-import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
+import {
+  ClinicalStatus,
+  ConditionVerificationStatus,
+} from '@backend/shared-enums';
+import { IPatientBasic } from './patient.interface';
 
 export interface IPatientCondition {
   id: string;
@@ -19,12 +23,5 @@ export interface IPatientCondition {
 }
 
 export interface IConditionWithDetails extends IPatientCondition {
-  patient?: {
-    id: string;
-    patientCode: string;
-    firstName: string;
-    lastName: string;
-    dateOfBirth: Date;
-    gender: string;
-  };
+  patient?: IPatientBasic;
 }

@@ -45,7 +45,7 @@ export default function EncounterDetailPage() {
 
   // API hooks
   const {
-    data: encounter,
+    data: encounterData,
     isLoading,
     error,
   } = useGetPatientEncounterByIdQuery(encounterId);
@@ -97,6 +97,8 @@ export default function EncounterDetailPage() {
     router.push("/reception/encounters");
   };
 
+  const encounter = encounterData?.data;
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -129,234 +131,231 @@ export default function EncounterDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                  <Stethoscope className="h-8 w-8" />
-                  Encounter Details
-                </h1>
-                <p className="text-foreground">
-                  {encounter.patient
-                    ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
-                    : "Unknown Patient"}{" "}
-                  - {new Date(encounter.encounterDate).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {!isEditing && (
-                <>
-                  <Button variant="outline" onClick={handleEdit}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </Button>
-                </>
-              )}
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Stethoscope className="h-8 w-8" />
+                Encounter Details
+              </h1>
+              <p className="text-foreground">
+                {encounter.patient
+                  ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
+                  : "Unknown Patient"}{" "}
+                - {new Date(encounter.encounterDate).toLocaleDateString()}
+              </p>
             </div>
           </div>
+          <div className="flex gap-2">
+            {!isEditing && (
+              <>
+                <Button variant="outline" onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
 
-          {/* Encounter Form or Details */}
-          {isEditing ? (
-            <EncounterForm
-              encounter={encounter}
-              onSubmit={handleSave}
-              onCancel={handleCancel}
-              loading={isUpdating}
-            />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Details */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Basic Information */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Encounter Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium text-foreground">
-                          Encounter Type
-                        </Label>
-                        <p className="text-lg">{encounter.encounterType}</p>
+        {/* Encounter Form or Details */}
+        {isEditing ? (
+          <EncounterForm
+            encounter={encounter}
+            onSubmit={handleSave}
+            onCancel={handleCancel}
+            loading={isUpdating}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Basic Information */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Encounter Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Encounter Type
+                      </Label>
+                      <p className="text-lg">{encounter.encounterType}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Status
+                      </Label>
+                      <div className="mt-1">
+                        <Badge
+                          variant={
+                            encounter.status === "completed"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {encounter.status}
+                        </Badge>
                       </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Date & Time
+                      </Label>
+                      <p className="text-lg">
+                        {new Date(encounter.encounterDate).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Duration
+                      </Label>
+                      <p className="text-lg">N/A</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Chief Complaint */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle>Chief Complaint</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg">
+                    {encounter.chiefComplaint || "No chief complaint recorded"}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Symptoms */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle>Symptoms</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg">
+                    {encounter.symptoms || "No symptoms recorded"}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle>Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg">
+                    {encounter.notes || "No notes recorded"}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Patient Information */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Patient Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {encounter.patient ? (
+                    <div className="space-y-2">
                       <div>
                         <Label className="text-sm font-medium text-foreground">
-                          Status
-                        </Label>
-                        <div className="mt-1">
-                          <Badge
-                            variant={
-                              encounter.status === "completed"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {encounter.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-foreground">
-                          Date & Time
+                          Name
                         </Label>
                         <p className="text-lg">
-                          {new Date(encounter.encounterDate).toLocaleString()}
+                          {encounter.patient.firstName}{" "}
+                          {encounter.patient.lastName}
                         </p>
                       </div>
                       <div>
                         <Label className="text-sm font-medium text-foreground">
-                          Duration
+                          Patient ID
+                        </Label>
+                        <p className="text-lg">
+                          {encounter.patient.patientCode}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-foreground">
+                          Date of Birth
+                        </Label>
+                        <p className="text-lg">N/A</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium text-foreground">
+                          Gender
                         </Label>
                         <p className="text-lg">N/A</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Chief Complaint */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle>Chief Complaint</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg">
-                      {encounter.chiefComplaint ||
-                        "No chief complaint recorded"}
+                  ) : (
+                    <p className="text-foreground">
+                      Patient information not available
                     </p>
-                  </CardContent>
-                </Card>
-
-                {/* Symptoms */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle>Symptoms</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg">
-                      {encounter.symptoms || "No symptoms recorded"}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Notes */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle>Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg">
-                      {encounter.notes || "No notes recorded"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Sidebar */}
-              <div className="space-y-6">
-                {/* Patient Information */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      Patient Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {encounter.patient ? (
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-sm font-medium text-foreground">
-                            Name
-                          </Label>
-                          <p className="text-lg">
-                            {encounter.patient.firstName}{" "}
-                            {encounter.patient.lastName}
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-foreground">
-                            Patient ID
-                          </Label>
-                          <p className="text-lg">
-                            {encounter.patient.patientCode}
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-foreground">
-                            Date of Birth
-                          </Label>
-                          <p className="text-lg">N/A</p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-foreground">
-                            Gender
-                          </Label>
-                          <p className="text-lg">N/A</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-foreground">
-                        Patient information not available
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Vital Signs */}
-                {encounter.vitalSigns &&
-                  Object.keys(encounter.vitalSigns).length > 0 && (
-                    <Card className="border-border">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Clock className="h-5 w-5" />
-                          Vital Signs
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-center py-4 text-foreground">
-                          <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p>Vital signs display component</p>
-                        </div>
-                      </CardContent>
-                    </Card>
                   )}
+                </CardContent>
+              </Card>
 
-                {/* Assigned Physician */}
-                <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle>Assigned Physician</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-lg">
-                      {encounter.assignedPhysicianId || "Not assigned"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Vital Signs */}
+              {encounter.vitalSigns &&
+                Object.keys(encounter.vitalSigns).length > 0 && (
+                  <Card className="border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        Vital Signs
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-4 text-foreground">
+                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>Vital signs display component</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Assigned Physician */}
+              <Card className="border-border">
+                <CardHeader>
+                  <CardTitle>Assigned Physician</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg">
+                    {encounter?.assignedPhysicianId || "Not assigned"}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </div>
-      </WorkspaceLayout>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -28,9 +28,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {children}
-      </WorkspaceLayout>
+      <WorkspaceLayout sidebar={<SidebarNav />}>{children}</WorkspaceLayout>
     </div>
   );
 }
