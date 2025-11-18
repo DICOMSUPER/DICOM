@@ -70,6 +70,7 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
   // Chọn template → đổ nội dung vào RichTextEditor
   const handleSelectTemplate = (template: any) => {
     setDescription(template.descriptionTemplate ?? "");
+    console.log("Selected Template:", template);
   };
 
   const handleCreateDiagnosis = async () => {

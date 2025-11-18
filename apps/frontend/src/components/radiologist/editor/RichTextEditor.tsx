@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { createEditor, Descendant, Transforms, Editor, Text, Element as SlateElement, BaseEditor } from "slate";
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from "slate-react";
 import { withHistory, HistoryEditor } from "slate-history";
@@ -51,27 +51,36 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     placeholder = "Nhập nội dung...",
     minHeight = "200px",
 }) => {
-    const [key, setKey] = useState(0);
-    const editor = useMemo(() => withHistory(withReact(createEditor())), [key]);
+    const [editorKey, setEditorKey] = useState(0);
+    const editor = useMemo(() => withHistory(withReact(createEditor())), [editorKey]);
 
     const initialValue: Descendant[] = useMemo(() => {
         if (!value || value.trim() === "") {
-            return [{
-                type: "paragraph",
-                children: [{ text: "" }]
-            } as CustomElement];
+            return [{ type: "paragraph", children: [{ text: "" }] }];
         }
-
-        const lines = value.split("\n");
-        return lines.map(line => ({
+        return value.split("\n").map(line => ({
             type: "paragraph",
             children: [{ text: line }]
-        } as CustomElement));
-    }, [value, key]);
+        }));
+    }, [value, editorKey]);
+
+    // ⛔ Slate không tự update khi value từ parent đổi
+    // 🔥 Fix: reset nội dung mỗi khi value thay đổi từ ngoài
+    useEffect(() => {
+        const parsed = value?.split("\n") || [""];
+        const newSlateValue: Descendant[] = parsed.map(line => ({
+            type: "paragraph",
+            children: [{ text: line }],
+        }));
+
+        editor.children = newSlateValue;
+        Transforms.deselect(editor);
+        editor.onChange();
+    }, [value, editor]);
 
     const renderElement = useCallback((props: RenderElementProps) => {
         const { attributes, children, element } = props;
-        const style = { textAlign: (element as any).align || "left" } as React.CSSProperties;
+        const style = { textAlign: element.align || "left" };
 
         switch (element.type) {
             case "bulleted-list":
@@ -87,37 +96,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     const renderLeaf = useCallback((props: RenderLeafProps) => {
         let { attributes, children, leaf } = props;
-
-        if ((leaf as any).bold) {
-            children = <strong>{children}</strong>;
-        }
-        if ((leaf as any).italic) {
-            children = <em>{children}</em>;
-        }
-        if ((leaf as any).underline) {
-            children = <u>{children}</u>;
-        }
-
+        if (leaf.bold) children = <strong>{children}</strong>;
+        if (leaf.italic) children = <em>{children}</em>;
+        if (leaf.underline) children = <u>{children}</u>;
         return <span {...attributes}>{children}</span>;
     }, []);
 
     const handleChange = (val: Descendant[]) => {
-        const isAstChange = editor.operations.some(
-            op => 'set_selection' !== op.type
-        );
-        if (isAstChange) {
-            const text = val.map(n => {
-                if ('children' in n) {
-                    return n.children.map((child: any) => child.text || '').join('');
-                }
-                return '';
-            }).join("\n");
-            onChange(text);
-        }
+        const isAstChange = editor.operations.some(op => op.type !== "set_selection");
+        if (!isAstChange) return;
+
+        const text = val
+            .map(n => ('children' in n ? n.children.map((c: any) => c.text || "").join("") : ""))
+            .join("\n");
+
+        onChange(text);
     };
 
     const isMarkActive = (format: string) => {
-        const marks = Editor.marks(editor) as any;
+        const marks = Editor.marks(editor);
         return marks ? marks[format] === true : false;
     };
 
@@ -128,24 +125,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const [match] = Array.from(
             Editor.nodes(editor, {
                 at: Editor.unhangRange(editor, selection),
-                match: n =>
-                    !Editor.isEditor(n) &&
-                    SlateElement.isElement(n) &&
-                    (n as any).type === format,
+                match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && n.type === format,
             })
         );
-
         return !!match;
     };
 
     const toggleMark = (format: string) => {
         const isActive = isMarkActive(format);
-
-        if (isActive) {
-            Editor.removeMark(editor, format);
-        } else {
-            Editor.addMark(editor, format, true);
-        }
+        isActive ? Editor.removeMark(editor, format) : Editor.addMark(editor, format, true);
     };
 
     const toggleBlock = (format: string) => {
@@ -153,63 +141,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const isList = LIST_TYPES.includes(format);
 
         Transforms.unwrapNodes(editor, {
-            match: n =>
-                !Editor.isEditor(n) &&
-                SlateElement.isElement(n) &&
-                LIST_TYPES.includes((n as any).type),
+            match: n => !Editor.isEditor(n) && SlateElement.isElement(n) && LIST_TYPES.includes(n.type),
             split: true,
         });
 
-        let newProperties: Partial<SlateElement>;
-        if (isActive) {
-            newProperties = {
-                type: 'paragraph',
-            } as any;
-        } else if (isList) {
-            newProperties = {
-                type: 'list-item',
-            } as any;
-        } else {
-            newProperties = {
-                type: format,
-            } as any;
-        }
+        const newProperties: Partial<SlateElement> = {
+            type: isActive ? "paragraph" : isList ? "list-item" : format,
+        };
 
-        Transforms.setNodes<SlateElement>(editor, newProperties);
+        Transforms.setNodes(editor, newProperties);
 
         if (!isActive && isList) {
             const block = { type: format, children: [] };
-            Transforms.wrapNodes(editor, block as any);
+            Transforms.wrapNodes(editor, block);
         }
     };
 
     const toggleAlign = (align: string) => {
-        Transforms.setNodes(
-            editor,
-            { align } as any,
-            { match: n => Editor.isBlock(editor, n) }
-        );
+        Transforms.setNodes(editor, { align }, { match: n => Editor.isBlock(editor, n) });
     };
 
-    const ToolbarButton = ({
-        active,
-        onToggle,
-        icon: Icon,
-        tooltip
-    }: {
-        active: boolean;
-        onToggle: () => void;
-        icon: any;
-        tooltip: string;
-    }) => (
+    const ToolbarButton = ({ active, onToggle, icon: Icon, tooltip }: any) => (
         <button
             type="button"
             onMouseDown={(e) => {
                 e.preventDefault();
                 onToggle();
             }}
-            className={`p-2 rounded hover:bg-gray-200 transition-colors ${active ? "bg-blue-100 text-blue-600" : "text-gray-700"
-                }`}
+            className={`p-2 rounded hover:bg-gray-200 transition-colors ${active ? "bg-blue-100 text-blue-600" : "text-gray-700"}`}
             title={tooltip}
         >
             <Icon className="w-4 h-4" />
@@ -218,103 +177,36 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     return (
         <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
-            {/* Toolbar */}
             <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50">
                 <div className="flex items-center gap-1 pr-2 border-r border-gray-300">
-                    <ToolbarButton
-                        active={isMarkActive("bold")}
-                        onToggle={() => toggleMark("bold")}
-                        icon={Bold}
-                        tooltip="Bold (Ctrl+B)"
-                    />
-                    <ToolbarButton
-                        active={isMarkActive("italic")}
-                        onToggle={() => toggleMark("italic")}
-                        icon={Italic}
-                        tooltip="Italic (Ctrl+I)"
-                    />
-                    <ToolbarButton
-                        active={isMarkActive("underline")}
-                        onToggle={() => toggleMark("underline")}
-                        icon={Underline}
-                        tooltip="Underline (Ctrl+U)"
-                    />
+                    <ToolbarButton active={isMarkActive("bold")} onToggle={() => toggleMark("bold")} icon={Bold} tooltip="Bold (Ctrl+B)" />
+                    <ToolbarButton active={isMarkActive("italic")} onToggle={() => toggleMark("italic")} icon={Italic} tooltip="Italic (Ctrl+I)" />
+                    <ToolbarButton active={isMarkActive("underline")} onToggle={() => toggleMark("underline")} icon={Underline} tooltip="Underline (Ctrl+U)" />
                 </div>
 
                 <div className="flex items-center gap-1 pr-2 border-r border-gray-300">
-                    <ToolbarButton
-                        active={isBlockActive("bulleted-list")}
-                        onToggle={() => toggleBlock("bulleted-list")}
-                        icon={List}
-                        tooltip="Bullet List"
-                    />
-                    <ToolbarButton
-                        active={isBlockActive("numbered-list")}
-                        onToggle={() => toggleBlock("numbered-list")}
-                        icon={ListOrdered}
-                        tooltip="Numbered List"
-                    />
+                    <ToolbarButton active={isBlockActive("bulleted-list")} onToggle={() => toggleBlock("bulleted-list")} icon={List} tooltip="Bullet List" />
+                    <ToolbarButton active={isBlockActive("numbered-list")} onToggle={() => toggleBlock("numbered-list")} icon={ListOrdered} tooltip="Numbered List" />
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <ToolbarButton
-                        active={false}
-                        onToggle={() => toggleAlign("left")}
-                        icon={AlignLeft}
-                        tooltip="Align Left"
-                    />
-                    <ToolbarButton
-                        active={false}
-                        onToggle={() => toggleAlign("center")}
-                        icon={AlignCenter}
-                        tooltip="Align Center"
-                    />
-                    <ToolbarButton
-                        active={false}
-                        onToggle={() => toggleAlign("right")}
-                        icon={AlignRight}
-                        tooltip="Align Right"
-                    />
+                    <ToolbarButton active={false} onToggle={() => toggleAlign("left")} icon={AlignLeft} tooltip="Align Left" />
+                    <ToolbarButton active={false} onToggle={() => toggleAlign("center")} icon={AlignCenter} tooltip="Align Center" />
+                    <ToolbarButton active={false} onToggle={() => toggleAlign("right")} icon={AlignRight} tooltip="Align Right" />
                 </div>
             </div>
 
-            {/* Editor */}
-            <Slate
-                editor={editor}
-                initialValue={initialValue}
-                onChange={handleChange}
-            >
+            <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>
                 <Editable
                     renderElement={renderElement}
                     renderLeaf={renderLeaf}
                     placeholder={placeholder}
                     className="p-4 outline-none"
                     style={{
-                        minHeight: minHeight,
+                        minHeight,
                         fontFamily: "system-ui, -apple-system, sans-serif",
                         fontSize: "14px",
                         lineHeight: "1.6",
-                    }}
-                    onKeyDown={(event) => {
-                        if (!event.ctrlKey && !event.metaKey) return;
-
-                        switch (event.key) {
-                            case "b": {
-                                event.preventDefault();
-                                toggleMark("bold");
-                                break;
-                            }
-                            case "i": {
-                                event.preventDefault();
-                                toggleMark("italic");
-                                break;
-                            }
-                            case "u": {
-                                event.preventDefault();
-                                toggleMark("underline");
-                                break;
-                            }
-                        }
                     }}
                 />
             </Slate>
