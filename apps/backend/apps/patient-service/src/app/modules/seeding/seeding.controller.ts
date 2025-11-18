@@ -67,6 +67,16 @@ export class SeedingController {
     };
   }
 
+  @MessagePattern('PatientService.Seeding.SeedReportTemplates')
+  async microserviceSeedReportTemplates(@Payload() data: any) {
+    await this.seedingService.seedReportTemplates();
+    return {
+      success: true,
+      message: 'Report templates seeded successfully!',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
 
 
   @MessagePattern('PatientService.Seeding.SeedDiagnosesReports')

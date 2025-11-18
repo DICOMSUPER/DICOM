@@ -1,45 +1,140 @@
+import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { Folder } from "lucide-react";
-import React from "react";
+import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
+import { ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function StudyLevel({
-  studies,
-  handleStudyClick,
+  study,
+  isExpanded,
+  onToggle,
+  name,
+  date,
+  seriesCount,
+  isLast,
+  refetch,
 }: {
-  studies: DicomStudy[];
-  handleStudyClick: (study: DicomStudy) => void;
+  study: DicomStudy;
+  isExpanded: boolean;
+  onToggle: (studyId: string) => void;
+  name: string;
+  date: string | undefined;
+  seriesCount: number;
+  isLast: boolean;
+  refetch: () => void;
 }) {
+  const [updateDicomStudy] = useUpdateDicomStudyMutation();
+  const [currentStatus, setCurrentStatus] = useState<DicomStudyStatus>(
+    study.studyStatus as DicomStudyStatus
+  );
+
+  // Update local status when study prop changes (after refetch)
+  useEffect(() => {
+    setCurrentStatus(study.studyStatus as DicomStudyStatus);
+  }, [study.studyStatus]);
+
+  const changeDicomStudyStatus = async (
+    id: string,
+    status: DicomStudyStatus
+  ) => {
+    await updateDicomStudy({ id, data: { studyStatus: status } });
+  };
+
+  const forwardStudy = async (studyId: string) => {
+    try {
+      // Optimistically update the status immediately
+      setCurrentStatus(DicomStudyStatus.TECHNICIAN_VERIFIED);
+
+      await changeDicomStudyStatus(
+        studyId,
+        DicomStudyStatus.TECHNICIAN_VERIFIED
+      );
+      refetch?.();
+      toast.success("Study forwarded successfully");
+    } catch (error) {
+      // Revert to original status on error
+      setCurrentStatus(study.studyStatus as DicomStudyStatus);
+      toast.error("Failed to forward study");
+    }
+  };
+
+  const isForwarded = currentStatus === DicomStudyStatus.TECHNICIAN_VERIFIED;
+
+  const getStatusBadge = () => {
+    const statusLabels: Record<DicomStudyStatus, string> = {
+      [DicomStudyStatus.SCANNED]: "Scanned",
+      [DicomStudyStatus.TECHNICIAN_VERIFIED]: "Technician Verified",
+      [DicomStudyStatus.READING]: "Reading",
+      [DicomStudyStatus.PENDING_APPROVAL]: "Pending Approval",
+      [DicomStudyStatus.APPROVED]: "Approved",
+      [DicomStudyStatus.RESULT_PRINTED]: "Result Printed",
+    };
+
+    const statusColors: Record<DicomStudyStatus, string> = {
+      [DicomStudyStatus.SCANNED]: "bg-gray-100 text-gray-700",
+      [DicomStudyStatus.TECHNICIAN_VERIFIED]: "bg-blue-100 text-blue-700",
+      [DicomStudyStatus.READING]: "bg-yellow-100 text-yellow-700",
+      [DicomStudyStatus.PENDING_APPROVAL]: "bg-orange-100 text-orange-700",
+      [DicomStudyStatus.APPROVED]: "bg-green-100 text-green-700",
+      [DicomStudyStatus.RESULT_PRINTED]: "bg-purple-100 text-purple-700",
+    };
+
+    return (
+      <span
+        className={`text-xs px-2 py-1 rounded ${statusColors[currentStatus]}`}
+      >
+        {statusLabels[currentStatus]}
+      </span>
+    );
+  };
+
   return (
-    <div className="space-y-2">
-      {studies && studies.length > 0 ? (
-        studies.map((study) => (
-          <div
-            key={study.id}
-            className="group flex items-center cursor-pointer p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] hover:border-[var(--primary)] hover:shadow-md transition-all duration-200 ease-in-out"
-            onClick={() => handleStudyClick(study)}
-          >
-            <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
-              <Folder className="w-5 h-5 text-blue-500" />
-            </div>
-            <span
-              className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200"
-              title={`${study.studyInstanceUid} - [${study.studyDate}]`}
-            >
-              {study.studyDescription ||
-                `Study ...${study.studyInstanceUid.slice(-7)}`}
-            </span>
-            <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
-              {study.series?.length || 0} series
-            </span>
-          </div>
-        ))
-      ) : (
-        <div className="bg-[var(--surface)] rounded-lg shadow p-6 border border-[var(--border)] cursor-not-allowed border-dashed">
-          <h6 className="italic text-center font-semibold text-[var(--neutral)]">
-            No studies uploaded yet
-          </h6>
+    <button
+      onClick={() => onToggle(study.id)}
+      disabled={study.series?.length === 0}
+      className={`w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors ${
+        study.series?.length === 0
+          ? "cursor-not-allowed opacity-50"
+          : "cursor-pointer"
+      } ${isLast ? "rounded-b-lg" : ""}`}
+    >
+      <div className="flex items-center space-x-4 flex-1 text-left">
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform ${
+            isExpanded ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+        <div>
+          <p className="text-sm font-medium text-gray-900" title={name}>
+            Study {name.slice(0, 5)}...{name.slice(-5)}
+          </p>
+          <p className="text-xs text-gray-500">{date}</p>
         </div>
-      )}
-    </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        {getStatusBadge()}
+
+        <button
+          onClick={async (e) => {
+            e.stopPropagation();
+            await forwardStudy(study.id);
+          }}
+          disabled={isForwarded}
+          className={`text-sm transition-colors ${
+            isForwarded
+              ? "text-gray-400 cursor-not-allowed"
+              : "text-blue-600 hover:text-blue-700 hover:underline"
+          }`}
+        >
+          Forward Study
+        </button>
+
+        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          {seriesCount} series
+        </span>
+      </div>
+    </button>
   );
 }

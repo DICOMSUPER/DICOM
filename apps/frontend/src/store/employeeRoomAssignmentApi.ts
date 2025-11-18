@@ -6,7 +6,7 @@ import { FilterEmployeeRoomAssignment, EmployeeRoomAssignment } from "@/interfac
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",
   baseQuery: axiosBaseQuery("/employee-room-assignments"),
-  tagTypes: ["EmployeeRoomAssignment", "employeeRoom"],
+  tagTypes: ["EmployeeRoomAssignment", "employeeRoom", "RoomSchedule"],
   endpoints: (builder) => ({
     getEmployeeRoomAssignmentsInCurrentSession: builder.query<
       ApiResponse<EmployeeRoomAssignment[]>,
@@ -38,6 +38,41 @@ export const employeeRoomAssignmentApi = createApi({
         method: "GET",
       }),
     }),
+    createEmployeeRoomAssignment: builder.mutation<
+      ApiResponse<EmployeeRoomAssignment>,
+      { roomScheduleId: string; employeeId: string; isActive?: boolean }
+    >({
+      query: (data) => ({
+        url: "/",
+        method: "POST",
+        data,
+      }),
+      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
+    }),
+    updateEmployeeRoomAssignment: builder.mutation<
+      ApiResponse<EmployeeRoomAssignment>,
+      { id: string; data: Partial<{ roomScheduleId: string; employeeId: string; isActive: boolean }> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/${id}`,
+        method: "PUT",
+        data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "EmployeeRoomAssignment", id },
+        "EmployeeRoomAssignment",
+      ],
+    }),
+    deleteEmployeeRoomAssignment: builder.mutation<
+      ApiResponse<void>,
+      string
+    >({
+      query: (id) => ({
+        url: `/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
+    }),
   }),
 });
 
@@ -45,4 +80,7 @@ export const {
   useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
   useGetEmployeeRoomAssignmentsQuery,
   useGetCurrentEmployeeRoomAssignmentQuery,
+  useCreateEmployeeRoomAssignmentMutation,
+  useUpdateEmployeeRoomAssignmentMutation,
+  useDeleteEmployeeRoomAssignmentMutation,
 } = employeeRoomAssignmentApi;

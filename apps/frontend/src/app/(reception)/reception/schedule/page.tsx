@@ -11,13 +11,12 @@ import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
+import { RoomView } from "@/components/schedule/RoomView";
 import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { 
-  useGetMySchedulesByDateRangeQuery,
-  useGetMySchedulesByDateQuery,
-} from "@/store/roomScheduleApi";
+import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
 import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
+import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 
 // Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
 
@@ -78,20 +77,11 @@ export default function ReceptionSchedulePage() {
 
   const currentSchedules = getFilteredSchedules();
   const isLoading = schedulesLoading || schedulesFetching;
+  const { shiftTemplateMap } = useShiftTemplatesDictionary();
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
     return currentSchedules.filter((schedule) => schedule.work_date === dateStr);
-  };
-
-  const getScheduleForTimeSlot = (date: Date, hour: number) => {
-    const dateStr = format(date, "yyyy-MM-dd");
-    return currentSchedules.find(
-      (schedule) =>
-        schedule.work_date === dateStr &&
-        schedule.actual_start_time &&
-        parseInt(schedule.actual_start_time.split(":")[0]) === hour
-    );
   };
 
   const getStatusColor = (status: string) => {
@@ -135,8 +125,10 @@ export default function ReceptionSchedulePage() {
     }
   };
 
-  const handleScheduleClick = (schedule: RoomSchedule) => {
-    setSelectedSchedule(schedule);
+  const handleScheduleClick = (schedule: RoomSchedule | RoomSchedule[]) => {
+    const target = Array.isArray(schedule) ? schedule[0] : schedule;
+    if (!target) return;
+    setSelectedSchedule(target);
     setIsModalOpen(true);
   };
 
@@ -155,10 +147,10 @@ export default function ReceptionSchedulePage() {
       selectedDate={selectedDate}
       timeSlots={timeSlots}
       schedules={currentSchedules}
-      getScheduleForTimeSlot={getScheduleForTimeSlot}
       getStatusColor={getStatusColor}
       isLoading={isLoading}
       onScheduleClick={handleScheduleClick}
+      shiftTemplateMap={shiftTemplateMap}
     />
   );
 
@@ -195,7 +187,15 @@ export default function ReceptionSchedulePage() {
           Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
-        <WeekView weekDays={weekDays} timeSlots={timeSlots} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
+        <WeekView
+          weekDays={weekDays}
+          timeSlots={timeSlots}
+          schedules={currentSchedules}
+          selectedDate={selectedDate}
+          isLoading={isLoading}
+          onScheduleClick={handleScheduleClick}
+          shiftTemplateMap={shiftTemplateMap}
+        />
       </div>
     );
   };
@@ -295,7 +295,7 @@ export default function ReceptionSchedulePage() {
             {/* View Mode Tabs */}
             <div className="mb-4 lg:mb-6">
               <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-                <TabsList className="bg-gray-100 w-full grid grid-cols-4">
+                <TabsList className="bg-gray-100 w-full grid grid-cols-5">
                   <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
                     Day
                   </TabsTrigger>
@@ -307,6 +307,9 @@ export default function ReceptionSchedulePage() {
                   </TabsTrigger>
                   <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
                     List
+                  </TabsTrigger>
+                  <TabsTrigger value="room" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                    Room
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -368,6 +371,26 @@ export default function ReceptionSchedulePage() {
                 {viewMode === "list" && (
                   <div>
                     {renderListView()}
+                  </div>
+                )}
+
+                {viewMode === "room" && (
+                  <div>
+                    <div className="mb-4 xl:mb-6">
+                      <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
+                      <p className="text-xs xl:text-sm text-gray-600">
+                        Your schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
+                      </p>
+                    </div>
+                    <RoomView
+                      selectedDate={selectedDate}
+                      timeSlots={timeSlots}
+                      schedules={currentSchedules}
+                      getStatusColor={getStatusColor}
+                      isLoading={isLoading}
+                      onScheduleClick={handleScheduleClick}
+                      shiftTemplateMap={shiftTemplateMap}
+                    />
                   </div>
                 )}
               </>

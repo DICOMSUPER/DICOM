@@ -182,8 +182,12 @@ export class PatientController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.FindByName`)
-  async findByName(@Payload() data: { patientName: string }): Promise<Patient[]> {
-    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByName`);
+  async findByName(
+    @Payload() data: { patientName: string }
+  ): Promise<Patient[]> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByName`
+    );
     try {
       const { patientName } = data;
       return await this.patientService.findPatientByName(patientName);
@@ -233,7 +237,7 @@ export class PatientController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Restore`)
-  async restore(@Payload() data: { id: string }): Promise<Patient | null> {
+  async restore(@Payload() data: { id: string }) {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Restore`);
     try {
       const { id } = data;

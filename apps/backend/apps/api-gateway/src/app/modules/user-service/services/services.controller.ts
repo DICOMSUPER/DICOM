@@ -12,8 +12,11 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { firstValueFrom } from 'rxjs';
-import { RequestLoggingInterceptor,TransformInterceptor } from '@backend/shared-interceptor';
+import { firstValueFrom, pluck } from 'rxjs';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import { CreateServiceDto, UpdateServiceDto } from '@backend/shared-domain';
 import { Public } from '@backend/shared-decorators';
 
@@ -25,7 +28,9 @@ export class ServicesController {
     private readonly userService: ClientProxy
   ) {}
 
+  @Public()
   @Get()
+  @Public()
   async getServices() {
     return await firstValueFrom(
       this.userService.send('UserService.Services.FindAll', {})
@@ -33,6 +38,7 @@ export class ServicesController {
   }
 
   @Get('paginated')
+  @Public()
   async findMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -56,6 +62,15 @@ export class ServicesController {
     );
   }
 
+  @Get(':id/department')
+  async getAllServiceProvidedByADepartment(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.userService.send('UserService.Services.GetByDepartmentId', {
+        departmentId: id,
+      })
+    );
+  }
+
   @Get(':id')
   async getServiceById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -69,14 +84,12 @@ export class ServicesController {
   @Public()
   async createService(@Body() createServiceDto: CreateServiceDto) {
     return await firstValueFrom(
-      this.userService.send(
-        'UserService.Services.Create',
-        createServiceDto
-      )
+      this.userService.send('UserService.Services.Create', createServiceDto)
     );
   }
 
   @Patch(':id')
+  @Public()
   async updateService(
     @Param('id') id: string,
     @Body() updateServiceDto: UpdateServiceDto
@@ -90,6 +103,7 @@ export class ServicesController {
   }
 
   @Delete(':id')
+  @Public()
   async deleteService(@Param('id') id: string) {
     return await firstValueFrom(
       this.userService.send('UserService.Services.Delete', {

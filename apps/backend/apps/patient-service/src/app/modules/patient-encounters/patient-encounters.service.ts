@@ -8,17 +8,16 @@ import {
   FilterPatientEncounterDto,
   PatientEncounter,
   PatientEncounterRepository,
+  ServiceRoom,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
-import {
-  EncounterStatus,
-  Roles
-} from '@backend/shared-enums';
+import { EncounterStatus, Roles } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import {
   HttpStatus,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -26,6 +25,17 @@ import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
 import { Between, In, Raw } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 
+export interface QueueInfo {
+  [roomId: string]: {
+    maxWaiting: number;
+    currentInProgress: number;
+  };
+}
+
+export interface RoomEncounterFilters {
+  roomId: string;
+  serviceRoomIds: string[];
+}
 @Injectable()
 export class PatientEncounterService {
   constructor(
@@ -35,17 +45,52 @@ export class PatientEncounterService {
     private readonly userService: ClientProxy
   ) {}
 
+  getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
+    const serviceRoom: ServiceRoom = await firstValueFrom(
+      this.userService.send('UserService.ServiceRooms.FindOne', serviceRoomId)
+    );
+
+    const serviceRooms = await firstValueFrom(
+      this.userService.send(
+        'UserService.ServiceRooms.FindAllWithoutPagination',
+        { roomId: serviceRoom.roomId }
+      )
+    );
+
+    const serviceRoomIds = serviceRooms.map((serviceRoom: ServiceRoom) => {
+      return serviceRoom.id;
+    });
+
+    const encounter = await this.encounterRepository.getLatestEncounterInDate(
+      serviceRoomIds
+    );
+
+    if (!encounter) return 1;
+    return encounter.orderNumber + 1;
+  };
+
   create = async (
     createPatientEncounterDto: CreatePatientEncounterDto
   ): Promise<PatientEncounter> => {
-    return await this.encounterRepository.create({
+    const orderNumber = await this.getOrderNumberInDate(
+      createPatientEncounterDto?.serviceRoomId as string
+    );
+
+    const data = {
       ...createPatientEncounterDto,
+      orderNumber,
       status: EncounterStatus.WAITING,
-    });
+    };
+
+    console.log('create body:', data);
+    return await this.encounterRepository.create(data);
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {
-    return await this.encounterRepository.findAll({ where: {} });
+    return await this.encounterRepository.findAll(
+      { where: { isDeleted: false } },
+      ['patient']
+    );
   };
 
   findOne = async (id: string): Promise<PatientEncounter | null> => {
@@ -66,7 +111,14 @@ export class PatientEncounterService {
   findMany = async (
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientEncounter>> => {
-    return await this.encounterRepository.paginate(paginationDto);
+    const paginationWithRelations: RepositoryPaginationDto = {
+      ...paginationDto,
+      relation: Array.from(
+        new Set([...(paginationDto.relation ?? []), 'patient'])
+      ),
+    };
+
+    return await this.encounterRepository.paginate(paginationWithRelations);
   };
 
   update = async (
@@ -90,7 +142,7 @@ export class PatientEncounterService {
     patientId: string,
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<PatientEncounter>> => {
-    const whereConditions = { patient: { id: patientId } };
+    const whereConditions = { patient: { id: patientId }, isDeleted: false };
     const { page, limit } = paginationDto;
 
     return await this.paginationService.paginate(
@@ -101,6 +153,7 @@ export class PatientEncounterService {
         order: {
           createdAt: 'DESC',
         },
+        relations: { patient: true },
       }
     );
   };
@@ -119,12 +172,15 @@ export class PatientEncounterService {
       orderNumber,
       roomId,
     } = filterEncounter;
+    console.log('filter', filterEncounter);
 
     const whereConditions: any = {};
 
     const user = await firstValueFrom(
-      this.userService.send('UserService.Users.findOne', { userId })
+      this.userService.send('UserService.Users.findOne', { id: userId })
     );
+
+    console.log('user', user);
 
     if (user.role !== Roles.PHYSICIAN && user.role !== Roles.SYSTEM_ADMIN) {
       throw new NotFoundException(
@@ -141,7 +197,6 @@ export class PatientEncounterService {
 
     if (patientName) {
       whereConditions.patient = {
-        // PostgreSQL
         firstName: Raw(
           (alias: string) =>
             `(${alias} || ' ' || last_name) ILIKE :patientName OR 
@@ -177,12 +232,14 @@ export class PatientEncounterService {
 
     whereConditions.encounterDate = Between(fromDate, toDate);
 
+    console.log('roomid', roomId);
     if (roomId) {
+      console.log('anhsapper findby room');
+
       const serviceRooms = await firstValueFrom(
-        this.userService.send('UserService.ServiceRooms.FindByRoom', {
-          roomId,
-        })
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
       );
+      console.log('serviceRooms', serviceRooms);
 
       if (serviceRooms && serviceRooms.length > 0) {
         const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
@@ -223,43 +280,27 @@ export class PatientEncounterService {
       }
     );
   }
-  skipEncounterAssignment = async (
-    id: string
-  ): Promise<PatientEncounter | null> => {
-    const assignment = await this.findOne(id);
 
-    if (!assignment) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Queue Assignment not found',
-        PATIENT_SERVICE
-      );
-    }
-
-    if (assignment.status !== EncounterStatus.WAITING) {
-      throw ThrowMicroserviceException(
-        HttpStatus.BAD_REQUEST,
-        'Only waiting assignments can be skipped',
-        PATIENT_SERVICE
-      );
-    }
-
-    return await this.encounterRepository.update(id, {
-      // skippedAt: new Date(),
-      updatedAt: new Date(),
-    });
-  };
   getStatsInDateRange = async (
     dateFrom: string,
     dateTo: string,
     roomId?: string
   ): Promise<any> => {
+    const startDate = new Date(dateFrom);
+    const endDate = new Date(dateTo);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error('Invalid date format. Expected format: YYYY-MM-DD');
+    }
+
+    if (startDate > endDate) {
+      throw new Error('dateFrom cannot be greater than dateTo');
+    }
     if (roomId) {
       const serviceRooms = await firstValueFrom(
-        this.userService.send('UserService.ServiceRooms.FindByRoom', {
-          roomId,
-        })
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
       );
+      console.log('getStatsInDateRange serviceRooms', serviceRooms);
       if (serviceRooms && serviceRooms.length > 0) {
         const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
         return await this.encounterRepository.getStatsInDateRange(
@@ -310,5 +351,96 @@ export class PatientEncounterService {
       updatedCount: waitingEncounters.length,
       encounters: waitingEncounters,
     };
+  }
+  async getEncounterStatsFromRoomIdsInDate(
+    data: RoomEncounterFilters[]
+  ): Promise<QueueInfo> {
+    // Get all unique room IDs
+    const uniqueRoomIds = [...new Set(data.map((d) => d.roomId))];
+
+    if (uniqueRoomIds.length === 0) {
+      const logger = new Logger('PatientService');
+      logger.debug('No rooms provided, fall back to 0');
+      return {};
+    }
+
+    // For each unique room, we need to get ALL its service rooms, not just the filtered ones
+    const roomToAllServiceRoomIds = new Map<string, string[]>();
+
+    for (const roomId of uniqueRoomIds) {
+      // Fetch ALL service rooms for this room
+      const allServiceRooms = await firstValueFrom(
+        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
+      );
+
+      if (allServiceRooms && allServiceRooms.length > 0) {
+        const allServiceRoomIds = allServiceRooms.map((sr: any) => sr.id);
+        roomToAllServiceRoomIds.set(roomId, allServiceRoomIds);
+      } else {
+        roomToAllServiceRoomIds.set(roomId, []);
+      }
+    }
+
+    // Flatten all service room IDs to fetch encounters
+    const allServiceRoomIds = Array.from(
+      roomToAllServiceRoomIds.values()
+    ).flat();
+
+    if (allServiceRoomIds.length === 0) {
+      const logger = new Logger('PatientService');
+      logger.debug('Rooms have no services, fall back to 0');
+      return uniqueRoomIds.reduce((acc, roomId) => {
+        acc[roomId] = {
+          maxWaiting: 0,
+          currentInProgress: 0,
+        };
+        return acc;
+      }, {} as QueueInfo);
+    }
+
+    console.log('allServiceRoomIds: ', allServiceRoomIds);
+
+    // Get all encounters for all service rooms
+    const encounters =
+      await this.encounterRepository.getEncounterStatsByServiceRoomIdsInDate(
+        allServiceRoomIds
+      );
+
+    const queueInfo: QueueInfo = {};
+
+    // Calculate stats per room using ALL service rooms in that room
+    uniqueRoomIds.forEach((roomId) => {
+      const serviceRoomIds = roomToAllServiceRoomIds.get(roomId) || [];
+
+      const roomEncounters =
+        encounters.filter((encounter) =>
+          serviceRoomIds.includes(encounter.serviceRoomId as string)
+        ) || [];
+
+      const waitingEncounters =
+        roomEncounters.filter(
+          (encounter) => encounter.status === EncounterStatus.WAITING
+        ) || [];
+
+      const arrivedEncounters =
+        roomEncounters.filter(
+          (encounter) => encounter.status === EncounterStatus.ARRIVED
+        ) || [];
+
+      const finishedEncounters =
+        roomEncounters.filter(
+          (encounter) => encounter.status === EncounterStatus.FINISHED
+        ) || [];
+
+      queueInfo[roomId] = {
+        maxWaiting:
+          waitingEncounters.length +
+          finishedEncounters.length +
+          arrivedEncounters.length,
+        currentInProgress: finishedEncounters.length + arrivedEncounters.length,
+      };
+    });
+
+    return queueInfo;
   }
 }

@@ -82,14 +82,9 @@ export const Pagination: React.FC<PaginationProps> = ({
   //     return pages;
   //   };
 
-  if (pagination.totalPages <= 1) {
-    return null; 
-  }
-
   return (
-    <div className={`flex items-center justify-between px-2 py-4 ${className}`}>
-      <div className="flex items-center space-x-4"></div>
-      {pagination.totalPages > 1 && (
+    <div className={`flex items-center justify-center px-2 py-4 ${className}`}>
+      {pagination.totalPages > 0 && (
         <div className="flex items-center space-x-2">
           
           <Button

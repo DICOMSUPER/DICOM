@@ -177,15 +177,14 @@ export class ServiceRoomsController {
       const result = await firstValueFrom(
         this.userServiceClient.send(
           'UserService.ServiceRooms.FindByRoom',
-          roomId
+          {roomId}
         )
       );
 
-      return {
-        data: result,
-        count: result.length,
-        message: 'Lấy danh sách dịch vụ theo phòng thành công',
-      };
+      console.log("anh sapper room service", result);
+      
+
+      return result
     } catch (error) {
       this.logger.error(
         `❌ Failed to fetch services for room: ${roomId}`,

@@ -102,4 +102,21 @@ export class DigitalSignatureController {
       );
     }
   }
+    @MessagePattern('digital-signature.getByUserId')
+  async getByUserId(@Payload() payload: { userId: string }) {
+    try {
+      this.logger.log(`Getting digital signature for userId=${payload.userId}`);
+      const record = await this.digitalSignatureService.getByUserId(
+        payload.userId
+      );
+      return record;
+    } catch (error) {
+      this.logger.error(`Get by userId error: ${(error as Error).message}`);
+      throw handleErrorFromMicroservices(
+        error,
+        'Digital signature not found',
+        'DigitalSignatureController.getByUserId'
+      );
+    }
+  }
 }

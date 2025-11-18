@@ -1,41 +1,43 @@
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { Folder } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import React from "react";
 
 export default function SeriesLevel({
   series,
-  handleSeriesClick,
+  isExpanded,
+  onToggle,
+  name,
+  instanceCount,
+  isLast,
 }: {
-  series: DicomSeries[];
-  handleSeriesClick: (series: DicomSeries) => void;
+  series: DicomSeries;
+  isExpanded: boolean;
+  onToggle: (seriesId: string) => void;
+  name: string;
+  instanceCount: number;
+  isLast: boolean;
 }) {
   return (
-    <div className="space-y-2">
-      {series && series.length > 0 ? (
-        series.map((s) => (
-          <div
-            key={s.id}
-            className="group flex items-center cursor-pointer p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--surface)] hover:border-[var(--primary)] hover:shadow-md transition-all duration-200 ease-in-out"
-            onClick={() => handleSeriesClick(s)}
-          >
-            <div className="text-[var(--primary)] group-hover:text-[var(--primary)] transition-colors duration-200">
-              <Folder className="w-5 h-5 text-blue-500" />
-            </div>
-            <span className="ml-2 font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors duration-200">
-              {s.seriesDescription || `Series ${s.id}`}
-            </span>
-            <span className="ml-auto text-sm text-[var(--neutral)] group-hover:text-[var(--secondary)] transition-colors duration-200">
-              {s.instances?.length || 0} instances
-            </span>
-          </div>
-        ))
-      ) : (
-        <div className="bg-[var(--surface)] rounded-lg shadow p-6 border border-[var(--border)] cursor-not-allowed border-dashed">
-          <h6 className="italic text-center font-semibold text-[var(--neutral)]">
-            No series found for this study
-          </h6>
-        </div>
-      )}
-    </div>
+    <button
+      onClick={() => onToggle(series.id)}
+      className={`w-full flex items-center justify-between px-6 py-3 hover:bg-gray-100 transition-colors pl-16 ${
+        series.instances?.length === 0 ? "cursor-not-allowed" : "cursor-pointer"
+      }  ${isLast ? "rounded-e-lg hover:rounded-e-lg" : ""}`}
+      disabled={series.instances?.length === 0}
+    >
+      <div className="flex items-center space-x-4 flex-1 text-left">
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${
+            isExpanded ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+        <p className="text-sm text-gray-900" title={name}>
+          Series {name.slice(0, 5)}...{name.slice(-5)}
+        </p>
+      </div>
+      <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+        {instanceCount} instances
+      </span>
+    </button>
   );
 }

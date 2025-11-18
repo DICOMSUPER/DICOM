@@ -235,6 +235,16 @@ export const scheduleApi = createApi({
         method: "POST",
         data: schedule,
       }),
+      transformResponse: (response: any) => {
+        // Handle response structure: { data: { schedule: ... }, ... } or { schedule: ... } or direct schedule
+        if (response?.data?.schedule) {
+          return response.data.schedule;
+        }
+        if (response?.schedule) {
+          return response.schedule;
+        }
+        return response;
+      },
       invalidatesTags: ["RoomSchedule"],
     }),
 

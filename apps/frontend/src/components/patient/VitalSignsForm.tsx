@@ -136,7 +136,7 @@ export function VitalSignsForm({
 
   return (
     <Card className='border-0 shadow-none p-0'>
-      <CardContent className='border-0 p-0'>
+      <CardContent className='border-0 p-6'>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {VITAL_SIGNS_CONFIG.map((config) => {

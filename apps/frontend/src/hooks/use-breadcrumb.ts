@@ -24,6 +24,20 @@ const pathMap: Record<string, string> = {
   'working-hours': 'Working Hours',
 }
 
+const formatSegment = (segment: string) => {
+  const remapped = pathMap[segment];
+  if (remapped) {
+    return remapped;
+  }
+
+  return segment
+    .replace(/-/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export function useBreadcrumb() {
   const pathname = usePathname()
 
@@ -35,7 +49,7 @@ export function useBreadcrumb() {
     paths.forEach((path) => {
       currentPath += `/${path}`
       items.push({
-        label: pathMap[path] || path.charAt(0).toUpperCase() + path.slice(1),
+        label: formatSegment(path),
         href: currentPath,
       })
     })

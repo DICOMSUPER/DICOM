@@ -99,6 +99,32 @@ export class UserController {
   }
 
   @Public()
+  @Post('logout')
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  async logoutUser(@Res({ passthrough: true }) res: Response) {
+    try {
+      const secure = process.env.NODE_ENV === 'production';
+      res.cookie('accessToken', '', {
+        httpOnly: true,
+        secure,
+        sameSite: 'strict',
+        maxAge: 0,
+        path: '/',
+      });
+
+      this.logger.log('✅ User logged out successfully');
+
+      return {
+        message: 'Đăng xuất thành công',
+      };
+    } catch (error) {
+      this.logger.error('❌ Logout failed', error);
+      throw handleError(error);
+    }
+  }
+
+  @Public()
   @Post('request-login')
   @ApiOperation({ summary: 'Request login with OTP verification' })
   @ApiBody({ type: LoginDto })

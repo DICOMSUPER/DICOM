@@ -393,7 +393,7 @@ export function PatientEncounterTable({
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No queue items found
+            No patient encounter items found today
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters

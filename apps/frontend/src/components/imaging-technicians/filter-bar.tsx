@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
+import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 
 const formatDateISO = (date: Date | undefined) => {
   if (!date) return undefined;
@@ -34,14 +35,9 @@ export default function FilterBar({
       mrn: p.get("mrn") ?? "",
       patientFirstName: p.get("patientFirstName") ?? "",
       patientLastName: p.get("patientLastName") ?? "",
-      startDate: p.get("startDate") ?? "",
-      endDate: p.get("endDate") ?? "",
-      studyStatus: p.get("studyStatus") ?? "All",
-      reportStatus: p.get("reportStatus") ?? "All",
       bodyPart: p.get("bodyPart") ?? "",
-      studyUID: p.get("studyUID") ?? "",
       modalityId: p.get("modalityId") ?? "",
-      orderStatus: p.get("orderStatus") ?? "All",
+      orderStatus: p.get("orderStatus") ?? "",
       procedureId: p.get("procedureId") ?? "",
     };
   }, [searchParams]);
@@ -68,6 +64,8 @@ export default function FilterBar({
   const [orderStatus, setOrderStatus] = useState(initial.orderStatus);
   const [procedureId, setProcedureId] = useState(initial.procedureId);
 
+  const { data: procedureData, isLoading: isLoadingProcedure } =
+    useGetAllRequestProceduresQuery();
   const pushWithParams = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
     Object.entries(updates).forEach(([k, v]) => {
@@ -91,6 +89,7 @@ export default function FilterBar({
   const DiagnosisStatusArray = Object.values(DiagnosisStatus);
   const orderStatusArray = Object.values(ImagingOrderStatus);
 
+  const procedures = procedureData?.data;
   const handleRefresh = () => {
     const params = {
       mrn,
@@ -236,15 +235,23 @@ export default function FilterBar({
             <Label className="text-xs font-semibold text-gray-700">
               Procedure ID
             </Label>
-            <Input
-              type="text"
-              placeholder="procedure UUID"
+
+            <select
               value={procedureId}
               onChange={(e) => {
                 setProcedureId(e.target.value);
               }}
               className="px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-            />
+            >
+              <option value={""}>All</option>
+              {!isLoadingProcedure &&
+                procedures &&
+                procedures.map((procedure) => (
+                  <option key={procedure.id} value={procedure.id}>
+                    {procedure.name}
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
       )}

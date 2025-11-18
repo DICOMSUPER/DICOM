@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DiagnosesReportService } from './diagnoses-reports.service';
 import {
   CreateDiagnosesReportDto,
+  ImagingOrderForm,
   UpdateDiagnosesReportDto,
 } from '@backend/shared-domain';
 import { DiagnosesReport } from '@backend/shared-domain';
@@ -15,7 +16,8 @@ import {
   PATIENT_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
-import { DiagnosisStatus } from '@backend/shared-enums';
+import { DiagnosisStatus, Roles } from '@backend/shared-enums';
+import { Role } from '@backend/shared-decorators';
 
 const moduleName = 'DiagnosesReport';
 @Controller('diagnoses-reports')
@@ -23,7 +25,7 @@ export class DiagnosesReportController {
   private logger = new Logger(PATIENT_SERVICE);
   constructor(
     private readonly diagnosesReportService: DiagnosesReportService
-  ) { }
+  ) {}
 
   @MessagePattern('PatientService.DiagnosesReport.Create')
   async create(
@@ -84,6 +86,7 @@ export class DiagnosesReportController {
   }
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
   async update(
     @Payload()
     data: {
@@ -121,6 +124,29 @@ export class DiagnosesReportController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to delete diagnoses report with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL_WITH_FILTER}`
+  )
+  async findAllWithFilter(
+    @Payload() data: { filter: any; userInfo: { userId: string; role: string } }
+  ): Promise<PaginatedResponseDto<DiagnosesReport>> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL_WITH_FILTER}`
+    );
+    try {
+      return await this.diagnosesReportService.findAllWithFilter(
+        data.filter,
+        data.userInfo
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find all diagnoses reports',
         PATIENT_SERVICE
       );
     }
@@ -177,7 +203,9 @@ export class DiagnosesReportController {
   //find by studyId
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.FindByStudyId`)
   async findByStudyId(@Payload() data: { studyId: string }) {
-    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByStudyId`);
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindByStudyId`
+    );
     try {
       const { studyId } = data;
       return await this.diagnosesReportService.findByStudyId(studyId);

@@ -1,10 +1,11 @@
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
 import { Room } from "../user/room.interface";
-import { DiagnosesReport } from "../patient/diagnosis-report.interface";
+
 import { DicomSeries } from "./dicom-series.interface";
 import { ImagingOrder } from "./imaging_order.interface";
 import {
+  DiagnosisReport,
   DiagnosisStatus,
   Patient,
 } from "../patient/patient-workflow.interface";
@@ -59,7 +60,7 @@ export interface DicomStudy extends BaseEntity {
   imagingOrder?: ImagingOrder; // Included for filter API
   modalityMachine?: ModalityMachine;
   series?: DicomSeries[]; // Included for filter API
-  report?: DiagnosesReport; // Included for filter API
+  report?: DiagnosisReport; // Included for filter API
   room?: Room; // Included for filter API
 }
 

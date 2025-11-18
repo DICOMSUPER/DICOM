@@ -71,6 +71,9 @@ export class RoomsController {
       limit?: number;
       search?: string;
       isActive?: boolean;
+      status?: string;
+      type?: string;
+      departmentId?: string;
     }
   ) {
     try {
@@ -252,6 +255,32 @@ export class RoomsController {
         error,
         'Failed to get room IDs',
         'RoomsController.getRoomIds'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Room.GetRoomsByDepartmentAndServiceId')
+  async getRoomsByDepartmentAndServiceId(
+    @Payload() data: { departmentId: string; serviceId: string; role?: Roles }
+  ) {
+    this.logger.log(
+      'Using pattern: UserService.Room.GetRoomsByDepartmentAndServiceId'
+    );
+    try {
+      const { departmentId, serviceId, role } = data;
+      return await this.roomsService.getRoomsByDepartmentAndServiceId(
+        departmentId,
+        serviceId,
+        role
+      );
+    } catch (error) {
+      this.logger.error(
+        `Get rooms by department and service error: ${(error as Error).message}`
+      );
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get room by department and service',
+        'UserService'
       );
     }
   }

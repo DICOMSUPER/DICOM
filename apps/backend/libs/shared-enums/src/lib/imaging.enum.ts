@@ -60,7 +60,6 @@ export enum AnnotationStatus {
   DRAFT = 'draft',
   FINAL = 'final',
   REVIEWED = 'reviewed',
-  ARCHIVED = 'archived',
 }
 
 export enum DiagnosisType {

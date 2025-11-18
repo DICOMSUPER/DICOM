@@ -28,6 +28,7 @@ const ViewerRightSidebar = ({
   studyId,
   onSeriesLoaded,
 }: ViewerRightSidebarProps) => {
+  const { state, getViewportSeries } = useViewer();
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [filterModality, setFilterModality] = useState<string>('All');
@@ -42,6 +43,26 @@ const ViewerRightSidebar = ({
   const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
+
+  // Sync selected series with active viewport's loaded series
+  useEffect(() => {
+    const activeViewportSeries = getViewportSeries(state.activeViewport);
+    if (activeViewportSeries) {
+      if (activeViewportSeries.id !== selectedSeries) {
+        setSelectedSeries(activeViewportSeries.id);
+        console.log(
+          "🔄 Synced sidebar selection with active viewport:",
+          activeViewportSeries.seriesDescription
+        );
+      }
+      return;
+    }
+
+    if (selectedSeries) {
+      setSelectedSeries(null);
+      console.log("🔄 Active viewport has no series; cleared sidebar selection");
+    }
+  }, [state.activeViewport, getViewportSeries, selectedSeries]);
   
 
 useEffect(() => {
@@ -78,6 +99,7 @@ useEffect(() => {
   const handleSeriesClick = (seriesItem: DicomSeries) => {
     setSelectedSeries(seriesItem.id);
     onSeriesSelect?.(seriesItem);
+    console.log('📌 Series selected:', seriesItem.seriesDescription, 'ID:', seriesItem.id);
   };
   // Helper function to get modality for a series
   const getSeriesModality = (series: DicomSeries) => {
@@ -89,6 +111,12 @@ useEffect(() => {
 useEffect(() => {
     const loadSeries = async () => {
       if (!studyId) {
+        return;
+      }
+
+      // Skip fetch if series already provided via prop and study hasn't changed
+      if (series && series.length > 0 && studyId === loadedStudyId) {
+        console.log('📦 Using cached series for study:', studyId);
         return;
       }
 
@@ -126,7 +154,7 @@ useEffect(() => {
     };
 
     loadSeries();
-  }, [studyId, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
+  }, [studyId, series, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
 
   // Preload thumbnail paths for series
   const preloadThumbnails = async (seriesArray: DicomSeries[]) => {

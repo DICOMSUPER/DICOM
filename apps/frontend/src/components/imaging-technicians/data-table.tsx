@@ -1,9 +1,11 @@
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { DicomStudyStatus, ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
 import { useRouter } from "next/navigation";
 import StatusButton from "./status-button";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
 import { toast } from "sonner";
+import OrderStatus from "./order-status";
+import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
 
 // Helper function to format date (e.g., "2025-09-19T07:38:34.275Z" to "9/19/25")
 const formatDate = (date: string | Date): string => {
@@ -59,6 +61,7 @@ export default function DataTable({
   const tableData = orders || [];
   const router = useRouter();
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
+  const [updateDicomStudy] = useUpdateDicomStudyMutation();
   if (isLoading) {
     return <div className="flex-1 bg-white p-4">Loading...</div>;
   }
@@ -85,7 +88,7 @@ export default function DataTable({
   };
 
   const OnCallIn = async (id: string) => {
-    changImagingOrderStatus(id, ImagingOrderStatus.IN_PROGRESS);
+    await changImagingOrderStatus(id, ImagingOrderStatus.IN_PROGRESS);
   };
 
   const OnViewDetail = async (id: string) => {
@@ -93,11 +96,11 @@ export default function DataTable({
   };
 
   const onMarkCompleted = async (id: string) => {
-    changImagingOrderStatus(id, ImagingOrderStatus.COMPLETED);
+    await changImagingOrderStatus(id, ImagingOrderStatus.COMPLETED);
   };
 
   const onMarkCancelled = async (id: string) => {
-    changImagingOrderStatus(id, ImagingOrderStatus.CANCELLED);
+    await changImagingOrderStatus(id, ImagingOrderStatus.CANCELLED);
   };
 
   return (
@@ -114,7 +117,7 @@ export default function DataTable({
               </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 MRN
-              </th>{" "}
+              </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Patient Last Name
               </th>
@@ -210,8 +213,10 @@ export default function DataTable({
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.specialInstructions || "N/A"}
                   </td>
-                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                    {row.orderStatus}
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700 text-center">
+                    <OrderStatus
+                      status={row.orderStatus as ImagingOrderStatus}
+                    />
                   </td>
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.completedDate ? formatDate(row.completedDate) : "N/A"}

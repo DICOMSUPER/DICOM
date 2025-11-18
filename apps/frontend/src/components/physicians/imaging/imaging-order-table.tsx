@@ -154,57 +154,57 @@ export function ImagingOrderFormTable({
       },
     }),
 
-columnHelper.accessor("notes", {
-  header: () => (
-    <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-      Notes
-    </div>
-  ),
-  cell: ({ row }) => {
-    const notes = row.original.notes?.trim() || "—";
-    const maxLength = 50;
-    const truncated =
-      notes.length > maxLength
-        ? `${notes.substring(0, maxLength)}...`
-        : notes;
-
-    return (
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge
-              variant="outline"
-              className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
-            >
-              {truncated}
-            </Badge>
-          </TooltipTrigger>
-          {notes.length > maxLength && (
-            <TooltipContent 
-              side="top"
-              align="start"
-              className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
-              sideOffset={5}
-            >
-              <p className="text-sm whitespace-pre-wrap break-words">
-                {notes}
-              </p>
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </TooltipProvider>
-    );
-  },
-}),
-    columnHelper.display({
-      id: "orderFormStatus",
+    columnHelper.accessor("notes", {
       header: () => (
         <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
-          Status
+          Notes
         </div>
       ),
-      cell: ({ row }) => getStatusBadge(row.original.orderFormStatus),
+      cell: ({ row }) => {
+        const notes = row.original.notes?.trim() || "—";
+        const maxLength = 50;
+        const truncated =
+          notes.length > maxLength
+            ? `${notes.substring(0, maxLength)}...`
+            : notes;
+
+        return (
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className="bg-slate-100 text-slate-700 border-slate-200 font-medium max-w-xs cursor-help"
+                >
+                  {truncated}
+                </Badge>
+              </TooltipTrigger>
+              {notes.length > maxLength && (
+                <TooltipContent
+                  side="top"
+                  align="start"
+                  className="max-w-sm z-50 bg-slate-900 text-white border-slate-700"
+                  sideOffset={5}
+                >
+                  <p className="text-sm whitespace-pre-wrap break-words">
+                    {notes}
+                  </p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     }),
+    // columnHelper.display({
+    //   id: "orderFormStatus",
+    //   header: () => (
+    //     <div className="font-semibold text-xs text-slate-600 uppercase tracking-widest">
+    //       Status
+    //     </div>
+    //   ),
+    //   cell: ({ row }) => getStatusBadge(row.original.orderFormStatus),
+    // }),
 
     columnHelper.accessor("createdAt", {
       header: ({ column }) => (
@@ -308,7 +308,7 @@ columnHelper.accessor("notes", {
             <User className="w-8 h-8 text-slate-400" />
           </div>
           <p className="text-slate-700 text-lg font-semibold">
-            No queue items found
+            No order forms items found
           </p>
           <p className="text-slate-500 text-sm mt-2">
             Try adjusting your search or filters

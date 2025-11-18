@@ -33,7 +33,8 @@ export class CreateReportTemplateDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
-  ownerUserId!: string;
+  @IsOptional()
+  ownerUserId?: string;
 
   @ApiPropertyOptional({
     description: 'Modality ID this template is associated with',
@@ -59,7 +60,6 @@ export class CreateReportTemplateDto {
     example: false,
   })
   @IsOptional()
-  @IsBoolean()
   isPublic?: boolean = false;
 
   @ApiPropertyOptional({

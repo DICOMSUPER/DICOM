@@ -24,6 +24,7 @@ import { Between } from 'typeorm';
 import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
 
 const relation = ['procedure', 'imagingOrderForm', 'studies'];
 @Injectable()
@@ -44,7 +45,7 @@ export class ImagingOrdersService {
   ): Promise<ImagingOrder> => {
     const order = await this.imagingOrderRepository.findOne(
       { where: { id, isDeleted: false } },
-      [],
+      relation,
       em
     );
     if (!order) {

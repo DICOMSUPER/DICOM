@@ -20,6 +20,7 @@ import {
   CreatePatientConditionDto,
 } from "./patient-condition.interface";
 import { ServiceRoom } from "../user/service-room.interface";
+import { ReportTemplate } from "./report-template.interface";
 
 // Re-export enums for convenience
 export {
@@ -85,9 +86,14 @@ export interface PatientEncounter extends BaseEntity {
   physicianSpecialty?: string;
   patient?: Patient;
   diagnosesCount?: number;
+  createdBy?: string;
   serviceRoomId?: string;
+<<<<<<< HEAD
   serviceRoom: ServiceRoom
 
+=======
+  serviceRoom: ServiceRoom;
+>>>>>>> main
 }
 
 export interface VitalSignMeasurement {
@@ -111,6 +117,8 @@ export interface VitalSignsCollection {
 export interface DiagnosisReport extends BaseEntity {
   encounterId: string;
   studyId: string;
+  signatureId?: string;
+  reportTemplateId?: string;
   diagnosisName: string;
   description?: string;
   diagnosisType: DiagnosisType;
@@ -119,25 +127,9 @@ export interface DiagnosisReport extends BaseEntity {
   diagnosisDate: Date;
   diagnosedBy: string;
   notes?: string;
-  followupRequired: boolean;
-  followUpInstructions: boolean;
-  encounter?: {
-    id: string;
-    patientId: string;
-    encounterDate: Date;
-    encounterType: EncounterType;
-  };
-  patient?: {
-    id: string;
-    patientCode: string;
-    firstName: string;
-    lastName: string;
-  };
+  encounter?: PatientEncounter;
+  reportTemplate?: ReportTemplate | null;
 }
-
-/**
- * DTOs for API operations
- */
 
 export interface CreatePatientDto {
   patientCode: string;
@@ -186,6 +178,7 @@ export interface CreatePatientEncounterDto {
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string | null;
+  serviceRoomId: string;
   notes?: string;
 }
 
@@ -309,13 +302,13 @@ export interface PatientStats {
   newPatientsThisMonth: number;
 }
 
-
-
 export interface EncounterStats {
   totalEncounters: number;
   encountersByType: Record<string, number>;
   encountersThisMonth: number;
   averageEncountersPerPatient: number;
+  todayEncounter: number;
+  todayStatEncounter: number;
 }
 
 export interface DiagnosisStats {

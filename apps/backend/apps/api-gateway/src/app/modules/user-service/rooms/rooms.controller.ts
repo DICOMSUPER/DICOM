@@ -18,6 +18,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -76,14 +77,16 @@ export class RoomsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('status') status?: string
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('departmentId') departmentId?: string
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
       this.logger.log(
-        `📋 Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
+        `Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
       );
 
       const result = await firstValueFrom(
@@ -92,22 +95,18 @@ export class RoomsController {
           limit: limitNum,
           search,
           status,
+          type,
+          departmentId,
         })
       );
 
       this.logger.log(
-        `✅ Retrieved ${result.data?.length || 0} rooms (Total: ${
-          result.total || 0
-        })`
+        `Retrieved ${result?.data?.length || 0} rooms (Total: ${result?.total || 0})`
       );
 
-      return {
-        data: result.data,
-        count: result.total || result.data?.length || 0,
-        message: 'Lấy danh sách phòng thành công',
-      };
+      return result;
     } catch (error) {
-      this.logger.error('❌ Failed to fetch rooms', error);
+      this.logger.error('Failed to fetch rooms', error);
       throw handleError(error);
     }
   }
@@ -168,6 +167,55 @@ export class RoomsController {
       });
 
       return combinedRooms;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)
+  @Get('by-department-and-service')
+  @ApiOperation({ summary: 'Get rooms by Department ID' })
+  @ApiQuery({ name: 'departmentId', description: 'Department ID' })
+  @ApiQuery({ name: 'serviceId', description: 'Service ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo khoa thành công',
+  })
+  async getRoomByDepartmentAndServiceId(
+    @Query('serviceId') serviceId: string,
+    @Query('departmentId') departmentId: string,
+    @Query('role') role?: Roles
+  ) {
+    try {
+      const rooms = await firstValueFrom(
+        this.roomClient.send(
+          'UserService.Room.GetRoomsByDepartmentAndServiceId',
+          { serviceId, departmentId, role }
+        )
+      );
+
+      const roomItems = rooms.map((room: Room) => {
+        return {
+          roomId: room.id,
+          serviceRoomIds: room.serviceRooms.map((roomService) => {
+            return roomService.id;
+          }),
+        };
+      });
+
+      const roomStats = await firstValueFrom(
+        this.patientClient.send(
+          'PatientService.PatientEncounter.GetEncounterStatsFromRoomIds',
+          roomItems
+        )
+      );
+
+      const combined = rooms.map((room: Room) => {
+        return { ...room, roomStats: roomStats[room.id] };
+      });
+
+      return combined;
     } catch (error) {
       console.log(error);
       throw error;

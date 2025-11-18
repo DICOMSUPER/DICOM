@@ -33,10 +33,7 @@ export class ImagingOrderFormController {
   async create(
     @Payload() data: { createImagingOrderFormDto: any, userId: string }
   ) {
-    console.log("create dto", data.createImagingOrderFormDto);
-    console.log("user id", data.userId);
-    
-    
+
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
@@ -160,37 +157,6 @@ export class ImagingOrderFormController {
       );
     }
   }
-
-  // @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`)
-  // async findByReferenceId(
-  //   @Payload()
-  //   data: {
-  //     id: string;
-  //     type: 'physician' | 'patient' | 'room';
-  //     paginationDto: RepositoryPaginationDto;
-  //   }
-  // ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
-  //   this.logger.log(
-  //     `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FindByReferenceId`
-  //   );
-  //   try {
-  //     const { id, type, paginationDto } = data;
-  //     return await this.imagingOrderFormService.findByReferenceId(id, type, {
-  //       page: paginationDto.page || 1,
-  //       limit: paginationDto.limit || 5,
-  //       search: paginationDto.search || '',
-  //       searchField: paginationDto.searchField || 'patientId',
-  //       sortField: paginationDto.sortField || 'createdAt',
-  //       order: paginationDto.order || 'asc',
-  //     });
-  //   } catch (error) {
-  //     throw handleErrorFromMicroservices(
-  //       error,
-  //       `Failed to find imaging order forms by ${data.type} with id: ${data.id}`,
-  //       IMAGING_SERVICE
-  //     );
-  //   }
-  // }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetOrders`)
   async getOrders(

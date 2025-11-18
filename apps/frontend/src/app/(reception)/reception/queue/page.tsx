@@ -10,6 +10,7 @@ import { QueueStatsCards } from "@/components/reception/queue-stats-cards";
 import { QueueTable } from "@/components/reception/queue-table";
 import { TabsContent } from "@/components/ui/tabs";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import { Clock, Users, CheckCircle } from "lucide-react";
 
 import {
@@ -49,9 +50,15 @@ export default function QueuePage() {
     }
   }, [encountersError]);
 
+  const encounterList = Array.isArray(encounters)
+    ? encounters
+    : Array.isArray((encounters as any)?.data)
+    ? (encounters as any).data
+    : [];
+
   // Process real data from API
   const waitingAssignments =
-    encounters
+    encounterList
       ?.filter(
         (encounter) =>
           encounter.status === "waiting" || encounter.status === "pending"
@@ -72,7 +79,7 @@ export default function QueuePage() {
       })) || [];
 
   const inProgressAssignments =
-    encounters
+    encounterList
       ?.filter(
         (encounter) =>
           encounter.status === "in-progress" || encounter.status === "active"
@@ -93,7 +100,7 @@ export default function QueuePage() {
       })) || [];
 
   const completedAssignments =
-    encounters
+    encounterList
       ?.filter(
         (encounter) =>
           encounter.status === "completed" || encounter.status === "finished"
@@ -161,99 +168,97 @@ export default function QueuePage() {
 
   return (
     <div className="space-y-6">
-        {/* Header with Quick Actions and Refresh */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Queue Management
-            </h1>
-            <p className="text-foreground">
-              Monitor and manage patient queue assignments
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <RefreshButton
-              onRefresh={handleRefresh}
-              loading={encountersLoading || statsLoading}
-            />
-            <QuickActionsBar />
-          </div>
+      {/* Header with Quick Actions and Refresh */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Queue Management
+          </h1>
+          <p className="text-foreground">
+            Monitor and manage patient queue assignments
+          </p>
         </div>
+        <div className="flex items-center gap-4">
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={encountersLoading || statsLoading}
+          />
+          <QuickActionsBar />
+        </div>
+      </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+      {/* Error Display */}
+      {error && (
+        <ErrorAlert title="Failed to load queue data" message={error} className="mb-4" />
+      )}
 
-        {/* Stats Cards */}
-        <QueueStatsCards
-          waitingCount={waitingAssignments.length}
-          inProgressCount={inProgressAssignments.length}
-          completedCount={completedAssignments.length}
-          totalCount={
-            waitingAssignments.length +
-            inProgressAssignments.length +
-            completedAssignments.length
-          }
-          isLoading={statsLoading}
-        />
+      {/* Stats Cards */}
+      <QueueStatsCards
+        waitingCount={waitingAssignments.length}
+        inProgressCount={inProgressAssignments.length}
+        completedCount={completedAssignments.length}
+        totalCount={
+          waitingAssignments.length +
+          inProgressAssignments.length +
+          completedAssignments.length
+        }
+        isLoading={statsLoading}
+      />
 
-        {/* Filters */}
-        <ReceptionFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          priorityFilter={priorityFilter}
-          onPriorityChange={setPriorityFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-        />
+      {/* Filters */}
+      <ReceptionFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
 
-        {/* Queue Tables */}
-        <ReceptionTableTabs tabs={tabs} defaultTab="waiting">
-          <TabsContent value="waiting">
-            <QueueTable
-              assignments={waitingAssignments}
-              isLoading={encountersLoading}
-              emptyStateIcon={<Clock className="h-12 w-12" />}
-              emptyStateTitle="No patients waiting"
-              emptyStateDescription="All patients have been assigned or are being treated."
-              onViewDetails={handleViewDetails}
-              onEditAssignment={handleEditAssignment}
-              onRemoveFromQueue={handleRemoveFromQueue}
-              showWaitTime={true}
-            />
-          </TabsContent>
+      {/* Queue Tables */}
+      <ReceptionTableTabs tabs={tabs} defaultTab="waiting">
+        <TabsContent value="waiting">
+          <QueueTable
+            assignments={waitingAssignments}
+            isLoading={encountersLoading}
+            emptyStateIcon={<Clock className="h-12 w-12" />}
+            emptyStateTitle="No patients waiting"
+            emptyStateDescription="All patients have been assigned or are being treated."
+            onViewDetails={handleViewDetails}
+            onEditAssignment={handleEditAssignment}
+            onRemoveFromQueue={handleRemoveFromQueue}
+            showWaitTime={true}
+          />
+        </TabsContent>
 
-          <TabsContent value="in-progress">
-            <QueueTable
-              assignments={inProgressAssignments}
-              isLoading={encountersLoading}
-              emptyStateIcon={<Users className="h-12 w-12" />}
-              emptyStateTitle="No In-Progress Assignments"
-              emptyStateDescription="There are currently no patients being treated. New assignments will appear here when treatment begins."
-              onViewDetails={handleViewDetails}
-              onEditAssignment={handleEditAssignment}
-              onStartTreatment={handleStartTreatment}
-              onMarkComplete={handleMarkComplete}
-              showWaitTime={true}
-            />
-          </TabsContent>
+        <TabsContent value="in-progress">
+          <QueueTable
+            assignments={inProgressAssignments}
+            isLoading={encountersLoading}
+            emptyStateIcon={<Users className="h-12 w-12" />}
+            emptyStateTitle="No In-Progress Assignments"
+            emptyStateDescription="There are currently no patients being treated. New assignments will appear here when treatment begins."
+            onViewDetails={handleViewDetails}
+            onEditAssignment={handleEditAssignment}
+            onStartTreatment={handleStartTreatment}
+            onMarkComplete={handleMarkComplete}
+            showWaitTime={true}
+          />
+        </TabsContent>
 
-          <TabsContent value="completed">
-            <QueueTable
-              assignments={completedAssignments}
-              isLoading={encountersLoading}
-              emptyStateIcon={<CheckCircle className="h-12 w-12" />}
-              emptyStateTitle="No Completed Assignments"
-              emptyStateDescription="Completed treatments will appear here. Check back later to see finished cases."
-              onViewDetails={handleViewDetails}
-              onEditAssignment={handleEditAssignment}
-              showCompletedTime={true}
-            />
-          </TabsContent>
-        </ReceptionTableTabs>
+        <TabsContent value="completed">
+          <QueueTable
+            assignments={completedAssignments}
+            isLoading={encountersLoading}
+            emptyStateIcon={<CheckCircle className="h-12 w-12" />}
+            emptyStateTitle="No Completed Assignments"
+            emptyStateDescription="Completed treatments will appear here. Check back later to see finished cases."
+            onViewDetails={handleViewDetails}
+            onEditAssignment={handleEditAssignment}
+            showCompletedTime={true}
+          />
+        </TabsContent>
+      </ReceptionTableTabs>
     </div>
   );
 }

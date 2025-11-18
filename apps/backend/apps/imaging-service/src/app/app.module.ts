@@ -5,6 +5,7 @@ import {
   DicomInstance,
   DicomSeries,
   DicomStudy,
+  DicomStudySignature,
   ImagingModality,
   ImagingOrder,
   ImagingOrderForm,
@@ -44,7 +45,13 @@ import { ImagingOrderFormModule } from './modules/imaging-order-form/imaging-ord
 import { ImagingOrderFormService } from './modules/imaging-order-form/imaging-order-form.service';
 import { ImagingOrderFormRepository } from './modules/imaging-order-form/imaging-order-form.repository';
 import { BackendRedisModule } from '@backend/redis';
-import { PatientServiceClientModule } from '@backend/shared-client';
+import {
+  PatientServiceClientModule,
+  UserServiceClientModule,
+} from '@backend/shared-client';
+import { DicomStudySignaturesModule } from './modules/dicom-study-signatures/dicom-study-signatures.module';
+import { DicomStudySignaturesService } from './modules/dicom-study-signatures/dicom-study-signatures.service';
+import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures/dicom-study-signatures.repository';
 
 @Module({
   imports: [
@@ -62,6 +69,7 @@ import { PatientServiceClientModule } from '@backend/shared-client';
       ModalityMachine,
       BodyPart,
       ImagingOrderForm,
+      DicomStudySignature,
     ]),
     DicomInstancesModule,
     DicomSeriesModule,
@@ -79,8 +87,10 @@ import { PatientServiceClientModule } from '@backend/shared-client';
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,
+    DicomStudySignaturesModule,
     BackendRedisModule,
-    PatientServiceClientModule
+    PatientServiceClientModule,
+    UserServiceClientModule,
   ],
   controllers: [AppController],
   providers: [
@@ -101,6 +111,8 @@ import { PatientServiceClientModule } from '@backend/shared-client';
     BodyPartRepository,
     ImagingOrderFormService,
     ImagingOrderFormRepository,
+    DicomStudySignaturesService,
+    DicomStudySignaturesRepository,
   ],
 })
 export class AppModule {}

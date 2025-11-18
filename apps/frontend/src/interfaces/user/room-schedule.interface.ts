@@ -1,9 +1,11 @@
 import { ScheduleStatus } from "@/enums/schedule.enum";
 import { BaseEntity } from "../base.interface";
+import { Room } from "./room.interface";
 
 export interface RoomSchedule extends BaseEntity {
   schedule_id: string;
   room_id?: string;
+  room?: Room;
   shift_template_id?: string;
   work_date: Date;
   actual_start_time?: string;

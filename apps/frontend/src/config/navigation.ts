@@ -1,22 +1,23 @@
 import {
-  BarChart3,
-  Users,
-  Clock,
-  UserCheck,
-  Settings,
-  Stethoscope,
-  Camera,
-  FileText,
-  Search,
-  Bell,
-  Database,
-  Shield,
   Activity,
+  BarChart3,
   BookOpen,
-  Monitor,
+  Building2,
+  Camera,
+  Clock,
   Cog,
-  Timer,
+  Database,
+  FileText,
   Logs,
+  Monitor,
+  Search,
+  Settings,
+  Shield,
+  Stethoscope,
+  Timer,
+  UserCheck,
+  Users,
+  Building
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -64,10 +65,10 @@ export const roleNavigation: RoleNavigation = {
       description: "Configure system settings",
     },
     {
-      href: "/admin/configurations",
-      label: "System Configurations",
+      href: "/admin/service",
+      label: "Service Management",
       icon: Cog,
-      description: "Advanced system configurations",
+      description: "Manage clinic services and offerings",
     },
     {
       href: "/admin/reports",
@@ -102,8 +103,20 @@ export const roleNavigation: RoleNavigation = {
     {
       href: "/admin/rooms",
       label: "Rooms Management",
-      icon: Monitor,
+      icon: Building2,
       description: "Manage clinic rooms and resources",
+    },
+    {
+      href: "/admin/departments",
+      label: "Departments Management",
+      icon: Building,
+      description: "Manage clinic departments and staff",
+    },
+    {
+      href: "/admin/room-assignments",
+      label: "Room Assignments",
+      icon: UserCheck,
+      description: "Assign employees to room schedules",
     },
   ],
 
@@ -115,12 +128,12 @@ export const roleNavigation: RoleNavigation = {
       icon: BarChart3,
       description: "Daily overview",
     },
-    // {
-    //   href: "/reception/patients",
-    //   label: "Patients",
-    //   icon: Users,
-    //   description: "Patient registration and search",
-    // },
+    {
+      href: "/reception/patients",
+      label: "Patients",
+      icon: Users,
+      description: "Patient registration and search",
+    },
     {
       href: "/reception/registration",
       label: "Register Patient",
@@ -133,18 +146,18 @@ export const roleNavigation: RoleNavigation = {
       icon: Search,
       description: "Search and filter patient encounters",
     },
-    {
-      href: "/reception/queue",
-      label: "Queue",
-      icon: Clock,
-      description: "Waiting room management",
-    },
-    {
-      href: "/reception/assignments",
-      label: "Assignments",
-      icon: UserCheck,
-      description: "Patient assignments",
-    },
+    // {
+    //   href: "/reception/queue",
+    //   label: "Queue",
+    //   icon: Clock,
+    //   description: "Waiting room management",
+    // },
+    // {
+    //   href: "/reception/assignments",
+    //   label: "Assignments",
+    //   icon: UserCheck,
+    //   description: "Patient assignments",
+    // },
     {
       href: "/reception/schedule",
       label: "Schedule",
@@ -156,17 +169,11 @@ export const roleNavigation: RoleNavigation = {
   // Physician - Patient care and medical records
   Physician: [
     {
-      href: "/physicians",
+      href: "/physicians/dashboard",
 
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient overview",
-    },
-    {
-      href: "/physicians/patients",
-      label: "My Patients",
-      icon: Users,
-      description: "Assigned patients",
     },
     {
       href: "/physicians/clinic-visit",
@@ -182,8 +189,8 @@ export const roleNavigation: RoleNavigation = {
       description: "Patient diagnoses management",
     },
     {
-      href: "/physicians/diagnoses-reports",
-      label: "Diagnoses Reports",
+      href: "/physicians/diagnosis-report",
+      label: "Diagnosis Reports",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },
@@ -210,28 +217,16 @@ export const roleNavigation: RoleNavigation = {
       description: "Imaging overview",
     },
     {
-      href: "/imaging-technicians/imaging",
+      href: "/imaging-technicians/order",
       label: "Imaging",
       icon: Camera,
       description: "DICOM image management",
     },
     {
-      href: "/imaging-technicians/patients",
-      label: "Patients",
-      icon: Users,
-      description: "Patient imaging records",
-    },
-    {
-      href: "/imaging-technicians/queue",
-      label: "Imaging Queue",
-      icon: Clock,
-      description: "Pending imaging studies",
-    },
-    {
-      href: "/imaging-technicians/equipment",
-      label: "Equipment",
+      href: "/imaging-technicians/machines",
+      label: "Machines",
       icon: Activity,
-      description: "Imaging equipment status",
+      description: "Imaging machines status",
     },
     {
       href: "/imaging-technicians/settings",

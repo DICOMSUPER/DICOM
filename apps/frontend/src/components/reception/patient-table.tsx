@@ -2,11 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ReceptionTable } from "@/components/reception/reception-table";
-import {
-  TableRowEnhanced,
-  TableCellEnhanced,
-} from "@/components/ui/table-enhanced";
+import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Eye, Edit, Trash2, User, Calendar, Phone, MapPin } from "lucide-react";
@@ -67,6 +63,11 @@ export function PatientTable({
     return age;
   };
 
+  const formatGender = (gender: string | null | undefined): string => {
+    if (!gender) return "N/A";
+    return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  };
+
   const headers = [
     "Patient",
     "Patient Code",
@@ -78,105 +79,100 @@ export function PatientTable({
   ];
 
   return (
-    <ReceptionTable
-      headers={headers}
+    <DataTable<Patient>
+      columns={[
+        {
+          header: "Patient",
+          cell: (patient) => (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <div className="font-medium">
+                  {patient.firstName} {patient.lastName}
+                </div>
+                <div className="text-sm text-foreground">
+                  {patient.bloodType && `Blood Type: ${patient.bloodType}`}
+                </div>
+              </div>
+            </div>
+          ),
+        },
+        { header: "Patient Code", cell: (patient) => patient.patientCode },
+        {
+          header: "Age/Gender",
+          cell: (patient) =>
+            `${formatAge(patient.dateOfBirth)} years • ${formatGender(patient.gender)}`,
+        },
+        {
+          header: "Contact",
+          cell: (patient) => (
+            <div className="text-foreground">
+              {patient.phoneNumber ? (
+                <div className="flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {patient.phoneNumber}
+                </div>
+              ) : (
+                <span className="text-foreground">No phone</span>
+              )}
+              {patient.address && (
+                <div className="flex items-center gap-1 text-sm text-foreground mt-1">
+                  <MapPin className="w-3 h-3" />
+                  {patient.address}
+                </div>
+              )}
+            </div>
+          ),
+        },
+        {
+          header: "Status",
+          headerClassName: "text-center",
+          cell: (patient) => (
+            <div className="flex justify-center">
+              <StatusBadge status={patient.isActive ? "active" : "inactive"} />
+            </div>
+          ),
+        },
+        {
+          header: "Last Visit",
+          cell: (patient) =>
+            patient.lastVisit ? formatTime(patient.lastVisit) : "Never",
+        },
+        {
+          header: "Actions",
+          cell: (patient) => (
+            <div className="flex items-center gap-2">
+              {onViewDetails && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onViewDetails(patient)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Eye className="h-4 w-4 text-teal-600" />
+                </Button>
+              )}
+              {onEditPatient && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEditPatient(patient)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4 text-teal-600" />
+                </Button>
+              )}
+            </div>
+          ),
+        },
+      ]}
+      data={patients}
       isLoading={isLoading}
-      isEmpty={patients.length === 0}
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
-    >
-      {patients &&
-        patients.length > 0 &&
-        patients.map((patient) => (
-          <TableRowEnhanced key={patient.id}>
-            <TableCellEnhanced>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <div className="font-medium">
-                    {patient.firstName} {patient.lastName}
-                  </div>
-                  <div className="text-sm text-foreground">
-                    {patient.bloodType && `Blood Type: ${patient.bloodType}`}
-                  </div>
-                </div>
-              </div>
-            </TableCellEnhanced>
-            <TableCellEnhanced>
-              <div className="text-foreground">{patient.patientCode}</div>
-            </TableCellEnhanced>
-            <TableCellEnhanced>
-              <div className="text-foreground">
-                {formatAge(patient.dateOfBirth)} years • {patient.gender}
-              </div>
-            </TableCellEnhanced>
-            <TableCellEnhanced>
-              <div className="text-foreground">
-                {patient.phoneNumber ? (
-                  <div className="flex items-center gap-1">
-                    <Phone className="w-3 h-3" />
-                    {patient.phoneNumber}
-                  </div>
-                ) : (
-                  <span className="text-foreground">No phone</span>
-                )}
-                {patient.address && (
-                  <div className="flex items-center gap-1 text-sm text-foreground mt-1">
-                    <MapPin className="w-3 h-3" />
-                    {patient.address}
-                  </div>
-                )}
-              </div>
-            </TableCellEnhanced>
-            <TableCellEnhanced>
-              <StatusBadge status={patient.isActive ? "active" : "inactive"} />
-            </TableCellEnhanced>
-            <TableCellEnhanced>
-              <div className="text-foreground">
-                {patient.lastVisit ? formatTime(patient.lastVisit) : "Never"}
-              </div>
-            </TableCellEnhanced>
-            <TableCellEnhanced isLast>
-              <div className="flex items-center gap-2">
-                {onViewDetails && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onViewDetails(patient)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                )}
-                {onEditPatient && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEditPatient(patient)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                )}
-
-                {/* Delete patient ??? */}
-                {/* {onDeletePatient && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeletePatient(patient)}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )} */}
-              </div>
-            </TableCellEnhanced>
-          </TableRowEnhanced>
-        ))}
-    </ReceptionTable>
+    />
   );
 }

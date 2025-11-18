@@ -1,6 +1,47 @@
+<<<<<<< HEAD
 // interfaces/digital-signature.interface.ts
 
 export interface DigitalSignature {
+=======
+import { User } from "@/store/scheduleApi";
+import { BaseEntity } from "../base.interface";
+
+
+export interface SetupSignatureDto {
+  pin: string;
+  userId: string;
+}
+
+export interface SignDataDto {
+  pin: string;
+  data: string;
+  userId: string;
+}
+
+export interface VerifySignatureDto {
+  data: string;
+  signature: string;
+  publicKey: string;
+}
+
+export interface SignatureResponse {
+  message: string;
+  signatureId: string;
+  signature: string;
+  publicKey: string;
+}
+
+export interface VerifyResponse {
+  message: string;
+  isValid: boolean;
+}
+
+export interface PublicKeyResponse {
+  message: string;
+  publicKey: string;
+}
+export interface DigitalSignature extends BaseEntity {
+>>>>>>> main
   id: string;
   signedData: string;
   certificateSerial: string;
@@ -8,6 +49,7 @@ export interface DigitalSignature {
   publicKey?: string;
   privateKeyEncrypted?: string;
   pinHash?: string;
+<<<<<<< HEAD
   createdAt: string; // Date kiểu string khi nhận từ API
   userId: string;
 }
@@ -49,4 +91,8 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   limit: number;
+=======
+  userId: string;
+  user?:User
+>>>>>>> main
 }

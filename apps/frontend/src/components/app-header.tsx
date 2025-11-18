@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
+import { useLogout } from "@/hooks/use-logout";
 
 interface AppHeaderProps {
   notificationCount?: number;
@@ -33,6 +34,8 @@ export function AppHeader({
   onMenuClick
 }: AppHeaderProps) {
   const user = useSelector((state: RootState) => state.auth.user);
+  const { logout: defaultLogout } = useLogout();
+  const logoutHandler = onLogout ?? defaultLogout;
 
   return (
     <header className="h-16 border-b border-border bg-card">
@@ -108,7 +111,7 @@ export function AppHeader({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem 
-                  onClick={onLogout}
+                  onClick={logoutHandler}
                   className="group cursor-pointer text-red-600 focus:text-white focus:bg-red-600 p-3 rounded-md ease-in-out duration-200"
                 >
                   <div className="flex items-center justify-between w-full">

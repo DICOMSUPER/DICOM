@@ -1,31 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  PatientCondition 
-} from "@/interfaces/patient/patient-condition.interface";
-import { 
-  ClinicalStatus, 
-  ConditionVerificationStatus 
+import { Button } from "@/components/ui/button";
+import { PatientCondition } from "@/interfaces/patient/patient-condition.interface";
+import {
+  ClinicalStatus,
+  ConditionVerificationStatus,
 } from "@/enums/patient-workflow.enum";
-import { Edit, Calendar, MapPin, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import {
+  Edit,
+  Calendar,
+  MapPin,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Eye,
+} from "lucide-react";
 
 interface PatientConditionListProps {
   conditions: PatientCondition[];
-  onEdit?: (condition: PatientCondition) => void;
+  onView?: (condition: PatientCondition) => void;
   onAdd?: () => void;
-  canEdit?: boolean;
 }
 
-export function PatientConditionList({ 
-  conditions, 
-  onEdit, 
+export function PatientConditionList({
+  conditions,
+  onView,
   onAdd,
-  canEdit = false 
 }: PatientConditionListProps) {
-  const [expandedCondition, setExpandedCondition] = useState<string | null>(null);
+  const [expandedCondition, setExpandedCondition] = useState<string | null>(
+    null
+  );
 
   const getStatusIcon = (status?: ClinicalStatus) => {
     switch (status) {
@@ -40,127 +53,140 @@ export function PatientConditionList({
     }
   };
 
-  const getStatusBadgeVariant = (status?: ClinicalStatus) => {
+  const getStatusBadgeClass = (status?: ClinicalStatus) => {
     switch (status) {
       case ClinicalStatus.ACTIVE:
-        return "destructive";
+        return "bg-red-100 text-red-700 border-red-200";
       case ClinicalStatus.INACTIVE:
-        return "secondary";
-      case ClinicalStatus.RECURRENCE:
-        return "destructive";
-      case ClinicalStatus.REMISSION:
-        return "outline";
+        return "bg-gray-100 text-gray-700 border-gray-200";
       case ClinicalStatus.RESOLVED:
-        return "default";
+        return "bg-green-100 text-green-700 border-green-200";
+      case ClinicalStatus.RECURRENCE:
+        return "bg-rose-100 text-rose-700 border-rose-200";
+      case ClinicalStatus.REMISSION:
+        return "bg-blue-100 text-blue-700 border-blue-200";
       default:
-        return "outline";
+        return "bg-muted text-foreground border-border";
     }
   };
 
-  const getVerificationBadgeVariant = (status?: ConditionVerificationStatus) => {
+  const getVerificationBadgeClass = (
+    status?: ConditionVerificationStatus
+  ) => {
     switch (status) {
       case ConditionVerificationStatus.CONFIRMED:
-        return "default";
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
       case ConditionVerificationStatus.PROVISIONAL:
-        return "secondary";
+        return "bg-amber-100 text-amber-700 border-amber-200";
       case ConditionVerificationStatus.DIFFERENTIAL:
-        return "outline";
+        return "bg-blue-100 text-blue-700 border-blue-200";
       case ConditionVerificationStatus.UNCONFIRMED:
-        return "destructive";
+        return "bg-gray-100 text-gray-700 border-gray-200";
       case ConditionVerificationStatus.REFUTED:
-        return "destructive";
+        return "bg-rose-100 text-rose-700 border-rose-200";
       case ConditionVerificationStatus.ENTERED_IN_ERROR:
-        return "destructive";
+        return "bg-red-100 text-red-700 border-red-200";
       default:
-        return "outline";
+        return "bg-muted text-foreground border-border";
     }
+  };
+
+  const formatStatus = (status: string) => {
+    return status
+      .split(/[-_]/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   if (conditions.length === 0) {
     return (
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            Medical Conditions
-          </CardTitle>
-          <CardDescription>
-            No medical conditions recorded for this patient
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="rounded-2xl p-6 shadow border-border border">
+        <div className="flex items-center gap-2 text-lg font-semibold mb-4">
+          <AlertCircle className="h-5 w-5" />
+          Medical Conditions
+        </div>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-16 w-16 text-foreground/40 mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            No Medical Conditions
+          </h3>
+          <p className="text-sm text-foreground text-center max-w-md">
+            No medical conditions have been recorded for this patient yet. Conditions will appear here once they are added to the patient&apos;s record.
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Medical Conditions ({conditions.length})
-            </CardTitle>
-            <CardDescription>
-              Patient's recorded medical conditions and diagnoses
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+    <div className="rounded-2xl p-6 shadow border-border border space-y-4">
+      <div className="flex items-center gap-2 text-lg font-semibold">
+        <AlertCircle className="h-5 w-5" />
+        Medical Conditions ({conditions.length})
+      </div>
+      <p className="text-sm text-foreground">
+        Patient&apos;s recorded medical conditions and diagnoses
+      </p>
 
-      <CardContent className="space-y-4">
+      <div className="space-y-3 max-h-[25vh] overflow-y-auto pr-2">
         {conditions.map((condition) => (
-          <Card 
-            key={condition.id} 
-            className="border border-border hover:shadow-sm transition-shadow"
+          <Card
+            key={condition.id}
+            className="border border-border hover:shadow-lg cursor-pointer hover:border-primary/60 transition-all duration-200 bg-card"
           >
-            <CardHeader 
-              className="pb-3 cursor-pointer"
-              onClick={() => setExpandedCondition(
-                expandedCondition === condition.id ? null : condition.id
-              )}
-            >
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   {getStatusIcon(condition.clinicalStatus)}
-                  <div>
-                    <h4 className="font-medium text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-foreground truncate">
                       {condition.codeDisplay || condition.code}
                     </h4>
-                    <p className="text-sm text-gray-600">
-                      {condition.code} {condition.codeSystem && `(${condition.codeSystem})`}
+                    <p className="text-xs text-gray-600 truncate">
+                      {condition.code}{" "}
+                      {condition.codeSystem && `(${condition.codeSystem})`}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {condition.clinicalStatus && (
-                    <Badge variant={getStatusBadgeVariant(condition.clinicalStatus)}>
-                      {condition.clinicalStatus}
+                    <Badge
+                      className={`${getStatusBadgeClass(
+                        condition.clinicalStatus
+                      )} px-2 py-0.5 text-xs font-semibold border`}
+                    >
+                      {formatStatus(condition.clinicalStatus)}
                     </Badge>
                   )}
                   {condition.verificationStatus && (
-                    <Badge variant={getVerificationBadgeVariant(condition.verificationStatus)}>
-                      {condition.verificationStatus.replace('-', ' ')}
+                    <Badge
+                      className={`${getVerificationBadgeClass(
+                        condition.verificationStatus
+                      )} px-2 py-0.5 text-xs font-semibold border`}
+                    >
+                      {formatStatus(condition.verificationStatus)}
                     </Badge>
                   )}
-                  {canEdit && onEdit && (
+                  {onView && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
+                      className="text-xs h-7 border-border hover:bg-gray-50"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEdit(condition);
+                        onView(condition);
                       }}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Eye className="w-3 h-3 mr-1.5" />
+                      View
                     </Button>
                   )}
                 </div>
@@ -168,48 +194,62 @@ export function PatientConditionList({
             </CardHeader>
 
             {expandedCondition === condition.id && (
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {(condition.severity || condition.stageSummary || condition.bodySite) && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {condition.severity && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Severity:</span>
-                          <p className="text-sm text-foreground">{condition.severity}</p>
-                        </div>
-                      )}
-                      {condition.stageSummary && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Stage:</span>
-                          <p className="text-sm text-foreground">{condition.stageSummary}</p>
-                        </div>
-                      )}
-                      {condition.bodySite && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-foreground">{condition.bodySite}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>Recorded: {formatDate(condition.recordedDate)}</span>
+              <CardContent className="pt-0 space-y-3">
+                {(condition.severity ||
+                  condition.stageSummary ||
+                  condition.bodySite) && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {condition.severity && (
+                      <div>
+                        <span className="text-xs font-medium text-gray-600">
+                          Severity:
+                        </span>
+                        <p className="text-sm text-foreground">
+                          {condition.severity}
+                        </p>
+                      </div>
+                    )}
+                    {condition.stageSummary && (
+                      <div>
+                        <span className="text-xs font-medium text-gray-600">
+                          Stage:
+                        </span>
+                        <p className="text-sm text-foreground">
+                          {condition.stageSummary}
+                        </p>
+                      </div>
+                    )}
+                    {condition.bodySite && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-foreground">
+                          {condition.bodySite}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  {condition.notes && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">Notes:</span>
-                      <p className="text-sm text-foreground mt-1">{condition.notes}</p>
-                    </div>
-                  )}
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Recorded: {formatDate(condition.recordedDate)}</span>
                 </div>
+
+                {condition.notes && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-600">
+                      Notes:
+                    </span>
+                    <p className="text-sm text-foreground mt-1">
+                      {condition.notes}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             )}
           </Card>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -24,7 +24,7 @@ import {
   PatientEncounter,
   EncounterSearchFilters,
 } from "@/interfaces/patient/patient-workflow.interface";
-import { EncounterType } from "@/enums/patient-workflow.enum";
+import { EncounterStatus, EncounterType } from "@/enums/patient-workflow.enum";
 import {
   Stethoscope,
   Search,
@@ -41,6 +41,7 @@ import {
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 
 export default function EncountersPage() {
@@ -116,7 +117,7 @@ export default function EncountersPage() {
   };
 
   const filteredEncounters =
-    encounters?.filter((encounter) => {
+    encounters?.data?.filter((encounter: PatientEncounter) => {
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase();
       return (
@@ -129,79 +130,79 @@ export default function EncountersPage() {
     }) || [];
 
   // Calculate stats
-  const scheduledCount = filteredEncounters.filter(
-    (e) => e.status === "scheduled"
+  const scheduledCount = filteredEncounters?.filter(
+    (e) => e.status === EncounterStatus.WAITING
   ).length;
   const inProgressCount = filteredEncounters.filter(
-    (e) => e.status === "in-progress" || e.status === "active"
+    (e) => e.status === EncounterStatus.ARRIVED
   ).length;
   const completedCount = filteredEncounters.filter(
-    (e) => e.status === "completed" || e.status === "finished"
+    (e) => e.status === EncounterStatus.FINISHED
   ).length;
 
   return (
     <div className="space-y-6">
-        {/* Header with Quick Actions and Refresh */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Encounter Management
-            </h1>
-            <p className="text-foreground">
-              Search and manage patient encounters
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <RefreshButton onRefresh={() => refetch()} loading={isLoading} />
-            {/* <Button
+      {/* Header with Quick Actions and Refresh */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Encounter Management
+          </h1>
+          <p className="text-foreground">
+            Search and manage patient encounters
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <RefreshButton onRefresh={() => refetch()} loading={isLoading} />
+          {/* <Button
               onClick={handleCreateEncounter}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
               Create New Encounter
             </Button> */}
-          </div>
         </div>
+      </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">
-              An error occurred while loading encounters
-            </p>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <EncounterStatsCards
-          totalCount={filteredEncounters.length}
-          scheduledCount={scheduledCount}
-          inProgressCount={inProgressCount}
-          completedCount={completedCount}
-          isLoading={isLoading}
+      {/* Error Display */}
+      {Boolean(error) && (
+        <ErrorAlert
+          className="mb-4"
+          title="Failed to load encounters"
+          message="An error occurred while loading encounters."
         />
+      )}
 
-        {/* Filters */}
-        <ReceptionFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          priorityFilter={priorityFilter}
-          onPriorityChange={setPriorityFilter}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-        />
+      {/* Stats Cards */}
+      <EncounterStatsCards
+        totalCount={filteredEncounters.length}
+        scheduledCount={scheduledCount}
+        inProgressCount={inProgressCount}
+        completedCount={completedCount}
+        isLoading={isLoading}
+      />
 
-        {/* Encounters Table */}
-        <EncounterTable
-          encounters={filteredEncounters as any}
-          isLoading={isLoading}
-          emptyStateIcon={<Stethoscope className="h-12 w-12" />}
-          emptyStateTitle="No encounters found"
-          emptyStateDescription="No encounters match your search criteria. Try adjusting your filters or search terms."
-          onViewDetails={handleViewEncounter}
-          onEditEncounter={handleEditEncounter}
-          onDeleteEncounter={handleDeleteEncounter}
-        />
+      {/* Filters */}
+      <ReceptionFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
+
+      {/* Encounters Table */}
+      <EncounterTable
+        encounters={filteredEncounters as any}
+        isLoading={isLoading}
+        emptyStateIcon={<Stethoscope className="h-12 w-12" />}
+        emptyStateTitle="No encounters found"
+        emptyStateDescription="No encounters match your search criteria. Try adjusting your filters or search terms."
+        onViewDetails={handleViewEncounter}
+        onEditEncounter={handleEditEncounter}
+        onDeleteEncounter={handleDeleteEncounter}
+      />
     </div>
   );
 }

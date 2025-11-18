@@ -1,7 +1,8 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { ImagingProcedurePDF } from "@/app/(physicians)/physicians/create-imaging-order/page";
-import logo from "../../../public/assets/logo2.webp";
+
+import { ImagingProcedurePDF } from "../patients/detail/create-order-form";
+import { addPDFHeader } from "./addHeaderPDF";
 
 export interface ImagingOrderPDFProps {
   imagingProcedurePDF: ImagingProcedurePDF;
@@ -10,38 +11,15 @@ export interface ImagingOrderPDFProps {
 export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
   const doc = new jsPDF();
 
-  let imageLogo = new Image();
-  imageLogo.src = logo.src;
-  const logoWidth = 30;
-  const logoHeight = 30;
-  doc.addImage(imageLogo, "PNG", 10, 10, logoWidth, logoHeight);
-
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("Healthcare Clinic", 10 + logoWidth + 8, 18);
-
- 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.text("123 Health St., Wellness City", 10 + logoWidth + 8, 25);
-  doc.text("Phone: (123) 456-7890", 10 + logoWidth + 8, 32);
-
- 
-  doc.setDrawColor(0); 
-  doc.setLineWidth(0.5);
-  doc.line(10, 40, doc.internal.pageSize.getWidth() - 10, 40);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.text("Radiology Request Form", doc.internal.pageSize.getWidth() / 2, 50, {
-    align: "center",
+  let y = addPDFHeader(doc, {
+    title: "Radiology Request Form",
+    clinicName: "Custom Clinic Name",
+    address: "Custom Address",
+    phone: "(999) 888-7777",
   });
 
-  let y = 65;
 
-
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Roboto");
   doc.setFontSize(12);
 
   doc.text(`Patient Name: ${imagingProcedurePDF.patientName}`, 10, y);

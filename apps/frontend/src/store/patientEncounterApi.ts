@@ -7,12 +7,14 @@ import {
   PaginatedResponse,
   EncounterStats,
   ApiResponse,
-  PaginationParams,
   EncounterStatsInDateRange,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
-import { PaginatedResponse as PaginationResponse } from "@/interfaces/pagination/pagination.interface";
+import {
+  PaginatedQuery,
+  PaginatedResponse as PaginationResponse,
+} from "@/interfaces/pagination/pagination.interface";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
@@ -62,9 +64,10 @@ export const patientEncounterApi = createApi({
     }),
 
     // Get encounters by patient
+    // Note: axiosBaseQuery unwraps ApiResponse wrapper, so this returns PaginatedResponse directly
     getPatientEncountersByPatientId: builder.query<
-      ApiResponse<PaginatedResponse<PatientEncounter>>,
-      { patientId: string; pagination: PaginationParams }
+      PaginatedResponse<PatientEncounter>,
+      { patientId: string; pagination: PaginatedQuery }
     >({
       query: ({ patientId, pagination }) => ({
         url: `/patient/${patientId}`,
@@ -154,7 +157,7 @@ export const patientEncounterApi = createApi({
     }),
 
     getStatsInDateRange: builder.query<
-      EncounterStatsInDateRange,
+      ApiResponse<EncounterStatsInDateRange>,
       { dateFrom: string; dateTo: string; roomId?: string }
     >({
       query: ({ dateFrom, dateTo, roomId }) => ({

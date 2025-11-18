@@ -30,16 +30,22 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared-interfaces/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-decorators/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-enums/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-interfaces/tsconfig.lib.json"
+      "path": "../../libs/shared-domain/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-domain/tsconfig.lib.json"
+      "path": "../../libs/redis/tsconfig.lib.json"
     },
     {
       "path": "../../libs/database/tsconfig.lib.json"

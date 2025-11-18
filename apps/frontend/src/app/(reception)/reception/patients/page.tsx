@@ -1,75 +1,112 @@
 "use client";
-// WorkspaceLayout and SidebarNav moved to layout.tsx
+
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
 import { PatientStatsCards } from "@/components/reception/patient-stats-cards";
 import { PatientTable } from "@/components/reception/patient-table";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { useState, useEffect } from "react";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { Pagination } from "@/components/common/PaginationV1";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
-  useGetPatientsQuery,
+  useGetPatientsPaginatedQuery,
   useGetPatientStatsQuery,
   useDeletePatientMutation,
 } from "@/store/patientApi";
 import { Users, UserPlus } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
+import {
+  Patient,
+  PatientSearchFilters,
+} from "@/interfaces/patient/patient-workflow.interface";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+
+interface ApiError {
+  data?: {
+    message?: string;
+  };
+}
 
 export default function ReceptionPage() {
   const router = useRouter();
-  const [notificationCount] = useState(3);
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch real data
+  const queryParams = useMemo(() => {
+    const filters: Omit<PatientSearchFilters, "limit" | "offset"> = {};
+
+    if (appliedSearchTerm.trim()) {
+      filters.searchTerm = appliedSearchTerm.trim();
+    }
+
+    if (appliedStatusFilter !== "all") {
+      if (
+        appliedStatusFilter === "active" ||
+        appliedStatusFilter === "waiting" ||
+        appliedStatusFilter === "in-progress"
+      ) {
+        filters.isActive = true;
+      } else if (appliedStatusFilter === "completed") {
+        filters.isActive = false;
+      }
+    }
+
+    return {
+      page,
+      limit,
+      filters,
+    };
+  }, [page, limit, appliedSearchTerm, appliedStatusFilter]);
+
   const {
-    data: patients,
+    data: patientsData,
     isLoading: patientsLoading,
     error: patientsError,
     refetch: refetchPatients,
-  } = useGetPatientsQuery({});
+  } = useGetPatientsPaginatedQuery({
+    page,
+    limit,
+    filters: queryParams.filters,
+  });
+
   const {
     data: patientStats,
     isLoading: statsLoading,
     refetch: refetchStats,
   } = useGetPatientStatsQuery();
 
-  // Handle errors
   useEffect(() => {
     if (patientsError) {
-      setError("Failed to load patient data. Please try again.");
+      const error = patientsError as FetchBaseQueryError;
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
+          ? (error.data as { message: string }).message
+          : "Failed to load patient data. Please try again.";
+      setError(errorMessage);
     } else {
       setError(null);
     }
   }, [patientsError]);
 
-  // Process real data from API
-  // Handle both direct array response and wrapped response
-  const patientsArray = Array.isArray(patients)
-    ? patients
-    : Array.isArray((patients as any)?.data)
-    ? (patients as any).data
-    : [];
-
-  const filteredPatients = patientsArray
-    .filter((patient) => {
-      if (!searchTerm) return true;
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        patient.firstName?.toLowerCase().includes(searchLower) ||
-        patient.lastName?.toLowerCase().includes(searchLower) ||
-        patient.patientCode?.toLowerCase().includes(searchLower) ||
-        patient.phoneNumber?.toLowerCase().includes(searchLower)
-      );
-    })
-    .map((patient) => ({
+  const patientsArray = useMemo(() => {
+    return (patientsData?.data ?? []).map((patient: Patient) => ({
       id: patient.id,
       firstName: patient.firstName || "Unknown",
       lastName: patient.lastName || "Patient",
       patientCode: patient.patientCode || "N/A",
-      dateOfBirth: patient.dateOfBirth || new Date(),
+      dateOfBirth: patient.dateOfBirth
+        ? typeof patient.dateOfBirth === "string"
+          ? patient.dateOfBirth
+          : patient.dateOfBirth.toISOString()
+        : new Date().toISOString(),
       gender: patient.gender || "Unknown",
       phoneNumber: patient.phoneNumber,
       address: patient.address,
@@ -78,42 +115,83 @@ export default function ReceptionPage() {
       priority: "normal",
       lastVisit: undefined,
     }));
+  }, [patientsData?.data]);
 
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
+  const paginationMeta = patientsData && {
+    total: patientsData.total,
+    page: patientsData.page,
+    limit: limit,
+    totalPages: patientsData.totalPages,
+    hasNextPage: patientsData.hasNextPage,
+    hasPreviousPage: patientsData.hasPreviousPage,
   };
 
   const handleRefresh = async () => {
     await Promise.all([refetchPatients(), refetchStats()]);
   };
 
-  const handleViewDetails = (patient: any) => {
+  const handleSearch = useCallback(() => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedStatusFilter(statusFilter);
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchTerm("");
+    setPriorityFilter("all");
+    setStatusFilter("all");
+    setAppliedSearchTerm("");
+    setAppliedStatusFilter("all");
+    setPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
+
+  const handleViewDetails = (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     router.push(`/reception/patients/${patient.id}`);
   };
 
-  const handleEditPatient = (patient: any) => {
+  const handleEditPatient = (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     router.push(`/reception/patients/edit/${patient.id}`);
   };
 
   const [deletePatient] = useDeletePatientMutation();
 
-  const handleDeletePatient = (patient: any) => {
+  const handleDeletePatient = async (patient: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  }) => {
     if (
       confirm(
         `Are you sure you want to delete patient ${patient.firstName} ${patient.lastName}?`
       )
     ) {
-      deletePatient(patient.id);
+      try {
+        await deletePatient(patient.id).unwrap();
+        toast.success(
+          `Patient ${patient.firstName} ${patient.lastName} deleted successfully`
+        );
+        await refetchPatients();
+      } catch (err) {
+        const error = err as ApiError;
+        toast.error(error?.data?.message || `Failed to delete patient`);
+      }
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header with Quick Actions and Refresh */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
@@ -130,23 +208,22 @@ export default function ReceptionPage() {
         </div>
       </div>
 
-      {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
+        <ErrorAlert
+          title="Failed to load patients"
+          message={error}
+          className="mb-4"
+        />
       )}
 
-      {/* Stats Cards */}
       <PatientStatsCards
-        totalCount={patientStats?.totalPatients || 0}
-        activeCount={patientStats?.activePatients || 0}
-        newThisMonthCount={patientStats?.newPatientsThisMonth || 0}
-        inactiveCount={patientStats?.inactivePatients || 0}
+        totalCount={patientStats?.data?.totalPatients || 0}
+        activeCount={patientStats?.data?.activePatients || 0}
+        newThisMonthCount={patientStats?.data?.newPatientsThisMonth || 0}
+        inactiveCount={patientStats?.data?.inactivePatients || 0}
         isLoading={statsLoading}
       />
 
-      {/* Filters */}
       <ReceptionFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -154,19 +231,25 @@ export default function ReceptionPage() {
         onPriorityChange={setPriorityFilter}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+        isSearching={patientsLoading}
       />
 
-      {/* Patient Table */}
-      {!patientsLoading && (
-        <PatientTable
-          patients={filteredPatients as any}
-          isLoading={patientsLoading}
-          emptyStateIcon={<Users className="h-12 w-12" />}
-          emptyStateTitle="No patients found"
-          emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
-          onViewDetails={handleViewDetails}
-          onEditPatient={handleEditPatient}
-          onDeletePatient={handleDeletePatient}
+      <PatientTable
+        patients={patientsArray as any}
+        isLoading={patientsLoading}
+        emptyStateIcon={<Users className="h-12 w-12" />}
+        emptyStateTitle="No patients found"
+        emptyStateDescription="No patients match your search criteria. Try adjusting your filters or search terms."
+        onViewDetails={handleViewDetails as any}
+        onEditPatient={handleEditPatient as any}
+        onDeletePatient={handleDeletePatient as any}
+      />
+      {paginationMeta && (
+        <Pagination
+          pagination={paginationMeta}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

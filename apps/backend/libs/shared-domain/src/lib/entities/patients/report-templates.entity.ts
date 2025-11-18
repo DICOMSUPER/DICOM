@@ -1,6 +1,6 @@
 import { BaseEntity } from '@backend/entities';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { BodyPart,ImagingModality } from '../imagings';
+import { BodyPart, ImagingModality } from '../imagings';
 import { DiagnosesReport } from './diagnoses-reports.entity';
 import { TemplateType } from '@backend/shared-enums';
 
@@ -44,13 +44,13 @@ export class ReportTemplate extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   recommendationTemplate!: string;
 
-  //   relation
+
   @OneToMany(
     () => DiagnosesReport,
     (diagnosisReport) => diagnosisReport.reportTemplate
   )
   diagnosisReports!: DiagnosesReport[];
 
-  modality?: ImagingModality;
-  bodyPart?: BodyPart;
+  // modality?: ImagingModality;
+  // bodyPart?: BodyPart;
 }

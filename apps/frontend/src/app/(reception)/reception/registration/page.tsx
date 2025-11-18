@@ -9,6 +9,7 @@ import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interfac
 // no need to import enums here; the form provides values
 import { useRouter } from "next/navigation";
 import PatientForm from "@/components/patient/PatientForm";
+import { ErrorAlert } from "@/components/ui/error-alert";
 
 export default function PatientRegistration() {
   const router = useRouter();
@@ -43,8 +44,7 @@ export default function PatientRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <WorkspaceLayout sidebar={<SidebarNav />}>
+    <div className="bg-background">
         <div className="mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold">Patient Registration</h1>
@@ -54,9 +54,11 @@ export default function PatientRegistration() {
           </div>
 
           {formErrors.general && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{formErrors.general}</p>
-            </div>
+            <ErrorAlert
+              className="mb-4"
+              title="Registration failed"
+              message={formErrors.general}
+            />
           )}
 
           <PatientForm
@@ -66,7 +68,7 @@ export default function PatientRegistration() {
             errors={formErrors}
           />
         </div>
-      </WorkspaceLayout>
+      
     </div>
   );
 }
