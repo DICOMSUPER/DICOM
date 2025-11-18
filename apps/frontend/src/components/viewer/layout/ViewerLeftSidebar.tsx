@@ -77,8 +77,8 @@ const transformTools = [
   { id: "flip-v", icon: FlipVertical, label: "Flip Vertical", action: "flip" },
 ];
 
-// Action tools
-const actionTools = [
+// Annotation Management tools (moved to top)
+const annotationManagementTools = [
   {
     id: "view-all-annotations",
     icon: FileText,
@@ -91,7 +91,6 @@ const actionTools = [
     label: "View Draft Annotations",
     action: "viewDraftAnnotations",
   },
-  { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
   { id: "clear", icon: Trash2, label: "Clear All Annotations", action: "clear" },
   {
     id: "clear-viewport",
@@ -100,16 +99,21 @@ const actionTools = [
     action: "clearViewport",
   },
   {
-    id: "clear-segmentation",
-    icon: Trash2,
-    label: "Clear Segmentation",
-    action: "clearSegmentation",
-  },
-  {
     id: "undo-annotation",
     icon: Undo,
     label: "Undo Annotation",
     action: "undoAnnotation",
+  },
+];
+
+// Action tools
+const actionTools = [
+  { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
+  {
+    id: "clear-segmentation",
+    icon: Trash2,
+    label: "Clear Segmentation",
+    action: "clearSegmentation",
   },
   { id: "invert", icon: MousePointer, label: "Invert Colors", action: "invert" },
 ];
@@ -280,19 +284,56 @@ export default function ViewerLeftSidebar({
             
             <div className="grid grid-cols-2 gap-2">
               {seriesLayouts.map((layout) => (
-                <button
-                  key={layout.id}
-                  onClick={() => onSeriesLayoutChange(layout.id)}
-                  className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-semibold flex items-center justify-center gap-2 ${
-                    seriesLayout === layout.id
-                      ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                  }`}
-                  title={layout.label}
-                >
-                  <layout.icon size={16} />
-                  {layout.label}
-                </button>
+                <Tooltip key={layout.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onSeriesLayoutChange(layout.id)}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-semibold flex items-center justify-center gap-2 ${
+                        seriesLayout === layout.id
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                      }`}
+                    >
+                      <layout.icon size={16} />
+                      {layout.label}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    {layout.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
+          {/* Annotation Management Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Annotation Management</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              View, clear, and undo annotations
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {annotationManagementTools.map((tool) => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleTransformAction(tool.action, tool.id)}
+                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${getActionButtonClasses(tool.id)}`}
+                    >
+                      <div className="flex items-center gap-1 w-full justify-center">
+                        <tool.icon className="h-5 w-5 shrink-0" />
+                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                          {tool.label}
+                        </span>
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                    {tool.label}
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           </div>

@@ -1,33 +1,25 @@
 import React from 'react';
-import { Monitor, Shield, Activity } from 'lucide-react';
+import { Monitor } from 'lucide-react';
 
 export function Header() {
   return (
-    <div className="text-center mb-8">
+    <div className="text-center mb-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-center mb-6">
-        <div className="bg-blue-600 p-4 rounded-full">
-          <Monitor size={40} className="text-white" />
+        <div className="relative">
+          <div className="absolute inset-0 bg-blue-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+          <div className="relative bg-blue-600 p-4 rounded-2xl transform hover:scale-105 transition-transform duration-300 shadow-lg">
+            <Monitor size={40} className="text-white" />
+          </div>
         </div>
       </div>
       
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">
-        DICOM Imaging System
+      <h1 className="text-3xl font-bold text-gray-900 mb-3">
+        Sign In
       </h1>
       
-      <p className="text-gray-600 mb-6">
-        Secure access to medical imaging and diagnostic tools
+      <p className="text-gray-600 text-lg mb-2">
+        Access your medical imaging workspace
       </p>
-      
-      <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
-        <div className="flex items-center space-x-2">
-          <Shield size={16} className="text-blue-500" />
-          <span>HIPAA Compliant</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Activity size={16} className="text-green-500" />
-          <span>24/7 Available</span>
-        </div>
-      </div>
     </div>
   );
 }

@@ -31,6 +31,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { useCreateAnnotationMutation } from "@/store/annotationApi";
 import { toast } from "sonner";
+import { Roles } from "@/enums/user.enum";
 
 type DraftAnnotationEntry = {
   id: string;
@@ -553,6 +554,12 @@ export function DraftAnnotationsModal({
     console.log(user)
     if (!user?.id) {
       toast.error("You must be signed in to submit annotations.");
+      return;
+    }
+
+    // Only radiologists can submit annotations
+    if (user.role !== Roles.RADIOLOGIST) {
+      toast.error("Only radiologists can submit annotations.");
       return;
     }
 

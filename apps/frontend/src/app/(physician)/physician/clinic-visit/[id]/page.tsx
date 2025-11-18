@@ -1,6 +1,6 @@
 "use client";
 import { Skeleton } from "@/components/ui/skeleton";
-import ClinicVisit from "@/components/physicians/patient-encounter/clinic-visit";
+import ClinicVisit from "@/components/physician/patient-encounter/clinic-visit";
 import { use } from "react";
 import { useGetPatientEncounterByIdQuery } from "@/store/patientEncounterApi";
 

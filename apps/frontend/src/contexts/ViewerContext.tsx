@@ -426,6 +426,7 @@ const buildDatabaseAnnotationPayload = (
   }
   const metadata = {
     ...(baseAnnotation.metadata ?? {}),
+    toolName: baseAnnotation.metadata?.toolName ?? 'Unknown',
     source: 'db',
     dbAnnotationId: record.id,
     annotationId: record.annotationId ?? record.id,
@@ -1589,18 +1590,17 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
 
   const clearAnnotations = () => {
-    console.log('Clear annotations requested from context');
-    clearAnnotationHistoryForViewport(state.activeViewport);
-    // Dispatch custom event that ViewPortMain will listen to
-    // Include active viewport ID to target specific viewport or fallback to Cornerstone.js standard ID
-    const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
-    window.dispatchEvent(new CustomEvent('clearAnnotations', {
-      detail: { activeViewportId }
-    }));
+    console.log('Clear annotations requested from context - clearing all viewports');
+    // Clear history for all viewports
+    state.viewportSeries.forEach((_, viewportIndex) => {
+      clearAnnotationHistoryForViewport(viewportIndex);
+    });
+    // Dispatch event without viewport ID filter so all viewports respond
+    window.dispatchEvent(new CustomEvent('clearAnnotations'));
   };
 
   const clearViewportAnnotations = () => {
-    console.log('Clear viewport annotations requested from context');
+    console.log('Clear viewport annotations requested from context - clearing active viewport only');
     clearAnnotationHistoryForViewport(state.activeViewport);
     const activeViewportId = state.viewportIds.get(state.activeViewport) || state.activeViewport.toString();
     window.dispatchEvent(new CustomEvent('clearViewportAnnotations', {

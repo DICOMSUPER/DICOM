@@ -20,7 +20,7 @@ export default function OrderPage() {
 
     if (storedOrderId) {
       // Redirect to the stored order
-      router.push(`/imaging-technicians/order/${storedOrderId}`);
+      router.push(`/imaging-technician/order/${storedOrderId}`);
     } else {
       // Mark as checked so we can show the message
       setHasChecked(true);

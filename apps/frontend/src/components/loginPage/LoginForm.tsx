@@ -6,8 +6,7 @@ import * as Yup from "yup";
 interface LoginFormProps {
   onLogin: (
     email: string,
-    password: string,
-    rememberMe: boolean
+    password: string
   ) => Promise<void> | void;
 }
 
@@ -17,9 +16,7 @@ const validationSchema = Yup.object({
     .email("Please enter a valid email address")
     .required("Email is required"),
   password: Yup.string()
-    .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
-  rememberMe: Yup.boolean(),
 });
 
 export function LoginForm({ onLogin }: LoginFormProps) {
@@ -30,13 +27,12 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     initialValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
     validationSchema,
-    onSubmit: async (values: { email: string; password: string; rememberMe: boolean }) => {
+    onSubmit: async (values: { email: string; password: string }) => {
       setIsLoading(true);
       try {
-        await onLogin(values.email, values.password, values.rememberMe);
+        await onLogin(values.email, values.password);
         // Keep loading state true on success - component will unmount on navigation
         // This prevents the button from flickering back to "Sign In" during page transition
       } catch (error) {
@@ -48,40 +44,44 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="w-full max-w-md">
-      <form onSubmit={formik.handleSubmit} className="space-y-6" autoComplete="on">
-        <div>
+      <form onSubmit={formik.handleSubmit} className="space-y-5" autoComplete="on">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-semibold text-gray-700 mb-2"
           >
-            Email Address
+            Email
           </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-              formik.touched.email && formik.errors.email ? "border-red-300 bg-red-50" : "border-gray-300"
-            }`}
-            placeholder="doctor@hospital.com"
-          />
-          {formik.touched.email && formik.errors.email && (
-            <p className="mt-1 text-sm text-red-600">{formik.errors.email}</p>
-          )}
+          <div className="relative group">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={`w-full px-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
+                formik.touched.email && formik.errors.email 
+                  ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+              placeholder="you@example.com"
+            />
+            {formik.touched.email && formik.errors.email && (
+              <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{formik.errors.email}</p>
+            )}
+          </div>
         </div>
 
-        <div>
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-semibold text-gray-700 mb-2"
           >
             Password
           </label>
-          <div className="relative">
+          <div className="relative group">
             <input
               id="password"
               name="password"
@@ -90,64 +90,49 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               value={formik.values.password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                formik.touched.password && formik.errors.password ? "border-red-300 bg-red-50" : "border-gray-300"
+              className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
+                formik.touched.password && formik.errors.password 
+                  ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
+                  : "border-gray-200 hover:border-gray-300"
               }`}
-              placeholder="Enter your password"
+              placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className="absolute top-1/2 right-0 -translate-y-1/2 pr-4 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           {formik.touched.password && formik.errors.password && (
-            <p className="mt-1 text-sm text-red-600">{formik.errors.password}</p>
+            <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{formik.errors.password}</p>
           )}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="rememberMe"
-              type="checkbox"
-              checked={formik.values.rememberMe}
-              onChange={formik.handleChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="remember-me"
-              className="ml-2 block text-sm text-gray-700"
-            >
-              Remember me
-            </label>
-          </div>
-
-          <a
-            href="#"
-            className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            Forgot password?
-          </a>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+          className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              Signing In...
+              Signing in...
             </div>
           ) : (
             "Sign In"
           )}
         </button>
+
+        <div className="flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-500 delay-400">
+          <a
+            href="#"
+            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors hover:underline"
+          >
+            Forgot password?
+          </a>
+        </div>
       </form>
     </div>
   );
