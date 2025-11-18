@@ -25,7 +25,7 @@ export const dicomStudySignatureApi = createApi({
       query: (dto) => ({
         url: "/technician-verify",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
       invalidatesTags: (result, error, { studyId }) => [
         { type: "StudySignatures", id: studyId },
@@ -42,7 +42,7 @@ export const dicomStudySignatureApi = createApi({
       query: (dto) => ({
         url: "/physician-approve",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
       invalidatesTags: (result, error, { studyId }) => [
         { type: "StudySignatures", id: studyId },
@@ -59,7 +59,7 @@ export const dicomStudySignatureApi = createApi({
       query: (dto) => ({
         url: "/verify",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
     }),
 

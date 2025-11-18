@@ -124,13 +124,13 @@ export class DicomStudySignaturesService {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
-      throw new InvalidStudyStatusException(
-        study.studyStatus,
-        DicomStudyStatus.SCANNED,
-        studyId
-      );
-    }
+    // if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
+    //   throw new InvalidStudyStatusException(
+    //     study.studyStatus,
+    //     DicomStudyStatus.SCANNED,
+    //     studyId
+    //   );
+    // }
 
     const existingSignature = study.studySignatures?.find(
       (s) => s.signatureType === SignatureType.PHYSICIAN_APPROVE

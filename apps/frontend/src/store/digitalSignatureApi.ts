@@ -17,7 +17,7 @@ import {
 export const digitalSignatureApi = createApi({
   reducerPath: "digitalSignatureApi",
   baseQuery: axiosBaseQuery("/digital-signature"),
-  tagTypes: ["DigitalSignature"],
+  tagTypes: ["DigitalSignature", "HasSignature"],
   endpoints: (builder) => ({
     setupSignature: builder.mutation<
       ApiResponse<DigitalSignature>,
@@ -26,11 +26,12 @@ export const digitalSignatureApi = createApi({
       query: (dto) => ({
         url: "/setup",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
       invalidatesTags: (result, error, { userId }) => [
         { type: "DigitalSignature", id: userId },
         "DigitalSignature",
+        "HasSignature",
       ],
     }),
 
@@ -39,7 +40,7 @@ export const digitalSignatureApi = createApi({
       query: (dto) => ({
         url: "/sign",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
     }),
 
@@ -48,7 +49,7 @@ export const digitalSignatureApi = createApi({
       query: (dto) => ({
         url: "/verify",
         method: "POST",
-        body: dto,
+        data: dto,
       }),
     }),
 
@@ -79,14 +80,13 @@ export const digitalSignatureApi = createApi({
         "DigitalSignature",
       ],
     }),
-    hasSignature: builder.query<ApiResponse<{ hasSignature: boolean }>, string>(
-      {
-        query: () => ({
-          url: `/has-signature`,
-          method: "GET",
-        }),
-      }
-    ),
+    hasSignature: builder.query<ApiResponse<{ hasSignature: boolean }>, void>({
+      query: () => ({
+        url: `/has-signature`,
+        method: "GET",
+      }),
+      providesTags: ["HasSignature"],
+    }),
   }),
 });
 
