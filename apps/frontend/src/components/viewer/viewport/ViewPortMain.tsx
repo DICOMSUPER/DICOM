@@ -204,7 +204,8 @@ const ViewPortMain = ({
       if (event) {
         const customEvent = event as CustomEvent;
         const { activeViewportId } = customEvent.detail || {};
-        if (activeViewportId && activeViewportId !== viewportId) return;
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
       }
       toolManagerRef.current?.getToolHandlers?.()?.clearAnnotations?.();
     };
@@ -213,8 +214,15 @@ const ViewPortMain = ({
       if (event) {
         const customEvent = event as CustomEvent;
         const { activeViewportId } = customEvent.detail || {};
-        if (activeViewportId && activeViewportId !== viewportId) return;
+        const actualViewportId = getViewportId(viewportIndex);
+        // Only execute if this is the active viewport or if no viewport ID is specified
+        if (activeViewportId && activeViewportId !== actualViewportId) {
+          console.log(`Skipping clear viewport annotations - viewportId mismatch: ${actualViewportId} !== ${activeViewportId}`);
+          return;
+        }
       }
+      const actualViewportId = getViewportId(viewportIndex);
+      console.log(`Executing clear viewport annotations for viewport ${actualViewportId}`);
       toolManagerRef.current?.getToolHandlers?.()?.clearViewportAnnotations?.();
     };
 
@@ -223,7 +231,8 @@ const ViewPortMain = ({
       if (event) {
         const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
         const { activeViewportId } = customEvent.detail || {};
-        if (activeViewportId && activeViewportId !== viewportId) return;
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
         historyEntry = customEvent.detail?.entry;
       }
       toolManagerRef.current?.getToolHandlers?.()?.undoAnnotation?.(historyEntry);
@@ -234,7 +243,8 @@ const ViewPortMain = ({
       if (event) {
         const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
         const { activeViewportId } = customEvent.detail || {};
-        if (activeViewportId && activeViewportId !== viewportId) return;
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
         historyEntry = customEvent.detail?.entry;
       }
       toolManagerRef.current?.getToolHandlers?.()?.redoAnnotation?.(historyEntry);

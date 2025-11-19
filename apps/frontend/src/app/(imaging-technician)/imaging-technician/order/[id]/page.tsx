@@ -1,4 +1,4 @@
-import ImagingPageWrapper from "@/components/imaging-technicians/imaging/imaging-page-wrapper";
+import ImagingPageWrapper from "@/components/imaging-technician/imaging/imaging-page-wrapper";
 
 interface PageProps {
   params: { id: string };

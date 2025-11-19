@@ -205,7 +205,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
       });
       return;
     }
-    router.push(`/physicians/patients/${encounterId}`);
+    router.push(`/physician/patients/${encounterId}`);
   };
 
   return (

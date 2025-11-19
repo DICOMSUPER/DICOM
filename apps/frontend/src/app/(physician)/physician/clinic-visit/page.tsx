@@ -1,7 +1,7 @@
 "use client";
-import ModalTransferPhysician from "@/components/physicians/patient-encounter/modal-transfer-physician";
-import { PatientEncounterFiltersSection } from "@/components/physicians/patient-encounter/patient-encounter-filters";
-import { PatientEncounterTable } from "@/components/physicians/patient-encounter/patient-encounter-table";
+import ModalTransferPhysician from "@/components/physician/patient-encounter/modal-transfer-physician";
+import { PatientEncounterFiltersSection } from "@/components/physician/patient-encounter/patient-encounter-filters";
+import { PatientEncounterTable } from "@/components/physician/patient-encounter/patient-encounter-table";
 import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
@@ -126,7 +126,7 @@ export default function QueuePage() {
   const router = useRouter();
 
   const handleViewDetails = (id: string) => {
-    router.push(`/physicians/clinic-visit/${id}`);
+    router.push(`/physician/clinic-visit/${id}`);
   };
 
   const handleStartServing = async (id: string) => {

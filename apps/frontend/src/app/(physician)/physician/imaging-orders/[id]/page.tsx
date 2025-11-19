@@ -1,5 +1,5 @@
 "use client";
-import ImagingOrderFormDetail from "@/components/physicians/imaging-detail/imaing-order-form-detail";
+import ImagingOrderFormDetail from "@/components/physician/imaging-detail/imaing-order-form-detail";
 import { IImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
 import { useGetImagingOrderFormByIdQuery } from "@/store/imagingOrderFormApi";
 import React, { use } from "react";

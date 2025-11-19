@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoginForm } from "../../components/loginPage/LoginForm";
 import { Header } from "../../components/loginPage/Header";
-import { SecurityBadge } from "../../components/loginPage/SecurityBadge";
 import { Background } from "../../components/loginPage/Background";
 import { CheckCircle, Monitor, Users, FileText } from "lucide-react";
 import { setCredentials } from "../../store/authSlice";
@@ -71,13 +70,13 @@ export default function LoginPage() {
             router.push("/admin");
             break;
           case "imaging_technician":
-            router.push("/imaging-technicians");
+            router.push("/imaging-technician");
             break;
           case "reception_staff":
             router.push("/reception");
             break;
           case "physician":
-            router.push("/physicians/dashboard");
+            router.push("/physician/dashboard");
             break;
           case "radiologist":
             router.push("/radiologist");
@@ -215,16 +214,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative overflow-hidden">
       <Background />
 
       {/* Left side - Login Form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
+        <div className="w-full max-w-md animate-in fade-in slide-in-from-left-4 duration-700">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 lg:p-10 transform transition-all hover:shadow-3xl">
             <Header />
             <LoginForm onLogin={handleLogin} />
-            <SecurityBadge />
           </div>
         </div>
       </div>
@@ -233,39 +231,41 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-200 to-blue-800 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
 
+        {/* Animated floating shapes */}
+        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-float"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-white/10 rounded-full blur-xl animate-float-delayed"></div>
+        <div className="absolute top-1/2 left-10 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-slow"></div>
+        <div className="absolute top-1/3 right-1/4 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float"></div>
+
         {/* Medical equipment silhouettes */}
-        <div className="relative z-10 text-center text-white">
+        <div className="relative z-10 text-center text-white animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="mb-8">
-            <Monitor size={80} className="mx-auto mb-4 opacity-90" />
-            <h2 className="text-3xl font-bold mb-4">
-              Advanced Medical Imaging
+            <div className="mb-6 transform hover:scale-110 transition-transform duration-300">
+              <Monitor size={80} className="mx-auto mb-4 opacity-95 drop-shadow-2xl" />
+            </div>
+            <h2 className="text-4xl font-bold mb-4 drop-shadow-lg">
+              DICOM Imaging System
             </h2>
-            <p className="text-xl opacity-90 max-w-md">
-              Professional DICOM imaging system for healthcare providers
-              worldwide
+            <p className="text-xl opacity-95 max-w-md leading-relaxed">
+              Professional medical imaging and diagnostic tools
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-6 mt-12 max-w-sm mx-auto">
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center">
+            <div className="text-center transform hover:scale-105 transition-transform duration-300">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center shadow-lg">
                 <CheckCircle size={32} />
               </div>
-              <p className="text-sm">DICOM Compatible</p>
+              <p className="text-sm font-medium">Fast & Reliable</p>
             </div>
-            <div className="text-center">
-              <div className="bg-white bg-opacity-20 rounded-full p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center">
+            <div className="text-center transform hover:scale-105 transition-transform duration-300">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center shadow-lg">
                 <Monitor size={32} />
               </div>
-              <p className="text-sm">HD Imaging</p>
+              <p className="text-sm font-medium">HD Quality</p>
             </div>
           </div>
         </div>
-
-        {/* Animated background elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 border border-white border-opacity-20 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-24 h-24 border border-white border-opacity-20 rounded-full animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-10 w-16 h-16 border border-white border-opacity-20 rounded-full animate-pulse delay-2000"></div>
       </div>
     </div>
   );

@@ -19,14 +19,14 @@ import { ArrowRight, Loader2, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { IEmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
 import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
 interface ModalTransferPhysicianProps {
   open: boolean;
   onClose: () => void;
   encounterId: string;
-  availablePhysicians?: IEmployeeRoomAssignment[];
+  availablePhysicians?: EmployeeRoomAssignment[];
 }
 
 const ModalTransferPhysician = ({
@@ -130,19 +130,19 @@ const ModalTransferPhysician = ({
                   </div>
                 ) : (
                   availablePhysicians?.map(
-                    (employeeAssignInRoom: IEmployeeRoomAssignment) => (
+                    (employeeAssignInRoom: EmployeeRoomAssignment) => (
                       <SelectItem
                         key={employeeAssignInRoom.id}
                         value={employeeAssignInRoom.id}
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {employeeAssignInRoom.employee.firstName}{" "}
-                            {employeeAssignInRoom.employee.lastName}
+                            {employeeAssignInRoom.employee?.firstName}{" "}
+                            {employeeAssignInRoom.employee?.lastName}
                           </span>
-                          {employeeAssignInRoom.employee.employeeId && (
+                          {employeeAssignInRoom.employee?.employeeId && (
                             <span className="text-xs text-slate-500">
-                              ID: {employeeAssignInRoom.employee.employeeId}
+                              ID: {employeeAssignInRoom.employee?.employeeId}
                             </span>
                           )}
                         </div>

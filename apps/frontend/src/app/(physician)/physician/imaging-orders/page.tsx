@@ -1,20 +1,23 @@
 "use client";
-import { DiagnosisReportFiltersSection } from "@/components/physicians/diagnosis-report/diagnosis-report-filters";
-import { DiagnosisReportTable } from "@/components/physicians/diagnosis-report/diagnosis-report-table";
-import { ModalDiagnosisReportDetail } from "@/components/physicians/diagnosis-report/modal-diagnosis-report-detail";
+import { ImagingOrderFormFiltersSection } from "@/components/physician/imaging/imaging-order-filters";
+import { ImagingOrderFormTable } from "@/components/physician/imaging/imaging-order-table";
+import { ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "@/lib/formatTimeDate";
-import { useGetDiagnosisReportWithFilterQuery } from "@/store/diagnosisApi";
 
+import { useGetImagingOrderFormPaginatedQuery } from "@/store/imagingOrderFormApi";
+import {
+  useSkipQueueAssignmentMutation,
+  useUpdateQueueAssignmentMutation,
+} from "@/store/queueAssignmentApi";
 import { prepareApiFilters } from "@/utils/filter-utils";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function DiagnosisReportPage() {
-  const [filters, setFilters] = useState<FilterDiagnosesReport>({
+export default function ImagingOrderFormPage() {
+  const [filters, setFilters] = useState<ImagingOrderFormFilters>({
     status: "all",
     patientName: "",
   });
@@ -23,11 +26,6 @@ export default function DiagnosisReportPage() {
     page: 1,
     limit: 5,
   });
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedReportId, setSelectedReportId] = useState<string>("");
-
-
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     total: 0,
@@ -43,7 +41,14 @@ export default function DiagnosisReportPage() {
   });
 
   const { data, isLoading, isFetching, error } =
-    useGetDiagnosisReportWithFilterQuery({ filters: apiFilters });
+    useGetImagingOrderFormPaginatedQuery({ filters: apiFilters });
+
+  // const { data: RoomScheduleData } = useGetMySchedulesByDateRangeQuery({
+  //   startDate: format(new Date(), "yyyy-MM-dd"),
+  //   endDate: format(new Date(), "yyyy-MM-dd"),
+  // });
+
+  // console.log("RoomScheduleData", RoomScheduleData);
 
   useEffect(() => {
     if (data) {
@@ -61,11 +66,10 @@ export default function DiagnosisReportPage() {
   const router = useRouter();
 
   const handleViewDetails = (id: string) => {
-    setSelectedReportId(id);
-    setModalOpen(true);
+    router.push(`/physician/imaging-orders/${id}`);
   };
 
-  const handleFiltersChange = (newFilters: FilterDiagnosesReport) => {
+  const handleFiltersChange = (newFilters: ImagingOrderFormFilters) => {
     setFilters(newFilters);
     setPagination({ ...pagination, page: 1 });
   };
@@ -89,18 +93,6 @@ export default function DiagnosisReportPage() {
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
-  const handleConfirmApprove = async (password: string) => {
-    // try {
-    //   await approveStudy({
-    //     reportId: selectedReportId,
-    //     password
-    //   }).unwrap();
-    //   toast.success("Study approved successfully");
-    //   setModalApproveOpen(false);
-    // } catch (error: any) {
-    //   toast.error(error?.data?.message || "Failed to approve study");
-    // }
-  };
 
   return (
     <div className="min-h-screen">
@@ -108,7 +100,7 @@ export default function DiagnosisReportPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Diagnosis Reports
+              Imaging Order Form
             </h1>
             <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               {/* Date */}
@@ -122,13 +114,14 @@ export default function DiagnosisReportPage() {
           </div>
         </div>
 
-        <DiagnosisReportFiltersSection
+        <ImagingOrderFormFiltersSection
           filters={filters}
           onFiltersChange={handleFiltersChange}
           onReset={handleReset}
         />
-        <DiagnosisReportTable
-          reportItems={data?.data || []}
+
+        <ImagingOrderFormTable
+          imagingOrderForm={data?.data || []}
           onViewDetails={handleViewDetails}
           pagination={paginationMeta}
           onPageChange={handlePageChange}
@@ -136,12 +129,6 @@ export default function DiagnosisReportPage() {
           // isUpdating={isUpdating}
           isLoading={isLoading}
         />
-        <ModalDiagnosisReportDetail
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          reportId={selectedReportId}
-        />
-
       </div>
     </div>
   );

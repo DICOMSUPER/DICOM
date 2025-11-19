@@ -1,15 +1,17 @@
 "use client";
 import {
   Layers,
-  User,
+  Home,
   ChevronUp,
   ChevronDown,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { Roles } from "@/enums/user.enum";
 
 interface ViewerHeaderProps {
   isCollapsed?: boolean;
@@ -25,9 +27,34 @@ export default function ViewerHeader({
   onRefresh,
 }: ViewerHeaderProps) {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  const handleUserProfile = () => {
-    router.push('/profile');
+  const handleGoHome = () => {
+    if (!user?.role) {
+      router.push('/');
+      return;
+    }
+
+    // Navigate to role-specific dashboard (matching login redirect routes)
+    switch (user.role) {
+      case Roles.SYSTEM_ADMIN:
+        router.push('/admin');
+        break;
+      case Roles.IMAGING_TECHNICIAN:
+        router.push('/imaging-technician');
+        break;
+      case Roles.RADIOLOGIST:
+        router.push('/radiologist');
+        break;
+      case Roles.RECEPTION_STAFF:
+        router.push('/reception');
+        break;
+      case Roles.PHYSICIAN:
+        router.push('/physician/dashboard');
+        break;
+      default:
+        router.push('/');
+    }
   };
 
   return (
@@ -60,19 +87,19 @@ export default function ViewerHeader({
             />
           )}
 
-          {/* User - Medical Profile */}
+          {/* Home Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={handleUserProfile}
+                onClick={handleGoHome}
                 className="h-10 w-10 p-0 text-slate-400 hover:bg-teal-900/30 hover:text-teal-300 transition-all rounded-lg border border-transparent hover:border-teal-700/30"
               >
-                <User className="h-5 w-5" />
+                <Home className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-slate-800 border-teal-700">Hồ sơ người dùng</TooltipContent>
+            <TooltipContent className="bg-slate-800 border-teal-700">Go to Home</TooltipContent>
           </Tooltip>
 
           {/* Elegant Divider */}
