@@ -6,10 +6,10 @@ import { Roles } from "@/enums/user.enum";
 // ====================== ROLE MAPPING ======================
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
   [Roles.SYSTEM_ADMIN]: [/^\/admin/],
-  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technicians/, /^\/viewer/],
+  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technician/, /^\/viewer/],
   [Roles.RADIOLOGIST]: [/^\/radiologist/, /^\/viewer/],
   [Roles.RECEPTION_STAFF]: [/^\/reception/],
-  [Roles.PHYSICIAN]: [/^\/physicians/, /^\/viewer/],
+  [Roles.PHYSICIAN]: [/^\/physician/, /^\/viewer/],
 };
 
 // ====================== FIND ALLOWED ROLES ======================
@@ -25,11 +25,11 @@ function getDashboardByRole(role: Roles): string {
     case Roles.SYSTEM_ADMIN:
       return "/admin";
     case Roles.IMAGING_TECHNICIAN:
-      return "/imaging-technicians";
+      return "/imaging-technician";
     case Roles.RECEPTION_STAFF:
       return "/reception";
     case Roles.PHYSICIAN:
-      return "/physicians/dashboard";
+      return "/physician/dashboard";
     case Roles.RADIOLOGIST:
       return "/radiologist";
     default:
@@ -99,10 +99,10 @@ export const config = {
   matcher: [
     "/login",
     "/admin/:path*",
-    "/imaging-technicians/:path*",
+    "/imaging-technician/:path*",
     "/radiologist/:path*",
     "/reception/:path*",
-    "/physicians/:path*",
+    "/physician/:path*",
     "/viewer/:path*",
   ],
   runtime: "nodejs",

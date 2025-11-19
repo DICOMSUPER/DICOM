@@ -490,24 +490,42 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     }
   };
 
-  // Clear annotations handler
+  // Clear annotations handler - removes only non-database annotations from annotation.state
   const handleClearAnnotations = () => {
     if (!viewport || !viewportReady) return;
     
     try {            
       const element = viewport.element as HTMLDivElement | null;
-      removeDraftAnnotationsFromElement(element);
-      setTimeout(() => {
+      if (!element) return;
+
+      // Get all annotations and filter out database annotations
+      const allAnnotations = annotation.state.getAllAnnotations() as Annotation[];
+      let removedCount = 0;
+      
+      allAnnotations.forEach((annotationItem) => {
+        // Only remove annotations that don't have source: 'db' (or no source field)
+        if (annotationItem?.annotationUID && !isDatabaseAnnotation(annotationItem)) {
+          annotation.state.removeAnnotation(annotationItem.annotationUID);
+          removedCount++;
+        }
+      });
+
+      // Render viewport after removing annotations
+      if (removedCount > 0) {
         viewport.render?.();
-      }, 50);
-      console.log(`Cleared draft annotations for viewport ${viewportId}`);
+        console.log(`Cleared ${removedCount} non-database annotations from viewport ${viewportId}`);
+      }
     } catch (error) {
       console.error('Error clearing annotations:', error);
     }
   };
 
   const handleClearViewportAnnotations = () => {
-    if (!viewport || !viewportReady) return;
+    console.log(`handleClearViewportAnnotations called for viewport ${viewportId}`);
+    if (!viewport || !viewportReady) {
+      console.warn(`Cannot clear viewport annotations - viewport not ready: ${viewportId}`);
+      return;
+    }
 
     const element = viewport.element as HTMLDivElement | null;
     if (!element) {
@@ -515,10 +533,34 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
       return;
     }
 
-    removeDraftAnnotationsFromElement(element);
-    setTimeout(() => {
-      viewport.render?.();
-    }, 50);
+    try {
+      let removedCount = 0;
+      // Remove only non-database annotations for this specific viewport element
+      annotationToolNames.forEach((toolName) => {
+        try {
+          const annotationsForTool = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
+          if (annotationsForTool?.length) {
+            annotationsForTool.forEach((annotationItem) => {
+              // Only remove annotations that don't have source: 'db' (or no source field)
+              if (annotationItem?.annotationUID && !isDatabaseAnnotation(annotationItem)) {
+                annotation.state.removeAnnotation(annotationItem.annotationUID);
+                removedCount++;
+              }
+            });
+          }
+        } catch (error) {
+          console.warn(`Failed to get annotations for tool ${toolName}:`, error);
+        }
+      });
+
+      // Render viewport after removing annotations
+      if (removedCount > 0) {
+        viewport.render?.();
+        console.log(`Cleared ${removedCount} non-database annotations from viewport ${viewportId}`);
+      }
+    } catch (error) {
+      console.error('Error clearing viewport annotations:', error);
+    }
   };
 
   // Clear segmentation handler
@@ -582,9 +624,16 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
   };
 
   // Undo annotation handler - removes the last annotation created
-  const handleUndoAnnotation = (historyEntry?: AnnotationHistoryEntry) => {
+  const handleUndoAnnotation = async (historyEntry?: AnnotationHistoryEntry) => {
     if (!viewport || !viewportReady) return;
 
+    // Only undo annotations from the stack (historyEntry is required)
+    if (!historyEntry?.annotationUID) {
+      console.log(`No history entry found to undo for viewport ${viewportId}`);
+      return;
+    }
+
+    const annotationUID = historyEntry.annotationUID;
     const element = viewport.element as HTMLDivElement | null;
     if (!element) {
       console.warn("Unable to resolve viewport element for undo.");
@@ -592,44 +641,30 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     }
 
     try {
-      console.log(`Undoing last annotation for viewport ${viewportId}`);
-      let lastAnnotation: any = null;
-      let lastAnnotationToolName: string | null = null;
-
-      if (historyEntry?.annotationUID) {
-        pendingUndoAnnotationsRef.current.add(historyEntry.annotationUID);
-        lastAnnotation = getAnnotationByUID(element, historyEntry.toolName ?? null, historyEntry.annotationUID);
-        lastAnnotationToolName = historyEntry.toolName ?? null;
-      }
+      console.log(`Undoing annotation ${annotationUID} for viewport ${viewportId}`);
       
-      if (!lastAnnotation) {
-        for (let i = annotationToolNames.length - 1; i >= 0; i--) {
-          const toolName = annotationToolNames[i];
-          try {
-            const annotations = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
-            if (annotations && annotations.length > 0) {
-              const draftAnnotations = annotations.filter((annotationItem) => !isDatabaseAnnotation(annotationItem));
-              if (draftAnnotations.length > 0) {
-                lastAnnotation = draftAnnotations[draftAnnotations.length - 1];
-                lastAnnotationToolName = toolName;
-                break;
-              }
-            }
-          } catch (error) {
-            console.warn(`Failed to get annotations for ${toolName}:`, error);
-          }
-        }
+      // Get the annotation from Cornerstone state
+      const lastAnnotation = getAnnotationByUID(
+        element,
+        historyEntry.toolName ?? null,
+        annotationUID
+      );
+
+      if (!lastAnnotation || !lastAnnotation.annotationUID) {
+        console.log(`Annotation ${annotationUID} not found in viewport ${viewportId}`);
+        return;
       }
 
-      if (lastAnnotation && lastAnnotationToolName && lastAnnotation.annotationUID) {
-        console.log(
-          `Removing annotation ${lastAnnotation.annotationUID} from tool ${lastAnnotationToolName}`
-        );
-        annotation.state.removeAnnotation(lastAnnotation.annotationUID);
-        console.log(`Successfully undone annotation for viewport ${viewportId}`);
-      } else {
-        console.log(`No annotations found to undo for viewport ${viewportId}`);
+      // Only undo annotations that don't have source: 'db' (or no source field)
+      if (isDatabaseAnnotation(lastAnnotation)) {
+        console.log(`Skipping undo for database annotation ${annotationUID}`);
+        return;
       }
+
+      // Remove from Cornerstone state only (no API call)
+      pendingUndoAnnotationsRef.current.add(annotationUID);
+      annotation.state.removeAnnotation(lastAnnotation.annotationUID);
+      console.log(`Successfully undone annotation ${annotationUID} for viewport ${viewportId}`);
 
       setTimeout(() => {
         if (viewport && typeof viewport.render === 'function') {

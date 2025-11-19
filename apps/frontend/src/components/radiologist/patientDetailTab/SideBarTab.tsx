@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDateYMD } from "@/utils/FormatDate";
 import { ExamItemDetail } from "./ExamDetail";
+import { OrderStatus } from "@/enums/image-order.enum";
 
 export interface ExamItem {
   id: string;
   label: string;
   modality: string;
   date: string;
+  status: "in-progress" | "completed" | string; // Thêm status
 }
 
 export interface SidebarTabProps {
@@ -31,12 +33,22 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  if (!patient) {
-    return <div>Patient not found</div>;
-  }
+
+  // --- Lọc exam theo status ---
+  const inProgressExams = useMemo(
+    () => examHistory.filter((exam) => exam.status === OrderStatus.IN_PROGRESS),
+    [examHistory]
+  );
+
+  const progressExams = useMemo(
+    () => examHistory.filter((exam) => exam.status === OrderStatus.COMPLETED),
+    [examHistory]
+  );
+
+  if (!patient) return <div>Patient not found</div>;
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
-      {/* --- Header --- */}
+      {/* Header */}
       <div className="p-4 border-b">
         <h3 className="font-medium text-sm mb-2">Thông tin ca</h3>
         <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
@@ -45,7 +57,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
       </div>
 
       <div className="p-4 space-y-4">
-        {/* --- Thông tin bệnh nhân --- */}
+        {/* Thông tin bệnh nhân */}
         <div>
           <h4 className="text-xs font-semibold text-gray-700 mb-2">
             THÔNG TIN BỆNH NHÂN
@@ -77,14 +89,14 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
 
         <Separator />
 
-        {/* --- Lịch sử khám --- */}
+        {/* Chưa chẩn đoán */}
         <div>
           <h4 className="text-xs font-semibold text-gray-700 mb-2">
-            LỊCH SỬ KHÁM
+            Chưa chẩn đoán
           </h4>
           <ScrollArea className="h-48">
             <div className="space-y-1">
-              {examHistory.map((exam) => (
+              {inProgressExams.map((exam) => (
                 <ExamItemDetail
                   key={exam.id}
                   exam={exam}
@@ -93,6 +105,38 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
                   setSelectedExam={setSelectedExam}
                 />
               ))}
+              {inProgressExams.length === 0 && (
+                <div className="text-gray-400 text-xs text-center">
+                  Không có exam nào
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+
+        <Separator />
+
+        {/* Lịch sử khám */}
+        <div>
+          <h4 className="text-xs font-semibold text-gray-700 mb-2">
+            LỊCH SỬ KHÁM
+          </h4>
+          <ScrollArea className="h-48">
+            <div className="space-y-1">
+              {progressExams.map((exam) => (
+                <ExamItemDetail
+                  key={exam.id}
+                  exam={exam}
+                  expandedId={expandedId}
+                  handleToggle={handleToggle}
+                  setSelectedExam={setSelectedExam}
+                />
+              ))}
+              {progressExams.length === 0 && (
+                <div className="text-gray-400 text-xs text-center">
+                  Không có lịch sử
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>

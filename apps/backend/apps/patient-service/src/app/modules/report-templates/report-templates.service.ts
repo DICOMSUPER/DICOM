@@ -21,12 +21,14 @@ export class ReportTemplatesService {
     @Inject()
     private readonly reportTemplateRepository: ReportTemplateRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
-  ) {}
-  create = async (
-    createReportTemplateDto: CreateReportTemplateDto,
-    userInfo: { userId: string; role: string }
-  ): Promise<ReportTemplate> => {
-    console.log('service user info', userInfo);
+  ) { }
+  create = async (createReportTemplateDto: CreateReportTemplateDto): Promise<ReportTemplate> => {
+  // ) {}
+  // create = async (
+  //   createReportTemplateDto: CreateReportTemplateDto,
+  //   userInfo: { userId: string; role: string }
+  // ): Promise<ReportTemplate> => {
+  //   console.log('service user info', userInfo);
 
     return await this.entityManager.transaction(async (em) => {
       const existingReportTemplate =
@@ -49,7 +51,7 @@ export class ReportTemplatesService {
       return await this.reportTemplateRepository.create(
         {
           ...createReportTemplateDto,
-          ownerUserId: userInfo.userId,
+          // ownerUserId: userInfo.userId,
           isPublic: true,
         },
         em
@@ -153,4 +155,16 @@ export class ReportTemplatesService {
   ): Promise<PaginatedResponseDto<ReportTemplate>> => {
     return await this.reportTemplateRepository.paginate(paginationDto);
   };
+
+  findByModaltyIdandBodyPartId = async (
+    modalityId: string,
+    bodyPartId: string
+  ): Promise<ReportTemplate[]> => {
+    return await this.reportTemplateRepository.findByModaltyIdandBodyPartId(
+      modalityId,
+      bodyPartId
+    );
+  };
+
+
 }

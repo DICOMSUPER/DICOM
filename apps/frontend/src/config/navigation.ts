@@ -169,39 +169,39 @@ export const roleNavigation: RoleNavigation = {
   // Physician - Patient care and medical records
   Physician: [
     {
-      href: "/physicians/dashboard",
+      href: "/physician/dashboard",
 
       label: "Dashboard",
       icon: BarChart3,
       description: "Patient overview",
     },
     {
-      href: "/physicians/clinic-visit",
+      href: "/physician/clinic-visit",
       label: "Clinic Visit",
 
       icon: FileText,
       description: "Manage patient queue assignments",
     },
     {
-      href: "/physicians/imaging-orders",
+      href: "/physician/imaging-orders",
       label: "Imaging Orders List",
       icon: Logs,
       description: "Patient diagnoses management",
     },
     {
-      href: "/physicians/diagnosis-report",
+      href: "/physician/diagnosis-report",
       label: "Diagnosis Reports",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },
     {
-      href: "/physicians/schedule",
+      href: "/physician/schedule",
       label: "Schedule",
       icon: Clock,
       description: "View your clinical schedule",
     },
     {
-      href: "/physicians/settings",
+      href: "/physician/settings",
       label: "Settings",
       icon: Settings,
       description: "Personal settings",
@@ -211,25 +211,25 @@ export const roleNavigation: RoleNavigation = {
   // Image Technician - DICOM and imaging
   "Image Technician": [
     {
-      href: "/imaging-technicians",
+      href: "/imaging-technician",
       label: "Dashboard",
       icon: BarChart3,
       description: "Imaging overview",
     },
     {
-      href: "/imaging-technicians/order",
+      href: "/imaging-technician/order",
       label: "Imaging",
       icon: Camera,
       description: "DICOM image management",
     },
     {
-      href: "/imaging-technicians/machines",
+      href: "/imaging-technician/machines",
       label: "Machines",
       icon: Activity,
       description: "Imaging machines status",
     },
     {
-      href: "/imaging-technicians/settings",
+      href: "/imaging-technician/settings",
       label: "Settings",
       icon: Settings,
       description: "Imaging settings",

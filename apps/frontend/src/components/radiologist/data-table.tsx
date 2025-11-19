@@ -72,7 +72,7 @@ export default function DataTable({
               </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 MRN
-              </th>{" "}
+              </th>
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Patient Last Name
               </th>

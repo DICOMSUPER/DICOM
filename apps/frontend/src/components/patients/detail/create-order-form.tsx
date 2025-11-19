@@ -29,7 +29,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
-import { ProcedureForm } from "@/components/physicians/imaging/procedure-form";
+import { ProcedureForm } from "@/components/physician/imaging/procedure-form";
 import { ICreateImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
 import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";

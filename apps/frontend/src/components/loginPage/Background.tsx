@@ -3,25 +3,23 @@ import React from 'react';
 export function Background() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50"></div>
       
-      {/* Medical grid pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Animated gradient orbs */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl animate-float-delayed"></div>
+      <div className="absolute top-1/2 left-0 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-float-slow"></div>
+      
+      {/* Subtle grid pattern */}
+      <div className="absolute inset-0 opacity-[0.02]">
         <div className="w-full h-full" style={{
           backgroundImage: `
             linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
           `,
-          backgroundSize: '20px 20px'
+          backgroundSize: '40px 40px'
         }}></div>
       </div>
-      
-      {/* Floating medical icons */}
-      <div className="absolute top-20 left-10 w-8 h-8 bg-blue-100 rounded-full opacity-30 animate-pulse"></div>
-      <div className="absolute top-40 right-20 w-6 h-6 bg-green-100 rounded-full opacity-30 animate-pulse delay-1000"></div>
-      <div className="absolute bottom-40 left-20 w-10 h-10 bg-blue-100 rounded-full opacity-30 animate-pulse delay-2000"></div>
-      <div className="absolute bottom-20 right-10 w-7 h-7 bg-green-100 rounded-full opacity-30 animate-pulse delay-500"></div>
     </div>
   );
 }

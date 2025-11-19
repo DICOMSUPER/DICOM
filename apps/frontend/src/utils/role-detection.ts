@@ -18,8 +18,8 @@ export function detectRoleFromPath(pathname: string): string {
   // Map route prefixes to roles
   const roleMap: Record<string, string> = {
     'reception': 'Reception Staff',
-    'physicians': 'Physician',
-    'imaging-technicians': 'Image Technician',
+    'physician': 'Physician',
+    'imaging-technician': 'Image Technician',
     'nurses': 'Nurse',
     'admin': 'Administrator', // Admin routes
     'dashboard': 'Administrator', // Default admin dashboard

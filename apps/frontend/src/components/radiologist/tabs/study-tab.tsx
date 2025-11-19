@@ -11,8 +11,8 @@ import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
 
 
 interface MedicalRecordPageProps {
-  patientId: string;   
-  studyUID?: string; 
+  patientId: string;
+  studyUID?: string;
 
 }
 
@@ -47,6 +47,7 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
 
   const examHistory = useMemo(() => {
     const list = imagingOrdersData?.data || [];
+    console.log("check 2", list)
     return list.map((order: any) => {
       const modalityName =
         order.procedure?.modality?.modalityCode || "Không rõ";
@@ -59,9 +60,11 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
         modality: modalityName,
         date: formattedDate,
         encounterId: order.imagingOrderForm.encounterId,
+        status: order.orderStatus,
       };
     });
   }, [imagingOrdersData]);
+  console.log("check", examHistory)
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(
     null
   );
@@ -102,21 +105,14 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
   return (
     <div className="flex h-screen bg-gray-50">
 
-    {patientData?.data && (
-      <SidebarTab
-        setSelectedExam={handleSelectExam}
-        examHistory={examHistory}
-        patient={patientData.data}
-      />
-    )}
-
       {patientData?.data && (
         <SidebarTab
           setSelectedExam={handleSelectExam}
           examHistory={examHistory}
-          patient={patientData?.data}
+          patient={patientData.data}
         />
       )}
+
 
       <MedicalRecordMain
         selectedExam={selectedExam}

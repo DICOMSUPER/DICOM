@@ -30,6 +30,7 @@ import serviceRoomApi from "./serviceRoomApi";
 import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
 import { aiAnalysisApi } from "./aiAnalysisApi";
 
+
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -85,6 +86,10 @@ export const store = configureStore({
       .concat(dicomInstanceApi.middleware)
       .concat(annotationApi.middleware)
       .concat(imagingApi.middleware)
+
+      // .concat(digitalSignatureApi.middleware)
+      // .concat(reportTemplateApi.middleware),
+
       .concat(serviceApi.middleware)
       .concat(reportTemplateApi.middleware)
       .concat(digitalSignatureApi.middleware)

@@ -1,7 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+
+// Interfaces
 import {
   DigitalSignature,
   PublicKeyResponse,
@@ -12,13 +12,20 @@ import {
   VerifySignatureDto,
 } from "@/interfaces/user/digital-signature.interface";
 
-// Types/Interfaces
+import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import {
+  PaginatedResponse,
+  QueryParams,
+} from "@/interfaces/pagination/pagination.interface";
 
+// API
 export const digitalSignatureApi = createApi({
   reducerPath: "digitalSignatureApi",
   baseQuery: axiosBaseQuery("/digital-signature"),
   tagTypes: ["DigitalSignature", "HasSignature"],
   endpoints: (builder) => ({
+
+    // ===== Create/setup signature (Generate keypair)
     setupSignature: builder.mutation<
       ApiResponse<DigitalSignature>,
       SetupSignatureDto
@@ -35,7 +42,7 @@ export const digitalSignatureApi = createApi({
       ],
     }),
 
-    // Sign data with PIN
+    // ===== Sign data
     signData: builder.mutation<SignatureResponse, SignDataDto>({
       query: (dto) => ({
         url: "/sign",
@@ -44,7 +51,7 @@ export const digitalSignatureApi = createApi({
       }),
     }),
 
-    // Verify signature
+    // ===== Verify signature
     verifySignature: builder.mutation<VerifyResponse, VerifySignatureDto>({
       query: (dto) => ({
         url: "/verify",
@@ -53,23 +60,44 @@ export const digitalSignatureApi = createApi({
       }),
     }),
 
-    // Get public key by userId
+    // ===== Get public key by userId
     getPublicKey: builder.query<PublicKeyResponse, string>({
-      query: (userId) => ({ url: `/public-key/${userId}`, method: "GET" }),
-      providesTags: (result, error, userId) => [
+      query: (userId) => ({
+        url: `/public-key/${userId}`,
+        method: "GET",
+      }),
+      providesTags: (r, e, userId) => [
         { type: "DigitalSignature", id: userId },
       ],
     }),
 
-    // Get digital signature by ID
+    // ===== Get signature by ID
     getDigitalSignatureById: builder.query<
       ApiResponse<DigitalSignature>,
       string
     >({
-      query: (id) => ({ url: `/${id}`, method: "GET" }),
-      providesTags: (result, error, id) => [{ type: "DigitalSignature", id }],
+      query: (id) => ({
+        url: `/${id}`,
+        method: "GET",
+      }),
+      providesTags: (r, e, id) => [
+        { type: "DigitalSignature", id },
+      ],
     }),
 
+    // ===== Check user has signature
+    hasSignature: builder.query<
+      ApiResponse<{ hasSignature: boolean }>,
+      void
+    >({
+      query: () => ({
+        url: "/has-signature",
+        method: "GET",
+      }),
+      providesTags: ["HasSignature"],
+    }),
+
+    // ===== Delete signature
     removeSignature: builder.mutation<{ message: string }, string>({
       query: (userId) => ({
         url: `/${userId}`,
@@ -78,18 +106,13 @@ export const digitalSignatureApi = createApi({
       invalidatesTags: (result, error, userId) => [
         { type: "DigitalSignature", id: userId },
         "DigitalSignature",
+        "HasSignature",
       ],
-    }),
-    hasSignature: builder.query<ApiResponse<{ hasSignature: boolean }>, void>({
-      query: () => ({
-        url: `/has-signature`,
-        method: "GET",
-      }),
-      providesTags: ["HasSignature"],
     }),
   }),
 });
 
+// ===== Auto Hooks Export =====
 export const {
   useSetupSignatureMutation,
   useSignDataMutation,
