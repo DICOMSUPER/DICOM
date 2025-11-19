@@ -293,7 +293,6 @@ export class RoomsService {
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
         .innerJoinAndSelect('room.schedules', 'schedules')
-        .innerJoinAndSelect('schedules.employee', 'employee'); // moved up
 
       qb.where('room.department_id = :id', { id: data.id }).andWhere(
         'room.status IN (:...status)',
