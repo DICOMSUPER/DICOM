@@ -1,32 +1,32 @@
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Loader2, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { IEmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
 import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
+import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
 
 interface ModalTransferPhysicianProps {
   open: boolean;
   onClose: () => void;
   encounterId: string;
-  availablePhysicians?: IEmployeeRoomAssignment[];
+  availablePhysicians?: EmployeeRoomAssignment[];
 }
 
 const ModalTransferPhysician = ({
@@ -52,7 +52,7 @@ const ModalTransferPhysician = ({
         data: {
           assignedPhysicianId: selectedPhysicianId,
         },
-      }).unwrap()
+      }).unwrap();
       toast.success("Patient transferred successfully");
       onClose();
       resetForm();
@@ -81,14 +81,6 @@ const ModalTransferPhysician = ({
               <UserCheck className="w-5 h-5 text-indigo-600" />
               Transfer Patient
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-6 w-6 rounded-full"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
           <DialogDescription>
             Transfer this patient encounter to another physician
@@ -130,19 +122,19 @@ const ModalTransferPhysician = ({
                   </div>
                 ) : (
                   availablePhysicians?.map(
-                    (employeeAssignInRoom: IEmployeeRoomAssignment) => (
+                    (employeeAssignInRoom: EmployeeRoomAssignment) => (
                       <SelectItem
                         key={employeeAssignInRoom.id}
                         value={employeeAssignInRoom.id}
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">
-                            {employeeAssignInRoom.employee.firstName}{" "}
-                            {employeeAssignInRoom.employee.lastName}
+                            {employeeAssignInRoom?.employee?.firstName}{" "}
+                            {employeeAssignInRoom?.employee?.lastName}
                           </span>
-                          {employeeAssignInRoom.employee.employeeId && (
+                          {employeeAssignInRoom?.employee?.employeeId && (
                             <span className="text-xs text-slate-500">
-                              ID: {employeeAssignInRoom.employee.employeeId}
+                              ID: {employeeAssignInRoom?.employee.employeeId}
                             </span>
                           )}
                         </div>

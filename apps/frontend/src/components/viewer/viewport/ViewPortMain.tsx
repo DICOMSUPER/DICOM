@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolManager";
-import { useViewer, type AnnotationHistoryEntry } from "@/contexts/ViewerContext";
+import {
+  useViewer,
+  type AnnotationHistoryEntry,
+} from "@/contexts/ViewerContext";
+import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
+import { getCanvasAsBase64, drawAIPredictions, clearAIAnnotations as clearAIAnnotationsUtil } from "@/utils/aiDiagnosis";
+import { Loader2 } from "lucide-react";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -50,7 +56,7 @@ const ViewPortMain = ({
   useEffect(() => {
     loadSeriesRef.current = loadSeriesIntoViewport;
   }, [loadSeriesIntoViewport]);
-  
+
   const viewportState = useMemo(
     () => getViewportState(viewportIndex),
     [getViewportState, viewportIndex]
@@ -59,10 +65,20 @@ const ViewPortMain = ({
   const resolvedViewportId = getViewportId(viewportIndex);
   const resolvedRenderingEngineId = getRenderingEngineId(viewportIndex);
 
-  const { isLoading, loadingProgress, viewportReady, currentFrame, totalFrames } = viewportState;
+  const {
+    isLoading,
+    loadingProgress,
+    viewportReady,
+    currentFrame,
+    totalFrames,
+  } = viewportState;
 
   const [elementReady, setElementReady] = useState(false);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
   const totalFramesRef = useRef(totalFrames);
+  
+  // AI Diagnosis mutation
+  const [diagnosisImageByAI] = useDiagnosisImageByAIMutation();
 
   useEffect(() => {
     totalFramesRef.current = totalFrames;
@@ -105,13 +121,23 @@ const ViewPortMain = ({
           break;
       }
     },
-    [dispatchClearAnnotations, dispatchResetView, nextFrame, prevFrame, viewportIndex]
+    [
+      dispatchClearAnnotations,
+      dispatchResetView,
+      nextFrame,
+      prevFrame,
+      viewportIndex,
+    ]
   );
 
   const handleViewportElementRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (node) {
         elementRef.current = node;
+        console.log("Đây chính là elementRef.current:", node);
+        console.log("className:", node.className); // → "w-full h-full bg-black ..."
+        console.log("data-viewport-id:", node.dataset.viewportId); // → "0"
+        console.log("data-viewport-uid:", node.dataset.viewportUid); // → "viewport-1"
         registerViewportElement(viewportIndex, node);
         setElementReady(true);
       } else {
@@ -129,7 +155,7 @@ const ViewPortMain = ({
       return;
     }
 
-    if (!selectedSeries) { 
+    if (!selectedSeries) {
       disposeViewportRef.current(viewportIndex);
       return;
     }
@@ -188,7 +214,8 @@ const ViewPortMain = ({
 
     const handleFlipViewportLocal = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { viewportId: eventViewportId, direction } = customEvent.detail || {};
+      const { viewportId: eventViewportId, direction } =
+        customEvent.detail || {};
       const actualViewportId = getViewportId(viewportIndex);
 
       if (eventViewportId !== actualViewportId) return;
@@ -221,23 +248,33 @@ const ViewPortMain = ({
     const handleUndoAnnotation = (event?: Event) => {
       let historyEntry: AnnotationHistoryEntry | undefined;
       if (event) {
-        const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: AnnotationHistoryEntry;
+        }>;
         const { activeViewportId } = customEvent.detail || {};
         if (activeViewportId && activeViewportId !== viewportId) return;
         historyEntry = customEvent.detail?.entry;
       }
-      toolManagerRef.current?.getToolHandlers?.()?.undoAnnotation?.(historyEntry);
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.undoAnnotation?.(historyEntry);
     };
 
     const handleRedoAnnotation = (event?: Event) => {
       let historyEntry: AnnotationHistoryEntry | undefined;
       if (event) {
-        const customEvent = event as CustomEvent<{ activeViewportId?: string; entry?: AnnotationHistoryEntry }>;
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: AnnotationHistoryEntry;
+        }>;
         const { activeViewportId } = customEvent.detail || {};
         if (activeViewportId && activeViewportId !== viewportId) return;
         historyEntry = customEvent.detail?.entry;
       }
-      toolManagerRef.current?.getToolHandlers?.()?.redoAnnotation?.(historyEntry);
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.redoAnnotation?.(historyEntry);
     };
 
     const handleInvertColorMap = () => {
@@ -248,32 +285,169 @@ const ViewPortMain = ({
       void refreshViewport(viewportIndex);
     };
 
+    // AI Diagnosis handler
+    const handleAIDiagnosis = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { viewportId: eventViewportId } = customEvent.detail || {};
+      
+      // Only process if this is the target viewport
+      if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
+        return;
+      }
+
+      if (!elementRef.current || !viewport) {
+        console.error('❌ Viewport not ready for AI diagnosis');
+        return;
+      }
+
+      console.log('🧠 Starting AI diagnosis for viewport:', resolvedViewportId);
+      setIsDiagnosing(true);
+
+      try {
+        // Get canvas and convert to base64
+        const base64Image = getCanvasAsBase64(elementRef.current);
+        
+        if (!base64Image) {
+          throw new Error('Failed to convert canvas to base64');
+        }
+
+        console.log('📷 Canvas converted to base64, calling API...');
+
+        // Call AI diagnosis API
+        const response = await diagnosisImageByAI({
+          base64Image,
+          aiModelId: undefined, // Use default model
+        }).unwrap();
+
+        console.log('✅ AI diagnosis response:', response);
+
+        if (response.success && response.data) {
+          const { prediction, image } = response.data;
+          
+          if (prediction && prediction.length > 0) {
+            // Get canvas dimensions
+            const canvas = viewport.canvas;
+            
+            // Draw AI predictions as annotations
+            drawAIPredictions(
+              prediction,
+              resolvedViewportId,
+              image.width,
+              image.height,
+              canvas.width,
+              canvas.height
+            );
+
+            // Render viewport to show annotations
+            viewport.render();
+            
+            console.log('✅ AI annotations drawn successfully');
+          } else {
+            console.log('ℹ️ No predictions found in AI response');
+          }
+        }
+      } catch (error) {
+        console.error('❌ AI diagnosis failed:', error);
+      } finally {
+        setIsDiagnosing(false);
+      }
+    };
+
+    // Clear AI annotations handler
+    const handleClearAIAnnotations = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { viewportId: eventViewportId } = customEvent.detail || {};
+      
+      if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
+        return;
+      }
+
+      console.log('🗑️ Clearing AI annotations for viewport:', resolvedViewportId);
+      clearAIAnnotationsUtil(resolvedViewportId);
+      
+      if (viewport) {
+        viewport.render();
+      }
+    };
+
     element.addEventListener("keydown", handleKeyDown);
     element.addEventListener("wheel", wheelScrollHandler, { passive: false });
-    window.addEventListener("rotateViewport", handleRotateViewportLocal as EventListener);
-    window.addEventListener("flipViewport", handleFlipViewportLocal as EventListener);
+    window.addEventListener(
+      "rotateViewport",
+      handleRotateViewportLocal as EventListener
+    );
+    window.addEventListener(
+      "flipViewport",
+      handleFlipViewportLocal as EventListener
+    );
     window.addEventListener("resetView", handleResetView);
     window.addEventListener("invertColorMap", handleInvertColorMap);
-    window.addEventListener("clearAnnotations", handleClearAnnotations as EventListener);
-    window.addEventListener("clearViewportAnnotations", handleClearViewportAnnotations as EventListener);
-    window.addEventListener("undoAnnotation", handleUndoAnnotation as EventListener);
-    window.addEventListener("redoAnnotation", handleRedoAnnotation as EventListener);
+    window.addEventListener(
+      "clearAnnotations",
+      handleClearAnnotations as EventListener
+    );
+    window.addEventListener(
+      "clearViewportAnnotations",
+      handleClearViewportAnnotations as EventListener
+    );
+    window.addEventListener(
+      "undoAnnotation",
+      handleUndoAnnotation as EventListener
+    );
+    window.addEventListener(
+      "redoAnnotation",
+      handleRedoAnnotation as EventListener
+    );
     window.addEventListener("refreshViewport", handleRefresh);
+    window.addEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
+    window.addEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
 
     return () => {
       element.removeEventListener("keydown", handleKeyDown);
       element.removeEventListener("wheel", wheelScrollHandler);
-      window.removeEventListener("rotateViewport", handleRotateViewportLocal as EventListener);
-      window.removeEventListener("flipViewport", handleFlipViewportLocal as EventListener);
+      window.removeEventListener(
+        "rotateViewport",
+        handleRotateViewportLocal as EventListener
+      );
+      window.removeEventListener(
+        "flipViewport",
+        handleFlipViewportLocal as EventListener
+      );
       window.removeEventListener("resetView", handleResetView);
       window.removeEventListener("invertColorMap", handleInvertColorMap);
-      window.removeEventListener("clearAnnotations", handleClearAnnotations as EventListener);
-      window.removeEventListener("clearViewportAnnotations", handleClearViewportAnnotations as EventListener);
-      window.removeEventListener("undoAnnotation", handleUndoAnnotation as EventListener);
-      window.removeEventListener("redoAnnotation", handleRedoAnnotation as EventListener);
+      window.removeEventListener(
+        "clearAnnotations",
+        handleClearAnnotations as EventListener
+      );
+      window.removeEventListener(
+        "clearViewportAnnotations",
+        handleClearViewportAnnotations as EventListener
+      );
+      window.removeEventListener(
+        "undoAnnotation",
+        handleUndoAnnotation as EventListener
+      );
+      window.removeEventListener(
+        "redoAnnotation",
+        handleRedoAnnotation as EventListener
+      );
       window.removeEventListener("refreshViewport", handleRefresh);
+      window.removeEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
+      window.removeEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
     };
-  }, [viewportIndex, viewportId, viewportReady, handleKeyDown, getViewportId, nextFrame, prevFrame, refreshViewport]);
+  }, [
+    viewportIndex,
+    viewportId,
+    viewportReady,
+    handleKeyDown,
+    getViewportId,
+    nextFrame,
+    prevFrame,
+    refreshViewport,
+    resolvedViewportId,
+    viewport,
+    diagnosisImageByAI,
+  ]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -295,7 +469,7 @@ const ViewPortMain = ({
       }
     };
 
-    const observer = new ResizeObserver(entries => {
+    const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) {
         return;
@@ -386,7 +560,9 @@ const ViewPortMain = ({
                     <div className="text-white text-lg font-medium mb-2">
                       Loading DICOM Images...
                     </div>
-                    <div className="text-gray-400 text-sm">{loadingProgress}% Complete</div>
+                    <div className="text-gray-400 text-sm">
+                      {loadingProgress}% Complete
+                    </div>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
                     <div
@@ -400,6 +576,21 @@ const ViewPortMain = ({
               </div>
             )}
 
+            {/* AI Diagnosis Loading Overlay */}
+            {isDiagnosing && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+                <div className="text-center">
+                  <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
+                  <div className="text-white text-lg font-medium mb-2">
+                    AI Analyzing...
+                  </div>
+                  <div className="text-gray-400 text-sm">
+                    Processing medical image with AI model
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showNavigationOverlay && (
               <>
                 <button
@@ -407,8 +598,18 @@ const ViewPortMain = ({
                   className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 z-50"
                   aria-label="Previous frame"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
 
@@ -417,8 +618,18 @@ const ViewPortMain = ({
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 z-50"
                   aria-label="Next frame"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </button>
 
@@ -432,7 +643,9 @@ const ViewPortMain = ({
           <div className="w-full h-full bg-black flex items-center justify-center">
             <div className="text-center text-slate-400">
               <div className="text-lg mb-2">No Series Selected</div>
-              <div className="text-sm">Please select a series from the sidebar</div>
+              <div className="text-sm">
+                Please select a series from the sidebar
+              </div>
             </div>
           </div>
         )}
@@ -442,4 +655,3 @@ const ViewPortMain = ({
 };
 
 export default ViewPortMain;
-

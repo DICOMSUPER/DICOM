@@ -73,7 +73,7 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @Get()
-  @Public()
+  @Public() 
   async getEmployeeRoomAssignments(
     @Query() filter?: FilterEmployeeRoomAssignmentDto
   ) {

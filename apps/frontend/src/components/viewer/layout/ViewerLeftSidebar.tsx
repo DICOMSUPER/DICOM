@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useViewer } from "@/contexts/ViewerContext";
+import AIDiagnosisButton from "@/components/viewer/toolbar/AIDiagnosisButton";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -334,6 +335,15 @@ export default function ViewerLeftSidebar({
                 </Tooltip>
               ))}
             </div>
+          </div>
+
+          {/* AI Diagnosis Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">AI Diagnosis</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Analyze current viewport with AI model
+            </p>
+            <AIDiagnosisButton />
           </div>
 
           {/* Measurement Tools Section */}

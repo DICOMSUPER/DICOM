@@ -177,6 +177,7 @@ export class AppService {
         const bodyPart = await this.bodyPartRepository.findOne({
           where: { id: order?.procedure?.bodyPartId, isDeleted: false },
         });
+        //tam thoi
         //check imaging modality
         const modality = await this.imagingModalityRepository.findOne(
           {
@@ -216,7 +217,7 @@ export class AppService {
             IMAGING_SERVICE
           );
         }
-
+        //tam thoi
         if (machine.modality.modalityCode !== modality.modalityCode) {
           throw ThrowMicroserviceException(
             HttpStatus.BAD_REQUEST,
@@ -225,6 +226,7 @@ export class AppService {
           );
         }
 
+        // tam thoi
         if (patient.id !== order.imagingOrderForm?.patientId) {
           throw ThrowMicroserviceException(
             HttpStatus.BAD_REQUEST,
@@ -232,7 +234,7 @@ export class AppService {
             IMAGING_SERVICE
           );
         }
-
+        // tam thoi
         if (modality.modalityCode !== data.Modality) {
           throw ThrowMicroserviceException(
             HttpStatus.BAD_REQUEST,

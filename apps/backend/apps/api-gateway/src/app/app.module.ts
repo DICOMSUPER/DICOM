@@ -21,6 +21,7 @@ import {
   ImagingServiceClientModule,
 } from '@backend/shared-client';
 import { DicomStudySignaturesModule } from './modules/imaging-service/dicom-study-signatures/dicom-study-signatures.module';
+import { AiModelModule } from './modules/system-service/ai-model/ai-model.module';
 dotenv.config();
 
 @Module({
@@ -43,6 +44,7 @@ dotenv.config();
     AiAnalysisModule,
     AuditLogModule,
     NotificationsModule,
+    AiModelModule,
     PatientServiceModule,
     SeedingModule,
     DicomStudySignaturesModule,
