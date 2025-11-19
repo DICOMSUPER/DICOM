@@ -68,18 +68,6 @@ export class ReportTemplatesController {
       })
     );
   }
-  @Get('by-modality-bodypart')
-  async getReportTemplatesByModalityAndBodyPart(
-    @Query('modalityId') modalityId?: string,
-    @Query('bodyPartId') bodyPartId?: string
-  ) {
-    return await firstValueFrom(
-      this.patientService.send('PatientService.ReportTemplate.FindByModalityIdAndBodyPartId', {
-        modalityId,
-        bodyPartId,
-      })
-    );
-  }
   @Get(':id')
   async getReportTemplateById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -89,6 +77,20 @@ export class ReportTemplatesController {
     );
   }
 
+
+    @Post('by-modality-bodypart')
+  async getReportTemplatesByModalityAndBodyPart(
+    @Body() payload: { modalityId?: string; bodyPartId?: string }
+  ) {
+    const { modalityId, bodyPartId } = payload;
+    return await firstValueFrom(
+      this.patientService.send(
+        'PatientService.ReportTemplate.FindByModalityIdAndBodyPartId',
+        { modalityId, bodyPartId }
+      )
+    );
+  }
+  
   @Post()
   @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
   async createReportTemplate(
@@ -97,7 +99,7 @@ export class ReportTemplatesController {
   ) {
     console.log("create report template", createReportTemplateDto);
     console.log("user info", req.userInfo);
-    
+
     return await firstValueFrom(
       this.patientService.send('PatientService.ReportTemplate.Create', {
         createReportTemplateDto,

@@ -21,18 +21,15 @@ export class ReportTemplatesService {
     @Inject()
     private readonly reportTemplateRepository: ReportTemplateRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
-<<<<<<< HEAD
   ) { }
   create = async (createReportTemplateDto: CreateReportTemplateDto): Promise<ReportTemplate> => {
-=======
-  ) {}
-  create = async (
-    createReportTemplateDto: CreateReportTemplateDto,
-    userInfo: { userId: string; role: string }
-  ): Promise<ReportTemplate> => {
-    console.log('service user info', userInfo);
+  // ) {}
+  // create = async (
+  //   createReportTemplateDto: CreateReportTemplateDto,
+  //   userInfo: { userId: string; role: string }
+  // ): Promise<ReportTemplate> => {
+  //   console.log('service user info', userInfo);
 
->>>>>>> main
     return await this.entityManager.transaction(async (em) => {
       const existingReportTemplate =
         await this.reportTemplateRepository.findOne(
@@ -54,7 +51,7 @@ export class ReportTemplatesService {
       return await this.reportTemplateRepository.create(
         {
           ...createReportTemplateDto,
-          ownerUserId: userInfo.userId,
+          // ownerUserId: userInfo.userId,
           isPublic: true,
         },
         em

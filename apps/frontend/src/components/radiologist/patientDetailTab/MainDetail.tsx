@@ -19,11 +19,11 @@ import {
 
 import PinDialog from "./PinDialog";
 import {
-  SignDataDto,
   useSignDataMutation,
   useGetDigitalSignatureByIdQuery,
 } from "@/store/digitalSignatureApi";
 
+import { SignDataDto } from "@/interfaces/user/digital-signature.interface";
 import RichTextEditor from "@/components/radiologist/editor/RichTextEditor";
 import SelectTemplateDialog from "./SelectTemplateDialog";
 
@@ -58,6 +58,7 @@ const MedicalRecordMain = ({ selectedStudyId, diagnosisData, isDiagnosisLoading,
       const result = await signData(payload);
 
       const signatureId = result?.data?.data?.signatureId;
+      console.log("Signature ID:", result?.data);
       setSignerId(signatureId);
 
       return signatureId;

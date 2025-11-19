@@ -24,16 +24,12 @@ import { dicomInstanceApi } from "./dicomInstanceApi";
 import { annotationApi } from "./annotationApi";
 import { employeeRoomAssignmentApi } from "./employeeRoomAssignmentApi";
 import { imagingApi } from "./imagingApi";
-<<<<<<< HEAD
-import { digitalSignatureApi } from "./digitalSignatureApi";
-import { reportTemplateApi } from "./diagnosisReportTeamplateApi";
-=======
 import { serviceApi } from "./serviceApi";
 import { reportTemplateApi } from "./reportTemplateApi";
 import { digitalSignatureApi } from "./digitalSignatureApi";
 import serviceRoomApi from "./serviceRoomApi";
 import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
->>>>>>> main
+
 
 export const store = configureStore({
   reducer: {
@@ -60,18 +56,15 @@ export const store = configureStore({
     [employeeRoomAssignmentApi.reducerPath]: employeeRoomAssignmentApi.reducer,
     [dicomInstanceApi.reducerPath]: dicomInstanceApi.reducer,
     [annotationApi.reducerPath]: annotationApi.reducer,
-<<<<<<< HEAD
-    [imagingApi.reducerPath]: imagingApi.reducer,
-    [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
-    [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
-=======
     [serviceApi.reducerPath]: serviceApi.reducer,
     [imagingApi.reducerPath]: imagingApi.reducer,
     [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
     [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
     [serviceRoomApi.reducerPath]: serviceRoomApi.reducer,
     [dicomStudySignatureApi.reducerPath]: dicomStudySignatureApi.reducer,
->>>>>>> main
+    // [imagingApi.reducerPath]: imagingApi.reducer,
+    // [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
+    // [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -97,16 +90,15 @@ export const store = configureStore({
       .concat(dicomInstanceApi.middleware)
       .concat(annotationApi.middleware)
       .concat(imagingApi.middleware)
-<<<<<<< HEAD
-      .concat(digitalSignatureApi.middleware)
-      .concat(reportTemplateApi.middleware),
-=======
+
+      // .concat(digitalSignatureApi.middleware)
+      // .concat(reportTemplateApi.middleware),
+
       .concat(serviceApi.middleware)
       .concat(reportTemplateApi.middleware)
       .concat(digitalSignatureApi.middleware)
       .concat(serviceRoomApi.middleware)
       .concat(dicomStudySignatureApi.middleware),
->>>>>>> main
 });
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -9,7 +9,7 @@ import React, { useState } from "react";
 interface PinDialogProps {
   open: boolean;
   onClose: () => void;
-  onSign: (pin: string) => Promise<string>; // chỉ ký, trả về signatureId
+  onSign: (pin: string) => Promise<string>; 
 }
 
 const PinDialog: React.FC<PinDialogProps> = ({ open, onClose, onSign }) => {

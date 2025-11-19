@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import {
   Controller,
   Get,
@@ -15,8 +15,6 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Inject } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-=======
->>>>>>> main
 import { Public, Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 import {
@@ -24,22 +22,7 @@ import {
   TransformInterceptor,
 } from '@backend/shared-interceptor';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Inject,
-  Logger,
-  Param,
-  Post,
-  Req,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+
 
 class SetupSignatureDto {
   pin!: string;
@@ -81,14 +64,14 @@ export class DigitalSignatureController {
     const pin = dto.pin;
 
     return await firstValueFrom(
-<<<<<<< HEAD
-      this.userServiceClient.send('digital-signature.setup', { userId, pin })
-=======
+
+      // this.userServiceClient.send('digital-signature.setup', { userId, pin })
+
       this.userServiceClient.send('digital-signature.setup', {
-        userId: dto.userId,
+        userId,
         pin: dto.pin,
       })
->>>>>>> main
+
     );
   }
 
@@ -105,17 +88,17 @@ export class DigitalSignatureController {
 
     const result = await firstValueFrom(
       this.userServiceClient.send('digital-signature.sign', {
-<<<<<<< HEAD
-        userId, // dùng userId từ token
-        pin,
-        data,
-      }),
-=======
-        userId: dto.userId,
+
+      //   userId, // dùng userId từ token
+      //   pin,
+      //   data,
+      // }),
+
+        userId,
         pin: dto.pin,
         data: dto.data,
       })
->>>>>>> main
+
     );
 
     return {

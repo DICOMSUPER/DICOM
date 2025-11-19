@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -12,7 +12,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetBodyPartsPaginatedQuery } from "@/store/bodyPartApi";
-import { useGetTemplatesByModalityBodyPartQuery } from "@/store/diagnosisReportTeamplateApi";
+import { useGetTemplatesByModalityBodyPartMutation } from "@/store/diagnosisReportTeamplateApi";
 
 interface SelectTemplateDialogProps {
     open: boolean;
@@ -27,26 +27,34 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
 }) => {
     const [modalityId, setModalityId] = useState<string | null>(null);
     const [bodyPartId, setBodyPartId] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<any[]>([]);
 
-    // GET list modalities (độc lập)
+    // Hook mutation
+    const [fetchTemplates, { data, isLoading }] = useGetTemplatesByModalityBodyPartMutation();
+
+    // GET list modalities
     const { data: modalitiesData } = useGetAllImagingModalityQuery();
     const modalities = modalitiesData?.data ?? [];
 
-    // GET list body parts (độc lập)
+    // GET list body parts
     const { data: bodyPartsData } = useGetBodyPartsPaginatedQuery();
     const bodyParts = bodyPartsData?.data ?? [];
 
-    console.log("Selected Modality ID:", modalityId);
-    console.log("Selected Body Part ID:", bodyPartId);
+    // Auto fetch templates khi modality + bodyPart thay đổi
+    useEffect(() => {
+        if (modalityId && bodyPartId) {
+            fetchTemplates({ modalityId, bodyPartId });
+        }
+    }, [modalityId, bodyPartId, fetchTemplates]);
 
-    // GET list templates dựa vào CẢ modalityId + bodyPartId
-    const { data: templatesData, isLoading } = useGetTemplatesByModalityBodyPartQuery(
-        { modalityId: modalityId ?? "", bodyPartId: bodyPartId ?? "" },
-        { skip: !modalityId || !bodyPartId }
-
-    );
-    const templates = templatesData?.data ?? [];
-    console.log("check teamplate ", templatesData)
+    // Update templates state khi có data
+    useEffect(() => {
+        if (data?.data) {
+            setTemplates(data.data);
+        } else {
+            setTemplates([]);
+        }
+    }, [data]);
 
     return (
         <Dialog open={open} onOpenChange={onClose}>

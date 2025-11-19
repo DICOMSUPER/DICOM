@@ -1,29 +1,29 @@
-<<<<<<< HEAD
 // interfaces/digital-signature.interface.ts
 
-export interface DigitalSignature {
-=======
 import { User } from "@/store/scheduleApi";
 import { BaseEntity } from "../base.interface";
 
-
+// Dùng để đăng ký mã PIN lần đầu
 export interface SetupSignatureDto {
   pin: string;
   userId: string;
 }
 
+// Dùng để ký dữ liệu
 export interface SignDataDto {
   pin: string;
   data: string;
   userId: string;
 }
 
+// Dùng để verify chữ ký
 export interface VerifySignatureDto {
   data: string;
   signature: string;
   publicKey: string;
 }
 
+// Response trả về sau khi ký
 export interface SignatureResponse {
   message: string;
   signatureId: string;
@@ -31,6 +31,7 @@ export interface SignatureResponse {
   publicKey: string;
 }
 
+// Response verify
 export interface VerifyResponse {
   message: string;
   isValid: boolean;
@@ -40,8 +41,9 @@ export interface PublicKeyResponse {
   message: string;
   publicKey: string;
 }
+
+// Entity chính của chữ ký số
 export interface DigitalSignature extends BaseEntity {
->>>>>>> main
   id: string;
   signedData: string;
   certificateSerial: string;
@@ -49,12 +51,11 @@ export interface DigitalSignature extends BaseEntity {
   publicKey?: string;
   privateKeyEncrypted?: string;
   pinHash?: string;
-<<<<<<< HEAD
-  createdAt: string; // Date kiểu string khi nhận từ API
   userId: string;
+  user?: User;
 }
 
-// DTO để tạo chữ ký mới
+// DTO tạo chữ ký
 export interface CreateDigitalSignatureDto {
   userId: string;
   signedData: string;
@@ -65,7 +66,7 @@ export interface CreateDigitalSignatureDto {
   pinHash: string;
 }
 
-// DTO để cập nhật chữ ký
+// DTO cập nhật chữ ký
 export interface UpdateDigitalSignatureDto {
   signedData?: string;
   certificateSerial?: string;
@@ -73,10 +74,10 @@ export interface UpdateDigitalSignatureDto {
   publicKey?: string;
   privateKeyEncrypted?: string;
   pinHash?: string;
-  isActive?: boolean; // nếu API có trạng thái active/inactive
+  isActive?: boolean;
 }
 
-// Bộ lọc tìm kiếm chữ ký số
+// Bộ lọc khi tìm chữ ký số
 export interface DigitalSignatureSearchFilters {
   userId?: string;
   certificateSerial?: string;
@@ -85,14 +86,10 @@ export interface DigitalSignatureSearchFilters {
   limit?: number;
 }
 
-// Response phân trang chuẩn
+// Phân trang chuẩn
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
   page: number;
   limit: number;
-=======
-  userId: string;
-  user?:User
->>>>>>> main
 }

@@ -88,12 +88,7 @@ export interface PatientEncounter extends BaseEntity {
   diagnosesCount?: number;
   createdBy?: string;
   serviceRoomId?: string;
-<<<<<<< HEAD
-  serviceRoom: ServiceRoom
-
-=======
   serviceRoom: ServiceRoom;
->>>>>>> main
 }
 
 export interface VitalSignMeasurement {

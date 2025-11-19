@@ -38,13 +38,13 @@ export const reportTemplateApi = createApi({
             providesTags: (result, error, id) => [{ type: "ReportTemplate", id }],
         }),
 
-        getTemplatesByModalityBodyPart: builder.query<ReportTemplate[], { modalityId: string; bodyPartId: string }>({
+        getTemplatesByModalityBodyPart: builder.mutation<ReportTemplate[], { modalityId: string; bodyPartId: string }>({
             query: ({ modalityId, bodyPartId }) => ({
                 url: `/by-modality-bodypart`,
-                method: "GET",
-                params: { modalityId, bodyPartId },
+                method: "POST",
+                data: { modalityId, bodyPartId },
             }),
-            providesTags: ["ReportTemplate"],
+            invalidatesTags: ["ReportTemplate"],
         }),
 
         // Create report template
@@ -88,9 +88,9 @@ export const reportTemplateApi = createApi({
 export const {
     useGetReportTemplatesQuery,
     useGetReportTemplateByIdQuery,
+    useGetTemplatesByModalityBodyPartMutation,
     useCreateReportTemplateMutation,
     useUpdateReportTemplateMutation,
     useDeleteReportTemplateMutation,
-    useGetTemplatesByModalityBodyPartQuery,
 
 } = reportTemplateApi;
