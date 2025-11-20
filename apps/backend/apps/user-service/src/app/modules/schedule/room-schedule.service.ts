@@ -26,39 +26,53 @@ export class RoomScheduleService {
     createDto: CreateRoomScheduleDto
   ): Promise<RoomSchedule> {
     try {
-      // Check for schedule conflicts with time overlap
-      if (createDto.employee_id && createDto.actual_start_time && createDto.actual_end_time) {
-        const conflictCheck = await this.checkConflict(
-          createDto.employee_id,
-          createDto.work_date,
-          createDto.actual_start_time,
-          createDto.actual_end_time
+      // Validate work_date is at least 1 day in the future
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const scheduleDate = new Date(createDto.work_date);
+      scheduleDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = scheduleDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 1) {
+        throw new BadRequestException(
+          'Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.'
         );
+      }
 
-        if (conflictCheck.hasConflict) {
+      // Validate that start_time and end_time are provided when creating new schedule
+      // Unless shift_template_id is provided (which will provide the times)
+      if (!createDto.shift_template_id) {
+        if (!createDto.actual_start_time || !createDto.actual_end_time) {
           throw new BadRequestException(
-            `Employee already has a schedule on ${createDto.work_date} from ${conflictCheck.conflictingSchedule?.actual_start_time} to ${conflictCheck.conflictingSchedule?.actual_end_time}`
+            'Start time and end time are required when creating a new schedule without a shift template.'
           );
         }
-      } else if (createDto.employee_id) {
-        // If no specific time, just check if employee has any schedule on that date
-        const existingSchedule =
-          await this.RoomScheduleRepository.findByEmployeeId(
-            createDto.employee_id
-          );
 
-        const conflictExists = existingSchedule.some(
-          (schedule) =>
-            schedule.work_date === createDto.work_date &&
-            schedule.schedule_status !== ScheduleStatus.CANCELLED
-        );
+        // Validate start time is before end time (handle overnight shifts)
+        const parseTime = (timeStr: string) => {
+          const parts = timeStr.split(':');
+          return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+        };
 
-        if (conflictExists) {
+        const startMinutes = parseTime(createDto.actual_start_time);
+        const endMinutes = parseTime(createDto.actual_end_time);
+
+        // For same-day shifts, start must be before end
+        // For overnight shifts (end < start), we allow it as it's a valid pattern
+        // But we need to ensure the times are valid
+        if (startMinutes === endMinutes) {
           throw new BadRequestException(
-            'Employee already has a schedule for this date'
+            'Start time and end time cannot be the same.'
           );
         }
       }
+
+      // Note: Employee conflict checking is handled at the assignment level
+      // Room schedules are room-based, not employee-based
+      // Employees are assigned to room schedules via employee_room_assignments
 
       const schedule = this.RoomScheduleRepository.create(createDto);
       return await this.RoomScheduleRepository.save(schedule);
@@ -87,7 +101,7 @@ export class RoomScheduleService {
         hasPreviousPage: result.page > 1,
       };
     } catch (error) {
-      throw new BadRequestException('Failed to fetch employee schedules');
+      throw new BadRequestException('Failed to fetch room schedules');
     }
   }
 
@@ -98,7 +112,7 @@ export class RoomScheduleService {
       const schedules = await this.RoomScheduleRepository.findWithFilters(filters || {});
       return schedules;
     } catch (error) {
-      throw new BadRequestException('Failed to fetch all employee schedules');
+      throw new BadRequestException('Failed to fetch all room schedules');
     }
   }
 
@@ -106,11 +120,11 @@ export class RoomScheduleService {
     try {
       const schedule = await this.RoomScheduleRepository.findOne({
         where: { schedule_id: id },
-        relations: ['employee', 'room', 'shift_template'],
+        relations: ['employeeRoomAssignments', 'employeeRoomAssignments.employee', 'room', 'shift_template'],
       });
 
       if (!schedule) {
-        throw new NotFoundException('Employee schedule not found');
+        throw new NotFoundException('Room schedule not found');
       }
 
       return schedule;
@@ -118,7 +132,7 @@ export class RoomScheduleService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Failed to fetch employee schedule');
+      throw new BadRequestException('Failed to fetch room schedule');
     }
   }
 
@@ -138,7 +152,7 @@ export class RoomScheduleService {
       ) {
         throw error;
       }
-      throw new BadRequestException('Failed to update employee schedule');
+      throw new BadRequestException('Failed to update room schedule');
     }
   }
 
@@ -148,13 +162,13 @@ export class RoomScheduleService {
       await this.RoomScheduleRepository.remove(schedule);
       return {
         success: true,
-        message: 'Employee schedule deleted successfully',
+        message: 'Room schedule deleted successfully',
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Failed to delete employee schedule');
+      throw new BadRequestException('Failed to delete room schedule');
     }
   }
 
@@ -168,7 +182,7 @@ export class RoomScheduleService {
         limit
       );
     } catch (error) {
-      throw new BadRequestException('Failed to fetch employee schedules');
+      throw new BadRequestException('Failed to fetch room schedules');
     }
   }
 
@@ -251,6 +265,51 @@ export class RoomScheduleService {
     schedules: CreateRoomScheduleDto[]
   ): Promise<RoomSchedule[]> {
     try {
+      // Validate all schedules before creating
+      const errors: string[] = [];
+      
+      for (let i = 0; i < schedules.length; i++) {
+        const schedule = schedules[i];
+        
+        // Validate work_date is at least 1 day in the future
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const scheduleDate = new Date(schedule.work_date);
+        scheduleDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = scheduleDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 1) {
+          errors.push(`Schedule ${i + 1}: work_date must be at least 1 day in advance`);
+        }
+
+        // Validate that start_time and end_time are provided when creating new schedule
+        if (!schedule.shift_template_id) {
+          if (!schedule.actual_start_time || !schedule.actual_end_time) {
+            errors.push(`Schedule ${i + 1}: Start time and end time are required when creating a new schedule without a shift template`);
+          } else {
+            // Validate start time is before end time
+            const parseTime = (timeStr: string) => {
+              const parts = timeStr.split(':');
+              return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+            };
+
+            const startMinutes = parseTime(schedule.actual_start_time);
+            const endMinutes = parseTime(schedule.actual_end_time);
+
+            if (startMinutes === endMinutes) {
+              errors.push(`Schedule ${i + 1}: Start time and end time cannot be the same`);
+            }
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        throw new BadRequestException(errors.join('; '));
+      }
+
       // Create all schedules
       const createdSchedules: RoomSchedule[] = [];
       for (const schedule of schedules) {
@@ -361,8 +420,7 @@ export class RoomScheduleService {
       throw new BadRequestException('Failed to copy week schedules');
     }
   }
-
-  // Conflict Detection
+  
   async checkConflict(
     employeeId: string,
     date: string,
@@ -371,6 +429,7 @@ export class RoomScheduleService {
     excludeScheduleId?: string
   ): Promise<{ hasConflict: boolean; conflictingSchedule?: RoomSchedule }> {
     try {
+      // Find schedules where employee is assigned via employeeRoomAssignments
       const existingSchedules =
         await this.RoomScheduleRepository.findByEmployeeId(employeeId);
 

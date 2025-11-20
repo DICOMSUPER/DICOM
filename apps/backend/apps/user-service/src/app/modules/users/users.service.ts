@@ -165,6 +165,8 @@ export class UsersService {
     limit?: number;
     search?: string;
     isActive?: boolean;
+    role?: string;
+    departmentId?: string;
   }) {
     try {
       const page = query.page ?? 1;
@@ -173,6 +175,7 @@ export class UsersService {
 
       const qb = this.userRepository
         .createQueryBuilder('user')
+        .leftJoinAndSelect('user.department', 'department')
         .select([
           'user.id',
           'user.username',
@@ -188,6 +191,11 @@ export class UsersService {
           'user.createdAt',
           'user.updatedAt',
           'user.createdBy',
+          'department.id',
+          'department.departmentName',
+          'department.departmentCode',
+          'department.description',
+          'department.isActive',
         ])
         .orderBy('user.createdAt', 'DESC')
         .skip(skip)
@@ -202,6 +210,14 @@ export class UsersService {
 
       if (query.isActive !== undefined) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      }
+
+      if (query.role) {
+        qb.andWhere('user.role = :role', { role: query.role });
+      }
+
+      if (query.departmentId) {
+        qb.andWhere('user.departmentId = :departmentId', { departmentId: query.departmentId });
       }
 
       const [data, total] = await qb.getManyAndCount();

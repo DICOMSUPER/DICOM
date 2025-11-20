@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Users, Clock, CalendarDays, DoorOpen, User } from "lucide-react";
+import { Users, Clock, CalendarDays, DoorOpen, User, Building2, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
@@ -163,9 +164,13 @@ export function ScheduleAssignmentList({
             : filteredSchedules.map((schedule) => {
                 const assignments = renderAssignments(schedule);
                 const isSelected = schedule.schedule_id === selectedScheduleId;
+                const room = schedule.room;
+                const occupancy = assignments.length;
+                const capacity = room?.capacity || 0;
+                
                 const meta = [
                   {
-                    label: schedule.room?.roomCode ?? "Room TBD",
+                    label: room?.roomCode ?? "Room TBD",
                     icon: DoorOpen,
                   },
                   {
@@ -179,6 +184,23 @@ export function ScheduleAssignmentList({
                     icon: Clock,
                   },
                 ];
+
+                // Get room equipment
+                const roomEquipment = room ? [
+                  room.hasTV && { name: 'TV', icon: <Tv className="h-3 w-3" /> },
+                  room.hasAirConditioning && { name: 'AC', icon: <Thermometer className="h-3 w-3" /> },
+                  room.hasWiFi && { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> },
+                  room.hasTelephone && { name: 'Phone', icon: <Phone className="h-3 w-3" /> },
+                  room.hasAttachedBathroom && { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> },
+                  room.isWheelchairAccessible && { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> },
+                  room.hasOxygenSupply && { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> },
+                  room.hasNurseCallButton && { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> },
+                ].filter(Boolean) : [];
+
+                // Get room services
+                const roomServices = room?.serviceRooms?.filter(sr => sr.isActive && sr.service).map(sr => 
+                  sr.service?.serviceName || sr.service?.serviceCode || 'Unknown'
+                ) || [];
 
                 return (
                   <Card
@@ -211,6 +233,85 @@ export function ScheduleAssignmentList({
                               ))}
                             </div>
                           </div>
+
+                          {/* Room Details Section */}
+                          {room && (
+                            <div className="space-y-2 pt-2 border-t border-border">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Building2 className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm font-semibold text-gray-900">Room Details</span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                                {/* Capacity & Occupancy */}
+                                {capacity > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-3 w-3 text-gray-500" />
+                                    <span className="text-gray-700">
+                                      <span className="font-semibold">{occupancy}</span> / {capacity} assigned
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Room Type */}
+                                {room.roomType && (
+                                  <div className="text-gray-700">
+                                    <span className="font-semibold">Type:</span> {room.roomType}
+                                  </div>
+                                )}
+
+                                {/* Department */}
+                                {room.department && (
+                                  <div className="text-gray-700">
+                                    <span className="font-semibold">Dept:</span>{' '}
+                                    {typeof room.department === 'string' 
+                                      ? room.department 
+                                      : (room.department.departmentName || room.department.departmentCode || 'N/A')}
+                                  </div>
+                                )}
+
+                                {/* Floor */}
+                                {room.floor !== undefined && room.floor !== null && (
+                                  <div className="text-gray-700">
+                                    <span className="font-semibold">Floor:</span> {room.floor}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Services */}
+                              {roomServices.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {roomServices.slice(0, 5).map((service, idx) => (
+                                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                      {service}
+                                    </Badge>
+                                  ))}
+                                  {roomServices.length > 5 && (
+                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                      +{roomServices.length - 5} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Equipment */}
+                              {roomEquipment.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {roomEquipment.slice(0, 6).map((eq: any, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                                      {eq.icon}
+                                      {eq.name}
+                                    </Badge>
+                                  ))}
+                                  {roomEquipment.length > 6 && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                      +{roomEquipment.length - 6} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-3">
                           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -269,11 +370,21 @@ export function ScheduleAssignmentList({
                               )}
                             </div>
                             <div className="flex-1 text-sm">
-                              <p className="font-bold text-gray-900 leading-tight">
-                                {assignment.employee
-                                  ? `${assignment.employee.firstName} ${assignment.employee.lastName}`
-                                  : assignment.employeeId}
-                              </p>
+                              {assignment.employee?.id ? (
+                                <Link
+                                  href={`/profile/${assignment.employee.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="block transition-all hover:text-primary group"
+                                >
+                                  <p className="font-bold text-gray-900 leading-tight group-hover:underline">
+                                    {assignment.employee.firstName} {assignment.employee.lastName}
+                                  </p>
+                                </Link>
+                              ) : (
+                                <p className="font-bold text-gray-900 leading-tight">
+                                  {assignment.employeeId}
+                                </p>
+                              )}
                               <p className="text-xs text-gray-600">
                                 {formatRole(assignment.employee?.role)}
                               </p>

@@ -1,6 +1,9 @@
 "use client";
 
 import { format } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,48 +15,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, ShieldQuestion, CalendarIcon } from "lucide-react";
+import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
 import { toast } from "sonner";
+import { DataTable } from "@/components/ui/data-table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { RoomSchedule, Employee, Room, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
 import { cn } from "@/lib/utils";
 import { formatRole } from "@/utils/role-formatter";
 import * as SelectPrimitive from "@radix-ui/react-select";
+import { StepIndicator } from "@/components/ui/step-indicator";
+
+// API imports
+import { useGetAvailableEmployeesQuery, useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
+import { useGetRoomsQuery } from "@/store/roomsApi";
+import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from "@/store/scheduleApi";
+import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssignmentsMutation } from "@/store/employeeRoomAssignmentApi";
+import { extractApiData } from "@/utils/api";
 
 interface AssignEmployeeFormProps {
-  schedule?: RoomSchedule;
-  employees: Employee[];
-  loadingEmployees: boolean;
-  roleFilter: string;
-  onRoleFilterChange: (value: string) => void;
-  departmentFilter: string;
-  onDepartmentFilterChange: (value: string) => void;
-  searchTerm: string;
-  onSearchTermChange: (value: string) => void;
-  selectedEmployeeId: string;
-  onSelectedEmployeeChange: (value: string) => void;
-  onSubmit: () => void;
-  submitting: boolean;
-  // New props for room selection
-  rooms?: Room[];
-  loadingRooms?: boolean;
-  shiftTemplates?: ShiftTemplate[];
-  loadingShiftTemplates?: boolean;
-  selectedDate?: Date;
-  onDateChange?: (date: Date | undefined) => void;
-  selectedRoomId?: string;
-  onRoomChange?: (roomId: string) => void;
-  selectedShiftId?: string;
-  onShiftChange?: (shiftId: string) => void;
-  selectedStartTime?: string;
-  onStartTimeChange?: (time: string) => void;
-  selectedEndTime?: string;
-  onEndTimeChange?: (time: string) => void;
-  availableSchedules?: RoomSchedule[];
-  onScheduleSelect?: (scheduleId: string) => void;
+  initialScheduleId?: string;
 }
 
 const formatDate = (value?: string) => {
@@ -84,91 +67,492 @@ const statusBadgeClass = (status?: string) => {
   }
 };
 
-export function AssignEmployeeForm({
-  schedule,
-  employees,
-  loadingEmployees,
-  roleFilter,
-  onRoleFilterChange,
-  departmentFilter,
-  onDepartmentFilterChange,
-  searchTerm,
-  onSearchTermChange,
-  selectedEmployeeId,
-  onSelectedEmployeeChange,
-  onSubmit,
-  submitting,
-  rooms = [],
-  loadingRooms = false,
-  shiftTemplates = [],
-  loadingShiftTemplates = false,
-  selectedDate,
-  onDateChange,
-  selectedRoomId,
-  onRoomChange,
-  selectedShiftId,
-  onShiftChange,
-  selectedStartTime,
-  onStartTimeChange,
-  selectedEndTime,
-  onEndTimeChange,
-  availableSchedules = [],
-  onScheduleSelect,
-}: AssignEmployeeFormProps) {
-  const handleSubmit = (e?: React.MouseEvent) => {
-    // Prevent double submission
+export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProps) {
+  const router = useRouter();
+  
+  // State
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string>(initialScheduleId || '');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
+  const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow;
+  };
+  const [formDate, setFormDate] = useState<Date | undefined>(getTomorrow());
+  const [formRoomId, setFormRoomId] = useState<string>('');
+  const [formShiftId, setFormShiftId] = useState<string>('');
+  const [formStartTime, setFormStartTime] = useState<string>('');
+  const [formEndTime, setFormEndTime] = useState<string>('');
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const [activeRoleFilter, setActiveRoleFilter] = useState<string>('');
+  const [activeDepartmentFilter, setActiveDepartmentFilter] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: allSchedulesData } = useGetRoomSchedulesQuery({});
+  const schedules = allSchedulesData ?? [];
+
+  const { data: roomsData, isLoading: loadingRooms } = useGetRoomsQuery({
+    page: 1,
+    limit: 1000,
+  });
+  const rooms = roomsData?.data ?? [];
+
+  const { data: shiftTemplatesData, isLoading: loadingShiftTemplates } = useGetShiftTemplatesQuery({});
+  const shiftTemplates: ShiftTemplate[] = Array.isArray(shiftTemplatesData) 
+    ? shiftTemplatesData 
+    : (shiftTemplatesData?.data ?? []);
+
+  const selectedSchedule = useMemo(
+    () => schedules.find((s) => s.schedule_id === selectedScheduleId),
+    [schedules, selectedScheduleId]
+  );
+
+  const employeeQueryDate = selectedSchedule?.work_date 
+    ? selectedSchedule.work_date 
+    : (formDate ? format(formDate, 'yyyy-MM-dd') : '');
+  const employeeQueryStartTime = selectedSchedule?.actual_start_time?.trim() 
+    ? selectedSchedule.actual_start_time.trim() 
+    : (formStartTime || undefined);
+  const employeeQueryEndTime = selectedSchedule?.actual_end_time?.trim() 
+    ? selectedSchedule.actual_end_time.trim() 
+    : (formEndTime || undefined);
+
+  const {
+    data: availableEmployeesData,
+    isFetching: availableEmployeesLoading,
+    refetch: refetchAvailableEmployees,
+  } = useGetAvailableEmployeesQuery(
+    {
+      date: employeeQueryDate,
+      startTime: employeeQueryStartTime,
+      endTime: employeeQueryEndTime,
+      search: activeSearch || undefined,
+      role: activeRoleFilter || undefined,
+      departmentId: activeDepartmentFilter || undefined,
+    },
+    {
+      skip: !employeeQueryDate,
+    }
+  );
+
+  const availableEmployees = useMemo(
+    () => extractApiData<Employee>(availableEmployeesData),
+    [availableEmployeesData]
+  );
+
+  const [createAssignment, { isLoading: isCreatingAssignment }] = useCreateEmployeeRoomAssignmentMutation();
+  const [bulkCreateAssignments, { isLoading: isBulkCreating }] = useBulkCreateEmployeeRoomAssignmentsMutation();
+  const [createSchedule, { isLoading: isCreatingSchedule }] = useCreateRoomScheduleMutation();
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      if (selectedSchedule.work_date) {
+        const scheduleDate = new Date(selectedSchedule.work_date);
+        if (!formDate || scheduleDate.toDateString() !== formDate.toDateString()) {
+          setFormDate(scheduleDate);
+        }
+      }
+      if (selectedSchedule.room_id && selectedSchedule.room_id !== formRoomId) {
+        setFormRoomId(selectedSchedule.room_id);
+      }
+      if (selectedSchedule.shift_template_id && selectedSchedule.shift_template_id !== formShiftId) {
+        setFormShiftId(selectedSchedule.shift_template_id);
+      }
+      if (selectedSchedule.actual_start_time && selectedSchedule.actual_start_time !== formStartTime) {
+        setFormStartTime(selectedSchedule.actual_start_time);
+      }
+      if (selectedSchedule.actual_end_time && selectedSchedule.actual_end_time !== formEndTime) {
+        setFormEndTime(selectedSchedule.actual_end_time);
+      }
+    }
+  }, [selectedSchedule]);
+
+  useEffect(() => {
+    if (formShiftId && shiftTemplates.length > 0 && !selectedSchedule) {
+      const selectedShift = shiftTemplates.find((s) => s.shift_template_id === formShiftId);
+      if (selectedShift) {
+        setFormStartTime(selectedShift.start_time);
+        setFormEndTime(selectedShift.end_time);
+      }
+    }
+  }, [formShiftId, shiftTemplates, selectedSchedule]);
+
+  const handleSearch = () => {
+    setActiveSearch(employeeSearch);
+    setActiveRoleFilter(roleFilter);
+    setActiveDepartmentFilter(departmentFilter);
+  };
+
+  useEffect(() => {
+    if (employeeQueryDate) {
+      setActiveSearch(employeeSearch);
+      setActiveRoleFilter(roleFilter);
+      setActiveDepartmentFilter(departmentFilter);
+    }
+  }, [employeeQueryDate, employeeQueryStartTime, employeeQueryEndTime]);
+
+  const handleSubmit = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     
-    if (!schedule && (!selectedDate || !selectedRoomId)) {
+    if (isSubmitting || isCreatingAssignment || isBulkCreating || isCreatingSchedule) return;
+
+    if (!selectedSchedule && (!formDate || !formRoomId)) {
       toast.error("Please select a date and room, or select an existing schedule");
       return;
     }
 
-    if (!selectedEmployeeId) {
-      toast.warning("Pick an employee from the list to continue");
+    const isBulk = selectedEmployeeIds.length > 1;
+    const employeeId = selectedEmployeeIds.length === 1 
+      ? selectedEmployeeIds[0] 
+      : (selectedEmployeeIds.length === 0 ? selectedEmployeeId : null);
+    const employeeCount = selectedEmployeeIds.length > 0 ? selectedEmployeeIds.length : (selectedEmployeeId ? 1 : 0);
+
+    if (employeeCount === 0 || (!isBulk && !employeeId)) {
+      toast.warning("Please select at least one employee");
       return;
     }
 
-    onSubmit();
+    if (!isDateValid) {
+      toast.error('Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.');
+      return;
+    }
+
+    if (!selectedSchedule && !areTimesValid) {
+      if (!formStartTime || !formEndTime) {
+        toast.error('Start time and end time are required when creating a new schedule');
+      } else {
+        toast.error('Start time and end time cannot be the same');
+      }
+      return;
+    }
+
+    if (wouldExceedCapacity) {
+      const baseOccupancy = selectedSchedule 
+        ? (selectedSchedule.employeeRoomAssignments?.length || 0)
+        : currentOccupancy;
+      toast.error(`Room capacity exceeded. Max capacity: ${selectedRoom?.capacity || 'N/A'}, current: ${baseOccupancy}, trying to add: ${employeeCount}`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    let targetSchedule = selectedSchedule;
+    let scheduleCreated = false;
+
+    if (!targetSchedule && formDate && formRoomId) {
+      try {
+        const selectedShift = formShiftId ? shiftTemplates.find((s) => s.shift_template_id === formShiftId) : null;
+        const startTime = formStartTime || selectedShift?.start_time;
+        const endTime = formEndTime || selectedShift?.end_time;
+
+        if (!startTime || !endTime) {
+          toast.error('Start time and end time are required');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const scheduleResponse = await createSchedule({
+          room_id: formRoomId,
+          shift_template_id: formShiftId || undefined,
+          work_date: format(formDate, 'yyyy-MM-dd'),
+          actual_start_time: startTime,
+          actual_end_time: endTime,
+          schedule_status: 'scheduled' as const,
+        }).unwrap();
+
+        targetSchedule = scheduleResponse as RoomSchedule;
+        if (!targetSchedule?.schedule_id) {
+          toast.error('Failed to create schedule: Invalid schedule ID returned');
+          setIsSubmitting(false);
+          return;
+        }
+        setSelectedScheduleId(targetSchedule.schedule_id);
+        scheduleCreated = true;
+      } catch (error: any) {
+        toast.error(error?.data?.message || 'Failed to create schedule');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (!targetSchedule?.schedule_id) {
+      toast.error('Please select or create a schedule');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      if (isBulk) {
+        const result = await bulkCreateAssignments({
+          roomScheduleId: targetSchedule.schedule_id,
+          employeeIds: selectedEmployeeIds,
+          isActive: true,
+        }).unwrap();
+        
+        const resultData = result as any;
+        const successCount = resultData?.data?.count ?? resultData?.count ?? (resultData?.data && Array.isArray(resultData.data) ? resultData.data.length : selectedEmployeeIds.length);
+        toast.success(`Successfully assigned ${successCount} employee(s)`);
+        setSelectedEmployeeIds([]);
+        setSelectedEmployeeId('');
+      } else {
+        await createAssignment({
+          roomScheduleId: targetSchedule.schedule_id,
+          employeeId: employeeId!,
+          isActive: true,
+        }).unwrap();
+        
+        toast.success('Employee assigned successfully');
+        setSelectedEmployeeIds([]);
+        setSelectedEmployeeId('');
+      }
+      
+      if (scheduleCreated) {
+        setFormDate(getTomorrow());
+        setFormRoomId('');
+        setFormShiftId('');
+        setFormStartTime('');
+        setFormEndTime('');
+        setSelectedScheduleId('');
+      }
+      
+      await refetchAvailableEmployees();
+      
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      router.push('/admin/room-assignments');
+    } catch (error: any) {
+      const errorMsg = isBulk ? 'Failed to assign employees' : 'Failed to assign employee';
+      toast.error(error?.data?.message || error?.message || errorMsg);
+      if (scheduleCreated) {
+        toast.warning('Schedule was created but assignment failed. You may need to delete the schedule if you want to try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Always show room selection UI when callbacks are provided
-  const showRoomSelection = !!(onDateChange || onRoomChange);
-
-  const roleOptions = Array.from(
-    new Set(employees.map((employee) => employee.role).filter(Boolean))
-  ) as string[];
-  const departmentOptions = Array.from(
-    new Set(employees.map((employee) => employee.departmentId).filter(Boolean))
-  ) as string[];
-
-  // Filter schedules for selected room and date
-  const filteredSchedules = selectedDate && selectedRoomId
-    ? availableSchedules.filter((s) => {
+  const filteredSchedules = formDate && formRoomId
+    ? schedules.filter((s) => {
         const scheduleDate = s.work_date ? new Date(s.work_date).toDateString() : null;
-        const selectedDateStr = selectedDate.toDateString();
-        return scheduleDate === selectedDateStr && s.room_id === selectedRoomId;
+        const selectedDateStr = formDate.toDateString();
+        return scheduleDate === selectedDateStr && s.room_id === formRoomId;
       })
     : [];
+
+  const selectedRoom = useMemo(() => {
+    if (selectedSchedule?.room) return selectedSchedule.room;
+    if (formRoomId) return rooms.find(r => r.id === formRoomId);
+    return undefined;
+  }, [selectedSchedule, formRoomId, rooms]);
+
+  const currentOccupancy = useMemo(() => {
+    if (!selectedRoom || !formDate) return 0;
+    const roomSchedules = schedules.filter(s => 
+      s.room_id === selectedRoom.id && 
+      s.work_date && 
+      new Date(s.work_date).toDateString() === formDate.toDateString()
+    );
+    return roomSchedules.reduce((count, schedule) => {
+      return count + (schedule.employeeRoomAssignments?.length || 0);
+    }, 0);
+  }, [selectedRoom, formDate, schedules]);
+
+  const wouldExceedCapacity = useMemo(() => {
+    if (!selectedRoom?.capacity) return false;
+    const newAssignments = selectedEmployeeIds.length > 0 
+      ? selectedEmployeeIds.length 
+      : (selectedEmployeeId ? 1 : 0);
+    const targetScheduleOccupancy = selectedSchedule 
+      ? (selectedSchedule.employeeRoomAssignments?.length || 0)
+      : 0;
+    const baseOccupancy = selectedSchedule ? targetScheduleOccupancy : currentOccupancy;
+    return (baseOccupancy + newAssignments) > selectedRoom.capacity;
+  }, [selectedRoom, currentOccupancy, selectedEmployeeId, selectedEmployeeIds, selectedSchedule]);
+
+  const isAtCapacity = useMemo(() => {
+    if (!selectedRoom?.capacity) return false;
+    const targetScheduleOccupancy = selectedSchedule 
+      ? (selectedSchedule.employeeRoomAssignments?.length || 0)
+      : 0;
+    const baseOccupancy = selectedSchedule ? targetScheduleOccupancy : currentOccupancy;
+    return baseOccupancy >= selectedRoom.capacity;
+  }, [selectedRoom, currentOccupancy, selectedSchedule]);
+
+  const roomEquipment = useMemo(() => {
+    if (!selectedRoom) return [];
+    const equipment: Array<{ name: string; icon: React.ReactNode }> = [];
+    if (selectedRoom.hasTV) equipment.push({ name: 'TV', icon: <Tv className="h-3 w-3" /> });
+    if (selectedRoom.hasAirConditioning) equipment.push({ name: 'Air Conditioning', icon: <Thermometer className="h-3 w-3" /> });
+    if (selectedRoom.hasWiFi) equipment.push({ name: 'WiFi', icon: <Wifi className="h-3 w-3" /> });
+    if (selectedRoom.hasTelephone) equipment.push({ name: 'Telephone', icon: <Phone className="h-3 w-3" /> });
+    if (selectedRoom.hasAttachedBathroom) equipment.push({ name: 'Attached Bathroom', icon: <Droplets className="h-3 w-3" /> });
+    if (selectedRoom.isWheelchairAccessible) equipment.push({ name: 'Wheelchair Accessible', icon: <Users className="h-3 w-3" /> });
+    if (selectedRoom.hasOxygenSupply) equipment.push({ name: 'Oxygen Supply', icon: <Stethoscope className="h-3 w-3" /> });
+    if (selectedRoom.hasNurseCallButton) equipment.push({ name: 'Nurse Call Button', icon: <Bell className="h-3 w-3" /> });
+    return equipment;
+  }, [selectedRoom]);
+
+  const roomServices = useMemo(() => {
+    if (!selectedRoom?.serviceRooms) return [];
+    return selectedRoom.serviceRooms
+      .filter(sr => sr.isActive && sr.service)
+      .map(sr => sr.service?.serviceName || sr.service?.serviceCode || 'Unknown Service');
+  }, [selectedRoom]);
+
+  const roleOptions = useMemo(() => {
+    return Array.from(new Set(availableEmployees.map((e) => e.role).filter(Boolean))) as string[];
+  }, [availableEmployees]);
+
+  const departmentOptions = useMemo(() => {
+    const deptMap = new Map<string, { id: string; name: string }>();
+    availableEmployees.forEach((employee) => {
+      if (employee.departmentId) {
+        let deptName = employee.departmentId;
+        if (employee.department) {
+          if (typeof employee.department === 'string') {
+            deptName = employee.department;
+          } else {
+            deptName = employee.department.departmentName || employee.department.departmentCode || employee.departmentId;
+          }
+        }
+        deptMap.set(employee.departmentId, { id: employee.departmentId, name: deptName });
+      }
+    });
+    return Array.from(deptMap.values());
+  }, [availableEmployees]);
+
+  const employeeColumns = useMemo(() => [
+    {
+      header: 'Select',
+      cell: (employee: Employee) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={selectedEmployeeIds.includes(employee.id) || selectedEmployeeId === employee.id}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                setSelectedEmployeeIds([...selectedEmployeeIds, employee.id]);
+                setSelectedEmployeeId(employee.id);
+              } else {
+                setSelectedEmployeeIds(selectedEmployeeIds.filter(id => id !== employee.id));
+                if (selectedEmployeeId === employee.id) {
+                  setSelectedEmployeeId('');
+                }
+              }
+            }}
+          />
+        </div>
+      ),
+      className: 'w-12 text-center',
+      headerClassName: 'text-center',
+    },
+    {
+      header: 'Name',
+      cell: (employee: Employee) => (
+        <Link
+          href={`/profile/${employee.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="block transition-all hover:text-primary group"
+        >
+          <div className="font-medium group-hover:underline">{employee.firstName} {employee.lastName}</div>
+          {employee.email && (
+            <div className="text-sm text-foreground">{employee.email}</div>
+          )}
+        </Link>
+      ),
+    },
+    {
+      header: 'Role',
+      cell: (employee: Employee) => (
+        <Badge variant="outline">{formatRole(employee.role)}</Badge>
+      ),
+    },
+    {
+      header: 'Department',
+      cell: (employee: Employee) => {
+        let departmentDisplay = '—';
+        if (employee.department) {
+          if (typeof employee.department === 'string') {
+            departmentDisplay = employee.department;
+          } else {
+            departmentDisplay = employee.department.departmentName || employee.department.departmentCode || employee.departmentId || '—';
+          }
+        } else if (employee.departmentId) {
+          departmentDisplay = employee.departmentId;
+        }
+        return <span className="text-sm">{departmentDisplay}</span>;
+      },
+    },
+  ], [selectedEmployeeId, selectedEmployeeIds]);
+
+  const isDateValid = useMemo(() => {
+    if (selectedSchedule?.work_date) return true;
+    if (!formDate) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const scheduleDate = new Date(formDate);
+    scheduleDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = scheduleDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays >= 1;
+  }, [formDate, selectedSchedule]);
+
+  const areTimesValid = useMemo(() => {
+    if (selectedSchedule) return true;
+    
+    if (formShiftId) return true;
+    
+    if (!formStartTime || !formEndTime) return false;
+    
+    const parseTime = (timeStr: string) => {
+      const parts = timeStr.split(':');
+      return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+    };
+    
+    const startMinutes = parseTime(formStartTime);
+    const endMinutes = parseTime(formEndTime);
+    
+    return startMinutes !== endMinutes;
+  }, [formStartTime, formEndTime, formShiftId, selectedSchedule]);
+
+  const hasDate = !!(selectedSchedule?.work_date || formDate);
+  const hasRoom = !!(selectedSchedule?.room_id || formRoomId);
+  const hasTimes = selectedSchedule ? true : (formShiftId ? true : !!(formStartTime && formEndTime));
+  const hasSelectedEmployee = !!(selectedEmployeeId || selectedEmployeeIds.length > 0);
+  const submitting = isSubmitting || isCreatingAssignment || isBulkCreating || isCreatingSchedule;
 
   return (
     <Card className="border border-border overflow-auto">
       <CardHeader>
         <CardTitle className="text-xl">Assign Employee</CardTitle>
         <p className="text-sm text-foreground">
-          {schedule
-            ? `Add another team member to ${schedule.room?.roomCode ?? "a room"} on ${formatDate(schedule.work_date)}.`
+          {selectedSchedule
+            ? `Add another team member to ${selectedSchedule.room?.roomCode ?? "a room"} on ${formatDate(selectedSchedule.work_date)}.`
             : "Select a room and date to assign an employee."}
         </p>
       </CardHeader>
-      <CardContent className="space-y-5">
-        {showRoomSelection ? (
-          <>
-            {/* Show selected schedule info if available */}
-            {schedule && (
+      <CardContent className="space-y-5 relative">
+        {/* Step indicator */}
+        <StepIndicator
+          steps={[
+            { completed: hasDate && isDateValid, label: 'Date' },
+            { completed: hasRoom, label: 'Room' },
+            { completed: hasTimes && areTimesValid, label: 'Time' },
+            { completed: hasSelectedEmployee, label: 'Employee' },
+          ]}
+        />
+        {/* Show selected schedule info if available */}
+        {selectedSchedule && (
               <div className="grid gap-2 rounded-md border border-border p-4 bg-muted/50 text-sm">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -176,17 +560,17 @@ export function AssignEmployeeForm({
                       Selected Schedule
                     </p>
                     <p className="font-semibold">
-                      {schedule.room?.roomCode ?? "Unassigned room"} — {formatDate(schedule.work_date)}
+                      {selectedSchedule.room?.roomCode ?? "Unassigned room"} — {formatDate(selectedSchedule.work_date)}
                     </p>
                   </div>
                   <Badge
                     variant="outline"
                     className={cn(
                       "uppercase",
-                      statusBadgeClass(schedule.schedule_status)
+                      statusBadgeClass(selectedSchedule.schedule_status)
                     )}
                   >
-                    {schedule.schedule_status}
+                    {selectedSchedule.schedule_status}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -195,7 +579,7 @@ export function AssignEmployeeForm({
                       Shift
                     </p>
                     <p className="font-semibold">
-                      {schedule.shift_template?.shift_name ?? "No shift template"}
+                      {selectedSchedule.shift_template?.shift_name ?? "No shift template"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -203,8 +587,8 @@ export function AssignEmployeeForm({
                       Time
                     </p>
                     <p className="font-semibold">
-                      {schedule.actual_start_time ?? "--:--"} —{" "}
-                      {schedule.actual_end_time ?? "--:--"}
+                      {selectedSchedule.actual_start_time ?? "--:--"} —{" "}
+                      {selectedSchedule.actual_end_time ?? "--:--"}
                     </p>
                   </div>
                 </div>
@@ -213,33 +597,49 @@ export function AssignEmployeeForm({
 
             {/* Date Selection */}
             <div>
-              <p className="text-sm font-medium mb-2 text-foreground">
+              <label className="text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  1
+                </span>
                 Select Date
-              </p>
+              </label>
+              {formDate && !isDateValid && (
+                <p className="text-xs text-red-600 mb-2">
+                  ⚠️ Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.
+                </p>
+              )}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !selectedDate && "text-foreground"
+                      !formDate && "text-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                    {formDate ? format(formDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-50" align="start">
                   <Calendar
                     mode="single"
-                    selected={selectedDate}
+                    selected={formDate}
                     onSelect={(date) => {
-                      onDateChange?.(date);
-                      // Clear schedule selection when date changes
-                      if (date && onScheduleSelect) {
-                        onScheduleSelect('');
+                      setFormDate(date);
+                      if (date) {
+                        setSelectedScheduleId('');
                       }
                     }}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const checkDate = new Date(date);
+                      checkDate.setHours(0, 0, 0, 0);
+                      return checkDate <= today;
+                    }}
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear() + 1}
                     initialFocus
                   />
                 </PopoverContent>
@@ -248,17 +648,17 @@ export function AssignEmployeeForm({
 
             {/* Room Selection */}
             <div>
-              <p className="text-sm font-medium mb-2 text-foreground">
+              <label className="text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  2
+                </span>
                 Select Room
-              </p>
+              </label>
               <Select
-                value={selectedRoomId}
+                value={formRoomId}
                 onValueChange={(value) => {
-                  onRoomChange?.(value);
-                  // Clear schedule selection when room changes
-                  if (onScheduleSelect) {
-                    onScheduleSelect('');
-                  }
+                  setFormRoomId(value);
+                  setSelectedScheduleId('');
                 }}
                 disabled={loadingRooms}
               >
@@ -267,24 +667,47 @@ export function AssignEmployeeForm({
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((room) => {
+                    const roomOccupancy = formDate 
+                      ? schedules.filter(s => 
+                          s.room_id === room.id && 
+                          s.work_date && 
+                          new Date(s.work_date).toDateString() === formDate.toDateString()
+                        ).reduce((count, schedule) => count + (schedule.employeeRoomAssignments?.length || 0), 0)
+                      : 0;
+                    
+                    const isRoomAtCapacity = room.capacity ? roomOccupancy >= room.capacity : false;
+                    const isRoomOverCapacity = room.capacity ? roomOccupancy > room.capacity : false;
+
                     const details: string[] = [];
                     if (room.roomType) details.push(`Type: ${room.roomType}`);
                     if (room.department) {
                       const deptName = typeof room.department === 'string' 
                         ? room.department 
-                        : (room.department as any)?.departmentName || (room.department as any)?.departmentCode || 'N/A';
+                        : (room.department.departmentName || room.department.departmentCode || 'N/A');
                       details.push(`Dept: ${deptName}`);
                     }
                     if (room.floor !== undefined && room.floor !== null) details.push(`Floor: ${room.floor}`);
-                    if (room.status) details.push(`Status: ${room.status}`);
-                    if (room.capacity) details.push(`Capacity: ${room.capacity}`);
+                    if (room.capacity) {
+                      details.push(`Capacity: ${roomOccupancy}/${room.capacity}${isRoomAtCapacity ? ' (FULL)' : ''}${isRoomOverCapacity ? ' (OVER)' : ''}`);
+                    }
+                    if (room.serviceRooms && room.serviceRooms.length > 0) {
+                      const activeServices = room.serviceRooms.filter(sr => sr.isActive && sr.service).length;
+                      if (activeServices > 0) {
+                        details.push(`Services: ${activeServices}`);
+                      }
+                    }
                     
                     return (
                       <SelectPrimitive.Item
                         key={room.id}
                         value={room.id}
                         textValue={room.roomCode}
-                        className="focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-start gap-2 rounded-sm py-2 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                        disabled={isRoomAtCapacity || isRoomOverCapacity}
+                        className={cn(
+                          "focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-start gap-2 rounded-sm py-2 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                          (isRoomAtCapacity || isRoomOverCapacity) && "opacity-60",
+                          isRoomOverCapacity && "bg-red-50"
+                        )}
                       >
                         <span className="absolute right-2 top-2 flex size-3.5 items-center justify-center">
                           <SelectPrimitive.ItemIndicator>
@@ -312,25 +735,207 @@ export function AssignEmployeeForm({
               </Select>
             </div>
 
+            {/* Room Details Card */}
+            {selectedRoom && (
+              <Card className={cn(
+                "border-border bg-muted/30",
+                isAtCapacity && "border-amber-500 bg-amber-50/50",
+                wouldExceedCapacity && "border-red-500 bg-red-50/50"
+              )}>
+                <CardHeader>
+                  <CardTitle className={cn(
+                    "text-base flex items-center gap-2",
+                    isAtCapacity && "text-amber-700",
+                    wouldExceedCapacity && "text-red-700"
+                  )}>
+                    <Building2 className="h-4 w-4" />
+                    Room Details: {selectedRoom.roomCode}
+                    {isAtCapacity && (
+                      <Badge variant="outline" className="ml-auto border-amber-500 text-amber-700">
+                        At Capacity
+                      </Badge>
+                    )}
+                    {wouldExceedCapacity && (
+                      <Badge variant="outline" className="ml-auto border-red-500 text-red-700">
+                        Capacity Exceeded
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Capacity & Occupancy */}
+                    <div className="space-y-1">
+                      <p className="text-xs text-foreground font-medium">Capacity</p>
+                      <p className={cn(
+                        "text-sm font-semibold flex items-center gap-1",
+                        isAtCapacity && "text-amber-700",
+                        wouldExceedCapacity && "text-red-700"
+                      )}>
+                        <Users className={cn(
+                          "h-4 w-4",
+                          isAtCapacity && "text-amber-600",
+                          wouldExceedCapacity && "text-red-600",
+                          !isAtCapacity && !wouldExceedCapacity && "text-primary"
+                        )} />
+                        {selectedSchedule 
+                          ? (selectedSchedule.employeeRoomAssignments?.length || 0)
+                          : currentOccupancy} / {selectedRoom.capacity || 'N/A'}
+                        {selectedEmployeeIds.length > 0 && (
+                          <span className="text-xs text-foreground">
+                            (+{selectedEmployeeIds.length} selected)
+                          </span>
+                        )}
+                        {selectedEmployeeId && selectedEmployeeIds.length === 0 && (
+                          <span className="text-xs text-foreground">
+                            (+1 selected)
+                          </span>
+                        )}
+                      </p>
+                      {selectedRoom.capacity && (() => {
+                        const baseOccupancy = selectedSchedule 
+                          ? (selectedSchedule.employeeRoomAssignments?.length || 0)
+                          : currentOccupancy;
+                        const newAssignments = selectedEmployeeIds.length > 0 
+                          ? selectedEmployeeIds.length 
+                          : (selectedEmployeeId ? 1 : 0);
+                        const totalOccupancy = baseOccupancy + newAssignments;
+                        const percentage = Math.min((totalOccupancy / selectedRoom.capacity) * 100, 100);
+                        
+                        return (
+                          <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                            <div 
+                              className={cn(
+                                "h-full transition-all",
+                                wouldExceedCapacity && "bg-red-500",
+                                isAtCapacity && "bg-amber-500",
+                                !isAtCapacity && !wouldExceedCapacity && "bg-primary"
+                              )}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        );
+                      })()}
+                      {wouldExceedCapacity && (
+                        <p className="text-xs text-red-600 font-medium mt-1">
+                          ⚠️ Cannot assign: would exceed capacity
+                        </p>
+                      )}
+                      {isAtCapacity && !wouldExceedCapacity && (
+                        <p className="text-xs text-amber-600 font-medium mt-1">
+                          ⚠️ Room is at full capacity
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Room Type */}
+                    {selectedRoom.roomType && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-foreground font-medium">Type</p>
+                        <p className="text-sm font-semibold">{selectedRoom.roomType}</p>
+                      </div>
+                    )}
+
+                    {/* Department */}
+                    {selectedRoom.department && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-foreground font-medium">Department</p>
+                        <p className="text-sm font-semibold">
+                          {typeof selectedRoom.department === 'string' 
+                            ? selectedRoom.department 
+                            : (selectedRoom.department.departmentName || selectedRoom.department.departmentCode || 'N/A')}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Floor */}
+                    {selectedRoom.floor !== undefined && selectedRoom.floor !== null && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-foreground font-medium">Floor</p>
+                        <p className="text-sm font-semibold">{selectedRoom.floor}</p>
+                      </div>
+                    )}
+
+                    {/* Status */}
+                    {selectedRoom.status && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-foreground font-medium">Status</p>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedRoom.status}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Services */}
+                  {roomServices.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Available Services</p>
+                      <div className="flex flex-wrap gap-2">
+                        {roomServices.map((service, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {service}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Equipment */}
+                  {roomEquipment.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Equipment & Amenities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {roomEquipment.map((eq, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs flex items-center gap-1">
+                            {eq.icon}
+                            {eq.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {selectedRoom.description && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-foreground font-medium">Description</p>
+                      <p className="text-sm text-foreground">{selectedRoom.description}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Existing Schedules for Selected Room/Date */}
-            {selectedDate && selectedRoomId && filteredSchedules.length > 0 && (
+            {formDate && formRoomId && filteredSchedules.length > 0 && (
               <div>
-                <p className="text-sm font-medium mb-2 text-foreground">
-                  Existing Schedules
+                <label className="text-sm font-medium mb-2 text-foreground block">
+                  Use Existing Schedule (Optional)
+                </label>
+                <p className="text-xs text-foreground mb-2">
+                  If there's already a schedule for this room and date, select it to add more employees to it. 
+                  Otherwise, leave as "Create new" to create a new schedule.
                 </p>
                 <Select
-                  value={schedule ? (schedule as RoomSchedule).schedule_id : ''}
-                  onValueChange={(value) => onScheduleSelect?.(value)}
+                  value={selectedScheduleId || '__none__'}
+                  onValueChange={(value) => {
+                    const scheduleId = value === '__none__' ? '' : value;
+                    setSelectedScheduleId(scheduleId);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an existing schedule" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__">Create new schedule</SelectItem>
                     {filteredSchedules.map((s) => (
                       <SelectItem key={s.schedule_id} value={s.schedule_id}>
                         {s.shift_template?.shift_name ?? "No shift"} —{" "}
                         {s.actual_start_time ?? "--:--"} to {s.actual_end_time ?? "--:--"}
-                        {s.employee && ` (${s.employee.firstName} ${s.employee.lastName})`}
+                        {s.employeeRoomAssignments && s.employeeRoomAssignments.length > 0 && (
+                          ` (${s.employeeRoomAssignments.length} employee${s.employeeRoomAssignments.length > 1 ? 's' : ''} assigned)`
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -339,21 +944,27 @@ export function AssignEmployeeForm({
             )}
 
             {/* Shift Template Selection (for new schedules) */}
-            {selectedDate && selectedRoomId && !schedule && (
+            {formDate && formRoomId && !selectedSchedule && (
               <>
                 <div>
-                  <p className="text-sm font-medium mb-2 text-foreground">
-                    Select Shift Template (Optional)
+                  <label className="text-sm font-medium mb-2 text-foreground block">
+                    Shift Template (Optional)
+                  </label>
+                  <p className="text-xs text-foreground mb-2">
+                    Select a shift template to automatically fill start and end times.
                   </p>
                   <Select
-                    value={selectedShiftId || undefined}
-                    onValueChange={onShiftChange}
+                    value={formShiftId || '__none__'}
+                    onValueChange={(value) => {
+                      setFormShiftId(value === '__none__' ? '' : value);
+                    }}
                     disabled={loadingShiftTemplates}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a shift template (optional)" />
+                      <SelectValue placeholder="Select a shift template" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__none__">None (set times manually)</SelectItem>
                       {shiftTemplates.map((shift) => (
                         <SelectItem key={shift.shift_template_id} value={shift.shift_template_id}>
                           {shift.shift_name} ({shift.start_time} - {shift.end_time})
@@ -367,194 +978,168 @@ export function AssignEmployeeForm({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-sm font-medium mb-2 text-foreground">
-                      Start Time
+                      Start Time {!formShiftId && <span className="text-red-600">*</span>}
                     </p>
                     <Input
                       type="time"
-                      value={selectedStartTime}
-                      onChange={(e) => onStartTimeChange?.(e.target.value)}
+                      value={formStartTime}
+                      onChange={(e) => setFormStartTime(e.target.value)}
                       placeholder="HH:MM"
+                      required={!formShiftId}
+                      className={!areTimesValid && !formShiftId && formStartTime ? 'border-red-500' : ''}
                     />
+                    {!areTimesValid && !formShiftId && formStartTime && formEndTime && formStartTime === formEndTime && (
+                      <p className="text-xs text-red-600 mt-1">Start and end times cannot be the same</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium mb-2 text-foreground">
-                      End Time
+                      End Time {!formShiftId && <span className="text-red-600">*</span>}
                     </p>
                     <Input
                       type="time"
-                      value={selectedEndTime}
-                      onChange={(e) => onEndTimeChange?.(e.target.value)}
+                      value={formEndTime}
+                      onChange={(e) => setFormEndTime(e.target.value)}
                       placeholder="HH:MM"
+                      required={!formShiftId}
+                      className={!areTimesValid && !formShiftId && formEndTime ? 'border-red-500' : ''}
                     />
+                    {!areTimesValid && !formShiftId && (!formStartTime || !formEndTime) && (
+                      <p className="text-xs text-red-600 mt-1">Both start and end times are required</p>
+                    )}
                   </div>
                 </div>
               </>
             )}
-          </>
-        ) : schedule ? (
-          <div className="grid gap-2 rounded-md border border-border p-4 bg-muted/50 text-sm">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="text-xs uppercase text-foreground">
-                  Room
-                </p>
-                <p className="font-semibold">
-                  {schedule.room?.roomCode ?? "Unassigned room"}
-                </p>
-              </div>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "uppercase",
-                  statusBadgeClass(schedule.schedule_status)
-                )}
-              >
-                {schedule.schedule_status}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className="text-xs uppercase text-foreground">
-                  Shift
-                </p>
-                <p className="font-semibold">
-                  {schedule.shift_template?.shift_name ?? "No shift template"}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase text-foreground">
-                  Time
-                </p>
-                <p className="font-semibold">
-                  {schedule.actual_start_time ?? "--:--"} —{" "}
-                  {schedule.actual_end_time ?? "--:--"}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-4 text-sm text-foreground/70">
-            Select a schedule on the left or choose a date and room above.
-          </div>
-        )}
 
-        <div className="grid gap-3">
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text-sm font-medium mb-2 text-foreground">
-                Filter by role
-              </p>
-              <Select
-                value={roleFilter}
-                onValueChange={onRoleFilterChange}
-                disabled={loadingEmployees}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All roles</SelectItem>
-                  {roleOptions.map((role) => (
-                    <SelectItem key={role} value={role ?? "unknown"}>
-                      {formatRole(role)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-2 text-foreground">
-                Filter by department
-              </p>
-              <Select
-                value={departmentFilter}
-                onValueChange={onDepartmentFilterChange}
-                disabled={loadingEmployees}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All departments</SelectItem>
-                  {departmentOptions.map((departmentId) => (
-                    <SelectItem key={departmentId} value={departmentId ?? "unknown"}>
-                      {departmentId ?? "Unknown dept."}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+        <div className="grid gap-4">
           <div>
-            <p className="text-sm font-medium mb-2 text-foreground">
-              Search employees
-            </p>
-            <Input
-              placeholder="Search by name or email"
-              value={searchTerm}
-              onChange={(event) => onSearchTermChange(event.target.value)}
-              disabled={loadingEmployees}
+            <label className="text-sm font-medium mb-3 text-foreground flex items-center gap-2">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                3
+              </span>
+              Available employees ({availableEmployees.length})
+            </label>
+            
+            {/* Search and Filter Controls */}
+            <div className="grid gap-3 mb-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={employeeSearch}
+                    onChange={(e) => setEmployeeSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    className="pl-9"
+                    disabled={availableEmployeesLoading}
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={availableEmployeesLoading}
+                  type="button"
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </Button>
+              </div>
+              
+              <div className="flex items-center flex-wrap gap-2">
+                <div>
+                  <Select
+                    value={roleFilter || 'all'}
+                    onValueChange={(value) => setRoleFilter(value === 'all' ? '' : value)}
+                    disabled={availableEmployeesLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All roles</SelectItem>
+                      {roleOptions.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {formatRole(role)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Select
+                    value={departmentFilter || 'all'}
+                    onValueChange={(value) => setDepartmentFilter(value === 'all' ? '' : value)}
+                    disabled={availableEmployeesLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+                      {departmentOptions.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Employee Data Table */}
+            <DataTable
+              columns={employeeColumns}
+              data={availableEmployees}
+              isLoading={availableEmployeesLoading}
+              emptyStateIcon={<Users className="h-8 w-8 text-foreground" />}
+              emptyStateTitle="No employees available"
+              emptyStateDescription={
+                employeeSearch || roleFilter || departmentFilter
+                  ? "No employees match your search criteria. Try adjusting your filters."
+                  : "No employees are available for the selected date and time."
+              }
+              rowKey={(employee) => employee.id}
+              rowClassName={(employee) => {
+                const isSelected = selectedEmployeeIds.includes(employee.id) || selectedEmployeeId === employee.id;
+                return isSelected ? 'bg-primary/10 hover:bg-primary/15 border-l-2 border-l-primary' : undefined;
+              }}
             />
-          </div>
-
-          <div>
-            <p className="text-sm font-medium mb-2 text-foreground">
-              Matching employees ({employees.length})
-            </p>
-            {loadingEmployees && (
-              <div className="flex items-center gap-2 text-xs text-foreground/80 mb-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading available employees...
-              </div>
-            )}
-            <Select
-              value={selectedEmployeeId}
-              onValueChange={onSelectedEmployeeChange}
-              disabled={loadingEmployees || employees.length === 0}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an employee" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.firstName} {employee.lastName} —{" "}
-                    {formatRole(employee.role)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {employees.length === 0 && (
-              <Alert variant="destructive" className="mt-2">
-                <AlertTitle>No employees available</AlertTitle>
-                <AlertDescription>
-                  Try widening your filters or pick a different role/department.
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          onClick={handleSubmit}
-          disabled={
-            submitting ||
-            loadingEmployees ||
-            !selectedEmployeeId ||
-            employees.length === 0
-          }
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Assigning...
-            </>
-          ) : (
-            "Assign Employee"
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="w-full"
+            onClick={handleSubmit}
+            disabled={
+              submitting ||
+              availableEmployeesLoading ||
+              (!selectedEmployeeId && selectedEmployeeIds.length === 0) ||
+              availableEmployees.length === 0 ||
+              wouldExceedCapacity
+            }
+            variant={(selectedEmployeeId || selectedEmployeeIds.length > 0) && !wouldExceedCapacity ? "default" : "outline"}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Assigning...
+              </>
+            ) : (
+              selectedEmployeeIds.length > 0 
+                ? `Assign ${selectedEmployeeIds.length} Employee${selectedEmployeeIds.length > 1 ? 's' : ''}`
+                : selectedEmployeeId
+                  ? "Assign Employee"
+                  : "Assign"
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

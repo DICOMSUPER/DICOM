@@ -297,7 +297,8 @@ export class UserController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
-    @Query('role') role?: string
+    @Query('role') role?: string,
+    @Query('departmentId') departmentId?: string
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -311,6 +312,7 @@ export class UserController {
           limit: limitNum,
           search,
           role,
+          departmentId,
         })
       );
 
@@ -363,9 +365,19 @@ export class UserController {
           { id, role, search }
         )
       );
-      //map user from schedule
-      const userArray = scheduleArray.map((schedule: RoomSchedule) => {
-        return schedule.employee;
+      //map user from schedule's employeeRoomAssignments
+      const userArray: User[] = [];
+      scheduleArray.forEach((schedule: RoomSchedule) => {
+        if (schedule.employeeRoomAssignments && schedule.employeeRoomAssignments.length > 0) {
+          schedule.employeeRoomAssignments.forEach((assignment) => {
+            if (assignment.employee && assignment.isActive) {
+              // Avoid duplicates
+              if (!userArray.find(u => u.id === assignment.employee.id)) {
+                userArray.push(assignment.employee);
+              }
+            }
+          });
+        }
       });
 
       //get queue order to map over

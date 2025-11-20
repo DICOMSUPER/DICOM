@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Clock, MapPin, X } from "lucide-react";
+import { Clock, MapPin, X, Users, Building2, Info, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RoomViewModal } from "@/components/admin/room/room-view-modal";
 import {
   Select,
   SelectContent,
@@ -77,6 +78,8 @@ export function RoomView({
 }: RoomViewProps) {
   const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(new Set());
   const [selectValue, setSelectValue] = useState<string>("");
+  const [selectedRoomForDetails, setSelectedRoomForDetails] = useState<any>(null);
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
   const { data: roomsData, isLoading: roomsLoading } = useGetRoomsQuery({
     page: 1,
@@ -137,6 +140,19 @@ export function RoomView({
       if (b === "Unassigned") return -1;
       return a.localeCompare(b);
     });
+  }, [schedulesWithTemplates]);
+
+  // Calculate occupancy for each room
+  const roomOccupancyMap = useMemo(() => {
+    const occupancy: Record<string, number> = {};
+    schedulesWithTemplates.forEach((schedule) => {
+      const roomKey = schedule.room?.roomCode || schedule.room_id || "Unassigned";
+      if (!occupancy[roomKey]) {
+        occupancy[roomKey] = 0;
+      }
+      occupancy[roomKey] += schedule.employeeRoomAssignments?.length || 0;
+    });
+    return occupancy;
   }, [schedulesWithTemplates]);
 
   // Get available rooms from schedules and rooms API
@@ -362,21 +378,159 @@ export function RoomView({
           {filteredSchedulesByRoom.map(([roomCode, roomSchedules]) => {
         const room = roomSchedules[0]?.room;
         const roomName = room?.roomCode || roomCode;
+        const currentOccupancy = roomOccupancyMap[roomCode] || 0;
+        const roomFromApi = roomsData?.data?.find(r => r.roomCode === roomCode || r.id === room?.id);
+        const fullRoomData = room || roomFromApi;
+
+        // Get room equipment
+        const roomEquipment = fullRoomData ? [
+          fullRoomData.hasTV && { name: 'TV', icon: <Tv className="h-3 w-3" /> },
+          fullRoomData.hasAirConditioning && { name: 'AC', icon: <Thermometer className="h-3 w-3" /> },
+          fullRoomData.hasWiFi && { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> },
+          fullRoomData.hasTelephone && { name: 'Phone', icon: <Phone className="h-3 w-3" /> },
+          fullRoomData.hasAttachedBathroom && { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> },
+          fullRoomData.isWheelchairAccessible && { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> },
+          fullRoomData.hasOxygenSupply && { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> },
+          fullRoomData.hasNurseCallButton && { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> },
+        ].filter(Boolean) : [];
+
+        // Get room services
+        const roomServices = fullRoomData?.serviceRooms?.filter(sr => sr.isActive && sr.service).map(sr => 
+          sr.service?.serviceName || sr.service?.serviceCode || 'Unknown'
+        ) || [];
 
         return (
           <div key={roomCode} className="space-y-2 border-b border-border pb-6 last:border-b-0">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="h-5 w-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">{roomName}</h3>
-              {room && (
-                <Badge variant="outline" className="text-xs">
-                  {room.roomType}
-                </Badge>
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <MapPin className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900">{roomName}</h3>
+                {fullRoomData?.roomType && (
+                  <Badge variant="outline" className="text-xs">
+                    {fullRoomData.roomType}
+                  </Badge>
+                )}
+                <span className="text-sm text-gray-500">
+                  ({roomSchedules.length} schedule{roomSchedules.length !== 1 ? "s" : ""})
+                </span>
+              </div>
+              
+              {/* Room Info Badge */}
+              {fullRoomData && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Capacity & Occupancy */}
+                  {fullRoomData.capacity && (
+                    <Badge variant="secondary" className="text-xs text-white flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {currentOccupancy}/{fullRoomData.capacity}
+                    </Badge>
+                  )}
+                  
+                  {/* Services count */}
+                  {roomServices.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {roomServices.length} service{roomServices.length !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  
+                  {/* Equipment count */}
+                  {roomEquipment.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {roomEquipment.length} {roomEquipment.length > 0 ? "Equipments" : 'No equipment'} 
+                    </Badge>
+                  )}
+                  
+                  {/* Details Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-sm h-7 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-md border border-primary/20"
+                    onClick={() => {
+                      // Add current occupancy to room data for modal
+                      const roomWithOccupancy = {
+                        ...fullRoomData,
+                        roomStats: {
+                          currentInProgress: currentOccupancy,
+                          maxWaiting: fullRoomData.capacity,
+                        },
+                      };
+                      setSelectedRoomForDetails(roomWithOccupancy);
+                      setIsRoomModalOpen(true);
+                    }}
+                  >
+                    <Info className="h-4 w-4 mr-1" />
+                    Details
+                  </Button>
+                </div>
               )}
-              <span className="text-sm text-gray-500">
-                ({roomSchedules.length} schedule{roomSchedules.length !== 1 ? "s" : ""})
-              </span>
             </div>
+            
+            {/* Room Quick Info */}
+            {fullRoomData && (
+              <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  {/* Capacity */}
+                  {fullRoomData.capacity && (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-700">
+                        <span className="font-semibold">{currentOccupancy}</span> / {fullRoomData.capacity} assigned
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Department */}
+                  {fullRoomData.department && (
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-700">
+                        {typeof fullRoomData.department === 'string' 
+                          ? fullRoomData.department 
+                          : (fullRoomData.department.departmentName || fullRoomData.department.departmentCode || 'N/A')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Floor */}
+                  {fullRoomData.floor !== undefined && fullRoomData.floor !== null && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-700">Floor {fullRoomData.floor}</span>
+                    </div>
+                  )}
+                  
+                  {/* Status */}
+                  {fullRoomData.status && (
+                    <div>
+                      <Badge variant="outline" className="text-xs">
+                        {fullRoomData.status}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Services & Equipment Preview */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {roomServices.slice(0, 3).map((service, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                      {service}
+                    </Badge>
+                  ))}
+                  {roomServices.length > 3 && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                      +{roomServices.length - 3} more
+                    </Badge>
+                  )}
+                  
+                  {roomEquipment.slice(0, roomEquipment.length).map((eq: any, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                      {eq.icon}
+                      {eq.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-2 space-y-0">
@@ -406,8 +560,12 @@ export function RoomView({
                             <div className="ml-2 flex items-center justify-between gap-4">
                               <div>
                                 <h4 className="font-semibold text-gray-900 text-base">
-                                  {segmentSchedules[0].employee?.firstName}{" "}
-                                  {segmentSchedules[0].employee?.lastName}
+                                  {segmentSchedules[0].employeeRoomAssignments && segmentSchedules[0].employeeRoomAssignments.length > 0
+                                    ? segmentSchedules[0].employeeRoomAssignments
+                                        .filter(a => a.isActive && a.employee)
+                                        .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`)
+                                        .join(', ')
+                                    : 'No employees assigned'}
                                 </h4>
                                 <div className="flex items-center space-x-1 text-xs text-gray-600">
                                   <Clock className="h-3 w-3" />
@@ -465,8 +623,12 @@ export function RoomView({
                                   >
                                     <div className="flex items-center gap-2">
                                       <span className="font-medium">
-                                        {schedule.employee?.firstName}{" "}
-                                        {schedule.employee?.lastName}
+                                        {schedule.employeeRoomAssignments && schedule.employeeRoomAssignments.length > 0
+                                          ? schedule.employeeRoomAssignments
+                                              .filter(a => a.isActive && a.employee)
+                                              .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`)
+                                              .join(', ')
+                                          : 'No employees assigned'}
                                       </span>
                                       <span className="text-gray-500">
                                         ({schedule.schedule_status})
@@ -506,6 +668,18 @@ export function RoomView({
         );
       })}
         </>
+      )}
+
+      {/* Room Details Modal */}
+      {selectedRoomForDetails && (
+        <RoomViewModal
+          room={selectedRoomForDetails}
+          isOpen={isRoomModalOpen}
+          onClose={() => {
+            setIsRoomModalOpen(false);
+            setSelectedRoomForDetails(null);
+          }}
+        />
       )}
     </div>
   );
