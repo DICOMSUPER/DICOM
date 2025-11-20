@@ -176,6 +176,8 @@ export class UsersController {
       limit?: number;
       search?: string;
       isActive?: boolean;
+      role?: string;
+      departmentId?: string;
     }
   ) {
     try {

@@ -175,7 +175,16 @@ export const RoomScheduleApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["RoomSchedule", "Stats"],
+      invalidatesTags: (result, error) => {
+        if (result?.schedule_id) {
+          return [
+            { type: "RoomSchedule", id: result.schedule_id },
+            "RoomSchedule",
+            "Stats",
+          ];
+        }
+        return ["RoomSchedule", "Stats"];
+      },
     }),
 
     // Update employee schedule
@@ -232,12 +241,23 @@ export const RoomScheduleApi = createApi({
     }),
 
     // Get available employees for scheduling
-    getAvailableEmployees: builder.query<Employee[], { date: string; time?: string; startTime?: string; endTime?: string }>({
-      query: ({ date, time, startTime, endTime }) => {
+    getAvailableEmployees: builder.query<Employee[], { 
+      date: string; 
+      time?: string; 
+      startTime?: string; 
+      endTime?: string;
+      search?: string;
+      role?: string;
+      departmentId?: string;
+    }>({
+      query: ({ date, time, startTime, endTime, search, role, departmentId }) => {
         const params: Record<string, string> = { date };
         if (time) params.time = time;
         if (startTime) params.startTime = startTime;
         if (endTime) params.endTime = endTime;
+        if (search) params.search = search;
+        if (role) params.role = role;
+        if (departmentId) params.departmentId = departmentId;
         return {
           url: "/available-employees",
           method: "GET",

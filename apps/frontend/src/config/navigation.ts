@@ -47,12 +47,6 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage system users and roles",
     },
     {
-      href: "/admin/schedule",
-      label: "Schedule Management",
-      icon: Clock,
-      description: "Manage staff schedules and assignments",
-    },
-    {
       href: "/admin/working-hours",
       label: "Working Hours",
       icon: Timer,

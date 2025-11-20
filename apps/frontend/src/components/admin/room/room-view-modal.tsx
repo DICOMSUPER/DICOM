@@ -116,6 +116,11 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                       <p className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         Capacity: {room.capacity} people
+                        {room.roomStats?.currentInProgress !== undefined && (
+                          <span className="text-xs text-foreground ml-2">
+                            ({room.roomStats.currentInProgress} currently assigned)
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -218,11 +223,30 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </section>
                 )}
 
+                {/* Services */}
+                {room.serviceRooms && room.serviceRooms.length > 0 && (
+                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Building2 className="h-5 w-5" />
+                      Available Services
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {room.serviceRooms
+                        .filter(sr => sr.isActive && sr.service)
+                        .map((sr) => (
+                          <Badge key={sr.id} variant="secondary" className="text-sm px-3 py-1">
+                            {sr.service?.serviceName || sr.service?.serviceCode || 'Unknown Service'}
+                          </Badge>
+                        ))}
+                    </div>
+                  </section>
+                )}
+
                 {/* Facilities */}
                 <section className="rounded-2xl p-6 shadow border-border border space-y-4">
                   <div className="flex items-center gap-2 text-lg font-semibold">
                     <Building2 className="h-5 w-5" />
-                    Facilities
+                    Equipment & Amenities
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {[

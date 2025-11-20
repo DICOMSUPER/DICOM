@@ -50,6 +50,8 @@ export class RoomScheduleRepository {
       .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
       .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
+      .leftJoinAndSelect('serviceRooms.service', 'service')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template');
 
     // Apply filters
@@ -127,6 +129,8 @@ export class RoomScheduleRepository {
       .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
       .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
+      .leftJoinAndSelect('serviceRooms.service', 'service')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template')
       .where('assignments.employeeId = :employeeId', { employeeId })
       .andWhere('assignments.isActive = :isActive', { isActive: true })
@@ -150,6 +154,8 @@ export class RoomScheduleRepository {
       .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
       .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
+      .leftJoinAndSelect('serviceRooms.service', 'service')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template')
       .where('schedule.work_date >= :startDate', { startDate })
       .andWhere('schedule.work_date <= :endDate', { endDate })
@@ -175,6 +181,8 @@ export class RoomScheduleRepository {
         'employeeRoomAssignments',
         'employeeRoomAssignments.employee',
         'room',
+        'room.serviceRooms',
+        'room.serviceRooms.service',
         'shift_template',
       ],
       order: { actual_start_time: 'ASC' },
@@ -189,6 +197,8 @@ export class RoomScheduleRepository {
       .leftJoinAndSelect('schedule.employeeRoomAssignments', 'assignments')
       .leftJoinAndSelect('assignments.employee', 'employee')
       .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('room.serviceRooms', 'serviceRooms')
+      .leftJoinAndSelect('serviceRooms.service', 'service')
       .leftJoinAndSelect('schedule.shift_template', 'shift_template');
 
     if (filters.employeeId) {

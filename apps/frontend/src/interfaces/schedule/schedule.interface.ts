@@ -1,4 +1,6 @@
 import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { Department } from "@/interfaces/user/department.interface";
+import { Room as RoomInterface } from "@/interfaces/user/room.interface";
 
 // Employee Schedule Interfaces
 export interface Employee {
@@ -11,43 +13,16 @@ export interface Employee {
   phone?: string;
   employeeId?: string;
   departmentId?: string;
-  department?: Department;
+  department?: Department | string; // Can be object or string for backward compatibility
 }
 
-export interface Department {
-  id: string;
-  departmentName: string;
-  departmentCode: string;
-  description?: string;
-  isActive: boolean;
-}
-
-export interface Room {
-  id: string;
-  roomCode: string;
-  roomType: string;
-  department?: string;
-  floor?: number;
-  capacity?: number;
-  pricePerDay?: number;
-  status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
-  description?: string;
-  hasTV: boolean;
-  hasAirConditioning: boolean;
-  hasWiFi: boolean;
-  hasTelephone: boolean;
-  hasAttachedBathroom: boolean;
-  isWheelchairAccessible: boolean;
-  hasOxygenSupply: boolean;
-  hasNurseCallButton: boolean;
-  notes?: string;
-  isActive: boolean;
-}
+// Use the Room type from user interface to ensure consistency
+export type Room = RoomInterface;
 
 export interface ShiftTemplate {
   shift_template_id: string;
   shift_name: string;
-  shift_type: 'MORNING' | 'AFTERNOON' | 'NIGHT' | 'FULL_DAY';
+  shift_type: 'MORNING' | 'AFTERNOON' | 'NIGHT' | 'FULL_DAY' | 'morning' | 'afternoon' | 'night' | 'full_day' | 'custom';
   start_time: string;
   end_time: string;
   break_start_time?: string;
@@ -58,7 +33,6 @@ export interface ShiftTemplate {
 
 export interface RoomSchedule {
   schedule_id: string;
-  employee_id?: string;
   room_id?: string;
   shift_template_id?: string;
   work_date: string;
@@ -68,7 +42,6 @@ export interface RoomSchedule {
   notes?: string;
   overtime_hours: number;
   created_by?: string;
-  employee?: Employee;
   room?: Room;
   shift_template?: ShiftTemplate;
   employeeRoomAssignments?: EmployeeRoomAssignment[];
@@ -76,7 +49,7 @@ export interface RoomSchedule {
 
 // DTOs for API calls
 export interface CreateRoomScheduleDto {
-  employee_id: string;
+  // Note: employee_id removed - employees are assigned via employee_room_assignments
   room_id?: string;
   shift_template_id?: string;
   work_date: string;
