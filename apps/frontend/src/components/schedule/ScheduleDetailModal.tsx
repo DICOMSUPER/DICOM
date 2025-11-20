@@ -12,7 +12,10 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,12 +29,22 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { EditScheduleModal } from "@/components/admin/room-assignments/EditScheduleModal";
+import { DeleteScheduleModal } from "@/components/admin/room-assignments/DeleteScheduleModal";
+import { DeleteAssignmentModal } from "@/components/admin/room-assignments/DeleteAssignmentModal";
+import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
+import { extractApiData } from "@/utils/api";
+import { formatTimeRange } from "@/utils/schedule-helpers";
+import { Monitor, Stethoscope } from "lucide-react";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { ServiceRoom } from "@/interfaces/user/service-room.interface";
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;
   isOpen: boolean;
   onClose: () => void;
   getStatusColor: (status: string) => string;
+  onScheduleUpdated?: () => void;
 }
 
 export function ScheduleDetailModal({
@@ -39,6 +52,7 @@ export function ScheduleDetailModal({
   isOpen,
   onClose,
   getStatusColor,
+  onScheduleUpdated,
 }: ScheduleDetailModalProps) {
   const scheduleList = useMemo(
     () =>
@@ -50,12 +64,61 @@ export function ScheduleDetailModal({
     [schedulePayload]
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteAssignmentModalOpen, setIsDeleteAssignmentModalOpen] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveIndex(0);
+    if (!isOpen) {
+      setIsEditModalOpen(false);
+      setIsDeleteModalOpen(false);
+      setIsDeleteAssignmentModalOpen(false);
+      setAssignmentToDelete(null);
+    }
   }, [isOpen, scheduleList.length]);
 
   const activeSchedule = scheduleList[activeIndex];
+  const roomId = activeSchedule?.room?.id ?? "";
+
+  const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
+    roomId,
+    { 
+      skip: !roomId || !isOpen,
+      refetchOnMountOrArgChange: true 
+    }
+  );
+  const modalities = useMemo(() => {
+    if (!modalitiesData) return [];
+    return extractApiData<ModalityMachine>(modalitiesData);
+  }, [modalitiesData]);
+
+  const roomServices = useMemo(() => {
+    if (!activeSchedule?.room?.serviceRooms) return [];
+    return activeSchedule.room.serviceRooms.filter((sr) => sr.isActive && sr.service);
+  }, [activeSchedule]);
+
+  const assignments = useMemo(() => activeSchedule?.employeeRoomAssignments ?? [], [activeSchedule]);
+  const primaryEmployee = useMemo(() => {
+    const assignmentList = activeSchedule?.employeeRoomAssignments ?? [];
+    return (
+      assignmentList.find((assignment) => assignment.isActive && assignment.employee)?.employee ??
+      assignmentList.find((assignment) => assignment.employee)?.employee ??
+      null
+    );
+  }, [activeSchedule]);
+
+  const isDateInAdvance = useMemo(() => {
+    if (!activeSchedule?.work_date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const scheduleDate = new Date(activeSchedule.work_date);
+    scheduleDate.setHours(0, 0, 0, 0);
+    const diffTime = scheduleDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 1;
+  }, [activeSchedule]);
 
   if (!activeSchedule) return null;
   const schedule: RoomSchedule = activeSchedule;
@@ -81,10 +144,6 @@ export function ScheduleDetailModal({
     return `${dateLabel} • ${item.actual_start_time ?? "--:--"}`;
   };
 
-  const formatTime = (time?: string) => {
-    if (!time) return "Not set";
-    return time;
-  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -117,16 +176,51 @@ export function ScheduleDetailModal({
     return (firstInitial + lastInitial || "NA").toUpperCase();
   };
 
-  const assignments = schedule.employeeRoomAssignments ?? [];
-  const primaryEmployee =
-    assignments.find((assignment) => assignment.isActive && assignment.employee)?.employee ??
-    assignments.find((assignment) => assignment.employee)?.employee ??
-    schedule.employee;
+  const getStatusBadgeClass = (status: string | boolean | undefined, type: 'schedule' | 'machine' | 'service' | 'assignment' = 'schedule'): string => {
+    if (type === 'assignment') {
+      const isActive = status === true || status === 'true' || status === 'ACTIVE';
+      return isActive 
+        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+        : 'bg-gray-100 text-gray-700 border-gray-200';
+    }
 
-  const statusLabel = schedule.schedule_status
-    ? schedule.schedule_status.replace(/_/g, " ")
-    : "status";
-  const formattedStatus = statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1);
+    if (type === 'service') {
+      const isActive = status === true || status === 'true' || status === 'ACTIVE';
+      return isActive 
+        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+        : 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+
+    if (type === 'machine') {
+      const statusStr = String(status || '').toUpperCase();
+      if (statusStr === 'ACTIVE' || statusStr === 'AVAILABLE') {
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      } else if (statusStr === 'INACTIVE' || statusStr === 'UNAVAILABLE') {
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+      } else if (statusStr === 'MAINTENANCE') {
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      }
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+
+    return getStatusColor(String(status || ''));
+  };
+
+  const getStatusLabel = (status: string | boolean | undefined, type: 'schedule' | 'machine' | 'service' | 'assignment' = 'schedule'): string => {
+    if (type === 'assignment' || type === 'service') {
+      const isActive = status === true || status === 'true' || status === 'ACTIVE';
+      return isActive ? 'Active' : 'Inactive';
+    }
+
+    if (type === 'machine') {
+      const statusStr = String(status || 'Unknown').toLowerCase();
+      return statusStr.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+
+    const statusStr = String(status || 'Unknown').toLowerCase();
+    return statusStr.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
   const notes = schedule.notes?.trim();
 
   const summaryStats = [
@@ -144,7 +238,7 @@ export function ScheduleDetailModal({
     },
     {
       label: "Shift Window",
-      value: `${formatTime(schedule.actual_start_time)} – ${formatTime(schedule.actual_end_time)}`,
+      value: formatTimeRange(schedule.actual_start_time, schedule.actual_end_time),
       caption: schedule.shift_template?.shift_name ?? "Custom shift",
       icon: CalendarClock,
     },
@@ -158,7 +252,7 @@ export function ScheduleDetailModal({
     },
     {
       label: "Actual Time",
-      value: `${formatTime(schedule.actual_start_time)} – ${formatTime(schedule.actual_end_time)}`,
+      value: formatTimeRange(schedule.actual_start_time, schedule.actual_end_time),
       icon: Clock,
     },
     {
@@ -246,14 +340,14 @@ export function ScheduleDetailModal({
                       </p>
                       <p className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        {formatTime(schedule.actual_start_time)} – {formatTime(schedule.actual_end_time)}
+                        {formatTimeRange(schedule.actual_start_time, schedule.actual_end_time)}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <Badge className={`${getStatusColor(schedule.schedule_status)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                    {formattedStatus}
+                  <Badge className={`${getStatusBadgeClass(schedule.schedule_status, 'schedule')} px-4 py-1 text-xs font-medium shadow-sm border`}>
+                    {getStatusLabel(schedule.schedule_status, 'schedule')}
                   </Badge>
                   {primaryEmployee && (
                     <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
@@ -293,9 +387,9 @@ export function ScheduleDetailModal({
               </div>
             </section>
 
-            <div className="grid gap-6 xl:grid-cols-3">
-              <div className="xl:col-span-2 space-y-6">
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+            <div className="grid gap-6 xl:grid-cols-2">
+              
+                <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
                   <div className="flex items-center gap-2 text-lg font-semibold">
                     <Calendar className="h-5 w-5" />
                     Schedule Overview
@@ -315,73 +409,7 @@ export function ScheduleDetailModal({
                     })}
                   </div>
                 </section>
-
-                {schedule.room && (
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <MapPin className="h-5 w-5" />
-                      Room Details
-                    </div>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Room code</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.room.roomCode}</p>
-                      </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Room type</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.room.roomType}</p>
-                      </div>
-                        <div className="md:col-span-2 rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Description</p>
-                        <p className="text-base text-foreground">
-                          {schedule.room.description || "No description provided"}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {schedule.shift_template && (
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Clock className="h-5 w-5" />
-                      Shift Template
-                    </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Shift name</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_name}</p>
-                      </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Shift type</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_type?.charAt(0).toUpperCase() + schedule.shift_template.shift_type?.slice(1)}</p>
-                      </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Scheduled time</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {schedule.shift_template.start_time} – {schedule.shift_template.end_time}
-                        </p>
-                      </div>
-                      {schedule.shift_template.break_start_time && schedule.shift_template.break_end_time && (
-                        <div className="md:col-span-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-amber-200/30">
-                          <p className="text-sm font-semibold text-amber-900">Break Period</p>
-                          <p className="text-base font-semibold text-amber-800">
-                            {schedule.shift_template.break_start_time} – {schedule.shift_template.break_end_time}
-                          </p>
-                          {schedule.shift_template.description && (
-                            <p className="text-xs text-amber-700 mt-2">
-                              {schedule.shift_template.description}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                )}
-              </div>
-
-              <div className="space-y-6">
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Users className="h-5 w-5" />
@@ -422,33 +450,207 @@ export function ScheduleDetailModal({
                               </p>
                             </div>
                           </div>
-                          <div className="text-right space-y-1">
-                            <Badge variant={assignment.isActive ? "default" : "outline"} className="text-[10px] uppercase tracking-wide">
-                              {assignment.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                            <p className="text-[10px] text-foreground">
-                              Added {formatDateTime((assignment as any)?.createdAt)}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <div className="text-right space-y-1">
+                              <Badge className={`${getStatusBadgeClass(assignment.isActive, 'assignment')} text-xs font-medium border`}>
+                                {getStatusLabel(assignment.isActive, 'assignment')}
+                              </Badge>
+                              <p className="text-[10px] text-foreground">
+                                Added {formatDateTime((assignment as any)?.createdAt)}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                setAssignmentToDelete(assignment.id);
+                                setIsDeleteAssignmentModalOpen(true);
+                              }}
+                              disabled={!isDateInAdvance}
+                              title={!isDateInAdvance ? "Cannot delete assignments for today or in the past. Only future assignments can be deleted." : undefined}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </section>
+                {schedule.room && (
+                  <section className="xl:col-span-2 rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <MapPin className="h-5 w-5" />
+                      Room Details
+                    </div>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Room code</p>
+                        <p className="text-base font-semibold text-foreground">{schedule.room.roomCode}</p>
+                      </div>
+                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Room type</p>
+                        <p className="text-base font-semibold text-foreground">{schedule.room.roomType}</p>
+                      </div>
+                        {schedule.room.capacity && (
+                          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                            <p className="text-sm text-foreground">Capacity</p>
+                            <p className="text-base font-semibold text-foreground">{schedule.room.capacity}</p>
+                          </div>
+                        )}
+                        <div className="md:col-span-3 rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Description</p>
+                        <p className="text-base text-foreground">
+                          {schedule.room.description || "No description provided"}
+                        </p>
+                      </div>
+                    </div>
 
-                {notes && (
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-3">
+                    {modalities.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2 text-base font-semibold">
+                          <Monitor className="h-4 w-4" />
+                          Modality Machines ({modalities.length})
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {modalities.map((machine: ModalityMachine) => {
+                            const displayName = machine.name || 
+                              machine.modality?.modalityName || 
+                              `${machine.manufacturer || ''} ${machine.model || ''}`.trim() ||
+                              "Unnamed Machine";
+                            
+                            return (
+                              <div
+                                key={machine.id}
+                                className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                              >
+                                <p className="text-sm font-semibold text-foreground">
+                                  {displayName}
+                                </p>
+                                {machine.modality?.modalityName && machine.name && (
+                                  <p className="text-xs text-foreground">Type: {machine.modality.modalityName}</p>
+                                )}
+                                {machine.model && (
+                                  <p className="text-xs text-foreground">Model: {machine.model}</p>
+                                )}
+                                {machine.manufacturer && (
+                                  <p className="text-xs text-foreground">Manufacturer: {machine.manufacturer}</p>
+                                )}
+                                {machine.status && (
+                                  <Badge
+                                    className={`${getStatusBadgeClass(machine.status, 'machine')} text-xs font-medium mt-1 border`}
+                                  >
+                                    {getStatusLabel(machine.status, 'machine')}
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {roomServices.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2 text-base font-semibold">
+                          <Stethoscope className="h-4 w-4" />
+                          Room Services ({roomServices.length})
+                        </div>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {roomServices
+                            .filter((sr: ServiceRoom) => sr.isActive && sr.service)
+                            .map((sr: ServiceRoom) => (
+                              <div
+                                key={sr.id}
+                                className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold text-foreground">
+                                      {sr.service?.serviceName || "Unknown Service"}
+                                    </p>
+                                    {sr.service?.serviceCode && (
+                                      <p className="text-xs text-foreground/70 mt-0.5">
+                                        Code: {sr.service.serviceCode}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge className={`${getStatusBadgeClass(sr.isActive, 'service')} text-xs font-medium shrink-0 border`}>
+                                    {getStatusLabel(sr.isActive, 'service')}
+                                  </Badge>
+                                </div>
+                                {sr.service?.description && (
+                                  <p className="text-xs text-foreground/80 line-clamp-2 mt-1">
+                                    {sr.service.description}
+                                  </p>
+                                )}
+                                {sr.notes && (
+                                  <div className="mt-2 pt-2 border-t border-border/20">
+                                    <p className="text-xs font-medium text-foreground/70">Notes:</p>
+                                    <p className="text-xs text-foreground/80 mt-0.5">{sr.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {schedule.shift_template && (
+                  <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Clock className="h-5 w-5" />
+                      Shift Template
+                    </div>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Shift name</p>
+                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_name}</p>
+                      </div>
+                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Shift type</p>
+                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_type?.charAt(0).toUpperCase() + schedule.shift_template.shift_type?.slice(1)}</p>
+                      </div>
+                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
+                        <p className="text-sm text-foreground">Scheduled time</p>
+                        <p className="text-base font-semibold text-foreground">
+                          {schedule.shift_template.start_time} – {schedule.shift_template.end_time}
+                        </p>
+                      </div>
+                      {schedule.shift_template.break_start_time && schedule.shift_template.break_end_time && (
+                        <div className="md:col-span-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-amber-200/30">
+                          <p className="text-sm font-semibold text-amber-900">Break Period</p>
+                          <p className="text-base font-semibold text-amber-800">
+                            {schedule.shift_template.break_start_time} – {schedule.shift_template.break_end_time}
+                          </p>
+                          {schedule.shift_template.description && (
+                            <p className="text-xs text-amber-700 mt-2">
+                              {schedule.shift_template.description}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
+                        
+                
+
+                
+                  <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-3">
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <FileText className="h-5 w-5" />
                       Notes
                     </div>
                     <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
-                      {notes}
+                      {notes || "No notes provided"}
                     </p>
                   </section>
-                )}
+                
               </div>
-            </div>
           </div>
         </ScrollArea>
 
@@ -457,11 +659,63 @@ export function ScheduleDetailModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="default">
+          <Button
+            variant="destructive"
+            onClick={() => setIsDeleteModalOpen(true)}
+            disabled={!isDateInAdvance}
+            title={!isDateInAdvance ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted." : undefined}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Schedule
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => setIsEditModalOpen(true)}
+            disabled={!isDateInAdvance}
+            title={!isDateInAdvance ? "Cannot edit schedules for today or in the past. Only future schedules can be edited." : undefined}
+          >
+            <Edit className="h-4 w-4 mr-2" />
             Edit Schedule
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <EditScheduleModal
+        schedule={activeSchedule}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdated={() => {
+          onScheduleUpdated?.();
+        }}
+      />
+
+      <DeleteScheduleModal
+        schedule={activeSchedule}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onDeleted={() => {
+          setIsDeleteModalOpen(false);
+          onScheduleUpdated?.();
+          onClose();
+        }}
+      />
+
+      {assignmentToDelete && (
+        <DeleteAssignmentModal
+          assignmentId={assignmentToDelete}
+          schedule={activeSchedule}
+          isOpen={isDeleteAssignmentModalOpen}
+          onClose={() => {
+            setIsDeleteAssignmentModalOpen(false);
+            setAssignmentToDelete(null);
+          }}
+          onDeleted={() => {
+            setIsDeleteAssignmentModalOpen(false);
+            setAssignmentToDelete(null);
+            onScheduleUpdated?.();
+          }}
+        />
+      )}
     </Dialog>
   );
 }

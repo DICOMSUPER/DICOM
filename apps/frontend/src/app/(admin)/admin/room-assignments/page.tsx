@@ -170,6 +170,36 @@ export default function RoomAssignmentsPage() {
     }
   };
 
+  const handleScheduleUpdated = async () => {
+    await refetchSchedules();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    if (detailSchedule) {
+      const scheduleId = Array.isArray(detailSchedule) 
+        ? detailSchedule[0]?.schedule_id 
+        : detailSchedule?.schedule_id;
+      if (scheduleId) {
+        const updatedSchedules = activeView === 'calendar' 
+          ? (allSchedulesData ?? [])
+          : (paginatedSchedulesData?.data ?? []);
+        const updatedSchedule = updatedSchedules.find(s => s.schedule_id === scheduleId);
+        if (updatedSchedule) {
+          const normalized = ensureScheduleHasEmployee(updatedSchedule);
+          if (normalized) {
+            setDetailSchedule(Array.isArray(detailSchedule) ? [normalized] : normalized);
+          } else if (Array.isArray(detailSchedule)) {
+            const allNormalized = updatedSchedules
+              .filter(s => detailSchedule.some(ds => ds.schedule_id === s.schedule_id))
+              .map(ensureScheduleHasEmployee)
+              .filter((item): item is RoomSchedule => Boolean(item));
+            if (allNormalized.length > 0) {
+              setDetailSchedule(allNormalized.length === 1 ? allNormalized[0] : allNormalized);
+            }
+          }
+        }
+      }
+    }
+  };
+
   const mergedSchedules = useMemo(() => {
     return schedules.map((schedule) => {
       const pending = optimisticAssignments[schedule.schedule_id] ?? [];
@@ -318,6 +348,7 @@ export default function RoomAssignmentsPage() {
       isOpen={isDetailModalOpen}
       onClose={closeScheduleDetails}
       getStatusColor={statusBadgeClass}
+      onScheduleUpdated={handleScheduleUpdated}
     />
     </>
   );
