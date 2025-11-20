@@ -35,7 +35,7 @@ import { DeleteAssignmentModal } from "@/components/admin/room-assignments/Delet
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/utils/api";
 import { formatTimeRange } from "@/utils/schedule-helpers";
-import { Monitor, Stethoscope } from "lucide-react";
+import { Monitor, Stethoscope, Loader2 } from "lucide-react";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
 
@@ -507,7 +507,18 @@ export function ScheduleDetailModal({
                       </div>
                     </div>
 
-                    {modalities.length > 0 && (
+                    {isLoadingModalities ? (
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2 text-base font-semibold">
+                          <Monitor className="h-4 w-4" />
+                          Modality Machines
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-foreground" />
+                          <span className="text-sm text-foreground">Loading modalities...</span>
+                        </div>
+                      </div>
+                    ) : modalities.length > 0 ? (
                       <div className="mt-4 space-y-3">
                         <div className="flex items-center gap-2 text-base font-semibold">
                           <Monitor className="h-4 w-4" />
@@ -548,6 +559,14 @@ export function ScheduleDetailModal({
                             );
                           })}
                         </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        <div className="flex items-center gap-2 text-base font-semibold">
+                          <Monitor className="h-4 w-4" />
+                          Modality Machines
+                        </div>
+                        <p className="text-sm text-foreground/70 italic">No modality machines available in this room</p>
                       </div>
                     )}
 

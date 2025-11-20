@@ -17,12 +17,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
+import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { RoomSchedule, Employee, Room, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { cn } from "@/lib/utils";
 import { formatRole } from "@/utils/role-formatter";
 import * as SelectPrimitive from "@radix-ui/react-select";
@@ -33,6 +34,7 @@ import { useGetAvailableEmployeesQuery, useGetRoomSchedulesQuery } from "@/store
 import { useGetRoomsQuery } from "@/store/roomsApi";
 import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from "@/store/scheduleApi";
 import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssignmentsMutation } from "@/store/employeeRoomAssignmentApi";
+import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/utils/api";
 import { formatTimeRange } from "@/utils/schedule-helpers";
 
@@ -113,6 +115,25 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
     () => schedules.find((s) => s.schedule_id === selectedScheduleId),
     [schedules, selectedScheduleId]
   );
+
+  const selectedRoomId = useMemo(() => {
+    if (selectedSchedule?.room?.id) return selectedSchedule.room.id;
+    if (formRoomId) return formRoomId;
+    return '';
+  }, [selectedSchedule, formRoomId]);
+
+  const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
+    selectedRoomId,
+    {
+      skip: !selectedRoomId,
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  const modalities = useMemo(() => {
+    if (!modalitiesData) return [];
+    return extractApiData<ModalityMachine>(modalitiesData);
+  }, [modalitiesData]);
 
   const employeeQueryDate = selectedSchedule?.work_date 
     ? selectedSchedule.work_date 
@@ -901,6 +922,39 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Modalities */}
+                  {isLoadingModalities ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Modalities</p>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin text-foreground" />
+                        <span className="text-xs text-foreground">Loading modalities...</span>
+                      </div>
+                    </div>
+                  ) : modalities.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Available Modalities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {modalities.map((modality) => (
+                          <Badge key={modality.id} variant="outline" className="text-xs flex items-center gap-1">
+                            <Monitor className="h-3 w-3" />
+                            {modality.name}
+                            {modality.modality && (
+                              <span className="text-[10px] text-foreground">
+                                ({modality.modality.modalityCode || modality.modality.modalityName})
+                              </span>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Modalities</p>
+                      <p className="text-xs text-foreground/70 italic">No modality machines available in this room</p>
                     </div>
                   )}
 
