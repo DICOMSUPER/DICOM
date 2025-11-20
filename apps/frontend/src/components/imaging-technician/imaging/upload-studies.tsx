@@ -17,6 +17,8 @@ interface UploadedStudiesProps {
   onStudySelect: (study: DicomStudy | null) => void;
   onSeriesSelect: (series: DicomSeries | null) => void;
   refetchStudy: () => void;
+  forwardingStudyId: string | null;
+  setForwardingStudyId: (id: string) => void;
 }
 
 export default function UploadedStudies({
@@ -28,6 +30,8 @@ export default function UploadedStudies({
   onStudySelect,
   onSeriesSelect,
   refetchStudy,
+  forwardingStudyId,
+  setForwardingStudyId,
 }: UploadedStudiesProps) {
   const [expandedStudies, setExpandedStudies] = useState<
     Record<string, boolean>

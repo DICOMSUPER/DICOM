@@ -32,6 +32,9 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   );
   const [importProgress, setImportProgress] = useState<number>(0);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [forwardingStudyId, setForwardingStudyId] = useState<string | null>(
+    null
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Parse user from cookies - must be done before hooks

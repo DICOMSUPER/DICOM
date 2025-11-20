@@ -206,7 +206,8 @@ export class AppService {
           {
             where: { id: modalityMachineId, isDeleted: false },
           },
-          ['modality']
+          ['modality'],
+          transactionalEntityManager
         );
 
         if (!machine) {
@@ -272,21 +273,32 @@ export class AppService {
         //study not exist, create study with 1 series count, flag no futher check for series
         if (!study) {
           createSeries = true;
-          study = await this.dicomStudiesRepository.create({
-            studyInstanceUid: data.StudyInstanceUID,
-            patientId: patient.id,
-            patientCode: data.PatientID,
-            orderId: order.id,
-            studyDate: data.StudyDate,
-            studyTime: data.StudyTime,
-            modalityMachineId: modalityMachineId,
-            studyDescription: data.StudyDescription,
-            referringPhysicianId: order.imagingOrderForm?.orderingPhysicianId,
-            performingTechnicianId: performingTechnicianId,
-            studyStatus: DicomStudyStatus.SCANNED,
-            numberOfSeries: 0,
-            storagePath: null,
-          });
+          study = await this.dicomStudiesRepository.create(
+            {
+              studyInstanceUid: data.StudyInstanceUID,
+              patientId: patient.id,
+              patientCode: data.PatientID,
+              orderId: order.id,
+              studyDate: data.StudyDate,
+              studyTime: data.StudyTime,
+              modalityMachineId: modalityMachineId,
+              studyDescription: data.StudyDescription,
+              referringPhysicianId: order.imagingOrderForm?.orderingPhysicianId,
+              performingTechnicianId: performingTechnicianId,
+              studyStatus: DicomStudyStatus.SCANNED,
+              numberOfSeries: 0,
+              storagePath: null,
+            },
+            transactionalEntityManager
+          );
+        } else {
+          if (study?.orderId == orderId) {
+            throw ThrowMicroserviceException(
+              HttpStatus.BAD_REQUEST,
+              'This study belong to another order',
+              'ImagingService'
+            );
+          }
         }
 
         let series;
@@ -310,20 +322,27 @@ export class AppService {
 
         //if need to create series: increase series count in study, create series
         if (createSeries) {
-          series = await this.dicomSeriesRepository.create({
-            seriesInstanceUid: data.SeriesInstanceUID,
-            studyId: study.id,
-            seriesNumber: study.numberOfSeries + 1,
-            seriesDescription: '',
-            bodyPartExamined: bodyPart?.name,
-            seriesDate: data.StudyDate || 'NA',
-            seriesTime: data.StudyTime || 'NA',
-            protocolName: 'NA',
-            numberOfInstances: 1,
-          });
-          study = await this.dicomStudiesRepository.update(study.id, {
-            numberOfSeries: study.numberOfSeries + 1,
-          });
+          series = await this.dicomSeriesRepository.create(
+            {
+              seriesInstanceUid: data.SeriesInstanceUID,
+              studyId: study.id,
+              seriesNumber: study.numberOfSeries + 1,
+              seriesDescription: '',
+              bodyPartExamined: bodyPart?.name,
+              seriesDate: data.StudyDate || 'NA',
+              seriesTime: data.StudyTime || 'NA',
+              protocolName: 'NA',
+              numberOfInstances: 1,
+            },
+            transactionalEntityManager
+          );
+          study = await this.dicomStudiesRepository.update(
+            study.id,
+            {
+              numberOfSeries: study.numberOfSeries + 1,
+            },
+            transactionalEntityManager
+          );
 
           //update instance count for series
         } else {
@@ -334,9 +353,13 @@ export class AppService {
               IMAGING_SERVICE
             );
           }
-          series = await this.dicomSeriesRepository.update(series.id, {
-            numberOfInstances: series.numberOfInstances + 1,
-          });
+          series = await this.dicomSeriesRepository.update(
+            series.id,
+            {
+              numberOfInstances: series.numberOfInstances + 1,
+            },
+            transactionalEntityManager
+          );
         }
 
         if (!series) {
@@ -349,17 +372,20 @@ export class AppService {
 
         const instanceNumber = series.numberOfInstances;
 
-        instance = await this.dicomInstancesRepository.create({
-          sopInstanceUid: data.SOPInstanceUID,
-          sopClassUID: data.SOPClassUID || 'NA',
-          seriesId: series.id,
-          instanceNumber: instanceNumber || 1,
-          filePath: filePath,
-          fileName: `${data.SOPInstanceUID}.dcm`,
-          numberOfFrame: data.NumberOfFrames || 1,
-          rows: data.Rows || 512,
-          columns: data.Columns || 512,
-        });
+        instance = await this.dicomInstancesRepository.create(
+          {
+            sopInstanceUid: data.SOPInstanceUID,
+            sopClassUID: data.SOPClassUID || 'NA',
+            seriesId: series.id,
+            instanceNumber: instanceNumber || 1,
+            filePath: filePath,
+            fileName: `${data.SOPInstanceUID}.dcm`,
+            numberOfFrame: data.NumberOfFrames || 1,
+            rows: data.Rows || 512,
+            columns: data.Columns || 512,
+          },
+          transactionalEntityManager
+        );
         return {
           study,
           series,
