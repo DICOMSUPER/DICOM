@@ -219,6 +219,7 @@ const handleSave = async () => {
   const { data: imagingModalitiesData } = useGetModalitiesInRoomQuery(room, {
     skip: !room,
   });
+  console.log("Imaging Modalities Data:", imagingModalitiesData);
   const { data: bodyPartsData } = useGetAllBodyPartsQuery();
 
   const handleCancel = () => {

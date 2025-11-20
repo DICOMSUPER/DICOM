@@ -11,6 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
 import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { Trash2 } from "lucide-react";
@@ -49,11 +50,12 @@ export function ProcedureForm({
       }
     );
 
-const availableProcedures = proceduresData?.data.filter(
-  (proc) => 
-    proc.id === procedure.procedureServiceId || 
-    !selectedProcedureIds.includes(proc.id)    
-) || [];
+  const availableProcedures =
+    proceduresData?.data.filter(
+      (proc) =>
+        proc.id === procedure.procedureServiceId ||
+        !selectedProcedureIds.includes(proc.id)
+    ) || [];
 
   return (
     <div>
@@ -94,10 +96,15 @@ const availableProcedures = proceduresData?.data.filter(
                 <SelectValue placeholder="Select modality" />
               </SelectTrigger>
               <SelectContent>
-                {imagingModalitiesData?.map((modality: ImagingModality) => (
-                  <SelectItem key={modality.id} value={modality.id}>
-                    {modality.modalityName}
-                  </SelectItem>
+                {imagingModalitiesData?.map((modality: ModalityMachine) => (
+                  modality.modality && (
+                    <SelectItem
+                      key={modality.modality.id}
+                      value={modality.modality.id}
+                    >
+                      {modality.modality.modalityName}
+                    </SelectItem>
+                  )
                 ))}
               </SelectContent>
             </Select>
