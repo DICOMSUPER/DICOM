@@ -92,57 +92,6 @@ export class RoomsService {
       throw new RoomNotFoundException('Không thể tìm thấy phòng');
     }
   }
-  // async findAll(query: {
-  //   page?: number;
-  //   limit?: number;
-  //   search?: string;
-  //   isActive?: boolean;
-  // }) {
-  //   try {
-  //     const page = query.page ?? 1;
-  //     const limit = query.limit ?? 10;
-  //     const skip = (page - 1) * limit;
-
-  //     const qb = this.roomRepository
-  //       .createQueryBuilder('room')
-  //       .leftJoinAndSelect('room.department', 'department')
-  //       .orderBy('room.createdAt', 'DESC')
-  //       .skip(skip)
-  //       .take(limit);
-
-  //     if (query.search) {
-  //       qb.andWhere(
-  //         '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
-  //         {
-  //           search: `%${query.search}%`,
-  //         }
-  //       );
-  //     }
-
-  //     if (query.isActive !== undefined) {
-  //       qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
-  //     }
-
-  //     const [data, total] = await qb.getManyAndCount();
-
-  //     return {
-  //       data: {
-  //         data,
-  //         pagination: {
-  //           page,
-  //           limit,
-  //           total,
-  //           totalPages: Math.ceil(total / limit),
-  //         },
-  //         count: data.length,
-  //       },
-  //       message: 'Lấy danh sách phòng thành công',
-  //     };
-  //   } catch (error: any) {
-  //     this.logger.error(`Find all rooms error: ${error.message}`);
-  //     throw new DatabaseException('Lỗi khi lấy danh sách phòng');
-  //   }
-  // }
 
   async findAll(query: {
     page?: number;
@@ -292,7 +241,7 @@ export class RoomsService {
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
-        .innerJoinAndSelect('room.schedules', 'schedules')
+        .innerJoinAndSelect('room.schedules', 'schedules');
 
       qb.where('room.department_id = :id', { id: data.id }).andWhere(
         'room.status IN (:...status)',
@@ -360,6 +309,84 @@ export class RoomsService {
       );
     }
   }
+
+async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
+  try {
+    console.log('🔍 START getRoomByDepartmentIdV2, departmentId:', departmentId);
+    
+    const qb = this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoinAndSelect('room.department', 'department')
+      .innerJoinAndSelect('room.schedules', 'schedules');
+
+    qb.where('room.department_id = :id', { id: departmentId })
+      .andWhere('room.status IN (:...status)', {
+        status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
+      });
+
+    const now = new Date();
+    const vnTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    console.log('⏰ VN time:', vnTime);
+    
+    const currentDate = vnTime.toISOString().split('T')[0]; 
+    const currentTime = vnTime.toTimeString().split(' ')[0]; 
+
+    const yesterday = new Date(vnTime);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDate = yesterday.toISOString().split('T')[0];
+
+    console.log('📅 Query params:', { currentDate, currentTime, yesterdayDate });
+
+    qb.andWhere(
+      `(
+        (schedules.work_date = :currentDate AND (
+          (schedules.actual_start_time > schedules.actual_end_time 
+            AND (schedules.actual_start_time <= :currentTime OR schedules.actual_end_time > :currentTime)
+          ) 
+          OR 
+          (schedules.actual_start_time <= schedules.actual_end_time 
+            AND schedules.actual_start_time <= :currentTime 
+            AND schedules.actual_end_time > :currentTime)
+        ))
+        OR 
+        (schedules.work_date = :yesterdayDate
+          AND schedules.actual_start_time > schedules.actual_end_time
+          AND :currentTime < schedules.actual_end_time
+        )
+      )`,
+      { currentDate, yesterdayDate, currentTime }
+    );
+
+    qb.distinct(true);
+    
+    // Log SQL query
+    const sql = qb.getSql();
+    console.log('🗄️ SQL Query:', sql);
+    console.log('🔧 Parameters:', qb.getParameters());
+    
+    console.log('⚙️ Executing query...');
+    const rooms = await qb.getMany();
+    
+    console.log('✅ Query executed successfully');
+    console.log('📦 Found rooms:', rooms.length);
+    console.log('📊 Rooms data:', JSON.stringify(rooms, null, 2));
+    
+    this.logger.log(`Found ${rooms.length} rooms for department ${departmentId} at ${currentDate} ${currentTime} VN time`);
+    
+    return rooms;
+  } catch (error) {
+    console.error('❌ Error in getRoomByDepartmentIdV2:', error);
+    console.error('❌ Error stack:', (error as Error).stack);
+    
+    throw ThrowMicroserviceException(
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      `Failed to get rooms by department_id: ${
+        (error as Error).message || error
+      }`,
+      'UserService'
+    );
+  }
+}
 
   async getRoomByRoomIds(roomIds: string[]): Promise<Room[]> {
     if (roomIds.length > 0) {

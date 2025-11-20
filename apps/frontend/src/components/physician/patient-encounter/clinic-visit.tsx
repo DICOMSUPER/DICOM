@@ -29,6 +29,8 @@ import {
 } from "@/interfaces/patient/patient-workflow.interface";
 import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { TZDate } from "@date-fns/tz";
 
 interface ClinicVisitProps {
   detail: PatientEncounter;
@@ -198,7 +200,6 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
     vitalSignsData as VitalSignsSimplified
   );
   const onViewPatientProfile = (encounterId: string) => {
-    // Implement navigation to patient profile
     if (!vitalSignsData) {
       toast.error("No vital signs data to view patient profile.", {
         duration: 3000,
@@ -228,12 +229,10 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
 
           <div>
             <Button
-              onClick={() =>
-                onViewPatientProfile(detail?.id || "")
-              }
+              onClick={() => onViewPatientProfile(detail?.id || "")}
               variant="outline"
               size="lg"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              className="border-gray-600 text-gray-600 hover:bg-gray-50"
             >
               <EyeClosed size={18} className="mr-2" />
               <span>View Patient Profile</span>
@@ -247,11 +246,11 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
         {/* Left column: Patient Information + Vital Signs */}
         <div className="space-y-6">
           {/* Patient Information */}
-          <div className="bg-white shadow-md rounded-lg border border-blue-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4">
+          <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-linear-to-r from-gray-300 to-gray-100 p-4">
               <div className="flex items-center gap-2">
-                <User className="text-white" size={24} />
-                <h2 className="text-xl font-semibold text-white">
+                <User className="text-black" size={24} />
+                <h2 className="text-xl font-semibold text-black">
                   Patient Information
                 </h2>
               </div>
@@ -315,18 +314,18 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
           </div>
 
           {/* Vital Signs */}
-          <div className="bg-white shadow-md rounded-lg border border-red-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-red-600 to-red-500 p-4 flex items-center justify-between">
+          <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-linear-to-r from-gray-300 to-gray-100 p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity className="text-white" size={24} />
-                <h2 className="text-xl font-semibold text-white">
+                <Activity className="text-black" size={24} />
+                <h2 className="text-xl font-semibold text-black">
                   Vital Signs
                 </h2>
               </div>
               {detail.vitalSigns && (
                 <button
                   onClick={handleOpenVitalSignsModal}
-                  className="px-3 py-1.5 bg-white text-red-600 rounded-md hover:bg-red-50 transition-colors text-sm font-medium flex items-center gap-1"
+                  className="px-3 py-1.5 bg-white text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-1"
                 >
                   <Plus size={14} />
                   Update
@@ -371,7 +370,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                 </p>
                 <button
                   onClick={handleOpenVitalSignsModal}
-                  className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md font-medium"
+                  className="flex items-center gap-2 px-6 py-3  bg-gray-300 text-black rounded-lg hover:bg-gray-200 transition-colors shadow-md font-medium"
                 >
                   <Plus size={18} />
                   Add Vital Signs
@@ -382,11 +381,11 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
         </div>
 
         {/* Right column: Visit Information */}
-        <div className="bg-white shadow-md rounded-lg border border-green-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-green-500 p-4">
+        <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-linear-to-r from-gray-300 to-gray-100 p-4">
             <div className="flex items-center gap-2">
-              <ClipboardList className="text-white" size={24} />
-              <h2 className="text-xl font-semibold text-white">
+              <ClipboardList className="text-black" size={24} />
+              <h2 className="text-xl font-semibold text-black">
                 Visit Information
               </h2>
             </div>
@@ -399,7 +398,10 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   Visit Date:
                 </span>
                 <span className="text-gray-900 font-semibold">
-                  {formatDate(detail.createdAt)}
+                  {format(
+                    new TZDate(detail.encounterDate),
+                    "PPP"
+                  )}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -427,7 +429,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                 <label className="font-semibold text-gray-700 block mb-2 text-sm uppercase tracking-wide">
                   Chief Complaint:
                 </label>
-                <p className="text-gray-800 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200">
                   {detail.chiefComplaint || "None specified"}
                 </p>
               </div>
@@ -435,7 +437,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                 <label className="font-semibold text-gray-700 block mb-2 text-sm uppercase tracking-wide">
                   Symptoms:
                 </label>
-                <p className="text-gray-800 bg-orange-50 p-3 rounded-lg border border-orange-200">
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200">
                   {detail.symptoms || "None specified"}
                 </p>
               </div>

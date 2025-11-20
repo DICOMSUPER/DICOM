@@ -64,6 +64,16 @@ export const roomApi = createApi({
       }),
       providesTags: (result, error, id) => [{ type: "Room", id }],
     }),
+    getRoomByDepartmentIdV2: builder.query<
+      ApiResponse<{ data: Room[] }>,
+      string
+    >({
+      query: (departmentId) => ({
+        url: `/department/${departmentId}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "Room", id }],
+    }),
 
     // Create new room
     createRoom: builder.mutation<Room, CreateRoomDto>({
@@ -114,6 +124,7 @@ export const roomApi = createApi({
 export const {
   useGetRoomsQuery,
   useGetRoomsByDepartmentIdQuery,
+  useGetRoomByDepartmentIdV2Query,
   useGetRoomByIdQuery,
   useCreateRoomMutation,
   useUpdateRoomMutation,

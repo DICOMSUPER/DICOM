@@ -143,7 +143,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                   <Skeleton className="h-96 w-full" />
                 ) : (
                   <EncounterHistoryTab
-                    encounterHistory={encountersData?.data.data || []}
+                    encounterHistory={encountersData?.data || []}
                   />
                 )}
               </TabsContent>

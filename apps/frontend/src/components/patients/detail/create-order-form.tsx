@@ -17,7 +17,10 @@ import { Room } from "@/interfaces/user/room.interface";
 import { calculateAge } from "@/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { useGetRoomsByDepartmentIdQuery } from "@/store/roomsApi";
+import {
+  useGetRoomByDepartmentIdV2Query,
+  useGetRoomsByDepartmentIdQuery,
+} from "@/store/roomsApi";
 import {
   CalendarFold,
   ClipboardList,
@@ -76,7 +79,7 @@ export default function CreateImagingOrder({
   encounterId,
 }: CreateImagingOrderProps) {
   const { data: profile } = useGetCurrentProfileQuery();
-  console.log("Profile Data:", profile?.data.data);
+  console.log("Profile Data:", profile?.data);
 
   const [department, setDepartment] = useState("");
   const [roomName, setRoomName] = useState("");
@@ -151,55 +154,67 @@ export default function CreateImagingOrder({
     return basicInfoValid && proceduresValid;
   };
 
-  const handleSave = async () => {
-    if (!isFormValid()) {
-      console.log("Form is invalid");
-      return;
+const handleSave = async () => {
+  if (!isFormValid()) {
+    console.log("Form is invalid");
+    toast.error("Please fill in all required fields");
+    return;
+  }
+
+  try {
+    const imagingOrders: CreateImagingOrderDto[] = procedures.map(
+      (procedure) => ({
+        request_procedure_id: procedure.procedureServiceId,
+        clinicalIndication: procedure.clinicalIndication ?? "",
+        contrastRequired: false,
+        specialInstructions: procedure.specialInstructions ?? "",
+      })
+    );
+
+    const payload: ICreateImagingOrderForm = {
+      patientId: patient.id as string,
+      encounterId: encounterId,
+      roomId: room,
+      notes,
+      diagnosis,
+      imagingOrders,
+    };
+
+
+    
+    const result = await createImagingOrderForm(payload).unwrap();
+    
+    console.log("✅ API Response:", result);
+    
+
+    if (result?.success || result?.data) {
+      toast.success("Imaging orders created successfully!");
+      handleDownloadPDF();
+      handleCancel();
+    } else {
+      throw new Error("Unexpected response format");
     }
-
-    try {
-      const imagingOrders: CreateImagingOrderDto[] = procedures.map(
-        (procedure) => ({
-          request_procedure_id: procedure.procedureServiceId,
-          clinicalIndication: procedure.clinicalIndication ?? "",
-          contrastRequired: false,
-          specialInstructions: procedure.specialInstructions ?? "",
-        })
-      );
-
-      const payload: ICreateImagingOrderForm = {
-        patientId: patient.id as string,
-        encounterId: encounterId,
-        roomId: room,
-        notes,
-        diagnosis,
-        imagingOrders,
-      };
-      const result = await createImagingOrderForm(payload).unwrap();
-      if (result.success) {
-        console.log("result", result);
-        handleDownloadPDF();
-        toast.success("Imaging orders created successfully!");
-        handleCancel();
-      }
-      // handleCancel();
-    } catch (error) {
-      toast.error("Failed to create imaging orders. Please try again.");
-    }
-  };
-
+  } catch (error: any) {
+    console.error("❌ Error creating imaging orders:", error);
+    const errorMessage =
+      error?.data?.message || 
+      error?.message || 
+      "Failed to create imaging orders. Please try again.";
+    
+    toast.error(errorMessage);
+  }
+};
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
-    useGetDepartmentsQuery({ limit: 100 });
+    useGetDepartmentsQuery({
+      limit: 100,
+      isActive: true,
+      departmentCode: ["KCDHA"],
+    });
 
   const { data: roomsData, isError: isRoomsError } =
-    useGetRoomsByDepartmentIdQuery(
-      {
-        id: department,
-      },
-      {
-        skip: !department,
-      }
-    );
+    useGetRoomByDepartmentIdV2Query(department, {
+      skip: !department,
+    });
 
   const { data: imagingModalitiesData } = useGetModalitiesInRoomQuery(room, {
     skip: !room,
@@ -239,7 +254,7 @@ export default function CreateImagingOrder({
       departmentName: departmentName,
       roomName: roomName,
       notes: notes,
-      orderingPhysicianName: `${profile?.data.data.firstName} ${profile?.data.data.lastName}`,
+      orderingPhysicianName: `${profile?.data.firstName} ${profile?.data.lastName}`,
     };
     ImagingOrder({ imagingProcedurePDF });
   };
@@ -446,7 +461,7 @@ export default function CreateImagingOrder({
                       value={room}
                       onValueChange={(value) => {
                         setRoom(value);
-                        const selected = roomsData?.data.find(
+                        const selected = roomsData?.data.data.find(
                           (r: Room) => r.id === value
                         );
                         setRoomName(selected?.roomCode || "");
@@ -460,9 +475,9 @@ export default function CreateImagingOrder({
                         <SelectValue placeholder="Select room" />
                       </SelectTrigger>
                       <SelectContent>
-                        {roomsData?.data.map((room: Room) => (
+                        {roomsData?.data.data.map((room: Room) => (
                           <SelectItem key={room.id} value={room.id}>
-                            {room.roomCode}
+                            {room.roomCode}- {room.description}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -511,6 +526,7 @@ export default function CreateImagingOrder({
                       bodyPartsData={bodyPartsData?.data}
                       updateProcedure={updateProcedure}
                       removeProcedure={removeProcedure}
+                       selectedProcedureIds={procedures.map(p => p.procedureServiceId).filter(Boolean)} 
                     />
                   ))}
                   <Button

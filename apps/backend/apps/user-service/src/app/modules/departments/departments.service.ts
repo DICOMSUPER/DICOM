@@ -45,6 +45,7 @@ export class DepartmentsService {
     limit?: number;
     search?: string;
     isActive?: boolean;
+    departmentCode?: string[];
   }) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
@@ -69,6 +70,9 @@ export class DepartmentsService {
       qb.andWhere('department.isActive = :isActive', { isActive: query.isActive });
     }
 
+    if (query.departmentCode && query.departmentCode.length > 0) {
+      qb.andWhere('department.departmentCode IN (:...departmentCode)', { departmentCode: query.departmentCode });
+    }
     const [data, total] = await qb.getManyAndCount();
 
     const totalPages = Math.ceil(total / limit);

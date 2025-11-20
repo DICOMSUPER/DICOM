@@ -64,6 +64,7 @@ export class DepartmentsController {
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('isActive') isActive?: boolean,
+    @Query('departmentCode') departmentCode?: string[],
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -76,7 +77,8 @@ export class DepartmentsController {
           page: pageNum,
           limit: limitNum,
           search,
-          isActive
+          isActive,
+          departmentCode
         })
       );
 

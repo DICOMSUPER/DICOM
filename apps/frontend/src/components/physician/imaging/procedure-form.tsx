@@ -1,4 +1,3 @@
-
 import { ImagingProcedure } from "@/components/patients/detail/create-order-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,6 +23,7 @@ export function ProcedureForm({
   bodyPartsData,
   updateProcedure,
   removeProcedure,
+  selectedProcedureIds,
 }: {
   procedure: ImagingProcedure;
   index: number;
@@ -36,6 +36,7 @@ export function ProcedureForm({
     value: string
   ) => void;
   removeProcedure: (id: string) => void;
+  selectedProcedureIds: string[];
 }) {
   const { data: proceduresData, isLoading: isProceduresLoading } =
     useGetAllRequestProceduresQuery(
@@ -47,6 +48,12 @@ export function ProcedureForm({
         skip: !procedure.bodyPart || !procedure.modality,
       }
     );
+
+const availableProcedures = proceduresData?.data.filter(
+  (proc) => 
+    proc.id === procedure.procedureServiceId || 
+    !selectedProcedureIds.includes(proc.id)    
+) || [];
 
   return (
     <div>
@@ -129,7 +136,6 @@ export function ProcedureForm({
             <Select
               value={procedure.procedureServiceId}
               onValueChange={(value) => {
-
                 updateProcedure(procedure.id, "procedureServiceId", value);
 
                 const selectedProc = proceduresData?.data.find(
@@ -162,11 +168,17 @@ export function ProcedureForm({
                 />
               </SelectTrigger>
               <SelectContent>
-                {proceduresData?.data.map((proc: RequestProcedure) => (
-                  <SelectItem key={proc.id} value={proc.id}>
-                    {proc.name}
-                  </SelectItem>
-                ))}
+                {availableProcedures.length > 0 ? (
+                  availableProcedures.map((proc: RequestProcedure) => (
+                    <SelectItem key={proc.id} value={proc.id}>
+                      {proc.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-4 text-sm text-slate-500 text-center">
+                    All procedures have been selected
+                  </div>
+                )}
               </SelectContent>
             </Select>
           </div>

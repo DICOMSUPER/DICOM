@@ -284,4 +284,32 @@ export class RoomsController {
       );
     }
   }
+  // get room by department id room.get-by-department-id
+  @MessagePattern('room.get-by-department-id')
+  async getRoomsByDepartmentId(@Payload() data: { departmentId: string }) {
+    this.logger.log(
+      'Using pattern: UserService.Room.GetRoomsByDepartmentAndServiceId'
+    );
+    try {
+      const { departmentId } = data;
+      const rooms = await this.roomsService.getRoomByDepartmentIdV2(
+        departmentId
+      );
+
+      return {
+        success: true,
+        data: rooms,
+        message: 'Lấy danh sách phòng theo khoa thành công',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Get rooms by department and service error: ${(error as Error).message}`
+      );
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get room by department and service',
+        'UserService'
+      );
+    }
+  }
 }
