@@ -87,6 +87,19 @@ export const formatScheduleTime = (schedule: { actual_start_time?: string; actua
   return `${start} - ${end}`;
 };
 
+export const formatTimeValue = (time?: string): string => {
+  if (!time) return "--:--";
+  return time;
+};
+
+export const formatTimeRange = (startTime?: string, endTime?: string, separator: string = " – "): string => {
+  if (!startTime && !endTime) return "--:--";
+  const start = formatTimeValue(startTime);
+  const end = formatTimeValue(endTime);
+  if (start === "--:--" && end === "--:--") return "--:--";
+  return `${start}${separator}${end}`;
+};
+
 export const getWeekDates = (date: Date): { start: Date; end: Date; dates: Date[] } => {
   const start = startOfWeek(date, { weekStartsOn: 1 }); // Monday
   const end = endOfWeek(date, { weekStartsOn: 1 }); // Sunday
@@ -275,6 +288,8 @@ export const scheduleHelpers = {
   isWithinWorkingHours,
   formatScheduleDate,
   formatScheduleTime,
+  formatTimeValue,
+  formatTimeRange,
   getWeekDates,
   getMonthDates,
   getScheduleStatusColor,

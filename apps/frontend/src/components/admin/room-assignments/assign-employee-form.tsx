@@ -34,6 +34,7 @@ import { useGetRoomsQuery } from "@/store/roomsApi";
 import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from "@/store/scheduleApi";
 import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssignmentsMutation } from "@/store/employeeRoomAssignmentApi";
 import { extractApiData } from "@/utils/api";
+import { formatTimeRange } from "@/utils/schedule-helpers";
 
 interface AssignEmployeeFormProps {
   initialScheduleId?: string;
@@ -92,6 +93,7 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
   const [activeRoleFilter, setActiveRoleFilter] = useState<string>('');
   const [activeDepartmentFilter, setActiveDepartmentFilter] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmAssign, setConfirmAssign] = useState(false);
 
   const { data: allSchedulesData } = useGetRoomSchedulesQuery({});
   const schedules = allSchedulesData ?? [];
@@ -220,6 +222,11 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
       return;
     }
 
+    if (!confirmAssign) {
+      toast.warning("Please confirm the assignment by checking the confirmation box");
+      return;
+    }
+
     if (!isDateValid) {
       toast.error('Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.');
       return;
@@ -311,6 +318,7 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
         toast.success('Employee assigned successfully');
         setSelectedEmployeeIds([]);
         setSelectedEmployeeId('');
+        setConfirmAssign(false);
       }
       
       if (scheduleCreated) {
@@ -932,7 +940,7 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                     {filteredSchedules.map((s) => (
                       <SelectItem key={s.schedule_id} value={s.schedule_id}>
                         {s.shift_template?.shift_name ?? "No shift"} —{" "}
-                        {s.actual_start_time ?? "--:--"} to {s.actual_end_time ?? "--:--"}
+                        {formatTimeRange(s.actual_start_time, s.actual_end_time, " to ")}
                         {s.employeeRoomAssignments && s.employeeRoomAssignments.length > 0 && (
                           ` (${s.employeeRoomAssignments.length} employee${s.employeeRoomAssignments.length > 1 ? 's' : ''} assigned)`
                         )}
@@ -1113,7 +1121,22 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="space-y-4 pt-4 border-t border-border">
+          <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/50 border border-border">
+            <Checkbox
+              id="confirm-assign"
+              checked={confirmAssign}
+              onCheckedChange={(checked) => setConfirmAssign(checked === true)}
+              className="mt-0.5"
+            />
+            <label
+              htmlFor="confirm-assign"
+              className="text-sm font-medium leading-relaxed cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I confirm that I want to assign the selected employee(s) to this schedule
+            </label>
+          </div>
+
           <Button
             className="w-full"
             onClick={handleSubmit}
@@ -1122,7 +1145,8 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
               availableEmployeesLoading ||
               (!selectedEmployeeId && selectedEmployeeIds.length === 0) ||
               availableEmployees.length === 0 ||
-              wouldExceedCapacity
+              wouldExceedCapacity ||
+              !confirmAssign
             }
             variant={(selectedEmployeeId || selectedEmployeeIds.length > 0) && !wouldExceedCapacity ? "default" : "outline"}
           >

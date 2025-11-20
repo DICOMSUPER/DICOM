@@ -1,4 +1,3 @@
-
 import { ImagingProcedure } from "@/components/patients/detail/create-order-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
 import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { Trash2 } from "lucide-react";
@@ -24,6 +24,7 @@ export function ProcedureForm({
   bodyPartsData,
   updateProcedure,
   removeProcedure,
+  selectedProcedureIds,
 }: {
   procedure: ImagingProcedure;
   index: number;
@@ -36,6 +37,7 @@ export function ProcedureForm({
     value: string
   ) => void;
   removeProcedure: (id: string) => void;
+  selectedProcedureIds: string[];
 }) {
   const { data: proceduresData, isLoading: isProceduresLoading } =
     useGetAllRequestProceduresQuery(
@@ -47,6 +49,13 @@ export function ProcedureForm({
         skip: !procedure.bodyPart || !procedure.modality,
       }
     );
+
+  const availableProcedures =
+    proceduresData?.data.filter(
+      (proc) =>
+        proc.id === procedure.procedureServiceId ||
+        !selectedProcedureIds.includes(proc.id)
+    ) || [];
 
   return (
     <div>
@@ -87,10 +96,15 @@ export function ProcedureForm({
                 <SelectValue placeholder="Select modality" />
               </SelectTrigger>
               <SelectContent>
-                {imagingModalitiesData?.map((modality: ImagingModality) => (
-                  <SelectItem key={modality.id} value={modality.id}>
-                    {modality.modalityName}
-                  </SelectItem>
+                {imagingModalitiesData?.map((modality: ModalityMachine) => (
+                  modality.modality && (
+                    <SelectItem
+                      key={modality.modality.id}
+                      value={modality.modality.id}
+                    >
+                      {modality.modality.modalityName}
+                    </SelectItem>
+                  )
                 ))}
               </SelectContent>
             </Select>
@@ -129,7 +143,6 @@ export function ProcedureForm({
             <Select
               value={procedure.procedureServiceId}
               onValueChange={(value) => {
-
                 updateProcedure(procedure.id, "procedureServiceId", value);
 
                 const selectedProc = proceduresData?.data.find(
@@ -162,11 +175,17 @@ export function ProcedureForm({
                 />
               </SelectTrigger>
               <SelectContent>
-                {proceduresData?.data.map((proc: RequestProcedure) => (
-                  <SelectItem key={proc.id} value={proc.id}>
-                    {proc.name}
-                  </SelectItem>
-                ))}
+                {availableProcedures.length > 0 ? (
+                  availableProcedures.map((proc: RequestProcedure) => (
+                    <SelectItem key={proc.id} value={proc.id}>
+                      {proc.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-4 text-sm text-slate-500 text-center">
+                    All procedures have been selected
+                  </div>
+                )}
               </SelectContent>
             </Select>
           </div>

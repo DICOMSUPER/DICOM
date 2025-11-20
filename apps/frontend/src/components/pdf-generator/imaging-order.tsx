@@ -70,6 +70,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
     head: [["#", "Procedure Name", "Body Part", "Clinical Indication"]],
     body: tableData,
     styles: {
+      font: "Roboto",
       fontSize: 10,
       cellPadding: 3,
       valign: "middle",
@@ -77,6 +78,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
       lineWidth: 0.2,
     },
     headStyles: {
+      font: "Roboto",
       fillColor: [0, 128, 128],
       textColor: 255,
       fontStyle: "bold",

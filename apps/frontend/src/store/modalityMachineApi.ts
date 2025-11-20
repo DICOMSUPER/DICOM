@@ -142,6 +142,18 @@ export const modalityMachineApi = createApi({
 
     getModalitiesInRoom: builder.query<GetAll, string>({
       query: (id) => ({ url: `/room/${id}`, method: "GET" }),
+      transformResponse: (response: any) => {
+        // Handle wrapped API response: { success: true, data: ModalityMachine[], ... }
+        if (response?.data && Array.isArray(response.data)) {
+          return { data: response.data };
+        }
+        // Handle direct array response
+        if (Array.isArray(response)) {
+          return { data: response };
+        }
+        // Handle GetAll structure
+        return response || { data: [] };
+      },
       providesTags: (result) =>
         result
           ? [

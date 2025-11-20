@@ -121,26 +121,42 @@ export class PatientService {
     return patients;
   };
 
-  getOverview = async (
-    patientCode: string
-  ): Promise<PatientOverview | null> => {
-    const patient = await this.patientRepository.findByPatientCode(patientCode);
+getOverview = async (
+  patientCode: string
+): Promise<PatientOverview | null> => {
+  const patient = await this.patientRepository.findByPatientCode(patientCode);
 
-    if (!patient) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'Failed to find patient by code',
-        PATIENT_SERVICE
-      );
-    }
-    const patientOverview = {
-      recentVitalSigns: patient?.encounters[0]
-        .vitalSigns as VitalSignsSimplified,
-      recentConditions: patient?.conditions.slice(0, 3) || [],
-    };
+  if (!patient) {
+    throw ThrowMicroserviceException(
+      HttpStatus.NOT_FOUND,
+      'Failed to find patient by code',
+      PATIENT_SERVICE
+    );
+  }
+  
+  console.log("patient overview", patient);
+  
+  
+  const sortedEncounters = patient.encounters
+    .filter(enc => !enc.isDeleted) 
+    .sort((a, b) => {
+      const dateA = new Date(a.encounterDate).getTime();
+      const dateB = new Date(b.encounterDate).getTime();
+      return dateB - dateA; 
+    });
 
-    return patientOverview;
+  
+  const encounterWithVitalSigns = sortedEncounters.find(
+    enc => enc.vitalSigns !== null && enc.vitalSigns !== undefined
+  );
+
+  const patientOverview = {
+    recentVitalSigns: encounterWithVitalSigns?.vitalSigns as VitalSignsSimplified || null,
+    recentConditions: patient?.conditions.slice(0, 3) || [],
   };
+
+  return patientOverview;
+};
 
   getPatientStats = async () => {
     return await this.patientRepository.getPatientStats();

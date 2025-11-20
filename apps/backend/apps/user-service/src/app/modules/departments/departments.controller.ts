@@ -56,6 +56,7 @@ export class DepartmentsController {
       limit?: number;
       search?: string;
       isActive?: boolean;
+      departmentCode?: string[];
     }
   ) {
     try {

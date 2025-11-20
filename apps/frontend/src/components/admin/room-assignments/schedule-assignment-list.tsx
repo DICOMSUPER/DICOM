@@ -212,7 +212,7 @@ export function ScheduleAssignmentList({
                         "border-primary shadow-lg shadow-primary/20 bg-primary/5"
                     )}
                   >
-                    <CardContent className="p-5 space-y-4">
+                    <CardContent className="space-y-4">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex-1 space-y-4">
                           <div>
@@ -282,12 +282,12 @@ export function ScheduleAssignmentList({
                               {roomServices.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {roomServices.slice(0, 5).map((service, idx) => (
-                                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                    <Badge key={idx} variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
                                       {service}
                                     </Badge>
                                   ))}
                                   {roomServices.length > 5 && (
-                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                                    <Badge variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
                                       +{roomServices.length - 5} more
                                     </Badge>
                                   )}
@@ -313,7 +313,7 @@ export function ScheduleAssignmentList({
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col items-end gap-3">
+                        <div className="flex flex-col items-end gap-2">
                           <div className="flex items-center gap-2 flex-wrap justify-end">
                             <Badge
                               variant="outline"
@@ -329,76 +329,78 @@ export function ScheduleAssignmentList({
                               <span>{assignments.length} assigned</span>
                             </Badge>
                           </div>
-                          {onScheduleDetails && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-8 border-border hover:bg-gray-50"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onScheduleDetails(schedule);
-                              }}
-                            >
-                              View details
-                            </Button>
-                          )}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {assignments.length === 0 && (
-                          <div className="w-full px-3 py-2 bg-gray-100 rounded-lg border border-border">
-                            <p className="text-sm text-gray-600">
-                              No employees assigned yet. Select this schedule to add one.
-                            </p>
-                          </div>
-                        )}
-
-                        {assignments.map((assignment) => (
-                          <div
-                            key={assignment.id}
-                            className={cn(
-                              "flex items-center gap-3 border border-border bg-gray-100 rounded-lg px-3 py-2 min-w-[240px]",
-                              assignment.__optimistic &&
-                                "opacity-70 border-dashed border-primary bg-primary/5"
-                            )}
-                          >
-                            <div className="h-9 w-9 rounded-lg bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-xs">
-                              {initials(
-                                assignment.employee?.firstName,
-                                assignment.employee?.lastName
-                              )}
-                            </div>
-                            <div className="flex-1 text-sm">
-                              {assignment.employee?.id ? (
-                                <Link
-                                  href={`/profile/${assignment.employee.id}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="block transition-all hover:text-primary group"
-                                >
-                                  <p className="font-bold text-gray-900 leading-tight group-hover:underline">
-                                    {assignment.employee.firstName} {assignment.employee.lastName}
-                                  </p>
-                                </Link>
-                              ) : (
-                                <p className="font-bold text-gray-900 leading-tight">
-                                  {assignment.employeeId}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-600">
-                                {formatRole(assignment.employee?.role)}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                        <div className="flex flex-wrap gap-2 flex-1">
+                          {assignments.length === 0 && (
+                            <div className="w-full px-3 py-2 bg-gray-100 rounded-lg border border-border">
+                              <p className="text-sm text-gray-600">
+                                No employees assigned yet. Select this schedule to add one.
                               </p>
                             </div>
-                            {assignment.__optimistic && (
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] uppercase border-border"
-                              >
-                                syncing
-                              </Badge>
-                            )}
-                          </div>
-                        ))}
+                          )}
+
+                          {assignments.map((assignment) => (
+                            <div
+                              key={assignment.id}
+                              className={cn(
+                                "flex items-center gap-3 border border-border bg-gray-100 rounded-lg px-3 py-2 min-w-[240px]",
+                                assignment.__optimistic &&
+                                  "opacity-70 border-dashed border-primary bg-primary/5"
+                              )}
+                            >
+                              <div className="h-9 w-9 rounded-lg bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-xs">
+                                {initials(
+                                  assignment.employee?.firstName,
+                                  assignment.employee?.lastName
+                                )}
+                              </div>
+                              <div className="flex-1 text-sm">
+                                {assignment.employee?.id ? (
+                                  <Link
+                                    href={`/profile/${assignment.employee.id}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="block transition-all hover:text-primary group"
+                                  >
+                                    <p className="font-bold text-gray-900 leading-tight group-hover:underline">
+                                      {assignment.employee.firstName} {assignment.employee.lastName}
+                                    </p>
+                                  </Link>
+                                ) : (
+                                  <p className="font-bold text-gray-900 leading-tight">
+                                    {assignment.employeeId}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-600">
+                                  {formatRole(assignment.employee?.role)}
+                                </p>
+                              </div>
+                              {assignment.__optimistic && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] uppercase border-border"
+                                >
+                                  syncing
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {onScheduleDetails && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 border-border hover:bg-gray-50 shrink-0"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onScheduleDetails(schedule);
+                            }}
+                          >
+                            View details
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

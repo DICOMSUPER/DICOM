@@ -18,7 +18,9 @@ export interface QueryParams
   extends PaginationParams,
     SortParams,
     SearchParams,
-    FilterParams {}
+    FilterParams {
+      
+    }
 
 export interface PaginationMeta {
   total: number;

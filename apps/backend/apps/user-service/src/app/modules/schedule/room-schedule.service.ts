@@ -120,7 +120,14 @@ export class RoomScheduleService {
     try {
       const schedule = await this.RoomScheduleRepository.findOne({
         where: { schedule_id: id },
-        relations: ['employeeRoomAssignments', 'employeeRoomAssignments.employee', 'room', 'shift_template'],
+        relations: [
+          'employeeRoomAssignments', 
+          'employeeRoomAssignments.employee', 
+          'room', 
+          'room.serviceRooms',
+          'room.serviceRooms.service',
+          'shift_template'
+        ],
       });
 
       if (!schedule) {

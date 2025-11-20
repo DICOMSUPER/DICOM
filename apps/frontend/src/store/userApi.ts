@@ -85,7 +85,7 @@ export const userApi = createApi({
       invalidatesTags: ["User"],
     }),
 
-    getCurrentProfile: builder.query<ApiResponse<{data:User}>, void>({
+    getCurrentProfile: builder.query<ApiResponse<User>, void>({
       query: () => ({
         url: "/profile",
         method: "GET",

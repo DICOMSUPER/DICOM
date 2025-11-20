@@ -150,14 +150,12 @@ export class ModalityMachinesService {
     );
   };
 
-  findByRoomId = async (roomId: string): Promise<ImagingModality[]> => {
+  findByRoomId = async (roomId: string): Promise<ModalityMachine[]> => {
     const machines = await this.modalityMachinesRepository.findAll({
-      where: { roomId },
+      where: { roomId, isDeleted: false },
+      relations: ['modality'],
     });
-    const uniqueModalities = Array.from(
-      new Map(machines.map((m) => [m.modality.id, m.modality])).values()
-    );
-    return uniqueModalities;
+    return machines;
   };
 
   update = async (
