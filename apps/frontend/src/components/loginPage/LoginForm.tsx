@@ -33,10 +33,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
       setIsLoading(true);
       try {
         await onLogin(values.email, values.password);
-        // Keep loading state true on success - component will unmount on navigation
-        // This prevents the button from flickering back to "Sign In" during page transition
       } catch (error) {
-        // Only reset loading state on error so user can retry
         setIsLoading(false);
       }
     },
@@ -44,7 +41,15 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="w-full max-w-md">
-      <form onSubmit={formik.handleSubmit} className="space-y-5" autoComplete="on">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          formik.handleSubmit(e);
+        }}
+        method="post"
+        className="space-y-5" 
+        autoComplete="on"
+      >
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
           <label
             htmlFor="email"
@@ -126,12 +131,16 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         </button>
 
         <div className="flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-500 delay-400">
-          <a
-            href="#"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              // TODO: Implement forgot password functionality
+            }}
             className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors hover:underline"
           >
             Forgot password?
-          </a>
+          </button>
         </div>
       </form>
     </div>

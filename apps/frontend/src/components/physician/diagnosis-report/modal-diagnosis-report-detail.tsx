@@ -36,6 +36,7 @@ import {
   useGetOneDicomStudyQuery,
   useUpdateDicomStudyMutation,
 } from "@/store/dicomStudyApi";
+import { usePhysicianApproveStudyMutation } from "@/store/dicomStudySignatureApi";
 import {
   useHasSignatureQuery,
   useSetupSignatureMutation,
@@ -46,6 +47,7 @@ import {
   useGetReportTemplateByIdQuery,
 } from "@/store/reportTemplateApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { formatDateVN } from "@/utils/FormatDate";
 import {
   AlertCircle,
   Calendar,
@@ -59,11 +61,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ModalSetUpSignature } from "./modal-setup";
-import { usePhysicianApproveStudyMutation } from "@/store/dicomStudySignatureApi";
 import { ModalApproveStudy } from "./modal-approve-study";
-import { skip } from "node:test";
-import { formatDateVN } from "@/utils/FormatDate";
+import { ModalSetUpSignature } from "./modal-setup";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;
@@ -278,7 +277,10 @@ export function ModalDiagnosisReportDetail({
 
       await updateDiagnosisMutation({
         id: reportId,
-        updateDiagnosis: { description: descriptionToSave },
+        updateDiagnosis: {
+          description: descriptionToSave,
+          reportTemplateId: selectedReportTemplateId,
+        },
       }).unwrap();
       await refetch();
       toast.success("Report description updated successfully");
@@ -456,7 +458,7 @@ export function ModalDiagnosisReportDetail({
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Diagnosis Date Card */}
                 <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
@@ -837,7 +839,16 @@ export function ModalDiagnosisReportDetail({
               <Separator className="my-6 bg-slate-200/50" />
 
               {!isEditDescriptionOpen ? (
-                <Button className="w-full" onClick={handleEditDescriptionOpen}>
+                <Button
+                  disabled={
+                    dicomStudyData?.data.studyStatus ===
+                    DicomStudyStatus.APPROVED 
+                    // || dicomStudyData?.data.studyStatus ===
+                    // DicomStudyStatus.RESULT_PRINTED
+                  }
+                  className="w-full"
+                  onClick={handleEditDescriptionOpen}
+                >
                   <div className="flex items-center justify-center">
                     <Notebook className="w-4 h-4 mr-2" />
                     Edit Report Description

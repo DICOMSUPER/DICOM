@@ -27,7 +27,6 @@ export const specialHoursSchema = z.object({
 
 // Schedule Schemas
 export const scheduleFormSchema = z.object({
-  employee_id: z.string().uuid("Invalid employee ID"),
   room_id: z.string().uuid("Invalid room ID").optional(),
   shift_template_id: z.string().uuid("Invalid shift template ID").optional(),
   work_date: z.string().min(1, "Work date is required"),

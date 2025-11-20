@@ -134,7 +134,7 @@ export function WorkspaceLayout({
         </div>
         {/* Main Content Area - Scrollable */}
         <div className={cn("flex-1 overflow-y-auto", !noPadding && "p-4")}>
-          {!noBreadcrumbs && (
+          {!noBreadcrumbs && breadcrumbItems.length > 1 && (
             <div className="mb-4">
               <Breadcrumb items={breadcrumbItems} />
             </div>

@@ -72,8 +72,40 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
-  @Get()
+  @Post('bulk')
+  // @Role(Roles.SYSTEM_ADMIN)
   @Public()
+  @ApiOperation({ summary: 'Create bulk employee room assignments' })
+  @ApiBody({ type: [CreateEmployeeRoomAssignmentDto] })
+  @ApiResponse({
+    status: 201,
+    description: 'Gán nhiều nhân viên vào phòng thành công',
+  })
+  async createBulk(
+    @Body() assignments: CreateEmployeeRoomAssignmentDto[]
+  ) {
+    try {
+      this.logger.log(`Creating bulk employee room assignments: ${assignments.length} assignments`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send(
+          'UserService.EmployeeRoomAssignments.CreateBulk',
+          { assignments }
+        )
+      );
+
+      return {
+        data: result,
+        count: result?.length || 0,
+        message: `Successfully created ${result?.length || 0} assignments`,
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to create bulk employee room assignments', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get()
+  @Public() 
   async getEmployeeRoomAssignments(
     @Query() filter?: FilterEmployeeRoomAssignmentDto
   ) {

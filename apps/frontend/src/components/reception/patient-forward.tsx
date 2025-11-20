@@ -25,7 +25,7 @@ import { useGetActiveServicesByDepartmentIdQuery } from "@/store/serviceApi";
 import { Services } from "@/interfaces/user/service.interface";
 import { Room } from "@/interfaces/user/room.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
-import StepIndicator from "./patient/forward/step-indicator";
+import { StepIndicator } from "@/components/ui/step-indicator";
 import ServiceSelection from "./patient/forward/service-selection";
 import RoomSelection from "./patient/forward/room-selection";
 
@@ -181,9 +181,11 @@ export function PatientForward({ patientId }: { patientId: string }) {
         <div className="space-y-6">
           {/* Step indicator */}
           <StepIndicator
-            selectedDepartment={selectedDepartment}
-            selectedService={selectedService}
-            selectedRoom={selectedRoom}
+            steps={[
+              { completed: !!selectedDepartment },
+              { completed: !!selectedService },
+              { completed: !!selectedRoom },
+            ]}
           />
 
           {/* Department Selection */}

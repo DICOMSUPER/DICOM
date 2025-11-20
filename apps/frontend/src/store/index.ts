@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { patientApi } from "./patientApi";
-import { queueAssignmentApi } from "./queueAssignmentApi";
 import { patientConditionApi } from "./patientConditionApi";
 import { patientEncounterApi } from "./patientEncounterApi";
 import { scheduleApi } from "./scheduleApi";
@@ -29,6 +28,7 @@ import { reportTemplateApi } from "./reportTemplateApi";
 import { digitalSignatureApi } from "./digitalSignatureApi";
 import serviceRoomApi from "./serviceRoomApi";
 import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
+import { aiAnalysisApi } from "./aiAnalysisApi";
 
 
 export const store = configureStore({
@@ -37,7 +37,6 @@ export const store = configureStore({
     patient: patientReducer,
     [patientApi.reducerPath]: patientApi.reducer,
     [patientEncounterApi.reducerPath]: patientEncounterApi.reducer,
-    [queueAssignmentApi.reducerPath]: queueAssignmentApi.reducer,
     [patientConditionApi.reducerPath]: patientConditionApi.reducer,
     [scheduleApi.reducerPath]: scheduleApi.reducer,
     [departmentApi.reducerPath]: departmentApi.reducer,
@@ -62,15 +61,12 @@ export const store = configureStore({
     [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
     [serviceRoomApi.reducerPath]: serviceRoomApi.reducer,
     [dicomStudySignatureApi.reducerPath]: dicomStudySignatureApi.reducer,
-    // [imagingApi.reducerPath]: imagingApi.reducer,
-    // [digitalSignatureApi.reducerPath]: digitalSignatureApi.reducer,
-    // [reportTemplateApi.reducerPath]: reportTemplateApi.reducer,
+    [aiAnalysisApi.reducerPath]: aiAnalysisApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
       .concat(patientApi.middleware)
       .concat(patientEncounterApi.middleware)
-      .concat(queueAssignmentApi.middleware)
       .concat(patientConditionApi.middleware)
       .concat(scheduleApi.middleware)
       .concat(departmentApi.middleware)
@@ -98,7 +94,8 @@ export const store = configureStore({
       .concat(reportTemplateApi.middleware)
       .concat(digitalSignatureApi.middleware)
       .concat(serviceRoomApi.middleware)
-      .concat(dicomStudySignatureApi.middleware),
+      .concat(dicomStudySignatureApi.middleware)
+      .concat(aiAnalysisApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

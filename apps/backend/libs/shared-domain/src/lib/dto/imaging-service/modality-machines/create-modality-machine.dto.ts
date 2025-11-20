@@ -8,19 +8,18 @@ export class CreateModalityMachineDto {
   @IsUUID()
   modalityId!: string;
 
-  @IsString()
+
   @IsOptional()
   manufacturer?: string;
 
-  @IsString()
+
   @IsOptional()
   model?: string;
 
-  @IsString()
   @IsOptional()
   serialNumber?: string;
 
-  @IsUUID()
+
   @IsOptional()
   roomId?: string;
 

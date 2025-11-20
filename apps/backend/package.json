@@ -22,11 +22,11 @@
     "@types/moment": "^2.11.29",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.1",
-    "axios": "^1.6.0",
+    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "cloudinary": "^2.7.0",
+    "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dcmjs": "^0.45.0",
@@ -43,6 +43,7 @@
     "pug": "^3.0.3",
     "reflect-metadata": "^0.1.14",
     "rxjs": "^7.8.0",
+    "streamifier": "^0.1.1",
     "typeorm": "^0.3.26"
   },
   "devDependencies": {

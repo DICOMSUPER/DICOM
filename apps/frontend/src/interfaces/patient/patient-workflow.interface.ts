@@ -199,9 +199,7 @@ export interface CreateDiagnosisReportDto {
   diagnosisDate: string;
   diagnosedBy: string;
   notes?: string;
-  followupRequired?: boolean;
-  followUpInstructions?: boolean;
-  signatureId?: string;
+  reportTemplateId?: string;
 }
 
 export interface UpdateDiagnosisReportDto {
@@ -212,8 +210,7 @@ export interface UpdateDiagnosisReportDto {
   severity?: Severity;
   diagnosisDate?: string;
   notes?: string;
-  followupRequired?: boolean;
-  followUpInstructions?: boolean;
+  reportTemplateId?: string;
 }
 
 /**

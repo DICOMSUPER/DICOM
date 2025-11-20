@@ -5,11 +5,11 @@ import { Roles } from "@/enums/user.enum";
 
 // ====================== ROLE MAPPING ======================
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {
-  [Roles.SYSTEM_ADMIN]: [/^\/admin/],
-  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technician/, /^\/viewer/],
-  [Roles.RADIOLOGIST]: [/^\/radiologist/, /^\/viewer/],
-  [Roles.RECEPTION_STAFF]: [/^\/reception/],
-  [Roles.PHYSICIAN]: [/^\/physician/, /^\/viewer/],
+  [Roles.SYSTEM_ADMIN]: [/^\/admin/, /^\/profile/],
+  [Roles.IMAGING_TECHNICIAN]: [/^\/imaging-technician/, /^\/viewer/, /^\/profile/],
+  [Roles.RADIOLOGIST]: [/^\/radiologist/, /^\/viewer/, /^\/profile/],
+  [Roles.RECEPTION_STAFF]: [/^\/reception/, /^\/profile/],
+  [Roles.PHYSICIAN]: [/^\/physician/, /^\/viewer/, /^\/profile/],
 };
 
 // ====================== FIND ALLOWED ROLES ======================
@@ -82,7 +82,9 @@ export async function middleware(req: NextRequest) {
 
    
     if (!allowedRoles.includes(decoded.role)) {
-      return NextResponse.redirect(new URL("/403", req.url));
+      const dashboardUrl = getDashboardByRole(decoded.role);
+      console.log("⚠️ Unauthorized access attempt, redirecting to user's dashboard:", dashboardUrl);
+      return NextResponse.redirect(new URL(dashboardUrl, req.url));
     }
 
     const response = NextResponse.next();
@@ -104,6 +106,7 @@ export const config = {
     "/reception/:path*",
     "/physician/:path*",
     "/viewer/:path*",
+    "/profile/:path*",
   ],
   runtime: "nodejs",
 };

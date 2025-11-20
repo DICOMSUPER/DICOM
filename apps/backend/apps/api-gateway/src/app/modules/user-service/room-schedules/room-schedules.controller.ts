@@ -37,7 +37,7 @@ import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { Public } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 
-@ApiTags('Employee Schedule Management')
+@ApiTags('Room Schedule Management')
 @Controller('room-schedules')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class RoomSchedulesController {
@@ -96,7 +96,7 @@ export class RoomSchedulesController {
 
   // 🩺 Kiểm tra tình trạng service
   @Get('health')
-  @ApiOperation({ summary: 'Check Employee Schedule service health' })
+  @ApiOperation({ summary: 'Check Room Schedule service health' })
   async checkHealth() {
     try {
       const result = await firstValueFrom(
@@ -105,10 +105,10 @@ export class RoomSchedulesController {
 
       return {
         ...result,
-        message: 'Employee Schedule service đang hoạt động',
+        message: 'Room Schedule service đang hoạt động',
       };
     } catch (error) {
-      this.logger.error('❌ Employee Schedule health check failed', error);
+      this.logger.error('❌ Room Schedule health check failed', error);
       throw handleError(error);
     }
   }
@@ -116,7 +116,7 @@ export class RoomSchedulesController {
   // 📋 Lấy danh sách lịch làm việc (có phân trang và filter)
   @Get()
   @ApiOperation({
-    summary: 'Get all employee schedules with pagination and filters',
+    summary: 'Get all room schedules with pagination and filters',
   })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -158,7 +158,7 @@ export class RoomSchedulesController {
   })
   async getAllSchedules(@Query() query: any) {
     try {
-      this.logger.log('📋 Fetching employee schedules...');
+      this.logger.log('📋 Fetching room schedules...');
       const result = await firstValueFrom(
         this.userServiceClient.send('UserService.RoomSchedule.FindMany', {
           paginationDto: {
@@ -186,7 +186,7 @@ export class RoomSchedulesController {
   // 📋 Lấy tất cả lịch làm việc (không phân trang) - dùng cho calendar
   @Get('all')
   @ApiOperation({
-    summary: 'Get all employee schedules without pagination (for calendar view)',
+    summary: 'Get all room schedules without pagination (for calendar view)',
   })
   @ApiQuery({
     name: 'employee_id',
@@ -219,7 +219,7 @@ export class RoomSchedulesController {
   })
   async getAllSchedulesWithoutPagination(@Query() query: any) {
     try {
-      this.logger.log('📋 Fetching all employee schedules (no pagination)...');
+      this.logger.log('📋 Fetching all room schedules (no pagination)...');
       const result = await firstValueFrom(
         this.userServiceClient.send('UserService.RoomSchedule.FindAll', {
           filters: {
@@ -318,6 +318,21 @@ export class RoomSchedulesController {
     required: false,
     description: 'End time to check conflicts (HH:MM:SS)',
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by name or email',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description: 'Filter by role',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    description: 'Filter by department ID',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách employees available thành công',
@@ -326,13 +341,20 @@ export class RoomSchedulesController {
     @Query('date') date: string,
     @Query('time') time?: string,
     @Query('startTime') startTime?: string,
-    @Query('endTime') endTime?: string
+    @Query('endTime') endTime?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('departmentId') departmentId?: string
   ) {
     try {
       this.logger.log(
         `👥 Fetching available employees for ${date}${
           time ? ' at ' + time : ''
-        }${startTime && endTime ? ` (${startTime} - ${endTime})` : ''}`
+        }${startTime && endTime ? ` (${startTime} - ${endTime})` : ''}${
+          search ? ` search: ${search}` : ''
+        }${role ? ` role: ${role}` : ''}${
+          departmentId ? ` department: ${departmentId}` : ''
+        }`
       );
       
       // Define allowed roles for room assignments
@@ -348,6 +370,9 @@ export class RoomSchedulesController {
           page: 1,
           limit: 1000,
           isActive: true,
+          search,
+          role,
+          departmentId,
         })
       );
       
@@ -355,10 +380,19 @@ export class RoomSchedulesController {
       const usersData = result.data?.data || result.data || result;
       const users = Array.isArray(usersData) ? usersData : [];
       
-      // Filter by allowed roles
-      let filteredUsers = users.filter((user: any) =>
-        allowedRoles.includes(user.role)
-      );
+      // Filter by allowed roles (only if no specific role filter is applied)
+      let filteredUsers = users;
+      if (!role) {
+        filteredUsers = users.filter((user: any) =>
+          allowedRoles.includes(user.role)
+        );
+      } else if (allowedRoles.includes(role as any)) {
+        // If role filter is provided and it's in allowed roles, filter by it
+        filteredUsers = users.filter((user: any) => user.role === role);
+      } else {
+        // If role filter is provided but not in allowed roles, return empty
+        filteredUsers = [];
+      }
       
       // Check for conflicting schedules if startTime and endTime are provided
       if (startTime && endTime) {
@@ -453,7 +487,7 @@ export class RoomSchedulesController {
 
   // 🆕 Tạo lịch làm việc mới
   @Post()
-  @ApiOperation({ summary: 'Create a new employee schedule' })
+  @ApiOperation({ summary: 'Create a new room schedule' })
   @ApiBody({ type: CreateRoomScheduleDto })
   @ApiResponse({ status: 201, description: 'Tạo lịch làm việc thành công' })
   @Public()
@@ -483,7 +517,7 @@ export class RoomSchedulesController {
 
   // 🔍 Lấy chi tiết 1 lịch làm việc - MUST BE LAST to avoid catching other routes
   @Get(':id')
-  @ApiOperation({ summary: 'Get employee schedule by ID' })
+  @ApiOperation({ summary: 'Get room schedule by ID' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
   @ApiResponse({
     status: 200,
@@ -507,7 +541,7 @@ export class RoomSchedulesController {
 
   // ✏️ Cập nhật lịch làm việc
   @Patch(':id')
-  @ApiOperation({ summary: 'Update employee schedule' })
+  @ApiOperation({ summary: 'Update room schedule' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
   @ApiBody({ type: UpdateRoomScheduleDto })
   @ApiResponse({
@@ -539,7 +573,7 @@ export class RoomSchedulesController {
 
   // 🗑️ Xóa lịch làm việc
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete employee schedule' })
+  @ApiOperation({ summary: 'Delete room schedule' })
   @ApiParam({ name: 'id', description: 'Schedule ID' })
   @ApiResponse({ status: 200, description: 'Xóa lịch làm việc thành công' })
   async deleteSchedule(@Param('id') id: string) {
@@ -562,7 +596,7 @@ export class RoomSchedulesController {
 
   // 📦 Tạo nhiều lịch làm việc cùng lúc
   @Post('bulk')
-  @ApiOperation({ summary: 'Create multiple employee schedules' })
+  @ApiOperation({ summary: 'Create multiple room schedules' })
   @ApiBody({ type: [CreateRoomScheduleDto] })
   @ApiResponse({
     status: 201,
@@ -589,7 +623,7 @@ export class RoomSchedulesController {
 
   // 🔄 Cập nhật nhiều lịch làm việc cùng lúc
   @Patch('bulk')
-  @ApiOperation({ summary: 'Update multiple employee schedules' })
+  @ApiOperation({ summary: 'Update multiple room schedules' })
   @ApiResponse({
     status: 200,
     description: 'Cập nhật nhiều lịch làm việc thành công',
@@ -617,7 +651,7 @@ export class RoomSchedulesController {
 
   // 🗑️ Xóa nhiều lịch làm việc cùng lúc
   @Delete('bulk')
-  @ApiOperation({ summary: 'Delete multiple employee schedules' })
+  @ApiOperation({ summary: 'Delete multiple room schedules' })
   @ApiResponse({
     status: 200,
     description: 'Xóa nhiều lịch làm việc thành công',

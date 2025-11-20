@@ -160,6 +160,9 @@ export interface ViewerContextType {
   nextFrame: (viewport: number) => void;
   prevFrame: (viewport: number) => void;
   refreshViewport: (viewport: number) => Promise<void>;
+  // AI Diagnosis methods
+  diagnosisViewport: (viewport: number) => Promise<void>;
+  clearAIAnnotations: (viewport: number) => void;
 }
 
 const defaultTransform: ViewportTransform = {
@@ -1641,6 +1644,47 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // AI Diagnosis - dispatch event to ViewPortMain
+  const diagnosisViewport = useCallback(
+    async (viewport: number) => {
+      const viewportId = getViewportId(viewport);
+      
+      if (!viewportId) {
+        console.error('❌ Cannot diagnose: viewport ID not found for viewport', viewport);
+        return;
+      }
+
+      console.log('🧠 Triggering AI diagnosis for viewport:', viewport, 'viewportId:', viewportId);
+      
+      window.dispatchEvent(
+        new CustomEvent('diagnoseViewport', {
+          detail: { viewportId, viewportIndex: viewport },
+        })
+      );
+    },
+    [getViewportId]
+  );
+
+  const clearAIAnnotations = useCallback(
+    (viewport: number) => {
+      const viewportId = getViewportId(viewport);
+      
+      if (!viewportId) {
+        console.error('❌ Cannot clear AI annotations: viewport ID not found');
+        return;
+      }
+
+      console.log('🗑️ Clearing AI annotations for viewport:', viewport);
+      
+      window.dispatchEvent(
+        new CustomEvent('clearAIAnnotations', {
+          detail: { viewportId },
+        })
+      );
+    },
+    [getViewportId]
+  );
+
   const value: ViewerContextType = {
     state,
     setActiveTool,
@@ -1673,6 +1717,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     nextFrame,
     prevFrame,
     refreshViewport,
+    diagnosisViewport,
+    clearAIAnnotations,
   };
 
   return (

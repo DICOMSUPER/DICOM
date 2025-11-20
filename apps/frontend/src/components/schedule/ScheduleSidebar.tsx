@@ -11,7 +11,7 @@ export function ScheduleSidebar({ selectedDate, onSelectDate }: ScheduleSidebarP
   return (
     <div className="bg-gray-50 border-r-0 lg:border-r border-b lg:border-b-0 border-gray-200 p-4 lg:p-6">
       {/* Calendar Section */}
-      <div>
+      <div className="sticky top-0 z-10">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Calendar</h3>
         <p className="text-sm text-gray-600 mb-4">Select a date to view schedules.</p>
         <div className="bg-white rounded-lg border border-gray-200 p-2 lg:p-4">

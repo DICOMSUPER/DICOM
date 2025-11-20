@@ -38,6 +38,25 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
+  @MessagePattern('UserService.EmployeeRoomAssignments.CreateBulk')
+  async createBulk(
+    @Payload()
+    data: { assignments: CreateEmployeeRoomAssignmentDto[] }
+  ) {
+    this.logger.log(
+      'Using pattern: UserService.EmployeeRoomAssignments.CreateBulk'
+    );
+    try {
+      return await this.employeeRoomAssignmentsService.createBulk(data.assignments);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to create bulk employee room assignments',
+        'USER_SERVICE'
+      );
+    }
+  }
+
   @MessagePattern('UserService.EmployeeRoomAssignments.FindAll')
   async findAll(
     data: { filter?: FilterEmployeeRoomAssignmentDto }

@@ -47,7 +47,32 @@ export const employeeRoomAssignmentApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
+      invalidatesTags: (result, error, { roomScheduleId }) => [
+        { type: "EmployeeRoomAssignment", id: roomScheduleId },
+        "EmployeeRoomAssignment",
+        { type: "RoomSchedule", id: roomScheduleId },
+        "RoomSchedule",
+      ],
+    }),
+    bulkCreateEmployeeRoomAssignments: builder.mutation<
+      ApiResponse<EmployeeRoomAssignment[]>,
+      { roomScheduleId: string; employeeIds: string[]; isActive?: boolean }
+    >({
+      query: ({ roomScheduleId, employeeIds, isActive = true }) => ({
+        url: "/bulk",
+        method: "POST",
+        data: employeeIds.map((employeeId) => ({
+          roomScheduleId,
+          employeeId,
+          isActive,
+        })),
+      }),
+      invalidatesTags: (result, error, { roomScheduleId }) => [
+        { type: "EmployeeRoomAssignment", id: roomScheduleId },
+        "EmployeeRoomAssignment",
+        { type: "RoomSchedule", id: roomScheduleId },
+        "RoomSchedule",
+      ],
     }),
     updateEmployeeRoomAssignment: builder.mutation<
       ApiResponse<EmployeeRoomAssignment>,
@@ -58,10 +83,24 @@ export const employeeRoomAssignmentApi = createApi({
         method: "PUT",
         data,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: "EmployeeRoomAssignment", id },
-        "EmployeeRoomAssignment",
-      ],
+      invalidatesTags: (result, error, { id, data }) => {
+        const tags: any[] = [
+          { type: "EmployeeRoomAssignment", id },
+          "EmployeeRoomAssignment",
+        ];
+        if (data.roomScheduleId || result?.data?.roomScheduleId) {
+          const scheduleId = data.roomScheduleId || result?.data?.roomScheduleId;
+          if (scheduleId) {
+            tags.push(
+              { type: "RoomSchedule", id: scheduleId },
+              "RoomSchedule"
+            );
+          }
+        } else {
+          tags.push("RoomSchedule");
+        }
+        return tags;
+      },
     }),
     deleteEmployeeRoomAssignment: builder.mutation<
       ApiResponse<void>,
@@ -71,7 +110,13 @@ export const employeeRoomAssignmentApi = createApi({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["EmployeeRoomAssignment", "RoomSchedule"],
+      invalidatesTags: (result, error, id) => {
+        return [
+          { type: "EmployeeRoomAssignment", id },
+          "EmployeeRoomAssignment",
+          "RoomSchedule",
+        ];
+      },
     }),
   }),
 });
@@ -81,6 +126,7 @@ export const {
   useGetEmployeeRoomAssignmentsQuery,
   useGetCurrentEmployeeRoomAssignmentQuery,
   useCreateEmployeeRoomAssignmentMutation,
+  useBulkCreateEmployeeRoomAssignmentsMutation,
   useUpdateEmployeeRoomAssignmentMutation,
   useDeleteEmployeeRoomAssignmentMutation,
 } = employeeRoomAssignmentApi;

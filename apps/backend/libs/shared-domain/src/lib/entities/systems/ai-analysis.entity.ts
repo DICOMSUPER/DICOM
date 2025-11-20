@@ -1,6 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { BaseEntity } from '@backend/database';
 import { AnalysisStatus } from '@backend/shared-enums';
+import { AiModel } from './ai-model.entity';
 
 @Entity('ai_analyses')
 export class AiAnalysis extends BaseEntity {
@@ -10,10 +17,12 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'study_id' })
   studyId!: string;
 
-  @Column({ name: 'series_id', nullable: true })
-  seriesId!: string;
-
-  @Column({ name: 'analysis_status', type: 'enum', enum: AnalysisStatus, default: AnalysisStatus.PENDING })
+  @Column({
+    name: 'analysis_status',
+    type: 'enum',
+    enum: AnalysisStatus,
+    default: AnalysisStatus.PENDING,
+  })
   analysisStatus!: AnalysisStatus;
 
   @Column({ name: 'analysis_results', type: 'json', nullable: true })
@@ -25,12 +34,10 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage?: string;
 
-  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
-  startedAt?: Date;
+  @Column({ name: 'ai_model_id' })
+  aiModelId!: string;
 
-  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
-  completedAt?: Date;
-
-  @Column({ name: 'is_deleted', nullable: true , default: false})
-  isDeleted?: boolean;
+  @ManyToOne(() => AiModel, (model) => model.analyses)
+  @JoinColumn({ name: 'ai_model_id' })
+  aiModel!: AiModel;
 }
