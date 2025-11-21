@@ -35,7 +35,7 @@ import {
   useLazyGetAnnotationsBySeriesIdQuery,
   useUpdateAnnotationMutation,
 } from "@/store/annotationApi";
-import { Annotation } from "@/types/Annotation";
+import type { Annotation } from "@cornerstonejs/tools/types";
 import { useViewer } from "@/contexts/ViewerContext";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";

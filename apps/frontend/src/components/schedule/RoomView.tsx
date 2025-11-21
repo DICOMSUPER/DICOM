@@ -19,7 +19,7 @@ import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "./time-segment-utils";
+} from "@/utils/time-segment-utils";
 import { useGetRoomsQuery } from "@/store/roomsApi";
 
 interface RoomViewProps {
@@ -512,12 +512,12 @@ export function RoomView({
                 {/* Services & Equipment Preview */}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {roomServices.slice(0, 3).map((service, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                    <Badge key={idx} variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
                       {service}
                     </Badge>
                   ))}
                   {roomServices.length > 3 && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                    <Badge variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
                       +{roomServices.length - 3} more
                     </Badge>
                   )}

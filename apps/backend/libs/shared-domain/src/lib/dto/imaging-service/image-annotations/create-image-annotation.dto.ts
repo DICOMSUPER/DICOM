@@ -16,10 +16,11 @@ export class CreateImageAnnotationDto {
   annotationType!: AnnotationType;
 
   @IsJSON()
-  annotationData!: object;
+  annotationData!: Record<string, any>;
 
   @IsJSON()
-  coordinates?: object;
+  @IsOptional()
+  coordinates?: Record<string, any>;
 
   @IsDecimal()
   @IsOptional()

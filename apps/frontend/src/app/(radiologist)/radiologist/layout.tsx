@@ -1,31 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import {
-  Users,
-  FileText,
-  Activity,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  TrendingUp,
-  Database,
-  Shield,
-  BarChart3,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-
-import { RadiologistWorkspaceLayout } from "@/components/radiologist/radiologist-layout";
+import { usePathname } from "next/navigation";
+import Sidebar from "@/components/radiologist/side-bar";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -34,26 +12,20 @@ interface RadiologistLayoutProps {
 export default function RadiologistLayout({
   children,
 }: RadiologistLayoutProps) {
-  const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Reception Staff");
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
-
-  const handleRoleChange = (newRole: string) => {
-    setCurrentRole(newRole);
-    console.log("Role changed to:", newRole);
-  };
+  const pathname = usePathname();
+  
+  // Check if we're on the work tree route
+  const isWorkTreeRoute = pathname?.startsWith("/radiologist/work-tree");
+  
+  // Conditionally render sidebar: Work Tree sidebar when on work tree route, otherwise normal navigation
+  const sidebarContent = isWorkTreeRoute ? <Sidebar /> : <SidebarNav />;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <RadiologistWorkspaceLayout>{children}</RadiologistWorkspaceLayout>
+      {/* Workspace Layout - same as other roles */}
+      <WorkspaceLayout sidebar={sidebarContent}>
+        {children}
+      </WorkspaceLayout>
     </div>
   );
 }

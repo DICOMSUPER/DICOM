@@ -8,7 +8,36 @@ import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "./time-segment-utils";
+} from "@/utils/time-segment-utils";
+
+// Helper function to get employee names from room assignments
+const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 2): string => {
+  if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+    return 'Unassigned';
+  }
+  
+  const activeAssignments = schedule.employeeRoomAssignments
+    .filter(a => a.isActive && a.employee)
+    .slice(0, maxNames);
+  
+  if (activeAssignments.length === 0) {
+    return 'Unassigned';
+  }
+  
+  const names = activeAssignments
+    .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+    .filter(Boolean);
+  
+  const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
+  const displayNames = names.join(', ');
+  
+  // If there are more employees than we're showing, add a count
+  if (totalCount > maxNames) {
+    return `${displayNames} +${totalCount - maxNames}`;
+  }
+  
+  return displayNames;
+};
 
 interface WeekViewProps {
   weekDays: Date[];
@@ -189,7 +218,7 @@ export function WeekView({
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
                             <div className="ml-2">
                               <div className="font-medium text-gray-900 truncate">
-                                {schedule.employee?.firstName} {schedule.employee?.lastName}
+                                {getEmployeeNames(schedule, 2)}
                               </div>
                               <div className="text-gray-600 text-xs">
                                 {schedule.actual_start_time} - {schedule.actual_end_time}

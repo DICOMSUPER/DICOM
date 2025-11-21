@@ -8,6 +8,8 @@ import {
   useGetRoomSchedulesQuery,
   useGetRoomSchedulesPaginatedQuery,
 } from '@/store/roomScheduleApi';
+import { useGetAllUsersQuery } from '@/store/userApi';
+import { useGetRoomsQuery } from '@/store/roomsApi';
 
 import { RoomAssignmentsHeader } from '@/components/admin/room-assignments/room-assignments-header';
 import { Button } from '@/components/ui/button';
@@ -20,10 +22,14 @@ import { ErrorAlert } from '@/components/ui/error-alert';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScheduleSidebar } from '@/components/schedule/ScheduleSidebar';
 import { Pagination } from '@/components/common/PaginationV1';
+import { ScheduleListFilters, ScheduleListFilters as FiltersType } from '@/components/schedule/ScheduleListFilters';
 
 import { RoomSchedule } from '@/interfaces/schedule/schedule.interface';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { AssignmentWithMeta } from '@/components/admin/room-assignments/types';
+import { User } from '@/interfaces/user/user.interface';
+import { Roles } from '@/enums/user.enum';
+import { extractApiData } from '@/utils/api';
 
 const getStatsFromSchedules = (schedules: RoomSchedule[], optimisticCount: number) => {
   const allAssignments = schedules.flatMap(
@@ -86,9 +92,11 @@ export default function RoomAssignmentsPage() {
   >({});
   const [detailSchedule, setDetailSchedule] = useState<RoomSchedule | RoomSchedule[] | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  // Pagination state for list mode
   const [listPage, setListPage] = useState(1);
   const [listLimit] = useState(10);
+  const [listFilters, setListFilters] = useState<FiltersType>({
+    sortBy: "date_desc",
+  });
 
   const openScheduleDetails = (payload: RoomSchedule | RoomSchedule[]) => {
     const payloadArray = Array.isArray(payload) ? payload : [payload];
@@ -110,8 +118,6 @@ export default function RoomAssignmentsPage() {
     setDetailSchedule(null);
   };
 
-  // Fetch all schedules for calendar mode
-  // Data is cached for 5 minutes, so switching back to calendar won't refetch if data exists
   const {
     data: allSchedulesData,
     isLoading: allSchedulesLoading,
@@ -126,8 +132,59 @@ export default function RoomAssignmentsPage() {
     }
   );
 
-  // Fetch paginated schedules for list mode
-  // Data is cached per page, so switching back to list won't refetch if data exists
+  const { data: usersData } = useGetAllUsersQuery({ 
+    page: 1, 
+    limit: 1000, 
+    isActive: true,
+    excludeRole: Roles.SYSTEM_ADMIN
+  });
+
+  const employees = useMemo(() => {
+    if (!usersData) return [];
+    return extractApiData<User>(usersData);
+  }, [usersData]);
+
+  const { data: roomsData } = useGetRoomsQuery({
+    page: 1,
+    limit: 1000,
+    is_active: true,
+  });
+
+  const rooms = roomsData?.data || [];
+
+  const paginatedFilters = useMemo(() => {
+    const filters: any = {};
+    
+    if (scheduleSearch) {
+      filters.search = scheduleSearch;
+    }
+    
+    if (listFilters.employeeId) {
+      filters.employee_id = listFilters.employeeId;
+    }
+    if (listFilters.roomId) {
+      filters.room_id = listFilters.roomId;
+    }
+    if (listFilters.startTime) {
+      filters.start_time = listFilters.startTime;
+    }
+    if (listFilters.endTime) {
+      filters.end_time = listFilters.endTime;
+    }
+    if (listFilters.dateFrom) {
+      filters.work_date_from = listFilters.dateFrom;
+    }
+    if (listFilters.dateTo) {
+      filters.work_date_to = listFilters.dateTo;
+    }
+    if (listFilters.sortBy === "date_asc" || listFilters.sortBy === "date_desc") {
+      filters.sort_by = "work_date";
+      filters.sort_order = listFilters.sortBy === "date_asc" ? "ASC" : "DESC";
+    }
+    
+    return filters;
+  }, [scheduleSearch, listFilters]);
+
   const {
     data: paginatedSchedulesData,
     isLoading: paginatedSchedulesLoading,
@@ -138,7 +195,7 @@ export default function RoomAssignmentsPage() {
     {
       page: listPage,
       limit: listLimit,
-      filters: {},
+      filters: paginatedFilters,
     },
     { 
       skip: activeView === 'calendar',
@@ -146,7 +203,6 @@ export default function RoomAssignmentsPage() {
     }
   );
 
-  // Use appropriate data based on view mode
   const schedulesData = activeView === 'calendar' ? allSchedulesData : paginatedSchedulesData?.data;
   const schedulesLoading = activeView === 'calendar' ? allSchedulesLoading : paginatedSchedulesLoading;
   const schedulesFetching = activeView === 'calendar' ? allSchedulesFetching : paginatedSchedulesFetching;
@@ -172,7 +228,7 @@ export default function RoomAssignmentsPage() {
 
   const handleScheduleUpdated = async () => {
     await refetchSchedules();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
     if (detailSchedule) {
       const scheduleId = Array.isArray(detailSchedule) 
         ? detailSchedule[0]?.schedule_id 
@@ -183,18 +239,9 @@ export default function RoomAssignmentsPage() {
           : (paginatedSchedulesData?.data ?? []);
         const updatedSchedule = updatedSchedules.find(s => s.schedule_id === scheduleId);
         if (updatedSchedule) {
-          const normalized = ensureScheduleHasEmployee(updatedSchedule);
-          if (normalized) {
-            setDetailSchedule(Array.isArray(detailSchedule) ? [normalized] : normalized);
-          } else if (Array.isArray(detailSchedule)) {
-            const allNormalized = updatedSchedules
-              .filter(s => detailSchedule.some(ds => ds.schedule_id === s.schedule_id))
-              .map(ensureScheduleHasEmployee)
-              .filter((item): item is RoomSchedule => Boolean(item));
-            if (allNormalized.length > 0) {
-              setDetailSchedule(allNormalized.length === 1 ? allNormalized[0] : allNormalized);
-            }
-          }
+          // Don't filter by ensureScheduleHasEmployee when updating after deletion
+          // The schedule should still be shown even if it has no employees
+          setDetailSchedule(Array.isArray(detailSchedule) ? [updatedSchedule] : updatedSchedule);
         }
       }
     }
@@ -217,16 +264,14 @@ export default function RoomAssignmentsPage() {
     });
   }, [schedules, optimisticAssignments]);
 
-  const calendarSchedules = useMemo(() => {
-    return mergedSchedules;
-  }, [mergedSchedules]);
-
-  // Reset page to 1 when switching to list view or when search changes
   useEffect(() => {
-    if (activeView === 'list' && listPage !== 1) {
+    if (activeView === 'list') {
       setListPage(1);
     }
-  }, [activeView, scheduleSearch]);
+  }, [activeView, scheduleSearch, listFilters]);
+
+  const handleListFiltersChange = (filters: FiltersType) => setListFilters(filters);
+  const handleListFiltersReset = () => setListFilters({ sortBy: "date_desc" });
 
   const optimisticAssignmentsCount = useMemo(
     () =>
@@ -242,9 +287,7 @@ export default function RoomAssignmentsPage() {
     optimisticAssignmentsCount
   );
 
-  const handleRefresh = async () => {
-    await refetchSchedules();
-  };
+  const handleRefresh = async () => refetchSchedules();
 
   useEffect(() => {
     setErrorMessage(schedulesError ? 'Failed to load room schedules. Please try again.' : null);
@@ -297,6 +340,14 @@ export default function RoomAssignmentsPage() {
       <div className="space-y-6">
         {activeView === 'list' ? (
           <>
+            <ScheduleListFilters
+              isAdmin={true}
+              employees={employees}
+              rooms={rooms}
+              filters={listFilters}
+              onFiltersChange={handleListFiltersChange}
+              onReset={handleListFiltersReset}
+            />
             <ScheduleAssignmentList
               schedules={mergedSchedules}
               selectedScheduleId={selectedScheduleId}
@@ -323,7 +374,7 @@ export default function RoomAssignmentsPage() {
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             <div className="xl:col-span-9 space-y-6 h-full">
               <RoomAssignmentCalendar
-                schedules={calendarSchedules}
+                schedules={mergedSchedules}
                 selectedDate={selectedDate}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}

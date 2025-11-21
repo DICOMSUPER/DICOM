@@ -32,7 +32,7 @@ import { useLazyGetAnnotationsBySeriesIdQuery } from '@/store/annotationApi';
 import { extractApiData } from '@/utils/api';
 import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { ImageAnnotation } from '@/interfaces/image-dicom/image-annotation.interface';
-import { Annotation } from '@/types/Annotation';
+import type { Annotation } from "@cornerstonejs/tools/types";
 
 export type ToolType = 
   | 'WindowLevel'
@@ -435,12 +435,13 @@ const buildDatabaseAnnotationPayload = (
     annotationId: record.annotationId ?? record.id,
     instanceId: record.instanceId,
     seriesId,
-    viewportId: viewportId ?? baseAnnotation.metadata?.viewportId,
+    viewportId: viewportId ?? undefined,
   };
   baseAnnotation.metadata = metadata;
+  const metadataRecord = baseAnnotation.metadata as unknown as Record<string, unknown> | undefined;
   baseAnnotation.annotationUID =
     baseAnnotation.annotationUID ||
-    (baseAnnotation.metadata?.annotationUID as string | undefined) ||
+    (typeof metadataRecord?.annotationUID === 'string' ? metadataRecord.annotationUID : undefined) ||
     record.annotationData?.annotationUID ||
     record.id;
   if (typeof baseAnnotation.isLocked !== 'boolean') {

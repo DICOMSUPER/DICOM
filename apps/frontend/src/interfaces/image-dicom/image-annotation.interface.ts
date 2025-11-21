@@ -1,7 +1,7 @@
 import { AnnotationStatus, AnnotationType } from "@/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
 import { DicomInstance } from "./dicom-instances.interface";
-import { AnnotationData, AnnotationHandles, Annotation } from "@/types/Annotation";
+import type { Annotation, AnnotationData, Handles } from "@cornerstonejs/tools/types";
 
 export interface ImageAnnotation extends BaseEntity {
   id: string;
@@ -10,7 +10,7 @@ export interface ImageAnnotation extends BaseEntity {
   annotatorId: string;
   annotationType: AnnotationType;
   annotationData: Annotation;
-  coordinates?: AnnotationHandles;
+  coordinates?: Handles;
   measurementValue?: number;
   measurementUnit?: string;
   textContent?: string;

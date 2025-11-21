@@ -16,6 +16,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { Roles } from "@/enums/user.enum";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +57,9 @@ export function ScheduleDetailModal({
   getStatusColor,
   onScheduleUpdated,
 }: ScheduleDetailModalProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAdmin = user?.role === Roles.SYSTEM_ADMIN;
+  
   const scheduleList = useMemo(
     () =>
       Array.isArray(schedulePayload)
@@ -459,19 +465,21 @@ export function ScheduleDetailModal({
                                 Added {formatDateTime((assignment as any)?.createdAt)}
                               </p>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                setAssignmentToDelete(assignment.id);
-                                setIsDeleteAssignmentModalOpen(true);
-                              }}
-                              disabled={!isDateInAdvance}
-                              title={!isDateInAdvance ? "Cannot delete assignments for today or in the past. Only future assignments can be deleted." : undefined}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  setAssignmentToDelete(assignment.id);
+                                  setIsDeleteAssignmentModalOpen(true);
+                                }}
+                                disabled={!isDateInAdvance}
+                                title={!isDateInAdvance ? "Cannot delete assignments for today or in the past. Only future assignments can be deleted." : undefined}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -678,24 +686,28 @@ export function ScheduleDetailModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setIsDeleteModalOpen(true)}
-            disabled={!isDateInAdvance}
-            title={!isDateInAdvance ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted." : undefined}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Schedule
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => setIsEditModalOpen(true)}
-            disabled={!isDateInAdvance}
-            title={!isDateInAdvance ? "Cannot edit schedules for today or in the past. Only future schedules can be edited." : undefined}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Schedule
-          </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="destructive"
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={!isDateInAdvance}
+                title={!isDateInAdvance ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted." : undefined}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Schedule
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => setIsEditModalOpen(true)}
+                disabled={!isDateInAdvance}
+                title={!isDateInAdvance ? "Cannot edit schedules for today or in the past. Only future schedules can be edited." : undefined}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Schedule
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
 
@@ -728,7 +740,7 @@ export function ScheduleDetailModal({
             setIsDeleteAssignmentModalOpen(false);
             setAssignmentToDelete(null);
           }}
-          onDeleted={() => {
+          onDeleted={(deletedAssignmentId) => {
             setIsDeleteAssignmentModalOpen(false);
             setAssignmentToDelete(null);
             onScheduleUpdated?.();

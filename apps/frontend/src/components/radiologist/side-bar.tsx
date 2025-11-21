@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, ArrowLeft } from "lucide-react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { Button } from "@/components/ui/button";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -46,17 +48,32 @@ export default function Sidebar() {
     pushWithParams({ modalityId, modalityMachineId: deviceId });
   };
 
+  const handleBack = () => {
+    router.push("/radiologist");
+  };
+
   return (
-    <div className="w-full h-full bg-gray-200 overflow-y-auto">
-      <div className="p-4 border-b border-gray-300 sticky top-0 bg-gray-200">
-        <h2 className="text-lg font-semibold text-gray-700">Work Tree</h2>
+    <div className="w-full h-full overflow-y-auto">
+      <div className="p-4 border-b border-border sticky top-0 bg-card">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            className="h-8 w-8 p-0"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-lg font-semibold text-foreground">Work Tree</h2>
+        </div>
       </div>
       <div className="py-2">
         {isLoadingModality && (
-          <div className="px-3 py-2 text-xs text-gray-500">Loading...</div>
+          <div className="px-3 py-2 text-xs text-foreground">Loading...</div>
         )}
         {!isLoadingModality && modalities.length === 0 && (
-          <div className="px-3 py-2 text-xs text-gray-500">No data</div>
+          <div className="px-3 py-2 text-xs text-foreground">No data</div>
         )}
 
         {!isLoadingModality &&
@@ -65,7 +82,7 @@ export default function Sidebar() {
             const id = m.id?.toUpperCase() ?? "";
             const children =
               m.modalityMachines?.filter(
-                (mm: modalityMachine) => !mm.isDeleted
+                (mm: ModalityMachine) => !mm.isDeleted
               ) ?? [];
             const isOpen =
               !!expanded[id] || m.id?.toUpperCase() === selectedModality;
@@ -73,10 +90,10 @@ export default function Sidebar() {
             return (
               <div key={m.id}>
                 <div
-                  className={`flex items-center gap-1 px-4 py-3 cursor-pointer text-sm font-medium ${
+                  className={`flex items-center gap-1 px-4 py-3 cursor-pointer text-sm font-medium transition-colors ${
                     isSelectedTop
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-accent"
                   }`}
                   onClick={() => handleNavigate(m.id)}
                 >
@@ -106,13 +123,13 @@ export default function Sidebar() {
                 </div>
                 {isOpen && children.length > 0 && (
                   <div>
-                    {children.map((c: modalityMachine) => (
+                    {children.map((c: ModalityMachine) => (
                       <div
                         key={c.id}
-                        className={`px-4 py-2 pl-10 text-sm cursor-pointer ${
+                        className={`px-4 py-2 pl-10 text-sm cursor-pointer transition-colors ${
                           selectedMachine === c.id
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-600 hover:bg-gray-100"
+                            ? "bg-accent text-accent-foreground font-medium"
+                            : "text-foreground hover:bg-accent/50"
                         }`}
                         onClick={() => handleNavigateChild(m.id, c.id)}
                       >

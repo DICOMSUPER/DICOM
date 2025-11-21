@@ -1,47 +1,44 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { getNavigationForRole } from "@/config/navigation";
-import { detectRoleFromPath } from "@/utils/role-detection";
+import { getNavigationRoleFromUserRole } from "@/utils/role-formatter";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const userRole = detectRoleFromPath(pathname);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const userRole = getNavigationRoleFromUserRole(user?.role);
   const allNavItems = getNavigationForRole(userRole);
 
-  // Sort by href length (longer = more specific) to prioritize specific matches
-  const sortedNavItems = [...allNavItems].sort(
-    (a, b) => b.href.length - a.href.length
+  const sortedNavItems = useMemo(
+    () => [...allNavItems].sort((a, b) => b.href.length - a.href.length),
+    [allNavItems]
   );
 
-  const navItems = allNavItems.map((item) => {
-    // Check if this item should be active
-    const isExactMatch = pathname === item.href;
-    const isPrefixMatch =
-      item.href !== "/" && pathname.startsWith(item.href + "/");
+  const navItems = useMemo(() => {
+    return allNavItems.map((item) => {
+      const isExactMatch = pathname === item.href;
+      const isPrefixMatch = item.href !== "/" && pathname.startsWith(item.href + "/");
 
-    // If it's a prefix match, check if there's a more specific nav item that also matches
-    let isActive = isExactMatch;
-    if (isPrefixMatch) {
-      // Check if any more specific nav item also matches this pathname
-      const moreSpecificMatch = sortedNavItems.find(
-        (otherItem) =>
-          otherItem.href !== item.href &&
-          otherItem.href.startsWith(item.href + "/") &&
-          (pathname === otherItem.href ||
-            pathname.startsWith(otherItem.href + "/"))
-      );
-      // Only active if no more specific match exists
-      isActive = !moreSpecificMatch;
-    }
+      let isActive = isExactMatch;
+      if (isPrefixMatch) {
+        const moreSpecificMatch = sortedNavItems.find(
+          (otherItem) =>
+            otherItem.href !== item.href &&
+            otherItem.href.startsWith(item.href + "/") &&
+            (pathname === otherItem.href || pathname.startsWith(otherItem.href + "/"))
+        );
+        isActive = !moreSpecificMatch;
+      }
 
-    return {
-      ...item,
-      active: isActive,
-    };
-  });
+      return { ...item, active: isActive };
+    });
+  }, [allNavItems, sortedNavItems, pathname]);
 
   return (
     <nav className="p-4">

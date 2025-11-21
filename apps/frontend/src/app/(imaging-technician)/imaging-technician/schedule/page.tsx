@@ -20,8 +20,6 @@ import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
 
-// Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
-
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },
   { time: "9:00 AM", hour: 9 },
@@ -35,7 +33,7 @@ const timeSlots = [
   { time: "5:00 PM", hour: 17 },
 ];
 
-export default function PhysicianSchedulePage() {
+export default function ImagingTechnicianSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
@@ -298,42 +296,42 @@ export default function PhysicianSchedulePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="pb-4 border-b border-gray-200">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              My Schedule
-            </h1>
-            <p className="text-sm text-gray-600">
-              View and manage your clinical schedule and appointments
-            </p>
-          </div>
-          <div className="flex items-center justify-end space-x-2">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
-              loading={isLoading}
-            />
-            <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
-              {format(selectedDate, "MMMM d, yyyy")}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        {/* Page Header */}
+        <div className="pb-4 border-b border-gray-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                My Schedule
+              </h1>
+              <p className="text-sm text-gray-600">
+                View and manage your work schedule
+              </p>
+            </div>
+            <div className="flex items-center justify-end space-x-2">
+              <RefreshButton 
+                onRefresh={handleRefresh} 
+                loading={isLoading}
+              />
+              <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
+                {format(selectedDate, "MMMM d, yyyy")}
+              </span>
+              <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
-        {/* Left Panel - Calendar and Filters */}
-        <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
+        {/* Main Content */}
+        <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
+          {/* Left Panel - Calendar and Filters */}
+          <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d) => setSelectedDate(d)} />
 
-        {/* Right Panel - Schedule View */}
-        <div className="lg:col-span-2 p-4 lg:p-6">
+          {/* Right Panel - Schedule View */}
+          <div className="lg:col-span-2 p-4 lg:p-6">
         
           <div className="mb-4 lg:mb-6">
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
@@ -356,32 +354,6 @@ export default function PhysicianSchedulePage() {
               </TabsList>
             </Tabs>
           </div>
-
-    
-          {/* {schedulesError && !isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center max-w-md mx-auto">
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 bg-red-50 rounded-full">
-                    <AlertCircle className="h-8 w-8 text-red-500" />
-                  </div>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to load schedules</h3>
-                <p className="text-sm text-gray-600 mb-6">
-                  We couldn't load your schedule data. Please check your connection and try again.
-                </p>
-                <Button 
-                  onClick={() => handleRefresh()} 
-                  variant="outline" 
-                  size="sm"
-                  className="inline-flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Try Again
-                </Button>
-              </div>
-            </div>
-          )} */}
 
           {/* Content - Skeleton loading is handled within each view component */}
           {!schedulesError && (
@@ -439,14 +411,15 @@ export default function PhysicianSchedulePage() {
           )}
         </div>
       </div>
-      
-      {/* Schedule Detail Modal */}
-      <ScheduleDetailModal
-        schedule={selectedSchedule}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        getStatusColor={getStatusColor}
-      />
+        
+        {/* Schedule Detail Modal */}
+        <ScheduleDetailModal
+          schedule={selectedSchedule}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          getStatusColor={getStatusColor}
+        />
     </div>
   );
 }
+

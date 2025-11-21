@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,15 @@ import {
   DollarSign,
   Calendar,
   DoorOpen,
+  Monitor,
+  Stethoscope,
+  Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useGetModalitiesInRoomQuery } from '@/store/modalityMachineApi';
+import { extractApiData } from '@/utils/api';
+import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
+import { ServiceRoom } from '@/interfaces/user/service-room.interface';
 
 interface RoomViewModalProps {
   room: Room | null;
@@ -33,6 +41,26 @@ interface RoomViewModalProps {
 
 export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalProps) {
   if (!room) return null;
+
+  const roomId = room.id ?? '';
+
+  const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
+    roomId,
+    { 
+      skip: !roomId || !isOpen,
+      refetchOnMountOrArgChange: true 
+    }
+  );
+
+  const modalities = useMemo(() => {
+    if (!modalitiesData) return [];
+    return extractApiData<ModalityMachine>(modalitiesData);
+  }, [modalitiesData]);
+
+  const roomServices = useMemo(() => {
+    if (!room?.serviceRooms) return [];
+    return room.serviceRooms.filter((sr) => sr.isActive && sr.service);
+  }, [room]);
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -58,6 +86,43 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
       default:
         return status || 'Unknown';
     }
+  };
+
+  const getStatusBadgeClass = (status: string | boolean | undefined, type: 'machine' | 'service' = 'service'): string => {
+    if (type === 'service') {
+      const isActive = status === true || status === 'true' || status === 'ACTIVE';
+      return isActive 
+        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+        : 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+
+    if (type === 'machine') {
+      const statusStr = String(status || '').toUpperCase();
+      if (statusStr === 'ACTIVE' || statusStr === 'AVAILABLE') {
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      } else if (statusStr === 'INACTIVE' || statusStr === 'UNAVAILABLE') {
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+      } else if (statusStr === 'MAINTENANCE') {
+        return 'bg-amber-100 text-amber-700 border-amber-200';
+      }
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+
+    return 'bg-muted text-foreground border-border';
+  };
+
+  const getStatusLabelForBadge = (status: string | boolean | undefined, type: 'machine' | 'service' = 'service'): string => {
+    if (type === 'service') {
+      const isActive = status === true || status === 'true' || status === 'ACTIVE';
+      return isActive ? 'Active' : 'Inactive';
+    }
+
+    if (type === 'machine') {
+      const statusStr = String(status || 'Unknown').toLowerCase();
+      return statusStr.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+
+    return String(status || 'Unknown');
   };
 
   const formatDate = (dateStr: string | Date | null | undefined) => {
@@ -223,22 +288,122 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </section>
                 )}
 
-                {/* Services */}
-                {room.serviceRooms && room.serviceRooms.length > 0 && (
+                {/* Modality Machines */}
+                {isLoadingModalities ? (
                   <section className="rounded-2xl p-6 shadow border-border border space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Building2 className="h-5 w-5" />
-                      Available Services
+                      <Monitor className="h-5 w-5" />
+                      Modality Machines
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {room.serviceRooms
-                        .filter(sr => sr.isActive && sr.service)
-                        .map((sr) => (
-                          <Badge key={sr.id} variant="secondary" className="text-sm px-3 py-1">
-                            {sr.service?.serviceName || sr.service?.serviceCode || 'Unknown Service'}
-                          </Badge>
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-foreground" />
+                      <span className="text-sm text-foreground">Loading modalities...</span>
+                    </div>
+                  </section>
+                ) : modalities.length > 0 ? (
+                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Monitor className="h-5 w-5" />
+                      Modality Machines ({modalities.length})
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {modalities.map((machine: ModalityMachine) => {
+                        const displayName = machine.name || 
+                          machine.modality?.modalityName || 
+                          `${machine.manufacturer || ''} ${machine.model || ''}`.trim() ||
+                          "Unnamed Machine";
+                        
+                        return (
+                          <div
+                            key={machine.id}
+                            className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                          >
+                            <p className="text-sm font-semibold text-foreground">
+                              {displayName}
+                            </p>
+                            {machine.modality?.modalityName && machine.name && (
+                              <p className="text-xs text-foreground">Type: {machine.modality.modalityName}</p>
+                            )}
+                            {machine.model && (
+                              <p className="text-xs text-foreground">Model: {machine.model}</p>
+                            )}
+                            {machine.manufacturer && (
+                              <p className="text-xs text-foreground">Manufacturer: {machine.manufacturer}</p>
+                            )}
+                            {machine.status && (
+                              <Badge
+                                className={`${getStatusBadgeClass(machine.status, 'machine')} text-xs font-medium mt-1 border`}
+                              >
+                                {getStatusLabelForBadge(machine.status, 'machine')}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ) : (
+                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Monitor className="h-5 w-5" />
+                      Modality Machines
+                    </div>
+                    <p className="text-sm text-foreground/70 italic">No modality machines available in this room</p>
+                  </section>
+                )}
+
+                {/* Services */}
+                {roomServices.length > 0 ? (
+                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Stethoscope className="h-5 w-5" />
+                      Room Services ({roomServices.length})
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {roomServices
+                        .filter((sr: ServiceRoom) => sr.isActive && sr.service)
+                        .map((sr: ServiceRoom) => (
+                          <div
+                            key={sr.id}
+                            className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-foreground">
+                                  {sr.service?.serviceName || "Unknown Service"}
+                                </p>
+                                {sr.service?.serviceCode && (
+                                  <p className="text-xs text-foreground/70 mt-0.5">
+                                    Code: {sr.service.serviceCode}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge className={`${getStatusBadgeClass(sr.isActive, 'service')} text-xs font-medium shrink-0 border`}>
+                                {getStatusLabelForBadge(sr.isActive, 'service')}
+                              </Badge>
+                            </div>
+                            {sr.service?.description && (
+                              <p className="text-xs text-foreground/80 line-clamp-2 mt-1">
+                                {sr.service.description}
+                              </p>
+                            )}
+                            {sr.notes && (
+                              <div className="mt-2 pt-2 border-t border-border/20">
+                                <p className="text-xs font-medium text-foreground/70">Notes:</p>
+                                <p className="text-xs text-foreground/80 mt-0.5">{sr.notes}</p>
+                              </div>
+                            )}
+                          </div>
                         ))}
                     </div>
+                  </section>
+                ) : (
+                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Stethoscope className="h-5 w-5" />
+                      Room Services
+                    </div>
+                    <p className="text-sm text-foreground/70 italic">No services available in this room</p>
                   </section>
                 )}
 
