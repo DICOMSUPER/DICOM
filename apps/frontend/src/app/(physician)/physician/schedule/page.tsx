@@ -1,10 +1,28 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import {
+  format,
+  addDays,
+  subDays,
+  addWeeks,
+  subWeeks,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+} from "date-fns";
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
@@ -12,11 +30,17 @@ import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
 import { RoomView } from "@/components/schedule/RoomView";
 import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
-import { ScheduleListFilters, ScheduleListFilters as FiltersType } from "@/components/schedule/ScheduleListFilters";
+import {
+  ScheduleListFilters,
+  ScheduleListFilters as FiltersType,
+} from "@/components/schedule/ScheduleListFilters";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
+import {
+  RoomSchedule,
+  ViewMode,
+} from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
 
@@ -38,22 +62,24 @@ const timeSlots = [
 export default function PhysicianSchedulePage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
-  const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [listFilters, setListFilters] = useState<FiltersType>({
     sortBy: "date_desc", // Default: latest first
   });
 
   // Fetch schedules for entire month (single query)
-  const { 
-    data: allSchedules = [], 
-    isLoading: schedulesLoading, 
+  const {
+    data: allSchedules = [],
+    isLoading: schedulesLoading,
     isFetching: schedulesFetching,
     error: schedulesError,
-    refetch: refetchSchedules 
+    refetch: refetchSchedules,
   } = useGetMySchedulesByDateRangeQuery({
     startDate: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
-    endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
+    endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd"),
   });
 
   // Fetch rooms for filter
@@ -68,9 +94,9 @@ export default function PhysicianSchedulePage() {
   // Filter schedules based on current view mode and selected date
   const getFilteredSchedules = (): RoomSchedule[] => {
     const scheduleArray = Array.isArray(allSchedules) ? allSchedules : [];
-    
+
     let filtered: RoomSchedule[] = [];
-    
+
     switch (viewMode) {
       case "day": {
         const dayStr = format(selectedDate, "yyyy-MM-dd");
@@ -78,9 +104,17 @@ export default function PhysicianSchedulePage() {
         break;
       }
       case "week": {
-        const weekStart = format(startOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-        const weekEnd = format(endOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-        filtered = scheduleArray.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+        const weekStart = format(
+          startOfWeek(selectedDate, { weekStartsOn: 0 }),
+          "yyyy-MM-dd"
+        );
+        const weekEnd = format(
+          endOfWeek(selectedDate, { weekStartsOn: 0 }),
+          "yyyy-MM-dd"
+        );
+        filtered = scheduleArray.filter(
+          (s) => s.work_date >= weekStart && s.work_date <= weekEnd
+        );
         break;
       }
       case "month":
@@ -107,7 +141,9 @@ export default function PhysicianSchedulePage() {
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return currentSchedules.filter((schedule) => schedule.work_date === dateStr);
+    return currentSchedules.filter(
+      (schedule) => schedule.work_date === dateStr
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -184,7 +220,7 @@ export default function PhysicianSchedulePage() {
     const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
     const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
     const weekDays: Date[] = [];
-    
+
     for (let i = 0; i < 7; i++) {
       weekDays.push(addDays(weekStart, i));
     }
@@ -196,21 +232,32 @@ export default function PhysicianSchedulePage() {
             Weekly Schedule
           </h2>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("prev")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs xl:text-sm"
+              onClick={() => navigateWeek("prev")}
+            >
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Week</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateWeek("next")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs xl:text-sm"
+              onClick={() => navigateWeek("next")}
+            >
               <span className="hidden xl:inline">Next Week</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
             </Button>
           </div>
         </div>
-        
+
         <div className="text-sm text-gray-600 mb-4">
-          Week of {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
+          Week of {format(weekStart, "MMMM d")} -{" "}
+          {format(weekEnd, "MMMM d, yyyy")}
         </div>
 
         <WeekView
@@ -230,11 +277,14 @@ export default function PhysicianSchedulePage() {
     const monthStart = startOfMonth(selectedDate);
     const monthEnd = endOfMonth(selectedDate);
     const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    
+
     // Get first day of week for the month
     const firstDayOfWeek = startOfWeek(monthStart, { weekStartsOn: 0 });
     const lastDayOfWeek = endOfWeek(monthEnd, { weekStartsOn: 0 });
-    const calendarDays = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
+    const calendarDays = eachDayOfInterval({
+      start: firstDayOfWeek,
+      end: lastDayOfWeek,
+    });
 
     return (
       <div className="space-y-4">
@@ -243,24 +293,40 @@ export default function PhysicianSchedulePage() {
             Monthly Schedule
           </h2>
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("prev")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs xl:text-sm"
+              onClick={() => navigateMonth("prev")}
+            >
               <ChevronLeft className="h-3 w-3 xl:h-4 xl:w-4 mr-1" />
               <span className="hidden xl:inline">Previous Month</span>
               <span className="xl:hidden">Prev</span>
             </Button>
-            <Button variant="outline" size="sm" className="text-xs xl:text-sm" onClick={() => navigateMonth("next")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs xl:text-sm"
+              onClick={() => navigateMonth("next")}
+            >
               <span className="hidden xl:inline">Next Month</span>
               <span className="xl:hidden">Next</span>
               <ChevronRight className="h-3 w-3 xl:h-4 xl:w-4 ml-1" />
             </Button>
           </div>
         </div>
-        
+
         <div className="text-sm text-gray-600 mb-4">
           {format(selectedDate, "MMMM yyyy")}
         </div>
 
-        <MonthView calendarDays={calendarDays} schedules={currentSchedules} selectedDate={selectedDate} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
+        <MonthView
+          calendarDays={calendarDays}
+          schedules={currentSchedules}
+          selectedDate={selectedDate}
+          isLoading={isLoading}
+          onScheduleClick={handleScheduleClick}
+        />
       </div>
     );
   };
@@ -275,14 +341,16 @@ export default function PhysicianSchedulePage() {
 
   const renderListView = () => (
     <div className="space-y-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Schedules List</h2>
-            <p className="text-xs lg:text-sm text-gray-600">
-              Your schedules for {format(selectedDate, "MMMM yyyy")}
-            </p>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <h2 className="text-lg lg:text-xl font-semibold text-gray-900">
+            Schedules List
+          </h2>
+          <p className="text-xs lg:text-sm text-gray-600">
+            Your schedules for {format(selectedDate, "MMMM yyyy")}
+          </p>
         </div>
+      </div>
 
       <ScheduleListFilters
         isAdmin={false}
@@ -292,7 +360,12 @@ export default function PhysicianSchedulePage() {
         onReset={handleListFiltersReset}
       />
 
-      <ListView schedules={currentSchedules} getStatusColor={getStatusColor} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
+      <ListView
+        schedules={currentSchedules}
+        getStatusColor={getStatusColor}
+        isLoading={isLoading}
+        onScheduleClick={handleScheduleClick}
+      />
     </div>
   );
 
@@ -302,25 +375,28 @@ export default function PhysicianSchedulePage() {
       <div className="pb-4 border-b border-gray-200">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              My Schedule
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">My Schedule</h1>
             <p className="text-sm text-gray-600">
               View and manage your clinical schedule and appointments
             </p>
           </div>
           <div className="flex items-center justify-end space-x-2">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
-              loading={isLoading}
-            />
-            <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
+            <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate("prev")}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
               {format(selectedDate, "MMMM d, yyyy")}
             </span>
-            <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate("next")}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -330,34 +406,53 @@ export default function PhysicianSchedulePage() {
       {/* Main Content */}
       <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
         {/* Left Panel - Calendar and Filters */}
-        <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
+        <ScheduleSidebar
+          selectedDate={selectedDate}
+          onSelectDate={(d) => setSelectedDate(d)}
+        />
 
         {/* Right Panel - Schedule View */}
         <div className="lg:col-span-2 p-4 lg:p-6">
-        
           <div className="mb-4 lg:mb-6">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <Tabs
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+            >
               <TabsList className="bg-gray-100 w-full grid grid-cols-5">
-                <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="day"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Day
                 </TabsTrigger>
-                <TabsTrigger value="week" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="week"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Week
                 </TabsTrigger>
-                <TabsTrigger value="month" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="month"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Month
                 </TabsTrigger>
-                <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="list"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   List
                 </TabsTrigger>
-                <TabsTrigger value="room" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="room"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Room
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-    
           {/* {schedulesError && !isLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center max-w-md mx-auto">
@@ -389,7 +484,9 @@ export default function PhysicianSchedulePage() {
               {viewMode === "day" && (
                 <div>
                   <div className="mb-4 xl:mb-6">
-                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">
+                      Daily Schedule
+                    </h1>
                     <p className="text-xs xl:text-sm text-gray-600">
                       Your schedule for {format(selectedDate, "MMMM d, yyyy")}
                     </p>
@@ -398,30 +495,21 @@ export default function PhysicianSchedulePage() {
                 </div>
               )}
 
-              {viewMode === "week" && (
-                <div>
-                  {renderWeekView()}
-                </div>
-              )}
+              {viewMode === "week" && <div>{renderWeekView()}</div>}
 
-              {viewMode === "month" && (
-                <div>
-                  {renderMonthView()}
-                </div>
-              )}
+              {viewMode === "month" && <div>{renderMonthView()}</div>}
 
-              {viewMode === "list" && (
-                <div>
-                  {renderListView()}
-                </div>
-              )}
+              {viewMode === "list" && <div>{renderListView()}</div>}
 
               {viewMode === "room" && (
                 <div>
                   <div className="mb-4 xl:mb-6">
-                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">
+                      Room Schedule
+                    </h1>
                     <p className="text-xs xl:text-sm text-gray-600">
-                      Your schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
+                      Your schedules grouped by room for{" "}
+                      {format(selectedDate, "MMMM d, yyyy")}
                     </p>
                   </div>
                   <RoomView
@@ -439,7 +527,7 @@ export default function PhysicianSchedulePage() {
           )}
         </div>
       </div>
-      
+
       {/* Schedule Detail Modal */}
       <ScheduleDetailModal
         schedule={selectedSchedule}

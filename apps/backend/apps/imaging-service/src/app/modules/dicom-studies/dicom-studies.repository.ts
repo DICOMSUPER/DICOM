@@ -168,14 +168,21 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       .leftJoinAndSelect('procedure.modality', 'modality')
       .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .andWhere('study.isDeleted = :notDeleted', { notDeleted: false });
+
+    if (data.roomId) {
+      qb.andWhere('imagingOrderForm.roomId = :roomId', { roomId: data.roomId });
+    }
+
     if (data.studyUID)
       qb.andWhere('study.studyInstanceUid ILIKE :studyUID', {
         studyUID: `%${data.studyUID}%`,
       });
+
     if (data.startDate)
       qb.andWhere('study.studyDate >= :startDate', {
         startDate: new Date(data.startDate),
       });
+
     if (data.endDate)
       qb.andWhere('study.studyDate <= :endDate', {
         endDate: new Date(data.endDate),

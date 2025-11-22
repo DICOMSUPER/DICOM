@@ -18,7 +18,8 @@ import {
   UserCheck,
   Users,
   Building,
-  FolderTree
+  Calendar,
+  FolderTree,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -207,7 +208,7 @@ export const roleNavigation: RoleNavigation = {
   "Imaging Technician": [
     {
       href: "/imaging-technician",
-      label: "Dashboard",
+      label: "Orders List",
       icon: BarChart3,
       description: "Imaging overview",
     },
@@ -226,7 +227,7 @@ export const roleNavigation: RoleNavigation = {
     {
       href: "/imaging-technician/schedule",
       label: "Schedule",
-      icon: Clock,
+      icon: Calendar,
       description: "View your work schedule",
     },
     {

@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -42,6 +41,7 @@ export class ImagingServiceController {
   @UseInterceptors(
     FileInterceptor('dicomFile', {
       storage: memoryStorage(),
+      limits: { fileSize: 512 * 1024 * 1024 }, //512 mb
     })
   )
   async uploadDicomFile(

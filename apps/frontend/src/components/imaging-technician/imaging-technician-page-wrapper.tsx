@@ -24,6 +24,8 @@ export default function ImageTechnicianPageWrapper() {
       modalityId: p.get("modalityId") ?? "",
       orderStatus: p.get("orderStatus") ?? "",
       procedureId: p.get("procedureId") ?? "",
+      startDate: p.get("startDate") ?? "",
+      endDate: p.get("endDate") ?? "",
     };
   }, [searchParams]);
 
@@ -73,6 +75,8 @@ export default function ImageTechnicianPageWrapper() {
         patientFirstName: initial.patientFirstName || undefined,
         patientLastName: initial.patientLastName || undefined,
         procedureId: initial.procedureId || undefined,
+        startDate: initial.startDate || undefined,
+        endDate: initial.endDate || undefined,
       },
     },
     {
@@ -102,7 +106,11 @@ export default function ImageTechnicianPageWrapper() {
       <div>
         {" "}
         {currentRoomId && (
-          <CurrentStatus roomId={currentRoomId}></CurrentStatus>
+          <CurrentStatus
+            roomId={currentRoomId}
+            startDate={initial?.startDate}
+            endDate={initial?.endDate}
+          ></CurrentStatus>
         )}
       </div>
       <FilterBar

@@ -7,9 +7,14 @@ import { ImagingOrderRepository } from './imaging-orders.repository';
 import { ImagingOrdersService } from './imaging-orders.service';
 import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ImagingOrdersCronJob } from './imaging-orders.cron';
 
 @Module({
-  imports: [BackendEntitiesModule.forFeature([ImagingOrder, ImagingModality])],
+  imports: [
+    BackendEntitiesModule.forFeature([ImagingOrder, ImagingModality]),
+    ScheduleModule.forRoot(),
+  ],
   controllers: [ImagingOrdersController],
   providers: [
     ImagingOrdersService,
@@ -17,6 +22,7 @@ import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repositor
     ImagingModalityRepository,
     ImagingOrderFormRepository,
     DicomStudiesRepository,
+    ImagingOrdersCronJob,
   ],
   exports: [BackendEntitiesModule, ImagingOrdersService],
 })

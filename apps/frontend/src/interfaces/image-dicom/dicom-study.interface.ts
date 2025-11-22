@@ -24,6 +24,7 @@ export interface DicomStudyFilterQuery {
   startDate?: string;
   endDate?: string;
   studyUID?: string;
+  roomId?: string;
 }
 
 export interface CreateDiagnosisPayload {

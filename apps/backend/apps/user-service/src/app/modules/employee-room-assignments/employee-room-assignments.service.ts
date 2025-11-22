@@ -17,7 +17,10 @@ import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { EmployeeRoomAssignmentRepository } from './employee-room-assignments.repository';
+import {
+  EmployeeRoomAssignmentRepository,
+  EmployeeRoomAssignmentStats,
+} from './employee-room-assignments.repository';
 
 @Injectable()
 export class EmployeeRoomAssignmentsService {
@@ -169,10 +172,11 @@ export class EmployeeRoomAssignmentsService {
         );
       }
 
-      const createdAssignment = await this.employeeRoomAssignmentsRepository.create(
-        createEmployeeRoomAssignmentDto,
-        em
-      );
+      const createdAssignment =
+        await this.employeeRoomAssignmentsRepository.create(
+          createEmployeeRoomAssignmentDto,
+          em
+        );
 
       // Update room status based on capacity after assignment is created
       if (roomSchedule.room_id) {
@@ -251,7 +255,9 @@ export class EmployeeRoomAssignmentsService {
         } catch (error: any) {
           errors.push({
             index: i,
-            message: error.message || `Failed to create assignment for employee ${assignment.employeeId}`,
+            message:
+              error.message ||
+              `Failed to create assignment for employee ${assignment.employeeId}`,
           });
         }
       }
@@ -264,7 +270,9 @@ export class EmployeeRoomAssignmentsService {
       if (errors.length > 0 && createdAssignments.length === 0) {
         throw ThrowMicroserviceException(
           HttpStatus.BAD_REQUEST,
-          `Failed to create any assignments: ${errors.map((e) => e.message).join('; ')}`,
+          `Failed to create any assignments: ${errors
+            .map((e) => e.message)
+            .join('; ')}`,
           'USER_SERVICE'
         );
       }
@@ -285,8 +293,12 @@ export class EmployeeRoomAssignmentsService {
       where.employeeId = employeeId;
     }
 
-    return await this.employeeRoomAssignmentsRepository.findAll({ where },["employee","roomSchedule"]);
+    return await this.employeeRoomAssignmentsRepository.findAll({ where }, [
+      'employee',
+      'roomSchedule',
+    ]);
   };
+
   findByEmployeeInCurrentSession = async (
     employeeId: string
   ): Promise<EmployeeRoomAssignment[]> => {
@@ -340,7 +352,9 @@ export class EmployeeRoomAssignmentsService {
           assignment.roomScheduleId
       ) {
         const roomSchedule = await em.findOne(RoomSchedule, {
-          where: { schedule_id: updateEmployeeRoomAssignmentDto.roomScheduleId },
+          where: {
+            schedule_id: updateEmployeeRoomAssignmentDto.roomScheduleId,
+          },
         });
 
         if (!roomSchedule) {
@@ -416,7 +430,10 @@ export class EmployeeRoomAssignmentsService {
           where: { schedule_id: newRoomScheduleId },
         });
         if (newRoomSchedule?.room_id) {
-          await this.updateRoomStatusBasedOnCapacity(newRoomSchedule.room_id, em);
+          await this.updateRoomStatusBasedOnCapacity(
+            newRoomSchedule.room_id,
+            em
+          );
         }
       } else if (oldRoomId) {
         // Same room, but update status in case isActive changed
@@ -482,5 +499,24 @@ export class EmployeeRoomAssignmentsService {
     return await this.employeeRoomAssignmentsRepository.findAll({
       where: { employeeId: employeeId, isDeleted: false },
     });
+  };
+
+  getEmployeeRoomAssignmentStats = async (data: {
+    employeeId: string;
+    startDate?: Date | string;
+    endDate?: Date | string;
+  }): Promise<EmployeeRoomAssignmentStats> => {
+    return await this.employeeRoomAssignmentsRepository.getEmployeeRoomAssignmentStats(
+      data
+    );
+  };
+
+  findEmployeeRoomAssignmentForEmployeeInWorkDate = async (data: {
+    id: string;
+    work_date: Date | string;
+  }): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findEmployeeRoomAssignmentForEmployeeInWorkDate(
+      data
+    );
   };
 }

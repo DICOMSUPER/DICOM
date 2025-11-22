@@ -30,6 +30,4 @@ export class FilterEmployeeRoomAssignmentDto extends PaginationDto {
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
-
-
 }

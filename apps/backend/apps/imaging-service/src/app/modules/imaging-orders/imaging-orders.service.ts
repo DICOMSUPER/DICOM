@@ -20,7 +20,7 @@ import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalit
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { OrderStatus } from '@backend/shared-enums';
-import { Between } from 'typeorm';
+import { Between, In, LessThan, Or } from 'typeorm';
 import { ImagingOrderFormRepository } from '../imaging-order-form/imaging-order-form.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -230,8 +230,12 @@ export class ImagingOrdersService {
     return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
   };
 
-  getRoomStatsInDate = async (id: string): Promise<RoomOrderStats> => {
-    return await this.imagingOrderRepository.getRoomStatsInDate(id);
+  getRoomStatsInDate = async (data: {
+    id: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<RoomOrderStats> => {
+    return await this.imagingOrderRepository.getRoomStatsInDateRange(data);
   };
 
   getRoomStats = async (id: string): Promise<RoomOrderStats> => {
@@ -247,4 +251,47 @@ export class ImagingOrdersService {
       paginationDto ?? { page: 1, limit: 10 }
     );
   }
+
+  //cron job
+  findAndHandleExpiredOrder = async (): Promise<ImagingOrder[]> => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const orders = await this.imagingOrderRepository.findAll(
+          {
+            where: {
+              orderStatus: In([
+                // OrderStatus.IN_PROGRESS,
+                OrderStatus.PENDING,
+              ]),
+              isDeleted: false,
+              createdAt: Or(
+                Between(startOfToday, endOfToday),
+                LessThan(startOfToday) //Incase missing previous date
+              ),
+            },
+          },
+          [],
+          transactionalEntityManager
+        );
+
+        const orderIds = orders.map((o: ImagingOrder) => {
+          return o.id;
+        });
+
+        const batchUpdate = await this.imagingOrderRepository.batchUpdate(
+          orderIds,
+          { orderStatus: OrderStatus.CANCELLED },
+          transactionalEntityManager
+        );
+
+        return batchUpdate;
+      }
+    );
+  };
 }

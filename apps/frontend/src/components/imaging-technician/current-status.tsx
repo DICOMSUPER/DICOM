@@ -1,9 +1,30 @@
-import React from "react";
-import { useGetOrderStatsForRoomQuery } from "@/store/imagingOrderApi";
+import React, { useMemo } from "react";
+import {
+  useGetOrderStatsForRoomInDateQuery,
+  useGetOrderStatsForRoomQuery,
+} from "@/store/imagingOrderApi";
 import { Clock, Activity, CheckCircle, XCircle, Users } from "lucide-react";
 
-export default function CurrentStatus({ roomId }: { roomId: string }) {
-  const { data, isLoading, error } = useGetOrderStatsForRoomQuery(roomId);
+export default function CurrentStatus({
+  roomId,
+  startDate,
+  endDate,
+}: {
+  roomId: string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+}) {
+  const dateParams = useMemo(() => {
+    const today = new Date();
+    return {
+      id: roomId,
+      startDate: startDate || today.toISOString(),
+      endDate: endDate || today.toISOString(),
+    };
+  }, [roomId, startDate, endDate]);
+
+  const { data, isLoading, error } =
+    useGetOrderStatsForRoomInDateQuery(dateParams);
 
   if (isLoading) {
     return (
@@ -30,15 +51,15 @@ export default function CurrentStatus({ roomId }: { roomId: string }) {
   const currentInProgress = data?.data?.currentInProgress;
 
   // Get the next waiting order by sorting by date (createdAt) first, then by orderNumber
-  const getNextWaitingOrder = () => {
-    if (!data?.data?.maxWaiting?.entity) return null;
+  // const getNextWaitingOrder = () => {
+  //   if (!data?.data?.maxWaiting?.entity) return null;
 
-    // For now, we'll use the maxWaiting data provided by the API
-    // In a real scenario, you might want to fetch all waiting orders and sort them
-    return data.data.maxWaiting;
-  };
+  //   // For now, we'll use the maxWaiting data provided by the API
+  //   // In a real scenario, you might want to fetch all waiting orders and sort them
+  //   return data.data.maxWaiting;
+  // };
 
-  const nextWaiting = getNextWaitingOrder();
+  // const nextWaiting = getNextWaitingOrder();
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -108,7 +129,9 @@ export default function CurrentStatus({ roomId }: { roomId: string }) {
           <div className="bg-white border border-gray-300 rounded p-3">
             <div className="flex items-center gap-2 mb-1">
               <Activity className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-medium text-gray-600">Active</span>
+              <span className="text-xs font-medium text-gray-600">
+                In progress
+              </span>
             </div>
             <div className="text-2xl font-bold text-gray-700">
               {stats?.inProgress || 0}
@@ -201,7 +224,7 @@ export default function CurrentStatus({ roomId }: { roomId: string }) {
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                <span>Active ({inProgress})</span>
+                <span>In progress ({inProgress})</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-400 rounded-sm"></div>

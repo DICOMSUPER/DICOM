@@ -22,8 +22,9 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
-import { Between, In, Raw } from 'typeorm';
+import { Between, EntityManager, In, LessThan, Or, Raw } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
+import { InjectEntityManager } from '@nestjs/typeorm';
 
 export interface QueueInfo {
   [roomId: string]: {
@@ -42,7 +43,8 @@ export class PatientEncounterService {
     @Inject() private readonly encounterRepository: PatientEncounterRepository,
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
-    private readonly userService: ClientProxy
+    private readonly userService: ClientProxy,
+    @InjectEntityManager() private readonly entityManager: EntityManager
   ) {}
 
   getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
@@ -318,40 +320,63 @@ export class PatientEncounterService {
     updatedCount: number;
     encounters: PatientEncounter[];
   }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    return await this.entityManager.transaction(
+      async (transactionalEntityManager) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
 
-    const waitingEncounters = await this.encounterRepository.findAll({
-      where: {
-        encounterDate: Between(today, endOfDay),
-        status: In([EncounterStatus.WAITING]),
-        isDeleted: false,
-      },
-      relations: ['patient'],
-    });
+        const waitingEncounters = await this.encounterRepository.findAll(
+          {
+            where: {
+              encounterDate: Or(Between(today, endOfDay), LessThan(today)), //in case missed previous date
+              status: In([EncounterStatus.WAITING]),
+              isDeleted: false,
+            },
+            relations: ['patient'],
+          },
+          [],
+          transactionalEntityManager
+        );
 
-    if (waitingEncounters.length === 0) {
-      return { updatedCount: 0, encounters: [] };
-    }
+        if (waitingEncounters.length === 0) {
+          return { updatedCount: 0, encounters: [] };
+        }
 
-    // Update all to UNARRIVED
-    const updatePromises = waitingEncounters.map((encounter) =>
-      this.encounterRepository.update(encounter.id, {
-        status: EncounterStatus.LEAVED,
-        updatedAt: new Date(),
-      })
+        // Update all to UNARRIVED
+        // const updatePromises = waitingEncounters.map((encounter) =>
+        //   this.encounterRepository.update(encounter.id, {
+        //     status: EncounterStatus.LEAVED,
+        //     updatedAt: new Date(),
+        //   })
+        // );
+
+        // await Promise.all(updatePromises);
+
+        //Change to batch update to optimize db
+        const encounterIds = waitingEncounters.map((e: PatientEncounter) => {
+          return e.id;
+        });
+
+        const updatedEncounters = await this.encounterRepository.batchUpdate(
+          encounterIds,
+          {
+            status: EncounterStatus.LEAVED,
+            updatedAt: new Date(),
+          },
+          transactionalEntityManager
+        );
+
+        return {
+          updatedCount: waitingEncounters.length,
+          encounters: updatedEncounters,
+        };
+      }
     );
-
-    await Promise.all(updatePromises);
-
-    return {
-      updatedCount: waitingEncounters.length,
-      encounters: waitingEncounters,
-    };
   }
+
   async getEncounterStatsFromRoomIdsInDate(
     data: RoomEncounterFilters[]
   ): Promise<QueueInfo> {
