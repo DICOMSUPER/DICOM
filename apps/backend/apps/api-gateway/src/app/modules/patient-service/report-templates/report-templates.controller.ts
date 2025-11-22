@@ -24,7 +24,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Role } from '@backend/shared-decorators';
 import { firstValueFrom } from 'rxjs';
 import { Roles } from '@backend/shared-enums';
-import type { IAuthenticatedRequest } from 'libs/shared-interfaces/src';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @Controller('report-templates')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -32,7 +32,7 @@ export class ReportTemplatesController {
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
-  ) { }
+  ) {}
 
   @Get()
   async getReportTemplates(
@@ -77,8 +77,7 @@ export class ReportTemplatesController {
     );
   }
 
-
-    @Post('by-modality-bodypart')
+  @Post('by-modality-bodypart')
   async getReportTemplatesByModalityAndBodyPart(
     @Body() payload: { modalityId?: string; bodyPartId?: string }
   ) {
@@ -90,15 +89,15 @@ export class ReportTemplatesController {
       )
     );
   }
-  
+
   @Post()
   @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
   async createReportTemplate(
     @Body() createReportTemplateDto: CreateReportTemplateDto,
     @Req() req: IAuthenticatedRequest
   ) {
-    console.log("create report template", createReportTemplateDto);
-    console.log("user info", req.userInfo);
+    console.log('create report template', createReportTemplateDto);
+    console.log('user info', req.userInfo);
 
     return await firstValueFrom(
       this.patientService.send('PatientService.ReportTemplate.Create', {
@@ -129,6 +128,4 @@ export class ReportTemplatesController {
       })
     );
   }
-
-
 }

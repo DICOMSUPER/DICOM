@@ -46,6 +46,8 @@ export interface FilterByRoomIdType {
   orderStatus?: ImagingOrderStatus;
   procedureId?: string;
   bodyPart?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export type ReferenceFieldOrderType =
@@ -240,6 +242,19 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   async filterImagingOrderByRoomId(
     data: FilterByRoomIdType
   ): Promise<ImagingOrder[]> {
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (data.startDate) {
+      startDate = new Date(data.startDate);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    if (data.endDate) {
+      endDate = new Date(data.endDate);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const repository = this.getRepository();
     const qb = repository
       .createQueryBuilder('order')
@@ -274,15 +289,28 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
         bodyPart: `%${data.bodyPart.trim()}%`,
       });
     }
+
+    if (data.startDate) {
+      qb.andWhere('order.createdAt >= :startDate', { startDate });
+    }
+
+    if (data.endDate) {
+      qb.andWhere('order.createdAt <= :endDate', { endDate });
+    }
+
     return qb.getMany();
   }
 
-  async getRoomStatsInDate(id: string) {
+  async getRoomStatsInDateRange(data: {
+    id: string;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
     const date = new Date();
-    const startOfDay = new Date(date);
+    const startOfDay = new Date(data.startDate || date);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(date);
+    const endOfDay = new Date(data.endDate || date);
     endOfDay.setHours(23, 59, 59, 999);
 
     const repository = this.getRepository();
@@ -291,7 +319,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     const allOrders = await repository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
-      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: id })
+      .andWhere('imagingOrderForm.roomId = :roomId', { roomId: data.id })
       .andWhere('order.createdAt BETWEEN :start AND :end', {
         start: startOfDay,
         end: endOfDay,

@@ -119,7 +119,8 @@ export class DicomStudiesController {
     @Query('bodyPart') bodyPart?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('studyUID') studyUID?: string
+    @Query('studyUID') studyUID?: string,
+    @Query('roomId') roomId?: string
   ) {
     try {
       // console.log(request.userInfo);
@@ -135,6 +136,7 @@ export class DicomStudiesController {
           modalityId,
           modalityMachineId,
           studyStatus,
+          roomId,
         })
       );
 
@@ -253,7 +255,12 @@ export class DicomStudiesController {
     );
   }
 
-  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN,Roles.RADIOLOGIST,Roles.PHYSICIAN)
+  @Role(
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN
+  )
   @Patch(':id')
   async updateDicomStudy(
     @Param('id') id: string,

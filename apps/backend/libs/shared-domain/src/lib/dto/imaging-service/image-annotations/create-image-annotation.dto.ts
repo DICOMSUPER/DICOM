@@ -1,13 +1,15 @@
-import { AnnotationStatus, AnnotationType } from '@backend/shared-enums';
 import {
   IsString,
   IsEnum,
   IsOptional,
-  IsJSON,
-  IsDecimal,
-  IsDate,
-  IsIn,
+  IsObject,
+  IsNumber,
+  IsUUID,
+  IsISO8601,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { AnnotationStatus, AnnotationType } from '@backend/shared-enums';
+
 export class CreateImageAnnotationDto {
   @IsString()
   instanceId!: string;
@@ -15,13 +17,15 @@ export class CreateImageAnnotationDto {
   @IsEnum(AnnotationType)
   annotationType!: AnnotationType;
 
-  @IsJSON()
+  @IsObject()
   annotationData!: object;
 
-  @IsJSON()
+  @IsObject()
+  @IsOptional()
   coordinates?: object;
 
-  @IsDecimal()
+  @Type(() => Number)
+  @IsNumber()
   @IsOptional()
   measurementValue?: number;
 
@@ -38,21 +42,25 @@ export class CreateImageAnnotationDto {
   colorCode?: string;
 
   @IsEnum(AnnotationStatus)
-  @IsIn([AnnotationStatus.DRAFT, AnnotationStatus.FINAL])
   annotationStatus!: AnnotationStatus;
 
-  //   imaging_technician
-  @IsString()
-  annotatorId!: string;
-
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  annotationDate: Date = new Date();
+  annotatorId?: string;
 
-  @IsDate()
+  @IsISO8601()
   @IsOptional()
-  reviewDate?: Date;
+  annotationDate?: string;
+
+  @IsISO8601()
+  @IsOptional()
+  reviewDate?: string;
+
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsUUID()
+  @IsOptional()
+  reviewerId?: string;
 }

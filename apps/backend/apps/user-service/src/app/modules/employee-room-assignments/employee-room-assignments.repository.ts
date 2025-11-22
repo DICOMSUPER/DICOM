@@ -5,6 +5,10 @@ import { BaseRepository } from '@backend/database';
 import { EmployeeRoomAssignment } from '@backend/shared-domain';
 import moment from 'moment';
 
+export interface EmployeeRoomAssignmentStats {
+  [day: string]: number;
+}
+
 @Injectable()
 export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoomAssignment> {
   constructor(
@@ -12,6 +16,78 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
     entityManager: EntityManager
   ) {
     super(EmployeeRoomAssignment, entityManager);
+  }
+
+  async getEmployeeRoomAssignmentStats(data: {
+    employeeId: string;
+    startDate?: Date | string;
+    endDate?: Date | string;
+  }): Promise<EmployeeRoomAssignmentStats> {
+    const startDate = new Date(data.startDate as string);
+    const endDate = new Date(data.endDate as string);
+
+    // Generate all dates between start and end first
+    const dateArray: string[] = [];
+    const result = new Map<string, number>();
+
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const isoDate = currentDate.toISOString().split('T')[0];
+      dateArray.push(isoDate);
+      result.set(isoDate, 0);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    console.log('Query params:', {
+      employeeId: data.employeeId,
+      dateArrayLength: dateArray.length,
+      dateRange: `${dateArray[0]} to ${dateArray[dateArray.length - 1]}`,
+    });
+
+    if (dateArray.length === 0) {
+      const obj: EmployeeRoomAssignmentStats = {};
+      result.forEach((value, key) => {
+        obj[key] = value;
+      });
+      return obj;
+    }
+
+    // Use IN clause with the date array
+    const employeeRoomAssignments = await this.repository
+      .createQueryBuilder('era')
+      .innerJoinAndSelect('era.roomSchedule', 'rs')
+      .where('era.employeeId = :employeeId', { employeeId: data.employeeId })
+      .andWhere('rs.work_date IN (:...dateArray)', { dateArray })
+      .andWhere('era.isActive = :isActive', { isActive: true })
+      .andWhere('era.isDeleted = :notDeleted', { notDeleted: false })
+      .getMany();
+
+    // console.log(`Found ${employeeRoomAssignments.length} assignments`);
+
+    // Debug: Log what we found
+    // employeeRoomAssignments.forEach((assignment, index) => {
+    //   console.log(`Assignment ${index + 1}:`, {
+    //     assignmentId: assignment.id,
+    //     workDate: assignment.roomSchedule?.work_date,
+    //     employeeId: assignment.employeeId,
+    //   });
+    // });
+
+    // Count actual assignments
+    employeeRoomAssignments.forEach((assignment) => {
+      const date = assignment.roomSchedule?.work_date;
+      if (!date) return;
+
+      result.set(date, (result.get(date) || 0) + 1);
+    });
+
+    // Convert Map → plain object
+    const obj: EmployeeRoomAssignmentStats = {};
+    result.forEach((value, key) => {
+      obj[key] = value;
+    });
+
+    return obj;
   }
 
   async findByEmployeeInCurrentSession(
@@ -89,5 +165,29 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
 
     const employeeRoomAssignment = await qb.getOne();
     return employeeRoomAssignment;
+  }
+
+  async findEmployeeRoomAssignmentForEmployeeInWorkDate(data: {
+    id: string;
+    work_date: Date | string;
+  }): Promise<EmployeeRoomAssignment[]> {
+    const repository = this.getRepository();
+
+    const workDateValue =
+      data.work_date instanceof Date
+        ? data.work_date?.toISOString().split('T')[0]
+        : data.work_date;
+
+    const qb = repository
+      .createQueryBuilder('era')
+      .leftJoinAndSelect('era.roomSchedule', 'roomSchedule')
+      .leftJoinAndSelect('roomSchedule.room', 'room')
+      .where('era.employeeId = :employeeId', { employeeId: data.id })
+      .andWhere('roomSchedule.work_date = :work_date', {
+        work_date: workDateValue,
+      })
+      .orderBy('roomSchedule.actual_start_time', 'ASC');
+
+    return await qb.getMany();
   }
 }

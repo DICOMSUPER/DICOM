@@ -17,7 +17,8 @@ import {
   Timer,
   UserCheck,
   Users,
-  Building
+  Building,
+  Calendar,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -206,7 +207,7 @@ export const roleNavigation: RoleNavigation = {
   "Image Technician": [
     {
       href: "/imaging-technician",
-      label: "Dashboard",
+      label: "Orders List",
       icon: BarChart3,
       description: "Imaging overview",
     },
@@ -220,6 +221,12 @@ export const roleNavigation: RoleNavigation = {
       href: "/imaging-technician/machines",
       label: "Machines",
       icon: Activity,
+      description: "Imaging machines status",
+    },
+    {
+      href: "/imaging-technician/schedule",
+      label: "Schedule",
+      icon: Calendar,
       description: "Imaging machines status",
     },
     {

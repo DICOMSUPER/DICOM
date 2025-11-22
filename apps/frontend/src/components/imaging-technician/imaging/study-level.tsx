@@ -123,7 +123,7 @@ export default function StudyLevel({
         <button
           onClick={async (e) => {
             e.stopPropagation();
-            await forwardStudy(study.id);
+            setForwardingStudyId(study.id);
           }}
           disabled={isForwarded}
           className={`text-sm transition-colors ${

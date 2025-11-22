@@ -1,7 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { FilterEmployeeRoomAssignment, EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import {
+  FilterEmployeeRoomAssignment,
+  EmployeeRoomAssignment,
+  EmployeeRoomAssignmentStats,
+} from "@/interfaces/user/employee-room-assignment.interface";
 
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",
@@ -20,7 +24,7 @@ export const employeeRoomAssignmentApi = createApi({
     }),
     getEmployeeRoomAssignments: builder.query<
       ApiResponse<EmployeeRoomAssignment[]>,
-      {filter: FilterEmployeeRoomAssignment}
+      { filter: FilterEmployeeRoomAssignment }
     >({
       query: ({ filter }) => ({
         url: `/`,
@@ -76,7 +80,14 @@ export const employeeRoomAssignmentApi = createApi({
     }),
     updateEmployeeRoomAssignment: builder.mutation<
       ApiResponse<EmployeeRoomAssignment>,
-      { id: string; data: Partial<{ roomScheduleId: string; employeeId: string; isActive: boolean }> }
+      {
+        id: string;
+        data: Partial<{
+          roomScheduleId: string;
+          employeeId: string;
+          isActive: boolean;
+        }>;
+      }
     >({
       query: ({ id, data }) => ({
         url: `/${id}`,
@@ -89,12 +100,10 @@ export const employeeRoomAssignmentApi = createApi({
           "EmployeeRoomAssignment",
         ];
         if (data.roomScheduleId || result?.data?.roomScheduleId) {
-          const scheduleId = data.roomScheduleId || result?.data?.roomScheduleId;
+          const scheduleId =
+            data.roomScheduleId || result?.data?.roomScheduleId;
           if (scheduleId) {
-            tags.push(
-              { type: "RoomSchedule", id: scheduleId },
-              "RoomSchedule"
-            );
+            tags.push({ type: "RoomSchedule", id: scheduleId }, "RoomSchedule");
           }
         } else {
           tags.push("RoomSchedule");
@@ -102,10 +111,7 @@ export const employeeRoomAssignmentApi = createApi({
         return tags;
       },
     }),
-    deleteEmployeeRoomAssignment: builder.mutation<
-      ApiResponse<void>,
-      string
-    >({
+    deleteEmployeeRoomAssignment: builder.mutation<ApiResponse<void>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",
@@ -118,6 +124,37 @@ export const employeeRoomAssignmentApi = createApi({
         ];
       },
     }),
+
+    getEmployeeRoomAssignmentStats: builder.query<
+      ApiResponse<EmployeeRoomAssignmentStats>,
+      { id: string; startDate?: string | Date; endDate?: string | Date }
+    >({
+      query: ({ id, startDate, endDate }) => ({
+        url: `/stats`,
+        method: "GET",
+        params: {
+          startDate:
+            startDate instanceof Date
+              ? startDate?.toISOString().split("T")[0]
+              : startDate,
+          endDate:
+            endDate instanceof Date
+              ? endDate?.toISOString().split("T")[0]
+              : endDate,
+        },
+      }),
+    }),
+
+    getEmployeeRoomAssignmentInWorkDate: builder.query<
+      ApiResponse<EmployeeRoomAssignment[]>,
+      string
+    >({
+      query: (work_date) => ({
+        url: "/by-date",
+        method: "GET",
+        params: { work_date },
+      }),
+    }),
   }),
 });
 
@@ -129,4 +166,6 @@ export const {
   useBulkCreateEmployeeRoomAssignmentsMutation,
   useUpdateEmployeeRoomAssignmentMutation,
   useDeleteEmployeeRoomAssignmentMutation,
+  useGetEmployeeRoomAssignmentStatsQuery,
+  useGetEmployeeRoomAssignmentInWorkDateQuery,
 } = employeeRoomAssignmentApi;
