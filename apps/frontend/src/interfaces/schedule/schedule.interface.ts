@@ -75,11 +75,18 @@ export interface RoomScheduleSearchFilters {
   employee_id?: string;
   room_id?: string;
   work_date?: string;
+  work_date_from?: string;
+  work_date_to?: string;
+  start_time?: string;
+  end_time?: string;
   schedule_status?: string;
   department_id?: string;
   role?: string;
   start_date?: string;
   end_date?: string;
+  sort_by?: string;
+  sort_order?: 'ASC' | 'DESC';
+  search?: string;
   limit?: number;
   offset?: number;
 }

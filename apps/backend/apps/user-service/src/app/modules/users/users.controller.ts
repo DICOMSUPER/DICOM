@@ -177,6 +177,7 @@ export class UsersController {
       search?: string;
       isActive?: boolean;
       role?: string;
+      excludeRole?: string;
       departmentId?: string;
     }
   ) {

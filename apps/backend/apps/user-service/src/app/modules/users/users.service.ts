@@ -166,6 +166,7 @@ export class UsersService {
     search?: string;
     isActive?: boolean;
     role?: string;
+    excludeRole?: string;
     departmentId?: string;
   }) {
     try {
@@ -214,6 +215,10 @@ export class UsersService {
 
       if (query.role) {
         qb.andWhere('user.role = :role', { role: query.role });
+      }
+
+      if (query.excludeRole) {
+        qb.andWhere('user.role != :excludeRole', { excludeRole: query.excludeRole });
       }
 
       if (query.departmentId) {

@@ -2,7 +2,10 @@ import {
   IsString,
   IsEnum,
   IsOptional,
-  IsObject,
+  IsJSON,
+  IsDecimal,
+  IsDate,
+  IsIn,
   IsNumber,
   IsUUID,
   IsISO8601,
@@ -17,12 +20,12 @@ export class CreateImageAnnotationDto {
   @IsEnum(AnnotationType)
   annotationType!: AnnotationType;
 
-  @IsObject()
-  annotationData!: object;
+  @IsJSON()
+  annotationData!: Record<string, any>;
 
-  @IsObject()
+  @IsJSON()
   @IsOptional()
-  coordinates?: object;
+  coordinates?: Record<string, any>;
 
   @Type(() => Number)
   @IsNumber()

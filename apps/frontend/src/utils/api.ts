@@ -39,13 +39,22 @@ export function extractApiData<T>(response: unknown): T[] {
       return dataField as T[]
     }
 
-    if (
-      dataField &&
-      typeof dataField === "object" &&
-      "data" in (dataField as { data?: unknown }) &&
-      Array.isArray((dataField as { data?: unknown }).data)
-    ) {
-      return ((dataField as { data?: unknown }).data || []) as T[]
+    // Handle nested data structures (data.data, data.data.data, etc.)
+    if (dataField && typeof dataField === "object") {
+      const nestedData = dataField as { data?: unknown }
+      
+      // Check if nested data has a data field that is an array
+      if ("data" in nestedData && Array.isArray(nestedData.data)) {
+        return (nestedData.data || []) as T[]
+      }
+      
+      // Handle triple nesting: data.data.data (e.g., { data: { data: { data: [...] } } })
+      if ("data" in nestedData && nestedData.data && typeof nestedData.data === "object") {
+        const deeperNested = nestedData.data as { data?: unknown }
+        if ("data" in deeperNested && Array.isArray(deeperNested.data)) {
+          return (deeperNested.data || []) as T[]
+        }
+      }
     }
   }
 

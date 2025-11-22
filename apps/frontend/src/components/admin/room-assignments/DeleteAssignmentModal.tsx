@@ -20,7 +20,7 @@ interface DeleteAssignmentModalProps {
   schedule: RoomSchedule | null;
   isOpen: boolean;
   onClose: () => void;
-  onDeleted?: () => void;
+  onDeleted?: (assignmentId: string) => void;
 }
 
 export function DeleteAssignmentModal({
@@ -68,7 +68,7 @@ export function DeleteAssignmentModal({
     try {
       await deleteAssignment(assignmentId).unwrap();
       toast.success("Assignment deleted successfully");
-      onDeleted?.();
+      onDeleted?.(assignmentId);
       onClose();
     } catch (error: any) {
       toast.error(error?.data?.message || error?.message || "Failed to delete assignment");

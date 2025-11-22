@@ -240,6 +240,20 @@ export class RoomScheduleRepository {
       query.andWhere('employee.role = :role', { role: filters.role });
     }
 
+    // Filter by start time (actual_start_time >= startTime)
+    if (filters.startTime) {
+      query.andWhere('schedule.actual_start_time >= :startTime', {
+        startTime: filters.startTime,
+      });
+    }
+
+    // Filter by end time (actual_end_time <= endTime)
+    if (filters.endTime) {
+      query.andWhere('schedule.actual_end_time <= :endTime', {
+        endTime: filters.endTime,
+      });
+    }
+
     if (filters.limit) {
       query.limit(filters.limit);
     }
@@ -248,9 +262,27 @@ export class RoomScheduleRepository {
       query.offset(filters.offset);
     }
 
-    query
-      .orderBy('schedule.work_date', 'ASC')
-      .addOrderBy('schedule.actual_start_time', 'ASC');
+    // Handle sorting
+    const sortBy = filters.sortBy || 'work_date';
+    const sortOrder = filters.sortOrder || 'DESC'; // Default to DESC (latest first)
+
+    // Map frontend sort values to database fields
+    let sortField = 'schedule.work_date';
+    if (sortBy === 'date' || sortBy === 'work_date') {
+      sortField = 'schedule.work_date';
+    } else if (sortBy === 'start_time' || sortBy === 'actual_start_time') {
+      sortField = 'schedule.actual_start_time';
+    } else if (sortBy === 'end_time' || sortBy === 'actual_end_time') {
+      sortField = 'schedule.actual_end_time';
+    }
+
+    const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    query.orderBy(sortField, order);
+
+    // Add secondary sort by time if sorting by date
+    if (sortBy === 'date' || sortBy === 'work_date') {
+      query.addOrderBy('schedule.actual_start_time', order);
+    }
 
     return await query.getMany();
   }

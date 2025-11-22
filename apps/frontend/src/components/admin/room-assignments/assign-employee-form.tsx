@@ -17,12 +17,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
+import { TimePicker } from "@/components/ui/time-picker";
+import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { RoomSchedule, Employee, Room, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { cn } from "@/lib/utils";
 import { formatRole } from "@/utils/role-formatter";
 import * as SelectPrimitive from "@radix-ui/react-select";
@@ -33,6 +35,7 @@ import { useGetAvailableEmployeesQuery, useGetRoomSchedulesQuery } from "@/store
 import { useGetRoomsQuery } from "@/store/roomsApi";
 import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from "@/store/scheduleApi";
 import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssignmentsMutation } from "@/store/employeeRoomAssignmentApi";
+import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/utils/api";
 import { formatTimeRange } from "@/utils/schedule-helpers";
 
@@ -113,6 +116,25 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
     () => schedules.find((s) => s.schedule_id === selectedScheduleId),
     [schedules, selectedScheduleId]
   );
+
+  const selectedRoomId = useMemo(() => {
+    if (selectedSchedule?.room?.id) return selectedSchedule.room.id;
+    if (formRoomId) return formRoomId;
+    return '';
+  }, [selectedSchedule, formRoomId]);
+
+  const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
+    selectedRoomId,
+    {
+      skip: !selectedRoomId,
+      refetchOnMountOrArgChange: true,
+    }
+  );
+
+  const modalities = useMemo(() => {
+    if (!modalitiesData) return [];
+    return extractApiData<ModalityMachine>(modalitiesData);
+  }, [modalitiesData]);
 
   const employeeQueryDate = selectedSchedule?.work_date 
     ? selectedSchedule.work_date 
@@ -236,7 +258,8 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
       if (!formStartTime || !formEndTime) {
         toast.error('Start time and end time are required when creating a new schedule');
       } else {
-        toast.error('Start time and end time cannot be the same');
+        const errorMsg = getTimeValidationError || 'End time must be after start time';
+        toast.error(errorMsg);
       }
       return;
     }
@@ -515,6 +538,12 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
     return diffDays >= 1;
   }, [formDate, selectedSchedule]);
 
+  // Helper function to parse time string to minutes
+  const parseTime = (timeStr: string) => {
+    const parts = timeStr.split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+  };
+
   const areTimesValid = useMemo(() => {
     if (selectedSchedule) return true;
     
@@ -522,16 +551,26 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
     
     if (!formStartTime || !formEndTime) return false;
     
-    const parseTime = (timeStr: string) => {
-      const parts = timeStr.split(':');
-      return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
-    };
+    const startMinutes = parseTime(formStartTime);
+    const endMinutes = parseTime(formEndTime);
+    
+    // End time must be after start time
+    return endMinutes > startMinutes;
+  }, [formStartTime, formEndTime, formShiftId, selectedSchedule]);
+
+  // Get time validation error message
+  const getTimeValidationError = useMemo(() => {
+    if (!formStartTime || !formEndTime) return null;
+    if (formShiftId) return null;
     
     const startMinutes = parseTime(formStartTime);
     const endMinutes = parseTime(formEndTime);
     
-    return startMinutes !== endMinutes;
-  }, [formStartTime, formEndTime, formShiftId, selectedSchedule]);
+    if (endMinutes <= startMinutes) {
+      return 'End time must be after start time';
+    }
+    return null;
+  }, [formStartTime, formEndTime, formShiftId]);
 
   const hasDate = !!(selectedSchedule?.work_date || formDate);
   const hasRoom = !!(selectedSchedule?.room_id || formRoomId);
@@ -881,7 +920,7 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                       <p className="text-xs text-foreground font-medium">Available Services</p>
                       <div className="flex flex-wrap gap-2">
                         {roomServices.map((service, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
+                          <Badge key={idx} variant="secondary" className="text-xs text-white">
                             {service}
                           </Badge>
                         ))}
@@ -901,6 +940,39 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Modalities */}
+                  {isLoadingModalities ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Modalities</p>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin text-foreground" />
+                        <span className="text-xs text-foreground">Loading modalities...</span>
+                      </div>
+                    </div>
+                  ) : modalities.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Available Modalities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {modalities.map((modality) => (
+                          <Badge key={modality.id} variant="outline" className="text-xs flex items-center gap-1">
+                            <Monitor className="h-3 w-3" />
+                            {modality.name}
+                            {modality.modality && (
+                              <span className="text-[10px] text-foreground">
+                                ({modality.modality.modalityCode || modality.modality.modalityName})
+                              </span>
+                            )}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-xs text-foreground font-medium">Modalities</p>
+                      <p className="text-xs text-foreground/70 italic">No modality machines available in this room</p>
                     </div>
                   )}
 
@@ -988,31 +1060,35 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                     <p className="text-sm font-medium mb-2 text-foreground">
                       Start Time {!formShiftId && <span className="text-red-600">*</span>}
                     </p>
-                    <Input
-                      type="time"
+                    <TimePicker
                       value={formStartTime}
-                      onChange={(e) => setFormStartTime(e.target.value)}
+                      onChange={(value) => setFormStartTime(value)}
                       placeholder="HH:MM"
-                      required={!formShiftId}
-                      className={!areTimesValid && !formShiftId && formStartTime ? 'border-red-500' : ''}
+                      disabled={!!formShiftId}
+                      error={(!areTimesValid || getTimeValidationError) && !formShiftId && formStartTime ? true : false}
                     />
-                    {!areTimesValid && !formShiftId && formStartTime && formEndTime && formStartTime === formEndTime && (
-                      <p className="text-xs text-red-600 mt-1">Start and end times cannot be the same</p>
+                    {getTimeValidationError && !formShiftId && (
+                      <p className="text-xs text-red-600 mt-1">{getTimeValidationError}</p>
+                    )}
+                    {!areTimesValid && !formShiftId && (!formStartTime || !formEndTime) && !getTimeValidationError && (
+                      <p className="text-xs text-red-600 mt-1">Both start and end times are required</p>
                     )}
                   </div>
                   <div>
                     <p className="text-sm font-medium mb-2 text-foreground">
                       End Time {!formShiftId && <span className="text-red-600">*</span>}
                     </p>
-                    <Input
-                      type="time"
+                    <TimePicker
                       value={formEndTime}
-                      onChange={(e) => setFormEndTime(e.target.value)}
+                      onChange={(value) => setFormEndTime(value)}
                       placeholder="HH:MM"
-                      required={!formShiftId}
-                      className={!areTimesValid && !formShiftId && formEndTime ? 'border-red-500' : ''}
+                      disabled={!!formShiftId}
+                      error={(!areTimesValid || getTimeValidationError) && !formShiftId && formEndTime ? true : false}
                     />
-                    {!areTimesValid && !formShiftId && (!formStartTime || !formEndTime) && (
+                    {getTimeValidationError && !formShiftId && (
+                      <p className="text-xs text-red-600 mt-1">{getTimeValidationError}</p>
+                    )}
+                    {!areTimesValid && !formShiftId && (!formStartTime || !formEndTime) && !getTimeValidationError && (
                       <p className="text-xs text-red-600 mt-1">Both start and end times are required</p>
                     )}
                   </div>

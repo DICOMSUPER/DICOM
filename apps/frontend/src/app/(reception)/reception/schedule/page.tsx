@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
-// WorkspaceLayout and SidebarNav moved to layout.tsx
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
@@ -13,12 +12,13 @@ import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
 import { RoomView } from "@/components/schedule/RoomView";
 import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
+import { ScheduleListFilters, ScheduleListFilters as FiltersType } from "@/components/schedule/ScheduleListFilters";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { useGetMySchedulesByDateRangeQuery } from "@/store/roomScheduleApi";
+import { useGetRoomsQuery } from "@/store/roomsApi";
 import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
-
-// Time slots for UI - Updated to match shift templates (8:00 AM - 5:00 PM)
+import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
 
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },
@@ -38,6 +38,9 @@ export default function ReceptionSchedulePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [listFilters, setListFilters] = useState<FiltersType>({
+    sortBy: "date_desc", // Default: latest first
+  });
 
   // Fetch schedules for entire month (single query)
   const { 
@@ -51,28 +54,49 @@ export default function ReceptionSchedulePage() {
     endDate: format(endOfMonth(selectedDate), "yyyy-MM-dd")
   });
 
+  // Fetch rooms for filter
+  const { data: roomsData } = useGetRoomsQuery({
+    page: 1,
+    limit: 1000,
+    is_active: true,
+  });
+
+  const rooms = useMemo(() => roomsData?.data || [], [roomsData]);
+
   // Filter schedules based on current view mode and selected date
   const getFilteredSchedules = (): RoomSchedule[] => {
     const scheduleArray = Array.isArray(allSchedules) ? allSchedules : [];
     
+    let filtered: RoomSchedule[] = [];
+    
     switch (viewMode) {
       case "day": {
         const dayStr = format(selectedDate, "yyyy-MM-dd");
-        return scheduleArray.filter((s) => s.work_date === dayStr);
+        filtered = scheduleArray.filter((s) => s.work_date === dayStr);
+        break;
       }
       case "week": {
         const weekStart = format(startOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
         const weekEnd = format(endOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-        return scheduleArray.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+        filtered = scheduleArray.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+        break;
       }
       case "month":
       case "list": {
         // Return all schedules for the month
-        return scheduleArray;
+        filtered = scheduleArray;
+        break;
       }
       default:
-        return scheduleArray;
+        filtered = scheduleArray;
     }
+
+    // Apply list view filters and sorting when in list mode
+    if (viewMode === "list") {
+      filtered = filterAndSortSchedules(filtered, listFilters);
+    }
+
+    return filtered;
   };
 
   const currentSchedules = getFilteredSchedules();
@@ -239,16 +263,32 @@ export default function ReceptionSchedulePage() {
     );
   };
 
+  const handleListFiltersChange = (filters: FiltersType) => {
+    setListFilters(filters);
+  };
+
+  const handleListFiltersReset = () => {
+    setListFilters({ sortBy: "date_desc" });
+  };
+
   const renderListView = () => (
     <div className="space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Schedules List</h2>
             <p className="text-xs lg:text-sm text-gray-600">
-              Your schedules for {format(selectedDate, "MMMM d, yyyy")}
+              Your schedules for {format(selectedDate, "MMMM yyyy")}
             </p>
           </div>
         </div>
+
+      <ScheduleListFilters
+        isAdmin={false}
+        rooms={rooms}
+        filters={listFilters}
+        onFiltersChange={handleListFiltersChange}
+        onReset={handleListFiltersReset}
+      />
 
       <ListView schedules={currentSchedules} getStatusColor={getStatusColor} isLoading={isLoading} onScheduleClick={handleScheduleClick} />
     </div>
@@ -288,13 +328,13 @@ export default function ReceptionSchedulePage() {
         {/* Main Content */}
         <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
           {/* Left Panel - Calendar and Filters */}
-          <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d)=>setSelectedDate(d)} />
+          <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d) => setSelectedDate(d)} />
 
           {/* Right Panel - Schedule View */}
           <div className="lg:col-span-2 p-4 lg:p-6">
-            {/* View Mode Tabs */}
-            <div className="mb-4 lg:mb-6">
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
+        
+          <div className="mb-4 lg:mb-6">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
                 <TabsList className="bg-gray-100 w-full grid grid-cols-5">
                   <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
                     Day
@@ -312,11 +352,11 @@ export default function ReceptionSchedulePage() {
                     Room
                   </TabsTrigger>
                 </TabsList>
-              </Tabs>
-            </div>
+            </Tabs>
+          </div>
 
-            {/* Error State */}
-            {schedulesError && !isLoading && (
+    
+          {/* {schedulesError && !isLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center max-w-md mx-auto">
                   <div className="flex justify-center mb-4">
@@ -334,69 +374,69 @@ export default function ReceptionSchedulePage() {
                     size="sm"
                     className="inline-flex items-center gap-2"
                   >
-                    <RefreshCw className="h-4 w-4" />
-                    Try Again
-                  </Button>
-                </div>
+                  <RefreshCw className="h-4 w-4" />
+                  Try Again
+                </Button>
               </div>
-            )}
+            </div>
+          )} */}
 
-            {/* Content - Skeleton loading is handled within each view component */}
-            {!schedulesError && (
-              <>
-                {viewMode === "day" && (
-                  <div>
-                    <div className="mb-4 xl:mb-6">
-                      <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
-                      <p className="text-xs xl:text-sm text-gray-600">
-                        Your schedule for {format(selectedDate, "MMMM d, yyyy")}
-                      </p>
-                    </div>
-                    {renderDayView()}
+          {/* Content - Skeleton loading is handled within each view component */}
+          {!schedulesError && (
+            <>
+              {viewMode === "day" && (
+                <div>
+                  <div className="mb-4 xl:mb-6">
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                    <p className="text-xs xl:text-sm text-gray-600">
+                      Your schedule for {format(selectedDate, "MMMM d, yyyy")}
+                    </p>
                   </div>
-                )}
+                  {renderDayView()}
+                </div>
+              )}
 
-                {viewMode === "week" && (
-                  <div>
-                    {renderWeekView()}
-                  </div>
-                )}
+              {viewMode === "week" && (
+                <div>
+                  {renderWeekView()}
+                </div>
+              )}
 
-                {viewMode === "month" && (
-                  <div>
-                    {renderMonthView()}
-                  </div>
-                )}
+              {viewMode === "month" && (
+                <div>
+                  {renderMonthView()}
+                </div>
+              )}
 
-                {viewMode === "list" && (
-                  <div>
-                    {renderListView()}
-                  </div>
-                )}
+              {viewMode === "list" && (
+                <div>
+                  {renderListView()}
+                </div>
+              )}
 
-                {viewMode === "room" && (
-                  <div>
-                    <div className="mb-4 xl:mb-6">
-                      <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
-                      <p className="text-xs xl:text-sm text-gray-600">
-                        Your schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
-                      </p>
-                    </div>
-                    <RoomView
-                      selectedDate={selectedDate}
-                      timeSlots={timeSlots}
-                      schedules={currentSchedules}
-                      getStatusColor={getStatusColor}
-                      isLoading={isLoading}
-                      onScheduleClick={handleScheduleClick}
-                      shiftTemplateMap={shiftTemplateMap}
-                    />
+              {viewMode === "room" && (
+                <div>
+                  <div className="mb-4 xl:mb-6">
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
+                    <p className="text-xs xl:text-sm text-gray-600">
+                      Your schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
+                    </p>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                  <RoomView
+                    selectedDate={selectedDate}
+                    timeSlots={timeSlots}
+                    schedules={currentSchedules}
+                    getStatusColor={getStatusColor}
+                    isLoading={isLoading}
+                    onScheduleClick={handleScheduleClick}
+                    shiftTemplateMap={shiftTemplateMap}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
+      </div>
         
         {/* Schedule Detail Modal */}
         <ScheduleDetailModal

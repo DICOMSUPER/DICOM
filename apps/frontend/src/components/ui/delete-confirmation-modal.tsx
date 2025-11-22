@@ -20,6 +20,13 @@ interface Schedule {
     firstName?: string;
     lastName?: string;
   };
+  employeeRoomAssignments?: Array<{
+    isActive?: boolean;
+    employee?: {
+      firstName?: string;
+      lastName?: string;
+    };
+  }>;
   work_date?: string;
   actual_start_time?: string;
   actual_end_time?: string;
@@ -46,12 +53,43 @@ export function DeleteConfirmationModal({
 }: DeleteConfirmationModalProps) {
   if (!schedule) return null;
 
+  // Helper to get employee names from room assignments
+  const getEmployeeNames = (): string => {
+    // First try employeeRoomAssignments
+    if (schedule.employeeRoomAssignments && schedule.employeeRoomAssignments.length > 0) {
+      const activeAssignments = schedule.employeeRoomAssignments
+        .filter(a => a.isActive && a.employee)
+        .slice(0, 2);
+      
+      if (activeAssignments.length > 0) {
+        const names = activeAssignments
+          .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+          .filter(Boolean);
+        
+        const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
+        const displayNames = names.join(', ');
+        
+        if (totalCount > 2) {
+          return `${displayNames} +${totalCount - 2}`;
+        }
+        return displayNames;
+      }
+    }
+    
+    // Fallback to legacy employee field
+    if (schedule.employee?.firstName || schedule.employee?.lastName) {
+      return `${schedule.employee.firstName || ''} ${schedule.employee.lastName || ''}`.trim();
+    }
+    
+    return 'Unassigned';
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent className="border-border max-w-md">
         <AlertDialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <AlertDialogTitle className="text-red-900">{title}</AlertDialogTitle>
@@ -64,7 +102,7 @@ export function DeleteConfirmationModal({
                 <User className="w-4 h-4 text-red-600" />
                 <span className="text-sm font-medium text-red-900">Employee:</span>
                 <span className="text-sm font-semibold text-red-800">
-                  {schedule.employee?.firstName} {schedule.employee?.lastName}
+                  {getEmployeeNames()}
                 </span>
               </div>
               

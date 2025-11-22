@@ -21,11 +21,30 @@ export const RoomScheduleApi = createApi({
   endpoints: (builder) => ({
     // Get all employee schedules with filters (no pagination - for calendar)
     getRoomSchedules: builder.query<RoomSchedule[], RoomScheduleSearchFilters>({
-      query: (filters) => ({
-        url: "/all",
-        method: "GET",
-        params: filters,
-      }),
+      query: (filters) => {
+        // Map frontend filter names to backend API parameter names
+        const params: any = {};
+        if (filters.employee_id) params.employee_id = filters.employee_id;
+        if (filters.room_id) params.room_id = filters.room_id;
+        if (filters.work_date_from) params.work_date_from = filters.work_date_from;
+        if (filters.work_date_to) params.work_date_to = filters.work_date_to;
+        if (filters.start_date) params.work_date_from = filters.start_date;
+        if (filters.end_date) params.work_date_to = filters.end_date;
+        if (filters.start_time) params.start_time = filters.start_time;
+        if (filters.end_time) params.end_time = filters.end_time;
+        if (filters.schedule_status) params.schedule_status = filters.schedule_status;
+        if (filters.role) params.role = filters.role;
+        if (filters.sort_by) params.sort_by = filters.sort_by;
+        if (filters.sort_order) params.sort_order = filters.sort_order;
+        if (filters.limit) params.limit = filters.limit;
+        if (filters.offset) params.offset = filters.offset;
+        
+        return {
+          url: "/all",
+          method: "GET",
+          params,
+        };
+      },
       transformResponse: (response: any) => {
         // Handle both array and wrapped response
         return Array.isArray(response) ? response : (response?.data || []);
@@ -43,21 +62,35 @@ export const RoomScheduleApi = createApi({
         filters: Omit<RoomScheduleSearchFilters, "limit" | "offset">;
       }
     >({
-      query: ({ page, limit, filters }) => ({
-        url: "",
-        method: "GET",
-        params: { page, limit, ...filters },
-      }),
+      query: ({ page, limit, filters }) => {
+        const params: any = { page, limit };
+        if (filters.employee_id) params.employee_id = filters.employee_id;
+        if (filters.room_id) params.room_id = filters.room_id;
+        if (filters.work_date_from) params.work_date_from = filters.work_date_from;
+        if (filters.work_date_to) params.work_date_to = filters.work_date_to;
+        if (filters.start_date) params.work_date_from = filters.start_date;
+        if (filters.end_date) params.work_date_to = filters.end_date;
+        if (filters.start_time) params.start_time = filters.start_time;
+        if (filters.end_time) params.end_time = filters.end_time;
+        if (filters.schedule_status) params.schedule_status = filters.schedule_status;
+        if (filters.role) params.role = filters.role;
+        if (filters.sort_by) params.sort_field = filters.sort_by;
+        if (filters.sort_order) params.order = filters.sort_order;
+        if (filters.search) params.search = filters.search;
+        
+        return {
+          url: "",
+          method: "GET",
+          params,
+        };
+      },
       transformResponse: (response: any) => {
-        // Backend returns paginated response directly when page/limit are provided
         if (response?.data && Array.isArray(response.data)) {
           return response;
         }
-        // If it's already in the right format, return as is
         if (response?.total !== undefined) {
           return response;
         }
-        // Fallback: wrap array response
         return {
           data: Array.isArray(response) ? response : [],
           total: Array.isArray(response) ? response.length : 0,

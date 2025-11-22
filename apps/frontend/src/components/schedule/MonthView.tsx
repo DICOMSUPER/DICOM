@@ -4,6 +4,35 @@ import { format, isSameDay } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 
+// Helper function to get employee names from room assignments
+const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 1): string => {
+  if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+    return 'Unassigned';
+  }
+  
+  const activeAssignments = schedule.employeeRoomAssignments
+    .filter(a => a.isActive && a.employee)
+    .slice(0, maxNames);
+  
+  if (activeAssignments.length === 0) {
+    return 'Unassigned';
+  }
+  
+  const names = activeAssignments
+    .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+    .filter(Boolean);
+  
+  const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
+  const displayNames = names.join(', ');
+  
+  // If there are more employees than we're showing, add a count
+  if (totalCount > maxNames) {
+    return `${displayNames} +${totalCount - maxNames}`;
+  }
+  
+  return displayNames;
+};
+
 interface MonthViewProps {
   calendarDays: Date[];
   schedules: RoomSchedule[];
@@ -67,7 +96,7 @@ export function MonthView({
                 >
                   <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 rounded-l"></div>
                   <span className="ml-1">
-                    {schedule.employee?.firstName} {schedule.employee?.lastName}
+                    {getEmployeeNames(schedule, 1)}
                   </span>
                 </div>
               ))}

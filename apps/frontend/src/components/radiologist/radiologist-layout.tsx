@@ -19,6 +19,7 @@ import {
 import { Bell, User } from "lucide-react";
 import type { RootState } from "@/store";
 import { useLogout } from "@/hooks/use-logout";
+import { SidebarNav } from "@/components/sidebar-nav";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -41,16 +42,111 @@ export function RadiologistWorkspaceLayout({
     triggerLogout();
   };
 
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+  // Auto close/open based on breakpoint
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1024px)");
+    const update = () => setIsSidebarOpen(!mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Toggle via custom event from header
+  React.useEffect(() => {
+    const handler = () => setIsSidebarOpen((v) => !v);
+    window.addEventListener(
+      "workspace:toggleSidebar",
+      handler as EventListener
+    );
+    // Close on ESC
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener(
+        "workspace:toggleSidebar",
+        handler as EventListener
+      );
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
   return (
     <div className="h-screen bg-background flex overflow-hidden">
-      {/* Main Work Area - Full Width */}
+      {/* Sidebar container with smooth width transition and full height */}
+      <div
+        className={
+          `border-r border-border bg-card overflow-hidden transition-[width] duration-300 ease-in-out h-screen ` +
+          (isSidebarOpen ? "w-64" : "w-0")
+        }
+      >
+        <div
+          className={
+            (isSidebarOpen ? "flex" : "hidden") + " lg:flex flex-col h-full"
+          }
+        >
+          {/* Sidebar Top Branding */}
+          <div className="px-4 py-3 h-16 border-b border-border shrink-0">
+            <h1 className="text-lg font-display font-bold text-foreground">
+              DICOM System
+            </h1>
+            <p className="text-xs text-slate-500">
+              Radiologist Workspace
+            </p>
+          </div>
+
+          {/* Sidebar Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
+            <SidebarNav />
+          </div>
+
+          {/* Logout Section - Fixed at Bottom */}
+          <div className="border-t border-border bg-card shrink-0">
+            <div className="p-4">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-red-600 hover:text-white hover:bg-red-600"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Work Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {/* Custom Header for Radiologist */}
           <header className="h-16 border-b border-border bg-card">
             <div className="h-full flex items-center justify-between px-4">
               {/* Left: Logo and Branding */}
               <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="lg:hidden"
+                >
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                </Button>
                 <div className="flex items-center space-x-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
                     D

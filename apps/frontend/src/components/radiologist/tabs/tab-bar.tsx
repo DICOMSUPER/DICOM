@@ -19,7 +19,7 @@ export default function TabBar() {
             border-t border-l border-r rounded-t-md
             ${
               activeTabId === tab.id
-                ? "bg-white text-black border-gray-300 -mb-[1px]"
+                ? "bg-white text-black border-gray-300 -mb-px"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-50 border-gray-300"
             }
           `}
@@ -37,7 +37,7 @@ export default function TabBar() {
                 e.stopPropagation();
                 closeTab?.(tab.id);
               }}
-              className="hover:bg-gray-200 rounded p-1 transition-colors flex-shrink-0"
+              className="hover:bg-gray-200 rounded p-1 transition-colors shrink-0"
               title="Close tab"
             >
               <X size={14} />
