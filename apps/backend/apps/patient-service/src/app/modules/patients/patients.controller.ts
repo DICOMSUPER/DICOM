@@ -282,6 +282,7 @@ export class PatientController {
     }
   }
 
+  // mostly submethod to use along for join patient
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Filter`)
   async filterPatient(
     @Payload()
@@ -298,6 +299,31 @@ export class PatientController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to filter patient',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.FindManyWithFilter`)
+  async findManyWithFilter(
+    @Payload() data: { paginationDto: RepositoryPaginationDto }
+  ) {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.FindManyWithFilter`
+    );
+    try {
+      const { paginationDto } = data;
+      return await this.patientService.findManyWithFilter({
+        page: paginationDto.page || 1,
+        limit: paginationDto.limit || 5,
+        search: paginationDto.search || '',
+        sortField: paginationDto.sortField || 'createdAt',
+        order: paginationDto.order || 'asc',
+      });
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find many with filter patient',
         PATIENT_SERVICE
       );
     }

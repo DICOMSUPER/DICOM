@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
 import { PatientEncounterController } from './patient-encounters.controller';
-import { PatientServiceClientModule } from '@backend/shared-client';
+import {
+  PatientServiceClientModule,
+  UserServiceClientModule,
+} from '@backend/shared-client';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
 
 @Module({
-  imports: [PatientServiceClientModule, SharedInterceptorModule, ],
+  imports: [
+    PatientServiceClientModule,
+    SharedInterceptorModule,
+    UserServiceClientModule,
+  ],
   controllers: [PatientEncounterController],
 })
 export class PatientEncounterModule {}
