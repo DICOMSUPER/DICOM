@@ -190,27 +190,7 @@ export class BaseRepository<T extends ObjectLiteral> {
 
     const query = repository.createQueryBuilder('entity');
 
-    // Apply where conditions from options
-    if (options?.where) {
-      query.andWhere(
-        new Brackets((qb) => {
-          if (typeof options.where === 'object') {
-            Object.entries(options.where).forEach(([key, value]) => {
-              qb.andWhere(`entity.${key} = :${key}`, { [key]: value });
-            });
-          }
-        })
-      );
-    }
-
-    // Search filter
-    if (search && searchField) {
-      query.andWhere(`entity.${searchField} LIKE :search`, {
-        search: `%${search}%`,
-      });
-    }
-
-    //  Relations
+    //  Relations, move relation above
     if (relation?.length) {
       relation.forEach((r) => {
         const parts = r.split('.');
@@ -232,6 +212,26 @@ export class BaseRepository<T extends ObjectLiteral> {
 
           parentAlias = alias; // move deeper for next iteration
         }
+      });
+    }
+
+    // Apply where conditions from options
+    if (options?.where) {
+      query.andWhere(
+        new Brackets((qb) => {
+          if (typeof options.where === 'object') {
+            Object.entries(options.where).forEach(([key, value]) => {
+              qb.andWhere(`entity.${key} = :${key}`, { [key]: value });
+            });
+          }
+        })
+      );
+    }
+
+    // Search filter
+    if (search && searchField) {
+      query.andWhere(`entity.${searchField} LIKE :search`, {
+        search: `%${search}%`,
       });
     }
 
@@ -335,7 +335,7 @@ export class BaseRepository<T extends ObjectLiteral> {
       ) as FindOptionsWhere<T>,
     });
 
-    if (!entities.length) [];
+    if (!entities.length) return [];
 
     // Merge data with each entity
     const updatedEntities = entities.map((entity) =>

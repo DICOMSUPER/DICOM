@@ -21,6 +21,7 @@ import {
 } from "./patient-condition.interface";
 import { ServiceRoom } from "../user/service-room.interface";
 import { ReportTemplate } from "./report-template.interface";
+import { User } from "../user/user.interface";
 
 // Re-export enums for convenience
 export {
@@ -89,6 +90,9 @@ export interface PatientEncounter extends BaseEntity {
   createdBy?: string;
   serviceRoomId?: string;
   serviceRoom: ServiceRoom;
+
+  assignedPhysician?: User;
+  createdByUser?: User;
 }
 
 export interface VitalSignMeasurement {
@@ -447,7 +451,6 @@ export interface EncounterStatsInDateRange {
   totalArrivedEncounters: number;
 }
 
-
 export interface DicomStudyStatsInDateRange {
   totalDicomStudies: number;
   totalScannedStudies: number;
@@ -456,4 +459,3 @@ export interface DicomStudyStatsInDateRange {
   totalTechnicianVerifiedStudies: number;
   totalResultPrintedStudies: number;
 }
-

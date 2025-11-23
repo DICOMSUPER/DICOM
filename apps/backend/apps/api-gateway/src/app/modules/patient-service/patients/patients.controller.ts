@@ -18,7 +18,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ValidationUtils } from '@backend/shared-utils';
 import { Public, Role } from '@backend/shared-decorators';
-import { Roles as RoleEnum } from '@backend/shared-enums';
+import { Roles as RoleEnum, Roles } from '@backend/shared-enums';
 import { RequestLoggingInterceptor } from '@backend/shared-interceptor';
 import { TransformInterceptor } from '@backend/shared-interceptor';
 import { CreatePatientDto, UpdatePatientDto } from '@backend/shared-domain';
@@ -78,7 +78,7 @@ export class PatientServiceController {
     @Query() searchDto: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-    @Query('q') searchTerm?: string
+    @Query('searchTerm') searchTerm?: string
   ) {
     try {
       // Validate pagination parameters
@@ -111,6 +111,33 @@ export class PatientServiceController {
     }
   }
 
+  @Get('filter-v2') //not pass filter field, allow dynamic filter between first name, lastname, code...
+  async findManyWithFilter(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
+  ) {
+    try {
+      const paginationDto = {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        search,
+        sortField,
+        order,
+      };
+
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Patient.FindManyWithFilter', {
+          paginationDto,
+        })
+      );
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
   @Get('stats')
   async getPatientStats() {
     try {
@@ -136,6 +163,7 @@ export class PatientServiceController {
       throw error;
     }
   }
+
   @Get('name')
   @Public()
   async findPatientByName(@Query('patientName') patientName: string) {
@@ -183,7 +211,10 @@ export class PatientServiceController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePatientDto: UpdatePatientDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updatePatientDto: UpdatePatientDto
+  ) {
     try {
       // Validate UUID format
       if (!ValidationUtils.isValidUUID(id)) {
