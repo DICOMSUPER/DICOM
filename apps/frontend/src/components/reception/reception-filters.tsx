@@ -1,7 +1,13 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X } from "lucide-react";
 
@@ -55,10 +61,11 @@ export function ReceptionFilters({
   isSearching = false,
   className = "",
 }: ReceptionFiltersProps) {
-  const hasActiveFilters = searchTerm || priorityFilter !== 'all' || statusFilter !== 'all';
+  const hasActiveFilters =
+    searchTerm || priorityFilter !== "all" || statusFilter !== "all";
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onSearch) {
+    if (e.key === "Enter" && onSearch) {
       onSearch();
     }
   };
@@ -78,8 +85,8 @@ export function ReceptionFilters({
             />
           </div>
           {onSearch && (
-            <Button 
-              onClick={onSearch} 
+            <Button
+              onClick={onSearch}
               disabled={isSearching}
               className="h-9 px-4"
             >
@@ -88,7 +95,9 @@ export function ReceptionFilters({
             </Button>
           )}
         </div>
-        <div className="flex gap-2">
+
+        {/* Patient does not have priority or status */}
+        {/* <div className="flex gap-2">
           <Select value={priorityFilter} onValueChange={onPriorityChange}>
             <SelectTrigger className="w-32 h-9">
               <SelectValue placeholder="Priority" />
@@ -125,7 +134,7 @@ export function ReceptionFilters({
               Reset
             </Button>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );

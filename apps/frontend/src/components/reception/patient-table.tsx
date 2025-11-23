@@ -6,21 +6,22 @@ import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Eye, Edit, Trash2, User, Calendar, Phone, MapPin } from "lucide-react";
+import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 
-interface Patient {
-  id: string;
-  firstName: string;
-  lastName: string;
-  patientCode: string;
-  dateOfBirth: string;
-  gender: string;
-  phoneNumber?: string;
-  address?: string;
-  bloodType?: string;
-  isActive: boolean;
-  priority?: string;
-  lastVisit?: string;
-}
+// interface Patient {
+//   id: string;
+//   firstName: string;
+//   lastName: string;
+//   patientCode: string;
+//   dateOfBirth: string;
+//   gender: string;
+//   phoneNumber?: string;
+//   address?: string;
+//   bloodType?: string;
+//   isActive: boolean;
+//   priority?: string;
+//   lastVisit?: string;
+// }
 
 interface PatientTableProps {
   patients: Patient[];
@@ -47,7 +48,7 @@ export function PatientTable({
     return new Date(date).toLocaleDateString();
   };
 
-  const formatAge = (dateOfBirth: string) => {
+  const formatAge = (dateOfBirth: string | Date) => {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -103,7 +104,9 @@ export function PatientTable({
         {
           header: "Age/Gender",
           cell: (patient) =>
-            `${formatAge(patient.dateOfBirth)} years • ${formatGender(patient.gender)}`,
+            `${formatAge(patient?.dateOfBirth as Date)} years • ${formatGender(
+              patient.gender
+            )}`,
         },
         {
           header: "Contact",
@@ -137,8 +140,15 @@ export function PatientTable({
         },
         {
           header: "Last Visit",
-          cell: (patient) =>
-            patient.lastVisit ? formatTime(patient.lastVisit) : "Never",
+          cell: (patient) => {
+            const encounter = patient.encounters?.[0];
+            if (!encounter?.encounterDate) return "Never";
+            const encounterDate =
+              encounter.encounterDate instanceof Date
+                ? encounter.encounterDate.toISOString()
+                : String(encounter.encounterDate);
+            return formatTime(encounterDate);
+          },
         },
         {
           header: "Actions",

@@ -36,14 +36,15 @@ export class ImageAnnotationsController {
 
   @Get()
   async getAll() {
-    const annotations = await firstValueFrom(
-      this.imagingService.send('ImagingService.ImageAnnotations.FindAll', {})
-    );
+    const annotations =
+      (await firstValueFrom(
+        this.imagingService.send('ImagingService.ImageAnnotations.FindAll', {})
+      )) || [];
 
     // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
     const userIds = [
       ...new Set(
-        annotations.flatMap((a: ImageAnnotation) => {
+        annotations?.flatMap((a: ImageAnnotation) => {
           const ids: string[] = [];
           if (a.annotatorId) ids.push(a.annotatorId);
           if (a.reviewerId) ids.push(a.reviewerId);
@@ -52,13 +53,13 @@ export class ImageAnnotationsController {
       ),
     ];
 
-    console.log('UserIds ,', userIds);
+    // console.log('UserIds ,', userIds);
 
     const users = await firstValueFrom(
       this.userService.send('UserService.Users.GetUsersByIds', { userIds })
     );
 
-    console.log('users', users);
+    // console.log('users', users);
     const combined = annotations.map((a: ImageAnnotation) => {
       const result: any = { ...a };
       if (a.annotatorId) {
@@ -96,11 +97,11 @@ export class ImageAnnotationsController {
       })
     );
 
-    const annotations = annotationsData?.data;
+    const annotations = annotationsData?.data || [];
     // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
     const userIds = [
       ...new Set(
-        annotations.flatMap((a: ImageAnnotation) => {
+        annotations?.flatMap((a: ImageAnnotation) => {
           const ids: string[] = [];
           if (a.annotatorId) ids.push(a.annotatorId);
           if (a.reviewerId) ids.push(a.reviewerId);
@@ -109,13 +110,13 @@ export class ImageAnnotationsController {
       ),
     ];
 
-    console.log('UserIds ,', userIds);
+    // console.log('UserIds ,', userIds);
 
     const users = await firstValueFrom(
       this.userService.send('UserService.Users.GetUsersByIds', { userIds })
     );
 
-    console.log('users', users);
+    // console.log('users', users);
     const combined = annotations.map((a: ImageAnnotation) => {
       const result: any = { ...a };
       if (a.annotatorId) {
@@ -149,17 +150,18 @@ export class ImageAnnotationsController {
       order,
     };
 
-    const annotations = await firstValueFrom(
+    const annotationsData = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageAnnotations.FindByReferenceId',
         { id, type: 'instance', paginationDto }
       )
     );
 
+    const annotations = annotationsData?.data || [];
     // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
     const userIds = [
       ...new Set(
-        annotations.flatMap((a: ImageAnnotation) => {
+        annotations?.flatMap((a: ImageAnnotation) => {
           const ids: string[] = [];
           if (a.annotatorId) ids.push(a.annotatorId);
           if (a.reviewerId) ids.push(a.reviewerId);
@@ -168,13 +170,13 @@ export class ImageAnnotationsController {
       ),
     ];
 
-    console.log('UserIds ,', userIds);
+    // console.log('UserIds ,', userIds);
 
     const users = await firstValueFrom(
       this.userService.send('UserService.Users.GetUsersByIds', { userIds })
     );
 
-    console.log('users', users);
+    // console.log('users', users);
     const combined = annotations.map((a: ImageAnnotation) => {
       const result: any = { ...a };
       if (a.annotatorId) {
@@ -186,7 +188,7 @@ export class ImageAnnotationsController {
       return result;
     });
 
-    return combined;
+    return { ...annotationsData, data: combined };
   }
 
   @Get('series/:id')
@@ -208,17 +210,18 @@ export class ImageAnnotationsController {
       order,
     };
 
-    const annotations = await firstValueFrom(
+    const annotationsData = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageAnnotations.FindByReferenceId',
         { id, type: 'series', paginationDto }
       )
     );
 
+    const annotations = annotationsData?.data || [];
     // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
     const userIds = [
       ...new Set(
-        annotations.flatMap((a: ImageAnnotation) => {
+        annotations?.flatMap((a: ImageAnnotation) => {
           const ids: string[] = [];
           if (a.annotatorId) ids.push(a.annotatorId);
           if (a.reviewerId) ids.push(a.reviewerId);
@@ -227,13 +230,13 @@ export class ImageAnnotationsController {
       ),
     ];
 
-    console.log('UserIds ,', userIds);
+    // console.log('UserIds ,', userIds);
 
     const users = await firstValueFrom(
       this.userService.send('UserService.Users.GetUsersByIds', { userIds })
     );
 
-    console.log('users', users);
+    // console.log('users', users);
     const combined = annotations.map((a: ImageAnnotation) => {
       const result: any = { ...a };
       if (a.annotatorId) {
@@ -245,7 +248,7 @@ export class ImageAnnotationsController {
       return result;
     });
 
-    return combined;
+    return { ...annotationsData, data: combined };
   }
 
   @Get('reference/:id')
@@ -275,11 +278,11 @@ export class ImageAnnotationsController {
       )
     );
 
-    const annotations = annotationsData?.data;
+    const annotations = annotationsData?.data || [];
     // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
     const userIds = [
       ...new Set(
-        annotations.flatMap((a: ImageAnnotation) => {
+        annotations?.flatMap((a: ImageAnnotation) => {
           const ids: string[] = [];
           if (a.annotatorId) ids.push(a.annotatorId);
           if (a.reviewerId) ids.push(a.reviewerId);
@@ -288,13 +291,13 @@ export class ImageAnnotationsController {
       ),
     ];
 
-    console.log('UserIds ,', userIds);
+    // console.log('UserIds ,', userIds);
 
     const users = await firstValueFrom(
       this.userService.send('UserService.Users.GetUsersByIds', { userIds })
     );
 
-    console.log('users', users);
+    // console.log('users', users);
     const combined = annotations.map((a: ImageAnnotation) => {
       const result: any = { ...a };
       if (a.annotatorId) {

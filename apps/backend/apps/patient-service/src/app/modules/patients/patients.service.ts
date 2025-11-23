@@ -10,6 +10,7 @@ import {
 } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
+  PaginationDto,
   RepositoryPaginationDto,
 } from '@backend/database';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -17,7 +18,6 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 import { v4 as uuidv4 } from 'uuid';
 import { DiagnosisStatus } from '@backend/shared-enums';
 import { VitalSignsSimplified } from '@backend/shared-interfaces';
-
 export interface PatientOverview {
   recentVitalSigns: VitalSignsSimplified;
   recentConditions: PatientCondition[];
@@ -121,42 +121,41 @@ export class PatientService {
     return patients;
   };
 
-getOverview = async (
-  patientCode: string
-): Promise<PatientOverview | null> => {
-  const patient = await this.patientRepository.findByPatientCode(patientCode);
+  getOverview = async (
+    patientCode: string
+  ): Promise<PatientOverview | null> => {
+    const patient = await this.patientRepository.findByPatientCode(patientCode);
 
-  if (!patient) {
-    throw ThrowMicroserviceException(
-      HttpStatus.NOT_FOUND,
-      'Failed to find patient by code',
-      PATIENT_SERVICE
+    if (!patient) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Failed to find patient by code',
+        PATIENT_SERVICE
+      );
+    }
+
+    console.log('patient overview', patient);
+
+    const sortedEncounters = patient.encounters
+      .filter((enc) => !enc.isDeleted)
+      .sort((a, b) => {
+        const dateA = new Date(a.encounterDate).getTime();
+        const dateB = new Date(b.encounterDate).getTime();
+        return dateB - dateA;
+      });
+
+    const encounterWithVitalSigns = sortedEncounters.find(
+      (enc) => enc.vitalSigns !== null && enc.vitalSigns !== undefined
     );
-  }
-  
-  console.log("patient overview", patient);
-  
-  
-  const sortedEncounters = patient.encounters
-    .filter(enc => !enc.isDeleted) 
-    .sort((a, b) => {
-      const dateA = new Date(a.encounterDate).getTime();
-      const dateB = new Date(b.encounterDate).getTime();
-      return dateB - dateA; 
-    });
 
-  
-  const encounterWithVitalSigns = sortedEncounters.find(
-    enc => enc.vitalSigns !== null && enc.vitalSigns !== undefined
-  );
+    const patientOverview = {
+      recentVitalSigns:
+        (encounterWithVitalSigns?.vitalSigns as VitalSignsSimplified) || null,
+      recentConditions: patient?.conditions.slice(0, 3) || [],
+    };
 
-  const patientOverview = {
-    recentVitalSigns: encounterWithVitalSigns?.vitalSigns as VitalSignsSimplified || null,
-    recentConditions: patient?.conditions.slice(0, 3) || [],
+    return patientOverview;
   };
-
-  return patientOverview;
-};
 
   getPatientStats = async () => {
     return await this.patientRepository.getPatientStats();
@@ -192,5 +191,49 @@ getOverview = async (
       patientLastName,
       patientCode
     );
+  };
+
+  findManyWithFilter = async (
+    paginationDto: RepositoryPaginationDto
+  ): Promise<PaginatedResponseDto<Patient>> => {
+    let patientsData;
+    // If search is provided, use OR search across multiple fields
+    if (paginationDto.search) {
+      const searchFields = [
+        'patientCode',
+        'firstName',
+        'lastName',
+        'phoneNumber',
+        'insuranceNumber',
+      ];
+      patientsData = await this.patientRepository.findWithOrSearch(
+        paginationDto,
+        searchFields,
+        paginationDto.search
+      );
+    }
+    // Otherwise, use regular pagination
+    patientsData = await this.patientRepository.paginate({
+      page: paginationDto.page,
+      limit: paginationDto.limit,
+      sortField: paginationDto.sortField,
+      order: paginationDto.order,
+      relation: paginationDto.relation || ['encounters'],
+    });
+
+    let patients = patientsData?.data;
+
+    patients = patients.map((p: Patient) => {
+      return {
+        ...p,
+        encounters: [...(p.encounters ?? [])].sort(
+          (a, b) =>
+            new Date(b.encounterDate).getTime() -
+            new Date(a.encounterDate).getTime()
+        ),
+      }; //sort encounter to show last visited
+    });
+
+    return { ...patientsData, data: patients };
   };
 }

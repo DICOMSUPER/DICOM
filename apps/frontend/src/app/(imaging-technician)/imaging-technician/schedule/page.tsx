@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -43,6 +43,9 @@ import {
 } from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
+import { useGetEmployeeRoomAssignmentStatsQuery } from "@/store/employeeRoomAssignmentApi";
+import { formatDateLocal } from "@/utils/schedule/utils";
+import Cookies from "js-cookie";
 
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },
@@ -58,6 +61,45 @@ const timeSlots = [
 ];
 
 export default function ImagingTechnicianSchedulePage() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [viewedMonth, setViewedMonth] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const userString = Cookies.get("user");
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setUserId(user?.id || null);
+      } catch (error) {
+        console.error("Error parsing user cookie:", error);
+        setUserId(null);
+      }
+    }
+  }, []);
+
+  // Update viewedMonth when selectedDate changes to a different month
+
+  const { startDate, endDate } = useMemo(() => {
+    const year = viewedMonth.getFullYear();
+    const month = viewedMonth.getMonth();
+
+    const start = new Date(year, month, 1);
+    const end = new Date(year, month + 1, 0);
+
+    return {
+      startDate: formatDateLocal(start),
+      endDate: formatDateLocal(end),
+    };
+  }, [viewedMonth]);
+
+  const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsQuery(
+    {
+      id: userId || "",
+      startDate,
+      endDate,
+    },
+    { skip: !userId }
+  );
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(
@@ -184,6 +226,19 @@ export default function ImagingTechnicianSchedulePage() {
       setSelectedDate(addMonths(selectedDate, 1));
     }
   };
+
+  useEffect(() => {
+    const selectedMonth = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      1
+    );
+    const viewedMonthKey = `${viewedMonth.getFullYear()}-${viewedMonth.getMonth()}`;
+    const selectedMonthKey = `${selectedMonth.getFullYear()}-${selectedMonth.getMonth()}`;
+    if (viewedMonthKey !== selectedMonthKey) {
+      setViewedMonth(selectedMonth);
+    }
+  }, [selectedDate, viewedMonth]);
 
   const handleScheduleClick = (schedule: RoomSchedule | RoomSchedule[]) => {
     const target = Array.isArray(schedule) ? schedule[0] : schedule;
@@ -407,6 +462,8 @@ export default function ImagingTechnicianSchedulePage() {
         <ScheduleSidebar
           selectedDate={selectedDate}
           onSelectDate={(d) => setSelectedDate(d)}
+          scheduleStats={scheduleData?.data || {}}
+          onMonthChange={setViewedMonth}
         />
 
         {/* Right Panel - Schedule View */}

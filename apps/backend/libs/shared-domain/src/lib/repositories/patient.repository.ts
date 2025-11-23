@@ -5,14 +5,14 @@ import {
   FindOptionsWhere,
   Like,
   Between,
+  Brackets,
 } from 'typeorm';
-import { BaseRepository } from '@backend/database';
+import { BaseRepository, PaginatedResponseDto } from '@backend/database';
 import { RepositoryPaginationDto } from '@backend/database';
 import { Patient } from '../entities/patients/patients.entity';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { DiagnosesReport } from '../entities/patients/diagnoses-reports.entity';
 import { PatientCondition } from '../entities/patients/patient-conditions';
-
 
 export interface PatientSearchFilters {
   patientCode?: string;
@@ -123,6 +123,102 @@ export class PatientRepository extends BaseRepository<Patient> {
       page: result.page,
       totalPages: result.totalPages,
     };
+  }
+
+  /**
+   * Find patients with pagination and OR search across multiple fields
+   */
+  async findWithOrSearch(
+    paginationDto: RepositoryPaginationDto,
+    searchFields: string[],
+    searchValue: string
+  ): Promise<PaginatedResponseDto<Patient>> {
+    const repository = this.getRepository();
+    const { page = 1, limit = 10, sortField, order, relation } = paginationDto;
+
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    const skip = (safePage - 1) * safeLimit;
+
+    const query = repository
+      .createQueryBuilder('patient')
+      .leftJoinAndSelect('patient.encounters', 'encounters');
+
+    // Relations
+    if (relation?.length) {
+      relation.forEach((r) => {
+        const parts = r.split('.');
+        let parentAlias = 'patient';
+        let currentPath = '';
+
+        for (const part of parts) {
+          currentPath = `${parentAlias}.${part}`;
+          const alias = `${parentAlias}_${part}`;
+
+          const alreadyJoined = query.expressionMap.joinAttributes.some(
+            (join) => join.alias.name === alias
+          );
+
+          if (!alreadyJoined) {
+            query.leftJoinAndSelect(currentPath, alias);
+          }
+
+          parentAlias = alias;
+        }
+      });
+    }
+
+    // OR search across multiple fields
+    if (searchValue && searchFields.length > 0) {
+      query.andWhere(
+        new Brackets((qb) => {
+          searchFields.forEach((field, index) => {
+            if (index === 0) {
+              qb.where(
+                `unaccent(LOWER(patient.${field})) ILIKE unaccent(LOWER(:search))` //unaccent toapply filter without diacritic (dấu câu)
+              );
+            } else {
+              qb.orWhere(
+                `unaccent(LOWER(patient.${field})) ILIKE unaccent(LOWER(:search))`
+              );
+            }
+          });
+        })
+      );
+      query.setParameter('search', `%${searchValue}%`);
+    }
+
+    // Exclude soft-deleted
+    if (this.hasIsDeletedColumn()) {
+      query.andWhere('patient.isDeleted = :isDeleted', { isDeleted: false });
+    }
+
+    // Sorting
+    if (sortField && order) {
+      query.orderBy(
+        `patient.${sortField}`,
+        order.toUpperCase() as 'ASC' | 'DESC'
+      );
+    }
+
+    query.skip(skip).take(safeLimit);
+
+    console.log(query);
+    const [data, total] = await query.getManyAndCount();
+
+    const totalPages = Math.ceil(total / safeLimit);
+    const hasNextPage = safePage < totalPages;
+    const hasPreviousPage = safePage > 1;
+
+    return new PaginatedResponseDto<Patient>(
+      data,
+      total,
+      safePage,
+      safeLimit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
+    );
   }
 
   /**
