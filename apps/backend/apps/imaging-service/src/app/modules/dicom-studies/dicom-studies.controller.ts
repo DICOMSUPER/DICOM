@@ -286,4 +286,5 @@ export interface FilterData {
   modalityId?: string;
   modalityMachineId?: string;
   studyStatus?: DicomStudyStatus;
+  roomId?: string;
 }

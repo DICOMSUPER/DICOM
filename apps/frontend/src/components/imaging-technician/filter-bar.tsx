@@ -39,6 +39,8 @@ export default function FilterBar({
       modalityId: p.get("modalityId") ?? "",
       orderStatus: p.get("orderStatus") ?? "",
       procedureId: p.get("procedureId") ?? "",
+      startDate: p.get("startDate") ?? "",
+      endDate: p.get("endDate") ?? "",
     };
   }, [searchParams]);
 
@@ -63,6 +65,12 @@ export default function FilterBar({
   const [modalityId, setModalityId] = useState(initial.modalityId);
   const [orderStatus, setOrderStatus] = useState(initial.orderStatus);
   const [procedureId, setProcedureId] = useState(initial.procedureId);
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    initial.startDate ? new Date(initial.startDate) : undefined
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    initial.endDate ? new Date(initial.endDate) : undefined
+  );
 
   const { data: procedureData, isLoading: isLoadingProcedure } =
     useGetAllRequestProceduresQuery();
@@ -79,6 +87,9 @@ export default function FilterBar({
     if (!advancedToggled === false) {
       setModalityId("");
       setOrderStatus("All");
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setProcedureId("");
     }
 
     setAdvancedToggled(!advancedToggled);
@@ -99,6 +110,8 @@ export default function FilterBar({
       modalityId: modalityId === "" ? undefined : modalityId,
       orderStatus: orderStatus === "All" ? undefined : orderStatus,
       procedureId: procedureId === "" ? undefined : procedureId,
+      startDate: formatDateISO(startDate),
+      endDate: formatDateISO(endDate),
     };
 
     pushWithParams(params);
@@ -252,6 +265,34 @@ export default function FilterBar({
                   </option>
                 ))}
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-semibold text-gray-700">
+              Start Date
+            </Label>
+            <DatePickerDropdown
+              date={startDate}
+              onSelect={(date) => {
+                setStartDate(date);
+                if (date && endDate && date > endDate) {
+                  setEndDate(undefined);
+                }
+              }}
+              placeholder="Start date"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-semibold text-gray-700">
+              End Date
+            </Label>
+            <DatePickerDropdown
+              date={endDate}
+              onSelect={(date) => setEndDate(date)}
+              placeholder="End date"
+              disabled={(date) => (startDate ? date < startDate : false)}
+            />
           </div>
         </div>
       )}

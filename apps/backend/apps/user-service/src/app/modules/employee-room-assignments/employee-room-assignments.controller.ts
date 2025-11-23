@@ -41,13 +41,17 @@ export class EmployeeRoomAssignmentsController {
   @MessagePattern('UserService.EmployeeRoomAssignments.CreateBulk')
   async createBulk(
     @Payload()
-    data: { assignments: CreateEmployeeRoomAssignmentDto[] }
+    data: {
+      assignments: CreateEmployeeRoomAssignmentDto[];
+    }
   ) {
     this.logger.log(
       'Using pattern: UserService.EmployeeRoomAssignments.CreateBulk'
     );
     try {
-      return await this.employeeRoomAssignmentsService.createBulk(data.assignments);
+      return await this.employeeRoomAssignmentsService.createBulk(
+        data.assignments
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -58,9 +62,9 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @MessagePattern('UserService.EmployeeRoomAssignments.FindAll')
-  async findAll(
-    data: { filter?: FilterEmployeeRoomAssignmentDto }
-  ): Promise<EmployeeRoomAssignment[]> {
+  async findAll(data: {
+    filter?: FilterEmployeeRoomAssignmentDto;
+  }): Promise<EmployeeRoomAssignment[]> {
     try {
       return await this.employeeRoomAssignmentsService.findAll(data.filter);
     } catch (error) {
@@ -207,6 +211,70 @@ export class EmployeeRoomAssignmentsController {
         error,
         'Failed to find currrent employee room assignment',
         'USER_SERVICE'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.EmployeeRoomAssignments.StatsOverTime')
+  async getEmployeeRoomAssignmentStats(
+    @Payload()
+    data: {
+      employeeId: string;
+      startDate?: Date | string;
+      endDate?: Date | string;
+    }
+  ) {
+    this.logger.log(
+      'Using pattern: UserService.EmployeeRoomAssignments.StatsOverTime'
+    );
+    try {
+      const fallbackStartDate = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
+      );
+      const fallbackEndDate = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() + 1,
+        0
+      );
+
+      return await this.employeeRoomAssignmentsService.getEmployeeRoomAssignmentStats(
+        {
+          ...data,
+          startDate: data.startDate ?? fallbackStartDate,
+          endDate: data.endDate ?? fallbackEndDate,
+        }
+      );
+    } catch (error) {
+      this.logger.error('Failed to get employee room assignment stats', error);
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get employee room assignment stats',
+        'UserService'
+      );
+    }
+  }
+
+  @MessagePattern(
+    'UserService.EmployeeRoomAssignments.FindEmployeeRoomAssignmentForEmployeeInWorkDate'
+  )
+  async findEmployeeRoomAssignmentForEmployeeInWorkDate(
+    @Payload() data: { id: string; work_date: Date | string }
+  ) {
+    try {
+      return await this.employeeRoomAssignmentsService.findEmployeeRoomAssignmentForEmployeeInWorkDate(
+        data
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to find employee room assignment for employee in work date',
+        error
+      );
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find employee room assignment for employee in work date',
+        'UserService'
       );
     }
   }

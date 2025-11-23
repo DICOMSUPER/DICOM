@@ -2,8 +2,6 @@ import { BaseEntity } from "../base.interface";
 import { RoomSchedule } from "./room-schedule.interface";
 import { User } from "./user.interface";
 
-
-
 export interface FilterEmployeeRoomAssignment {
   roomScheduleId?: string;
   employeeId?: string;
@@ -17,4 +15,8 @@ export interface EmployeeRoomAssignment extends BaseEntity {
   isActive: boolean;
   roomSchedule?: RoomSchedule;
   employee?: User;
+}
+
+export interface EmployeeRoomAssignmentStats {
+  [day: string]: number;
 }

@@ -4,10 +4,12 @@ import {
   Delete,
   Get,
   Inject,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -16,19 +18,59 @@ import {
   TransformInterceptor,
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
+import {
+  CreateImageAnnotationDto,
+  ImageAnnotation,
+  User,
+} from '@backend/shared-domain';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 @Controller('image-annotations')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImageAnnotationsController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
-    private readonly imagingService: ClientProxy
+    private readonly imagingService: ClientProxy,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
   ) {}
 
   @Get()
   async getAll() {
-    return await firstValueFrom(
+    const annotations = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindAll', {})
     );
+
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        annotations.flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    console.log('UserIds ,', userIds);
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    console.log('users', users);
+    const combined = annotations.map((a: ImageAnnotation) => {
+      const result: any = { ...a };
+      if (a.annotatorId) {
+        result.annotator = users.find((u: User) => u.id === a.annotatorId);
+      }
+      if (a.reviewerId) {
+        result.reviewer = users.find((u: User) => u.id === a.reviewerId);
+      }
+      return result;
+    });
+
+    return combined;
   }
 
   @Get('paginated')
@@ -48,11 +90,44 @@ export class ImageAnnotationsController {
       sortField,
       order,
     };
-    return await firstValueFrom(
+    const annotationsData = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindMany', {
         paginationDto,
       })
     );
+
+    const annotations = annotationsData?.data;
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        annotations.flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    console.log('UserIds ,', userIds);
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    console.log('users', users);
+    const combined = annotations.map((a: ImageAnnotation) => {
+      const result: any = { ...a };
+      if (a.annotatorId) {
+        result.annotator = users.find((u: User) => u.id === a.annotatorId);
+      }
+      if (a.reviewerId) {
+        result.reviewer = users.find((u: User) => u.id === a.reviewerId);
+      }
+      return result;
+    });
+
+    return { ...annotationsData, data: combined };
   }
 
   @Get('instance/:id')
@@ -74,12 +149,44 @@ export class ImageAnnotationsController {
       order,
     };
 
-    return await firstValueFrom(
+    const annotations = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageAnnotations.FindByReferenceId',
         { id, type: 'instance', paginationDto }
       )
     );
+
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        annotations.flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    console.log('UserIds ,', userIds);
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    console.log('users', users);
+    const combined = annotations.map((a: ImageAnnotation) => {
+      const result: any = { ...a };
+      if (a.annotatorId) {
+        result.annotator = users.find((u: User) => u.id === a.annotatorId);
+      }
+      if (a.reviewerId) {
+        result.reviewer = users.find((u: User) => u.id === a.reviewerId);
+      }
+      return result;
+    });
+
+    return combined;
   }
 
   @Get('series/:id')
@@ -101,12 +208,44 @@ export class ImageAnnotationsController {
       order,
     };
 
-    return await firstValueFrom(
+    const annotations = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageAnnotations.FindByReferenceId',
         { id, type: 'series', paginationDto }
       )
     );
+
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        annotations.flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    console.log('UserIds ,', userIds);
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    console.log('users', users);
+    const combined = annotations.map((a: ImageAnnotation) => {
+      const result: any = { ...a };
+      if (a.annotatorId) {
+        result.annotator = users.find((u: User) => u.id === a.annotatorId);
+      }
+      if (a.reviewerId) {
+        result.reviewer = users.find((u: User) => u.id === a.reviewerId);
+      }
+      return result;
+    });
+
+    return combined;
   }
 
   @Get('reference/:id')
@@ -129,28 +268,99 @@ export class ImageAnnotationsController {
       order,
     };
 
-    return await firstValueFrom(
+    const annotationsData = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageAnnotations.FindByReferenceId',
         { id, type, paginationDto }
       )
     );
+
+    const annotations = annotationsData?.data;
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        annotations.flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    console.log('UserIds ,', userIds);
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    console.log('users', users);
+    const combined = annotations.map((a: ImageAnnotation) => {
+      const result: any = { ...a };
+      if (a.annotatorId) {
+        result.annotator = users.find((u: User) => u.id === a.annotatorId);
+      }
+      if (a.reviewerId) {
+        result.reviewer = users.find((u: User) => u.id === a.reviewerId);
+      }
+      return result;
+    });
+
+    return { ...annotationsData, data: combined };
   }
 
   @Get(':id')
   async getById(@Param('id') id: string) {
-    return await firstValueFrom(
+    const annotation = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindOne', {
         id,
       })
     );
+
+    if (!annotation) {
+      throw new NotFoundException('Annotation not found');
+    }
+
+    // Collect all user IDs (both annotatorId and reviewerId) and remove duplicates
+    const userIds = [
+      ...new Set(
+        [annotation].flatMap((a: ImageAnnotation) => {
+          const ids: string[] = [];
+          if (a.annotatorId) ids.push(a.annotatorId);
+          if (a.reviewerId) ids.push(a.reviewerId);
+          return ids;
+        })
+      ),
+    ];
+
+    const users = await firstValueFrom(
+      this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+    );
+
+    const result: any = { ...annotation };
+    if (annotation.annotatorId) {
+      result.annotator = users.find(
+        (u: User) => u.id === annotation.annotatorId
+      );
+    }
+    if (annotation.reviewerId) {
+      result.reviewer = users.find((u: User) => u.id === annotation.reviewerId);
+    }
+
+    return result;
   }
 
   @Post()
-  async create(@Body() createImageAnnotationDto: any) {
+  async create(
+    @Body() createImageAnnotationDto: CreateImageAnnotationDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.Create', {
-        createImageAnnotationDto,
+        createImageAnnotationDto: {
+          ...createImageAnnotationDto,
+          annotatorId: req.userInfo.userId,
+        },
       })
     );
   }

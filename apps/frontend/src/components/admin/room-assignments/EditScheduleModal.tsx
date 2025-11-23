@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Select,
   SelectContent,
@@ -131,11 +132,36 @@ export function EditScheduleModal({
     return false;
   }, [schedule, allSchedules, startTime, endTime, shiftTemplateId, useTemplate, shiftTemplates, isDateInAdvance]);
 
+  // Helper function to parse time string to minutes
+  const parseTime = (timeStr: string) => {
+    const parts = timeStr.split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+  };
+
   const areTimesValid = useMemo(() => {
     if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") return true;
     if (!useTemplate && (!startTime || !endTime)) return false;
-    if (!useTemplate && startTime && endTime) return startTime !== endTime;
+    if (!useTemplate && startTime && endTime) {
+      const startMinutes = parseTime(startTime);
+      const endMinutes = parseTime(endTime);
+      // End time must be after start time
+      return endMinutes > startMinutes;
+    }
     return false;
+  }, [useTemplate, shiftTemplateId, startTime, endTime]);
+
+  // Get time validation error message
+  const getTimeValidationError = useMemo(() => {
+    if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") return null;
+    if (!startTime || !endTime) return null;
+    
+    const startMinutes = parseTime(startTime);
+    const endMinutes = parseTime(endTime);
+    
+    if (endMinutes <= startMinutes) {
+      return 'End time must be after start time';
+    }
+    return null;
   }, [useTemplate, shiftTemplateId, startTime, endTime]);
 
   const handleSubmit = async () => {
@@ -152,11 +178,12 @@ export function EditScheduleModal({
     }
 
     if (!areTimesValid) {
-      toast.error(
-        useTemplate && !shiftTemplateId
-          ? "Please select a shift template or switch to manual time entry"
-          : "Start time and end time cannot be the same"
-      );
+      if (useTemplate && !shiftTemplateId) {
+        toast.error("Please select a shift template or switch to manual time entry");
+      } else {
+        const errorMsg = getTimeValidationError || "Start time and end time are required";
+        toast.error(errorMsg);
+      }
       return;
     }
 
@@ -273,7 +300,7 @@ export function EditScheduleModal({
                   </SelectContent>
                 </Select>
                 {shiftTemplateId && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-foreground mt-2">
                     Times will be automatically set from the template
                   </p>
                 )}
@@ -284,26 +311,26 @@ export function EditScheduleModal({
                   <Label htmlFor="start-time" className="text-sm font-medium">
                     Start Time
                   </Label>
-                  <Input
-                    id="start-time"
-                    type="time"
+                  <TimePicker
                     value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="mt-2"
+                    onChange={(value) => setStartTime(value)}
+                    placeholder="HH:MM"
                     disabled={!isDateInAdvance}
+                    className="mt-2"
+                    error={(!areTimesValid || getTimeValidationError) && startTime ? true : false}
                   />
                 </div>
                 <div>
                   <Label htmlFor="end-time" className="text-sm font-medium">
                     End Time
                   </Label>
-                  <Input
-                    id="end-time"
-                    type="time"
+                  <TimePicker
                     value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="mt-2"
+                    onChange={(value) => setEndTime(value)}
+                    placeholder="HH:MM"
                     disabled={!isDateInAdvance}
+                    className="mt-2"
+                    error={(!areTimesValid || getTimeValidationError) && endTime ? true : false}
                   />
                 </div>
               </div>
@@ -319,7 +346,7 @@ export function EditScheduleModal({
               <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
                 ⚠️ {useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__")
                   ? "Please select a shift template or switch to manual time entry"
-                  : "Start time and end time cannot be the same"}
+                  : (getTimeValidationError || "Start time and end time are required")}
               </div>
             )}
 

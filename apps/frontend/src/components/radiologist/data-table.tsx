@@ -46,7 +46,7 @@ export default function DataTable({
 }) {
   const { openTab } = useTabs();
 
-  console.log("check studies  " , studies)
+  console.log("check studies  ", studies);
 
   const tableData = studies || [];
 
@@ -59,10 +59,13 @@ export default function DataTable({
   }
 
   return (
-    <div className="flex-1 bg-white">
-      <div className="w-full overflow-x-scroll horizontal-scrollbar">
+    <div className="flex-1 bg-white overflow-hidden">
+      <div
+        className="w-full overflow-x-auto overflow-y-auto"
+        style={{ maxHeight: "calc(100vh - 300px)" }}
+      >
         <table className="min-w-[1200px] w-full border-collapse text-sm">
-          <thead className="bg-gray-100 sticky top-0">
+          <thead className="bg-gray-100 sticky top-0 z-10">
             <tr className="border-b border-gray-300">
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 No.
@@ -106,10 +109,10 @@ export default function DataTable({
               <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                 Contrast
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700  border-r border-gray-300">
+              <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300 min-w-[200px] max-w-[300px]">
                 Notes
               </th>
-              <th className="px-4 py-2 text-left font-semibold text-gray-700 ">
+              <th className="px-4 py-2 text-left font-semibold text-gray-700">
                 Actions
               </th>
             </tr>
@@ -119,7 +122,7 @@ export default function DataTable({
               {tableData.map((row: DicomStudy, idx: number) => (
                 <tr
                   key={idx}
-                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  className="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {idx + 1}
@@ -149,8 +152,8 @@ export default function DataTable({
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.patient?.dateOfBirth && row.patient?.gender
                       ? `${row.patient.gender
-                        .charAt(0)
-                        .toUpperCase()}, ${calculateAge(
+                          .charAt(0)
+                          .toUpperCase()}, ${calculateAge(
                           row.patient?.dateOfBirth as unknown as string
                         )}`
                       : "NA"}
@@ -176,23 +179,32 @@ export default function DataTable({
                   <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                     {row.imagingOrder?.contrastRequired ? "Yes" : "No"}
                   </td>
-                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                    {row.imagingOrder?.imagingOrderForm?.notes}
+                  <td className="px-4 py-2 border-r border-gray-200 text-gray-700 min-w-[200px] max-w-[300px]">
+                    <div
+                      className="truncate"
+                      title={row.imagingOrder?.imagingOrderForm?.notes}
+                    >
+                      {row.imagingOrder?.imagingOrderForm?.notes}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-gray-600 text-xs">
                     <button
-                      className="text-blue-500 cursor-pointer"
+                      className="text-blue-500 cursor-pointer hover:text-blue-700 hover:underline"
                       onClick={() => {
-                        localStorage.setItem("patientId", row.patient?.id as string);
+                        localStorage.setItem(
+                          "patientId",
+                          row.patient?.id as string
+                        );
 
                         openTab?.(
                           row.studyInstanceUid,
-                          `${row.patient?.lastName} ${row.patient?.firstName} - (${row.studyDate.toString()})`,
+                          `${row.patient?.lastName} ${
+                            row.patient?.firstName
+                          } - (${row.studyDate.toString()})`,
                           <StudyTab patientId={row.patient?.id as string} />
                         );
                       }}
                     >
-
                       View
                     </button>
                   </td>
@@ -200,11 +212,16 @@ export default function DataTable({
               ))}
             </tbody>
           ) : (
-            <tr>
-              <td colSpan={16} className="px-4 py-8 text-center text-gray-500">
-                No study match
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td
+                  colSpan={16}
+                  className="px-4 py-8 text-center text-gray-500"
+                >
+                  No study match
+                </td>
+              </tr>
+            </tbody>
           )}
         </table>
       </div>

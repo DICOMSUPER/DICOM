@@ -14,6 +14,8 @@ export default function StudyLevel({
   seriesCount,
   isLast,
   refetch,
+  forwardingStudyId,
+  setForwardingStudyId,
 }: {
   study: DicomStudy;
   isExpanded: boolean;
@@ -23,6 +25,8 @@ export default function StudyLevel({
   seriesCount: number;
   isLast: boolean;
   refetch: () => void;
+  forwardingStudyId: string | null;
+  setForwardingStudyId: (id: string) => void;
 }) {
   const [updateDicomStudy] = useUpdateDicomStudyMutation();
   const [currentStatus, setCurrentStatus] = useState<DicomStudyStatus>(
@@ -119,7 +123,7 @@ export default function StudyLevel({
         <button
           onClick={async (e) => {
             e.stopPropagation();
-            await forwardStudy(study.id);
+            setForwardingStudyId(study.id);
           }}
           disabled={isForwarded}
           className={`text-sm transition-colors ${

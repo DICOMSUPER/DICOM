@@ -209,9 +209,29 @@ export class RoomSchedulesController {
     description: 'Filter to date',
   })
   @ApiQuery({
+    name: 'start_time',
+    required: false,
+    description: 'Filter by start time (HH:MM)',
+  })
+  @ApiQuery({
+    name: 'end_time',
+    required: false,
+    description: 'Filter by end time (HH:MM)',
+  })
+  @ApiQuery({
     name: 'schedule_status',
     required: false,
     description: 'Filter by status',
+  })
+  @ApiQuery({
+    name: 'sort_by',
+    required: false,
+    description: 'Sort field (work_date, start_time, end_time)',
+  })
+  @ApiQuery({
+    name: 'sort_order',
+    required: false,
+    description: 'Sort order (ASC, DESC)',
   })
   @ApiResponse({
     status: 200,
@@ -223,13 +243,16 @@ export class RoomSchedulesController {
       const result = await firstValueFrom(
         this.userServiceClient.send('UserService.RoomSchedule.FindAll', {
           filters: {
-            room_id: query.room_id,
-            work_date_from: query.work_date_from,
-            work_date_to: query.work_date_to,
-            schedule_status: query.schedule_status,
-            employee_id: query.employee_id,
+            employeeId: query.employee_id,
+            roomId: query.room_id,
+            workDateFrom: query.work_date_from || query.start_date,
+            workDateTo: query.work_date_to || query.end_date,
+            startTime: query.start_time,
+            endTime: query.end_time,
+            scheduleStatus: query.schedule_status,
             role: query.role,
-            department_id: query.department_id,
+            sortBy: query.sort_by,
+            sortOrder: query.sort_order,
           },
         })
       );

@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   columns?: DataTableColumn<T>[];
   data?: T[];
   children?: ReactNode;
+  headers?: string[];
   isLoading: boolean;
   emptyStateIcon: ReactNode;
   emptyStateTitle: string;
@@ -40,6 +41,7 @@ export function DataTable<T>({
   columns,
   data,
   children,
+  headers,
   isLoading,
   emptyStateIcon,
   emptyStateTitle,
@@ -52,7 +54,7 @@ export function DataTable<T>({
   isEmpty,
 }: DataTableProps<T>) {
   const useColumns = Array.isArray(columns) && Array.isArray(data);
-  const resolvedColumnCount = useColumns ? columns!.length : skeletonColumns;
+  const resolvedColumnCount = useColumns ? columns!.length : (headers ? headers.length : skeletonColumns);
   const resolvedRows = useColumns ? data || [] : [];
   const showEmptyState = !isLoading && (useColumns ? resolvedRows.length === 0 : Boolean(isEmpty));
 
@@ -70,6 +72,15 @@ export function DataTable<T>({
                       className={column.headerClassName}
                     >
                       {column.header}
+                    </TableHeadEnhanced>
+                  ))
+                : headers
+                ? headers.map((header, index) => (
+                    <TableHeadEnhanced
+                      key={`header-${index}`}
+                      isLast={index === headers.length - 1}
+                    >
+                      {header}
                     </TableHeadEnhanced>
                   ))
                 : null}

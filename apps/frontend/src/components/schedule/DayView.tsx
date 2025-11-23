@@ -10,7 +10,36 @@ import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "./time-segment-utils";
+} from "@/utils/time-segment-utils";
+
+// Helper function to get employee names from room assignments
+const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 3): string => {
+  if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+    return 'No employees assigned';
+  }
+  
+  const activeAssignments = schedule.employeeRoomAssignments
+    .filter(a => a.isActive && a.employee)
+    .slice(0, maxNames);
+  
+  if (activeAssignments.length === 0) {
+    return 'No employees assigned';
+  }
+  
+  const names = activeAssignments
+    .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+    .filter(Boolean);
+  
+  const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
+  const displayNames = names.join(', ');
+  
+  // If there are more employees than we're showing, add a count
+  if (totalCount > maxNames) {
+    return `${displayNames} +${totalCount - maxNames}`;
+  }
+  
+  return displayNames;
+};
 
 interface DayViewProps {
   selectedDate: Date;
@@ -184,7 +213,7 @@ export function DayView({
                     <div className="ml-2 flex items-center justify-between gap-4">
                       <div>
                         <h4 className="font-semibold text-gray-900 text-base">
-                          {slotSchedules[0].employee?.firstName} {slotSchedules[0].employee?.lastName}
+                          {getEmployeeNames(slotSchedules[0], 3)}
                         </h4>
                         <div className="flex items-center space-x-1 text-xs text-gray-600">
                           <Clock className="h-3 w-3" />
@@ -230,7 +259,7 @@ export function DayView({
                           <div key={schedule.schedule_id} className="flex items-center justify-between text-xs text-gray-700">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">
-                                {schedule.employee?.firstName} {schedule.employee?.lastName}
+                                {getEmployeeNames(schedule, 2)}
                               </span>
                               <span className="text-gray-500">({schedule.schedule_status})</span>
                             </div>

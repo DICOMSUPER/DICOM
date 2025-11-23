@@ -23,7 +23,7 @@ import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 import { AnnotationStatus, AnnotationType } from "@/enums/image-dicom.enum";
 import { useViewer } from "@/contexts/ViewerContext";
-import { Annotation } from "@cornerstonejs/tools/types";
+import type { Annotation } from "@cornerstonejs/tools/types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

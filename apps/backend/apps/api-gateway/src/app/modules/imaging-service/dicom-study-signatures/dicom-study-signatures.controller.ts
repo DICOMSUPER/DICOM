@@ -21,7 +21,7 @@ import {
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
 import { SignStudyDto, VerifyStudySignatureDto } from '@backend/shared-domain';
-import type { IAuthenticatedRequest } from 'libs/shared-interfaces/src';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @Controller('dicom-study-signatures')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)

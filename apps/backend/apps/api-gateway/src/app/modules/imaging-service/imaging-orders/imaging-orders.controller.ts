@@ -25,6 +25,11 @@ import { ImagingOrderStatus } from '@backend/shared-enums';
 import { handleError } from '@backend/shared-utils';
 import { firstValueFrom } from 'rxjs';
 
+type FilteredOrder = Partial<ImagingOrder> & {
+  patient: Patient;
+  orderingPhysician: User;
+};
+
 @Controller('imaging-orders')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingOrdersController {
@@ -129,8 +134,16 @@ export class ImagingOrdersController {
     @Query('bodyPart') bodyPart?: string,
     @Query('mrn') mrn?: string,
     @Query('patientFirstName') patientFirstName?: string,
-    @Query('patientLastName') patientLastName?: string
+    @Query('patientLastName') patientLastName?: string,
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date
   ) {
+    let startDateValue = startDate;
+    let endDateValue = endDate;
+
+    if (!startDateValue) startDateValue = new Date();
+    if (!endDateValue) endDateValue = new Date();
+
     const orders = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FilterByRoomId', {
         roomId: id,
@@ -138,6 +151,8 @@ export class ImagingOrdersController {
         orderStatus,
         procedureId,
         bodyPart,
+        startDate: startDateValue,
+        endDate: endDateValue,
       })
     );
 
@@ -183,18 +198,42 @@ export class ImagingOrdersController {
     });
 
     return hasPatientFilter
-      ? combined.filter((orderWithPatient) => Boolean(orderWithPatient.patient))
+      ? combined.filter((orderWithPatient: FilteredOrder) =>
+          Boolean(orderWithPatient.patient)
+        )
       : combined;
   }
 
+  //get the room all time order stats
   @Get(':id/room-stats')
   async getRoomImagingOrderStats(@Param('id') id: string) {
-    console.log('GetQueueStats');
+    // console.log('GetQueueStats');
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.GetQueueStats', {
         id,
       })
     );
+    return stats;
+  }
+
+  //get the room's in date order stats
+  @Get(':id/room-stats-in-date')
+  async getRoomImagingOrderStatsInDate(
+    @Param('id') id: string,
+    @Query('startDate') startDate?: Date,
+    @Query('endDate') endDate?: Date
+  ) {
+    const stats = await firstValueFrom(
+      this.imagingService.send(
+        'ImagingService.ImagingOrders.GetQueueStatsInDate',
+        {
+          id,
+          startDate,
+          endDate,
+        }
+      )
+    );
+
     return stats;
   }
 

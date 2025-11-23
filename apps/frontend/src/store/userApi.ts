@@ -18,6 +18,7 @@ export interface UserFilters {
   limit?: number;
   search?: string;
   role?: string;
+  excludeRole?: string;
   isActive?: boolean;
   departmentId?: string;
 }

@@ -17,7 +17,9 @@ import {
   Timer,
   UserCheck,
   Users,
-  Building
+  Building,
+  Calendar,
+  FolderTree,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -202,11 +204,11 @@ export const roleNavigation: RoleNavigation = {
     },
   ],
 
-  // Image Technician - DICOM and imaging
-  "Image Technician": [
+  // Imaging Technician - DICOM and imaging
+  "Imaging Technician": [
     {
       href: "/imaging-technician",
-      label: "Dashboard",
+      label: "Orders List",
       icon: BarChart3,
       description: "Imaging overview",
     },
@@ -223,6 +225,12 @@ export const roleNavigation: RoleNavigation = {
       description: "Imaging machines status",
     },
     {
+      href: "/imaging-technician/schedule",
+      label: "Schedule",
+      icon: Calendar,
+      description: "View your work schedule",
+    },
+    {
       href: "/imaging-technician/settings",
       label: "Settings",
       icon: Settings,
@@ -230,49 +238,32 @@ export const roleNavigation: RoleNavigation = {
     },
   ],
 
-  // Nurse - Patient care support
-  Nurse: [
+  // Radiologist - Medical imaging interpretation
+  Radiologist: [
     {
-      href: "/nurses",
+      href: "/radiologist",
       label: "Dashboard",
       icon: BarChart3,
-      description: "Patient care overview",
+      description: "Clinical overview",
     },
     {
-      href: "/nurses/patients",
-      label: "Patients",
-      icon: Users,
-      description: "Patient care management",
+      href: "/radiologist/work-tree",
+      label: "Work Tree",
+      icon: FolderTree,
+      description: "View imaging studies by modality and machine",
     },
     {
-      href: "/nurses/vitals",
-      label: "Vitals",
-      icon: Activity,
-      description: "Patient vital signs",
-    },
-    {
-      href: "/nurses/medications",
-      label: "Medications",
-      icon: Stethoscope,
-      description: "Medication management",
-    },
-    {
-      href: "/nurses/schedule",
+      href: "/radiologist/schedule",
       label: "Schedule",
       icon: Clock,
-      description: "Care schedule",
-    },
-    {
-      href: "/nurses/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Personal settings",
+      description: "View your clinical schedule",
     },
   ],
 };
 
-export function getNavigationForRole(role: string): NavigationItem[] {
-  return roleNavigation[role] || roleNavigation["Reception Staff"];
+export function getNavigationForRole(role?: string | null): NavigationItem[] {
+  if (!role) return [];
+  return roleNavigation[role] || [];
 }
 
 export function getAvailableRoles(): string[] {

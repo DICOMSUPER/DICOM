@@ -48,7 +48,7 @@ import { MouseBindings } from "@cornerstonejs/tools/enums";
 import { eventTarget, getRenderingEngine, type Types } from "@cornerstonejs/core";
 import { AnnotationType } from "@/enums/image-dicom.enum";
 import { useViewer, type AnnotationHistoryEntry } from "@/contexts/ViewerContext";
-import type { Annotation } from "@/types/Annotation";
+import type { Annotation } from "@cornerstonejs/tools/types";
 
 // Tool type definitions
 type NavigationTool = 'WindowLevel' | 'Pan' | 'Zoom' | 'StackScroll' | 'Probe' | 'TrackballRotate' | 'MIPJumpToClick';
@@ -748,9 +748,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
 
       const annotationPayload = customEvent.detail?.annotation;
       const annotationUID = annotationPayload?.annotationUID;
+      const metadataRecord = annotationPayload?.metadata as Record<string, unknown> | undefined;
       const annotationSource =
-        typeof annotationPayload?.metadata?.source === 'string'
-          ? annotationPayload.metadata.source.toLowerCase()
+        typeof metadataRecord?.source === 'string'
+          ? (metadataRecord.source as string).toLowerCase()
           : undefined;
       const databaseAnnotation = annotationSource === 'db';
 

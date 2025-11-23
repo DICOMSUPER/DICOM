@@ -121,7 +121,8 @@ export class DicomStudiesController {
     @Query('bodyPart') bodyPart?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
-    @Query('studyUID') studyUID?: string
+    @Query('studyUID') studyUID?: string,
+    @Query('roomId') roomId?: string
   ) {
     try {
       // console.log(request.userInfo);
@@ -137,6 +138,7 @@ export class DicomStudiesController {
           modalityId,
           modalityMachineId,
           studyStatus,
+          roomId,
         })
       );
 

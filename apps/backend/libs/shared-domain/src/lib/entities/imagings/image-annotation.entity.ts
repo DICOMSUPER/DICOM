@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { DicomInstance } from './dicom-instance.entity';
 import { AnnotationType, AnnotationStatus } from '@backend/shared-enums';
-import type { AnnotationData } from '@backend/shared-interfaces';
 import { BaseEntity } from '@backend/entities';
 
 @Entity('image_annotations')
@@ -27,11 +26,11 @@ export class ImageAnnotation extends BaseEntity {
   @Column({ name: 'annotation_type', type: 'enum', enum: AnnotationType })
   annotationType!: AnnotationType;
 
-  @Column({ name: 'annotation_data', type: 'json', nullable:true })
-  annotationData!: AnnotationData;
+  @Column({ name: 'annotation_data', type: 'json'})
+  annotationData!: Record<string, any>;
 
   @Column({ name: 'coordinates', type: 'json', nullable: true })
-  coordinates?: object;
+  coordinates?: Record<string, any>;
 
   @Column({
     name: 'measurement_value',
@@ -47,7 +46,7 @@ export class ImageAnnotation extends BaseEntity {
 
   @Column({ name: 'text_content', type: 'text', nullable: true })
   textContent?: string;
-  
+
   @Column({ name: 'color_code', length: 7, nullable: true })
   colorCode?: string;
 
@@ -68,6 +67,9 @@ export class ImageAnnotation extends BaseEntity {
     default: () => 'CURRENT_TIMESTAMP',
   })
   annotationDate!: Date;
+
+  @Column({ name: 'reviewer_id', type: 'uuid', nullable: true })
+  reviewerId?: string;
 
   @Column({ name: 'review_date', type: 'timestamp', nullable: true })
   reviewDate?: Date;

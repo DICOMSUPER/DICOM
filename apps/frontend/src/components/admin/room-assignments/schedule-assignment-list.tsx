@@ -73,22 +73,7 @@ export function ScheduleAssignmentList({
   onScheduleDetails,
 }: ScheduleAssignmentListProps) {
   const filteredSchedules = useMemo(() => {
-    if (!scheduleSearch) return schedules;
-    const needle = scheduleSearch.toLowerCase();
-
-    return schedules.filter((schedule) => {
-      const roomCode =
-        (schedule.room?.roomCode ?? schedule.room?.roomType ?? "").toLowerCase();
-      const notes = (schedule.notes ?? "").toLowerCase();
-      const shiftName =
-        (schedule.shift_template?.shift_name ?? "").toLowerCase();
-
-      return (
-        roomCode.includes(needle) ||
-        notes.includes(needle) ||
-        shiftName.includes(needle)
-      );
-    });
+    return schedules;
   }, [scheduleSearch, schedules]);
 
   const renderAssignments = (
@@ -157,7 +142,7 @@ export function ScheduleAssignmentList({
         </p>
       </div>
 
-      <ScrollArea className="h-[75vh] p-4 rounded-lg border border-border shadow-sm">
+      <ScrollArea className="p-4 rounded-lg border border-border shadow-sm">
         <div className="space-y-3">
           {isLoading
             ? renderSkeletons()

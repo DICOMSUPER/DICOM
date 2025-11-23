@@ -298,6 +298,7 @@ export class UserController {
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('role') role?: string,
+    @Query('excludeRole') excludeRole?: string,
     @Query('departmentId') departmentId?: string
   ) {
     try {
@@ -312,6 +313,7 @@ export class UserController {
           limit: limitNum,
           search,
           role,
+          excludeRole,
           departmentId,
         })
       );

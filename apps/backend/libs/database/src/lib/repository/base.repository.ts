@@ -7,6 +7,7 @@ import {
   ObjectLiteral,
   FindOptionsWhere,
   Brackets,
+  In,
 } from 'typeorm';
 import { PaginatedResponseDto } from '../pagination/paginated-response.dto';
 import { RepositoryPaginationDto } from './repository-pagination.dto';
@@ -269,5 +270,86 @@ export class BaseRepository<T extends ObjectLiteral> {
       hasNextPage,
       hasPreviousPage
     );
+  }
+
+  //note: this method is used to batch delete multiple entities by IDs
+  async batchDelete(
+    ids: (number | string)[],
+    entityManager?: EntityManager
+  ): Promise<number> {
+    if (!ids.length) return 0;
+
+    const repository = this.getRepository(entityManager);
+    const result = await repository.delete({
+      id: In(ids),
+    } as unknown as FindOptionsWhere<T>);
+    return result.affected || 0;
+  }
+
+  //note: this method is used to batch soft delete multiple entities by IDs
+  async batchSoftDelete(
+    ids: (number | string)[],
+    softDeleteField: keyof T | 'isDeleted',
+    entityManager?: EntityManager
+  ): Promise<number> {
+    if (!ids.length) return 0;
+
+    const repository = this.getRepository(entityManager);
+
+    // Find all entities that exist and are not already soft-deleted
+    const entities = await repository.find({
+      where: this.withNotDeletedWhere(
+        { id: In(ids) } as unknown as FindOptionsWhere<T>,
+        entityManager
+      ) as FindOptionsWhere<T>,
+    });
+
+    if (!entities.length) return 0;
+
+    // Update all entities with soft delete flag
+    const updatedEntities = entities.map((entity) =>
+      repository.merge(entity, {
+        [softDeleteField]: true as unknown as T[keyof T],
+      } as DeepPartial<T>)
+    );
+
+    await repository.save(updatedEntities);
+    return updatedEntities.length;
+  }
+
+  //note: this method is used to batch update multiple entities by IDs
+  async batchUpdate(
+    ids: (number | string)[],
+    data: DeepPartial<T>,
+    entityManager?: EntityManager
+  ): Promise<T[]> {
+    if (!ids.length) return [];
+
+    const repository = this.getRepository(entityManager);
+
+    // Find all entities that exist and are not soft-deleted
+    const entities = await repository.find({
+      where: this.withNotDeletedWhere(
+        { id: In(ids) } as unknown as FindOptionsWhere<T>,
+        entityManager
+      ) as FindOptionsWhere<T>,
+    });
+
+    if (!entities.length) [];
+
+    // Merge data with each entity
+    const updatedEntities = entities.map((entity) =>
+      repository.merge(entity, data)
+    );
+
+    await repository.save(updatedEntities);
+
+    const updatedEntitiesAfter = await repository.find({
+      where: this.withNotDeletedWhere(
+        { id: In(ids) } as unknown as FindOptionsWhere<T>,
+        entityManager
+      ) as FindOptionsWhere<T>,
+    });
+    return updatedEntitiesAfter;
   }
 }

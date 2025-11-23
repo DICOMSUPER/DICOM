@@ -3,20 +3,28 @@
 import { TabData, useTabs } from "./tab-context";
 import TabBar from "./tab-bar";
 import { ReactNode, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function TabLayout() {
   const { availableTabs, activeTabId, setActiveTabId } = useTabs();
   const [currentTab, setCurrentTab] = useState<TabData | null | undefined>(
     null
   );
+  const pathname = usePathname();
+  
+  // Check if we're on the work tree route - if so, don't show sidebar in tab layout
+  // because the work tree is already in the main sidebar
+  const isWorkTreeRoute = pathname?.startsWith("/radiologist/work-tree");
+  
   useEffect(() => {
     setCurrentTab(availableTabs.find((tab) => tab.id === activeTabId));
-  }, [activeTabId]);
+  }, [activeTabId, availableTabs]);
 
   return (
-    <div className="flex h-screen">
-      {currentTab?.hasSideBar && (
-        <div className="w-80 bg-gray-200 border-r border-gray-300 flex-shrink-0">
+    <div className="flex h-full">
+      {/* Only show sidebar in tab layout if NOT on work tree route (where it's in main sidebar) */}
+      {currentTab?.hasSideBar && !isWorkTreeRoute && (
+        <div className="w-80 bg-gray-200 border-r border-gray-300 shrink-0">
           <>{currentTab.SidebarContent}</>
         </div>
       )}

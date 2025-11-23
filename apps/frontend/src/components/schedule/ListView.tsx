@@ -71,15 +71,45 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
     );
   }
 
+  // Helper function to get primary employee from room assignments
+  const getPrimaryEmployee = (schedule: RoomSchedule) => {
+    if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+      return null;
+    }
+    // Get the first active assignment with an employee
+    const activeAssignment = schedule.employeeRoomAssignments.find(a => a.isActive && a.employee);
+    return activeAssignment?.employee || null;
+  };
+
+  // Helper function to get all employee names
+  const getEmployeeNames = (schedule: RoomSchedule): string => {
+    if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+      return 'Unassigned';
+    }
+    
+    const activeAssignments = schedule.employeeRoomAssignments
+      .filter(a => a.isActive && a.employee);
+    
+    if (activeAssignments.length === 0) {
+      return 'Unassigned';
+    }
+    
+    const names = activeAssignments
+      .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+      .filter(Boolean);
+    
+    return names.join(', ');
+  };
+
   return (
     <div className="space-y-4">
       {schedules.map((schedule) => {
-        const employee = schedule.employee;
+        const employee = getPrimaryEmployee(schedule);
         const room = schedule.room;
         const shiftTemplate = schedule.shift_template;
         const workDate = schedule.work_date ? format(new Date(schedule.work_date), "EEEE, MMM d, yyyy") : "N/A";
 
-        const assignedCount = schedule.employeeRoomAssignments?.length || (employee ? 1 : 0);
+        const assignedCount = schedule.employeeRoomAssignments?.filter(a => a.isActive && a.employee).length || 0;
 
         return (
           <div 
@@ -126,11 +156,13 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 text-sm">
-                      {employee?.firstName || "Unassigned"} {employee?.lastName || ""}
+                      {getEmployeeNames(schedule)}
                     </h4>
-                            <p className="text-xs text-gray-600 lowercase">
-                              {formatRole(employee?.role)}
-                            </p>
+                    {employee && (
+                      <p className="text-xs text-gray-600 lowercase">
+                        {formatRole(employee?.role)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

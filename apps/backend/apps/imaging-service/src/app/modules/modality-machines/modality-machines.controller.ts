@@ -16,7 +16,7 @@ import {
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
 import { ModalityMachinesService } from './modality-machines.service';
-import { MachineStatus } from 'libs/shared-enums/src';
+import { MachineStatus } from '@backend/shared-enums';
 
 const moduleName = 'ModalityMachines';
 @Controller('modality-machines')
@@ -83,7 +83,7 @@ export class ModalityMachinesController {
   )
   async findByRoomId(
     @Payload() data: { roomId: string }
-  ): Promise<ImagingModality[]> {
+  ): Promise<ModalityMachine[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_BY_ROOM_ID}`
     );

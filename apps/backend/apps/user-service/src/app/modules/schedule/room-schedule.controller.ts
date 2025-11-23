@@ -48,9 +48,32 @@ export class RoomScheduleController {
   }
 
   @MessagePattern('UserService.RoomSchedule.FindAll')
-  async findAll(@Payload() data?: { filters?: any }) {
+  async findAll(@Payload() data?: { filters?: RoomScheduleSearchFilters | any }) {
     try {
-      return await this.RoomScheduleService.findAll(data?.filters);
+      const filters = data?.filters || {};
+      const transformedFilters: RoomScheduleSearchFilters = {
+        employeeId: filters.employeeId || filters.employee_id,
+        roomId: filters.roomId || filters.room_id,
+        workDateFrom: filters.workDateFrom || filters.work_date_from || filters.start_date,
+        workDateTo: filters.workDateTo || filters.work_date_to || filters.end_date,
+        startTime: filters.startTime || filters.start_time,
+        endTime: filters.endTime || filters.end_time,
+        scheduleStatus: filters.scheduleStatus || filters.schedule_status,
+        role: filters.role,
+        sortBy: filters.sortBy || filters.sort_by,
+        sortOrder: filters.sortOrder || filters.sort_order,
+        limit: filters.limit,
+        offset: filters.offset,
+      };
+      
+      // Remove undefined values
+      Object.keys(transformedFilters).forEach(key => {
+        if (transformedFilters[key] === undefined) {
+          delete transformedFilters[key];
+        }
+      });
+      
+      return await this.RoomScheduleService.findAll(transformedFilters);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

@@ -234,7 +234,7 @@ export class ImagingOrdersController {
     );
     try {
       const { patientId, pagination } = data;
-      
+
       return await this.imagingOrdersService.findByPatientId(
         patientId,
         pagination ?? { page: 1, limit: 10 }
@@ -249,12 +249,20 @@ export class ImagingOrdersController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`)
-  async getRoomOrderStatsInDate(@Payload() data: { id: string }) {
+  async getRoomOrderStatsInDate(
+    @Payload() data: { id: string; startDate?: Date; endDate?: Date }
+  ) {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetQueueStatsInDate`
     );
     try {
-      return await this.imagingOrdersService.getRoomStatsInDate(data.id);
+      const startDate = data.startDate ?? new Date();
+      const endDate = data?.endDate ?? new Date();
+      return await this.imagingOrdersService.getRoomStatsInDate({
+        ...data,
+        startDate,
+        endDate,
+      });
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
