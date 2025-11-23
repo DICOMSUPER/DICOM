@@ -13,6 +13,8 @@ import {
 } from "@/utils/aiDiagnosis";
 import { getEnabledElement, Types } from "@cornerstonejs/core";
 import { Loader2 } from "lucide-react";
+import { AILabelOverlay } from "../overlay/AILabelOverlay";
+import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -80,6 +82,13 @@ const ViewPortMain = ({
 
   const [elementReady, setElementReady] = useState(false);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [predictions, setPredictions] = useState<PredictionMetadata[]>([]);
+  const [aiImageMetadata, setAiImageMetadata] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
+
   const totalFramesRef = useRef(totalFrames);
 
   // AI Diagnosis mutation
@@ -353,18 +362,14 @@ const ViewPortMain = ({
           console.log("ℹNo predictions found in AI response");
           return;
         }
-
         console.log(`Found ${predictions.length} predictions`);
+        setPredictions(predictions);
 
-        // Get necessary viewport metadata
         const stackViewport = viewport as Types.IStackViewport;
         const canvas = stackViewport.canvas;
         const currentImageId = stackViewport.getCurrentImageId?.() || "";
-        // FrameOfReferenceUID
-        const frameOfReferenceUID = stackViewport.getFrameOfReferenceUID?.();
-        console.log("frame2", frameOfReferenceUID);
-        
-
+        setAiImageMetadata({ width: image.width, height: image.height });
+        setAnalyzedImageId(currentImageId);
 
         console.log("🔍 Viewport metadata:", {
           canvasSize: { width: canvas.width, height: canvas.height },
@@ -384,9 +389,9 @@ const ViewPortMain = ({
 
         viewport.render();
 
-        console.log("✅ AI annotations drawn successfully");
+        console.log("AI annotations drawn successfully");
       } catch (error) {
-        console.error("❌ AI diagnosis failed:", error);
+        console.error("AI diagnosis failed:", error);
       } finally {
         setIsDiagnosing(false);
       }
@@ -400,11 +405,11 @@ const ViewPortMain = ({
         return;
       }
 
-      console.log(
-        "🗑️ Clearing AI annotations for viewport:",
-        resolvedViewportId
-      );
+      console.log("Clearing AI annotations for viewport:", resolvedViewportId);
       clearAIAnnotationsUtil(resolvedViewportId);
+      setPredictions([]);
+      setAiImageMetadata(null);
+      setAnalyzedImageId("");
 
       if (viewport) {
         viewport.render();
@@ -605,6 +610,27 @@ const ViewPortMain = ({
               data-viewport-id={viewportId}
               key={`viewport-element-${viewportId}`}
             />
+            {(() => {
+              console.log("🎯 Overlay props:", {
+                predictions: predictions.length,
+                aiImageMetadata,
+                analyzedImageId,
+                resolvedViewportId,
+                resolvedRenderingEngineId,
+                condition: predictions && predictions.length > 0,
+              });
+              return null;
+            })()}
+            {predictions && predictions.length > 0 && !isDiagnosing && (
+              <AILabelOverlay
+                viewportId={resolvedViewportId as string}
+                renderingEngineId={resolvedRenderingEngineId as string}
+                predictions={predictions}
+                aiImageWidth={aiImageMetadata?.width as number}
+                aiImageHeight={aiImageMetadata?.height as number}
+                targetImageId={analyzedImageId}
+              />
+            )}
 
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
