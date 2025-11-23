@@ -64,7 +64,10 @@ export default function QueuePage() {
   const { data: currentRoom, isLoading: isCurrentRoomLoading } =
     useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
   const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
-  console.log("RoomScheduleData", currentRoom?.data as EmployeeRoomAssignment[]);
+  console.log(
+    "RoomScheduleData",
+    currentRoom?.data as EmployeeRoomAssignment[]
+  );
   console.log("RoomId", roomId);
 
   const { data, isLoading, isFetching, error } =
@@ -136,20 +139,20 @@ export default function QueuePage() {
         toast.error("Encounter item not found");
         return;
       }
-    const arrivedEncounter = data?.data.find(
-      (item) => 
-        item.status === EncounterStatus.ARRIVED && 
-        item.assignedPhysicianId === currentRoom?.data?.[0]?.employeeId &&
-          item.id !== id 
+      const arrivedEncounter = data?.data.find(
+        (item) =>
+          item.status === EncounterStatus.ARRIVED &&
+          item.assignedPhysicianId === currentRoom?.data?.[0]?.employeeId &&
+          item.id !== id
       );
 
-    if (arrivedEncounter) {
-      toast.warning(
-        `You are currently serving another patient (${arrivedEncounter.patient?.firstName} ${arrivedEncounter.patient?.lastName}). Please complete or transfer them first.`,
-        { duration: 5000 }
-      );
-      return;
-    }
+      if (arrivedEncounter) {
+        toast.warning(
+          `You are currently serving another patient (${arrivedEncounter.patient?.firstName} ${arrivedEncounter.patient?.lastName}). Please complete or transfer them first.`,
+          { duration: 5000 }
+        );
+        return;
+      }
       await updatePatientEncounter({
         id,
         data: {
@@ -201,7 +204,6 @@ export default function QueuePage() {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-
   const handleReset = () => {
     setFilters({
       encounterId: "",
@@ -219,75 +221,73 @@ export default function QueuePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Clinic Visit
-            </h1>
-            <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Date */}
-              <div className="text-sm text-gray-500">
-                Today:{" "}
-                <span className="font-medium text-gray-700">
-                  {formatDate(new Date())}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Clinic Visit
+          </h1>
+          <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Date */}
+            <div className="text-sm text-gray-500">
+              Today:{" "}
+              <span className="font-medium text-gray-700">
+                {formatDate(new Date())}
+              </span>
+            </div>
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              {/* Total Visited */}
+              <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
+                <Users size={16} />
+                <span className="text-sm font-semibold">
+                  Visited: {statsData?.data.totalArrivedEncounters || 0}
                 </span>
               </div>
 
-              {/* Stats */}
-              <div className="flex flex-wrap gap-3 sm:gap-4">
-                {/* Total Visited */}
-                <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
-                  <Users size={16} />
-                  <span className="text-sm font-semibold">
-                    Visited: {statsData?.data.totalArrivedEncounters || 0}
-                  </span>
-                </div>
+              {/* Total */}
+              <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
+                <Clock size={16} />
+                <span className="text-sm font-semibold">
+                  Total: {statsData?.data.totalEncounters || 0}
+                </span>
+              </div>
 
-                {/* Total */}
-                <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
-                  <Clock size={16} />
-                  <span className="text-sm font-semibold">
-                    Total: {statsData?.data.totalEncounters || 0}
-                  </span>
-                </div>
-
-                {/* Completed */}
-                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
-                  <CheckCircle size={16} />
-                  <span className="text-sm font-semibold">
-                    Completed: {statsData?.data.totalCompletedEncounters || 0}
-                  </span>
-                </div>
+              {/* Completed */}
+              <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
+                <CheckCircle size={16} />
+                <span className="text-sm font-semibold">
+                  Completed: {statsData?.data.totalCompletedEncounters || 0}
+                </span>
               </div>
             </div>
           </div>
         </div>
-        <PatientEncounterFiltersSection
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onReset={handleReset}
-        />
-        <PatientEncounterTable
-          employeeId={currentRoom?.data?.[0]?.employeeId as string}
-          encounterItems={data?.data || []}
-          onStartServing={handleStartServing}
-          onComplete={handleComplete}
-          onViewDetails={handleViewDetails}
-          pagination={paginationMeta}
-          onPageChange={handlePageChange}
-          isUpdating={isUpdating}
-          isLoading={isLoading || isCurrentRoomLoading}
-          isFetching={isFetching}
-          onTransferPhysician={handleOpenTransferModal}
-        />
-        <ModalTransferPhysician
-          open={transferModalOpen}
-          onClose={() => setTransferModalOpen(false)}
-          encounterId={selectedEncounterId}
-          availablePhysicians={anotherEmployeeAssignInRoom}
-        />
       </div>
+      <PatientEncounterFiltersSection
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleReset}
+      />
+      <PatientEncounterTable
+        employeeId={currentRoom?.data?.[0]?.employeeId as string}
+        encounterItems={data?.data || []}
+        onStartServing={handleStartServing}
+        onComplete={handleComplete}
+        onViewDetails={handleViewDetails}
+        pagination={paginationMeta}
+        onPageChange={handlePageChange}
+        isUpdating={isUpdating}
+        isLoading={isLoading || isCurrentRoomLoading}
+        isFetching={isFetching}
+        onTransferPhysician={handleOpenTransferModal}
+      />
+      <ModalTransferPhysician
+        open={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        encounterId={selectedEncounterId}
+        availablePhysicians={anotherEmployeeAssignInRoom}
+      />
     </div>
   );
 }

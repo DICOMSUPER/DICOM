@@ -35,6 +35,9 @@ interface DataTableProps<T> {
   rowClassName?: (row: T, index: number) => string | undefined;
   rowKey?: (row: T, index: number) => React.Key;
   isEmpty?: boolean;
+  showNumberColumn?: boolean;
+  page?: number;
+  limit?: number;
 }
 
 export function DataTable<T>({
@@ -52,9 +55,12 @@ export function DataTable<T>({
   rowClassName,
   rowKey,
   isEmpty,
+  showNumberColumn = true,
+  page = 1,
+  limit = 10,
 }: DataTableProps<T>) {
   const useColumns = Array.isArray(columns) && Array.isArray(data);
-  const resolvedColumnCount = useColumns ? columns!.length : (headers ? headers.length : skeletonColumns);
+  const resolvedColumnCount = useColumns ? (columns!.length + (showNumberColumn ? 1 : 0)) : (headers ? headers.length + (showNumberColumn ? 1 : 0) : skeletonColumns);
   const resolvedRows = useColumns ? data || [] : [];
   const showEmptyState = !isLoading && (useColumns ? resolvedRows.length === 0 : Boolean(isEmpty));
 
@@ -64,11 +70,20 @@ export function DataTable<T>({
         <TableEnhanced>
           <TableHeaderEnhanced>
             <TableRowEnhanced isHeader>
+              {showNumberColumn && (
+                <TableHeadEnhanced
+                  key="header-number"
+                  isLast={false}
+                  className="w-16 text-center"
+                >
+                  #
+                </TableHeadEnhanced>
+              )}
               {useColumns && columns
                 ? columns.map((column, index) => (
                     <TableHeadEnhanced
                       key={`header-${index}`}
-                      isLast={index === columns.length - 1}
+                      isLast={index === columns.length - 1 && !showNumberColumn}
                       className={column.headerClassName}
                     >
                       {column.header}
@@ -78,7 +93,7 @@ export function DataTable<T>({
                 ? headers.map((header, index) => (
                     <TableHeadEnhanced
                       key={`header-${index}`}
-                      isLast={index === headers.length - 1}
+                      isLast={index === headers.length - 1 && !showNumberColumn}
                     >
                       {header}
                     </TableHeadEnhanced>
@@ -91,22 +106,34 @@ export function DataTable<T>({
               <TableSkeleton rows={skeletonRows} columns={resolvedColumnCount} />
             ) : (
               (useColumns && columns
-                ? resolvedRows.map((row, rowIndex) => (
-                    <TableRowEnhanced
-                      key={rowKey ? rowKey(row, rowIndex) : rowIndex}
-                      className={rowClassName?.(row, rowIndex)}
-                    >
-                      {columns.map((column, colIndex) => (
-                        <TableCellEnhanced
-                          key={`${rowIndex}-${colIndex}`}
-                          isLast={colIndex === columns.length - 1}
-                          className={column.className}
-                        >
-                          {column.cell(row)}
-                        </TableCellEnhanced>
-                      ))}
-                    </TableRowEnhanced>
-                  ))
+                ? resolvedRows.map((row, rowIndex) => {
+                    const rowNumber = (page - 1) * limit + rowIndex + 1;
+                    return (
+                      <TableRowEnhanced
+                        key={rowKey ? rowKey(row, rowIndex) : rowIndex}
+                        className={rowClassName?.(row, rowIndex)}
+                      >
+                        {showNumberColumn && (
+                          <TableCellEnhanced
+                            key={`${rowIndex}-number`}
+                            isLast={false}
+                            className="w-16 text-center text-foreground"
+                          >
+                            {rowNumber}
+                          </TableCellEnhanced>
+                        )}
+                        {columns.map((column, colIndex) => (
+                          <TableCellEnhanced
+                            key={`${rowIndex}-${colIndex}`}
+                            isLast={colIndex === columns.length - 1 && !showNumberColumn}
+                            className={column.className}
+                          >
+                            {column.cell(row)}
+                          </TableCellEnhanced>
+                        ))}
+                      </TableRowEnhanced>
+                    );
+                  })
                 : children)
             )}
           </TableBodyEnhanced>

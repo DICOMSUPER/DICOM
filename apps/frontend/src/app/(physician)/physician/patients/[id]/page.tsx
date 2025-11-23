@@ -72,21 +72,19 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen ">
-        <div className="max-w-7xl ">
-          <div className="flex items-center gap-4 mb-8">
-            <Skeleton className="h-8 w-8" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
+        <div className="flex items-center gap-4 mb-8">
+          <Skeleton className="h-8 w-8" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-1">
-              <Skeleton className="h-96 w-full" />
-            </div>
-            <div className="lg:col-span-3">
-              <Skeleton className="h-96 w-full" />
-            </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1">
+            <Skeleton className="h-96 w-full" />
+          </div>
+          <div className="lg:col-span-3">
+            <Skeleton className="h-96 w-full" />
           </div>
         </div>
       </div>

@@ -32,8 +32,8 @@ export class ServiceRoomsController {
 
 
   @MessagePattern('UserService.ServiceRooms.FindByService')
-  async findByService(@Payload() data: { serviceId: string }) {
-    return await this.serviceRoomsService.findByService(data.serviceId);
+  async findByService(@Payload() serviceId: string) {
+    return await this.serviceRoomsService.findByService(serviceId);
   }
 
   @MessagePattern('UserService.ServiceRooms.FindByRoom')

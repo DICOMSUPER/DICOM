@@ -122,7 +122,8 @@ export default function Page() {
   }, [rooms, roomsRes?.total]);
 
   const uniqueRoomTypes = useMemo(() => {
-    return [...new Set(rooms.map((r) => r.roomType))];
+    const types = rooms.map((r) => r.roomType).filter((type): type is NonNullable<typeof type> => type !== undefined && type !== null);
+    return [...new Set(types.map(String))];
   }, [rooms]);
 
   const getStatusRoomBadge = (status: string) => {

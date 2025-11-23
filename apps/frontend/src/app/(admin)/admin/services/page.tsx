@@ -1,7 +1,7 @@
 "use client";
 import { ServiceFiltersSection } from "@/components/admin/service/service-filters";
 import { ServiceTable } from "@/components/admin/service/service-table";
-
+import { ServiceStatsCards } from "@/components/admin/service/service-stats-cards";
 import { ModalServiceForm } from "@/components/admin/service/modal-create-service";
 import { ModalServiceDetail } from "@/components/admin/service/modal-service-detail";
 import {
@@ -15,6 +15,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { Pagination } from "@/components/common/PaginationV1";
 import {
   PaginatedQuery,
   PaginationMeta,
@@ -22,8 +25,8 @@ import {
 import {
   CreateServiceDto,
   UpdateServiceDto,
+  Services,
 } from "@/interfaces/user/service.interface";
-import { formatDate } from "@/lib/formatTimeDate";
 import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
@@ -31,13 +34,15 @@ import {
   useUpdateServiceMutation,
 } from "@/store/serviceApi";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { getBooleanStatusBadge } from "@/utils/status-badge";
 
 export default function ServicePage() {
   const [filters, setFilters] = useState<PaginatedQuery>({
     page: 1,
-    limit: 5,
+    limit: 10,
     search: "",
     searchField: "serviceName",
     sortBy: "createdAt",
@@ -47,7 +52,7 @@ export default function ServicePage() {
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     total: 0,
     page: 1,
-    limit: 5,
+    limit: 10,
     totalPages: 0,
     hasNextPage: false,
     hasPreviousPage: false,
@@ -63,7 +68,13 @@ export default function ServicePage() {
   const [editMode, setEditMode] = useState(false);
 
   // RTK Query hooks
-  const { data, isLoading, isFetching } = useGetServicesPaginatedQuery({
+  const { 
+    data, 
+    isLoading, 
+    isFetching,
+    error: servicesError,
+    refetch: refetchServices,
+  } = useGetServicesPaginatedQuery({
     page: filters.page,
     limit: filters.limit,
     search: filters.search,
@@ -76,12 +87,29 @@ export default function ServicePage() {
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
 
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (servicesError) {
+      const error = servicesError as FetchBaseQueryError;
+      const errorMessage = 
+        error?.data && 
+        typeof error.data === 'object' &&
+        'message' in error.data
+          ? (error.data as { message: string }).message
+          : 'Failed to load service data. Please try again.';
+      setError(errorMessage);
+    } else {
+      setError(null);
+    }
+  }, [servicesError]);
+
   useEffect(() => {
     if (data) {
       setPaginationMeta({
         total: data.total || 0,
         page: data.page || 1,
-        limit: data.limit || 5,
+        limit: data.limit || 10,
         totalPages: data.totalPages || 0,
         hasNextPage: data.hasNextPage || false,
         hasPreviousPage: data.hasPreviousPage || false,
@@ -89,9 +117,22 @@ export default function ServicePage() {
     }
   }, [data]);
 
+  const services = data?.data || [];
+  
+  const stats = useMemo(() => {
+    const total = data?.total ?? 0;
+    const active = services.filter((s) => s.isActive).length;
+    const inactive = services.filter((s) => !s.isActive).length;
+    return { total, active, inactive };
+  }, [services, data?.total]);
+
+  const handleRefresh = async () => {
+    await refetchServices();
+  };
+
   // View Details Handler
-  const handleViewDetails = (id: string) => {
-    setSelectedServiceId(id);
+  const handleViewDetails = (service: Services) => {
+    setSelectedServiceId(service.id);
     setDetailModalOpen(true);
   };
 
@@ -102,16 +143,16 @@ export default function ServicePage() {
     setFormModalOpen(true);
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (service: Services) => {
     setEditMode(true);
-    setSelectedServiceId(id);
+    setSelectedServiceId(service.id);
     setFormModalOpen(true);
   };
 
 
   // Delete Service Handler
-  const handleDelete = (id: string) => {
-    setSelectedServiceId(id);
+  const handleDelete = (service: Services) => {
+    setSelectedServiceId(service.id);
     setDeleteDialogOpen(true);
   };
 
@@ -172,7 +213,7 @@ export default function ServicePage() {
   const handleReset = () => {
     setFilters({
       page: 1,
-      limit: 5,
+      limit: 10,
       search: "",
       searchField: "serviceName",
       sortBy: "createdAt",
@@ -181,46 +222,61 @@ export default function ServicePage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Service Management
-            </h1>
-            <div className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="text-sm text-gray-500">
-                Today:{" "}
-                <span className="font-medium text-gray-700">
-                  {formatDate(new Date())}
-                </span>
-              </div>
-              <Button onClick={handleAddService}>
-                <Plus className="h-4 w-4 mr-2" /> Add Service
-              </Button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Service Management</h1>
+          <p className="text-foreground">Search and manage service records</p>
         </div>
+        <div className="flex items-center gap-4">
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={isLoading || isFetching}
+          />
+          <Button
+            onClick={handleAddService}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add New Service
+          </Button>
+        </div>
+      </div>
 
-        {/* Filters */}
-        <ServiceFiltersSection
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onReset={handleReset}
-        />
+      {error && (
+        <ErrorAlert title="Failed to load services" message={error} className="mb-4" />
+      )}
 
-        {/* Table */}
-        <ServiceTable
-          serviceItems={data?.data || []}
-          onViewDetails={handleViewDetails}
+      <ServiceStatsCards
+        totalCount={stats.total}
+        activeCount={stats.active}
+        inactiveCount={stats.inactive}
+        isLoading={isLoading}
+      />
+
+      <ServiceFiltersSection
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleReset}
+      />
+
+      <ServiceTable
+        serviceItems={services}
+        getStatusBadge={getBooleanStatusBadge}
+        onViewDetails={handleViewDetails}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        isLoading={isLoading}
+        page={filters.page}
+        limit={filters.limit}
+      />
+      
+      {paginationMeta && (
+        <Pagination
           pagination={paginationMeta}
           onPageChange={handlePageChange}
-          isFetching={isFetching}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          isLoading={isLoading}
         />
+      )}
 
         {/* View Details Modal */}
         <ModalServiceDetail
@@ -307,7 +363,7 @@ export default function ServicePage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog> */}
-      </div>
+      
     </div>
   );
 }

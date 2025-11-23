@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Like, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   CreateServiceRoomDto,
   FilterServiceRoomDto,
@@ -14,7 +14,7 @@ import {
   Services,
   UpdateServiceRoomDto,
 } from '@backend/shared-domain';
-import { PaginatedResponseDto, PaginationService } from '@backend/database';
+import { PaginatedResponseDto } from '@backend/database';
 
 @Injectable()
 export class ServiceRoomsService {
@@ -25,8 +25,7 @@ export class ServiceRoomsService {
     private readonly servicesRepository: Repository<Services>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-    private readonly entityManager: EntityManager,
-    private readonly paginationService: PaginationService
+    private readonly entityManager: EntityManager
   ) {}
 
   async create(data: CreateServiceRoomDto) {
@@ -79,7 +78,6 @@ export class ServiceRoomsService {
     .leftJoinAndSelect('sr.room', 'room')
     .leftJoinAndSelect('room.department', 'department');
 
-  // Apply filters
   if (serviceName) {
     qb.andWhere('service.serviceName ILIKE :serviceName', { 
       serviceName: `%${serviceName}%` 
@@ -95,10 +93,8 @@ if (roomCode) {
     qb.andWhere('sr.isActive = :isActive', { isActive });
   }
 
-  // Order
   qb.orderBy('sr.createdAt', 'DESC');
 
-  // Pagination
   const skip = (page - 1) * limit;
   qb.skip(skip).take(limit);
 
@@ -119,7 +115,9 @@ if (roomCode) {
     );
   } catch (error) {
     console.error('❌ Database error:', error);
-    throw new BadRequestException('Error querying service rooms:');
+    throw new BadRequestException(
+      `Error querying service rooms: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -132,7 +130,6 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
     .leftJoinAndSelect('sr.room', 'room')
     .leftJoinAndSelect('room.department', 'department');
 
-  // Apply filters
   if (serviceId) {
     qb.andWhere('service.id = :serviceId', { 
       serviceId
@@ -179,17 +176,25 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   }
 
   async findByService(serviceId: string) {
-    return await this.serviceRoomRepository.find({
-      where: { service: { id: serviceId } as any },
-      relations: ['service', 'room', 'room.department'],
-    });
+    return await this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department')
+      .where('service.id = :serviceId', { serviceId })
+      .orderBy('sr.createdAt', 'DESC')
+      .getMany();
   }
 
   async findByRoom(roomId: string) {
-    return await this.serviceRoomRepository.find({
-      where: { room: { id: roomId } as any },
-      relations: ['service', 'room', 'room.department'],
-    });
+    return await this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department')
+      .where('room.id = :roomId', { roomId })
+      .orderBy('sr.createdAt', 'DESC')
+      .getMany();
   }
 
   async update(id: string, updatedData: UpdateServiceRoomDto) {
@@ -197,6 +202,10 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
 
     if (updatedData.isActive !== undefined) {
       serviceRoom.isActive = updatedData.isActive;
+    }
+
+    if (updatedData.notes !== undefined) {
+      serviceRoom.notes = updatedData.notes;
     }
 
     return await this.serviceRoomRepository.save(serviceRoom);

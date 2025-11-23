@@ -1,0 +1,131 @@
+'use client';
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Eye, Edit, Trash2, Monitor } from 'lucide-react';
+import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
+import { DataTable } from '@/components/ui/data-table';
+import { formatDate } from '@/lib/formatTimeDate';
+import { getMachineStatusBadgeSimple } from '@/utils/machine-status-badge';
+
+interface ModalityMachineTableProps {
+  machineItems: ModalityMachine[];
+  isLoading?: boolean;
+  emptyStateIcon?: React.ReactNode;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  onViewDetails?: (machine: ModalityMachine) => void;
+  onEdit?: (machine: ModalityMachine) => void;
+  onDelete?: (machine: ModalityMachine) => void;
+  page?: number;
+  limit?: number;
+}
+
+export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
+  machineItems,
+  isLoading = false,
+  emptyStateIcon = <Monitor className="h-12 w-12 text-foreground" />,
+  emptyStateTitle = "No modality machines found",
+  emptyStateDescription = "Create a modality machine to see it listed here.",
+  onViewDetails,
+  onEdit,
+  onDelete,
+  page = 1,
+  limit = 10,
+}) => {
+
+  const columns = [
+    {
+      header: 'Machine Name',
+      cell: (machine: ModalityMachine) => (
+        <div className="font-medium text-blue-600">
+          {machine.name || '—'}
+        </div>
+      ),
+    },
+    {
+      header: 'Imaging Modality',
+      cell: (machine: ModalityMachine) => (
+        <div className="text-foreground">
+          {machine.modality?.modalityName || '—'} ({machine.modality?.modalityCode || '—'})
+        </div>
+      ),
+    },
+    {
+      header: 'Manufacturer',
+      cell: (machine: ModalityMachine) => (
+        <div className="text-foreground">{machine.manufacturer || '—'}</div>
+      ),
+    },
+    {
+      header: 'Model',
+      cell: (machine: ModalityMachine) => (
+        <div className="text-foreground">{machine.model || '—'}</div>
+      ),
+    },
+    {
+      header: 'Status',
+      cell: (machine: ModalityMachine) => getMachineStatusBadgeSimple(machine.status),
+    },
+    {
+      header: 'Created At',
+      cell: (machine: ModalityMachine) => (
+        <div className="text-foreground">{formatDate(machine.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Actions',
+      headerClassName: 'text-center',
+      cell: (machine: ModalityMachine) => (
+        <div className="flex items-center gap-2 justify-center">
+          {onViewDetails && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewDetails(machine)}
+              className="h-8 w-8 p-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(machine)}
+              className="h-8 w-8 p-0"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(machine)}
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable<ModalityMachine>
+      columns={columns}
+      data={machineItems}
+      isLoading={isLoading}
+      emptyStateIcon={emptyStateIcon}
+      emptyStateTitle={emptyStateTitle}
+      emptyStateDescription={emptyStateDescription}
+      rowKey={(machine, index) => machine?.id || `machine-${index}`}
+      showNumberColumn={true}
+      page={page}
+      limit={limit}
+    />
+  );
+};
+

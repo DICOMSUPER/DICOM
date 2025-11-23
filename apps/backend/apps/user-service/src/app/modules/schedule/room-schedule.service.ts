@@ -532,41 +532,6 @@ export class RoomScheduleService {
     }
   }
 
-  // Working Hours Validation
-  async validateAgainstWorkingHours(schedules: RoomSchedule[]): Promise<{
-    valid: boolean;
-    violations: { schedule: RoomSchedule; reason: string }[];
-  }> {
-    try {
-      const violations: { schedule: RoomSchedule; reason: string }[] = [];
-
-      for (const schedule of schedules) {
-        // This would integrate with WorkingHoursService
-        // For now, we'll implement basic validation
-        if (schedule.actual_start_time && schedule.actual_end_time) {
-          const startTime = schedule.actual_start_time;
-          const endTime = schedule.actual_end_time;
-
-          // Basic time validation (can be enhanced with actual working hours check)
-          if (startTime >= endTime) {
-            violations.push({
-              schedule,
-              reason: 'Start time must be before end time',
-            });
-          }
-        }
-      }
-
-      return {
-        valid: violations.length === 0,
-        violations,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        'Failed to validate schedules against working hours'
-      );
-    }
-  }
 
   async getOverlappingSchedules(
     roomId: string,

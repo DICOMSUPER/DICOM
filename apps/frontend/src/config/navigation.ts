@@ -19,7 +19,7 @@ import {
   Users,
   Building,
   Calendar,
-  FolderTree,,
+  FolderTree,
   Link2
 } from "lucide-react";
 
@@ -45,15 +45,9 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/admin/users",
-      label: "User Management",
+      label: "Users",
       icon: Users,
       description: "Manage system users and roles",
-    },
-    {
-      href: "/admin/working-hours",
-      label: "Working Hours",
-      icon: Timer,
-      description: "Configure clinic working hours and break times",
     },
     {
       href: "/admin/settings",
@@ -62,8 +56,8 @@ export const roleNavigation: RoleNavigation = {
       description: "Configure system settings",
     },
     {
-      href: "/admin/service",
-      label: "Service Management",
+      href: "/admin/services",
+      label: "Services",
       icon: Cog,
       description: "Manage clinic services and offerings",
     },
@@ -81,7 +75,7 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/admin/database",
-      label: "Database Management",
+      label: "Database",
       icon: Database,
       description: "Manage database and backups",
     },
@@ -99,19 +93,19 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/admin/rooms",
-      label: "Rooms Management",
+      label: "Rooms",
       icon: Building2,
       description: "Manage clinic rooms and resources",
     },
     {
       href: "/admin/room-services",
-      label: "Room Service Management",
+      label: "Room Services",
       icon: Link2,
       description: "Manage room service assignments",
     },
     {
       href: "/admin/departments",
-      label: "Departments Management",
+      label: "Departments",
       icon: Building,
       description: "Manage clinic departments and staff",
     },
@@ -193,7 +187,7 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physician/diagnosis-report",
-      label: "Reports Management",
+      label: "Reports",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },

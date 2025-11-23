@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Users, Mail, Phone } from 'lucide-react';
+import { Eye, Edit, Power, Users, Mail, Phone } from 'lucide-react';
 import { User } from '@/interfaces/user/user.interface';
 import { DataTable } from '@/components/ui/data-table';
 
@@ -15,7 +15,9 @@ interface UserTableProps {
   emptyStateDescription?: string;
   onViewDetails?: (user: User) => void;
   onEditUser?: (user: User) => void;
-  onDeleteUser?: (user: User) => void;
+  onToggleStatus?: (user: User) => void;
+  page?: number;
+  limit?: number;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -27,7 +29,9 @@ export const UserTable: React.FC<UserTableProps> = ({
   emptyStateDescription = "Create a user to see it listed here.",
   onViewDetails,
   onEditUser,
-  onDeleteUser,
+  onToggleStatus,
+  page = 1,
+  limit = 10,
 }) => {
 
   const getRoleLabel = (role?: string) => {
@@ -99,7 +103,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (user: User) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
               variant="ghost"
@@ -120,14 +124,15 @@ export const UserTable: React.FC<UserTableProps> = ({
               <Edit className="h-4 w-4 text-blue-600" />
             </Button>
           )}
-          {onDeleteUser && (
+          {onToggleStatus && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDeleteUser(user)}
+              onClick={() => onToggleStatus(user)}
               className="h-8 w-8 p-0"
+              title={user.isActive ? 'Disable user' : 'Enable user'}
             >
-              <Trash2 className="h-4 w-4 text-red-600" />
+              <Power className={`h-4 w-4 ${user.isActive ? 'text-amber-600' : 'text-green-600'}`} />
             </Button>
           )}
         </div>
@@ -144,6 +149,8 @@ export const UserTable: React.FC<UserTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(user) => user.id}
+      page={page}
+      limit={limit}
     />
   );
 };

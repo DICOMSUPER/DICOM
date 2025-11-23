@@ -72,23 +72,19 @@ export function ConfirmationModal({
   icon,
 }: ConfirmationModalProps) {
   const styles = variantStyles[variant];
-  const IconComponent = icon || styles.icon;
+  const DefaultIcon = styles.icon;
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="border-border max-w-md">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`shrink-0 w-10 h-10 rounded-full ${styles.iconBg} flex items-center justify-center`}>
-              {typeof IconComponent === 'function' ? (
-                <IconComponent className={`w-5 h-5 ${styles.iconColor}`} />
-              ) : (
-                IconComponent
-              )}
+        <AlertDialogHeader className="text-center">
+          <div className="flex flex-col items-center gap-4 mb-2">
+            <div className={`shrink-0 w-16 h-16 rounded-full ${styles.iconBg} flex items-center justify-center`}>
+              {icon || <DefaultIcon className={`w-8 h-8 ${styles.iconColor}`} />}
             </div>
-            <AlertDialogTitle className={styles.titleColor}>{title}</AlertDialogTitle>
+            <AlertDialogTitle className={`${styles.titleColor} text-2xl font-semibold`}>{title}</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-foreground">
+          <AlertDialogDescription className="text-foreground text-base text-center">
             {typeof description === 'string' ? <p>{description}</p> : description}
           </AlertDialogDescription>
         </AlertDialogHeader>

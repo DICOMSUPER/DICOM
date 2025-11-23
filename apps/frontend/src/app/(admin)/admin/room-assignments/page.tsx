@@ -31,6 +31,7 @@ import { User } from '@/interfaces/user/user.interface';
 import { Roles } from '@/enums/user.enum';
 import { extractApiData } from '@/utils/api';
 import { PaginationMeta } from '@/interfaces/pagination/pagination.interface';
+import { EmployeeRoomAssignmentStats } from '@/interfaces/user/employee-room-assignment.interface';
 
 const getStatsFromSchedules = (schedules: RoomSchedule[], optimisticCount: number) => {
   const allAssignments = schedules.flatMap(
@@ -288,6 +289,20 @@ export default function RoomAssignmentsPage() {
     optimisticAssignmentsCount
   );
 
+  const scheduleStats = useMemo<EmployeeRoomAssignmentStats>(() => {
+    const statsMap: EmployeeRoomAssignmentStats = {};
+    mergedSchedules.forEach((schedule) => {
+      if (schedule.work_date) {
+        const dateKey = typeof schedule.work_date === 'string' 
+          ? schedule.work_date.split('T')[0] 
+          : new Date(schedule.work_date).toISOString().split('T')[0];
+        const assignmentCount = schedule.employeeRoomAssignments?.length || 0;
+        statsMap[dateKey] = (statsMap[dateKey] || 0) + assignmentCount;
+      }
+    });
+    return statsMap;
+  }, [mergedSchedules]);
+
   const handleRefresh = async () => refetchSchedules();
 
   useEffect(() => {
@@ -392,6 +407,7 @@ export default function RoomAssignmentsPage() {
               <ScheduleSidebar
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
+                scheduleStats={scheduleStats}
               />
             </div>
           </div>

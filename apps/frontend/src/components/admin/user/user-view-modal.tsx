@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { User } from '@/interfaces/user/user.interface';
 import {
   User as UserIcon,
@@ -29,7 +30,6 @@ interface UserViewModalProps {
 }
 
 export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalProps) {
-  if (!user) return null;
 
   const formatDateTime = (dateValue?: string | Date | null) => {
     if (!dateValue) return '—';
@@ -58,8 +58,15 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
         </DialogHeader>
 
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+          {!user ? (
+            <div className="space-y-8 pr-4 pb-2">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-4 pr-4 pb-2">
+              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
@@ -93,7 +100,7 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
             <section className="rounded-2xl p-6 shadow border-border border space-y-4">
               <div className="flex items-center gap-2 text-lg font-semibold">
                 <UserIcon className="h-5 w-5" />
-                Personal Information
+                Personal & Contact Information
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
@@ -117,15 +124,6 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
                   </div>
                   <p className="text-base font-semibold text-foreground">{user.lastName}</p>
                 </div>
-              </div>
-            </section>
-
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Mail className="h-5 w-5" />
-                Contact Information
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <Mail className="h-4 w-4" />
@@ -146,7 +144,7 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
             <section className="rounded-2xl p-6 shadow border-border border space-y-4">
               <div className="flex items-center gap-2 text-lg font-semibold">
                 <Shield className="h-5 w-5" />
-                Role & Department
+                Role, Department & Additional Information
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
@@ -165,15 +163,6 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
                     {user.department?.departmentName || '—'}
                   </p>
                 </div>
-              </div>
-            </section>
-
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <BadgeIcon className="h-5 w-5" />
-                Additional Information
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <BadgeIcon className="h-4 w-4" />
@@ -198,7 +187,7 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
                 <Calendar className="h-5 w-5" />
                 Timestamps
               </div>
-              <div className="space-y-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Created At</p>
                   <p className="text-base font-semibold text-foreground">
@@ -213,14 +202,15 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
                 </div>
               </div>
             </section>
-          </div>
+            </div>
+          )}
         </ScrollArea>
 
         <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {onEdit && (
+          {onEdit && user && (
             <Button variant="default" onClick={() => onEdit(user)}>
               Edit User
             </Button>

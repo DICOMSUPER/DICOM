@@ -100,7 +100,7 @@ export default function Page() {
         typeof error.data === 'object' &&
         'message' in error.data
           ? (error.data as { message: string }).message
-          : 'Failed to load room-service assignment data. Please try again.';
+          : 'Failed to load room service assignment data. Please try again.';
       setError(errorMessage);
     } else {
       setError(null);
@@ -183,13 +183,13 @@ export default function Page() {
     if (!selectedRoomService) return;
     try {
       await deleteServiceRoom(selectedRoomService.id).unwrap();
-      toast.success(`Room-service assignment deleted successfully`);
+      toast.success(`Room service assignment deleted successfully`);
       setIsDeleteModalOpen(false);
       setSelectedRoomService(null);
       await refetchRoomServices();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error?.data?.message || `Failed to delete room-service assignment`);
+      toast.error(error?.data?.message || `Failed to delete room service assignment`);
     }
   };
 
@@ -202,7 +202,7 @@ export default function Page() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Room Service Management</h1>
-          <p className="text-foreground">Search and manage room-service assignments</p>
+          <p className="text-foreground">Search and manage room service assignments</p>
         </div>
         <div className="flex items-center gap-4">
           <RefreshButton
@@ -220,7 +220,7 @@ export default function Page() {
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load room-service assignments" message={error} className="mb-4" />
+        <ErrorAlert title="Failed to load room service assignments" message={error} className="mb-4" />
       )}
 
       <RoomServiceStatsCards
@@ -252,7 +252,7 @@ export default function Page() {
         getStatusBadge={getStatusBadge}
         isLoading={roomServicesLoading}
         emptyStateIcon={<Link2 className="h-12 w-12" />}
-        emptyStateTitle="No room-service assignments found"
+        emptyStateTitle="No room service assignments found"
         emptyStateDescription="No assignments match your search criteria. Try adjusting your filters or search terms."
         onViewDetails={handleViewDetails}
         onEditRoomService={handleEditRoomService}

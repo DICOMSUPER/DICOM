@@ -10,6 +10,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ServiceRoom } from '@/interfaces/user/service-room.interface';
 import {
   Link2,
@@ -28,7 +29,6 @@ interface RoomServiceViewModalProps {
 }
 
 export function RoomServiceViewModal({ roomService, isOpen, onClose, onEdit }: RoomServiceViewModalProps) {
-  if (!roomService) return null;
 
   const formatDateTime = (dateValue?: string | Date | null) => {
     if (!dateValue) return '—';
@@ -52,8 +52,15 @@ export function RoomServiceViewModal({ roomService, isOpen, onClose, onEdit }: R
         </DialogHeader>
 
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+          {!roomService ? (
+            <div className="space-y-8 pr-4 pb-2">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-8 pr-4 pb-2">
+              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
@@ -177,14 +184,15 @@ export function RoomServiceViewModal({ roomService, isOpen, onClose, onEdit }: R
                 </div>
               </div>
             </section>
-          </div>
+            </div>
+          )}
         </ScrollArea>
 
         <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {onEdit && (
+          {onEdit && roomService && (
             <Button variant="default" onClick={() => onEdit(roomService)}>
               Edit Assignment
             </Button>

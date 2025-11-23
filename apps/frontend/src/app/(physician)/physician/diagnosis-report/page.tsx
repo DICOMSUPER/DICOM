@@ -27,8 +27,6 @@ export default function DiagnosisReportPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReportId, setSelectedReportId] = useState<string>("");
 
-
-
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     total: 0,
     page: 1,
@@ -104,45 +102,42 @@ export default function DiagnosisReportPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Diagnosis Reports Management
-            </h1>
-            <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Date */}
-              <div className="text-sm text-gray-500">
-                Today:{" "}
-                <span className="font-medium text-gray-700">
-                  {formatDate(new Date())}
-                </span>
-              </div>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Diagnosis Reports Management
+          </h1>
+          <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Date */}
+            <div className="text-sm text-gray-500">
+              Today:{" "}
+              <span className="font-medium text-gray-700">
+                {formatDate(new Date())}
+              </span>
             </div>
           </div>
         </div>
-
-        <DiagnosisReportFiltersSection
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onReset={handleReset}
-        />
-        <DiagnosisReportTable
-          reportItems={data?.data || []}
-          onViewDetails={handleViewDetails}
-          pagination={paginationMeta}
-          onPageChange={handlePageChange}
-          isFetching={isFetching}
-          // isUpdating={isUpdating}
-          isLoading={isLoading}
-        />
-        <ModalDiagnosisReportDetail
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          reportId={selectedReportId}
-        />
-
       </div>
+
+      <DiagnosisReportFiltersSection
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleReset}
+      />
+      <DiagnosisReportTable
+        reportItems={data?.data || []}
+        onViewDetails={handleViewDetails}
+        pagination={paginationMeta}
+        onPageChange={handlePageChange}
+        isFetching={isFetching}
+        // isUpdating={isUpdating}
+        isLoading={isLoading}
+      />
+      <ModalDiagnosisReportDetail
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        reportId={selectedReportId}
+      />
     </div>
   );
 }

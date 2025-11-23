@@ -116,7 +116,7 @@ export default function RoomSelection({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-foreground">
                       Queue completion
                     </p>
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">

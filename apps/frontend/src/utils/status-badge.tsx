@@ -113,3 +113,31 @@ export const getSystemStatusBadge = (status: string): React.ReactNode => {
   return getStatusBadge(status, statusConfig);
 };
 
+export const getEncounterTypeBadge = (type: string): React.ReactNode => {
+  const typeKey = String(type ?? '').toLowerCase().replace('_', '-');
+  const statusConfig: Record<string, StatusBadgeConfig> = {
+    'inpatient': {
+      label: 'Inpatient',
+      colorClass: 'bg-blue-100 text-blue-700',
+    },
+    'outpatient': {
+      label: 'Outpatient',
+      colorClass: 'bg-green-100 text-green-700',
+    },
+    'emergency': {
+      label: 'Emergency',
+      colorClass: 'bg-red-100 text-red-700',
+    },
+    'follow-up': {
+      label: 'Follow Up',
+      colorClass: 'bg-purple-100 text-purple-700',
+    },
+    'follow_up': {
+      label: 'Follow Up',
+      colorClass: 'bg-purple-100 text-purple-700',
+    },
+  };
+
+  return getStatusBadge(typeKey, statusConfig);
+};
+

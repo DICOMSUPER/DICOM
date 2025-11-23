@@ -5,20 +5,22 @@ import { Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { useGetAllUsersQuery, useDeleteUserMutation, UserFilters } from '@/store/userApi';
+import { useGetAllUsersQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { UserTable } from '@/components/admin/user/UserTable';
 import { UserStatsCards } from '@/components/admin/user/user-stats-cards';
 import { UserFilters as UserFiltersComponent } from '@/components/admin/user/user-filters';
 import { UserViewModal } from '@/components/admin/user/user-view-modal';
 import { UserFormModal } from '@/components/admin/user/user-form-modal';
-import { UserDeleteModal } from '@/components/admin/user/user-delete-modal';
+import { UserToggleStatusModal } from '@/components/admin/user/user-toggle-status-modal';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
 import { User } from '@/interfaces/user/user.interface';
 import { Department } from '@/interfaces/user/department.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { extractApiData } from '@/utils/api';
+import { Roles } from '@/enums/user.enum';
 
 interface ApiError {
   data?: {
@@ -41,12 +43,13 @@ export default function Page() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);
 
   const queryParams: UserFilters = useMemo(() => {
     const params: UserFilters = {
       page,
       limit,
+      excludeRole: Roles.SYSTEM_ADMIN,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -81,7 +84,7 @@ export default function Page() {
     refetch: refetchDepartments,
   } = useGetDepartmentsQuery({ page: 1, limit: 1000 });
 
-  const [deleteUser, { isLoading: isDeletingUser }] = useDeleteUserMutation();
+  const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation();
 
   useEffect(() => {
     if (usersError) {
@@ -98,22 +101,23 @@ export default function Page() {
     }
   }, [usersError]);
 
-  const users: User[] = usersRes?.data ?? [];
-  const departments: Department[] = departmentsData?.data ?? [];
+  const users: User[] = extractApiData<User>(usersRes);
+  const departments: Department[] = extractApiData<Department>(departmentsData);
+
   const paginationMeta = usersRes ? {
-    total: usersRes.total,
-    page: usersRes.page,
-    limit: usersRes.limit,
-    totalPages: usersRes.totalPages,
-    hasNextPage: usersRes.hasNextPage,
-    hasPreviousPage: usersRes.hasPreviousPage,
+    total: usersRes.total ?? 0,
+    page: usersRes.page ?? 1,
+    limit: usersRes.limit ?? limit,
+    totalPages: usersRes.totalPages ?? 1,
+    hasNextPage: usersRes.hasNextPage ?? false,
+    hasPreviousPage: usersRes.hasPreviousPage ?? false,
   } : null;
 
   const stats = useMemo(() => {
     const total = usersRes?.total ?? 0;
-    const active = users.filter((u) => u.isActive).length;
-    const inactive = users.filter((u) => !u.isActive).length;
-    const verified = users.filter((u) => u.isVerified).length;
+    const active = users.filter((u) => u?.isActive).length;
+    const inactive = users.filter((u) => u && !u.isActive).length;
+    const verified = users.filter((u) => u?.isVerified).length;
     return { total, active, inactive, verified };
   }, [users, usersRes?.total]);
 
@@ -164,22 +168,26 @@ export default function Page() {
     setIsFormModalOpen(true);
   };
 
-  const handleDeleteUser = (user: User) => {
+  const handleToggleStatus = (user: User) => {
     setSelectedUser(user);
-    setIsDeleteModalOpen(true);
+    setIsToggleStatusModalOpen(true);
   };
 
-  const confirmDeleteUser = async () => {
+  const confirmToggleStatus = async () => {
     if (!selectedUser) return;
     try {
-      await deleteUser(selectedUser.id).unwrap();
-      toast.success(`User deleted successfully`);
-      setIsDeleteModalOpen(false);
+      const newStatus = !(selectedUser.isActive ?? true);
+      await updateUser({
+        id: selectedUser.id,
+        updates: { isActive: newStatus },
+      }).unwrap();
+      toast.success(`User ${newStatus ? 'enabled' : 'disabled'} successfully`);
+      setIsToggleStatusModalOpen(false);
       setSelectedUser(null);
       await refetchUsers();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error?.data?.message || `Failed to delete user`);
+      toast.error(error?.data?.message || `Failed to ${selectedUser.isActive ? 'disable' : 'enable'} user`);
     }
   };
 
@@ -245,7 +253,9 @@ export default function Page() {
         emptyStateDescription="No users match your search criteria. Try adjusting your filters or search terms."
         onViewDetails={handleViewDetails}
         onEditUser={handleEditUser}
-        onDeleteUser={handleDeleteUser}
+        onToggleStatus={handleToggleStatus}
+        page={paginationMeta?.page ?? page}
+        limit={limit}
       />
       {paginationMeta && (
         <Pagination
@@ -277,15 +287,15 @@ export default function Page() {
         onSuccess={handleFormSuccess}
       />
 
-      <UserDeleteModal
+      <UserToggleStatusModal
         user={selectedUser}
-        isOpen={isDeleteModalOpen}
+        isOpen={isToggleStatusModalOpen}
         onClose={() => {
-          setIsDeleteModalOpen(false);
+          setIsToggleStatusModalOpen(false);
           setSelectedUser(null);
         }}
-        onConfirm={confirmDeleteUser}
-        isDeleting={isDeletingUser}
+        onConfirm={confirmToggleStatus}
+        isUpdating={isUpdatingUser}
       />
     </div>
   );

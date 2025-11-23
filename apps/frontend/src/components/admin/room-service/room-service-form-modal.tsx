@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { ServiceRoom } from '@/interfaces/user/service-room.interface';
 import { useCreateServiceRoomMutation, useUpdateServiceRoomMutation } from '@/store/serviceRoomApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
@@ -36,6 +47,15 @@ interface RoomServiceFormModalProps {
   onSuccess?: () => void;
 }
 
+const roomServiceFormSchema = z.object({
+  roomId: z.string().min(1, 'Room is required'),
+  serviceId: z.string().min(1, 'Service is required'),
+  isActive: z.boolean(),
+  notes: z.string().optional(),
+});
+
+type RoomServiceFormValues = z.infer<typeof roomServiceFormSchema>;
+
 export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }: RoomServiceFormModalProps) {
   const isEdit = !!roomService;
   const [createServiceRoom] = useCreateServiceRoomMutation();
@@ -45,70 +65,65 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
   const rooms: Room[] = roomsData?.data ?? [];
   const services: Services[] = servicesData?.data ?? [];
 
-  const [formData, setFormData] = useState({
-    roomId: '',
-    serviceId: '',
-    isActive: true,
-    notes: '',
+  const form = useForm<RoomServiceFormValues>({
+    resolver: zodResolver(roomServiceFormSchema),
+    defaultValues: {
+      roomId: '',
+      serviceId: '',
+      isActive: true,
+      notes: '',
+    },
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (roomService) {
-      setFormData({
+      form.reset({
         roomId: roomService.roomId || '',
         serviceId: roomService.serviceId || '',
         isActive: roomService.isActive ?? true,
         notes: roomService.notes || '',
       });
     } else {
-      setFormData({
+      form.reset({
         roomId: '',
         serviceId: '',
         isActive: true,
         notes: '',
       });
     }
-  }, [roomService, isOpen]);
+  }, [roomService, isOpen, form]);
 
-  const handleSubmit = async () => {
-    if (!formData.roomId) {
-      toast.error('Room is required');
-      return;
-    }
-    if (!formData.serviceId) {
-      toast.error('Service is required');
-      return;
-    }
-
-    setIsSubmitting(true);
+  const onSubmit = async (data: RoomServiceFormValues) => {
     try {
       const payload = {
-        roomId: formData.roomId,
-        serviceId: formData.serviceId,
-        isActive: formData.isActive,
-        notes: formData.notes || undefined,
+        roomId: data.roomId,
+        serviceId: data.serviceId,
+        isActive: data.isActive,
+        notes: data.notes || undefined,
       };
 
       if (isEdit && roomService) {
         await updateServiceRoom({ id: roomService.id, data: { isActive: payload.isActive, notes: payload.notes } }).unwrap();
-        toast.success('Room-service assignment updated successfully');
+        toast.success('Room service assignment updated successfully');
       } else {
         await createServiceRoom(payload).unwrap();
-        toast.success('Room-service assignment created successfully');
+        toast.success('Room service assignment created successfully');
       }
       onSuccess?.();
       onClose();
+      form.reset();
     } catch (error: any) {
-      toast.error(error?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} room-service assignment`);
-    } finally {
-      setIsSubmitting(false);
+      toast.error(error?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} room service assignment`);
     }
   };
 
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <DialogTitle className="text-xl font-semibold">
@@ -116,102 +131,129 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Link2 className="h-5 w-5" />
-                Assignment Information
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="roomId" className="text-foreground">Room *</Label>
-                  <Select
-                    value={formData.roomId}
-                    onValueChange={(value) => setFormData({ ...formData, roomId: value })}
-                    disabled={isEdit}
-                  >
-                    <SelectTrigger className="text-foreground">
-                      <SelectValue placeholder="Select room" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rooms.map((room) => (
-                        <SelectItem key={room.id} value={room.id}>
-                          {room.roomCode} - {room.roomType}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="serviceId" className="text-foreground">Service *</Label>
-                  <Select
-                    value={formData.serviceId}
-                    onValueChange={(value) => setFormData({ ...formData, serviceId: value })}
-                    disabled={isEdit}
-                  >
-                    <SelectTrigger className="text-foreground">
-                      <SelectValue placeholder="Select service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.serviceCode} - {service.serviceName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </section>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <ScrollArea className="flex-1 min-h-0 h-full px-6">
+              <div className="space-y-8 pr-4 pb-2">
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <Link2 className="h-5 w-5" />
+                    Assignment Information
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="roomId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Room *</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isEdit}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="text-foreground">
+                                <SelectValue placeholder="Select room" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {rooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.roomCode} - {room.roomType}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="serviceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-foreground">Service *</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isEdit}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="text-foreground">
+                                <SelectValue placeholder="Select service" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {services.map((service) => (
+                                <SelectItem key={service.id} value={service.id}>
+                                  {service.serviceCode} - {service.serviceName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 pt-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-foreground cursor-pointer">
+                          Active
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Link2 className="h-5 w-5" />
-                Notes
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <Link2 className="h-5 w-5" />
+                    Notes
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Additional notes about this assignment..."
+                            rows={3}
+                            className="text-foreground"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-foreground">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes about this assignment..."
-                  rows={3}
-                  className="text-foreground"
-                />
-              </div>
-            </section>
+            </ScrollArea>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Link2 className="h-5 w-5" />
-                Status
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isActive: checked as boolean })
-                  }
-                />
-                <Label htmlFor="isActive" className="text-foreground cursor-pointer">
-                  Active
-                </Label>
-              </div>
-            </section>
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : isEdit ? 'Update Assignment' : 'Create Assignment'}
-          </Button>
-        </DialogFooter>
+            <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Update Assignment' : 'Create Assignment'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

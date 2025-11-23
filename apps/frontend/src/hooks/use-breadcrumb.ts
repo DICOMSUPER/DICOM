@@ -21,7 +21,6 @@ const pathMap: Record<string, string> = {
   'encounters': 'Encounters',
   'diagnoses': 'Diagnoses',
   'schedule': 'Schedule Management',
-  'working-hours': 'Working Hours',
 }
 
 const formatSegment = (segment: string) => {

@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Room } from '@/interfaces/user/room.interface';
 import { RoomStatus } from '@/enums/room.enum';
 import {
@@ -41,14 +42,12 @@ interface RoomViewModalProps {
 }
 
 export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }: RoomViewModalProps) {
-  if (!room) return null;
-
-  const roomId = room.id ?? '';
+  const roomId = room?.id ?? '';
 
   const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
     roomId,
     { 
-      skip: !roomId || !isOpen,
+      skip: !roomId || !isOpen || !room,
       refetchOnMountOrArgChange: true 
     }
   );
@@ -62,6 +61,8 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }
     if (!room?.serviceRooms) return [];
     return room.serviceRooms.filter((sr) => sr.isActive && sr.service);
   }, [room]);
+
+  if (!room) return null;
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -154,14 +155,19 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        {/* Fixed Header */}
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <DialogTitle className="text-xl font-semibold">Room Details</DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable Content */}
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
+          {!room ? (
+            <div className="space-y-8 pr-4 pb-2">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-8 pr-4 pb-2">
             {/* Hero Section */}
             <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-6">
@@ -503,7 +509,8 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }
                 </section>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </ScrollArea>
 
         {/* Fixed Footer */}
@@ -511,12 +518,12 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {onAssignService && (
+          {onAssignService && room && (
             <Button variant="default" onClick={() => onAssignService(room)}>
               Assign Service
             </Button>
           )}
-          {onEdit && (
+          {onEdit && room && (
             <Button variant="default" onClick={() => onEdit(room)}>
               Edit Room
             </Button>

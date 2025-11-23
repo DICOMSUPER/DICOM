@@ -1,6 +1,5 @@
-import { RoomType } from "@/enums/patient.enum";
+import { RoomType, RoomStatus } from "@/enums/room.enum";
 import { Department } from "./department.interface";
-import { RoomStatus } from "@/enums/room.enum";
 import { ServiceRoom } from "./service-room.interface";
 
 export interface Room {

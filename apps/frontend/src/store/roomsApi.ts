@@ -89,8 +89,8 @@ export const roomApi = createApi({
     updateRoom: builder.mutation<Room, { id: string; data: UpdateRoomDto }>({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: "PATCH",
-        body: data,
+        method: "PUT",
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Room", id },

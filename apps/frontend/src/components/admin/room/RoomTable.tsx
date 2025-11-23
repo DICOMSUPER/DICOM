@@ -177,7 +177,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (room: Room) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
               variant="ghost"

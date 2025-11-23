@@ -13,7 +13,6 @@ import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.
 import { WeeklySchedulePatternsModule } from './modules/weekly-schedule-patterns/weekly-schedule-patterns.module';
 import { DigitalSignatureModule } from './modules/digital-signature/digital-signature.module';
 import { OtpsModule } from './modules/otps/otps.module';
-import { WorkingHoursModule } from './modules/working-hours/working-hours.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
 import { ServiceRoomsModule } from './modules/service-rooms/service-rooms.module';
 import { EmployeeRoomAssignmentsModule } from './modules/employee-room-assignments/employee-room-assignments.module';
@@ -38,7 +37,6 @@ import { ServicesModule } from './modules/services/services.module';
     ShiftTemplatesModule,
     WeeklySchedulePatternsModule,
     OtpsModule,
-    WorkingHoursModule,
     SeedingModule,
     DigitalSignatureModule,
     ServiceRoomsModule,

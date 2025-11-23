@@ -24,7 +24,7 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
   getStatusBadge,
   isLoading = false,
   emptyStateIcon = <Link2 className="h-12 w-12 text-foreground" />,
-  emptyStateTitle = "No room-service assignments found",
+  emptyStateTitle = "No room service assignments found",
   emptyStateDescription = "Create an assignment to see it listed here.",
   onViewDetails,
   onEditRoomService,
@@ -80,7 +80,7 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (roomService: ServiceRoom) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
               variant="ghost"

@@ -19,6 +19,7 @@ export interface UpdateDepartmentDto {
   code?: string;
   description?: string;
   headOfDepartment?: string;
+  headDepartmentId?: string;
   phoneNumber?: string;
   location?: string;
   isActive?: boolean;
@@ -75,8 +76,8 @@ export const departmentApi = createApi({
     >({
       query: ({ id, data }) => ({
         url: `/${id}`,
-        method: "PATCH",
-        body: data,
+        method: "PUT",
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Department", id },

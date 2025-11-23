@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Room } from '@/interfaces/user/room.interface';
@@ -233,11 +233,11 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                 Status
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <Switch
                   id="isActive"
                   checked={formData.isActive}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isActive: checked as boolean })
+                    setFormData({ ...formData, isActive: checked })
                   }
                 />
                 <Label htmlFor="isActive" className="text-foreground cursor-pointer">

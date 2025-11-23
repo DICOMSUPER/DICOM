@@ -288,23 +288,6 @@ export class RoomScheduleController {
     }
   }
 
-  @Post('validate-working-hours')
-  @MessagePattern('UserService.RoomSchedule.ValidateWorkingHours')
-  async validateAgainstWorkingHours(
-    @Payload() data: { schedules: RoomSchedule[] }
-  ) {
-    try {
-      return await this.RoomScheduleService.validateAgainstWorkingHours(
-        data.schedules
-      );
-    } catch (error) {
-      throw handleErrorFromMicroservices(
-        error,
-        'Failed to validate schedules against working hours',
-        'RoomScheduleController'
-      );
-    }
-  }
 
   @MessagePattern('UserService.RoomSchedule.GetOverlappingSchedule')
   async getOverlappingSchedules(@Payload() data: { id: string; role: Roles }) {

@@ -1,30 +1,5 @@
 import { z } from "zod";
 
-// Working Hours Schemas
-export const workingHoursSchema = z.object({
-  dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  isEnabled: z.boolean().default(true),
-  description: z.string().optional(),
-});
-
-export const breakTimeSchema = z.object({
-  breakName: z.string().min(1, "Break name is required"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  workingHoursId: z.string().uuid("Invalid working hours ID"),
-  description: z.string().optional(),
-});
-
-export const specialHoursSchema = z.object({
-  date: z.string().min(1, "Date is required"),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  isHoliday: z.boolean().default(false),
-  description: z.string().optional(),
-});
-
 // Schedule Schemas
 export const scheduleFormSchema = z.object({
   room_id: z.string().uuid("Invalid room ID").optional(),
@@ -118,9 +93,6 @@ export const dateRangeSchema = z.object({
 });
 
 // Export types
-export type WorkingHoursFormData = z.infer<typeof workingHoursSchema>;
-export type BreakTimeFormData = z.infer<typeof breakTimeSchema>;
-export type SpecialHoursFormData = z.infer<typeof specialHoursSchema>;
 export type ScheduleFormData = z.infer<typeof scheduleFormSchema>;
 export type BulkScheduleData = z.infer<typeof bulkScheduleSchema>;
 export type CopyWeekData = z.infer<typeof copyWeekSchema>;

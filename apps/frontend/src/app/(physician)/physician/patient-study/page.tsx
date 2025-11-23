@@ -45,10 +45,11 @@ export default function DicomStudyPage() {
   const { data, isLoading, isFetching, error } =
     useGetDicomStudiesFilteredWithPaginationQuery({ filters: apiFilters });
 
-  const { data: statsData, isLoading: isStatsLoading } = useGetStatsInDateRangeQuery({
-    dateFrom: format(new Date(), "yyyy-MM-dd") as string,
-    dateTo: format(new Date(), "yyyy-MM-dd") as string,
-  });
+  const { data: statsData, isLoading: isStatsLoading } =
+    useGetStatsInDateRangeQuery({
+      dateFrom: format(new Date(), "yyyy-MM-dd") as string,
+      dateTo: format(new Date(), "yyyy-MM-dd") as string,
+    });
 
   console.log("statsData", statsData);
 
@@ -98,67 +99,73 @@ export default function DicomStudyPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Patient Diagnosis Reports
-            </h1>
-            <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              {/* Date */}
-              <div className="text-sm text-gray-500">
-                Today:{" "}
-                <span className="font-medium text-gray-700">
-                  {formatDate(new Date())}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Patient Diagnosis Reports
+          </h1>
+          <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Date */}
+            <div className="text-sm text-gray-500">
+              Today:{" "}
+              <span className="font-medium text-gray-700">
+                {formatDate(new Date())}
+              </span>
+            </div>
+            {/* Stats */}
+            <div className="flex flex-wrap gap-3 sm:gap-4">
+              {/* Total Visited */}
+              <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
+                <Users size={16} />
+                <span className="text-sm font-semibold">
+                  Pending Approve:{" "}
+                  {isStatsLoading
+                    ? "..."
+                    : statsData?.data.totalPendingApprovalStudies || 0}
                 </span>
               </div>
-              {/* Stats */}
-              <div className="flex flex-wrap gap-3 sm:gap-4">
-                {/* Total Visited */}
-                <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
-                  <Users size={16} />
-                  <span className="text-sm font-semibold">
-                    Pending Approve:{" "}
-                    {isStatsLoading ? "..." : statsData?.data.totalPendingApprovalStudies || 0}
-                  </span>
-                </div>
 
-                {/* Total */}
-                <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
-                  <CheckCircle size={16} />
-                  <span className="text-sm font-semibold">
-                    Approved: {isStatsLoading ? "..." : statsData?.data.totalApprovedStudies || 0}
-                  </span>
-                </div>
+              {/* Total */}
+              <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
+                <CheckCircle size={16} />
+                <span className="text-sm font-semibold">
+                  Approved:{" "}
+                  {isStatsLoading
+                    ? "..."
+                    : statsData?.data.totalApprovedStudies || 0}
+                </span>
+              </div>
 
-                {/* Completed */}
-                <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
-                  <Notebook size={16} />
-                  <span className="text-sm font-semibold">
-                    Total: {isStatsLoading ? "..." : statsData?.data.totalDicomStudies || 0}
-                  </span>
-                </div>
+              {/* Completed */}
+              <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
+                <Notebook size={16} />
+                <span className="text-sm font-semibold">
+                  Total:{" "}
+                  {isStatsLoading
+                    ? "..."
+                    : statsData?.data.totalDicomStudies || 0}
+                </span>
               </div>
             </div>
           </div>
         </div>
-
-        <DicomStudyFiltersSection
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onReset={handleReset}
-        />
-
-        <DicomStudyTable
-          dicomStudies={data?.data || []}
-          onViewDetails={handleViewDetails}
-          pagination={paginationMeta}
-          onPageChange={handlePageChange}
-          isFetching={isFetching}
-          // isUpdating={isUpdating}
-          isLoading={isLoading}
-        />
       </div>
+
+      <DicomStudyFiltersSection
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleReset}
+      />
+
+      <DicomStudyTable
+        dicomStudies={data?.data || []}
+        onViewDetails={handleViewDetails}
+        pagination={paginationMeta}
+        onPageChange={handlePageChange}
+        isFetching={isFetching}
+        // isUpdating={isUpdating}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

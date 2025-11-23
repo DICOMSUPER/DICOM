@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoomDto, RoomStatus } from '@backend/shared-domain';
 import { UpdateRoomDto } from '@backend/shared-domain';
-import { Room } from '@backend/shared-domain';
+import { Room, Department } from '@backend/shared-domain';
 import {
   RoomNotFoundException,
   RoomAlreadyExistsException,
@@ -25,6 +25,8 @@ export class RoomsService {
   constructor(
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
     private readonly redisService: RedisService
   ) {}
 
@@ -198,20 +200,37 @@ export class RoomsService {
         }
       }
 
-      Object.assign(room, updateRoomDto);
+      // Handle department update - only update if provided and not empty
+      if (updateRoomDto.department !== undefined && updateRoomDto.department !== null && updateRoomDto.department !== '') {
+        const department = await this.departmentRepository.findOne({
+          where: { id: updateRoomDto.department },
+        });
+        if (!department) {
+          throw new NotFoundException(`Department with ID ${updateRoomDto.department} not found`);
+        }
+        room.department = department;
+      }
+      // If department is not provided or is empty, keep the existing department (don't update it)
+
+      // Update other fields (excluding department which we handled above)
+      const { department, ...otherFields } = updateRoomDto;
+      Object.assign(room, otherFields);
+
       const updatedRoom = await this.roomRepository.save(room);
 
       this.logger.log(`✅ Room updated successfully: ${updatedRoom.id}`);
       return updatedRoom;
     } catch (error: unknown) {
-      this.logger.error(`Update room error: ${(error as Error).message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Update room error: ${errorMessage}`);
       if (
         error instanceof RoomNotFoundException ||
-        error instanceof RoomAlreadyExistsException
+        error instanceof RoomAlreadyExistsException ||
+        error instanceof NotFoundException
       ) {
         throw error;
       }
-      throw new RoomUpdateFailedException('Không thể cập nhật phòng');
+      throw new RoomUpdateFailedException(id, { originalError: errorMessage });
     }
   }
 
