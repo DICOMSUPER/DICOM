@@ -305,8 +305,9 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
         }
         setSelectedScheduleId(targetSchedule.schedule_id);
         scheduleCreated = true;
-      } catch (error: any) {
-        toast.error(error?.data?.message || 'Failed to create schedule');
+      } catch (error) {
+        const apiError = error as { data?: { message?: string }; message?: string };
+        toast.error(apiError?.data?.message || apiError?.message || 'Failed to create schedule');
         setIsSubmitting(false);
         return;
       }
@@ -326,8 +327,13 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
           isActive: true,
         }).unwrap();
         
-        const resultData = result as any;
-        const successCount = resultData?.data?.count ?? resultData?.count ?? (resultData?.data && Array.isArray(resultData.data) ? resultData.data.length : selectedEmployeeIds.length);
+        const resultData = result as { data?: { count?: number } | unknown[]; count?: number };
+        const successCount = 
+          (typeof resultData?.data === 'object' && resultData.data !== null && 'count' in resultData.data 
+            ? (resultData.data as { count: number }).count 
+            : undefined) ??
+          resultData?.count ??
+          (Array.isArray(resultData?.data) ? resultData.data.length : selectedEmployeeIds.length);
         toast.success(`Successfully assigned ${successCount} employee(s)`);
         setSelectedEmployeeIds([]);
         setSelectedEmployeeId('');
@@ -358,9 +364,10 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
       await new Promise(resolve => setTimeout(resolve, 100));
       
       router.push('/admin/room-assignments');
-    } catch (error: any) {
+    } catch (error) {
       const errorMsg = isBulk ? 'Failed to assign employees' : 'Failed to assign employee';
-      toast.error(error?.data?.message || error?.message || errorMsg);
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || errorMsg);
       if (scheduleCreated) {
         toast.warning('Schedule was created but assignment failed. You may need to delete the schedule if you want to try again.');
       }

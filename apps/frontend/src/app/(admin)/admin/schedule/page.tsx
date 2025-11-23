@@ -17,7 +17,7 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { useGetAllUsersQuery } from "@/store/userApi";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { RoomSchedule, ViewMode } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ViewMode, RoomScheduleSearchFilters } from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -51,7 +51,7 @@ export default function AdminSchedulePage() {
   });
 
   const queryFilters = useMemo(() => {
-    const baseFilters: any = {
+    const baseFilters: RoomScheduleSearchFilters = {
       work_date_from: format(startOfMonth(selectedDate), "yyyy-MM-dd"),
       work_date_to: format(endOfMonth(selectedDate), "yyyy-MM-dd"),
     };

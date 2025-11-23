@@ -23,6 +23,8 @@ import {
   Rotate3D,
   Maximize2,
   RotateCcw as RotateCcwIcon,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -48,7 +50,7 @@ export default function UnifiedToolbar({
   onRefresh,
   loading = false,
 }: UnifiedToolbarProps) {
-  const { rotateViewport, flipViewport, resetView, clearAnnotations } = useViewer();
+  const { rotateViewport, flipViewport, resetView, clearAnnotations, toggleAnnotations, state } = useViewer();
 
   // Basic navigation tools
   const navigationTools = [
@@ -274,6 +276,30 @@ export default function UnifiedToolbar({
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-slate-800 border-teal-700 text-white">
               Reset View
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => toggleAnnotations()}
+                className={`h-8 w-8 p-0 transition-all rounded-lg ${
+                  state.showAnnotations
+                    ? "text-teal-400 hover:bg-slate-700 hover:text-teal-300"
+                    : "text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                }`}
+              >
+                {state.showAnnotations ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-slate-800 border-teal-700 text-white">
+              {state.showAnnotations ? "Hide Annotations" : "Show Annotations"}
             </TooltipContent>
           </Tooltip>
 

@@ -6,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, FileText, MoreVertical } from "lucide-react";
 import {
@@ -15,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getPatientStatusBadge } from "@/utils/status-badge";
 
 const patients = [
   {
@@ -39,6 +39,7 @@ const patients = [
 ];
 
 export function PatientList() {
+
   return (
     <div className="rounded-md border border-border">
       <Table>
@@ -61,12 +62,7 @@ export function PatientList() {
               <TableCell>{patient.gender}</TableCell>
               <TableCell>{patient.lastVisit}</TableCell>
               <TableCell>
-                <Badge
-                  variant="secondary"
-                  className={patient.status === "Active" ? "bg-secondary text-secondary-foreground" : ""}
-                >
-                  {patient.status}
-                </Badge>
+                {getPatientStatusBadge(patient.status)}
               </TableCell>
               <TableCell>{patient.studyCount} studies</TableCell>
               <TableCell className="text-right">

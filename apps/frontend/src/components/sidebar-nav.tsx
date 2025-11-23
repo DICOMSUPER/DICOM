@@ -55,8 +55,8 @@ export function SidebarNav() {
                     : "text-slate-600"
                 }`}
               >
-                <Icon className="w-4 h-4 mr-2" />
-                {item.label}
+                <Icon className="w-4 h-4 mr-2 shrink-0" />
+                <span className="truncate">{item.label}</span>
               </Button>
             </Link>
           );

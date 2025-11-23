@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { getSystemStatusBadge } from "@/utils/status-badge";
 
 interface SystemService {
   name: string;
@@ -59,16 +59,7 @@ export function AdminSystemStatus({
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'online':
-        return <Badge variant="secondary">Online</Badge>;
-      case 'warning':
-        return <Badge variant="outline">Warning</Badge>;
-      case 'offline':
-        return <Badge variant="destructive">Offline</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
+    return getSystemStatusBadge(status);
   };
 
   return (

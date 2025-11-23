@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { getRoomStatusBadge } from '@/utils/status-badge';
 import { useGetRoomsQuery, useDeleteRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { RoomTable } from '@/components/admin/room/RoomTable';
@@ -13,6 +13,7 @@ import { RoomFilters } from '@/components/admin/room/room-filters';
 import { RoomViewModal } from '@/components/admin/room/room-view-modal';
 import { RoomFormModal } from '@/components/admin/room/room-form-modal';
 import { RoomDeleteModal } from '@/components/admin/room/room-delete-modal';
+import { RoomServiceAssignmentModal } from '@/components/admin/room/room-service-assignment-modal';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
@@ -44,6 +45,7 @@ export default function Page() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
 
   const queryParams: QueryParams = useMemo(() => {
     const params: QueryParams = {
@@ -124,16 +126,7 @@ export default function Page() {
   }, [rooms]);
 
   const getStatusRoomBadge = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case RoomStatus.AVAILABLE:
-        return <Badge className="bg-green-100 text-green-800">Available</Badge>;
-      case RoomStatus.OCCUPIED:
-        return <Badge className="bg-red-100 text-red-800">Occupied</Badge>;
-      case RoomStatus.MAINTENANCE:
-        return <Badge className="bg-yellow-100 text-yellow-800">Maintenance</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    return getRoomStatusBadge(status);
   };
 
   const handleRefresh = async () => {
@@ -199,6 +192,15 @@ export default function Page() {
   };
 
   const handleFormSuccess = () => {
+    refetchRooms();
+  };
+
+  const handleAssignService = (room: Room) => {
+    setSelectedRoom(room);
+    setIsAssignmentModalOpen(true);
+  };
+
+  const handleAssignmentSuccess = () => {
     refetchRooms();
   };
 
@@ -281,6 +283,10 @@ export default function Page() {
           setIsViewModalOpen(false);
           handleEditRoom(room);
         }}
+        onAssignService={(room) => {
+          setIsViewModalOpen(false);
+          handleAssignService(room);
+        }}
       />
 
       <RoomFormModal
@@ -302,6 +308,16 @@ export default function Page() {
         }}
         onConfirm={confirmDeleteRoom}
         isDeleting={isDeletingRoom}
+      />
+
+      <RoomServiceAssignmentModal
+        room={selectedRoom}
+        isOpen={isAssignmentModalOpen}
+        onClose={() => {
+          setIsAssignmentModalOpen(false);
+          setSelectedRoom(null);
+        }}
+        onSuccess={handleAssignmentSuccess}
       />
     </div>
   );

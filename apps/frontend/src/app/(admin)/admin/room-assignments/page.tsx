@@ -24,12 +24,13 @@ import { ScheduleSidebar } from '@/components/schedule/ScheduleSidebar';
 import { Pagination } from '@/components/common/PaginationV1';
 import { ScheduleListFilters, ScheduleListFilters as FiltersType } from '@/components/schedule/ScheduleListFilters';
 
-import { RoomSchedule } from '@/interfaces/schedule/schedule.interface';
+import { RoomSchedule, RoomScheduleSearchFilters } from '@/interfaces/schedule/schedule.interface';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { AssignmentWithMeta } from '@/components/admin/room-assignments/types';
 import { User } from '@/interfaces/user/user.interface';
 import { Roles } from '@/enums/user.enum';
 import { extractApiData } from '@/utils/api';
+import { PaginationMeta } from '@/interfaces/pagination/pagination.interface';
 
 const getStatsFromSchedules = (schedules: RoomSchedule[], optimisticCount: number) => {
   const allAssignments = schedules.flatMap(
@@ -153,7 +154,7 @@ export default function RoomAssignmentsPage() {
   const rooms = roomsData?.data || [];
 
   const paginatedFilters = useMemo(() => {
-    const filters: any = {};
+    const filters: RoomScheduleSearchFilters = {};
     
     if (scheduleSearch) {
       filters.search = scheduleSearch;
@@ -207,13 +208,13 @@ export default function RoomAssignmentsPage() {
   const schedulesLoading = activeView === 'calendar' ? allSchedulesLoading : paginatedSchedulesLoading;
   const schedulesFetching = activeView === 'calendar' ? allSchedulesFetching : paginatedSchedulesFetching;
   const schedulesError = activeView === 'calendar' ? allSchedulesError : paginatedSchedulesError;
-  const paginationMeta = paginatedSchedulesData ? {
+  const paginationMeta: PaginationMeta | null = paginatedSchedulesData ? {
     total: paginatedSchedulesData.total,
     page: paginatedSchedulesData.page,
     limit: listLimit,
     totalPages: paginatedSchedulesData.totalPages,
-    hasNextPage: (paginatedSchedulesData as any).hasNextPage ?? (paginatedSchedulesData.page < paginatedSchedulesData.totalPages),
-    hasPreviousPage: (paginatedSchedulesData as any).hasPreviousPage ?? (paginatedSchedulesData.page > 1),
+    hasNextPage: paginatedSchedulesData.page < paginatedSchedulesData.totalPages,
+    hasPreviousPage: paginatedSchedulesData.page > 1,
   } : null;
 
   const schedules = schedulesData ?? [];
@@ -302,7 +303,11 @@ export default function RoomAssignmentsPage() {
           <div className="flex items-center gap-2">
             <Tabs
               value={activeView}
-              onValueChange={(value) => setActiveView(value as any)}
+              onValueChange={(value) => {
+                if (value === "list" || value === "calendar") {
+                  setActiveView(value);
+                }
+              }}
               className="w-auto"
             >
               <TabsList className="grid grid-cols-2">

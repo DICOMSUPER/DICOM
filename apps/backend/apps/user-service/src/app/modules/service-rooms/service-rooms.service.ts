@@ -76,17 +76,18 @@ export class ServiceRoomsService {
   const qb = this.serviceRoomRepository
     .createQueryBuilder('sr')
     .leftJoinAndSelect('sr.service', 'service')
-    .leftJoinAndSelect('sr.room', 'room');
+    .leftJoinAndSelect('sr.room', 'room')
+    .leftJoinAndSelect('room.department', 'department');
 
   // Apply filters
   if (serviceName) {
-    qb.andWhere('service.serviceName LIKE :serviceName', { 
+    qb.andWhere('service.serviceName ILIKE :serviceName', { 
       serviceName: `%${serviceName}%` 
     });
   }
 
 if (roomCode) {
-  qb.andWhere('room.roomCode LIKE :roomCode', { 
+  qb.andWhere('room.roomCode ILIKE :roomCode', { 
     roomCode: `%${roomCode}%`
   });
 }
@@ -123,16 +124,22 @@ if (roomCode) {
 }
 
 async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoom[]> {
-  const { roomId,roomCode, serviceName, isActive } = filter;
+  const { roomId, roomCode, serviceName, serviceId, isActive } = filter;
 
   const qb = this.serviceRoomRepository
     .createQueryBuilder('sr')
     .leftJoinAndSelect('sr.service', 'service')
-    .leftJoinAndSelect('sr.room', 'room');
+    .leftJoinAndSelect('sr.room', 'room')
+    .leftJoinAndSelect('room.department', 'department');
 
   // Apply filters
+  if (serviceId) {
+    qb.andWhere('service.id = :serviceId', { 
+      serviceId
+    });
+  }
   if (serviceName) {
-    qb.andWhere('service.serviceName LIKE :serviceName', { 
+    qb.andWhere('service.serviceName ILIKE :serviceName', { 
       serviceName: `%${serviceName}%` 
     });
   }
@@ -143,8 +150,8 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   }
 
   if (roomCode) {
-    qb.andWhere('room.roomCode LIKE :roomCode', { 
-      roomCode: `%${roomCode}%` 
+    qb.andWhere('room.roomCode ILIKE :roomCode', { 
+      roomCode: `%${roomCode}%`
     });
   }
 
@@ -161,7 +168,7 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   async findOne(id: string) {
     const serviceRoom = await this.serviceRoomRepository.findOne({
       where: { id },
-      relations: ['service', 'room'],
+      relations: ['service', 'room', 'room.department'],
     });
 
     if (!serviceRoom) {
@@ -174,14 +181,14 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   async findByService(serviceId: string) {
     return await this.serviceRoomRepository.find({
       where: { service: { id: serviceId } as any },
-      relations: ['service', 'room'],
+      relations: ['service', 'room', 'room.department'],
     });
   }
 
   async findByRoom(roomId: string) {
     return await this.serviceRoomRepository.find({
       where: { room: { id: roomId } as any },
-      relations: ['service', 'room'],
+      relations: ['service', 'room', 'room.department'],
     });
   }
 

@@ -92,7 +92,11 @@ export function RoomAssignmentCalendar({
     <div className="space-y-4">
       <Tabs
         value={viewMode}
-        onValueChange={(value) => onViewModeChange(value as any)}
+        onValueChange={(value) => {
+          if (value === "day" || value === "week" || value === "month" || value === "room") {
+            onViewModeChange(value);
+          }
+        }}
       >
         <TabsList className="grid grid-cols-4 w-full bg-muted">
           <TabsTrigger value="day">Day</TabsTrigger>
@@ -130,7 +134,7 @@ export function RoomAssignmentCalendar({
           <WeekView
             weekDays={weekDays}
             timeSlots={timeSlots}
-            schedules={schedules as any}
+            schedules={schedules}
             selectedDate={selectedDate}
             isLoading={isLoading}
             onScheduleClick={handleScheduleClick}
@@ -147,7 +151,7 @@ export function RoomAssignmentCalendar({
           </h2>
           <MonthView
             calendarDays={calendarDays}
-            schedules={schedules as any}
+            schedules={schedules}
             selectedDate={selectedDate}
             isLoading={isLoading}
             onScheduleClick={handleScheduleClick}

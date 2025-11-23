@@ -1,7 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
-import { CreateUserDto } from '@backend/shared-domain';
+import { CreateUserDto, UpdateUserDto } from '@backend/shared-domain';
 
 import {
   InvalidCredentialsException,
@@ -10,6 +10,7 @@ import {
   OtpVerificationFailedException,
   RegistrationFailedException,
   InvalidTokenException,
+  ValidationException,
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';
@@ -303,6 +304,135 @@ export class UsersController {
         error,
         `Failed to get user by userIds ${JSON.stringify(data.userIds)}`,
         'UsersController.getUserIdsByRole'
+      );
+    }
+  }
+
+  @MessagePattern('user.create-staff-account')
+  async createStaffAccount(
+    @Payload()
+    data: {
+      createUserDto: CreateUserDto;
+      createdBy?: string;
+    }
+  ) {
+    try {
+      this.logger.log(`Creating staff account for email: ${data.createUserDto.email}`);
+
+      const result = await this.usersService.createStaffAccount(
+        data.createUserDto,
+        data.createdBy
+      );
+
+      if (!result) {
+        throw new RegistrationFailedException('Failed to create staff account');
+      }
+
+      return {
+        user: result,
+        message: 'Tạo tài khoản nhân viên thành công',
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Create staff account error: ${(error as Error).message}`);
+      if (
+        error instanceof UserAlreadyExistsException ||
+        error instanceof RegistrationFailedException ||
+        error instanceof ValidationException
+      ) {
+        throw error;
+      }
+      handleErrorFromMicroservices(
+        error,
+        'Failed to create staff account',
+        'UsersController.createStaffAccount'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Users.Update')
+  async update(
+    @Payload()
+    data: {
+      id: string;
+      updateUserDto: UpdateUserDto;
+    }
+  ) {
+    try {
+      this.logger.log(`Updating user with id: ${data.id}`);
+
+      const result = await this.usersService.update(data.id, data.updateUserDto);
+
+      return {
+        user: result,
+        message: 'Cập nhật thông tin người dùng thành công',
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Update user error: ${(error as Error).message}`);
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException ||
+        error instanceof UserAlreadyExistsException
+      ) {
+        throw error;
+      }
+      handleErrorFromMicroservices(
+        error,
+        'Failed to update user',
+        'UsersController.update'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Users.Disable')
+  async disable(@Payload() data: { id: string }) {
+    try {
+      this.logger.log(`Disabling user with id: ${data.id}`);
+
+      const result = await this.usersService.disable(data.id);
+
+      return {
+        user: result,
+        message: 'Vô hiệu hóa người dùng thành công',
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Disable user error: ${(error as Error).message}`);
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException
+      ) {
+        throw error;
+      }
+      handleErrorFromMicroservices(
+        error,
+        'Failed to disable user',
+        'UsersController.disable'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Users.Enable')
+  async enable(@Payload() data: { id: string }) {
+    try {
+      this.logger.log(`Enabling user with id: ${data.id}`);
+
+      const result = await this.usersService.enable(data.id);
+
+      return {
+        user: result,
+        message: 'Kích hoạt người dùng thành công',
+      };
+    } catch (error: unknown) {
+      this.logger.error(`Enable user error: ${(error as Error).message}`);
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException
+      ) {
+        throw error;
+      }
+      handleErrorFromMicroservices(
+        error,
+        'Failed to enable user',
+        'UsersController.enable'
       );
     }
   }

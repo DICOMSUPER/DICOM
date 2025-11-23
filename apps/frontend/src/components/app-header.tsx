@@ -24,6 +24,7 @@ interface AppHeaderProps {
   notificationCount?: number;
   onNotificationClick?: () => void;
   onLogout?: () => void;
+  isLoggingOut?: boolean;
   onMenuClick?: () => void;
 }
 
@@ -31,11 +32,13 @@ export function AppHeader({
   notificationCount = 0,
   onNotificationClick,
   onLogout,
+  isLoggingOut: externalIsLoggingOut,
   onMenuClick
 }: AppHeaderProps) {
   const user = useSelector((state: RootState) => state.auth.user);
-  const { logout: defaultLogout } = useLogout();
+  const { logout: defaultLogout, isLoggingOut: internalIsLoggingOut } = useLogout();
   const logoutHandler = onLogout ?? defaultLogout;
+  const isLoggingOut = externalIsLoggingOut ?? internalIsLoggingOut;
 
   return (
     <header className="h-16 border-b border-border bg-card">
@@ -112,11 +115,16 @@ export function AppHeader({
                 <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem 
                   onClick={logoutHandler}
-                  className="group cursor-pointer text-red-600 focus:text-white focus:bg-red-600 p-3 rounded-md ease-in-out duration-200"
+                  disabled={isLoggingOut}
+                  className="group cursor-pointer text-red-600 focus:text-white focus:bg-red-600 p-3 rounded-md ease-in-out duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-medium">Logout</span>
-                    <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
+                    <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                    {isLoggingOut ? (
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
+                    )}
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -52,7 +52,7 @@ export function RoomAssignmentsTable({
           header: 'Room',
           cell: (assignment) => (
             <div className="text-foreground">
-              {((assignment.roomSchedule as any)?.room?.room_code as string | undefined) || '—'}
+              {assignment.roomSchedule?.room?.roomCode || '—'}
             </div>
           ),
         },
@@ -70,8 +70,7 @@ export function RoomAssignmentsTable({
           header: 'Shift',
           cell: (assignment) => (
             <div className="text-foreground">
-              {((assignment.roomSchedule as any)?.shift_template?.shift_name as string | undefined) ||
-                '—'}
+              {assignment.roomSchedule?.shift_template?.shift_name || '—'}
             </div>
           ),
         },

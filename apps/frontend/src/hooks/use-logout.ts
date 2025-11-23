@@ -20,13 +20,13 @@ export function useLogout() {
         method: "POST",
         credentials: "include",
       });
-    } catch (error) {
-      console.error("Failed to call logout endpoint", error);
-    } finally {
       dispatch(logoutAction());
       toast.success("Logged out successfully");
       router.push("/login");
+    } catch (error) {
+      console.error("Failed to call logout endpoint", error);
       setIsLoggingOut(false);
+      toast.error("Failed to logout. Please try again.");
     }
   }, [dispatch, router, isLoggingOut]);
 

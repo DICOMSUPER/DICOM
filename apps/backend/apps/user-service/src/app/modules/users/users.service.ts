@@ -510,6 +510,18 @@ export class UsersService {
     }
   }
 
+  async createStaffAccount(
+    createUserDto: CreateUserDto,
+    createdBy?: string
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    const staffAccountDto: CreateUserDto = {
+      ...createUserDto,
+      isVerified: createUserDto.isVerified !== undefined ? createUserDto.isVerified : true,
+      createdBy: createdBy || createUserDto.createdBy,
+    };
+    return this.register(staffAccountDto);
+  }
+
   async verifyToken(token: string): Promise<any> {
     try {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
@@ -572,8 +584,160 @@ export class UsersService {
     }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  /**
+   * Update user information
+   * @param id - User ID
+   * @param updateUserDto - Updated user data
+   * @returns Updated user without password hash
+   */
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
+    try {
+      if (!id) {
+        throw new ValidationException('User ID is required');
+      }
+
+      // Find existing user (check both active and inactive)
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['department'],
+      });
+
+      if (!user) {
+        throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
+      }
+
+      // Check email uniqueness if email is being updated
+      if (updateUserDto.email && updateUserDto.email !== user.email) {
+        const existingUserByEmail = await this.findByEmail(updateUserDto.email);
+        if (existingUserByEmail && existingUserByEmail.id !== id) {
+          throw new UserAlreadyExistsException('Email đã được sử dụng');
+        }
+      }
+
+      // Check username uniqueness if username is being updated
+      if (updateUserDto.username && updateUserDto.username !== user.username) {
+        const existingUserByUsername = await this.userRepository.findOne({
+          where: { username: updateUserDto.username },
+        });
+        if (existingUserByUsername && existingUserByUsername.id !== id) {
+          throw new UserAlreadyExistsException('Tên đăng nhập đã được sử dụng');
+        }
+      }
+
+      // Check employeeId uniqueness if employeeId is being updated
+      if (updateUserDto.employeeId && updateUserDto.employeeId !== user.employeeId) {
+        const existingUserByEmployeeId = await this.userRepository.findOne({
+          where: { employeeId: updateUserDto.employeeId },
+        });
+        if (existingUserByEmployeeId && existingUserByEmployeeId.id !== id) {
+          throw new UserAlreadyExistsException('Mã nhân viên đã được sử dụng');
+        }
+      }
+
+      // Hash password if password is being updated
+      if (updateUserDto.password) {
+        updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      }
+
+      // Update user fields
+      Object.keys(updateUserDto).forEach((key) => {
+        if (key === 'password') {
+          user.passwordHash = (updateUserDto as any).password;
+        } else if (updateUserDto[key as keyof UpdateUserDto] !== undefined) {
+          (user as any)[key] = updateUserDto[key as keyof UpdateUserDto];
+        }
+      });
+
+      const updatedUser = await this.userRepository.save(user);
+      const { passwordHash, ...userWithoutPassword } = updatedUser;
+      return userWithoutPassword;
+    } catch (error: any) {
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException ||
+        error instanceof UserAlreadyExistsException
+      ) {
+        throw error;
+      }
+      if (error?.code === '23505' || error?.message?.includes('duplicate')) {
+        throw new UserAlreadyExistsException('Thông tin đã được sử dụng');
+      }
+      throw new DatabaseException('Lỗi khi cập nhật người dùng');
+    }
+  }
+
+  /**
+   * Disable user (soft delete by setting isActive to false)
+   * @param id - User ID
+   * @returns Updated user without password hash
+   */
+  async disable(id: string): Promise<Omit<User, 'passwordHash'>> {
+    try {
+      if (!id) {
+        throw new ValidationException('User ID is required');
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['department'],
+      });
+
+      if (!user) {
+        throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
+      }
+
+      // Set isActive to false instead of deleting
+      user.isActive = false;
+
+      const updatedUser = await this.userRepository.save(user);
+      const { passwordHash, ...userWithoutPassword } = updatedUser;
+      return userWithoutPassword;
+    } catch (error: any) {
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException
+      ) {
+        throw error;
+      }
+      throw new DatabaseException('Lỗi khi vô hiệu hóa người dùng');
+    }
+  }
+
+  /**
+   * Enable user (set isActive to true)
+   * @param id - User ID
+   * @returns Updated user without password hash
+   */
+  async enable(id: string): Promise<Omit<User, 'passwordHash'>> {
+    try {
+      if (!id) {
+        throw new ValidationException('User ID is required');
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['department'],
+      });
+
+      if (!user) {
+        throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
+      }
+
+      // Set isActive to true
+      user.isActive = true;
+
+      const updatedUser = await this.userRepository.save(user);
+      const { passwordHash, ...userWithoutPassword } = updatedUser;
+      return userWithoutPassword;
+    } catch (error: any) {
+      if (
+        error instanceof ValidationException ||
+        error instanceof UserNotFoundException
+      ) {
+        throw error;
+      }
+      throw new DatabaseException('Lỗi khi kích hoạt người dùng');
+    }
   }
 
   remove(id: number) {

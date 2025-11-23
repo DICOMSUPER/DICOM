@@ -18,7 +18,8 @@ import {
   UserCheck,
   Users,
   Building,
-  FolderTree
+  FolderTree,
+  Link2
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -100,6 +101,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Rooms Management",
       icon: Building2,
       description: "Manage clinic rooms and resources",
+    },
+    {
+      href: "/admin/room-services",
+      label: "Room Service Management",
+      icon: Link2,
+      description: "Manage room service assignments",
     },
     {
       href: "/admin/departments",

@@ -122,9 +122,10 @@ export default function ServicePage() {
       toast.success("Service deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedServiceId("");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to delete service:", error);
-      toast.error(error?.data?.message || "Failed to delete service");
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || "Failed to delete service");
     }
   };
 
@@ -146,9 +147,10 @@ export default function ServicePage() {
       setFormModalOpen(false);
       setSelectedServiceId("");
       setEditMode(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to save service:", error);
-      toast.error(error?.data?.message || "Failed to save service");
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || "Failed to save service");
     }
   };
 

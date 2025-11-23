@@ -37,9 +37,10 @@ interface RoomViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (room: Room) => void;
+  onAssignService?: (room: Room) => void;
 }
 
-export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalProps) {
+export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }: RoomViewModalProps) {
   if (!room) return null;
 
   const roomId = room.id ?? '';
@@ -171,22 +172,24 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </div>
                   <div>
                     <p className="text-3xl font-semibold text-foreground leading-tight">
-                      {room.roomType}
+                      {room.roomType || 'N/A'}
                     </p>
                     <div className="mt-3 grid gap-2 text-sm text-foreground">
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        Floor {room.floor} • {room.department?.departmentName || 'No Department'}
+                        {room.floor !== undefined ? `Floor ${room.floor}` : 'Floor N/A'} • {room.department?.departmentName || 'No Department'}
                       </p>
-                      <p className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Capacity: {room.capacity} people
-                        {room.roomStats?.currentInProgress !== undefined && (
-                          <span className="text-xs text-foreground ml-2">
-                            ({room.roomStats.currentInProgress} currently assigned)
-                          </span>
-                        )}
-                      </p>
+                      {room.capacity !== undefined && (
+                        <p className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Capacity: {room.capacity} people
+                          {room.roomStats?.currentInProgress !== undefined && (
+                            <span className="text-xs text-foreground ml-2">
+                              ({room.roomStats.currentInProgress} currently assigned)
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -194,12 +197,14 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   <Badge className={`${getStatusColor(room.status)} px-4 py-1 text-xs font-semibold shadow-sm`}>
                     {getStatusLabel(room.status)}
                   </Badge>
-                  {room.pricePerDay && (
+                  {room.pricePerDay !== undefined && room.pricePerDay !== null && (
                     <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
                       <p className="uppercase text-xs tracking-wide">Price per Day</p>
                       <p className="text-base font-semibold text-foreground flex items-center gap-1 justify-end">
                         <DollarSign className="h-4 w-4" />
-                        {Number(room.pricePerDay).toLocaleString()} ₫
+                        {typeof room.pricePerDay === 'number' 
+                          ? room.pricePerDay.toLocaleString() 
+                          : Number(room.pricePerDay).toLocaleString()} ₫
                       </p>
                     </div>
                   )}
@@ -213,7 +218,7 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-foreground">Room Type</p>
-                    <p className="text-lg font-semibold text-foreground">{room.roomType}</p>
+                    <p className="text-lg font-semibold text-foreground">{room.roomType || 'N/A'}</p>
                     <p className="text-xs text-foreground">Category</p>
                   </div>
                 </div>
@@ -506,6 +511,11 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
+          {onAssignService && (
+            <Button variant="default" onClick={() => onAssignService(room)}>
+              Assign Service
+            </Button>
+          )}
           {onEdit && (
             <Button variant="default" onClick={() => onEdit(room)}>
               Edit Room

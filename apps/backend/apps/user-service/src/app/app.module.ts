@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { QualificationsModule } from './modules/qualifications/qualifications.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.module';
@@ -24,6 +25,7 @@ import { ServicesModule } from './modules/services/services.module';
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
     }),
+    NestScheduleModule.forRoot(),
     DatabaseModule.forService({
       prefix: 'USER',
       defaultDbName: 'dicom_user_service',

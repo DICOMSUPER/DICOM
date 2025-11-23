@@ -31,7 +31,7 @@ export function WorkspaceLayout({
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const breadcrumbItems = useBreadcrumb();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { logout: triggerLogout } = useLogout();
+  const { logout: triggerLogout, isLoggingOut } = useLogout();
 
   const handleLogout = () => {
     triggerLogout();
@@ -116,9 +116,14 @@ export function WorkspaceLayout({
                 variant="ghost"
                 className="group w-full justify-between text-red-600 hover:text-white! hover:bg-red-600! ease-in-out duration-200"
                 onClick={handleLogout}
+                disabled={isLoggingOut}
               >
-                <span className="font-medium">Logout</span>
-                <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
+                <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                {isLoggingOut ? (
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4 text-red-600 group-hover:text-white ease-in-out duration-200" />
+                )}
               </Button>
             </div>
           </div>

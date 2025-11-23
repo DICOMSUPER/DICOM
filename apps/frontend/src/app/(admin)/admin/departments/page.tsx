@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { getBooleanStatusBadge } from '@/utils/status-badge';
 import { useGetDepartmentsQuery, useDeleteDepartmentMutation } from '@/store/departmentApi';
 import { DepartmentTable } from '@/components/admin/room/DepartmentTable';
 import { DepartmentStatsCards } from '@/components/admin/room/department-stats-cards';
@@ -97,13 +97,9 @@ export default function Page() {
     return { total, active, inactive, totalRooms };
   }, [departments, departmentsData?.total]);
 
-  const getStatusDepartmentBadge = (isActive: boolean) => (
-    isActive ? (
-      <Badge className="bg-green-100 text-green-800">Active</Badge>
-    ) : (
-      <Badge className="bg-red-100 text-red-800">Inactive</Badge>
-    )
-  );
+  const getStatusDepartmentBadge = (isActive: boolean) => {
+    return getBooleanStatusBadge(isActive);
+  };
 
   const handleRefresh = async () => {
     await refetchDepartments();

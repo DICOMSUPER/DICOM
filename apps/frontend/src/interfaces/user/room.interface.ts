@@ -6,12 +6,13 @@ import { ServiceRoom } from "./service-room.interface";
 export interface Room {
   id: string;
   roomCode: string;
-  roomType: RoomType;
-  floor: number;
-  capacity: number;
-  pricePerDay: string;
+  roomType?: RoomType;
+  floor?: number;
+  capacity?: number;
+  pricePerDay?: number | string;
   status: RoomStatus;
-  description: string;
+  departmentId: string;
+  description?: string;
   hasTV: boolean;
   hasAirConditioning: boolean;
   hasWiFi: boolean;
@@ -20,11 +21,11 @@ export interface Room {
   isWheelchairAccessible: boolean;
   hasOxygenSupply: boolean;
   hasNurseCallButton: boolean;
-  notes: string;
+  notes?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  department: Department;
+  department?: Department;
   roomStats?: {
     currentInProgress?: number;
     maxWaiting?: number;

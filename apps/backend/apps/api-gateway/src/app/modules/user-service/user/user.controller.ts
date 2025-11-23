@@ -27,7 +27,7 @@ import { Role } from '@backend/shared-decorators';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { AuthGuard } from '@backend/shared-guards';
 // removed unused import
-import { RoomSchedule, User } from '@backend/shared-domain';
+import { RoomSchedule, User, CreateUserDto } from '@backend/shared-domain';
 class LoginDto {
   email!: string;
   password!: string;
@@ -331,6 +331,58 @@ export class UserController {
       };
     } catch (error) {
       this.logger.error('❌ Failed to fetch users', error);
+      throw handleError(error);
+    }
+  }
+
+  @Post('users')
+  @UseGuards(AuthGuard)
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Create user account (System Admin only)' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User account created successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Only system admin can create user accounts',
+  })
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    try {
+      const userId = req['userInfo'].userId;
+
+      this.logger.log(
+        `👤 Creating user account for email: ${createUserDto.email} by user: ${userId}`
+      );
+
+      const result = await firstValueFrom(
+        this.userClient.send('user.create-staff-account', {
+          createUserDto,
+          createdBy: userId,
+        })
+      );
+
+      if (!result) {
+        throw new Error('Failed to create user account');
+      }
+
+      this.logger.log(
+        `✅ User account created successfully for email: ${createUserDto.email}`
+      );
+
+      return {
+        user: result.user,
+        message: result.message || 'Tạo tài khoản người dùng thành công',
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to create user account for email: ${createUserDto.email}`,
+        error
+      );
       throw handleError(error);
     }
   }

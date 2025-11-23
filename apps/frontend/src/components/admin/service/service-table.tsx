@@ -3,8 +3,8 @@
 import Pagination, {
   type PaginationMeta,
 } from "@/components/common/PaginationV1";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getBooleanStatusBadge } from "@/utils/status-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,11 +67,7 @@ export function ServiceTable({
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const getStatusBadge = (isActive: boolean) => {
-    if (isActive) {
-      return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-    } else {
-      return <Badge className="bg-red-100 text-red-800">Inactive</Badge>;
-    }
+    return getBooleanStatusBadge(isActive);
   };
   const columns = [
     columnHelper.accessor("serviceCode", {

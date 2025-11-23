@@ -150,6 +150,45 @@ export class RoomScheduleService {
     try {
       const schedule = await this.findOne(id);
 
+      // Determine the values after update
+      const finalEndTime = updateDto.actual_end_time !== undefined 
+        ? updateDto.actual_end_time 
+        : schedule.actual_end_time;
+      
+      const finalStartTime = updateDto.actual_start_time !== undefined
+        ? updateDto.actual_start_time
+        : schedule.actual_start_time;
+
+      const finalWorkDate = updateDto.work_date || schedule.work_date;
+
+      // Check if schedule should be automatically marked as completed
+      // A schedule is considered "done" when:
+      // 1. Both actual_start_time and actual_end_time are set
+      // 2. The work_date is today or in the past
+      if (finalStartTime && finalEndTime && finalWorkDate) {
+        const workDate = new Date(finalWorkDate);
+        workDate.setHours(0, 0, 0, 0);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // If work date is today or in the past, and both times are set, mark as completed
+        if (workDate <= today) {
+          // Only auto-complete if:
+          // - Status is not explicitly being set to something else in the update
+          // - Current status is not CANCELLED or NO_SHOW
+          // - Status is not already COMPLETED (to avoid unnecessary updates)
+          const explicitStatusUpdate = updateDto.schedule_status !== undefined;
+          const isCancelledOrNoShow = schedule.schedule_status === ScheduleStatus.CANCELLED || 
+                                      schedule.schedule_status === ScheduleStatus.NO_SHOW;
+          const isAlreadyCompleted = schedule.schedule_status === ScheduleStatus.COMPLETED;
+          
+          if (!explicitStatusUpdate && !isCancelledOrNoShow && !isAlreadyCompleted) {
+            updateDto.schedule_status = ScheduleStatus.COMPLETED;
+          }
+        }
+      }
+
       Object.assign(schedule, updateDto);
       return await this.RoomScheduleRepository.save(schedule);
     } catch (error) {
@@ -342,6 +381,37 @@ export class RoomScheduleService {
 
       for (const update of updates) {
         const schedule = await this.findOne(update.id);
+        
+        // Apply the same auto-completion logic as in the update method
+        const finalEndTime = update.data.actual_end_time !== undefined 
+          ? update.data.actual_end_time 
+          : schedule.actual_end_time;
+        
+        const finalStartTime = update.data.actual_start_time !== undefined
+          ? update.data.actual_start_time
+          : schedule.actual_start_time;
+
+        const finalWorkDate = update.data.work_date || schedule.work_date;
+
+        if (finalStartTime && finalEndTime && finalWorkDate) {
+          const workDate = new Date(finalWorkDate);
+          workDate.setHours(0, 0, 0, 0);
+          
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (workDate <= today) {
+            const explicitStatusUpdate = update.data.schedule_status !== undefined;
+            const isCancelledOrNoShow = schedule.schedule_status === ScheduleStatus.CANCELLED || 
+                                        schedule.schedule_status === ScheduleStatus.NO_SHOW;
+            const isAlreadyCompleted = schedule.schedule_status === ScheduleStatus.COMPLETED;
+            
+            if (!explicitStatusUpdate && !isCancelledOrNoShow && !isAlreadyCompleted) {
+              update.data.schedule_status = ScheduleStatus.COMPLETED;
+            }
+          }
+        }
+        
         Object.assign(schedule, update.data);
         const saved = await this.RoomScheduleRepository.save(schedule);
         updatedSchedules.push(saved);
@@ -511,6 +581,82 @@ export class RoomScheduleService {
       );
     } catch (error) {
       throw new BadRequestException('Failed to fetch overlapping schedules');
+    }
+  }
+
+  /**
+   * Automatically mark schedules as COMPLETED when they are done
+   * A schedule is considered done when:
+   * 1. The work_date is in the past, OR
+   * 2. The work_date is today and the actual_end_time has passed
+   * 3. Both actual_start_time and actual_end_time are set
+   * 4. Status is SCHEDULED or CONFIRMED (not already COMPLETED, CANCELLED, or NO_SHOW)
+   */
+  async autoMarkCompletedSchedules(): Promise<{
+    updatedCount: number;
+    schedules: RoomSchedule[];
+  }> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
+      const now = new Date();
+      const currentTime = now.toTimeString().substring(0, 8); // HH:MM:SS format
+
+      // Use repository's findWithFilters to efficiently query only schedules that could be completed
+      // Get SCHEDULED schedules with work_date <= today
+      const scheduledSchedules = await this.RoomScheduleRepository.findWithFilters({
+        workDateTo: todayStr,
+        scheduleStatus: ScheduleStatus.SCHEDULED,
+      });
+
+      // Get CONFIRMED schedules
+      const confirmedSchedules = await this.RoomScheduleRepository.findWithFilters({
+        workDateTo: todayStr,
+        scheduleStatus: ScheduleStatus.CONFIRMED,
+      });
+
+      // Combine and filter to only those that should be completed
+      const candidateSchedules = [
+        ...scheduledSchedules.filter(s => s.actual_start_time && s.actual_end_time),
+        ...confirmedSchedules.filter(s => s.actual_start_time && s.actual_end_time),
+      ];
+      
+      const schedulesToComplete = candidateSchedules.filter((schedule) => {
+        // Work date must be today or in the past (already filtered by workDateTo)
+        const workDate = new Date(schedule.work_date);
+        workDate.setHours(0, 0, 0, 0);
+        
+        // If work date is today, check if end time has passed
+        if (schedule.work_date === todayStr) {
+          if (!schedule.actual_end_time) return false;
+          const endTime = schedule.actual_end_time.substring(0, 8); // HH:MM:SS
+          return endTime <= currentTime;
+        }
+
+        // If work date is in the past, it should be completed
+        return workDate < today;
+      });
+
+      const completedSchedules: RoomSchedule[] = [];
+      let updatedCount = 0;
+
+      // Mark each schedule as completed
+      for (const schedule of schedulesToComplete) {
+        schedule.schedule_status = ScheduleStatus.COMPLETED;
+        const saved = await this.RoomScheduleRepository.save(schedule);
+        completedSchedules.push(saved);
+        updatedCount++;
+      }
+
+      return {
+        updatedCount,
+        schedules: completedSchedules,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        'Failed to auto-mark completed schedules'
+      );
     }
   }
 }

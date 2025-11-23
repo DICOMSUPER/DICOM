@@ -74,7 +74,9 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         department: room.department?.id || '',
         floor: room.floor?.toString() || '',
         capacity: room.capacity?.toString() || '',
-        pricePerDay: room.pricePerDay || '',
+        pricePerDay: room.pricePerDay !== undefined && room.pricePerDay !== null 
+          ? (typeof room.pricePerDay === 'number' ? room.pricePerDay.toString() : String(room.pricePerDay))
+          : '',
         status: room.status || RoomStatus.AVAILABLE,
         description: room.description || '',
         notes: room.notes || '',
@@ -142,7 +144,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         department: formData.department,
         floor: Number(formData.floor),
         capacity: Number(formData.capacity),
-        pricePerDay: formData.pricePerDay || '0',
+        pricePerDay: formData.pricePerDay ? Number(formData.pricePerDay) : undefined,
         status: formData.status,
         description: formData.description,
         notes: formData.notes,

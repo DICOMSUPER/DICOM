@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
+import { RoomSchedule } from '@/interfaces/schedule/schedule.interface';
+import { User } from '@/interfaces/user/user.interface';
 
 export type RoomAssignmentFormState = {
   roomScheduleId: string;
@@ -32,8 +34,8 @@ interface RoomAssignmentDialogProps {
   formData: RoomAssignmentFormState;
   onChange: (data: RoomAssignmentFormState) => void;
   onSubmit: () => void;
-  schedules: any[];
-  users: any[];
+  schedules: RoomSchedule[];
+  users: User[];
   isSubmitting: boolean;
 }
 
@@ -79,48 +81,26 @@ export function RoomAssignmentDialog({
                 <SelectValue placeholder="Select room schedule" />
               </SelectTrigger>
               <SelectContent>
-                {scheduleOptions.map((schedule: any) => {
-                  const roomCode =
-                    ((schedule?.room as any)?.room_code as string | undefined) ||
-                    'Room';
-                  const shiftName =
-                    ((schedule?.shift_template as any)?.shift_name as
-                      | string
-                      | undefined) ?? '';
-                  return (
-                    <SelectItem
-                      key={schedule.schedule_id}
-                      value={schedule.schedule_id}
-                    >
-                      {roomCode} -{' '}
-                      {schedule.work_date
-                        ? format(new Date(schedule.work_date), 'MM/dd/yyyy')
-                        : 'N/A'}
-                      {shiftName ? ` (${shiftName})` : ''}
-                    </SelectItem>
-                  );
-                })}
-                {scheduleOptions.map((schedule: any) => {
-                  const roomCode =
-                    ((schedule?.room as any)?.room_code as string | undefined) ||
-                    'Room';
-                  const shiftName =
-                    ((schedule?.shift_template as any)?.shift_name as
-                      | string
-                      | undefined) ?? '';
-                  return (
-                    <SelectItem
-                      key={schedule.schedule_id}
-                      value={schedule.schedule_id}
-                    >
-                      {roomCode} -{' '}
-                      {schedule.work_date
-                        ? format(new Date(schedule.work_date), 'MM/dd/yyyy')
-                        : 'N/A'}
-                      {shiftName ? ` (${shiftName})` : ''}
-                    </SelectItem>
-                  );
-                })}
+                {scheduleOptions.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500">No schedules available</div>
+                ) : (
+                  scheduleOptions.map((schedule) => {
+                    const roomCode = schedule.room?.roomCode || 'Room';
+                    const shiftName = schedule.shift_template?.shift_name || '';
+                    return (
+                      <SelectItem
+                        key={schedule.schedule_id}
+                        value={schedule.schedule_id}
+                      >
+                        {roomCode} -{' '}
+                        {schedule.work_date
+                          ? format(new Date(schedule.work_date), 'MM/dd/yyyy')
+                          : 'N/A'}
+                        {shiftName ? ` (${shiftName})` : ''}
+                      </SelectItem>
+                    );
+                  })
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -139,11 +119,15 @@ export function RoomAssignmentDialog({
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
               <SelectContent>
-                {userOptions.map((user: any) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.firstName} {user.lastName} ({user.email})
-                  </SelectItem>
-                ))}
+                {userOptions.length === 0 ? (
+                  <div className="p-2 text-sm text-gray-500">No employees available</div>
+                ) : (
+                  userOptions.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName} {user.email ? `(${user.email})` : ''}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

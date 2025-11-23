@@ -99,6 +99,7 @@ export interface ViewerState {
   layout: GridLayout;
   activeViewport: number;
   isToolActive: boolean;
+  showAnnotations: boolean;
   viewportSeries: Map<number, DicomSeries>;
   viewportTransforms: Map<number, ViewportTransform>;
   viewportIds: Map<number, string>;
@@ -131,6 +132,7 @@ export interface ViewerContextType {
   invertViewport: () => void;
   clearAnnotations: () => void;
   clearViewportAnnotations: () => void;
+  toggleAnnotations: () => void;
   undoAnnotation: () => void;
   redoAnnotation: () => void;
   recordAnnotationHistoryEntry: (viewport: number, entry: AnnotationHistoryEntry) => void;
@@ -188,6 +190,7 @@ const defaultState: ViewerState = {
   layout: '1x1',
   activeViewport: 0,
   isToolActive: false,
+  showAnnotations: true,
   viewportSeries: new Map(),
   viewportTransforms: new Map(),
   viewportIds: new Map(),
@@ -216,7 +219,8 @@ type ViewerAction =
       transform: ViewportTransform;
       recordHistory?: boolean;
     }
-  | { type: 'SET_TOOL_ACTIVE'; isActive: boolean };
+  | { type: 'SET_TOOL_ACTIVE'; isActive: boolean }
+  | { type: 'TOGGLE_ANNOTATIONS' };
 
 const shallowEqualRuntime = (a: ViewportRuntimeState, b: ViewportRuntimeState) => {
   if (a === b) {
@@ -284,6 +288,12 @@ const viewerReducer = (state: ViewerState, action: ViewerAction): ViewerState =>
       return {
         ...state,
         isToolActive: action.isActive,
+      };
+    }
+    case 'TOGGLE_ANNOTATIONS': {
+      return {
+        ...state,
+        showAnnotations: !state.showAnnotations,
       };
     }
     case 'SET_LAYOUT': {
@@ -1686,6 +1696,19 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     [getViewportId]
   );
 
+  const toggleAnnotations = useCallback(() => {
+    dispatch({ type: 'TOGGLE_ANNOTATIONS' });
+    
+    // Dispatch event to all viewports to toggle annotation visibility
+    window.dispatchEvent(
+      new CustomEvent('toggleAnnotations', {
+        detail: { showAnnotations: !state.showAnnotations },
+      })
+    );
+    
+    console.log('👁️ Toggled annotation visibility:', !state.showAnnotations);
+  }, [state.showAnnotations]);
+
   const value: ViewerContextType = {
     state,
     setActiveTool,
@@ -1697,6 +1720,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     invertViewport,
     clearAnnotations,
     clearViewportAnnotations,
+    toggleAnnotations,
     undoAnnotation,
     redoAnnotation,
     recordAnnotationHistoryEntry,

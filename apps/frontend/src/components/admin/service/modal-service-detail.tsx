@@ -6,10 +6,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetServiceByIdQuery } from "@/store/serviceApi";
 import { formatDate } from "@/lib/formatTimeDate";
+import { getBooleanStatusBadge } from "@/utils/status-badge";
 
 interface ModalServiceDetailProps {
   open: boolean;
@@ -50,11 +50,7 @@ export function ModalServiceDetail({
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Status</p>
-                {service.isActive ? (
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                ) : (
-                  <Badge className="bg-red-100 text-red-800">Inactive</Badge>
-                )}
+                {getBooleanStatusBadge(service.isActive)}
               </div>
             </div>
 

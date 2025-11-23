@@ -19,10 +19,14 @@ import {
 } from '@backend/shared-interceptor';
 import { CreateServiceDto, UpdateServiceDto } from '@backend/shared-domain';
 import { Public } from '@backend/shared-decorators';
+import { handleError } from '@backend/shared-utils';
+import { Logger } from '@nestjs/common';
 
 @Controller('services')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ServicesController {
+  private readonly logger = new Logger(ServicesController.name);
+
   constructor(
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy
@@ -105,10 +109,18 @@ export class ServicesController {
   @Delete(':id')
   @Public()
   async deleteService(@Param('id') id: string) {
-    return await firstValueFrom(
-      this.userService.send('UserService.Services.Delete', {
-        id,
-      })
-    );
+    try {
+      this.logger.log(`🗑️ Deleting service: ${id}`);
+      const result = await firstValueFrom(
+        this.userService.send('UserService.Services.Delete', {
+          id,
+        })
+      );
+      this.logger.log(`✅ Service deleted successfully: ${id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to delete service: ${id}`, error);
+      throw handleError(error);
+    }
   }
 }
