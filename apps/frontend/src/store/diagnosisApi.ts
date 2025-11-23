@@ -57,7 +57,7 @@ export const diagnosisApi = createApi({
       ],
     }),
 
-    getDiagnoseByStudyId: builder.query<DiagnosisReport[], string>({
+    getDiagnoseByStudyId: builder.query<ApiResponse<DiagnosisReport[]>, string>({
       query: (studyId) => ({
         url: `/studyId/${studyId}`,
         method: "GET",

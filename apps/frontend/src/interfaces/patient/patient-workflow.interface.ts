@@ -446,3 +446,14 @@ export interface EncounterStatsInDateRange {
   totalCompletedEncounters: number;
   totalArrivedEncounters: number;
 }
+
+
+export interface DicomStudyStatsInDateRange {
+  totalDicomStudies: number;
+  totalScannedStudies: number;
+  totalPendingApprovalStudies: number;
+  totalApprovedStudies: number;
+  totalTechnicianVerifiedStudies: number;
+  totalResultPrintedStudies: number;
+}
+

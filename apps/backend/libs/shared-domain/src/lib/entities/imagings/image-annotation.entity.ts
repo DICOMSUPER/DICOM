@@ -27,7 +27,7 @@ export class ImageAnnotation extends BaseEntity {
   @Column({ name: 'annotation_type', type: 'enum', enum: AnnotationType })
   annotationType!: AnnotationType;
 
-  @Column({ name: 'annotation_data', type: 'json' })
+  @Column({ name: 'annotation_data', type: 'json', nullable:true })
   annotationData!: AnnotationData;
 
   @Column({ name: 'coordinates', type: 'json', nullable: true })

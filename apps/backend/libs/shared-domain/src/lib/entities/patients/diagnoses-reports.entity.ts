@@ -56,7 +56,7 @@ export class DiagnosesReport extends BaseEntity {
   @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
   severity!: Severity;
 
-  @Column({ name: 'diagnosis_date', type: 'date' })
+  @Column({ name: 'diagnosis_date', type: 'date', nullable: true })
   diagnosisDate!: Date;
 
   @Column({ name: 'diagnosed_by', type: 'uuid' })

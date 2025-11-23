@@ -26,6 +26,10 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     super(DicomStudy, entityManager);
   }
 
+  createQueryBuilder(alias: string, entityManager?: EntityManager) {
+    return this.getRepository(entityManager).createQueryBuilder(alias);
+  }
+
   async findDicomStudiesByReferenceId(
     id: string,
     type: findDicomStudyByReferenceIdType,
@@ -201,7 +205,6 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
         studyStatus: data.studyStatus,
       });
 
-    //radiologist can only see technician verified status study
     if (data.role && data.role === Roles.RADIOLOGIST) {
       qb.andWhere('study.studyStatus <> :status', {
         status: DicomStudyStatus.SCANNED,
@@ -209,5 +212,97 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     }
 
     return await qb.getMany();
+  }
+
+  async getStatsInDateRange(
+    dateFrom?: string,
+    dateTo?: string,
+    roomId?: string,
+    userInfo?: { userId: string; role: string }
+  ): Promise<any> {
+    const queryBuilder = this.getRepository()
+      .createQueryBuilder('study')
+      .select('COUNT(*)', 'totalStudies')
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :scannedStatus THEN 1 END)`,
+        'totalScannedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :pendingApprovalStatus THEN 1 END)`,
+        'totalPendingApprovalStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :approvedStatus THEN 1 END)`,
+        'totalApprovedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :technicianVerifiedStatus THEN 1 END)`,
+        'totalTechnicianVerifiedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :resultPrintedStatus THEN 1 END)`,
+        'totalResultPrintedStudies'
+      )
+      .leftJoin('study.imagingOrder', 'order')
+      .leftJoin('order.imagingOrderForm', 'imagingOrderForm')
+      .where('study.is_deleted = :isDeleted', { isDeleted: false })
+      .setParameter('scannedStatus', DicomStudyStatus.SCANNED)
+      .setParameter('pendingApprovalStatus', DicomStudyStatus.PENDING_APPROVAL)
+      .setParameter('approvedStatus', DicomStudyStatus.APPROVED)
+      .setParameter(
+        'technicianVerifiedStatus',
+        DicomStudyStatus.TECHNICIAN_VERIFIED
+      )
+      .setParameter('resultPrintedStatus', DicomStudyStatus.RESULT_PRINTED);
+
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom + 'T00:00:00');
+      const endDate = new Date(dateTo + 'T23:59:59.999');
+      queryBuilder
+        .andWhere('study.studyDate >= :dateFrom', { dateFrom: startDate })
+        .andWhere('study.studyDate <= :dateTo', { dateTo: endDate });
+    } else if (dateFrom && !dateTo) {
+      const startDate = new Date(dateFrom + 'T00:00:00');
+      queryBuilder.andWhere('study.studyDate >= :dateFrom', {
+        dateFrom: startDate,
+      });
+    } else if (!dateFrom && dateTo) {
+      const endDate = new Date(dateTo + 'T23:59:59.999');
+      queryBuilder.andWhere('study.studyDate <= :dateTo', { dateTo: endDate });
+    }
+    if (roomId) {
+      queryBuilder.andWhere('imagingOrderForm.roomId = :roomId', {
+        roomId,
+      });
+    }
+
+    if (userInfo && userInfo.role === Roles.PHYSICIAN) {
+      queryBuilder.andWhere('imagingOrderForm.orderingPhysicianId = :userId', {
+        userId: userInfo.userId,
+      });
+    }
+
+    console.log('🔍 SQL:', queryBuilder.getSql());
+    console.log('🔍 Params:', queryBuilder.getParameters());
+
+    const result = await queryBuilder.getRawOne();
+
+    return {
+      totalDicomStudies: parseInt(result?.totalStudies || '0', 10),
+      totalScannedStudies: parseInt(result?.totalScannedStudies || '0', 10),
+      totalPendingApprovalStudies: parseInt(
+        result?.totalPendingApprovalStudies || '0',
+        10
+      ),
+      totalApprovedStudies: parseInt(result?.totalApprovedStudies || '0', 10),
+      totalTechnicianVerifiedStudies: parseInt(
+        result?.totalTechnicianVerifiedStudies || '0',
+        10
+      ),
+      totalResultPrintedStudies: parseInt(
+        result?.totalResultPrintedStudies || '0',
+        10
+      ),
+    };
   }
 }

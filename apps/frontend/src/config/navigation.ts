@@ -184,21 +184,21 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physician/diagnosis-report",
-      label: "Diagnosis Reports",
+      label: "Reports Management",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },
     {
+      href: "/physician/patient-study",
+      label: "Reports",
+      icon: Settings,
+      description: "View Your Patient Studies",
+    },
+        {
       href: "/physician/schedule",
       label: "Schedule",
       icon: Clock,
       description: "View your clinical schedule",
-    },
-    {
-      href: "/physician/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Personal settings",
     },
   ],
 

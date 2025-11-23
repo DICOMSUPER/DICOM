@@ -993,7 +993,7 @@ export function ModalDiagnosisReportDetail({
               )}
 
               {/* Display existing description when not in edit mode */}
-              {!isEditDescriptionOpen && report.data.description && (
+              { report.data.description && (
                 <div className="bg-white border border-slate-200/60 rounded-xl p-6">
                   <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
                     <FileText className="w-4 h-4 text-teal-600" />

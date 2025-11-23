@@ -69,3 +69,12 @@ export default interface DicomStudyReferenceQuery
   id: string;
   type: string;
 }
+
+export interface DicomStudyFilters {
+  status?: DicomStudyStatus | "all";
+  patientName?: string;
+  modalityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  orderId?: string;
+}

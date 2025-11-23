@@ -40,8 +40,10 @@ export class DiagnosisReportsController {
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   @Post()
   async createDiagnoseReport(
-    @Body() createDiagnosesReportDto: CreateDiagnosesReportDto
+    @Body() createDiagnosesReportDto: any
   ) {
+    console.log("diagnosis report", createDiagnosesReportDto);
+    
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Create', {
@@ -141,6 +143,29 @@ export class DiagnosisReportsController {
     );
   }
 
+    @Get('studyId/:studyId')
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN,
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN
+  )
+  async getDiagnosisReportByStudyId(@Param('studyId') studyId: string) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send(
+          'PatientService.DiagnosesReport.FindByStudyId',
+          {
+            studyId,
+          }
+        )
+      );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   @Get(':id')
   @Role(
     Roles.RADIOLOGIST,
@@ -181,26 +206,5 @@ export class DiagnosisReportsController {
     }
   }
 
-  @Get('studyId/:studyId')
-  @Role(
-    Roles.RADIOLOGIST,
-    Roles.PHYSICIAN,
-    Roles.SYSTEM_ADMIN,
-    Roles.IMAGING_TECHNICIAN
-  )
-  async getDiagnosisReportByStudyId(@Param('studyId') studyId: string) {
-    try {
-      return await firstValueFrom(
-        this.patientService.send(
-          'PatientService.DiagnosesReport.FindByStudyId',
-          {
-            studyId,
-          }
-        )
-      );
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
+
 }

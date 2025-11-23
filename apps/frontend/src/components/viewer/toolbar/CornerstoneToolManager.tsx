@@ -11,6 +11,7 @@ import {
   AngleTool,
   ProbeTool,
   RectangleROITool,
+  PlanarFreehandROITool,
   WindowLevelTool,
   PanTool,
   ZoomTool,
@@ -51,7 +52,7 @@ import type { Annotation } from "@/types/Annotation";
 
 // Tool type definitions
 type NavigationTool = 'WindowLevel' | 'Pan' | 'Zoom' | 'StackScroll' | 'Probe' | 'TrackballRotate' | 'MIPJumpToClick';
-type MeasurementTool = 'Length' | 'Height' | 'CircleROI' | 'EllipticalROI' | 'RectangleROI' | 'Bidirectional' | 'Angle' | 'ArrowAnnotate' | 'CobbAngle' | 'SplineROI' | 'SegmentBidirectional' | 'ScaleOverlay';
+type MeasurementTool = 'Length' | 'Height' | 'CircleROI' | 'EllipticalROI' | 'RectangleROI' | 'PlanarFreehandROI' | 'Bidirectional' | 'Angle' | 'ArrowAnnotate' | 'CobbAngle' | 'SplineROI' | 'SegmentBidirectional' | 'ScaleOverlay';
 type AdvancedTool = 'PlanarRotate' | 'Magnify' | 'ETDRSGrid' | 'ReferenceLines' | 'OrientationMarker' | 'OverlayGrid';
 type AnnotationTool = 'KeyImage' | 'Label' | 'DragProbe' | 'PaintFill' | 'Eraser';
 type SegmentationTool = 'Brush' | 'CircleScissors' | 'RectangleScissors' | 'SphereScissors';
@@ -97,6 +98,7 @@ const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
   'CircleROI': { toolName: CircleROITool.toolName, toolClass: CircleROITool, category: 'measurement' },
   'EllipticalROI': { toolName: EllipticalROITool.toolName, toolClass: EllipticalROITool, category: 'measurement' },
   'RectangleROI': { toolName: RectangleROITool.toolName, toolClass: RectangleROITool, category: 'measurement' },
+  'PlanarFreehandROI': { toolName: PlanarFreehandROITool.toolName, toolClass: PlanarFreehandROITool, category: 'measurement' },
   'Bidirectional': { toolName: BidirectionalTool.toolName, toolClass: BidirectionalTool, category: 'measurement' },
   'Angle': { toolName: AngleTool.toolName, toolClass: AngleTool, category: 'measurement' },
   'ArrowAnnotate': { toolName: ArrowAnnotateTool.toolName, toolClass: ArrowAnnotateTool, category: 'measurement' },
@@ -623,11 +625,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
     }
   };
 
-  // Undo annotation handler - removes the last annotation created
   const handleUndoAnnotation = async (historyEntry?: AnnotationHistoryEntry) => {
     if (!viewport || !viewportReady) return;
 
-    // Only undo annotations from the stack (historyEntry is required)
     if (!historyEntry?.annotationUID) {
       console.log(`No history entry found to undo for viewport ${viewportId}`);
       return;
@@ -863,6 +863,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
         }
       }
     });
+    
 
     // Set up mouse bindings using TOOL_BINDINGS configuration
     if (toolGroup && typeof toolGroup.setToolActive === 'function') {
@@ -890,6 +891,14 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(({
         });
       } catch (error) {
         console.warn('Error setting up mouse bindings:', error);
+      }
+    }
+
+    if(toolGroup && typeof toolGroup.setToolEnabled === 'function'){
+      try {
+        toolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
+      } catch (error) {
+        console.warn('Error enabling PlanarFreehandROITool:', error);
       }
     }
 

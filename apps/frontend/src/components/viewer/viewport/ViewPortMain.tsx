@@ -6,7 +6,12 @@ import {
   type AnnotationHistoryEntry,
 } from "@/contexts/ViewerContext";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
-import { getCanvasAsBase64, drawAIPredictions, clearAIAnnotations as clearAIAnnotationsUtil } from "@/utils/aiDiagnosis";
+import {
+  getCanvasAsBase64,
+  drawAIPredictions,
+  clearAIAnnotations as clearAIAnnotationsUtil,
+} from "@/utils/aiDiagnosis";
+import { getEnabledElement, Types } from "@cornerstonejs/core";
 import { Loader2 } from "lucide-react";
 
 interface ViewPortMainProps {
@@ -76,7 +81,7 @@ const ViewPortMain = ({
   const [elementReady, setElementReady] = useState(false);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const totalFramesRef = useRef(totalFrames);
-  
+
   // AI Diagnosis mutation
   const [diagnosisImageByAI] = useDiagnosisImageByAIMutation();
 
@@ -244,12 +249,16 @@ const ViewPortMain = ({
         const actualViewportId = getViewportId(viewportIndex);
         // Only execute if this is the active viewport or if no viewport ID is specified
         if (activeViewportId && activeViewportId !== actualViewportId) {
-          console.log(`Skipping clear viewport annotations - viewportId mismatch: ${actualViewportId} !== ${activeViewportId}`);
+          console.log(
+            `Skipping clear viewport annotations - viewportId mismatch: ${actualViewportId} !== ${activeViewportId}`
+          );
           return;
         }
       }
       const actualViewportId = getViewportId(viewportIndex);
-      console.log(`Executing clear viewport annotations for viewport ${actualViewportId}`);
+      console.log(
+        `Executing clear viewport annotations for viewport ${actualViewportId}`
+      );
       toolManagerRef.current?.getToolHandlers?.()?.clearViewportAnnotations?.();
     };
 
@@ -296,85 +305,107 @@ const ViewPortMain = ({
     };
 
     // AI Diagnosis handler
+
     const handleAIDiagnosis = async (event: Event) => {
       const customEvent = event as CustomEvent;
       const { viewportId: eventViewportId } = customEvent.detail || {};
-      
-      // Only process if this is the target viewport
       if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
         return;
       }
-
       if (!elementRef.current || !viewport) {
-        console.error('❌ Viewport not ready for AI diagnosis');
+        console.error("Viewport not ready for AI diagnosis");
         return;
       }
 
-      console.log('🧠 Starting AI diagnosis for viewport:', resolvedViewportId);
+      console.log("🧠 Starting AI diagnosis for viewport:", resolvedViewportId);
       setIsDiagnosing(true);
 
       try {
         // Get canvas and convert to base64
         const base64Image = getCanvasAsBase64(elementRef.current);
-        
+
         if (!base64Image) {
-          throw new Error('Failed to convert canvas to base64');
+          throw new Error("Failed to convert canvas to base64");
         }
 
-        console.log('📷 Canvas converted to base64, calling API...');
-
-        // Call AI diagnosis API
+        console.log("Canvas converted to base64, calling API...");
         const response = await diagnosisImageByAI({
           base64Image,
-          aiModelId: undefined, // Use default model
+          aiModelId: undefined,
         }).unwrap();
 
-        console.log('✅ AI diagnosis response:', response);
+        console.log("Full AI diagnosis response:", response);
 
-        if (response.success && response.data) {
-          const { prediction, image } = response.data;
-          
-          if (prediction && prediction.length > 0) {
-            // Get canvas dimensions
-            const canvas = viewport.canvas;
-            
-            // Draw AI predictions as annotations
-            drawAIPredictions(
-              prediction,
-              resolvedViewportId,
-              image.width,
-              image.height,
-              canvas.width,
-              canvas.height
-            );
-
-            // Render viewport to show annotations
-            viewport.render();
-            
-            console.log('✅ AI annotations drawn successfully');
-          } else {
-            console.log('ℹ️ No predictions found in AI response');
-          }
+        if (!response?.data) {
+          console.warn("No data in response");
+          return;
         }
+
+        const { predictions, image } = response.data;
+
+        console.log("Predictions:", predictions);
+        console.log("Image metadata:", image);
+        if (
+          !predictions ||
+          !Array.isArray(predictions) ||
+          predictions.length === 0
+        ) {
+          console.log("ℹNo predictions found in AI response");
+          return;
+        }
+
+        console.log(`Found ${predictions.length} predictions`);
+
+        // Get necessary viewport metadata
+        const stackViewport = viewport as Types.IStackViewport;
+        const canvas = stackViewport.canvas;
+        const currentImageId = stackViewport.getCurrentImageId?.() || "";
+        // FrameOfReferenceUID
+        const frameOfReferenceUID = stackViewport.getFrameOfReferenceUID?.();
+        console.log("frame2", frameOfReferenceUID);
+        
+
+
+        console.log("🔍 Viewport metadata:", {
+          canvasSize: { width: canvas.width, height: canvas.height },
+          currentImageId,
+          imageSize: image,
+        });
+        drawAIPredictions(
+          predictions,
+          resolvedViewportId,
+          currentImageId,
+          resolvedRenderingEngineId as string,
+          image.width,
+          image.height,
+          canvas.width,
+          canvas.height
+        );
+
+        viewport.render();
+
+        console.log("✅ AI annotations drawn successfully");
       } catch (error) {
-        console.error('❌ AI diagnosis failed:', error);
+        console.error("❌ AI diagnosis failed:", error);
       } finally {
         setIsDiagnosing(false);
       }
     };
-
     // Clear AI annotations handler
     const handleClearAIAnnotations = (event: Event) => {
       const customEvent = event as CustomEvent;
       const { viewportId: eventViewportId } = customEvent.detail || {};
-      
+
       if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
         return;
       }
 
-      console.log('🗑️ Clearing AI annotations for viewport:', resolvedViewportId);
+      console.log(
+        "🗑️ Clearing AI annotations for viewport:",
+        resolvedViewportId
+      );
       clearAIAnnotationsUtil(resolvedViewportId);
-      
+
       if (viewport) {
         viewport.render();
       }
@@ -409,8 +440,14 @@ const ViewPortMain = ({
       handleRedoAnnotation as EventListener
     );
     window.addEventListener("refreshViewport", handleRefresh);
-    window.addEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
-    window.addEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
+    window.addEventListener(
+      "diagnoseViewport",
+      handleAIDiagnosis as EventListener
+    );
+    window.addEventListener(
+      "clearAIAnnotations",
+      handleClearAIAnnotations as EventListener
+    );
 
     return () => {
       element.removeEventListener("keydown", handleKeyDown);
@@ -442,8 +479,14 @@ const ViewPortMain = ({
         handleRedoAnnotation as EventListener
       );
       window.removeEventListener("refreshViewport", handleRefresh);
-      window.removeEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
-      window.removeEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
+      window.removeEventListener(
+        "diagnoseViewport",
+        handleAIDiagnosis as EventListener
+      );
+      window.removeEventListener(
+        "clearAIAnnotations",
+        handleClearAIAnnotations as EventListener
+      );
     };
   }, [
     viewportIndex,

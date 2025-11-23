@@ -370,8 +370,6 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       );
     }
 
-    console.log('🔍 SQL:', queryBuilder.getSql());
-    console.log('🔍 Params:', queryBuilder.getParameters());
 
     const result = await queryBuilder.getRawOne();
 
@@ -387,28 +385,6 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       ),
     };
   }
-  // async findInRoomWithFilters(filters: {
-  //   page: number;
-  //   limit: number;
-  //   fromDate: Date;
-  //   toDate: Date;
-  //   status?: EncounterStatus;
-  //   priority?: EncounterPriorityLevel;
-  //   orderNumber?: number;
-  //   patientName?: string;
-  //   serviceRoomIds?: string[];
-  // }): Promise<{ data: PatientEncounter[]; total: number }> {
-  //   const {
-  //     page,
-  //     limit,
-  //     fromDate,
-  //     toDate,
-  //     status,
-  //     priority,
-  //     orderNumber,
-  //     patientName,
-  //     serviceRoomIds,
-  //   } = filters;
 
   async getLatestEncounterInDate(
     servicesRoomIds: string[]

@@ -1,3 +1,21 @@
+import { Public, Role } from '@backend/shared-decorators';
+import {
+  DiagnosesReport,
+  DicomStudy,
+  FilterDicomStudyFormDto,
+  Patient,
+  Room,
+} from '@backend/shared-domain';
+import {
+  DiagnosisStatus,
+  DicomStudyStatus,
+  Roles,
+} from '@backend/shared-enums';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import {
   Body,
   Controller,
@@ -12,23 +30,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  DiagnosesReport,
-  DicomStudy,
-  DigitalSignature,
-  Patient,
-  Room,
-} from '@backend/shared-domain';
-import { DiagnosisStatus, DicomStudyStatus } from '@backend/shared-enums';
 import { firstValueFrom } from 'rxjs';
-import {
-  TransformInterceptor,
-  RequestLoggingInterceptor,
-} from '@backend/shared-interceptor';
-import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
-import { Roles } from '@backend/shared-enums';
-import { Public, Role } from '@backend/shared-decorators';
-import { userInfo } from 'os';
 @Controller('dicom-studies')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DicomStudiesController {
@@ -237,6 +239,45 @@ export class DicomStudiesController {
     }
   }
 
+  @Get('filter-with-pagination')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.RADIOLOGIST,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.SYSTEM_ADMIN
+  )
+  async getStudyWithFilterWithPagination(
+    @Query() filter: FilterDicomStudyFormDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    const userInfo = req.userInfo;
+    return await firstValueFrom(
+      this.imagingService.send(
+        'ImagingService.DicomStudies.FilterWithPagination',
+        { filter, userInfo }
+      )
+    );
+  }
+
+  @Get('stats-in-date-range')
+  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN, Roles.RADIOLOGIST, Roles.PHYSICIAN)
+  async getStatsInDateRange(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('roomId') roomId?: string,
+    @Req() req?: IAuthenticatedRequest
+
+  ) {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.DicomStudies.GetStatsInDateRange', {
+        dateFrom,
+        dateTo,
+        roomId,
+        userInfo: req?.userInfo
+      })
+    );
+  }
+
   @Get(':id')
   async getDicomStudyById(@Param('id') id: string) {
     return await firstValueFrom(
@@ -253,7 +294,12 @@ export class DicomStudiesController {
     );
   }
 
-  @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN,Roles.RADIOLOGIST,Roles.PHYSICIAN)
+  @Role(
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN
+  )
   @Patch(':id')
   async updateDicomStudy(
     @Param('id') id: string,
