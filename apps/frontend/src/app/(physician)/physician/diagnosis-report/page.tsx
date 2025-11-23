@@ -108,7 +108,7 @@ export default function DiagnosisReportPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Diagnosis Reports
+              Diagnosis Reports Management
             </h1>
             <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               {/* Date */}

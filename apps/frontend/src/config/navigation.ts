@@ -18,7 +18,8 @@ import {
   UserCheck,
   Users,
   Building,
-  FolderTree,
+  Calendar,
+  FolderTree,,
   Link2
 } from "lucide-react";
 
@@ -192,21 +193,21 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physician/diagnosis-report",
-      label: "Diagnosis Reports",
+      label: "Reports Management",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },
     {
+      href: "/physician/patient-study",
+      label: "Reports",
+      icon: Settings,
+      description: "View Your Patient Studies",
+    },
+        {
       href: "/physician/schedule",
       label: "Schedule",
       icon: Clock,
       description: "View your clinical schedule",
-    },
-    {
-      href: "/physician/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Personal settings",
     },
   ],
 
@@ -214,7 +215,7 @@ export const roleNavigation: RoleNavigation = {
   "Imaging Technician": [
     {
       href: "/imaging-technician",
-      label: "Dashboard",
+      label: "Orders List",
       icon: BarChart3,
       description: "Imaging overview",
     },
@@ -233,7 +234,7 @@ export const roleNavigation: RoleNavigation = {
     {
       href: "/imaging-technician/schedule",
       label: "Schedule",
-      icon: Clock,
+      icon: Calendar,
       description: "View your work schedule",
     },
     {

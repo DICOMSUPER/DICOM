@@ -29,9 +29,12 @@ import {
 } from '@backend/shared-interceptor';
 import { Roles } from '@backend/shared-enums';
 import { Public, Role } from '@backend/shared-decorators';
-import { CreateEmployeeRoomAssignmentDto, FilterEmployeeRoomAssignmentDto, UpdateEmployeeRoomAssignmentDto } from '@backend/shared-domain';
+import {
+  CreateEmployeeRoomAssignmentDto,
+  FilterEmployeeRoomAssignmentDto,
+  UpdateEmployeeRoomAssignmentDto,
+} from '@backend/shared-domain';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
-
 
 @ApiTags('Employee Room Assignments')
 @Controller('employee-room-assignments')
@@ -81,11 +84,11 @@ export class EmployeeRoomAssignmentsController {
     status: 201,
     description: 'Gán nhiều nhân viên vào phòng thành công',
   })
-  async createBulk(
-    @Body() assignments: CreateEmployeeRoomAssignmentDto[]
-  ) {
+  async createBulk(@Body() assignments: CreateEmployeeRoomAssignmentDto[]) {
     try {
-      this.logger.log(`Creating bulk employee room assignments: ${assignments.length} assignments`);
+      this.logger.log(
+        `Creating bulk employee room assignments: ${assignments.length} assignments`
+      );
       const result = await firstValueFrom(
         this.userServiceClient.send(
           'UserService.EmployeeRoomAssignments.CreateBulk',
@@ -99,24 +102,28 @@ export class EmployeeRoomAssignmentsController {
         message: `Successfully created ${result?.length || 0} assignments`,
       };
     } catch (error) {
-      this.logger.error('❌ Failed to create bulk employee room assignments', error);
+      this.logger.error(
+        '❌ Failed to create bulk employee room assignments',
+        error
+      );
       throw handleError(error);
     }
   }
 
   @Get()
-  @Public() 
+  @Public()
   async getEmployeeRoomAssignments(
     @Query() filter?: FilterEmployeeRoomAssignmentDto
   ) {
     return await firstValueFrom(
-      this.userServiceClient.send('UserService.EmployeeRoomAssignments.FindAll', {
-        filter,
-      })
+      this.userServiceClient.send(
+        'UserService.EmployeeRoomAssignments.FindAll',
+        {
+          filter,
+        }
+      )
     );
   }
-
-
 
   @Get('paginated')
   async findMany(
@@ -146,26 +153,33 @@ export class EmployeeRoomAssignmentsController {
   }
 
   @Get('current-session')
-  @Role(Roles.PHYSICIAN, Roles.RECEPTION_STAFF,Roles.IMAGING_TECHNICIAN, Roles.RADIOLOGIST)
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.RECEPTION_STAFF,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST
+  )
   @ApiOperation({ summary: 'Get room assignments by employee ID' })
   @ApiParam({ name: 'employeeId', description: 'Employee ID' })
   @ApiResponse({
     status: 200,
     description: 'Lấy danh sách gán phòng theo nhân viên thành công',
   })
-  async findByEmployeeInCurrentSession(@Req()req: IAuthenticatedRequest) {
+  async findByEmployeeInCurrentSession(@Req() req: IAuthenticatedRequest) {
     try {
       const employeeId = req.userInfo.userId;
-      console.log("employee apigate way",employeeId);
-      
-      this.logger.log(`📋 Fetching room assignments for employee: ${employeeId}`);
+      console.log('employee apigate way', employeeId);
+
+      this.logger.log(
+        `📋 Fetching room assignments for employee: ${employeeId}`
+      );
       const result = await firstValueFrom(
         this.userServiceClient.send(
           'UserService.EmployeeRoomAssignments.FindByEmployeeInCurrentSession',
           employeeId
         )
       );
-      return result
+      return result;
     } catch (error) {
       this.logger.error(
         `❌ Failed to fetch room assignments for employee: ${req.userInfo.userId}`,
@@ -175,8 +189,48 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
+  @Role(
+    Roles.IMAGING_TECHNICIAN,
+    Roles.PHYSICIAN,
+    Roles.RADIOLOGIST,
+    Roles.RECEPTION_STAFF,
+    Roles.SYSTEM_ADMIN
+  )
+  @Get('stats')
+  async getEmployeeRoomAssignmentStats(
+    @Req() req: IAuthenticatedRequest,
+    @Query('startDate') startDate?: Date | string,
+    @Query('endDate') endDate?: Date | string
+  ) {
+    return await firstValueFrom(
+      this.userServiceClient.send(
+        'UserService.EmployeeRoomAssignments.StatsOverTime',
+        { employeeId: req?.userInfo?.userId, startDate, endDate }
+      )
+    );
+  }
+
+  @Role(Roles.IMAGING_TECHNICIAN, Roles.PHYSICIAN, Roles.RADIOLOGIST)
+  @Get('by-date')
+  async findEmployeeRoomAssignmentForEmployeeInWorkDate(
+    @Req() req: IAuthenticatedRequest,
+    @Query('work_date') work_date: string | Date
+  ) {
+    return await firstValueFrom(
+      this.userServiceClient.send(
+        'UserService.EmployeeRoomAssignments.FindEmployeeRoomAssignmentForEmployeeInWorkDate',
+        { id: req.userInfo.userId, work_date }
+      )
+    );
+  }
+
   @Get('room/:roomId')
-  @Role(Roles.SYSTEM_ADMIN, Roles.PHYSICIAN, Roles.RECEPTION_STAFF)
+  @Role(
+    Roles.SYSTEM_ADMIN,
+    Roles.PHYSICIAN,
+    Roles.RECEPTION_STAFF,
+    Roles.IMAGING_TECHNICIAN
+  )
   @ApiOperation({ summary: 'Get employee assignments by room ID' })
   @ApiParam({ name: 'roomId', description: 'Room ID' })
   @ApiResponse({

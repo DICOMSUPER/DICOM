@@ -14,6 +14,7 @@ import {
   useGetPatientsPaginatedQuery,
   useGetPatientStatsQuery,
   useDeletePatientMutation,
+  useFilterPatientV2Query,
 } from "@/store/patientApi";
 import { Users, UserPlus } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
@@ -71,10 +72,10 @@ export default function ReceptionPage() {
     isLoading: patientsLoading,
     error: patientsError,
     refetch: refetchPatients,
-  } = useGetPatientsPaginatedQuery({
+  } = useFilterPatientV2Query({
     page,
     limit,
-    filters: queryParams.filters,
+    search: appliedSearchTerm,
   });
 
   const {
@@ -113,7 +114,7 @@ export default function ReceptionPage() {
       bloodType: patient.bloodType,
       isActive: patient.isActive ?? true,
       priority: "normal",
-      lastVisit: undefined,
+      encounters: patient.encounters || [],
     }));
   }, [patientsData?.data]);
 

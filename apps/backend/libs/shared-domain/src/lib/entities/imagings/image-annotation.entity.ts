@@ -26,7 +26,7 @@ export class ImageAnnotation extends BaseEntity {
   @Column({ name: 'annotation_type', type: 'enum', enum: AnnotationType })
   annotationType!: AnnotationType;
 
-  @Column({ name: 'annotation_data', type: 'json' })
+  @Column({ name: 'annotation_data', type: 'json'})
   annotationData!: Record<string, any>;
 
   @Column({ name: 'coordinates', type: 'json', nullable: true })
@@ -46,7 +46,7 @@ export class ImageAnnotation extends BaseEntity {
 
   @Column({ name: 'text_content', type: 'text', nullable: true })
   textContent?: string;
-  
+
   @Column({ name: 'color_code', length: 7, nullable: true })
   colorCode?: string;
 
@@ -67,6 +67,9 @@ export class ImageAnnotation extends BaseEntity {
     default: () => 'CURRENT_TIMESTAMP',
   })
   annotationDate!: Date;
+
+  @Column({ name: 'reviewer_id', type: 'uuid', nullable: true })
+  reviewerId?: string;
 
   @Column({ name: 'review_date', type: 'timestamp', nullable: true })
   reviewDate?: Date;

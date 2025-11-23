@@ -4,6 +4,7 @@ import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface"
 import {
   CreateImagingOrderDto,
   ImagingOrder,
+  QueueInfo,
   UpdateImagingOrderDto,
 } from "@/interfaces/image-dicom/imaging-order.interface";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
@@ -19,6 +20,8 @@ export interface RoomFilter {
     mrn?: string;
     patientFirstName?: string;
     patientLastName?: string;
+    startDate?: Date | string;
+    endDate?: Date | string;
   };
 }
 
@@ -121,6 +124,7 @@ export const imagingOrderApi = createApi({
         { type: "ImagingOrder", id: "LIST" },
       ],
     }),
+
     //find  by id patient
     getImagingOrdersByPatientId: builder.query<
       PaginatedResponse<ImagingOrder>,
@@ -142,6 +146,7 @@ export const imagingOrderApi = createApi({
             ]
           : [{ type: "ImagingOrder", id: "LIST" }],
     }),
+
     getImagingOrderByRoomIdFilter: builder.query<
       ApiResponse<ImagingOrder[]>,
       RoomFilter
@@ -152,10 +157,31 @@ export const imagingOrderApi = createApi({
         params: filterParams,
       }),
     }),
-    getOrderStatsForRoom: builder.query<ApiResponse<unknown>, string>({
+
+    getOrderStatsForRoom: builder.query<ApiResponse<QueueInfo>, string>({
       query: (id) => ({
         url: `/${id}/room-stats`,
         method: "GET",
+      }),
+    }),
+
+    getOrderStatsForRoomInDate: builder.query<
+      ApiResponse<QueueInfo>,
+      { id: string; startDate?: Date | string; endDate?: Date | string }
+    >({
+      query: ({ id, startDate, endDate }) => ({
+        url: `/${id}/room-stats-in-date`,
+        method: "GET",
+        params: {
+          startDate:
+            startDate instanceof Date
+              ? startDate?.toISOString()?.split("T")[0]
+              : startDate,
+          endDate:
+            endDate instanceof Date
+              ? endDate?.toISOString()?.split("T")[0]
+              : endDate,
+        },
       }),
     }),
   }),
@@ -169,7 +195,7 @@ export const {
   useCreateImagingOrderMutation,
   useGetImagingOrderByRoomIdFilterQuery,
   useGetOrderStatsForRoomQuery,
-
+  useGetOrderStatsForRoomInDateQuery,
   useGetImagingOrdersByPatientIdQuery,
   //   useUpdateImagingOrderMutation,
 

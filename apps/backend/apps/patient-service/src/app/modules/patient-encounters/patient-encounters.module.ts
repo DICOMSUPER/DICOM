@@ -3,27 +3,34 @@ import { PatientEncounterController } from './patient-encounters.controller';
 import { PatientEncounterService } from './patient-encounters.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
-import { PatientEncounter, PatientEncounterRepository, Patient, DiagnosesReport } from '@backend/shared-domain';
+import {
+  PatientEncounter,
+  PatientEncounterRepository,
+  Patient,
+  DiagnosesReport,
+} from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
 import { UserServiceClientModule } from '@backend/shared-client';
 import { PatientEncounterCronService } from './patient-encounter.cron';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PatientEncounter, Patient, DiagnosesReport]),
-    UserServiceClientModule
+    UserServiceClientModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [PatientEncounterController],
   providers: [
     PatientEncounterService,
     {
       provide: PatientEncounterRepository,
-      useFactory: (entityManager: EntityManager) => 
+      useFactory: (entityManager: EntityManager) =>
         new PatientEncounterRepository(entityManager),
       inject: [EntityManager],
     },
     PaginationService,
-    PatientEncounterCronService
+    PatientEncounterCronService,
   ],
   exports: [PatientEncounterService, PatientEncounterRepository],
 })

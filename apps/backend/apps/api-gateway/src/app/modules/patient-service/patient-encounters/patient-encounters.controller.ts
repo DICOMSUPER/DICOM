@@ -14,6 +14,7 @@ import {
   BadRequestException,
   UseInterceptors,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -21,11 +22,13 @@ import { ValidationUtils } from '@backend/shared-utils';
 import {
   CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
+  User,
 } from '@backend/shared-domain';
-import type {
-  EncounterSearchFilters,
+import {
   FilterPatientEncounterDto,
+  PatientEncounter,
 } from '@backend/shared-domain';
+import type { EncounterSearchFilters } from '@backend/shared-domain';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
@@ -42,7 +45,9 @@ export class PatientEncounterController {
 
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    private readonly patientService: ClientProxy
+    private readonly patientService: ClientProxy,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
   ) {}
 
   @Get('in-room')
@@ -57,15 +62,15 @@ export class PatientEncounterController {
         filterQueue?.limit
       );
 
-      console.log('validatedParams', validatedParams);
+      // console.log('validatedParams', validatedParams);
       const payload = {
         ...filterQueue,
         ...validatedParams,
       };
-      console.log('Payload', payload);
+      // console.log('Payload', payload);
 
       const userId = req.userInfo.userId;
-      console.log('User id', userId);
+      // console.log('User id', userId);
 
       const result = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindManyInRoom', {
@@ -73,9 +78,36 @@ export class PatientEncounterController {
           userId,
         })
       );
-      console.log('result', result);
+      // console.log('result', result);
 
-      return result;
+      const encounters = result?.data || [];
+      const userIds = [
+        ...new Set(
+          encounters?.flatMap((e: PatientEncounter) => {
+            const ids: string[] = [];
+            if (e.createdBy) ids.push(e.createdBy);
+            if (e.assignedPhysicianId) ids.push(e.assignedPhysicianId);
+            return ids;
+          })
+        ),
+      ];
+
+      // console.log(userIds)
+
+      const users = await firstValueFrom(
+        this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+      );
+
+      const combined: any[] = encounters.map((e: PatientEncounter) => {
+        return {
+          ...e,
+          createdByUser: users.find((u: User) => u.id === e.createdBy),
+          assignedPhysician: users.find(
+            (u: User) => u.id === e.assignedPhysicianId
+          ),
+        };
+      });
+      return { ...result, data: combined };
     } catch (error) {
       this.logger.error('Error finding all patient encounters in room:', error);
       throw error;
@@ -121,11 +153,41 @@ export class PatientEncounterController {
         limit: validatedParams.limit || 10,
         ...filters,
       };
-      return await firstValueFrom(
+      const encountersData = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindMany', {
           paginationDto,
         })
       );
+
+      const encounters = encountersData?.data || [];
+
+      const userIds = [
+        ...new Set(
+          encounters?.flatMap((e: PatientEncounter) => {
+            const ids: string[] = [];
+            if (e.createdBy) ids.push(e.createdBy);
+            if (e.assignedPhysicianId) ids.push(e.assignedPhysicianId);
+            return ids;
+          })
+        ),
+      ];
+
+      // console.log(userIds)
+
+      const users = await firstValueFrom(
+        this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+      );
+
+      const combined: any[] = encounters.map((e: PatientEncounter) => {
+        return {
+          ...e,
+          createdByUser: users.find((u: User) => u.id === e.createdBy),
+          assignedPhysician: users.find(
+            (u: User) => u.id === e.assignedPhysicianId
+          ),
+        };
+      });
+      return { ...encountersData, data: combined };
     } catch (error) {
       this.logger.error('Error fetching encounters:', error);
       throw error;
@@ -175,11 +237,44 @@ export class PatientEncounterController {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
 
-      return await firstValueFrom(
+      const encounter = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindOne', {
           id,
         })
       );
+
+      if (!encounter) {
+        throw new NotFoundException('Encounter not found');
+      }
+
+      const encounters = [encounter];
+      const userIds = [
+        ...new Set(
+          encounters?.flatMap((e: PatientEncounter) => {
+            const ids: string[] = [];
+            if (e.createdBy) ids.push(e.createdBy);
+            if (e.assignedPhysicianId) ids.push(e.assignedPhysicianId);
+            return ids;
+          })
+        ),
+      ];
+
+      // console.log(userIds)
+
+      const users = await firstValueFrom(
+        this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+      );
+
+      const combined: any[] = encounters.map((e: PatientEncounter) => {
+        return {
+          ...e,
+          createdByUser: users.find((u: User) => u.id === e.createdBy),
+          assignedPhysician: users.find(
+            (u: User) => u.id === e.assignedPhysicianId
+          ),
+        };
+      });
+      return combined[0];
     } catch (error) {
       this.logger.error('Error fetching encounter:', error);
       throw error;
@@ -239,12 +334,42 @@ export class PatientEncounterController {
         throw new BadRequestException(`Invalid UUID format: ${patientId}`);
       }
 
-      return await firstValueFrom(
+      const encountersData = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindByPatientId', {
           patientId,
           pagination,
         })
       );
+
+      const encounters = encountersData?.data || [];
+
+      const userIds = [
+        ...new Set(
+          encounters?.flatMap((e: PatientEncounter) => {
+            const ids: string[] = [];
+            if (e.createdBy) ids.push(e.createdBy);
+            if (e.assignedPhysicianId) ids.push(e.assignedPhysicianId);
+            return ids;
+          })
+        ),
+      ];
+
+      // console.log(userIds)
+
+      const users = await firstValueFrom(
+        this.userService.send('UserService.Users.GetUsersByIds', { userIds })
+      );
+
+      const combined: any[] = encounters.map((e: PatientEncounter) => {
+        return {
+          ...e,
+          createdByUser: users.find((u: User) => u.id === e.createdBy),
+          assignedPhysician: users.find(
+            (u: User) => u.id === e.assignedPhysicianId
+          ),
+        };
+      });
+      return { ...encountersData, data: combined };
     } catch (error) {
       this.logger.error('Error fetching encounters by patient ID:', error);
       throw error;

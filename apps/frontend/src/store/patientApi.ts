@@ -1,4 +1,8 @@
 import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+} from "@/enums/patient-workflow.enum";
+import {
   ApiResponse,
   CreatePatientDto,
   PaginatedResponse,
@@ -20,6 +24,11 @@ export interface IRepositoryPagination {
   order?: "asc" | "desc";
   relation?: string[];
 }
+
+export type PatientFilterV2 = Partial<IRepositoryPagination> & {
+  priority?: EncounterPriorityLevel;
+  status?: EncounterStatus;
+};
 
 export const patientApi = createApi({
   reducerPath: "patientApi",
@@ -131,6 +140,16 @@ export const patientApi = createApi({
       query: () => ({ url: "/stats", method: "GET" }),
       providesTags: ["Stats"],
     }),
+
+    filterPatientV2: builder.query<PaginatedResponse<Patient>, PatientFilterV2>(
+      {
+        query: ({ page, limit, search, order, sortField }) => ({
+          url: `/filter-v2`,
+          method: "GET",
+          params: { page, limit, search, order, sortField },
+        }),
+      }
+    ),
   }),
 });
 
@@ -147,4 +166,5 @@ export const {
   useDeletePatientMutation,
   useRestorePatientMutation,
   useGetPatientStatsQuery,
+  useFilterPatientV2Query,
 } = patientApi;

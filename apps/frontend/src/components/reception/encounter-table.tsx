@@ -3,44 +3,48 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import { TableRowEnhanced, TableCellEnhanced } from "@/components/ui/table-enhanced";
+import {
+  TableRowEnhanced,
+  TableCellEnhanced,
+} from "@/components/ui/table-enhanced";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
+import {
+  Eye,
+  Edit,
+  Trash2,
   User,
   Calendar,
   Stethoscope,
-  Clock
+  Clock,
 } from "lucide-react";
+import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
 
-interface Encounter {
-  id: string;
-  patient: {
-    firstName: string;
-    lastName: string;
-    patientCode: string;
-  };
-  encounterType: string;
-  status: string;
-  chiefComplaint?: string;
-  encounterDate: string;
-  assignedPhysicianId?: string;
-  priority?: string;
-  roomId?: string;
-}
+// interface Encounter {
+//   id: string;
+//   patient: {
+//     firstName: string;
+//     lastName: string;
+//     patientCode: string;
+//   };
+//   encounterType: string;
+//   status: string;
+//   chiefComplaint?: string;
+//   encounterDate: string;
+//   assignedPhysicianId?: string;
+//   priority?: string;
+//   roomId?: string;
+// }
 
 interface EncounterTableProps {
-  encounters: Encounter[];
+  encounters: PatientEncounter[];
   isLoading: boolean;
   emptyStateIcon: React.ReactNode;
   emptyStateTitle: string;
   emptyStateDescription: string;
-  onViewDetails?: (encounter: Encounter) => void;
-  onEditEncounter?: (encounter: Encounter) => void;
-  onDeleteEncounter?: (encounter: Encounter) => void;
+  onViewDetails?: (encounter: PatientEncounter) => void;
+  onEditEncounter?: (encounter: PatientEncounter) => void;
+  onDeleteEncounter?: (encounter: PatientEncounter) => void;
 }
 
 export function EncounterTable({
@@ -53,8 +57,8 @@ export function EncounterTable({
   onEditEncounter,
   onDeleteEncounter,
 }: EncounterTableProps) {
-  
-  const formatTime = (date: string) => {
+  const formatTime = (date: string | Date | undefined) => {
+    if (!date) return "N/A";
     return new Date(date).toLocaleDateString();
   };
 
@@ -64,12 +68,12 @@ export function EncounterTable({
 
   const headers = [
     "Patient",
-    "Encounter Type", 
+    "Encounter Type",
     "Status",
     "Chief Complaint",
     "Date",
     "Physician",
-    "Actions"
+    "Actions",
   ];
 
   return (
@@ -90,10 +94,10 @@ export function EncounterTable({
               </div>
               <div>
                 <div className="font-medium">
-                  {encounter.patient.firstName} {encounter.patient.lastName}
+                  {encounter?.patient?.firstName} {encounter?.patient?.lastName}
                 </div>
                 <div className="text-sm text-foreground">
-                  ID: {encounter.patient.patientCode}
+                  ID: {encounter?.patient?.patientCode}
                 </div>
               </div>
             </div>
@@ -111,18 +115,20 @@ export function EncounterTable({
           </TableCellEnhanced>
           <TableCellEnhanced>
             <div className="text-foreground max-w-xs truncate">
-              {encounter.chiefComplaint || 'No complaint recorded'}
+              {encounter.chiefComplaint || "No complaint recorded"}
             </div>
           </TableCellEnhanced>
           <TableCellEnhanced>
             <div className="flex items-center gap-1 text-foreground">
               <Calendar className="w-3 h-3" />
-              {formatTime(encounter.encounterDate)}
+              {formatTime(encounter?.encounterDate)}
             </div>
           </TableCellEnhanced>
           <TableCellEnhanced>
             <div className="text-foreground">
-              {encounter.assignedPhysicianId || 'Unassigned'}
+              {encounter?.assignedPhysician
+                ? `Dr.${encounter?.assignedPhysician?.lastName} ${encounter?.assignedPhysician?.firstName}`
+                : "Unassigned"}
             </div>
           </TableCellEnhanced>
           <TableCellEnhanced isLast>
@@ -137,7 +143,7 @@ export function EncounterTable({
                   <Eye className="h-4 w-4" />
                 </Button>
               )}
-              {onEditEncounter && (
+              {/* {onEditEncounter && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -156,7 +162,7 @@ export function EncounterTable({
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
+              )} */}
             </div>
           </TableCellEnhanced>
         </TableRowEnhanced>

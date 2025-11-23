@@ -196,6 +196,33 @@ export class DicomStudiesController {
       );
     }
   }
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterWithPagination`)
+  async filterWithPagination(
+    @Payload()
+    data: {
+      filter: any;
+      userInfo: {
+        userId: string;
+        role: string;
+      };
+    }
+  ): Promise<PaginatedResponseDto<DicomStudy>> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+    );
+    try {
+      return await this.dicomStudiesService.filterWithPagination(
+        data.filter,
+        data.userInfo
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find all imaging order forms',
+        IMAGING_SERVICE
+      );
+    }
+  }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByOrderId`)
   async findByOrderId(
@@ -215,6 +242,39 @@ export class DicomStudiesController {
       );
     }
   }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStatsInDateRange`)
+  async getStatsInDateRange(
+    @Payload()
+    data: {
+      dateFrom?: string;
+      dateTo?: string;
+      roomId?: string;
+      userInfo?: {
+        userId: string;
+        role: string;
+      };
+    }
+  ) {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStatsInDateRange`
+    );
+    try {
+      const { dateFrom, dateTo, roomId, userInfo } = data;
+      return await this.dicomStudiesService.getStatsInDateRange(
+        dateFrom,
+        dateTo,
+        roomId,
+        userInfo
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to get dicom study stats in date range`,
+        IMAGING_SERVICE
+      );
+    }
+  }
 }
 
 export interface FilterData {
@@ -226,4 +286,5 @@ export interface FilterData {
   modalityId?: string;
   modalityMachineId?: string;
   studyStatus?: DicomStudyStatus;
+  roomId?: string;
 }

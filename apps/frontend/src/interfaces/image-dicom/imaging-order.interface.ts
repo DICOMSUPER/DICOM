@@ -44,3 +44,17 @@ export interface ImagingOrder extends BaseEntity {
   patient: Patient;
   orderPhysician: User;
 }
+
+interface QueueStats {
+  total: number;
+  waiting: number;
+  inProgress: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface QueueInfo {
+  maxWaiting: number | null;
+  currentInProgress: number | null;
+  stats: QueueStats;
+}

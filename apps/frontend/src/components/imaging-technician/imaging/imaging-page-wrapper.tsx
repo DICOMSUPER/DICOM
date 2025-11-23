@@ -23,6 +23,13 @@ import PatientInfo from "./patient-info";
 import PhysicianInfo from "./physician-info";
 import ProcedureInfo from "./procedure-info";
 import { MachineStatus } from "@/enums/machine-status.enum";
+import SignatureModal from "./signature-modal";
+import SetupSignatureModal from "./setup-signature-modal";
+import { useTechnicianVerifyStudyMutation } from "@/store/dicomStudySignatureApi";
+import {
+  useHasSignatureQuery,
+  useSetupSignatureMutation,
+} from "@/store/digitalSignatureApi";
 
 export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   const [file, setFile] = useState<File | null>(null);
@@ -32,6 +39,11 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   );
   const [importProgress, setImportProgress] = useState<number>(0);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [forwardingStudyId, setForwardingStudyId] = useState<string | null>(
+    null
+  );
+  const [setupSignatureModal, setSetupSignatureModal] =
+    useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Parse user from cookies - must be done before hooks
@@ -128,6 +140,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   const physician = physicianData?.data;
 
   const procedure = order?.procedure;
+
   const handleUploadDicomFile = async (
     dicomFile: File,
     modalityMachineId: string
@@ -166,6 +179,8 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             onStudySelect={setSelectedStudy}
             onSeriesSelect={setSelectedSeries}
             refetchStudy={refetchStudy}
+            forwardingStudyId={forwardingStudyId}
+            setForwardingStudyId={setForwardingStudyId}
           />
         )}
       </div>
@@ -201,6 +216,24 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
           </>
         )}
       </div>
+      <SignatureModal
+        isOpen={forwardingStudyId !== null}
+        onSetupSignature={() => {
+          setSetupSignatureModal(true);
+          setForwardingStudyId(null);
+        }}
+        onClose={() => {
+          setForwardingStudyId(null);
+        }}
+        refetchStudy={refetchStudy}
+        studyId={forwardingStudyId}
+      />
+      <SetupSignatureModal
+        isOpen={setupSignatureModal}
+        onClose={() => {
+          setSetupSignatureModal(false);
+        }}
+      />
     </div>
   );
 }

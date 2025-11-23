@@ -7,18 +7,19 @@ export class PatientEncounterCronService {
   private readonly logger = new Logger(PatientEncounterCronService.name);
 
   constructor(
-    private readonly patientEncounterService: PatientEncounterService,
+    private readonly patientEncounterService: PatientEncounterService
   ) {}
 
-
-  @Cron('59 23 * * *', {
+  @Cron('59 * * * *', {
+    //hourly update to avoid missed
     timeZone: 'Asia/Ho_Chi_Minh',
   })
   async handleAutoMarkLeaved() {
     this.logger.log('Starting auto-mark leaved encounters job');
 
     try {
-      const result = await this.patientEncounterService.autoMarkLeavedEncounters();
+      const result =
+        await this.patientEncounterService.autoMarkLeavedEncounters();
       if (result.updatedCount > 0) {
         this.logger.log(
           `Auto-marked ${result.updatedCount} encounters as LEAVED`
@@ -36,6 +37,4 @@ export class PatientEncounterCronService {
       this.logger.error('Error during auto-mark leaved job:', error);
     }
   }
-
-
 }

@@ -29,6 +29,7 @@ export const uploadFileToCloudinary = async (
           public_id: `dicom_${Date.now()}_${Math.random()
             .toString(36)
             .substring(2)}.DCM`,
+          max_file_size: 1000000000,
         },
         (error, result) => {
           if (error) {

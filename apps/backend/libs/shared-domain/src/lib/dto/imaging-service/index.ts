@@ -6,6 +6,7 @@ export * from './dicom-series/update-dicom-series.dto';
 
 export * from './dicom-studies/create-dicom-study.dto';
 export * from './dicom-studies/update-dicom-study.dto';
+export * from './dicom-studies/filter-dicom-studies.dto';
 
 export * from './image-annotations/create-image-annotation.dto';
 export * from './image-annotations/update-image-annotation.dto';
@@ -30,4 +31,5 @@ export * from './imaging-order-form/filter-imaging-order-form.dto';
 
 export * from './dicom-study-signatures/sign-study.dto';
 export * from './dicom-study-signatures/verify-study-signature.dto';
+
 

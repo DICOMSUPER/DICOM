@@ -54,6 +54,8 @@ export enum AnnotationType {
   LABEL = 'Label',
   PROBE = 'Probe',
   DRAG_PROBE = 'DragProbe',
+  // Freehand tools
+  PLANAR_FREEHAND_ROI = 'PlanarFreehandROI',
 }
 
 export enum AnnotationStatus {

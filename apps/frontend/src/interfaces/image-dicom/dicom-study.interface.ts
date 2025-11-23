@@ -24,6 +24,7 @@ export interface DicomStudyFilterQuery {
   startDate?: string;
   endDate?: string;
   studyUID?: string;
+  roomId?: string;
 }
 
 export interface CreateDiagnosisPayload {
@@ -68,4 +69,13 @@ export default interface DicomStudyReferenceQuery
   extends Partial<PaginatedQuery> {
   id: string;
   type: string;
+}
+
+export interface DicomStudyFilters {
+  status?: DicomStudyStatus | "all";
+  patientName?: string;
+  modalityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  orderId?: string;
 }

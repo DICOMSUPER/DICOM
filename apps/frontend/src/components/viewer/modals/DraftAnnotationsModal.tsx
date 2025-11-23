@@ -621,14 +621,20 @@ export function DraftAnnotationsModal({
         (toSerializable({
           annotationUID: entry.annotation?.annotationUID ?? entry.id,
           metadata: entry.annotation?.metadata ?? entry.metadata,
-          data: entry.annotation?.data ?? {},
+          data: entry.annotation?.data ??  {},
         }) as Record<string, unknown>) ?? {};
+        console.log("annotation payload",annotationPayload);
+        
 
       const dataRecord =
         (entry.annotation?.data as Record<string, unknown> | undefined) ?? {};
 
+        console.log("data record", dataRecord);
+        
+
       const coordinatePayload =
         toSerializable(dataRecord["handles"]) ?? undefined;
+        console.log("coordinate payload", coordinatePayload);
 
       const measurementValueCandidate = dataRecord["measurementValue"];
       const measurementUnitCandidate = dataRecord["measurementUnit"];

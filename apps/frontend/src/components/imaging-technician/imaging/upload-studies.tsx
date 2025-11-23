@@ -7,6 +7,8 @@ import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interfac
 import StudyLevel from "./study-level";
 import SeriesLevel from "./series-level";
 import InstancesLevel from "./instance-level";
+import SignatureModal from "./signature-modal";
+import SetupSignatureModal from "./setup-signature-modal";
 
 interface UploadedStudiesProps {
   studies: DicomStudy[];
@@ -17,6 +19,8 @@ interface UploadedStudiesProps {
   onStudySelect: (study: DicomStudy | null) => void;
   onSeriesSelect: (series: DicomSeries | null) => void;
   refetchStudy: () => void;
+  forwardingStudyId: string | null;
+  setForwardingStudyId: (id: string) => void;
 }
 
 export default function UploadedStudies({
@@ -28,6 +32,8 @@ export default function UploadedStudies({
   onStudySelect,
   onSeriesSelect,
   refetchStudy,
+  forwardingStudyId,
+  setForwardingStudyId,
 }: UploadedStudiesProps) {
   const [expandedStudies, setExpandedStudies] = useState<
     Record<string, boolean>
@@ -119,6 +125,8 @@ export default function UploadedStudies({
                 seriesCount={study.numberOfSeries ?? studySeries.length}
                 isLast={isLast}
                 refetch={refetchStudy}
+                forwardingStudyId={forwardingStudyId}
+                setForwardingStudyId={setForwardingStudyId}
               />
 
               {/* Series Level - Hidden by default */}

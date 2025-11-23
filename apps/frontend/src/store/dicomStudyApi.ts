@@ -1,15 +1,15 @@
+import DicomStudyReferenceQuery, {
+  DicomStudy,
+  DicomStudyFilterQuery,
+  DicomStudyFilters,
+} from "@/interfaces/image-dicom/dicom-study.interface";
 import {
   PaginatedQuery,
   PaginatedResponse,
 } from "@/interfaces/pagination/pagination.interface";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { ApiResponse, DicomStudyStatsInDateRange } from "@/interfaces/patient/patient-workflow.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import DicomStudyReferenceQuery, {
-  DicomStudy,
-  DicomStudyFilterQuery,
-} from "@/interfaces/image-dicom/dicom-study.interface";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { string } from "zod";
 
 type StudyReferenceType =
   | "modality"
@@ -49,6 +49,27 @@ export const dicomStudyApi = createApi({
     getOneDicomStudy: builder.query<ApiResponse<DicomStudy>, string>({
       query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (r, e, id) => [{ type: "DicomStudy", id }],
+    }),
+
+    getDicomStudiesFilteredWithPagination: builder.query<
+      PaginatedResponse<DicomStudy>,
+      { filters?: DicomStudyFilters }
+    >({
+      query: ({ filters }) => ({
+        url: "/filter-with-pagination",
+        method: "GET",
+        params: filters,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map((r) => ({
+                type: "DicomStudy" as const,
+                id: r.id,
+              })),
+              { type: "DicomStudy", id: "LIST" },
+            ]
+          : [{ type: "DicomStudy", id: "LIST" }],
     }),
 
     getPaginatedDicomStudies: builder.query<
@@ -166,6 +187,23 @@ export const dicomStudyApi = createApi({
         params: { type, page, limit, search, searchField, sortBy, order },
       }),
     }),
+
+
+    getStatsInDateRange: builder.query<
+      ApiResponse<DicomStudyStatsInDateRange>,
+      { dateFrom?: string; dateTo?: string; roomId?: string }
+    >({
+      query: ({ dateFrom, dateTo, roomId }) => ({
+        url: "/stats-in-date-range",
+        method: "GET",
+        params: {
+          dateFrom,
+          dateTo,
+          roomId,
+        },
+      }),
+      providesTags: ["DicomStudy"],
+    }),
   }),
 });
 
@@ -181,4 +219,6 @@ export const {
   useUpdateDicomStudyMutation,
   useDeleteDicomStudyMutation,
   useUseGetDicomStudyByReferenceIdQuery,
+  useGetDicomStudiesFilteredWithPaginationQuery,
+  useGetStatsInDateRangeQuery,
 } = dicomStudyApi;
