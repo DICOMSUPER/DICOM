@@ -36,11 +36,14 @@ export default function TabLayout() {
           {/* Tab bar */}
           <TabBar />
           {/* Tab content */}
-          {currentTab && (
-            <div className="flex-1 overflow-hidden">
-              {currentTab.tabContent}
-            </div>
-          )}
+          <div className="max-h-[75vh] overflow-y-auto">
+            {" "}
+            {currentTab && (
+              <div className="flex-1 overflow-hidden">
+                {currentTab.tabContent}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Suspense>

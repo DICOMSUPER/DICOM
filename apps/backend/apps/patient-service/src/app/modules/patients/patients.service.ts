@@ -233,7 +233,7 @@ export class PatientService {
             new Date(a.encounterDate).getTime()
         ),
       }; //sort encounter to show last visited
-    });
+    }) as any; 
 
     return { ...patientsData, data: patients };
   };

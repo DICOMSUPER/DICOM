@@ -5,6 +5,7 @@ import {
   v2 as cloudinary,
 } from 'cloudinary';
 const streamifier = require('streamifier');
+import { Multer } from 'multer';
 
 @Injectable()
 export class CloudinaryService {

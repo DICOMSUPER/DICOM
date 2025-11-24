@@ -23,13 +23,15 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 interface ImagingTechnicianLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ImagingTechnicianLayout({ children }: ImagingTechnicianLayoutProps) {
+export default function ImagingTechnicianLayout({
+  children,
+}: ImagingTechnicianLayoutProps) {
   const [notificationCount] = useState(3);
   const [currentRole, setCurrentRole] = useState("Imaging Technician");
 
@@ -47,11 +49,11 @@ export default function ImagingTechnicianLayout({ children }: ImagingTechnicianL
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {children}
-      </WorkspaceLayout>
-    </div>
+    <Suspense>
+      <div className="min-h-screen bg-background">
+        {/* Workspace Layout */}
+        <WorkspaceLayout sidebar={<SidebarNav />}>{children}</WorkspaceLayout>
+      </div>
+    </Suspense>
   );
 }

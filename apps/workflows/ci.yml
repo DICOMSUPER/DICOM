@@ -1,0 +1,61 @@
+name: NestJS Monorepo CI/CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout source code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      # 3️⃣ Install pnpm globally
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        run: pnpm install
+
+      # 5️⃣ Build NestJS services
+      - name: Build NestJS services
+        run: |
+          pnpm --filter user-service build
+          pnpm --filter patient-service build
+          pnpm --filter imaging-service build
+
+      # 6️⃣ Build Docker images
+      - name: Build Docker image for user-service
+        run: docker build -t yourdockerhub/user-service:latest -f apps/user-service/Dockerfile .
+
+      - name: Build Docker image for patient-service
+        run: docker build -t yourdockerhub/patient-service:latest -f apps/patient-service/Dockerfile .
+
+      - name: Build Docker image for imaging-service
+        run: docker build -t yourdockerhub/imaging-service:latest -f apps/imaging-service/Dockerfile .
+
+      # 7️⃣ Optional: Login & Push Docker images (uncomment if cần push)
+      # - name: Log in to Docker Hub
+      #   uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKER_USER }}
+      #     password: ${{ secrets.DOCKER_PASS }}
+      #
+      # - name: Push Docker images
+      #   run: |
+      #     docker push yourdockerhub/user-service:latest
+      #     docker push yourdockerhub/patient-service:latest
+      #     docker push yourdockerhub/imaging-service:latest
