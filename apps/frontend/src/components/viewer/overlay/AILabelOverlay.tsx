@@ -79,7 +79,7 @@ export const AILabelOverlay = ({
       const normalizedX = aiCenterX / aiImageWidth;
       const normalizedY = aiTopY / aiImageHeight;
 
-      console.log("📊 Normalized coords:", { normalizedX, normalizedY });
+      console.log("Normalized coords:", { normalizedX, normalizedY });
 
       // Chuyển từ Normalized coords → DICOM image pixel coords
       const imagePixelX = normalizedX * dimensions[0];
@@ -201,7 +201,7 @@ export const AILabelOverlay = ({
   return (
     <div 
       className="absolute inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 10 }}
     >
       {overlayItems.map((item) => (
         <div
