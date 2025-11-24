@@ -1,16 +1,16 @@
 import { Column } from 'typeorm';
-
-export abstract class BaseEntity {
+import { BaseEntity as TypeOrmBaseEntity } from 'typeorm';
+export abstract class BaseEntity extends TypeOrmBaseEntity {
   @Column({
     name: 'created_at',
-    type: 'timestamp',
+    type: 'timestamptz',
     default: () => 'CURRENT_TIMESTAMP',
   })
   createdAt!: Date;
 
   @Column({
     name: 'updated_at',
-    type: 'timestamp',
+    type: 'timestamptz',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })

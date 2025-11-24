@@ -19,9 +19,10 @@ export default function Page() {
   const router = useRouter();
   const patientId = params.id as string;
 
-  const { data: patient, isLoading } = useGetPatientByIdQuery(patientId);
+  const { data: patientData, isLoading } = useGetPatientByIdQuery(patientId);
   const [updatePatient, { isLoading: isUpdating }] = useUpdatePatientMutation();
 
+  const patient = patientData?.data;
   const handleSubmit = async (
     formData: CreatePatientDto | UpdatePatientDto
   ) => {

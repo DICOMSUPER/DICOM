@@ -3,7 +3,7 @@ import { ImageAnnotationsService } from './image-annotations.service';
 import { ImageAnnotationsController } from './image-annotations.controller';
 import { ImageAnnotation } from '@backend/shared-domain';
 import { DicomInstance } from '@backend/shared-domain';
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { ImageAnnotationsRepository } from './image-annotations.repository';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 

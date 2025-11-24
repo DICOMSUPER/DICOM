@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 // WorkspaceLayout and SidebarNav moved to layout.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +19,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   useGetPatientEncountersQuery,
   useDeletePatientEncounterMutation,
+  useFilterEncounterWithPaginationQuery,
+  useGetPatientEncounterStatsQuery,
 } from "@/store/patientEncounterApi";
+import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { EncounterSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
 import {
-  PatientEncounter,
-  EncounterSearchFilters,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { EncounterStatus, EncounterType } from "@/enums/patient-workflow.enum";
+  EncounterPriorityLevel,
+  EncounterStatus,
+  EncounterType,
+} from "@/enums/patient-workflow.enum";
 import {
   Stethoscope,
   Search,
@@ -42,107 +46,239 @@ import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
-import { ReceptionFilters } from "@/components/reception/reception-filters";
+import { EncounterFilter } from "@/components/reception/encounter-filter";
+import { FilterEncounterWithPaginationParams } from "@/interfaces/patient/patient-visit.interface";
+import { Pagination } from "@/components/common/PaginationV1";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+
+interface ApiError {
+  data?: {
+    message?: string;
+  };
+}
 
 export default function EncountersPage() {
   const router = useRouter();
-  const [notificationCount] = useState(3);
+  const [page, setPage] = useState(1);
+  const limit = 5;
+
+  // UI state (what user is typing/selecting)
   const [searchTerm, setSearchTerm] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [filters, setFilters] = useState<EncounterSearchFilters>({
-    encounterType: undefined,
-    status: undefined,
-    assignedPhysicianId: undefined,
-    limit: 20,
-    offset: 0,
-    sortBy: "encounterDate",
-    sortOrder: "desc",
-  });
+  const [priorityFilter, setPriorityFilter] = useState<
+    EncounterPriorityLevel | undefined
+  >(undefined);
+  const [statusFilter, setStatusFilter] = useState<EncounterStatus | undefined>(
+    undefined
+  );
+  const [startDate, setStartDate] = useState<Date | string | undefined>(
+    undefined
+  );
+  const [endDate, setEndDate] = useState<Date | string | undefined>(undefined);
+  const [serviceId, setServiceId] = useState<string | undefined>(undefined);
+  const [type, setType] = useState<EncounterType | undefined>(undefined);
+  // Applied state (what's actually used in the query)
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState<
+    EncounterStatus | undefined
+  >(undefined);
+  const [appliedStartDate, setAppliedStartDate] = useState<
+    Date | string | undefined
+  >(undefined);
+  const [appliedEndDate, setAppliedEndDate] = useState<
+    Date | string | undefined
+  >(undefined);
+  const [appliedServiceId, setAppliedServiceId] = useState<string | undefined>(
+    undefined
+  );
+  const [appliedPriorityFilter, setAppliedPriorityFilter] = useState<
+    string | undefined
+  >(undefined);
+  const [appliedType, setAppliedType] = useState<EncounterType | undefined>(
+    undefined
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  // Build query params from applied filters
+  const queryParams = useMemo<FilterEncounterWithPaginationParams>(() => {
+    return {
+      page,
+      limit,
+      order: "desc",
+      sortField: "encounterDate",
+      search: appliedSearchTerm.trim() || undefined,
+      status: appliedStatusFilter,
+      startDate: appliedStartDate,
+      endDate: appliedEndDate,
+      serviceId: appliedServiceId,
+      priority: appliedPriorityFilter,
+      type: appliedType,
+    };
+  }, [
+    page,
+    limit,
+    appliedSearchTerm,
+    appliedStatusFilter,
+    appliedStartDate,
+    appliedEndDate,
+    appliedServiceId,
+    appliedPriorityFilter,
+    appliedType,
+  ]);
 
   // API hooks
   const {
     data: encounters,
     isLoading,
-    error,
+    error: encountersError,
     refetch,
-  } = useGetPatientEncountersQuery(filters);
-  const [deleteEncounter, { isLoading: isDeleting }] =
-    useDeletePatientEncounterMutation();
+  } = useFilterEncounterWithPaginationQuery(queryParams);
 
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
+  const [deleteEncounter] = useDeletePatientEncounterMutation();
 
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    refetch();
-  };
-
-  const handleFilterChange = (
-    key: keyof EncounterSearchFilters,
-    value: any
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const handleDeleteEncounter = async (encounter: any) => {
-    if (confirm("Are you sure you want to delete this encounter?")) {
-      try {
-        await deleteEncounter(encounter.id).unwrap();
-        refetch();
-      } catch (error) {
-        console.error("Error deleting encounter:", error);
-      }
+  // Error handling
+  useEffect(() => {
+    if (encountersError) {
+      const error = encountersError as FetchBaseQueryError;
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
+          ? (error.data as { message: string }).message
+          : "Failed to load encounters. Please try again.";
+      setError(errorMessage);
+    } else {
+      setError(null);
     }
+  }, [encountersError]);
+
+  // Handlers
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const handleSearch = useCallback(() => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedStatusFilter(statusFilter);
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+    setAppliedServiceId(serviceId);
+    setPage(1);
+    setAppliedPriorityFilter(priorityFilter);
+    setAppliedType(type);
+  }, [
+    searchTerm,
+    statusFilter,
+    startDate,
+    endDate,
+    serviceId,
+    priorityFilter,
+    type,
+  ]);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchTerm("");
+    setPriorityFilter(undefined);
+    setStatusFilter(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setServiceId(undefined);
+    setAppliedSearchTerm("");
+    setAppliedStatusFilter(undefined);
+    setAppliedStartDate(undefined);
+    setAppliedEndDate(undefined);
+    setAppliedServiceId(undefined);
+    setAppliedType(undefined);
+    setPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
+
+  const handleDeleteEncounter = useCallback(
+    async (encounter: PatientEncounter) => {
+      if (confirm("Are you sure you want to delete this encounter?")) {
+        try {
+          await deleteEncounter(encounter.id).unwrap();
+          await refetch();
+        } catch (err) {
+          const error = err as ApiError;
+          console.error("Error deleting encounter:", error?.data?.message);
+        }
+      }
+    },
+    [deleteEncounter, refetch]
+  );
+
+  const handleViewEncounter = useCallback(
+    (encounter: PatientEncounter) => {
+      router.push(`/reception/encounters/${encounter.id}`);
+    },
+    [router]
+  );
+
+  const handleEditEncounter = useCallback(
+    (encounter: PatientEncounter) => {
+      router.push(`/reception/encounters/${encounter.id}?edit=true`);
+    },
+    [router]
+  );
+
+  // Process encounters data
+  const encountersArray = useMemo(() => {
+    return encounters?.data ?? [];
+  }, [encounters?.data]);
+
+  const { data: encounterStatsData, isLoading: isLoadingEncounterStats } =
+    useGetPatientEncounterStatsQuery();
+
+  const encounterStats = encounterStatsData?.data || {
+    totalEncounters: 0,
+    encountersByType: {
+      emergency: 0,
+      inpatient: 0,
+      outpatient: 0,
+    },
+    encountersThisMonth: 0,
+    averageEncountersPerPatient: 0,
+    todayEncounter: 0,
+    todayStatEncounter: 0,
   };
 
-  const handleViewEncounter = (encounter: any) => {
-    router.push(`/reception/encounters/${encounter.id}`);
-  };
+  console.log(encounterStats);
+  // Calculate stats from filtered data // TODO, using custom api later
+  const stats = useMemo(() => {
+    const scheduledCount = encountersArray.filter(
+      (e) => e.status === EncounterStatus.WAITING
+    ).length;
+    const inProgressCount = encountersArray.filter(
+      (e) => e.status === EncounterStatus.ARRIVED
+    ).length;
+    const completedCount = encountersArray.filter(
+      (e) => e.status === EncounterStatus.FINISHED
+    ).length;
 
-  const handleEditEncounter = (encounter: any) => {
-    router.push(`/reception/encounters/${encounter.id}?edit=true`);
-  };
+    return {
+      totalCount: encountersArray.length,
+      scheduledCount,
+      inProgressCount,
+      completedCount,
+    };
+  }, [encountersArray]);
 
-  const handleCreateEncounter = () => {
-    router.push("/reception/patients");
-  };
-
-  const filteredEncounters =
-    encounters?.data?.filter((encounter: PatientEncounter) => {
-      if (!searchTerm) return true;
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        encounter.patient?.firstName?.toLowerCase().includes(searchLower) ||
-        encounter.patient?.lastName?.toLowerCase().includes(searchLower) ||
-        encounter.patient?.patientCode?.toLowerCase().includes(searchLower) ||
-        encounter.chiefComplaint?.toLowerCase().includes(searchLower) ||
-        encounter.encounterType?.toLowerCase().includes(searchLower)
-      );
-    }) || [];
-
-  // Calculate stats
-  const scheduledCount = filteredEncounters?.filter(
-    (e) => e.status === EncounterStatus.WAITING
-  ).length;
-  const inProgressCount = filteredEncounters.filter(
-    (e) => e.status === EncounterStatus.ARRIVED
-  ).length;
-  const completedCount = filteredEncounters.filter(
-    (e) => e.status === EncounterStatus.FINISHED
-  ).length;
-
+  // Pagination metadata
+  const paginationMeta = useMemo(() => {
+    if (!encounters) return null;
+    return {
+      total: encounters.total,
+      page: encounters.page,
+      limit: limit,
+      totalPages: encounters.totalPages,
+      hasNextPage: encounters.hasNextPage,
+      hasPreviousPage: encounters.hasPreviousPage,
+    };
+  }, [encounters, limit]);
   return (
     <div className="space-y-6">
-      {/* Header with Quick Actions and Refresh */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
@@ -153,48 +289,54 @@ export default function EncountersPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton onRefresh={() => refetch()} loading={isLoading} />
-          {/* <Button
-              onClick={handleCreateEncounter}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create New Encounter
-            </Button> */}
+          <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
         </div>
       </div>
 
       {/* Error Display */}
-      {Boolean(error) && (
+      {error && (
         <ErrorAlert
           className="mb-4"
           title="Failed to load encounters"
-          message="An error occurred while loading encounters."
+          message={error}
         />
       )}
 
       {/* Stats Cards */}
       <EncounterStatsCards
-        totalCount={filteredEncounters.length}
-        scheduledCount={scheduledCount}
-        inProgressCount={inProgressCount}
-        completedCount={completedCount}
-        isLoading={isLoading}
+        totalCountThisMonth={encounterStats?.encountersThisMonth || 0}
+        todayEncounter={encounterStats?.todayEncounter || 0}
+        todayStatEncounter={encounterStats?.todayStatEncounter || 0}
+        averageEncountersPerPatient={
+          encounterStats?.averageEncountersPerPatient
+        }
+        isLoading={isLoadingEncounterStats}
       />
 
       {/* Filters */}
-      <ReceptionFilters
+      <EncounterFilter
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         priorityFilter={priorityFilter}
         onPriorityChange={setPriorityFilter}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        type={type}
+        onTypeChange={setType}
+        serviceId={serviceId}
+        onServiceIdChange={setServiceId}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+        isSearching={isLoading}
       />
 
       {/* Encounters Table */}
       <EncounterTable
-        encounters={filteredEncounters as any}
+        encounters={encountersArray}
         isLoading={isLoading}
         emptyStateIcon={<Stethoscope className="h-12 w-12" />}
         emptyStateTitle="No encounters found"
@@ -203,6 +345,14 @@ export default function EncountersPage() {
         onEditEncounter={handleEditEncounter}
         onDeleteEncounter={handleDeleteEncounter}
       />
+
+      {/* Pagination */}
+      {paginationMeta && (
+        <Pagination
+          pagination={paginationMeta}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 }

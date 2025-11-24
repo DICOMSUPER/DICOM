@@ -9,6 +9,8 @@ import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus from "./current-status";
 import Cookies from "js-cookie";
+import UserNotFoundInCookies from "../common/user-not-found-in-cookies";
+import UserDontHaveRoomAssignment from "../common/user-dont-have-room-assignment";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
@@ -86,7 +88,7 @@ export default function ImageTechnicianPageWrapper() {
 
   // Early returns after all hooks are called
   if (!userId) {
-    return <>No user in cookies</>;
+    return <UserNotFoundInCookies />;
   }
 
   if (isLoadingCurrentEmployeeSchedule) {
@@ -94,11 +96,11 @@ export default function ImageTechnicianPageWrapper() {
   }
 
   if (!currentEmployeeSchedule?.data?.roomSchedule?.room_id) {
-    return <>No working schedule yet</>;
+    return <UserDontHaveRoomAssignment />;
   }
 
   if (!currentRoomId) {
-    return <>No room assigned to your schedule yet</>;
+    return <UserDontHaveRoomAssignment />;
   }
 
   return (
