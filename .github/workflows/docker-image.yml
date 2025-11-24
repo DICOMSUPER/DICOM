@@ -22,9 +22,12 @@ jobs:
           node-version: 20
           cache: "pnpm"
 
-      # 3️⃣ Install pnpm globally
-      - name: Install pnpm
-        run: npm install -g pnpm
+      # 3️⃣ Setup pnpm đúng cách
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm --version  # kiểm tra pnpm đã sẵn sàng
 
       # 4️⃣ Install dependencies
       - name: Install dependencies
@@ -56,7 +59,7 @@ jobs:
           cd apps/backend
           docker build -t dicom/imaging-service:latest -f apps/imaging-service/Dockerfile .
 
-      # # 7️⃣ Login Docker Hub (sử dụng Secrets)
+      # # 7️⃣ Login Docker Hub
       # - name: Docker Hub Login
       #   uses: docker/login-action@v2
       #   with:
@@ -66,9 +69,9 @@ jobs:
       # # 8️⃣ Push Docker images
       # - name: Push Docker images
       #   run: |
-      #     docker push yourdockerhub/user-service:latest
-      #     docker push yourdockerhub/patient-service:latest
-      #     docker push yourdockerhub/imaging-service:latest
+      #     docker push dicom/user-service:latest
+      #     docker push dicom/patient-service:latest
+      #     docker push dicom/imaging-service:latest
 
       # # 9️⃣ Deploy lên server qua SSH
       # - name: Deploy to Server
