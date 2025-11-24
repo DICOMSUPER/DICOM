@@ -1,4 +1,4 @@
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { ImagingModality, ImagingOrder } from '@backend/shared-domain';
 import { Module } from '@nestjs/common';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';

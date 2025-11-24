@@ -3,7 +3,7 @@ import { DicomInstancesService } from './dicom-instances.service';
 import { DicomInstancesController } from './dicom-instances.controller';
 import { DicomInstance } from '@backend/shared-domain';
 import { DicomSeries } from '@backend/shared-domain';
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { DicomInstancesRepository } from './dicom-instances.repository';
 import { DicomSeriesRepository } from '../dicom-series/dicom-series.repository';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';

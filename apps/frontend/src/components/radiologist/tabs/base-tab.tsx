@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import FilterBar from "../filter-bar";
 import DataTable from "../data-table";
 import { useSearchParams } from "next/navigation";
@@ -82,18 +82,26 @@ export default function BaseTab() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <FilterBar
-        onRefetch={refetchStudy}
-        caseNumber={(studyData?.data || []).length}
-        maxCases={(studyData?.data || []).length} //may be pagination ?
-      />
-      <DataTable
-        studies={studyData?.data || []}
-        isLoading={isLoadingStudy}
-        refetch={refetchStudy}
-        error={!!studyError}
-      />
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-600">Loading...</div>
+        </div>
+      }
+    >
+      <div className="flex-1 flex flex-col h-full">
+        <FilterBar
+          onRefetch={refetchStudy}
+          caseNumber={(studyData?.data || []).length}
+          maxCases={(studyData?.data || []).length} //may be pagination ?
+        />
+        <DataTable
+          studies={studyData?.data || []}
+          isLoading={isLoadingStudy}
+          refetch={refetchStudy}
+          error={!!studyError}
+        />
+      </div>
+    </Suspense>
   );
 }

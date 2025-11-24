@@ -12,6 +12,15 @@ import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { DicomStudyStatus, Roles } from '@backend/shared-enums';
 import { FilterData } from './dicom-studies.controller';
 
+interface DicomStudiesStatsSummary {
+  totalDicomStudies: number;
+  totalScannedStudies: number;
+  totalPendingApprovalStudies: number;
+  totalApprovedStudies: number;
+  totalTechnicianVerifiedStudies: number;
+  totalResultPrintedStudies: number;
+}
+
 export type findDicomStudyByReferenceIdType =
   | 'modality'
   | 'order'
@@ -226,7 +235,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     dateTo?: string,
     roomId?: string,
     userInfo?: { userId: string; role: string }
-  ): Promise<any> {
+  ): Promise<DicomStudiesStatsSummary> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('study')
       .select('COUNT(*)', 'totalStudies')

@@ -6,10 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EncounterType } from "@/enums/patient-workflow.enum";
+import {
+  EncounterType,
+  EncounterPriorityLevel,
+} from "@/enums/patient-workflow.enum";
 import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
-import { Stethoscope, CheckCircle, AlertCircle, Users } from "lucide-react";
+import {
+  Stethoscope,
+  CheckCircle,
+  AlertCircle,
+  Users,
+  Zap,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import React from "react";
@@ -28,13 +39,38 @@ import { ServiceRoom } from "@/interfaces/user/service-room.interface";
 import { StepIndicator } from "@/components/ui/step-indicator";
 import ServiceSelection from "./patient/forward/service-selection";
 import RoomSelection from "./patient/forward/room-selection";
+import DepartmentSelection from "./patient/forward/department-selection";
+import EncounterTypeSelection from "./patient/forward/encounter-type-selection";
+import PriorityLevelSelection from "./patient/forward/priority-level-selection";
+import NoteInput from "./patient/forward/note-input";
+import ForwardButton from "./patient/forward/forward-button";
 
 // Format encounter type for display
 const formatEncounterType = (type: string): string => {
   return type
     .split(/[-_]/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .join(" ");
+};
+
+// Priority level configurations
+const priorityLevelConfig = {
+  [EncounterPriorityLevel.ROUTINE]: {
+    icon: Clock,
+    className: "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100",
+    description: "Standard processing time",
+  },
+  [EncounterPriorityLevel.URGENT]: {
+    icon: Zap,
+    className:
+      "bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100",
+    description: "Expedited processing required",
+  },
+  [EncounterPriorityLevel.STAT]: {
+    icon: AlertTriangle,
+    className: "bg-red-50 text-red-700 border-red-300 hover:bg-red-100",
+    description: "Immediate attention required",
+  },
 };
 
 type DepartmentOption = Department & { value: string; label: string };
@@ -46,6 +82,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
     patientId: patientId,
     encounterDate: "",
     encounterType: EncounterType.INPATIENT,
+    priority: EncounterPriorityLevel.ROUTINE,
     notes: "",
   });
 
@@ -60,10 +97,11 @@ export function PatientForward({ patientId }: { patientId: string }) {
   const onChangeEncounterInfo = (
     field:
       | "patientId"
-      | "encounterDate "
+      | "encounterDate"
       | "assignedPhysicianId"
       | "notes"
-      | "encounterType",
+      | "encounterType"
+      | "priority",
     value: string
   ) => {
     setEncounterInfo({ ...encounterInfo, [field]: value });
@@ -162,9 +200,10 @@ export function PatientForward({ patientId }: { patientId: string }) {
   };
 
   // Check if form is valid
-  const isFormValid = selectedDepartment && selectedService && selectedRoom;
+  const isFormValid = !!(selectedDepartment && selectedService && selectedRoom);
 
   const EncounterTypeArray = [...Object.values(EncounterType)];
+  const PriorityLevelArray = [...Object.values(EncounterPriorityLevel)];
 
   return (
     <Card className="border-border">
@@ -174,7 +213,8 @@ export function PatientForward({ patientId }: { patientId: string }) {
           Forward Patient
         </CardTitle>
         <CardDescription>
-          Select department, service, and room to forward the patient
+          Select department, service, room, and set priority for the patient
+          encounter
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -189,42 +229,16 @@ export function PatientForward({ patientId }: { patientId: string }) {
           />
 
           {/* Department Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                1
-              </span>
-              Select Department
-            </label>
-            <Select
-              className="basic-single"
-              classNamePrefix="select"
-              value={
-                selectedDepartment
-                  ? ({
-                      value: selectedDepartment.id,
-                      label: selectedDepartment.departmentName,
-                      ...selectedDepartment,
-                    } as DepartmentOption)
-                  : null
-              }
-              onChange={(selectedOption: SingleValue<DepartmentOption>) => {
-                setSelectedDepartment(
-                  selectedOption ? ({ ...selectedOption } as Department) : null
-                );
-                setSelectedService(null);
-                setSelectedRoom(null);
-              }}
-              onInputChange={(inputValue) => {
-                setDepartmentSearch(inputValue);
-              }}
-              isLoading={isLoadingDepartment}
-              options={departmentOptions}
-              placeholder="Search and select department..."
-              isClearable
-              isSearchable
-            />
-          </div>
+          <DepartmentSelection
+            selectedDepartment={selectedDepartment}
+            departmentOptions={departmentOptions}
+            departmentSearch={departmentSearch}
+            setDepartmentSearch={setDepartmentSearch}
+            isLoadingDepartment={isLoadingDepartment}
+            setSelectedDepartment={setSelectedDepartment}
+            setSelectedService={setSelectedService}
+            setSelectedRoom={setSelectedRoom}
+          />
 
           {/* Service Selection */}
           <ServiceSelection
@@ -246,75 +260,36 @@ export function PatientForward({ patientId }: { patientId: string }) {
           />
 
           {/* Encounter Type */}
-          <div className="space-y-5">
-            <label className="text-sm font-medium text-foreground">
-              Encounter Type
-            </label>
-            <div className="flex items-center gap-2 flex-wrap mt-2">
-              {EncounterTypeArray &&
-                EncounterTypeArray.map((type) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    aria-pressed={encounterInfo.encounterType === type}
-                    size="sm"
-                    className={`${
-                      encounterInfo.encounterType === type
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border bg-background text-foreground hover:bg-muted"
-                    }`}
-                    variant={
-                      encounterInfo.encounterType === type
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => {
-                      onChangeEncounterInfo("encounterType", type);
-                    }}
-                  >
-                    {formatEncounterType(type)}
-                  </Button>
-                ))}
-            </div>
-          </div>
+          <EncounterTypeSelection
+            EncounterTypeArray={EncounterTypeArray}
+            encounterInfo={encounterInfo}
+            formatEncounterType={formatEncounterType}
+            onChangeEncounterInfo={onChangeEncounterInfo}
+          />
+
+          {/* Priority Level */}
+          <PriorityLevelSelection
+            encounterInfo={encounterInfo}
+            PriorityLevelArray={PriorityLevelArray}
+            onChangeEncounterInfo={onChangeEncounterInfo}
+          />
 
           {/* Notes */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Notes (Optional)
-            </label>
-            <textarea
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                onChangeEncounterInfo("notes", e.target.value);
-              }}
-              value={encounterInfo.notes}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-              rows={3}
-              placeholder="Add any symptoms or intake notes..."
-            />
-          </div>
+          <NoteInput
+            encounterInfo={encounterInfo}
+            onChangeEncounterInfo={onChangeEncounterInfo}
+          />
 
           {/* Submit Button */}
-          <Button
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={onSubmit}
-            disabled={!isFormValid || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                Forwarding...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Forward Patient
-              </>
-            )}
-          </Button>
+          <ForwardButton
+            encounterInfo={encounterInfo}
+            onSubmit={onSubmit}
+            isFormValid={isFormValid}
+            isSubmitting={isSubmitting}
+          />
 
           {!isFormValid && (
-            <p className="text-xs text-foreground text-center">
+            <p className="text-xs text-gray-600 text-center">
               Please complete all required selections to forward the patient
             </p>
           )}

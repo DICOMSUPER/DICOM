@@ -1,4 +1,4 @@
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { ImagingOrder, ImagingOrderForm } from '@backend/shared-domain';
 import { Module } from '@nestjs/common';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
@@ -23,6 +23,6 @@ import { BackendRedisModule } from '@backend/redis';
     ImagingOrderFormRepository,
     ImagingModalityRepository,
   ],
-  exports: [BackendEntitiesModule,PatientServiceClientModule],
+  exports: [BackendEntitiesModule, PatientServiceClientModule],
 })
 export class ImagingOrderFormModule {}
