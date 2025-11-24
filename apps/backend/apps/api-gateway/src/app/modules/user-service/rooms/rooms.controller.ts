@@ -85,9 +85,7 @@ export class RoomsController {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(
-        `Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`
-      );
+      this.logger.log(`Fetching rooms - Page: ${pageNum}, Limit: ${limitNum}`);
 
       const result = await firstValueFrom(
         this.roomClient.send('room.get-all', {
@@ -101,7 +99,9 @@ export class RoomsController {
       );
 
       this.logger.log(
-        `Retrieved ${result?.data?.length || 0} rooms (Total: ${result?.total || 0})`
+        `Retrieved ${result?.data?.length || 0} rooms (Total: ${
+          result?.total || 0
+        })`
       );
 
       return result;
@@ -204,13 +204,16 @@ export class RoomsController {
         };
       });
 
+      // console.log('rooomIt:', roomItems);
+
       const roomStats = await firstValueFrom(
         this.patientClient.send(
-          'PatientService.PatientEncounter.GetEncounterStatsFromRoomIds',
+          'PatientService.Encounter.GetEncounterStatsFromRoomIds',
           roomItems
         )
       );
 
+      // console.log('roomStats: ', roomStats);
       const combined = rooms.map((room: Room) => {
         return { ...room, roomStats: roomStats[room.id] };
       });

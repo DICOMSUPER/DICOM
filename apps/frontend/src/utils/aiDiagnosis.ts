@@ -246,7 +246,7 @@ export const drawAIPredictions = (
             label: [
               `AI Diagnosis`,
               `Class: ${className}`,
-              `Confidence: ${confidence}%`,
+              `Confidence: ${confidence}`,
             ].join("\n"),
 
             cachedStats: {

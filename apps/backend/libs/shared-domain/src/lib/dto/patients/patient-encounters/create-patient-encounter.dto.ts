@@ -8,7 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { EncounterType } from '@backend/shared-enums';
+import { EncounterPriorityLevel, EncounterType } from '@backend/shared-enums';
 import { VitalSignsDto } from './vital-signs.dto';
 
 export class CreatePatientEncounterDto {
@@ -20,6 +20,10 @@ export class CreatePatientEncounterDto {
 
   @IsEnum(EncounterType)
   encounterType!: EncounterType;
+
+  @IsOptional()
+  @IsEnum(EncounterPriorityLevel)
+  priority?: EncounterPriorityLevel = EncounterPriorityLevel.ROUTINE;
 
   @IsOptional()
   @IsString()

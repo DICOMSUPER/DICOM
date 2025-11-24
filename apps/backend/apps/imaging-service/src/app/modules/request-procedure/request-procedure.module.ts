@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { RequestProcedure } from '@backend/shared-domain';
 import { RequestProcedureController } from './request-procedure.controller';
 import { RequestProcedureRepository } from './request-procedure.repository';

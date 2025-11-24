@@ -211,17 +211,18 @@ export class PatientService {
         searchFields,
         paginationDto.search
       );
+    } else {
+      // Otherwise, use regular pagination
+      patientsData = await this.patientRepository.paginate({
+        page: paginationDto.page,
+        limit: paginationDto.limit,
+        sortField: paginationDto.sortField,
+        order: paginationDto.order,
+        relation: paginationDto.relation || ['encounters'],
+      });
     }
-    // Otherwise, use regular pagination
-    patientsData = await this.patientRepository.paginate({
-      page: paginationDto.page,
-      limit: paginationDto.limit,
-      sortField: paginationDto.sortField,
-      order: paginationDto.order,
-      relation: paginationDto.relation || ['encounters'],
-    });
 
-    let patients = patientsData?.data;
+    let patients = patientsData?.data || [];
 
     patients = patients.map((p: Patient) => {
       return {

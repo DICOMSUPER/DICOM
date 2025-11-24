@@ -15,6 +15,7 @@ import { getEnabledElement, Types } from "@cornerstonejs/core";
 import { Loader2 } from "lucide-react";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
+import { useSearchParams } from "next/navigation";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -55,6 +56,9 @@ const ViewPortMain = ({
   const toolManagerRef = useRef<any>(null);
   const disposeViewportRef = useRef(disposeViewport);
   const loadSeriesRef = useRef(loadSeriesIntoViewport);
+  const searchParams = useSearchParams();
+  const studyId = searchParams.get("study");
+  console.log("selected Study id", studyId);
 
   useEffect(() => {
     disposeViewportRef.current = disposeViewport;
@@ -317,7 +321,12 @@ const ViewPortMain = ({
 
     const handleAIDiagnosis = async (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { viewportId: eventViewportId } = customEvent.detail || {};
+      const {
+        viewportId: eventViewportId,
+        modelId,
+        modelName,
+        versionName,
+      } = customEvent.detail || {};
       if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
         return;
       }
@@ -340,7 +349,10 @@ const ViewPortMain = ({
         console.log("Canvas converted to base64, calling API...");
         const response = await diagnosisImageByAI({
           base64Image,
-          aiModelId: undefined,
+          aiModelId: modelId,
+          modelName,
+          versionName,
+          selectedStudyId: studyId !== null ? studyId : undefined,
         }).unwrap();
 
         console.log("Full AI diagnosis response:", response);

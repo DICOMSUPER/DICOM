@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ChevronDown, ArrowLeft } from "lucide-react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
@@ -53,95 +53,98 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-full h-full overflow-y-auto">
-      <div className="p-4 border-b border-border sticky top-0 bg-card">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="h-8 w-8 p-0"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-lg font-semibold text-foreground">Work Tree</h2>
+    <Suspense>
+      {" "}
+      <div className="w-full h-full overflow-y-auto">
+        <div className="p-4 border-b border-border sticky top-0 bg-card">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="h-8 w-8 p-0"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h2 className="text-lg font-semibold text-foreground">Work Tree</h2>
+          </div>
+        </div>
+        <div className="py-2">
+          {isLoadingModality && (
+            <div className="px-3 py-2 text-xs text-foreground">Loading...</div>
+          )}
+          {!isLoadingModality && modalities.length === 0 && (
+            <div className="px-3 py-2 text-xs text-foreground">No data</div>
+          )}
+
+          {!isLoadingModality &&
+            modalities.length > 0 &&
+            modalities.map((m) => {
+              const id = m.id?.toUpperCase() ?? "";
+              const children =
+                m.modalityMachines?.filter(
+                  (mm: ModalityMachine) => !mm.isDeleted
+                ) ?? [];
+              const isOpen =
+                !!expanded[id] || m.id?.toUpperCase() === selectedModality;
+              const isSelectedTop = m.id?.toUpperCase() === selectedModality;
+              return (
+                <div key={m.id}>
+                  <div
+                    className={`flex items-center gap-1 px-4 py-3 cursor-pointer text-sm font-medium transition-colors ${
+                      isSelectedTop
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-accent"
+                    }`}
+                    onClick={() => handleNavigate(m.id)}
+                  >
+                    <span className="w-4 h-4 flex items-center justify-center">
+                      {children.length > 0 && (
+                        <button
+                          type="button"
+                          className="p-0 m-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(id);
+                          }}
+                          aria-label={isOpen ? "Collapse" : "Expand"}
+                        >
+                          {isOpen ? (
+                            <ChevronDown size={16} />
+                          ) : (
+                            <ChevronRight size={16} />
+                          )}
+                        </button>
+                      )}
+                    </span>
+                    <span className="truncate" title={m.modalityName}>
+                      {m.modalityCode}{" "}
+                      {/* Display modalityCode, but use id for selection */}
+                    </span>
+                  </div>
+                  {isOpen && children.length > 0 && (
+                    <div>
+                      {children.map((c: ModalityMachine) => (
+                        <div
+                          key={c.id}
+                          className={`px-4 py-2 pl-10 text-sm cursor-pointer transition-colors ${
+                            selectedMachine === c.id
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : "text-foreground hover:bg-accent/50"
+                          }`}
+                          onClick={() => handleNavigateChild(m.id, c.id)}
+                        >
+                          {c.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </div>
-      <div className="py-2">
-        {isLoadingModality && (
-          <div className="px-3 py-2 text-xs text-foreground">Loading...</div>
-        )}
-        {!isLoadingModality && modalities.length === 0 && (
-          <div className="px-3 py-2 text-xs text-foreground">No data</div>
-        )}
-
-        {!isLoadingModality &&
-          modalities.length > 0 &&
-          modalities.map((m) => {
-            const id = m.id?.toUpperCase() ?? "";
-            const children =
-              m.modalityMachines?.filter(
-                (mm: ModalityMachine) => !mm.isDeleted
-              ) ?? [];
-            const isOpen =
-              !!expanded[id] || m.id?.toUpperCase() === selectedModality;
-            const isSelectedTop = m.id?.toUpperCase() === selectedModality;
-            return (
-              <div key={m.id}>
-                <div
-                  className={`flex items-center gap-1 px-4 py-3 cursor-pointer text-sm font-medium transition-colors ${
-                    isSelectedTop
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground hover:bg-accent"
-                  }`}
-                  onClick={() => handleNavigate(m.id)}
-                >
-                  <span className="w-4 h-4 flex items-center justify-center">
-                    {children.length > 0 && (
-                      <button
-                        type="button"
-                        className="p-0 m-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpand(id);
-                        }}
-                        aria-label={isOpen ? "Collapse" : "Expand"}
-                      >
-                        {isOpen ? (
-                          <ChevronDown size={16} />
-                        ) : (
-                          <ChevronRight size={16} />
-                        )}
-                      </button>
-                    )}
-                  </span>
-                  <span className="truncate" title={m.modalityName}>
-                    {m.modalityCode}{" "}
-                    {/* Display modalityCode, but use id for selection */}
-                  </span>
-                </div>
-                {isOpen && children.length > 0 && (
-                  <div>
-                    {children.map((c: ModalityMachine) => (
-                      <div
-                        key={c.id}
-                        className={`px-4 py-2 pl-10 text-sm cursor-pointer transition-colors ${
-                          selectedMachine === c.id
-                            ? "bg-accent text-accent-foreground font-medium"
-                            : "text-foreground hover:bg-accent/50"
-                        }`}
-                        onClick={() => handleNavigateChild(m.id, c.id)}
-                      >
-                        {c.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-      </div>
-    </div>
+    </Suspense>
   );
 }

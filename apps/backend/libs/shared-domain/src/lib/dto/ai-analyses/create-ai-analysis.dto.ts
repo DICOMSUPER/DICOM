@@ -4,15 +4,15 @@ import { AnalysisStatus } from '@backend/shared-enums';
 export class CreateAiAnalysisDto {
   @IsString()
   @IsNotEmpty()
-  patientId!: string;
+  userId!: string;
 
   @IsString()
   @IsNotEmpty()
   studyId!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  seriesId!: string;
+  // @IsString()
+  // @IsNotEmpty()
+  // seriesId!: string;
 
 //   @IsString()
 //   @IsNotEmpty()
@@ -42,11 +42,4 @@ export class CreateAiAnalysisDto {
   @IsString()
   errorMessage?: string;
 
-  @IsOptional()
-  @IsDateString()
-  startedAt?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  completedAt?: Date;
 }

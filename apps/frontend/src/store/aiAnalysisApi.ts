@@ -48,7 +48,7 @@ export const aiAnalysisApi = createApi({
     //   }
     diagnosisImageByAI: builder.mutation<
       ApiResponse<AiResultDiagnosis>,
-      { base64Image: string; aiModelId?: string }
+      { base64Image: string; aiModelId?: string, modelName?: string, versionName?: string, selectedStudyId?: string }
     >({
       query: (body) => ({
         url: "/diagnosis-image",

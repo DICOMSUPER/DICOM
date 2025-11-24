@@ -197,7 +197,9 @@ export enum EncounterStatus {
   // TRIAGED = "triaged",
   // IN_PROGRESS = "in-progress",
   FINISHED = "finished",
+  LEAVED = "leaved",
 }
+
 export enum EncounterPriorityLevel {
   ROUTINE = "Routine",
   URGENT = "Urgent",
