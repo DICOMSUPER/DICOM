@@ -11,7 +11,12 @@ import {
   ServiceRoom,
   UpdatePatientEncounterDto,
 } from '@backend/shared-domain';
-import { EncounterStatus, Roles } from '@backend/shared-enums';
+import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+  EncounterType,
+  Roles,
+} from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import {
   HttpStatus,
@@ -468,4 +473,28 @@ export class PatientEncounterService {
 
     return queueInfo;
   }
+
+  filterEncounter = async (data: {
+    paginationDto?: RepositoryPaginationDto;
+    priority?: EncounterPriorityLevel;
+    status?: EncounterStatus;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    roomServiceIds?: string[]; //api gateway will be responsible for getting all roomServiceWith provided serviceId
+    type?: EncounterType;
+  }): Promise<PaginatedResponseDto<PatientEncounter>> => {
+    // console.log('Encounter filter at service level', data);
+    const searchFields = [
+      'patientCode',
+      'firstName',
+      'lastName',
+      'phoneNumber',
+      'insuranceNumber',
+    ];
+
+    return await this.encounterRepository.filterEncounter({
+      ...data,
+      searchFields,
+    });
+  };
 }

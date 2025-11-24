@@ -33,7 +33,7 @@ interface ApiError {
 export default function ReceptionPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 5;
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -135,6 +135,7 @@ export default function ReceptionPage() {
     setAppliedSearchTerm(searchTerm);
     setAppliedStatusFilter(statusFilter);
     setPage(1);
+    refetchPatients();
   }, [searchTerm, statusFilter]);
 
   const handleResetFilters = useCallback(() => {
@@ -146,9 +147,13 @@ export default function ReceptionPage() {
     setPage(1);
   }, []);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      refetchPatients();
+    },
+    [refetchPatients]
+  );
 
   const handleViewDetails = (patient: {
     id: string;

@@ -355,7 +355,7 @@ export class ImageAnnotationsController {
 
   @Post()
   async create(
-    @Body() createImageAnnotationDto: CreateImageAnnotationDto,
+    @Body() createImageAnnotationDto: any,
     @Req() req: IAuthenticatedRequest
   ) {
     return await firstValueFrom(

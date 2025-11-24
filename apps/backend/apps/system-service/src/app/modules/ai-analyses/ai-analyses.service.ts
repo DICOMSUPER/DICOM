@@ -28,9 +28,9 @@ export class AiAnalysesService {
     @InjectRepository(AiModel)
     private readonly aiModelRepository: Repository<AiModel>,
     private readonly redisService: RedisService,
-    private readonly paginationService: PaginationService,
-    // private readonly cloudinaryService: CloudinaryService
-  ) {}
+    private readonly paginationService: PaginationService
+  ) // private readonly cloudinaryService: CloudinaryService
+  {}
   async create(createAiAnalysisDto: CreateAiAnalysisDto): Promise<AiAnalysis> {
     console.log('Creating AI analysis:', createAiAnalysisDto);
 
@@ -58,41 +58,47 @@ export class AiAnalysesService {
   // }
   async diagnosisImageByAI(
     base64Image: string,
-    aiModelId: string
+    aiModelId: string,
+    modelName: string,
+    versionName: string,
+    
+    userId: string,
+    selectedStudyId?: string
   ): Promise<AiResultDiagnosis> {
     try {
-      // const aiModel = await this.aiModelRepository.findOne({
-      //   where: { id: aiModelId },
-      // });
-      // if (!aiModel) {
-      //   throw new NotFoundException(`AI Model with ID ${aiModelId} not found`);
-      // }
       const result = await axios<AiResultDiagnosis>({
         method: 'POST',
-        url: `https://serverless.roboflow.com/effusion-chest-xray-segmentation/1`,
+        url: `https://serverless.roboflow.com/${aiModelId}`,
         params: {
-          api_key: "31I5NP2qoFDBvXy8ybXD",
+          api_key: '31I5NP2qoFDBvXy8ybXD',
         },
         data: base64Image,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      // this.aiAnalysisRepository.create({
-      //   analysisResults: result.data,
-      //   analysisStatus: AnalysisStatus.COMPLETED,
-      //   // aiModelId: aiModelId,
-      // });
+      this.aiAnalysisRepository.save({
+        analysisResults: result.data,
+        analysisStatus: AnalysisStatus.COMPLETED,
+        aiModelId: aiModelId,
+        modelName: modelName,
+        versionName: versionName,
+        userId: userId,
+        studyId: selectedStudyId || '',
+      });
 
-      
       return result.data;
     } catch (error: any) {
       console.log('Error diagnosing image:', error);
-      // this.aiAnalysisRepository.create({
-      //   errorMessage: error.message,
-      //   analysisStatus: AnalysisStatus.FAILED,
-      //   // aiModelId: aiModelId,
-      // });
+      this.aiAnalysisRepository.save({
+        errorMessage: error.message,
+        analysisStatus: AnalysisStatus.FAILED,
+        aiModelId: aiModelId,
+        modelName: modelName,
+        versionName: versionName,
+        userId: userId,
+        studyId: selectedStudyId,
+      });
       throw new BadRequestException(
         'Failed to diagnose image: ' + error.message
       );
@@ -123,7 +129,7 @@ export class AiAnalysesService {
     // Build query options
     const options: any = {
       where: {},
-      order: { startedAt: 'DESC' },
+      order: { createdAt: 'DESC' },
     };
 
     // Apply filters

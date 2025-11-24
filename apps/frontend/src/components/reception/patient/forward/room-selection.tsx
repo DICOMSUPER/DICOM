@@ -63,26 +63,34 @@ export default function RoomSelection({
             {rooms.map((room) => {
               const maxQueue = room.roomStats?.maxWaiting ?? 1;
               const currentInProgress = room.roomStats?.currentInProgress ?? 0;
-              const completedPercent = Math.max(
-                Math.min(
-                  ((maxQueue - currentInProgress) / maxQueue) * 100,
-                  100
-                ),
-                0
-              );
 
-              const getCompletionColor = (percent: number) => {
-                if (percent >= 90) return "bg-green-500";
-                if (percent >= 70) return "bg-blue-500";
+              // Fixed calculation: if current is 0 and max is 0, show 100%
+              // Otherwise calculate availability percentage
+              const availabilityPercent =
+                maxQueue === 0
+                  ? 100
+                  : currentInProgress === 0
+                  ? 0
+                  : Math.max(
+                      Math.min(
+                        ((maxQueue - currentInProgress) / maxQueue) * 100,
+                        100
+                      ),
+                      0
+                    );
+
+              const getAvailabilityColor = (percent: number) => {
+                if (percent >= 70) return "bg-green-500";
                 if (percent >= 40) return "bg-yellow-500";
+                if (percent >= 20) return "bg-orange-500";
                 return "bg-red-500";
               };
 
-              const getCompletionStatusText = (percent: number) => {
-                if (percent >= 90) return "Queue completed";
-                if (percent >= 70) return "Almost done";
-                if (percent >= 40) return "In progress";
-                return "Just started";
+              const getAvailabilityText = (percent: number) => {
+                if (percent >= 70) return "Available";
+                if (percent >= 40) return "Moderate wait";
+                if (percent >= 20) return "Busy";
+                return "Very busy";
               };
 
               const isSelected = selectedRoom?.id === room.id;
@@ -116,33 +124,31 @@ export default function RoomSelection({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs text-foreground">
-                      Queue completion
-                    </p>
+                    <p className="text-xs text-gray-600">Room availability</p>
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
-                        className={`h-full transition-all duration-300 ${getCompletionColor(
-                          completedPercent
+                        className={`h-full transition-all duration-300 ${getAvailabilityColor(
+                          availabilityPercent
                         )}`}
-                        style={{ width: `${completedPercent}%` }}
+                        style={{ width: `${availabilityPercent}%` }}
                       />
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-foreground">
-                        {completedPercent.toFixed(0)}% completed
+                      <span className="text-foreground font-medium">
+                        {availabilityPercent.toFixed(0)}% completed
                       </span>
                       <span
                         className={`font-medium ${
-                          completedPercent >= 90
-                            ? "text-green-500"
-                            : completedPercent >= 70
-                            ? "text-blue-500"
-                            : completedPercent >= 40
+                          availabilityPercent >= 70
+                            ? "text-green-600"
+                            : availabilityPercent >= 40
                             ? "text-yellow-600"
-                            : "text-red-500"
+                            : availabilityPercent >= 20
+                            ? "text-orange-600"
+                            : "text-red-600"
                         }`}
                       >
-                        {getCompletionStatusText(completedPercent)}
+                        {getAvailabilityText(availabilityPercent)}
                       </span>
                     </div>
                   </div>

@@ -154,7 +154,8 @@ export default function TabProvider({ children }: { children: ReactNode }) {
       const updated = prev.filter((tab) => tab.id !== id);
 
       if (activeTabId === id) {
-        const next = updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
+        const next =
+          updated.length > 0 ? updated[updated.length - 1] : { id: "0" };
         setActiveTabId(next.id);
       }
 
@@ -185,7 +186,9 @@ export default function TabProvider({ children }: { children: ReactNode }) {
   // ✅ Lưu tabs vào sessionStorage
   useEffect(() => {
     try {
-      const serializable = availableTabs.map(({ tabContent, SidebarContent, ...rest }) => rest);
+      const serializable = availableTabs.map(
+        ({ tabContent, SidebarContent, ...rest }) => rest
+      );
       sessionStorage.setItem("browser-tabs", JSON.stringify(serializable));
       sessionStorage.setItem("browser-active-tab", activeTabId);
     } catch {
@@ -197,7 +200,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     <TabContext.Provider
       value={{ availableTabs, activeTabId, setActiveTabId, openTab, closeTab }}
     >
-      {children}
+      <Suspense fallback={<>Loading...</>}> {children}</Suspense>
     </TabContext.Provider>
   );
 }

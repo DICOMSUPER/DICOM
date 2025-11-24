@@ -4,7 +4,7 @@ import { DicomSeriesController } from './dicom-series.controller';
 import { DicomSeries } from '@backend/shared-domain';
 import { DicomStudy } from '@backend/shared-domain';
 import { DicomInstance } from '@backend/shared-domain';
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import { DicomSeriesRepository } from './dicom-series.repository';
 import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';

@@ -1,3 +1,13 @@
+import { Role } from '@backend/shared-decorators';
+import {
+  CreateAiAnalysisDto,
+  FilterAiAnalysisDto,
+  UpdateAiAnalysisDto,
+} from '@backend/shared-domain';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -8,19 +18,12 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  CreateAiAnalysisDto,
-  FilterAiAnalysisDto,
-  UpdateAiAnalysisDto,
-} from '@backend/shared-domain';
-import {
-  RequestLoggingInterceptor,
-  TransformInterceptor,
-} from '@backend/shared-interceptor';
-import { Public } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
+import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 
 @Controller('ai-analyses')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -49,19 +52,33 @@ export class AiAnalysisController {
   //   );
   // }
 
-  
   @Post('/diagnosis-image')
-  @Public()
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN,
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN
+  )
   async diagnosisImageByAI(
     @Body()
     body: {
       base64Image: string;
       aiModelId?: string;
-    }
+      modelName?: string;
+      versionName?: string;
+      selectedStudyId?: string;
+    },
+    @Req() req: IAuthenticatedRequest
   ) {
+    console.log("");
+    
     return this.systemService.send(
       'SystemService.AiAnalysis.DiagnosisImage',
-      body
+      {
+        body,
+        userId: req.userInfo?.userId,
+      },
+    
     );
   }
   @Get()

@@ -4,46 +4,46 @@ import { ReceptionStatsCards } from "@/components/reception/reception-stats-card
 import { Stethoscope, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 interface EncounterStatsCardsProps {
-  totalCount: number;
-  scheduledCount: number;
-  inProgressCount: number;
-  completedCount: number;
-  isLoading?: boolean;
+  totalCountThisMonth: number;
+  todayEncounter: number;
+  todayStatEncounter: number;
+  averageEncountersPerPatient: number;
+  isLoading: boolean;
 }
 
 export function EncounterStatsCards({
-  totalCount,
-  scheduledCount,
-  inProgressCount,
-  completedCount,
-  isLoading = false,
+  totalCountThisMonth,
+  todayEncounter,
+  todayStatEncounter,
+  averageEncountersPerPatient,
+  isLoading,
 }: EncounterStatsCardsProps) {
   const stats = [
     {
-      title: "Total Encounters",
-      value: totalCount,
-      description: "All encounters",
+      title: "Monthly Encounters",
+      value: totalCountThisMonth,
+      description: "New encounters in this month",
       icon: Stethoscope,
       isLoading,
     },
     {
-      title: "Scheduled",
-      value: scheduledCount,
-      description: "Awaiting treatment",
+      title: "Daily Encounters",
+      value: todayEncounter,
+      description: "All encounters created in today",
       icon: Clock,
       isLoading,
     },
     {
-      title: "In Progress",
-      value: inProgressCount,
-      description: "Currently active",
+      title: "Today's Stat",
+      value: todayStatEncounter,
+      description: "Today encounter that priority are stats",
       icon: AlertCircle,
       isLoading,
     },
     {
-      title: "Completed",
-      value: completedCount,
-      description: "Finished encounters",
+      title: "Patients's Encounter",
+      value: averageEncountersPerPatient.toFixed(2),
+      description: "Average encounter per patient",
       icon: CheckCircle,
       isLoading,
     },

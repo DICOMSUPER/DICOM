@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Between, EntityManager } from 'typeorm';
-import { BaseRepository } from '@backend/database';
+import { Between, Brackets, EntityManager } from 'typeorm';
+import { BaseRepository, PaginatedResponseDto } from '@backend/database';
 import { RepositoryPaginationDto } from '@backend/database';
 import { PatientEncounter } from '../entities/patients/patient-encounters.entity';
 import { Patient } from '../entities/patients/patients.entity';
@@ -280,7 +280,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       }),
       this.getRepository().find({
         where: whereClause,
-        select: ['encounterType'],
+        // select: ['encounterType'],
       }),
       this.getRepository().count({
         where: {
@@ -306,6 +306,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
 
     // Calculate average encounters per patient
     const uniquePatients = new Set(allEncounters.map((e) => e.patientId)).size;
+
     const averageEncountersPerPatient =
       uniquePatients > 0 ? totalEncounters / uniquePatients : 0;
 
@@ -324,10 +325,14 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
    */
   async getRecentEncounters(
     patientId: string,
-    limit: number = 5
+    limit: number
   ): Promise<PatientEncounter[]> {
     return await this.findAll(
-      { where: { patientId }, take: limit, order: { encounterDate: 'DESC' } },
+      {
+        where: { patientId },
+        take: limit || 5,
+        order: { encounterDate: 'DESC' },
+      },
       ['patient']
     );
   }
@@ -351,11 +356,11 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
         'totalArrivedEncounters'
       )
 
-      .where('encounter.encounter_date >= :dateFrom', {
-        dateFrom: startDate,
+      .where('encounter.created_at >= :dateFrom', {
+        dateFrom: startDate.toISOString(),
       })
-      .andWhere('encounter.encounter_date <= :dateTo', {
-        dateTo: endDate,
+      .andWhere('encounter.createdd_at <= :dateTo', {
+        dateTo: endDate.toISOString(),
       })
       .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
       .setParameter('finishedStatus', EncounterStatus.FINISHED)
@@ -369,7 +374,6 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
         }
       );
     }
-
 
     const result = await queryBuilder.getRawOne();
 
@@ -536,11 +540,135 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       .where('encounter.service_room_id IN (:...serviceRoomIds)', {
         serviceRoomIds,
       })
-      .andWhere('encounter.createdAt BETWEEN :startOfDate AND :endOfDate', {
-        startOfDate,
-        endOfDate,
-      });
+      .andWhere(
+        'encounter.encounter_date BETWEEN :startOfDate AND :endOfDate',
+        {
+          startOfDate: startOfDate.toISOString(),
+          endOfDate: endOfDate.toISOString(),
+        }
+      );
 
     return qb.getMany();
+  }
+
+  async filterEncounter(data: {
+    paginationDto?: RepositoryPaginationDto;
+    searchFields?: string[];
+    status?: EncounterStatus;
+    startDate?: Date | string;
+    endDate?: Date | string;
+    roomServiceIds?: string[];
+    priority?: EncounterPriorityLevel;
+    type?: EncounterType;
+  }): Promise<PaginatedResponseDto<PatientEncounter>> {
+    // console.log('encounter filter data: ', data);
+
+    if (data.roomServiceIds && data.roomServiceIds.length === 0)
+      return {
+        data: [],
+        limit: data?.paginationDto?.limit || 5,
+        page: data?.paginationDto?.page || 1,
+        total: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      };
+    const repository = this.getRepository();
+
+    const qb = repository
+      .createQueryBuilder('encounter')
+      .leftJoinAndSelect('encounter.patient', 'patient');
+
+    // Search functionality
+    if (data.paginationDto?.search && data.searchFields?.length) {
+      qb.andWhere(
+        new Brackets((qb) => {
+          data.searchFields?.forEach((field, index) => {
+            const condition = `unaccent(LOWER(patient.${field})) ILIKE unaccent(LOWER(:search))`;
+            if (index === 0) {
+              qb.where(condition);
+            } else {
+              qb.orWhere(condition);
+            }
+          });
+        })
+      );
+      qb.setParameter('search', `%${data.paginationDto.search}%`);
+    }
+
+    // Status filter
+    if (data.status) {
+      qb.andWhere('encounter.status = :status', { status: data.status });
+    }
+
+    // Date filters
+    if (data.startDate) {
+      const startDateValue = new Date(data.startDate);
+      startDateValue.setHours(0, 0, 0, 0);
+      qb.andWhere('encounter.encounterDate >= :startDate', {
+        startDate: startDateValue,
+      });
+    }
+
+    if (data.endDate) {
+      const endDateValue = new Date(data.endDate);
+      endDateValue.setHours(23, 59, 59, 999);
+      qb.andWhere('encounter.encounterDate <= :endDate', {
+        endDate: endDateValue,
+      });
+    }
+
+    // Room service filter - with additional safety check
+    if (data.roomServiceIds && data.roomServiceIds.length > 0) {
+      // Filter out any invalid UUIDs
+      const validRoomServiceIds = data.roomServiceIds.filter(
+        (id) => id && typeof id === 'string' && id.length > 0
+      );
+
+      if (validRoomServiceIds.length > 0) {
+        qb.andWhere('encounter.serviceRoomId IN (:...roomServiceIds)', {
+          roomServiceIds: validRoomServiceIds,
+        });
+      }
+    }
+
+    // Priority filter
+    if (data.priority) {
+      qb.andWhere('encounter.priority = :priority', {
+        priority: data.priority,
+      });
+    }
+
+    if (data?.type) {
+      qb.andWhere('encounter.encounterType = :type', { type: data?.type });
+    }
+
+    // Sorting
+    const sortField = data.paginationDto?.sortField || 'encounterDate';
+    const order =
+      data.paginationDto?.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+    qb.orderBy(`encounter.${sortField}`, order);
+
+    // Pagination with defaults
+    const take = data.paginationDto?.limit || 20;
+    const page = data.paginationDto?.page || 1;
+    const skip = take * (page - 1);
+
+    qb.take(take).skip(skip);
+
+    const [encounters, total] = await qb.getManyAndCount();
+    const totalPages = Math.ceil(total / take);
+
+    const result = {
+      data: encounters,
+      total,
+      page,
+      limit: take,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    } as PaginatedResponseDto<PatientEncounter>;
+
+    return result;
   }
 }

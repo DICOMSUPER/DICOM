@@ -163,8 +163,9 @@ export interface ViewerContextType {
   prevFrame: (viewport: number) => void;
   refreshViewport: (viewport: number) => Promise<void>;
   // AI Diagnosis methods
-  diagnosisViewport: (viewport: number) => Promise<void>;
+  diagnosisViewport: (viewport: number, options: { modelId: string, modelName: string, versionName: string }) => Promise<void>;
   clearAIAnnotations: (viewport: number) => void;
+  
 }
 
 const defaultTransform: ViewportTransform = {
@@ -1657,7 +1658,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   // AI Diagnosis - dispatch event to ViewPortMain
   const diagnosisViewport = useCallback(
-    async (viewport: number) => {
+    async (viewport: number,options?: { modelId: string, modelName: string, versionName: string }) => {
       const viewportId = getViewportId(viewport);
       
       if (!viewportId) {
@@ -1665,13 +1666,25 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      console.log('🧠 Triggering AI diagnosis for viewport:', viewport, 'viewportId:', viewportId);
+   console.log('🧠 Triggering AI diagnosis:', {
+      viewport,
+      viewportId,
+      modelId: options?.modelId,
+      modelName: options?.modelName,
+      versionName: options?.versionName,
+    });
       
-      window.dispatchEvent(
-        new CustomEvent('diagnoseViewport', {
-          detail: { viewportId, viewportIndex: viewport },
-        })
-      );
+    window.dispatchEvent(
+      new CustomEvent('diagnoseViewport', {
+        detail: { 
+          viewportId, 
+          viewportIndex: viewport,
+          modelId: options?.modelId,
+          modelName: options?.modelName,
+          versionName: options?.versionName,
+        },
+      })
+    );
     },
     [getViewportId]
   );

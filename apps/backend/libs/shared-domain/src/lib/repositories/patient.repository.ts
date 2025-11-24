@@ -203,7 +203,7 @@ export class PatientRepository extends BaseRepository<Patient> {
 
     query.skip(skip).take(safeLimit);
 
-    console.log(query);
+    // console.log(query);
     const [data, total] = await query.getManyAndCount();
 
     const totalPages = Math.ceil(total / safeLimit);

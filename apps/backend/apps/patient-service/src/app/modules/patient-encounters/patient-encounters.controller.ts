@@ -12,6 +12,7 @@ import {
 import { PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
+  PaginationDto,
   RepositoryPaginationDto,
 } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
@@ -19,6 +20,11 @@ import {
   PATIENT_SERVICE,
   MESSAGE_PATTERNS,
 } from '../../../constant/microservice.constant';
+import {
+  EncounterPriorityLevel,
+  EncounterStatus,
+  EncounterType,
+} from '@backend/shared-enums';
 
 const moduleName = 'Encounter';
 @Controller('encounters')
@@ -161,10 +167,10 @@ export class PatientEncounterController {
   )
   findByRoom(
     @Payload() data: { filterQueue: FilterPatientEncounterDto; userId: string }
-  ) {
-    console.log('dataa', data);
+  ): Promise<PaginatedResponseDto<PatientEncounter>> {
+    // console.log('dataa', data);
 
-    console.log('data', data);
+    // console.log('data', data);
 
     return this.patientEncounterService.getAllInRoom(
       data.filterQueue,
@@ -239,11 +245,11 @@ export class PatientEncounterController {
   }
 
   @MessagePattern(
-    'PatientService.PatientEncounter.GetEncounterStatsFromRoomIds'
+    `${PATIENT_SERVICE}.${moduleName}.GetEncounterStatsFromRoomIds`
   )
   async getEncounterStatsFromRoomIds(@Payload() data: RoomEncounterFilters[]) {
     this.logger.log(
-      'Using pattern: PatientService.PatientEncounter.GetEncounterStatsFromRoomIds'
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetEncounterStatsFromRoomIds`
     );
     try {
       return await this.patientEncounterService.getEncounterStatsFromRoomIdsInDate(
@@ -258,5 +264,33 @@ export class PatientEncounterController {
         'PatientService'
       );
     }
+  }
+
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.FilterEncounterWithPagination`
+  )
+  async filterEncounter(
+    @Payload()
+    data: {
+      paginationDto?: RepositoryPaginationDto;
+      status?: EncounterStatus;
+      startDate?: Date | string;
+      endDate?: Date | string;
+      roomServiceIds?: string[]; //api gateway will be responsible for getting all roomServiceWith provided serviceId
+      priority?: EncounterPriorityLevel;
+      type?: EncounterType;
+    }
+  ): Promise<PaginatedResponseDto<PatientEncounter>> {
+    return await this.patientEncounterService.filterEncounter({
+      ...data,
+      paginationDto: {
+        ...data.paginationDto,
+        page: data.paginationDto?.page || 1,
+        limit: data.paginationDto?.limit || 5,
+        sortField: data.paginationDto?.sortField || 'encounterDate',
+        order: data.paginationDto?.order || 'desc',
+        search: data.paginationDto?.search || '',
+      },
+    });
   }
 }

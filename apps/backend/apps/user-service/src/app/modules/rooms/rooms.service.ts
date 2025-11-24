@@ -329,35 +329,46 @@ export class RoomsService {
     }
   }
 
-async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
-  try {
-    console.log('🔍 START getRoomByDepartmentIdV2, departmentId:', departmentId);
-    
-    const qb = this.roomRepository
-      .createQueryBuilder('room')
-      .leftJoinAndSelect('room.department', 'department')
-      .innerJoinAndSelect('room.schedules', 'schedules');
+  async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
+    try {
+      console.log(
+        '🔍 START getRoomByDepartmentIdV2, departmentId:',
+        departmentId
+      );
 
-    qb.where('room.department_id = :id', { id: departmentId })
-      .andWhere('room.status IN (:...status)', {
-        status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
+      const qb = this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoinAndSelect('room.department', 'department')
+        .innerJoinAndSelect('room.schedules', 'schedules');
+
+      qb.where('room.department_id = :id', { id: departmentId }).andWhere(
+        'room.status IN (:...status)',
+        {
+          status: [RoomStatus.AVAILABLE, RoomStatus.OCCUPIED],
+        }
+      );
+
+      const now = new Date();
+      const vnTime = new Date(
+        now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' })
+      );
+      console.log('⏰ VN time:', vnTime);
+
+      const currentDate = vnTime.toISOString().split('T')[0];
+      const currentTime = vnTime.toTimeString().split(' ')[0];
+
+      const yesterday = new Date(vnTime);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDate = yesterday.toISOString().split('T')[0];
+
+      console.log('📅 Query params:', {
+        currentDate,
+        currentTime,
+        yesterdayDate,
       });
 
-    const now = new Date();
-    const vnTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
-    console.log('⏰ VN time:', vnTime);
-    
-    const currentDate = vnTime.toISOString().split('T')[0]; 
-    const currentTime = vnTime.toTimeString().split(' ')[0]; 
-
-    const yesterday = new Date(vnTime);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayDate = yesterday.toISOString().split('T')[0];
-
-    console.log('📅 Query params:', { currentDate, currentTime, yesterdayDate });
-
-    qb.andWhere(
-      `(
+      qb.andWhere(
+        `(
         (schedules.work_date = :currentDate AND (
           (schedules.actual_start_time > schedules.actual_end_time 
             AND (schedules.actual_start_time <= :currentTime OR schedules.actual_end_time > :currentTime)
@@ -373,39 +384,41 @@ async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
           AND :currentTime < schedules.actual_end_time
         )
       )`,
-      { currentDate, yesterdayDate, currentTime }
-    );
+        { currentDate, yesterdayDate, currentTime }
+      );
 
-    qb.distinct(true);
-    
-    // Log SQL query
-    const sql = qb.getSql();
-    console.log('🗄️ SQL Query:', sql);
-    console.log('🔧 Parameters:', qb.getParameters());
-    
-    console.log('⚙️ Executing query...');
-    const rooms = await qb.getMany();
-    
-    console.log('✅ Query executed successfully');
-    console.log('📦 Found rooms:', rooms.length);
-    console.log('📊 Rooms data:', JSON.stringify(rooms, null, 2));
-    
-    this.logger.log(`Found ${rooms.length} rooms for department ${departmentId} at ${currentDate} ${currentTime} VN time`);
-    
-    return rooms;
-  } catch (error) {
-    console.error('❌ Error in getRoomByDepartmentIdV2:', error);
-    console.error('❌ Error stack:', (error as Error).stack);
-    
-    throw ThrowMicroserviceException(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      `Failed to get rooms by department_id: ${
-        (error as Error).message || error
-      }`,
-      'UserService'
-    );
+      qb.distinct(true);
+
+      // Log SQL query
+      const sql = qb.getSql();
+      console.log('🗄️ SQL Query:', sql);
+      console.log('🔧 Parameters:', qb.getParameters());
+
+      console.log('⚙️ Executing query...');
+      const rooms = await qb.getMany();
+
+      console.log('✅ Query executed successfully');
+      console.log('📦 Found rooms:', rooms.length);
+      console.log('📊 Rooms data:', JSON.stringify(rooms, null, 2));
+
+      this.logger.log(
+        `Found ${rooms.length} rooms for department ${departmentId} at ${currentDate} ${currentTime} VN time`
+      );
+
+      return rooms;
+    } catch (error) {
+      console.error('❌ Error in getRoomByDepartmentIdV2:', error);
+      console.error('❌ Error stack:', (error as Error).stack);
+
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `Failed to get rooms by department_id: ${
+          (error as Error).message || error
+        }`,
+        'UserService'
+      );
+    }
   }
-}
 
   async getRoomByRoomIds(roomIds: string[]): Promise<Room[]> {
     if (roomIds.length > 0) {
@@ -505,6 +518,24 @@ async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const yesterdayDate = yesterday.toISOString().split('T')[0];
 
+      // First, get room IDs that have the specified service
+      const roomIdsWithService = await this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoin('room.serviceRooms', 'serviceRooms')
+        .select('room.id', 'roomId')
+        .where('room.department_id = :departmentId', { departmentId })
+        .andWhere('serviceRooms.service_id = :serviceId', { serviceId })
+        .andWhere('room.is_active = true')
+        .andWhere('serviceRooms.is_active = true')
+        .getRawMany();
+
+      const roomIds = roomIdsWithService.map((room) => room.roomId);
+
+      if (roomIds.length === 0) {
+        return [];
+      }
+
+      // Now get the full room data with ALL service rooms
       const qb = this.roomRepository
         .createQueryBuilder('room')
 
@@ -536,9 +567,7 @@ async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
           'employeeRoomAssignments.is_active = true'
         )
         .leftJoin('employeeRoomAssignments.employee', 'employee')
-
-        .where('room.department_id = :departmentId', { departmentId })
-        .andWhere('serviceRooms.service_id = :serviceId', { serviceId })
+        .where('room.id IN (:...roomIds)', { roomIds })
         .andWhere('room.is_active = true')
         .andWhere('serviceRooms.is_active = true')
 
@@ -568,7 +597,9 @@ async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
           { todayDate, todayTime, yesterdayDate }
         );
 
-      if (role) qb.andWhere('employee.role = :role', { role });
+      if (role) {
+        qb.andWhere('employee.role = :role', { role });
+      }
 
       return await qb.getMany();
     } catch (error) {
