@@ -5,7 +5,6 @@ import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/radiologist/side-bar";
-import { Suspense } from "react";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
