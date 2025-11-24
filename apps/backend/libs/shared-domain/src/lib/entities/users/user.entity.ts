@@ -45,7 +45,7 @@ export class User {
   role!: Roles;
 
   @Column({ name: 'department_id', nullable: true })
-  departmentId!: string;
+  departmentId!: string | null;
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto, RoomSchedule } from '@backend/shared-domain';
+import { CreateUserDto, Department } from '@backend/shared-domain';
 import { UpdateUserDto } from '@backend/shared-domain';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -30,8 +30,8 @@ export class UsersService {
     private otpService: OtpService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(RoomSchedule)
-    private RoomScheduleRepository: Repository<RoomSchedule>
+    @InjectRepository(Department)
+    private departmentRepository: Repository<Department>
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
@@ -110,8 +110,6 @@ export class UsersService {
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN'),
       });
 
-      console.log(refreshToken);
-
       const expiresIn =
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const expiresInMs = this.parseExpiresIn(expiresIn);
@@ -122,8 +120,6 @@ export class UsersService {
         expiresAt,
       };
     } catch (error) {
-      console.log('ERROR', error);
-
       if (
         error instanceof ValidationException ||
         error instanceof TokenGenerationFailedException
@@ -421,7 +417,6 @@ export class UsersService {
     createUserDto: CreateUserDto
   ): Promise<Omit<User, 'passwordHash'> | null> {
     try {
-      // Validation
       if (!createUserDto.password) {
         throw new ValidationException('Password là bắt buộc');
       }
@@ -438,13 +433,11 @@ export class UsersService {
         throw new ValidationException('Họ và tên là bắt buộc');
       }
 
-      // Check existing email
       const existingUserByEmail = await this.findByEmail(createUserDto.email);
       if (existingUserByEmail) {
         throw new UserAlreadyExistsException('Email đã được sử dụng');
       }
 
-      // Check existing username
       const existingUserByUsername = await this.userRepository.findOne({
         where: { username: createUserDto.username },
       });
@@ -452,7 +445,6 @@ export class UsersService {
         throw new UserAlreadyExistsException('Tên đăng nhập đã được sử dụng');
       }
 
-      // Check existing employeeId if provided
       if (createUserDto.employeeId) {
         const existingUserByEmployeeId = await this.userRepository.findOne({
           where: { employeeId: createUserDto.employeeId },
@@ -462,10 +454,8 @@ export class UsersService {
         }
       }
 
-      // Hash password
       const passwordHash = await bcrypt.hash(createUserDto.password, 10);
 
-      // Create new user
       const newUser = this.userRepository.create({
         username: createUserDto.username,
         email: createUserDto.email,
@@ -505,7 +495,6 @@ export class UsersService {
         throw new UserAlreadyExistsException('Thông tin đã được sử dụng');
       }
 
-      console.error('Register error:', error);
       throw new DatabaseException('Lỗi trong quá trình đăng ký');
     }
   }
@@ -531,7 +520,6 @@ export class UsersService {
         );
       }
 
-      // Xác minh và decode token
       const decoded = this.jwtService.verify(token, { secret: jwtSecret });
 
       return decoded; // { email, sub: userId, role }
@@ -584,19 +572,12 @@ export class UsersService {
     }
   }
 
-  /**
-   * Update user information
-   * @param id - User ID
-   * @param updateUserDto - Updated user data
-   * @returns Updated user without password hash
-   */
   async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
     try {
       if (!id) {
         throw new ValidationException('User ID is required');
       }
 
-      // Find existing user (check both active and inactive)
       const user = await this.userRepository.findOne({
         where: { id },
         relations: ['department'],
@@ -606,7 +587,6 @@ export class UsersService {
         throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
       }
 
-      // Check email uniqueness if email is being updated
       if (updateUserDto.email && updateUserDto.email !== user.email) {
         const existingUserByEmail = await this.findByEmail(updateUserDto.email);
         if (existingUserByEmail && existingUserByEmail.id !== id) {
@@ -614,7 +594,6 @@ export class UsersService {
         }
       }
 
-      // Check username uniqueness if username is being updated
       if (updateUserDto.username && updateUserDto.username !== user.username) {
         const existingUserByUsername = await this.userRepository.findOne({
           where: { username: updateUserDto.username },
@@ -624,7 +603,6 @@ export class UsersService {
         }
       }
 
-      // Check employeeId uniqueness if employeeId is being updated
       if (updateUserDto.employeeId && updateUserDto.employeeId !== user.employeeId) {
         const existingUserByEmployeeId = await this.userRepository.findOne({
           where: { employeeId: updateUserDto.employeeId },
@@ -634,43 +612,150 @@ export class UsersService {
         }
       }
 
-      // Hash password if password is being updated
-      if (updateUserDto.password) {
-        updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+      const targetDepartmentId = updateUserDto.targetDepartmentId;
+      const sentDepartmentId = updateUserDto.departmentId;
+      const isChangingDepartment = sentDepartmentId !== undefined && sentDepartmentId !== user.departmentId;
+      const effectiveDepartmentId = sentDepartmentId !== undefined ? sentDepartmentId : user.departmentId;
+
+      if (targetDepartmentId !== undefined) {
+        if (targetDepartmentId) {
+          const targetDepartment = await this.departmentRepository.findOne({
+            where: { id: targetDepartmentId },
+          });
+          if (!targetDepartment) {
+            throw new ValidationException('Phòng ban không tồn tại');
+          }
+
+          if (targetDepartmentId !== effectiveDepartmentId) {
+            if (isChangingDepartment) {
+              throw new ValidationException(
+                `Phòng ban làm việc mới phải khớp với phòng ban trưởng phòng. Người dùng chỉ có thể là trưởng phòng của phòng ban mà họ đang làm việc.`
+              );
+            } else {
+              throw new ValidationException(
+                `Phòng ban trưởng phòng phải khớp với phòng ban làm việc hiện tại. Người dùng chỉ có thể là trưởng phòng của phòng ban mà họ đang làm việc.`
+              );
+            }
+          }
+        }
       }
 
-      // Update user fields
-      Object.keys(updateUserDto).forEach((key) => {
-        if (key === 'password') {
-          user.passwordHash = (updateUserDto as any).password;
-        } else if (updateUserDto[key as keyof UpdateUserDto] !== undefined) {
-          (user as any)[key] = updateUserDto[key as keyof UpdateUserDto];
-        }
+      const currentHeadDepartments = await this.departmentRepository.find({
+        where: { headDepartmentId: id },
       });
 
-      const updatedUser = await this.userRepository.save(user);
-      const { passwordHash, ...userWithoutPassword } = updatedUser;
-      return userWithoutPassword;
+      if (isChangingDepartment && currentHeadDepartments.length > 0) {
+        if (targetDepartmentId === undefined || (targetDepartmentId !== null && targetDepartmentId !== sentDepartmentId)) {
+          const departmentNames = currentHeadDepartments.map(dept => dept.departmentName).join(', ');
+          throw new ValidationException(
+            `Người dùng đang là trưởng phòng của ${departmentNames}. Khi thay đổi phòng ban, phải đặt người dùng làm trưởng phòng của phòng ban mới hoặc bổ nhiệm trưởng phòng mới trước khi thay đổi.`
+          );
+        }
+      }
+
+      const departmentsToUpdate: { departmentId: string; headUserId: string | null }[] = [];
+
+      if (targetDepartmentId !== undefined) {
+        for (const dept of currentHeadDepartments) {
+          if (dept.id !== targetDepartmentId) {
+            departmentsToUpdate.push({ departmentId: dept.id, headUserId: null });
+          }
+        }
+
+        if (targetDepartmentId) {
+          const existingUpdate = departmentsToUpdate.find(d => d.departmentId === targetDepartmentId);
+          if (!existingUpdate) {
+            departmentsToUpdate.push({ departmentId: targetDepartmentId, headUserId: id });
+          } else {
+            existingUpdate.headUserId = id;
+          }
+        } else {
+          for (const dept of currentHeadDepartments) {
+            departmentsToUpdate.push({ departmentId: dept.id, headUserId: null });
+          }
+        }
+      }
+
+      for (const deptUpdate of departmentsToUpdate) {
+        try {
+          const department = await this.departmentRepository.findOne({
+            where: { id: deptUpdate.departmentId },
+          });
+          if (!department) {
+            throw new ValidationException(`Không tìm thấy phòng ban với ID: ${deptUpdate.departmentId}`);
+          }
+          department.headDepartmentId = deptUpdate.headUserId;
+          await this.departmentRepository.save(department);
+        } catch (deptError: any) {
+          if (deptError instanceof ValidationException) {
+            throw deptError;
+          }
+          throw new DatabaseException(
+            `Lỗi khi cập nhật phòng ban: ${deptError?.message || 'Unknown error'}`
+          );
+        }
+      }
+
+      const { targetDepartmentId: _, departmentId: departmentIdToUpdate, ...userUpdateData } = updateUserDto;
+
+      if (userUpdateData.password) {
+        try {
+          const hashedPassword = await bcrypt.hash(userUpdateData.password, 10);
+          user.passwordHash = hashedPassword;
+          delete userUpdateData.password;
+        } catch (hashError: any) {
+          throw new DatabaseException(
+            `Lỗi khi mã hóa mật khẩu: ${hashError?.message || 'Unknown error'}`
+          );
+        }
+      }
+
+      try {
+        Object.assign(user, userUpdateData);
+        if (departmentIdToUpdate !== undefined) {
+          user.departmentId = departmentIdToUpdate;
+          user.department!.id = departmentIdToUpdate!;
+        }
+        const updatedUser = await this.userRepository.save(user);
+        if (departmentIdToUpdate !== undefined && updatedUser.departmentId !== departmentIdToUpdate) {
+          throw new DatabaseException(
+            `Failed to update departmentId. Expected: ${departmentIdToUpdate}, Got: ${updatedUser.departmentId}`
+          );
+        }
+        const { passwordHash, ...userWithoutPassword } = updatedUser;
+        return userWithoutPassword;
+      } catch (saveError: any) {
+        if (saveError?.code === '23505' || saveError?.message?.includes('duplicate')) {
+          if (saveError?.message?.includes('email') || saveError?.constraint?.includes('email')) {
+            throw new UserAlreadyExistsException('Email đã được sử dụng');
+          }
+          if (saveError?.message?.includes('username') || saveError?.constraint?.includes('username')) {
+            throw new UserAlreadyExistsException('Tên đăng nhập đã được sử dụng');
+          }
+          if (saveError?.message?.includes('employeeId') || saveError?.constraint?.includes('employee_id')) {
+            throw new UserAlreadyExistsException('Mã nhân viên đã được sử dụng');
+          }
+          throw new UserAlreadyExistsException('Thông tin đã được sử dụng');
+        }
+        throw new DatabaseException(
+          `Lỗi khi lưu thông tin người dùng: ${saveError?.message || 'Unknown error'}`
+        );
+      }
     } catch (error: any) {
       if (
         error instanceof ValidationException ||
         error instanceof UserNotFoundException ||
-        error instanceof UserAlreadyExistsException
+        error instanceof UserAlreadyExistsException ||
+        error instanceof DatabaseException
       ) {
         throw error;
       }
-      if (error?.code === '23505' || error?.message?.includes('duplicate')) {
-        throw new UserAlreadyExistsException('Thông tin đã được sử dụng');
-      }
-      throw new DatabaseException('Lỗi khi cập nhật người dùng');
+      throw new DatabaseException(
+        `Lỗi khi cập nhật người dùng: ${error?.message || 'Unknown error'}`
+      );
     }
   }
 
-  /**
-   * Disable user (soft delete by setting isActive to false)
-   * @param id - User ID
-   * @returns Updated user without password hash
-   */
   async disable(id: string): Promise<Omit<User, 'passwordHash'>> {
     try {
       if (!id) {
@@ -686,7 +771,6 @@ export class UsersService {
         throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
       }
 
-      // Set isActive to false instead of deleting
       user.isActive = false;
 
       const updatedUser = await this.userRepository.save(user);
@@ -703,11 +787,6 @@ export class UsersService {
     }
   }
 
-  /**
-   * Enable user (set isActive to true)
-   * @param id - User ID
-   * @returns Updated user without password hash
-   */
   async enable(id: string): Promise<Omit<User, 'passwordHash'>> {
     try {
       if (!id) {
@@ -723,7 +802,6 @@ export class UsersService {
         throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
       }
 
-      // Set isActive to true
       user.isActive = true;
 
       const updatedUser = await this.userRepository.save(user);

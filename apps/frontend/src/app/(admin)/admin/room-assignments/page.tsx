@@ -94,6 +94,7 @@ export default function RoomAssignmentsPage() {
   >({});
   const [detailSchedule, setDetailSchedule] = useState<RoomSchedule | RoomSchedule[] | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [listPage, setListPage] = useState(1);
   const [listLimit] = useState(10);
   const [listFilters, setListFilters] = useState<FiltersType>({
@@ -303,7 +304,16 @@ export default function RoomAssignmentsPage() {
     return statsMap;
   }, [mergedSchedules]);
 
-  const handleRefresh = async () => refetchSchedules();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchSchedules();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     setErrorMessage(schedulesError ? 'Failed to load room schedules. Please try again.' : null);
@@ -339,7 +349,7 @@ export default function RoomAssignmentsPage() {
             </Button>
             <RefreshButton 
               onRefresh={handleRefresh} 
-              loading={schedulesLoading || schedulesFetching} 
+              loading={isRefreshing} 
             />
           </div>
         </div>

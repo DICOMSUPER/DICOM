@@ -141,3 +141,38 @@ export const getEncounterTypeBadge = (type: string): React.ReactNode => {
   return getStatusBadge(typeKey, statusConfig);
 };
 
+export const getMachineStatusBadge = (status: string): React.ReactNode => {
+  const statusConfig: Record<string, StatusBadgeConfig> = {
+    'ACTIVE': {
+      label: 'Active',
+      colorClass: 'bg-green-100 text-green-700',
+    },
+    'INACTIVE': {
+      label: 'Inactive',
+      colorClass: 'bg-gray-100 text-gray-700',
+    },
+    'MAINTENANCE': {
+      label: 'Maintenance',
+      colorClass: 'bg-yellow-100 text-yellow-700',
+    },
+  };
+
+  return getStatusBadge(status, statusConfig);
+};
+
+export const getMachineStatusBadgeSimple = (status: string): React.ReactNode => {
+  const statusMap: Record<string, { label: string; className: string }> = {
+    'ACTIVE': { label: 'Active', className: 'bg-green-100 text-green-800' },
+    'INACTIVE': { label: 'Inactive', className: 'bg-gray-100 text-gray-800' },
+    'MAINTENANCE': { label: 'Maintenance', className: 'bg-yellow-100 text-yellow-800' },
+  };
+
+  const statusInfo = statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
+
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.className}`}>
+      {statusInfo.label}
+    </span>
+  );
+};
+

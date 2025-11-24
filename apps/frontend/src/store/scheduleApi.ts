@@ -358,12 +358,6 @@ export const scheduleApi = createApi({
       providesTags: ["ScheduleStats"],
     }),
 
-      query: (date: string) => ({
-        url: `/working-hours/for-date/${date}`,
-        method: "GET",
-      }),
-    }),
-
     // Bulk Operations
     createBulkSchedules: builder.mutation<
       RoomSchedule[],

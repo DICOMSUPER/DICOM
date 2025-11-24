@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, Length, IsOptional, IsEnum, IsBoolean, IsUUID } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Length, IsOptional, IsEnum, IsBoolean, IsUUID, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Roles } from '@backend/shared-enums';
 
@@ -59,10 +59,11 @@ export class CreateUserDto {
   @IsEnum(Roles, { message: 'Vai trò không hợp lệ' })
   role?: Roles;
 
-  @ApiPropertyOptional({ description: 'ID phòng ban', example: 'uuid-string' })
+  @ApiPropertyOptional({ description: 'ID phòng ban', example: 'uuid-string', nullable: true })
   @IsOptional()
+  @ValidateIf((o) => o.departmentId !== null && o.departmentId !== undefined)
   @IsUUID(4, { message: 'ID phòng ban phải là UUID hợp lệ' })
-  departmentId?: string;
+  departmentId?: string | null;
 
   @ApiPropertyOptional({ description: 'Trạng thái hoạt động', example: true })
   @IsOptional()

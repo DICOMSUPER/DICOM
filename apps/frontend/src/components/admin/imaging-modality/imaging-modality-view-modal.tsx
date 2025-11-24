@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGetImagingModalityByIdQuery } from "@/store/imagingModalityApi";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
 import { formatDate } from "@/lib/formatTimeDate";
-import { Scan, Calendar, Loader2 } from "lucide-react";
+import { Scan, Calendar, Activity } from "lucide-react";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 
 interface ImagingModalityViewModalProps {
   open: boolean;
@@ -34,6 +35,25 @@ export function ImagingModalityViewModal({
   });
 
   const modality = data?.data;
+
+  const modalityMachines = modality?.modalityMachines || [];
+
+  const getStatusBadgeClass = (status: string | undefined): string => {
+    const statusStr = String(status || '').toUpperCase();
+    if (statusStr === 'ACTIVE' || statusStr === 'AVAILABLE') {
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    } else if (statusStr === 'INACTIVE' || statusStr === 'UNAVAILABLE') {
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    } else if (statusStr === 'MAINTENANCE') {
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+    }
+    return 'bg-gray-100 text-gray-700 border-gray-200';
+  };
+
+  const getStatusLabelForBadge = (status: string | undefined): string => {
+    const statusStr = String(status || 'Unknown').toLowerCase();
+    return statusStr.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
 
   if (isLoading) {
     return (
@@ -148,6 +168,60 @@ export function ImagingModalityViewModal({
                 </div>
               </div>
             </section>
+
+            {modalityMachines.length > 0 ? (
+              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Activity className="h-5 w-5" />
+                  Modality Machines ({modalityMachines.length})
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {modalityMachines.map((machine: ModalityMachine) => {
+                    const displayName = machine.name || 
+                      `${machine.manufacturer || ''} ${machine.model || ''}`.trim() ||
+                      "Unnamed Machine";
+                    
+                    return (
+                      <div
+                        key={machine.id}
+                        className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                      >
+                        <p className="text-sm font-semibold text-foreground">
+                          {displayName}
+                        </p>
+                        {machine.model && (
+                          <p className="text-xs text-foreground">Model: {machine.model}</p>
+                        )}
+                        {machine.manufacturer && (
+                          <p className="text-xs text-foreground">Manufacturer: {machine.manufacturer}</p>
+                        )}
+                        {machine.serialNumber && (
+                          <p className="text-xs text-foreground">Serial: {machine.serialNumber}</p>
+                        )}
+                        {machine.roomId && (
+                          <p className="text-xs text-foreground">Room ID: {machine.roomId}</p>
+                        )}
+                        {machine.status && (
+                          <Badge
+                            className={`${getStatusBadgeClass(machine.status)} text-xs font-medium mt-1 border`}
+                          >
+                            {getStatusLabelForBadge(machine.status)}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Activity className="h-5 w-5" />
+                  Modality Machines
+                </div>
+                <p className="text-sm text-foreground/70 italic">No modality machines assigned to this imaging modality</p>
+              </section>
+            )}
           </div>
         </ScrollArea>
 

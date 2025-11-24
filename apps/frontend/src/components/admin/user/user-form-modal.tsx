@@ -35,13 +35,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { User } from '@/interfaces/user/user.interface';
 import { useCreateUserMutation, useCreateStaffAccountMutation, useUpdateUserMutation, useGetCurrentProfileQuery } from '@/store/userApi';
-import { useGetDepartmentsQuery, useUpdateDepartmentMutation } from '@/store/departmentApi';
 import { Department } from '@/interfaces/user/department.interface';
 import { Roles } from '@/enums/user.enum';
 import { User as UserIcon } from 'lucide-react';
 
 interface UserFormModalProps {
   user: User | null;
+  departments: Department[];
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -60,27 +60,32 @@ const userFormSchema = z.object({
     message: 'Employee ID must not exceed 20 characters',
   }),
   role: z.string().min(1, 'Role is required'),
-  departmentId: z.string().optional().refine((val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val), {
+  departmentId: z.string().min(1, 'Department is required').refine((val) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val), {
     message: 'Department ID must be a valid UUID',
   }),
-  headDepartmentId: z.string().optional().refine((val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val), {
-    message: 'Head Department ID must be a valid UUID',
+  targetDepartmentId: z.string().optional().refine((val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val), {
+    message: 'Target Department ID must be a valid UUID',
   }),
   isActive: z.boolean(),
   isVerified: z.boolean(),
+}).refine((data) => {
+  if (data.targetDepartmentId && data.departmentId) {
+    return data.targetDepartmentId === data.departmentId;
+  }
+  return true;
+}, {
+  message: 'Target Department must match the Department where the user works',
+  path: ['targetDepartmentId'],
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModalProps) {
+export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }: UserFormModalProps) {
   const isEdit = !!user;
   const [createUser] = useCreateUserMutation();
   const [createStaffAccount] = useCreateStaffAccountMutation();
   const [updateUser] = useUpdateUserMutation();
-  const [updateDepartment] = useUpdateDepartmentMutation();
-  const { data: departmentsData } = useGetDepartmentsQuery({ page: 1, limit: 10000 });
   const { data: currentUserData } = useGetCurrentProfileQuery();
-  const departments: Department[] = departmentsData?.data ?? [];
   const currentUser = currentUserData?.data;
   const isSystemAdmin = currentUser?.role === Roles.SYSTEM_ADMIN;
 
@@ -96,7 +101,7 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
       employeeId: '',
       role: '',
       departmentId: '',
-      headDepartmentId: '',
+      targetDepartmentId: '',
       isActive: true,
       isVerified: false,
     },
@@ -117,7 +122,7 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
         employeeId: user.employeeId || '',
         role: user.role || '',
         departmentId: user.departmentId || '',
-        headDepartmentId: headDepartment?.id || '',
+        targetDepartmentId: headDepartment?.id || '',
         isActive: user.isActive ?? true,
         isVerified: user.isVerified ?? false,
       });
@@ -132,12 +137,12 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
         employeeId: '',
         role: '',
         departmentId: '',
-        headDepartmentId: '',
+        targetDepartmentId: '',
         isActive: true,
         isVerified: false,
       });
     }
-  }, [isOpen, user?.id, form, departments]);
+  }, [isOpen, user?.id]);
 
   const onSubmit = async (data: UserFormValues) => {
     if (!isEdit && !data.password) {
@@ -157,7 +162,8 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
         phone: data.phone || undefined,
         employeeId: data.employeeId || undefined,
         role: data.role,
-        departmentId: data.departmentId || undefined,
+        departmentId: data.departmentId,
+        targetDepartmentId: data.targetDepartmentId ? data.targetDepartmentId : null,
         isActive: data.isActive,
         isVerified: data.isVerified,
       };
@@ -166,46 +172,24 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
         payload.password = data.password;
       }
 
-      let userId: string;
       if (isEdit && user) {
-        await updateUser({ id: user.id, updates: payload }).unwrap();
-        userId = user.id;
+        const result = await updateUser({ id: user.id, updates: payload }).unwrap();
         toast.success('User updated successfully');
+        onSuccess?.();
+        onClose();
+        form.reset();
       } else {
-        let result;
         if (isSystemAdmin) {
-          result = await createStaffAccount(payload).unwrap();
+          await createStaffAccount(payload).unwrap();
           toast.success('Staff account created successfully');
         } else {
-          result = await createUser(payload).unwrap();
+          await createUser(payload).unwrap();
           toast.success('User created successfully');
         }
-        userId = (result as any).id || (result as any).user?.id || '';
+        onSuccess?.();
+        onClose();
+        form.reset();
       }
-
-      if (userId) {
-        const currentHeadDepartments = departments.filter(dept => dept.headDepartmentId === userId);
-        
-        for (const dept of currentHeadDepartments) {
-          if (dept.id !== data.headDepartmentId) {
-            await updateDepartment({ 
-              id: dept.id, 
-              data: { headDepartmentId: undefined } as any
-            }).unwrap();
-          }
-        }
-
-        if (data.headDepartmentId) {
-          await updateDepartment({ 
-            id: data.headDepartmentId, 
-            data: { headDepartmentId: userId } as any
-          }).unwrap();
-        }
-      }
-
-      onSuccess?.();
-      onClose();
-      form.reset();
     } catch (error: any) {
       toast.error(error?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} user`);
     }
@@ -426,16 +410,15 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
                         <FormItem>
                           <FormLabel className="text-foreground">Department</FormLabel>
                           <Select
-                            value={field.value || "none"}
-                            onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
+                            value={field.value}
+                            onValueChange={field.onChange}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="text-foreground w-full">
                                 <SelectValue placeholder="Select department" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
                               {departments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.id}>
                                   {dept.departmentName}
@@ -449,7 +432,7 @@ export function UserFormModal({ user, isOpen, onClose, onSuccess }: UserFormModa
                     />
                     <FormField
                       control={form.control}
-                      name="headDepartmentId"
+                      name="targetDepartmentId"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-foreground">Head of Department</FormLabel>

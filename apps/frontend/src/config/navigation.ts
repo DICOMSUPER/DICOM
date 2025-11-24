@@ -62,36 +62,6 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage clinic services and offerings",
     },
     {
-      href: "/admin/reports",
-      label: "Analytics & Reports",
-      icon: FileText,
-      description: "Generate system reports",
-    },
-    {
-      href: "/admin/security",
-      label: "Security & Audit",
-      icon: Shield,
-      description: "Monitor security and audit logs",
-    },
-    {
-      href: "/admin/database",
-      label: "Database",
-      icon: Database,
-      description: "Manage database and backups",
-    },
-    {
-      href: "/admin/docs",
-      label: "Documentation",
-      icon: BookOpen,
-      description: "System documentation and guides",
-    },
-    {
-      href: "/admin/monitoring",
-      label: "System Monitoring",
-      icon: Monitor,
-      description: "Monitor system performance",
-    },
-    {
       href: "/admin/rooms",
       label: "Rooms",
       icon: Building2,
@@ -114,6 +84,18 @@ export const roleNavigation: RoleNavigation = {
       label: "Room Assignments",
       icon: UserCheck,
       description: "Assign employees to room schedules",
+    },
+    {
+      href: "/admin/imaging-modalities",
+      label: "Imaging Modalities",
+      icon: Monitor,
+      description: "Manage imaging modalities",
+    },
+    {
+      href: "/admin/modality-machines",
+      label: "Modality Machines",
+      icon: Activity,
+      description: "Manage modality machines",
     },
   ],
 

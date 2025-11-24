@@ -8,7 +8,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { BarChart3 } from "lucide-react";
 
 export function SidebarNav() {
   const pathname = usePathname();
@@ -16,17 +15,7 @@ export function SidebarNav() {
   const userRole = getNavigationRoleFromUserRole(user?.role);
   const allNavItems = getNavigationForRole(userRole);
 
-  const defaultNavItem = useMemo(
-    () => ({
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: BarChart3,
-      description: "Default dashboard",
-    }),
-    []
-  );
-
-  const navItemsToUse = allNavItems.length > 0 ? allNavItems : [defaultNavItem];
+  const navItemsToUse = allNavItems;
 
   const sortedNavItems = useMemo(
     () => [...navItemsToUse].sort((a, b) => b.href.length - a.href.length),

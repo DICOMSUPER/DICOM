@@ -37,6 +37,7 @@ export default function Page() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const queryParams: QueryParams = useMemo(() => {
     const params: QueryParams = {
@@ -102,7 +103,14 @@ export default function Page() {
   };
 
   const handleRefresh = async () => {
-    await refetchDepartments();
+    setIsRefreshing(true);
+    try {
+      await refetchDepartments();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleSearch = useCallback(() => {
@@ -173,7 +181,7 @@ export default function Page() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={departmentsLoading}
+            loading={isRefreshing}
           />
           <Button
             onClick={handleCreateDepartment}

@@ -45,6 +45,7 @@ export default function Page() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const queryParams: FilterServiceRoomDto = useMemo(() => {
     const params: FilterServiceRoomDto = {
@@ -132,7 +133,14 @@ export default function Page() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([refetchRoomServices(), refetchRooms(), refetchServices()]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchRoomServices(), refetchRooms(), refetchServices()]);
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleSearch = useCallback(() => {
@@ -207,7 +215,7 @@ export default function Page() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={roomServicesLoading || roomsLoading || servicesLoading}
+            loading={isRefreshing}
           />
           <Button
             onClick={handleCreateRoomService}

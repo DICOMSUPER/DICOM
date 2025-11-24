@@ -6,6 +6,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  Suspense,
 } from "react";
 import BaseTab from "./base-tab";
 import Sidebar from "../side-bar";
@@ -42,10 +43,18 @@ const TabContext = createContext<TabContextType>({
     {
       id: "0",
       name: "Working tree",
-      tabContent: <BaseTab />,
+      tabContent: (
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <BaseTab />
+        </Suspense>
+      ),
       canNotClose: true,
       hasSideBar: true,
-      SidebarContent: <Sidebar />,
+      SidebarContent: (
+        <Suspense fallback={<div className="p-4">Loading sidebar...</div>}>
+          <Sidebar />
+        </Suspense>
+      ),
     },
   ],
 });
@@ -58,8 +67,16 @@ const recreateTab = (sTab: SerializableTabData): TabData => {
   let sidebarContent: ReactNode | undefined;
 
   if (sTab.id === "0") {
-    tabContent = <BaseTab />;
-    sidebarContent = <Sidebar />;
+    tabContent = (
+      <Suspense fallback={<div className="p-4">Loading...</div>}>
+        <BaseTab />
+      </Suspense>
+    );
+    sidebarContent = (
+      <Suspense fallback={<div className="p-4">Loading sidebar...</div>}>
+        <Sidebar />
+      </Suspense>
+    );
   }
 
   return {
@@ -76,10 +93,18 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     {
       id: "0",
       name: "Working tree",
-      tabContent: <BaseTab />,
+      tabContent: (
+        <Suspense fallback={<div className="p-4">Loading...</div>}>
+          <BaseTab />
+        </Suspense>
+      ),
       canNotClose: true,
       hasSideBar: true,
-      SidebarContent: <Sidebar />,
+      SidebarContent: (
+        <Suspense fallback={<div className="p-4">Loading sidebar...</div>}>
+          <Sidebar />
+        </Suspense>
+      ),
     },
   ]);
 

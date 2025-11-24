@@ -9,7 +9,7 @@ export class Department extends BaseEntity {
   id!: string;
 
   @Column({ name: 'head_department_id', nullable: true })
-  headDepartmentId!: string;
+  headDepartmentId!: string | null;
 
   @Column({ name: 'department_name', length: 100, nullable: false })
   departmentName!: string;

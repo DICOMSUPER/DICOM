@@ -6,7 +6,7 @@ import { Eye, Edit, Trash2, Monitor } from 'lucide-react';
 import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { formatDate } from '@/lib/formatTimeDate';
-import { getMachineStatusBadgeSimple } from '@/utils/machine-status-badge';
+import { getMachineStatusBadgeSimple } from '@/utils/status-badge';
 
 interface ModalityMachineTableProps {
   machineItems: ModalityMachine[];

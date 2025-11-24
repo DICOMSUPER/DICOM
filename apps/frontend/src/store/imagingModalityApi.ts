@@ -53,7 +53,7 @@ export const imagingModalityApi = createApi({
           limit: params?.limit,
           search: params?.search,
           searchField: params?.searchField,
-          sortField: params?.sortField,
+          sortBy: params?.sortBy,
           order: params?.order,
         },
       }),

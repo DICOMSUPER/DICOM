@@ -44,6 +44,7 @@ export default function Page() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const queryParams: UserFilters = useMemo(() => {
     const params: UserFilters = {
@@ -126,7 +127,14 @@ export default function Page() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([refetchUsers(), refetchDepartments()]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchUsers(), refetchDepartments()]);
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleSearch = useCallback(() => {
@@ -191,8 +199,16 @@ export default function Page() {
     }
   };
 
-  const handleFormSuccess = () => {
-    refetchUsers();
+  const handleFormSuccess = async () => {
+    const usersResult = await refetchUsers();
+    await refetchDepartments();
+    if (selectedUser && usersResult.data) {
+      const updatedUsers = extractApiData<User>(usersResult.data);
+      const updatedUser = updatedUsers.find(u => u.id === selectedUser.id);
+      if (updatedUser) {
+        setSelectedUser(updatedUser);
+      }
+    }
   };
 
   return (
@@ -205,7 +221,7 @@ export default function Page() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={usersLoading || deptsLoading}
+            loading={isRefreshing}
           />
           <Button
             onClick={handleCreateUser}
@@ -279,6 +295,7 @@ export default function Page() {
 
       <UserFormModal
         user={selectedUser}
+        departments={departments}
         isOpen={isFormModalOpen}
         onClose={() => {
           setIsFormModalOpen(false);

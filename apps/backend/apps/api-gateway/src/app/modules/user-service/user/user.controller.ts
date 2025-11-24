@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Inject,
   Logger,
@@ -26,8 +27,7 @@ import { Public } from '@backend/shared-decorators';
 import { Role } from '@backend/shared-decorators';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
 import { AuthGuard } from '@backend/shared-guards';
-// removed unused import
-import { RoomSchedule, User, CreateUserDto } from '@backend/shared-domain';
+import { RoomSchedule, User, CreateUserDto, UpdateUserDto } from '@backend/shared-domain';
 class LoginDto {
   email!: string;
   password!: string;
@@ -411,7 +411,6 @@ export class UserController {
     @Query('role') role: Roles,
     @Query('search') search: string
   ) {
-    //Get schedule for current time
     try {
       const scheduleArray = await firstValueFrom(
         this.userClient.send(
@@ -419,13 +418,11 @@ export class UserController {
           { id, role, search }
         )
       );
-      //map user from schedule's employeeRoomAssignments
       const userArray: User[] = [];
       scheduleArray.forEach((schedule: RoomSchedule) => {
         if (schedule.employeeRoomAssignments && schedule.employeeRoomAssignments.length > 0) {
           schedule.employeeRoomAssignments.forEach((assignment) => {
             if (assignment.employee && assignment.isActive) {
-              // Avoid duplicates
               if (!userArray.find(u => u.id === assignment.employee.id)) {
                 userArray.push(assignment.employee);
               }
@@ -434,10 +431,7 @@ export class UserController {
         }
       });
 
-      //get queue order to map over
-      const userIds = userArray.map((user: User) => {
-        return user.id;
-      });
+      const userIds = userArray.map((user: User) => user.id);
 
       const queueStats = await firstValueFrom(
         this._patientService.send(
@@ -445,7 +439,6 @@ export class UserController {
           { userIds }
         )
       );
-      // Join them based on id
       const combined = userArray.map((user: any) => ({
         ...user,
         queueStats: queueStats[user.id] || null, // Fallback to null if no stats for this user
@@ -471,7 +464,43 @@ export class UserController {
     }
   }
 
-  // ...existing code...
+  @Patch('/:id')
+  @UseGuards(AuthGuard)
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Update user (System Admin only)' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto
+  ) {
+    try {
+      this.logger.log(`Updating user with id: ${id}`);
+      this.logger.log(`Update payload: ${JSON.stringify(updateUserDto, null, 2)}`);
 
+      const result = await firstValueFrom(
+        this.userClient.send('UserService.Users.Update', {
+          id,
+          updateUserDto,
+        })
+      );
 
+      this.logger.log(`✅ User updated successfully: ${id}`);
+
+      return {
+        user: result.user,
+        message: result.message || 'Cập nhật thông tin người dùng thành công',
+      };
+    } catch (error) {
+      this.logger.error(`❌ Failed to update user: ${id}`, error);
+      throw handleError(error);
+    }
+  }
 }

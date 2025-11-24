@@ -13,8 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetModalityMachineByIdQuery } from "@/store/modalityMachineApi";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
-import { getRoomStatusBadge } from "@/utils/status-badge";
-import { getMachineStatusBadge } from "@/utils/machine-status-badge";
+import { getRoomStatusBadge, getMachineStatusBadge } from "@/utils/status-badge";
 import { formatDate } from "@/lib/formatTimeDate";
 import { Monitor, Calendar, Building2 } from "lucide-react";
 

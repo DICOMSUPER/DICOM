@@ -66,6 +66,7 @@ export default function ServicePage() {
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [editMode, setEditMode] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // RTK Query hooks
   const { 
@@ -127,7 +128,14 @@ export default function ServicePage() {
   }, [services, data?.total]);
 
   const handleRefresh = async () => {
-    await refetchServices();
+    setIsRefreshing(true);
+    try {
+      await refetchServices();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // View Details Handler
@@ -231,7 +239,7 @@ export default function ServicePage() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={isLoading || isFetching}
+            loading={isRefreshing}
           />
           <Button
             onClick={handleAddService}

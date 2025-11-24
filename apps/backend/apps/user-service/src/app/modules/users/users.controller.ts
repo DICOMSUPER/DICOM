@@ -1,5 +1,5 @@
 import { Controller, Logger } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from '@backend/shared-domain';
 
@@ -11,6 +11,7 @@ import {
   RegistrationFailedException,
   InvalidTokenException,
   ValidationException,
+  DatabaseException,
 } from '@backend/shared-exception';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import { Roles } from '@backend/shared-enums';
@@ -233,7 +234,6 @@ export class UsersController {
         role: decoded.role,
       };
     } catch (error) {
-      console.log(error);
       this.logger.error(
         `Token verification failed: ${(error as Error).message}`
       );
@@ -359,6 +359,7 @@ export class UsersController {
   ) {
     try {
       this.logger.log(`Updating user with id: ${data.id}`);
+      this.logger.log(`Received updateUserDto: ${JSON.stringify(data.updateUserDto, null, 2)}`);
 
       const result = await this.usersService.update(data.id, data.updateUserDto);
 
@@ -368,14 +369,19 @@ export class UsersController {
       };
     } catch (error: unknown) {
       this.logger.error(`Update user error: ${(error as Error).message}`);
-      if (
-        error instanceof ValidationException ||
-        error instanceof UserNotFoundException ||
-        error instanceof UserAlreadyExistsException
-      ) {
-        throw error;
+      if (error instanceof ValidationException || error instanceof DatabaseException) {
+        const errorResponse = (error as any).getResponse();
+        const message = typeof errorResponse === 'object' && errorResponse !== null && 'message' in errorResponse
+          ? (errorResponse as { message: string }).message
+          : (error as Error).message || 'An error occurred';
+        const statusCode = (error as any).getStatus();
+        throw new RpcException({
+          code: statusCode,
+          message: message,
+          errorCode: error instanceof ValidationException ? 'VALIDATION_ERROR' : 'DATABASE_ERROR',
+        });
       }
-      handleErrorFromMicroservices(
+      throw handleErrorFromMicroservices(
         error,
         'Failed to update user',
         'UsersController.update'

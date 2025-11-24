@@ -46,6 +46,7 @@ export default function AdminSchedulePage() {
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [listFilters, setListFilters] = useState<FiltersType>({
     sortBy: "date_desc", // Default: latest first
   });
@@ -208,19 +209,26 @@ export default function AdminSchedulePage() {
   };
 
   const handleRefresh = async () => {
-    const result = await refetchSchedules();
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Update selectedSchedule with fresh data
-    if (selectedSchedule) {
-      const scheduleId = selectedSchedule.schedule_id;
-      if (scheduleId) {
-        const updatedSchedules = Array.isArray(result.data) ? result.data : [];
-        const updatedSchedule = updatedSchedules.find(s => s.schedule_id === scheduleId);
-        if (updatedSchedule) {
-          setSelectedSchedule(updatedSchedule);
+    setIsRefreshing(true);
+    try {
+      const result = await refetchSchedules();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Update selectedSchedule with fresh data
+      if (selectedSchedule) {
+        const scheduleId = selectedSchedule.schedule_id;
+        if (scheduleId) {
+          const updatedSchedules = Array.isArray(result.data) ? result.data : [];
+          const updatedSchedule = updatedSchedules.find(s => s.schedule_id === scheduleId);
+          if (updatedSchedule) {
+            setSelectedSchedule(updatedSchedule);
+          }
         }
       }
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -346,7 +354,7 @@ export default function AdminSchedulePage() {
           <div className="flex items-center justify-end space-x-2">
             <RefreshButton 
               onRefresh={handleRefresh} 
-              loading={isLoading}
+              loading={isRefreshing}
             />
             <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
               <ChevronLeft className="h-4 w-4" />

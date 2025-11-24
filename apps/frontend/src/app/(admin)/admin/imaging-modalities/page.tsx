@@ -5,11 +5,12 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { Button } from '@/components/ui/button';
-import { ModalityMachineFiltersSection } from '@/components/admin/modality-machine/modality-machine-filters';
-import { ModalityMachineTable } from '@/components/admin/modality-machine/modality-machine-table';
-import { ModalityMachineStatsCards } from '@/components/admin/modality-machine/modality-machine-stats-cards';
-import { ModalityMachineFormModal } from '@/components/admin/modality-machine/modality-machine-form-modal';
-import { ModalityMachineViewModal } from '@/components/admin/modality-machine/modality-machine-view-modal';
+import { getBooleanStatusBadge } from '@/utils/status-badge';
+import { ImagingModalityFiltersSection } from '@/components/admin/imaging-modality/imaging-modality-filters';
+import { ImagingModalityTable } from '@/components/admin/imaging-modality/imaging-modality-table';
+import { ImagingModalityStatsCards } from '@/components/admin/imaging-modality/imaging-modality-stats-cards';
+import { ImagingModalityFormModal } from '@/components/admin/imaging-modality/imaging-modality-form-modal';
+import { ImagingModalityViewModal } from '@/components/admin/imaging-modality/imaging-modality-view-modal';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
@@ -28,17 +29,16 @@ import {
   PaginationMeta,
 } from '@/interfaces/pagination/pagination.interface';
 import {
-  CreateModalityMachineDto,
-  UpdateModalityMachineDto,
-} from '@/interfaces/image-dicom/modality-machine.interface';
-import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
+  CreateImagingModalityDto,
+  UpdateImagingModalityDto,
+} from '@/store/imagingModalityApi';
+import { ImagingModality } from '@/interfaces/image-dicom/imaging_modality.interface';
 import {
-  useCreateModalityMachineMutation,
-  useDeleteModalityMachineMutation,
-  useGetModalityMachinePaginatedQuery,
-  useUpdateModalityMachineMutation,
-} from '@/store/modalityMachineApi';
-import { MachineStatus } from '@/enums/machine-status.enum';
+  useCreateImagingModalityMutation,
+  useDeleteImagingModalityMutation,
+  useGetImagingModalityPaginatedQuery,
+  useUpdateImagingModalityMutation,
+} from '@/store/imagingModalityApi';
 
 interface ApiError {
   data?: {
@@ -46,12 +46,12 @@ interface ApiError {
   };
 }
 
-export default function ModalityMachinePage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string }>({
+export default function ImagingModalityPage() {
+  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string }>({
     page: 1,
     limit: 10,
     search: "",
-    searchField: "name",
+    searchField: "modalityName",
     sortBy: "createdAt",
     order: "desc",
   });
@@ -59,127 +59,124 @@ export default function ModalityMachinePage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
+  const [selectedModalityId, setSelectedModalityId] = useState<string | null>(
     null
   );
-  const [machineToDelete, setMachineToDelete] =
-    useState<ModalityMachine | null>(null);
+  const [modalityToDelete, setModalityToDelete] =
+    useState<ImagingModality | null>(null);
+
   const [error, setError] = useState<string | null>(null);
 
   const {
-    data: machinesData,
+    data: modalitiesData,
     isLoading,
-    error: machinesError,
+    error: modalitiesError,
     refetch,
-  } = useGetModalityMachinePaginatedQuery(filters);
+  } = useGetImagingModalityPaginatedQuery(filters);
 
-  const [createMachine, { isLoading: isCreating }] =
-    useCreateModalityMachineMutation();
-  const [updateMachine, { isLoading: isUpdating }] =
-    useUpdateModalityMachineMutation();
-  const [deleteMachine, { isLoading: isDeleting }] =
-    useDeleteModalityMachineMutation();
+  const [createModality, { isLoading: isCreating }] =
+    useCreateImagingModalityMutation();
+  const [updateModality, { isLoading: isUpdating }] =
+    useUpdateImagingModalityMutation();
+  const [deleteModality, { isLoading: isDeleting }] =
+    useDeleteImagingModalityMutation();
 
   useEffect(() => {
-    if (machinesError) {
-      const error = machinesError as FetchBaseQueryError;
+    if (modalitiesError) {
+      const error = modalitiesError as FetchBaseQueryError;
       const errorMessage = 
         error?.data && 
         typeof error.data === 'object' &&
         'message' in error.data
           ? (error.data as { message: string }).message
-          : 'Failed to load modality machine data. Please try again.';
+          : 'Failed to load imaging modality data. Please try again.';
       setError(errorMessage);
     } else {
       setError(null);
     }
-  }, [machinesError]);
+  }, [modalitiesError]);
 
-  const machines = machinesData?.data?.data || [];
-  const paginatedData = machinesData?.data;
+  const modalities = modalitiesData?.data || [];
   const meta: PaginationMeta = {
-    page: paginatedData?.page || 1,
-    limit: paginatedData?.limit || 10,
-    total: paginatedData?.total || 0,
-    totalPages: paginatedData?.totalPages || 0,
-    hasNextPage: paginatedData?.hasNextPage || false,
-    hasPreviousPage: paginatedData?.hasPreviousPage || false,
+    page: modalitiesData?.page || 1,
+    limit: modalitiesData?.limit || 10,
+    total: modalitiesData?.total || 0,
+    totalPages: modalitiesData?.totalPages || 0,
+    hasNextPage: modalitiesData?.hasNextPage || false,
+    hasPreviousPage: modalitiesData?.hasPreviousPage || false,
   };
 
   const stats = useMemo(() => {
     let active = 0;
     let inactive = 0;
-    let maintenance = 0;
     
-    machines.forEach((m) => {
-      if (m.status === MachineStatus.ACTIVE) active++;
-      else if (m.status === MachineStatus.INACTIVE) inactive++;
-      else if (m.status === MachineStatus.MAINTENANCE) maintenance++;
+    modalities.forEach((m) => {
+      if (m.isActive) active++;
+      else inactive++;
     });
     
     return {
       total: meta.total,
       active,
       inactive,
-      maintenance,
     };
-  }, [machines, meta.total]);
+  }, [modalities, meta.total]);
 
   const handleCreate = () => {
-    setSelectedMachineId(null);
+    setSelectedModalityId(null);
     setIsFormModalOpen(true);
   };
 
-  const handleEdit = (machine: ModalityMachine) => {
-    setSelectedMachineId(machine.id);
+  const handleEdit = (modality: ImagingModality) => {
+    setSelectedModalityId(modality.id);
     setIsFormModalOpen(true);
   };
 
-  const handleView = (machine: ModalityMachine) => {
-    setSelectedMachineId(machine.id);
+  const handleView = (modality: ImagingModality) => {
+    setSelectedModalityId(modality.id);
     setIsViewModalOpen(true);
   };
 
-  const handleDelete = (machine: ModalityMachine) => {
-    setMachineToDelete(machine);
+  const handleDelete = (modality: ImagingModality) => {
+    setModalityToDelete(modality);
   };
 
   const confirmDelete = async () => {
-    if (!machineToDelete) return;
+    if (!modalityToDelete) return;
 
     try {
-      await deleteMachine({ id: machineToDelete.id }).unwrap();
-      toast.success("Modality machine deleted successfully");
-      setMachineToDelete(null);
+      await deleteModality(modalityToDelete.id).unwrap();
+      toast.success("Imaging modality deleted successfully");
+      setModalityToDelete(null);
     } catch (err) {
       const error = err as ApiError;
       toast.error(
-        error?.data?.message || "Failed to delete modality machine"
+        error?.data?.message || "Failed to delete imaging modality"
       );
     }
   };
 
   const handleSubmit = async (
-    data: CreateModalityMachineDto | UpdateModalityMachineDto
+    data: CreateImagingModalityDto | UpdateImagingModalityDto
   ) => {
     try {
-      if (selectedMachineId) {
-        await updateMachine({
-          id: selectedMachineId,
-          data: data as UpdateModalityMachineDto,
+      if (selectedModalityId) {
+        await updateModality({
+          id: selectedModalityId,
+          data: data as UpdateImagingModalityDto,
         }).unwrap();
-        toast.success("Modality machine updated successfully");
+        toast.success("Imaging modality updated successfully");
       } else {
-        await createMachine(data as CreateModalityMachineDto).unwrap();
-        toast.success("Modality machine created successfully");
+        await createModality(data as CreateImagingModalityDto).unwrap();
+        toast.success("Imaging modality created successfully");
       }
       setIsFormModalOpen(false);
-      setSelectedMachineId(null);
+      setSelectedModalityId(null);
     } catch (err) {
       const error = err as ApiError;
       toast.error(
         error?.data?.message ||
-          `Failed to ${selectedMachineId ? "update" : "create"} modality machine`
+          `Failed to ${selectedModalityId ? "update" : "create"} imaging modality`
       );
     }
   };
@@ -189,7 +186,7 @@ export default function ModalityMachinePage() {
       page: 1,
       limit: 10,
       search: "",
-      searchField: "name",
+      searchField: "modalityName",
       sortBy: "createdAt",
       order: "desc",
     });
@@ -214,8 +211,8 @@ export default function ModalityMachinePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Modality Machines</h1>
-          <p className="text-foreground">Manage modality machines and their assignments</p>
+          <h1 className="text-3xl font-bold text-foreground">Imaging Modalities</h1>
+          <p className="text-foreground">Manage imaging modalities and their configurations</p>
         </div>
         <div className="flex items-center gap-4">
           <RefreshButton
@@ -227,31 +224,31 @@ export default function ModalityMachinePage() {
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Machine
+            Add Modality
           </Button>
         </div>
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load modality machines" message={error} className="mb-4" />
+        <ErrorAlert title="Failed to load imaging modalities" message={error} className="mb-4" />
       )}
 
-      <ModalityMachineStatsCards
+      <ImagingModalityStatsCards
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        maintenanceCount={stats.maintenance}
         isLoading={isLoading}
       />
 
-      <ModalityMachineFiltersSection
+      <ImagingModalityFiltersSection
         filters={filters}
         onFiltersChange={setFilters}
         onReset={handleReset}
       />
 
-      <ModalityMachineTable
-        machineItems={machines}
+      <ImagingModalityTable
+        modalityItems={modalities}
+        getStatusBadge={getBooleanStatusBadge}
         isLoading={isLoading}
         onViewDetails={handleView}
         onEdit={handleEdit}
@@ -267,41 +264,41 @@ export default function ModalityMachinePage() {
         />
       )}
 
-      <ModalityMachineFormModal
+      <ImagingModalityFormModal
         open={isFormModalOpen}
         onClose={() => {
           setIsFormModalOpen(false);
-          setSelectedMachineId(null);
+          setSelectedModalityId(null);
         }}
         onSubmit={handleSubmit}
-        machineId={selectedMachineId || undefined}
+        modalityId={selectedModalityId || undefined}
         isLoading={isCreating || isUpdating}
       />
 
-      <ModalityMachineViewModal
+      <ImagingModalityViewModal
         open={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
-          setSelectedMachineId(null);
+          setSelectedModalityId(null);
         }}
-        machineId={selectedMachineId || ""}
+        modalityId={selectedModalityId || ""}
         onEdit={(id) => {
           setIsViewModalOpen(false);
-          setSelectedMachineId(id);
+          setSelectedModalityId(id);
           setIsFormModalOpen(true);
         }}
       />
 
       <AlertDialog
-        open={!!machineToDelete}
-        onOpenChange={(open) => !open && setMachineToDelete(null)}
+        open={!!modalityToDelete}
+        onOpenChange={(open) => !open && setModalityToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Modality Machine</AlertDialogTitle>
+            <AlertDialogTitle>Delete Imaging Modality</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete{" "}
-              <strong>{machineToDelete?.name}</strong>? This action
+              <strong>{modalityToDelete?.modalityName}</strong>? This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
