@@ -20,30 +20,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: "npm"
 
-      # 3️⃣ Setup pnpm đúng cách
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm --version  # kiểm tra pnpm đã sẵn sàng
-
-      # 4️⃣ Install dependencies
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           cd apps/backend
-          pnpm install
+          npm ci
 
-      # 5️⃣ Build NestJS services
+      # 4️⃣ Build NestJS services
       - name: Build NestJS services
         run: |
           cd apps/backend
-          pnpm --filter user-service build
-          pnpm --filter patient-service build
-          pnpm --filter imaging-service build
+          npm run build --workspace=user-service
+          npm run build --workspace=patient-service
+          npm run build --workspace=imaging-service
 
-      # 6️⃣ Build Docker images
+      # 5️⃣ Build Docker images
       - name: Build Docker image for user-service
         run: |
           cd apps/backend
@@ -59,21 +52,21 @@ jobs:
           cd apps/backend
           docker build -t dicom/imaging-service:latest -f apps/imaging-service/Dockerfile .
 
-      # # 7️⃣ Login Docker Hub
+      # # 6️⃣ Login Docker Hub
       # - name: Docker Hub Login
       #   uses: docker/login-action@v2
       #   with:
       #     username: ${{ secrets.DOCKER_USER }}
       #     password: ${{ secrets.DOCKER_PASS }}
 
-      # # 8️⃣ Push Docker images
+      # # 7️⃣ Push Docker images
       # - name: Push Docker images
       #   run: |
       #     docker push dicom/user-service:latest
       #     docker push dicom/patient-service:latest
       #     docker push dicom/imaging-service:latest
 
-      # # 9️⃣ Deploy lên server qua SSH
+      # # 8️⃣ Deploy lên server qua SSH
       # - name: Deploy to Server
       #   uses: appleboy/ssh-action@v0.1.7
       #   with:
