@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
+          cache-dependency-path: "apps/backend/package-lock.json"  # ✅ Chỉ định đúng path
 
       # 3️⃣ Install dependencies
       - name: Install dependencies
@@ -28,13 +29,11 @@ jobs:
           cd apps/backend
           npm ci
 
-      # 4️⃣ Build NestJS services
+      # 4️⃣ Build NestJS services (dùng Nx)
       - name: Build NestJS services
         run: |
           cd apps/backend
-          npm run build --workspace=user-service
-          npm run build --workspace=patient-service
-          npm run build --workspace=imaging-service
+          npx nx run-many --target=build --projects=user-service,patient-service,imaging-service --parallel=3
 
       # 5️⃣ Build Docker images
       - name: Build Docker image for user-service
