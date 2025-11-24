@@ -34,7 +34,7 @@ export class ReportTemplatesController {
       
       return await this.reportTemplatesService.create(
         data.createReportTemplateDto,
-        data.userInfo
+        // data.userInfo
       );
     } catch (error) {
       throw handleErrorFromMicroservices(

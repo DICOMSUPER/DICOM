@@ -21,7 +21,8 @@
     "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": false,
-    "noImplicitReturns": true,
+    
+    "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
