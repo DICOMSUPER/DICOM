@@ -33,7 +33,7 @@ jobs:
       - name: Build NestJS services
         run: |
           cd apps/backend
-          npx nx run-many --target=build --projects=user-service,patient-service,imaging-service --parallel=3
+          npx nx run-many --target=build 
 
       # 5️⃣ Build Docker images
       - name: Build Docker image for user-service
