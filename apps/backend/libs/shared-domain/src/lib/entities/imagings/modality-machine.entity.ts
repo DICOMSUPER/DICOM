@@ -20,7 +20,7 @@ export class ModalityMachine extends BaseEntity {
   @Column({ name: 'modality_id', type: 'uuid' })
   modalityId!: string;
 
-  @ManyToOne(() => ImagingModality, { nullable: true, eager: true })
+  @ManyToOne(() => ImagingModality, { nullable: true })
   @JoinColumn({ name: 'modality_id' })
   modality!: ImagingModality;
 

@@ -38,7 +38,9 @@ import {
   useGetModalityMachinePaginatedQuery,
   useUpdateModalityMachineMutation,
 } from '@/store/modalityMachineApi';
+import { useGetRoomsQuery } from '@/store/roomsApi';
 import { MachineStatus } from '@/enums/machine-status.enum';
+import { Room } from '@/interfaces/user/room.interface';
 
 interface ApiError {
   data?: {
@@ -73,6 +75,9 @@ export default function ModalityMachinePage() {
     refetch,
   } = useGetModalityMachinePaginatedQuery(filters);
 
+  const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({ page: 1, limit: 10000 });
+  const rooms = roomsData?.data || [];
+
   const [createMachine, { isLoading: isCreating }] =
     useCreateModalityMachineMutation();
   const [updateMachine, { isLoading: isUpdating }] =
@@ -95,15 +100,14 @@ export default function ModalityMachinePage() {
     }
   }, [machinesError]);
 
-  const machines = machinesData?.data?.data || [];
-  const paginatedData = machinesData?.data;
+  const machines = machinesData?.data || [];
   const meta: PaginationMeta = {
-    page: paginatedData?.page || 1,
-    limit: paginatedData?.limit || 10,
-    total: paginatedData?.total || 0,
-    totalPages: paginatedData?.totalPages || 0,
-    hasNextPage: paginatedData?.hasNextPage || false,
-    hasPreviousPage: paginatedData?.hasPreviousPage || false,
+    page: machinesData?.page || 1,
+    limit: machinesData?.limit || 10,
+    total: machinesData?.total || 0,
+    totalPages: machinesData?.totalPages || 0,
+    hasNextPage: machinesData?.hasNextPage || false,
+    hasPreviousPage: machinesData?.hasPreviousPage || false,
   };
 
   const stats = useMemo(() => {
@@ -151,6 +155,7 @@ export default function ModalityMachinePage() {
       await deleteMachine({ id: machineToDelete.id }).unwrap();
       toast.success("Modality machine deleted successfully");
       setMachineToDelete(null);
+      await refetch();
     } catch (err) {
       const error = err as ApiError;
       toast.error(
@@ -175,6 +180,7 @@ export default function ModalityMachinePage() {
       }
       setIsFormModalOpen(false);
       setSelectedMachineId(null);
+      await refetch();
     } catch (err) {
       const error = err as ApiError;
       toast.error(
@@ -203,6 +209,8 @@ export default function ModalityMachinePage() {
     setIsRefreshing(true);
     try {
       await refetch();
+      // Also refetch rooms since they're used in modals
+      await refetchRooms();
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -260,12 +268,10 @@ export default function ModalityMachinePage() {
         limit={meta.limit}
       />
 
-      {meta.totalPages > 1 && (
-        <Pagination
-          pagination={meta}
-          onPageChange={handlePageChange}
-        />
-      )}
+      <Pagination
+        pagination={meta}
+        onPageChange={handlePageChange}
+      />
 
       <ModalityMachineFormModal
         open={isFormModalOpen}
@@ -276,20 +282,22 @@ export default function ModalityMachinePage() {
         onSubmit={handleSubmit}
         machineId={selectedMachineId || undefined}
         isLoading={isCreating || isUpdating}
+        rooms={rooms}
       />
 
       <ModalityMachineViewModal
-        open={isViewModalOpen}
+        isOpen={isViewModalOpen}
         onClose={() => {
           setIsViewModalOpen(false);
           setSelectedMachineId(null);
         }}
-        machineId={selectedMachineId || ""}
+        machineId={selectedMachineId}
         onEdit={(id) => {
           setIsViewModalOpen(false);
           setSelectedMachineId(id);
           setIsFormModalOpen(true);
         }}
+        rooms={rooms}
       />
 
       <AlertDialog

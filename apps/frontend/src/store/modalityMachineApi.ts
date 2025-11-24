@@ -76,20 +76,48 @@ export const modalityMachineApi = createApi({
         url: `/${id}`,
         method: "GET",
       }),
+      transformResponse: (response: any) => {
+        // Ensure the response structure is correct and modality relation is included
+        // Response should be: { success: true, data: { data: ModalityMachine } }
+        // ModalityMachine should have modality relation included from backend
+        if (response?.data?.data) {
+          // Log if modality is missing (for debugging)
+          if (!response.data.data.modality && response.data.data.modalityId) {
+            console.warn('Modality relation missing in response for machine:', response.data.data.id);
+          }
+        }
+        return response;
+      },
       providesTags: (_result, _error, id) => [{ type: "ModalityMachine", id }],
     }),
 
     getModalityMachinePaginated: builder.query<
-      ApiResponse<PaginatedResponse<ModalityMachine>>,
+      PaginatedResponse<ModalityMachine>,
       PaginatedQuery
     >({
       query: (query: PaginatedQuery) => ({
-        url: "paginated",
+        url: "/paginated",
         method: "GET",
         params: query,
       }),
+      transformResponse: (response: any) => {
+        // Handle nested response structure
+        if (response?.data && Array.isArray(response.data)) {
+          return {
+            data: response.data,
+            total: response.total ?? 0,
+            page: response.page ?? 1,
+            limit: response.limit ?? 10,
+            totalPages: response.totalPages ?? Math.ceil((response.total ?? 0) / (response.limit ?? 10)),
+            hasNextPage: response.hasNextPage ?? false,
+            hasPreviousPage: response.hasPreviousPage ?? false,
+          };
+        }
+        // Handle direct response
+        return response;
+      },
       providesTags: (result) => {
-        const machines = result?.data?.data ?? [];
+        const machines = result?.data ?? [];
         return machines.length > 0
           ? [
               ...machines.map((machine: ModalityMachine) => ({

@@ -56,6 +56,31 @@ export const calculateDuration = (startTime: string, endTime: string): number =>
   return Math.round(diffMs / (1000 * 60 * 60)); // Return hours
 };
 
+export const isWithinWorkingHours = (
+  time: string,
+  workingStartTime: string = '08:00',
+  workingEndTime: string = '17:00'
+): boolean => {
+  const timeObj = parseTime(time);
+  const startObj = parseTime(workingStartTime);
+  const endObj = parseTime(workingEndTime);
+  
+  if (!timeObj || !startObj || !endObj) return false;
+  
+  const timeHours = timeObj.getHours();
+  const timeMinutes = timeObj.getMinutes();
+  const startHours = startObj.getHours();
+  const startMinutes = startObj.getMinutes();
+  const endHours = endObj.getHours();
+  const endMinutes = endObj.getMinutes();
+  
+  const timeInMinutes = timeHours * 60 + timeMinutes;
+  const startInMinutes = startHours * 60 + startMinutes;
+  const endInMinutes = endHours * 60 + endMinutes;
+  
+  return timeInMinutes >= startInMinutes && timeInMinutes <= endInMinutes;
+};
+
 
 // Date utilities
 export const formatScheduleDate = (date: string | Date): string => {
