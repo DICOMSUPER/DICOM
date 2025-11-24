@@ -1,20 +1,13 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
 import { BaseEntity } from '@backend/database';
 import { AnalysisStatus } from '@backend/shared-enums';
-import { AiModel } from './ai-model.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('ai_analyses')
 export class AiAnalysis extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'analysis_id' })
   id!: string;
 
-  @Column({ name: 'study_id' })
+  @Column({ name: 'study_id', nullable: true })
   studyId!: string;
 
   @Column({
@@ -34,10 +27,19 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage?: string;
 
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
+  userId!: string;
+
   @Column({ name: 'ai_model_id' })
   aiModelId!: string;
 
-  @ManyToOne(() => AiModel, (model) => model.analyses)
-  @JoinColumn({ name: 'ai_model_id' })
-  aiModel!: AiModel;
+  @Column({ name: 'model_name', length: 150, nullable: true })
+  modelName?: string;
+
+  @Column({ name: 'version_name', length: 50, nullable: true })
+  versionName?: string;
+
+  // @ManyToOne(() => AiModel, (model) => model.analyses)
+  // @JoinColumn({ name: 'ai_model_id' })
+  // aiModel!: AiModel;
 }

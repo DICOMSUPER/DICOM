@@ -61,7 +61,7 @@ export class AiModelService {
     // Build query options
     const options: any = {
       where: {},
-      order: { startedAt: 'DESC' },
+      order: { createdAt: 'DESC' },
     };
 
     // Apply filters

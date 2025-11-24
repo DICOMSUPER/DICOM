@@ -31,6 +31,6 @@ export class AiModel extends BaseEntity {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @OneToMany(() => AiAnalysis, (analysis) => analysis.aiModel)
-  analyses!: AiAnalysis[];
+  // @OneToMany(() => AiAnalysis, (analysis) => analysis.aiModel)
+  // analyses!: AiAnalysis[];
 }

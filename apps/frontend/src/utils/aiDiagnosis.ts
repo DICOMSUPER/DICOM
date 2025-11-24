@@ -2,14 +2,14 @@ import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import {
   getEnabledElement,
   getRenderingEngine,
-  type Types
+  type Types,
 } from "@cornerstonejs/core";
 import {
   annotation,
   PlanarFreehandROITool,
   RectangleROITool,
   ToolGroupManager,
-  utilities as toolsUtilities
+  utilities as toolsUtilities,
 } from "@cornerstonejs/tools";
 import type { Annotation } from "@cornerstonejs/tools/types";
 
@@ -57,8 +57,6 @@ export const getColorForClass = (className: string): string => {
 
 export const clearAIAnnotations = (viewportId: string): void => {
   try {
-
-
     const allAnnotations = annotation.state.getAllAnnotations();
 
     let removedCount = 0;
@@ -248,16 +246,20 @@ export const drawAIPredictions = (
             label: [
               `AI Diagnosis`,
               `Class: ${className}`,
-              `Confidence: ${confidence}%`,
+              `Confidence: ${confidence}`,
             ].join("\n"),
 
             cachedStats: {
               Diagnosis: className,
               Conf: confidence,
               imageId: referencedImageId,
+              prediction,
+              aiImageWidth,
+              aiImageHeight,
               statsArray: [
                 { key: "Diagnosis", value: className },
                 { key: "Confidence", value: confidence },
+              
               ],
             },
             contour: {

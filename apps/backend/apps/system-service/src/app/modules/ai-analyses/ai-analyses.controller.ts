@@ -23,13 +23,17 @@ export class AiAnalysesController {
 
   @MessagePattern('SystemService.AiAnalysis.DiagnosisImage')
   async diagnosisImageByAI(
-    @Payload() body: { base64Image: string, aiModelId?: string }
+    @Payload() data: {body: { base64Image: string; aiModelId: string; modelName: string; versionName: string , selectedStudyId?: string}, userId: string }
   ) {
     return await this.aiAnalysesService.diagnosisImageByAI(
-      body.base64Image,
-      body?.aiModelId || ''
+      data.body.base64Image,
+      data.body.aiModelId,
+      data.body.modelName,
+      data.body.versionName,
+      data.userId
     );
   }
+
 
   @MessagePattern('ai_analysis.findAll')
   async findAll(@Payload() filter: FilterAiAnalysisDto) {

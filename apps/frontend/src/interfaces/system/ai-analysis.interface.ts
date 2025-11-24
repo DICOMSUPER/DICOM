@@ -16,13 +16,10 @@ export interface AiAnalysis extends BaseEntity {
 export interface CreateAiAnalysisDto {
   patientId: string;
   studyId: string;
-  seriesId: string;
   status: AnalysisStatus;
   analysisResults?: any;
   findings?: string;
   errorMessage?: string;
-  startedAt?: string | Date;
-  completedAt?: string | Date;
 }
 
 export interface FilterAiAnalysisDto extends QueryParams {
