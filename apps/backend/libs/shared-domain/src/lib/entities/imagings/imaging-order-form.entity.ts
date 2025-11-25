@@ -1,4 +1,4 @@
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 import { OrderFormStatus } from '@backend/shared-enums';
 import {
   Column,
@@ -44,5 +44,5 @@ export class ImagingOrderForm extends BaseEntity {
   @Column({ name: 'room_id', type: 'uuid', nullable: true })
   roomId!: string;
 
-  patient?: Patient; 
+  patient?: Patient;
 }
