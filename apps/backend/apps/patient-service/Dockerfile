@@ -9,7 +9,7 @@ COPY libs ./libs
 COPY entities ./entities
 
 RUN npm ci
-RUN npx nx build user-service
+RUN npx nx build patient-service
 
 # Stage 2 – runtime image
 FROM node:20-alpine
@@ -22,5 +22,5 @@ RUN npm ci --omit=dev
 # copy compiled service from Nx dist folder
 COPY --from=builder /workspace/apps/patient-service/dist ./
 
-EXPOSE 5002
+EXPOSE 5004
 CMD ["node", "main.js"]

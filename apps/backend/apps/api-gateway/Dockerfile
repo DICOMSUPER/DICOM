@@ -22,5 +22,5 @@ RUN npm ci --omit=dev
 # copy compiled service from Nx dist folder
 COPY --from=builder /workspace/apps/api-gateway/dist ./
 
-EXPOSE 5002
+EXPOSE 5000
 CMD ["node", "main.js"]
