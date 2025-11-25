@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getEncounterTypeBadge } from "@/utils/status-badge";
 import {
   Eye,
   Edit,
@@ -102,6 +101,7 @@ export function EncounterTable({
 
   return (
     <DataTable<PatientEncounter>
+      headers={headers}
       rowKey={(encounter) => encounter.id}
       data={encounters}
       isLoading={isLoading}

@@ -1,22 +1,14 @@
 import {
   IsString,
-  IsDate,
   IsEnum,
   IsOptional,
   IsBoolean,
   IsUUID,
-  IsEmail,
-  IsPhoneNumber,
   MinLength,
   MaxLength,
   IsDateString,
-  IsNumber,
-  Min,
-  Max,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
 import { Gender, BloodType } from '@backend/shared-enums';
-import { IsInsuranceNumber } from '@backend/shared-utils';
 
 export class CreatePatientDto {
   @IsString()

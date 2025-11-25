@@ -6,9 +6,6 @@ import {
   IsBoolean,
   IsUUID,
   IsDateString,
-  IsInt,
-  Min,
-  Max,
 } from 'class-validator';
 import { DayOfWeek } from '@backend/shared-enums';
 import { Type } from 'class-transformer';

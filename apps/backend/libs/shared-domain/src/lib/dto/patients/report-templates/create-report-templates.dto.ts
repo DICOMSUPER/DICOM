@@ -3,7 +3,6 @@ import {
   IsEnum,
   IsOptional,
   IsUUID,
-  IsBoolean,
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

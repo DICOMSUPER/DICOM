@@ -21,14 +21,12 @@ export interface LogLevel {
 @Injectable()
 export class LoggingService implements LoggerService {
   private readonly logger = new Logger(LoggingService.name);
-  private correlationId: string | null = null;
   private context: LogContext = {};
 
   /**
    * Set correlation ID for the current request
    */
   setCorrelationId(correlationId: string): void {
-    this.correlationId = correlationId;
     this.context.correlationId = correlationId;
   }
 
@@ -43,7 +41,6 @@ export class LoggingService implements LoggerService {
    * Clear context and correlation ID
    */
   clearContext(): void {
-    this.correlationId = null;
     this.context = {};
   }
 

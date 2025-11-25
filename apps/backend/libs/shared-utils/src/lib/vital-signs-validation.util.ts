@@ -2,7 +2,6 @@ import {
   VitalSignCode, 
   VitalSignUnit, 
   VitalSignCodeDisplayNames,
-  VitalSignUnitDisplayNames,
   VitalSignCodeUnitMapping 
 } from '@backend/shared-enums';
 import { 

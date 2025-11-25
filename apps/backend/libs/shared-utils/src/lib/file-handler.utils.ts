@@ -1,7 +1,5 @@
 import { Logger } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
-import { Express } from 'express';
-import { Multer } from 'multer';
 const logger = new Logger('SharedUtils - FileHandler');
 
 export type CloudinaryConfig = {
@@ -11,11 +9,25 @@ export type CloudinaryConfig = {
   secure_distribution?: string;
   upload_prefix?: string;
 };
+
+// Type for Multer file upload
+type MulterFile = {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+  destination?: string;
+  filename?: string;
+  path?: string;
+};
+
 export const uploadFileToCloudinary = async (
   cloudinaryConfig: CloudinaryConfig,
-  file: Express.Multer.File,
+  file: MulterFile,
   folder: string
-) => {
+): Promise<string> => {
   logger.log('Uploading file to Cloudinary');
   cloudinary.config(cloudinaryConfig);
 

@@ -1,0 +1,18 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./entities" },
+    { "path": "./libs/redis" },
+    { "path": "./libs/database" },
+    { "path": "./libs/shared-client" },
+    { "path": "./libs/shared-decorators" },
+    { "path": "./libs/shared-domain" },
+    { "path": "./libs/shared-enums" },
+    { "path": "./libs/shared-exception" },
+    { "path": "./libs/shared-guards" },
+    { "path": "./libs/shared-interceptor" },
+    { "path": "./libs/shared-interfaces" },
+    { "path": "./libs/shared-utils" }
+  ]
+}
+
