@@ -222,7 +222,7 @@ export function ImagingOrderFormTable({
           <span className="font-semibold text-slate-900 text-sm">
             {formatDate(row.original.createdAt)}
           </span>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
+          <div className="flex items-center gao-2 text-xs text-slate-500">
             <Clock className="w-3.5 h-3.5" />
             <span>{formatTime(row.original.createdAt)}</span>
           </div>

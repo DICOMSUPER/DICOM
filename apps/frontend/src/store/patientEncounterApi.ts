@@ -18,6 +18,7 @@ import {
   PaginatedQuery,
   PaginatedResponse as PaginationResponse,
 } from "@/interfaces/pagination/pagination.interface";
+import { tr } from "date-fns/locale";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
@@ -136,7 +137,20 @@ export const patientEncounterApi = createApi({
         "PatientEncounter",
       ],
     }),
-
+    transferPatientEncounter: builder.mutation<
+      ApiResponse<PatientEncounter>,
+      { id: string; data: UpdatePatientEncounterDto }
+    >({
+      query: ({ id, data }) => ({
+        url: `/transfer/${id}`,
+        method: "PATCH",
+        data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PatientEncounter", id },
+        "PatientEncounter",
+      ],
+    }),
     // Delete encounter
     deletePatientEncounter: builder.mutation<void, string>({
       query: (id) => ({
@@ -215,4 +229,5 @@ export const {
   useGetStatsInDateRangeQuery,
   useSkipEncounterMutation,
   useFilterEncounterWithPaginationQuery,
+  useTransferPatientEncounterMutation,
 } = patientEncounterApi;

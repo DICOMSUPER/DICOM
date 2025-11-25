@@ -369,6 +369,7 @@ export class PatientEncounterController {
     }
   }
 
+
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -391,6 +392,32 @@ export class PatientEncounterController {
       throw error;
     }
   }
+
+  // update transfer patient encounter
+  @Patch('transfer/:id')
+  @Role(Roles.PHYSICIAN)
+  async transfer(
+    @Param('id') id: string,
+    @Body() updatePatientEncounterDto: UpdatePatientEncounterDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    try {
+     
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.Transfer', {
+          id,
+          updatePatientEncounterDto,
+          transferredBy: req.userInfo.userId,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error transferring encounter:', error);
+      throw error;
+    }
+  } 
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

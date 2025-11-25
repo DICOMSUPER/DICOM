@@ -11,12 +11,14 @@ export default function DicomStudyDetailPage() {
 
   const { data: diagnosis, isLoading } = useGetDiagnoseByStudyIdQuery(id);
 
-  console.log("diagnosis", diagnosis);
+  const reportId = diagnosis?.data && diagnosis.data.length > 0 
+    ? diagnosis.data[0].id 
+    : "";
 
   return (
-    <div className="container mx-auto py-6 space-y-6 max-w-7xl">
+    <div className="mx-auto py-6 space-y-6 w-full">
       <DiagnosisReportDetail
-        reportId={diagnosis?.data[0].id as string}
+        reportId={reportId}
         isReportLoading={isLoading}
       />
     </div>

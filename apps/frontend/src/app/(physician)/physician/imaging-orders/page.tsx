@@ -92,18 +92,21 @@ export default function ImagingOrderFormPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Imaging Order Form
-          </h1>
-          <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* Date */}
-            <div className="text-sm text-gray-500">
-              Today:{" "}
-              <span className="font-medium text-gray-700">
-                {formatDate(new Date())}
-              </span>
+      <div className="w-full">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              Imaging Order Form
+            </h1>
+            <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Date */}
+              <div className="text-sm text-gray-500">
+                Today:{" "}
+                <span className="font-medium text-gray-700">
+                  {formatDate(new Date())}
+                </span>
+              </div>
+              
             </div>
           </div>
         </div>

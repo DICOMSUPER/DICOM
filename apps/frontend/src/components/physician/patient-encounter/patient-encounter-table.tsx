@@ -36,8 +36,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Zap,
+  UserStar,
 } from "lucide-react";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDate, formatTime, formatTimeVN } from "@/lib/formatTimeDate";
 import Pagination, {
   type PaginationMeta,
 } from "@/components/common/PaginationV1";
@@ -48,6 +49,14 @@ import {
   EncounterStatus,
 } from "@/enums/patient-workflow.enum";
 import { is } from "date-fns/locale";
+import { format } from "date-fns";
+import TransferDetailModal from "./transfer-detail-modal";
+import { TooltipProvider } from "@/components/ui-next/Tooltip/Tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -79,6 +88,14 @@ export function PatientEncounterTable({
   onTransferPhysician,
 }: PatientEncounterTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [showTransferModal, setShowTransferModal] = React.useState(false);
+  const [selectedEncounter, setSelectedEncounter] =
+    React.useState<PatientEncounter | null>(null);
+
+  const handleShowTransferDetail = (encounter: PatientEncounter) => {
+    setSelectedEncounter(encounter);
+    setShowTransferModal(true);
+  };
 
   const getStatusBadge = (status: EncounterStatus) => {
     switch (status) {
@@ -180,12 +197,12 @@ export function PatientEncounterTable({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Queue #
+          Order Encounter #
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="font-bold text-lg text-slate-900 text-center">
+        <div className="font-bold text-lg text-slate-900 ml-5">
           {row.original.orderNumber}
         </div>
       ),
@@ -225,13 +242,13 @@ export function PatientEncounterTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1 text-center">
+        <div className="space-y-1 ml-5">
           <span className="font-semibold text-slate-900 text-sm">
-            {formatDate(row.original.createdAt)}
+            {format(row.original.encounterDate, "dd/MM/yyyy")}
           </span>
-          <div className="flex justify-center items-center gap-4 text-xs text-slate-500">
+          <div className="flex justify-start items-center gap-2 text-xs text-slate-500">
             <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(row.original.createdAt)}</span>
+            <span>{format(row.original.encounterDate, "hh:mm a")}</span>
           </div>
         </div>
       ),
@@ -369,7 +386,7 @@ export function PatientEncounterTable({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gradient-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200">
+            <TableRow className="bg-linear-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200">
               {columns.map((_, index) => (
                 <TableHead key={index} className="px-6 py-4">
                   <div className="h-4 bg-slate-200 rounded animate-pulse" />
@@ -412,7 +429,7 @@ export function PatientEncounterTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
-                  className="bg-gradient-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200 hover:bg-slate-50"
+                  className="bg-linear-to-r from-slate-50 to-slate-50 border-b-2 border-slate-200 hover:bg-slate-50"
                 >
                   {headerGroup.headers.map((header) => (
                     <TableHead key={header.id} className="px-6 py-4">
@@ -435,10 +452,29 @@ export function PatientEncounterTable({
                     row.original.priority as EncounterPriorityLevel
                   )} ${
                     isFetching ? "opacity-60" : "opacity-100"
-                  } transition-opacity`}
+                  } transition-opacity relative`}
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map((cell, cellIdx) => (
                     <TableCell key={cell.id} className="px-6 py-4">
+                      {cellIdx === 0 && row.original.isTransferred && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg"
+                                style={{ zIndex: 1 }}
+                                onClick={() =>
+                                  handleShowTransferDetail(row.original)
+                                }
+                                type="button"
+                              >
+                                <UserStar />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Transferred</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -456,6 +492,12 @@ export function PatientEncounterTable({
         onPageChange={onPageChange}
         showInfo={true}
       />
+      {showTransferModal && selectedEncounter && (
+        <TransferDetailModal
+          encounter={selectedEncounter}
+          onClose={() => setShowTransferModal(false)}
+        />
+      )}
     </div>
   );
 }

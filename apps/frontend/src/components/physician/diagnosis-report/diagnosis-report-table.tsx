@@ -36,6 +36,7 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { format } from "date-fns";
 import {
   ArrowUpDown,
   CheckCircle2,
@@ -134,7 +135,7 @@ export function DiagnosisReportTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="font-bold text-lg text-slate-900 text-center">
+        <div className="font-bold text-lg text-slate-900 ">
           {row.original.id.substring(0, 5)}
         </div>
       ),
@@ -191,9 +192,9 @@ export function DiagnosisReportTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1 text-center">
-          <span className="font-semibold text-slate-900 text-sm">
-            {formatDate(row.original.diagnosisDate)}
+        <div className="space-y-1">
+          <span className="font-semibold ml-4 text-slate-900 text-sm">
+            {format(row.original.diagnosisDate, "dd/MM/yyyy")}
           </span>
         </div>
       ),

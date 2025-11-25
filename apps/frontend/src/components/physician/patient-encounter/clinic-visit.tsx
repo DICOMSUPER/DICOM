@@ -31,6 +31,8 @@ import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
+import { VisitInformationForm } from "./visit-information-form";
+import { VisitInformationFormValues } from "@/lib/validation/visit-information-form";
 
 interface ClinicVisitProps {
   detail: PatientEncounter;
@@ -38,8 +40,16 @@ interface ClinicVisitProps {
 
 const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false);
+  const [showVisitInformationModal, setShowVisitInformationModal] =
+    useState(false);
   const [vitalSignsData, setVitalSignsData] = useState(
     detail.vitalSigns || null
+  );
+  const [visitInformationData, setVisitInformationData] = useState<Partial<VisitInformationFormValues> | null>(
+    {
+      chiefComplaint: detail.chiefComplaint,
+      symptoms: detail.symptoms,
+    } 
   );
   const router = useRouter();
   const [updatePatientEncounter, { isLoading: isUpdating }] =
@@ -48,9 +58,16 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const handleOpenVitalSignsModal = () => {
     setShowVitalSignsModal(true);
   };
+  const handleOpenVisitInformationModal = () => {
+    setShowVisitInformationModal(true);
+  };
 
   const handleCloseVitalSignsModal = () => {
     setShowVitalSignsModal(false);
+  };
+
+  const handleCloseVisitInformationModal = () => {
+    setShowVisitInformationModal(false);
   };
 
   const handleVitalSignsSubmit = async (values: any) => {
@@ -68,7 +85,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
       };
 
       // Call API to update encounter with vital signs
-      const result = await updatePatientEncounter({
+      await updatePatientEncounter({
         id: detail.id,
         data: {
           vitalSigns: vitalSignsDto,
@@ -76,6 +93,38 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
       }).unwrap();
       setVitalSignsData(vitalSignsDto);
       setShowVitalSignsModal(false);
+
+      toast.success("Vital signs updated successfully!", {
+        description: `Updated for ${detail.patient?.firstName} ${detail.patient?.lastName}`,
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast.error("Failed to update vital signs", {
+        description: error?.data?.message || "Please try again later",
+        duration: 4000,
+      });
+    }
+    setVitalSignsData(values);
+  };
+
+  const handleVisitInformationSubmit = async (values: any) => {
+    try {
+      // Map form values to VitalSignsDto format
+      const visitInformationDto = {
+        chiefComplaint: values.chiefComplaint,
+        symptoms: values.symptoms,
+      };
+
+      // Call API to update encounter with vital signs
+      await updatePatientEncounter({
+        id: detail.id,
+        data: {
+          chiefComplaint: visitInformationDto.chiefComplaint,
+          symptoms: visitInformationDto.symptoms,
+        },
+      }).unwrap();
+      setVisitInformationData(visitInformationDto);
+      setShowVisitInformationModal(false);
 
       toast.success("Vital signs updated successfully!", {
         description: `Updated for ${detail.patient?.firstName} ${detail.patient?.lastName}`,
@@ -210,7 +259,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
+    <div className="max-full mx-auto p-6 bg-linear-to-br from-gray-50 to-blue-50 min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm rounded-lg p-6 mb-6 border border-gray-200">
         <div className="flex justify-between items-center">
@@ -382,13 +431,21 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
 
         {/* Right column: Visit Information */}
         <div className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden">
-          <div className="bg-linear-to-r from-gray-300 to-gray-100 p-4">
+          <div className="flex justify-between bg-linear-to-r from-gray-300 to-gray-100 p-4">
             <div className="flex items-center gap-2">
               <ClipboardList className="text-black" size={24} />
               <h2 className="text-xl font-semibold text-black">
                 Visit Information
               </h2>
             </div>
+
+            <Button
+              onClick={handleOpenVisitInformationModal}
+              className="px-3 py-1.5 bg-white text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-1"
+            >
+              <Plus size={14} />
+              Update
+            </Button>
           </div>
           <div className="p-5">
             <div className="space-y-3 mb-6">
@@ -398,10 +455,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   Visit Date:
                 </span>
                 <span className="text-gray-900 font-semibold">
-                  {format(
-                    new TZDate(detail.encounterDate),
-                    "PPP"
-                  )}
+                  {format(new TZDate(detail.encounterDate), "PPP")}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-100">
@@ -413,15 +467,6 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   {detail.encounterType}
                 </span>
               </div>
-              {/* <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="font-medium text-gray-600 flex items-center gap-2">
-                  <Stethoscope size={16} className="text-gray-400" />
-                  Physician ID:
-                </span>
-                <span className="font-mono text-gray-900">
-                  {detail.assignedPhysicianId || "Not assigned"}
-                </span>
-              </div> */}
             </div>
 
             <div className="space-y-4 mt-6">
@@ -430,7 +475,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   Chief Complaint:
                 </label>
                 <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  {detail.chiefComplaint || "None specified"}
+                  {detail.chiefComplaint || "No chief complaint provided"}
                 </p>
               </div>
               <div>
@@ -438,7 +483,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   Symptoms:
                 </label>
                 <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  {detail.symptoms || "None specified"}
+                  {detail.symptoms || "No symptoms provided"}
                 </p>
               </div>
               <div>
@@ -463,6 +508,15 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
         onOpenChange={setShowVitalSignsModal}
         initialData={initialData}
         onSubmit={handleVitalSignsSubmit}
+        mode={isUpdateMode ? "update" : "create"}
+        isLoading={isUpdating}
+      />
+
+      <VisitInformationForm
+        open={showVisitInformationModal}
+        onOpenChange={setShowVisitInformationModal}
+        initialData={visitInformationData}
+        onSubmit={handleVisitInformationSubmit}
         mode={isUpdateMode ? "update" : "create"}
         isLoading={isUpdating}
       />
