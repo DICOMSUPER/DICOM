@@ -10,6 +10,7 @@
       "decoratorMetadata": true,
       "legacyDecorator": true
     },
+  
     "keepClassNames": true,
     "externalHelpers": true,
     "loose": true

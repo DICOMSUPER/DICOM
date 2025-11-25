@@ -6,5 +6,6 @@ describe('GET /api', () => {
 
     expect(res.status).toBe(200);
     expect(res.data).toEqual({ message: 'Hello API' });
+    expect(res.data).toEqual({ message: 'Hello pikachu' });
   });
 });
