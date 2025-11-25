@@ -2,7 +2,7 @@ name: DICOM_BE CI/CD
 
 on:
   push:
-    branches: ["main", "quang", "test"] # branch phụ để test docker image
+    branches: ["main"] # branch phụ để test docker image
   pull_request:
     branches: ["main"]
 
