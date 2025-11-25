@@ -105,6 +105,7 @@ export function EncounterTable({
       rowKey={(encounter) => encounter.id}
       data={encounters}
       isLoading={isLoading}
+      isEmpty={encounters.length === 0}
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}

@@ -12,6 +12,7 @@ import { DicomSeriesService } from './modules/dicom-series/dicom-series.service'
 import { DicomInstancesService } from './modules/dicom-instances/dicom-instances.service';
 import { ImagingModalitiesService } from './modules/imaging-modalities/imaging-modalities.service';
 import { Patient } from '@backend/shared-domain';
+import { Multer } from 'multer';
 
 interface FileForTransmission {
   originalname: string;

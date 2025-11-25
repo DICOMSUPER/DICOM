@@ -43,7 +43,10 @@ export class RoomsService {
       }
 
       const existingRoom = await this.roomRepository.findOne({
-        where: { roomCode: createRoomDto.roomCode },
+        where: { 
+          roomCode: createRoomDto.roomCode,
+          isDeleted: false,
+        },
       });
       if (existingRoom) {
         throw new RoomAlreadyExistsException(
@@ -191,7 +194,10 @@ export class RoomsService {
       // Check trùng mã phòng nếu cập nhật roomCode
       if (updateRoomDto.roomCode && updateRoomDto.roomCode !== room.roomCode) {
         const existingRoom = await this.roomRepository.findOne({
-          where: { roomCode: updateRoomDto.roomCode },
+          where: { 
+            roomCode: updateRoomDto.roomCode,
+            isDeleted: false,
+          },
         });
         if (existingRoom && existingRoom.id !== id) {
           throw new RoomAlreadyExistsException(

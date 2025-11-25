@@ -158,10 +158,17 @@ export class BaseRepository<T extends ObjectLiteral> {
     const entity = await this.findById(id, [], entityManager);
     if (!entity) return false;
 
-    const merged = repository.merge(entity, {
+    const hasIsActiveColumn = !!repository.metadata.findColumnWithPropertyName('isActive');
+    
+    const updateData: DeepPartial<T> = {
       [softDeleteField]: true as unknown as T[keyof T],
-    } as DeepPartial<T>);
+    } as DeepPartial<T>;
 
+    if (hasIsActiveColumn) {
+      (updateData as any).isActive = false;
+    }
+
+    const merged = repository.merge(entity, updateData);
     await repository.save(merged);
     return true;
   }
@@ -190,18 +197,29 @@ export class BaseRepository<T extends ObjectLiteral> {
 
     const query = repository.createQueryBuilder('entity');
 
-    //  Relations, move relation above
-    if (relation?.length) {
-      relation.forEach((r) => {
+    const relationsFromDto = relation?.length ? relation : undefined;
+    let relationsFromOptions: string[] | undefined = undefined;
+    if (options?.relations) {
+      const relationsValue = options.relations as any;
+      if (Array.isArray(relationsValue) && relationsValue.length > 0) {
+        if (typeof relationsValue[0] === 'string') {
+          relationsFromOptions = relationsValue as string[];
+        }
+      }
+    }
+    
+    const relationsToJoin = relationsFromDto || relationsFromOptions;
+    
+    if (relationsToJoin?.length) {
+      relationsToJoin.forEach((r: string) => {
         const parts = r.split('.');
         let parentAlias = 'entity';
         let currentPath = '';
 
         for (const part of parts) {
           currentPath = `${parentAlias}.${part}`;
-          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+          const alias = `${parentAlias}_${part}`;
 
-          // Only join if this alias doesn’t already exist
           const alreadyJoined = query.expressionMap.joinAttributes.some(
             (join) => join.alias.name === alias
           );
@@ -210,7 +228,7 @@ export class BaseRepository<T extends ObjectLiteral> {
             query.leftJoinAndSelect(currentPath, alias);
           }
 
-          parentAlias = alias; // move deeper for next iteration
+          parentAlias = alias;
         }
       });
     }

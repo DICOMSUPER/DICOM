@@ -171,6 +171,7 @@ export default function ServicePage() {
       toast.success("Service deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedServiceId("");
+      await refetchServices();
     } catch (error) {
       console.error("Failed to delete service:", error);
       const apiError = error as { data?: { message?: string }; message?: string };
@@ -196,6 +197,7 @@ export default function ServicePage() {
       setFormModalOpen(false);
       setSelectedServiceId("");
       setEditMode(false);
+      await refetchServices();
     } catch (error) {
       console.error("Failed to save service:", error);
       const apiError = error as { data?: { message?: string }; message?: string };

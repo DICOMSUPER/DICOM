@@ -45,11 +45,17 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
     },
     {
       header: 'Imaging Modality',
-      cell: (machine: ModalityMachine) => (
-        <div className="text-foreground">
-          {machine.modality?.modalityName || '—'} ({machine.modality?.modalityCode || '—'})
-        </div>
-      ),
+      cell: (machine: ModalityMachine) => {
+        // Debug logging (remove in production)
+        if (!machine.modality && machine.modalityId) {
+          console.warn('Modality relation missing for machine:', machine.id, 'modalityId:', machine.modalityId);
+        }
+        return (
+          <div className="text-foreground">
+            {machine.modality?.modalityName || '—'} ({machine.modality?.modalityCode || '—'})
+          </div>
+        );
+      },
     },
     {
       header: 'Manufacturer',
@@ -85,7 +91,7 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
               onClick={() => onViewDetails(machine)}
               className="h-8 w-8 p-0"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 text-green-600" />
             </Button>
           )}
           {onEdit && (
@@ -95,7 +101,7 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
               onClick={() => onEdit(machine)}
               className="h-8 w-8 p-0"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 text-blue-600" />
             </Button>
           )}
           {onDelete && (
@@ -103,9 +109,9 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onDelete(machine)}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              className="h-8 w-8 p-0"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-red-600" />
             </Button>
           )}
         </div>

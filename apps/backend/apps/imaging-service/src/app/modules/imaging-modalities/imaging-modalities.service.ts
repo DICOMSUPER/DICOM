@@ -26,6 +26,48 @@ export class ImagingModalitiesService {
     createImagingModalityDto: CreateImagingModalityDto
   ): Promise<ImagingModality> => {
     return await this.entityManager.transaction(async (em) => {
+      if (createImagingModalityDto.modalityCode) {
+        const existingByCode = await this.imagingModalityRepository.findOne(
+          {
+            where: { 
+              modalityCode: createImagingModalityDto.modalityCode,
+              isDeleted: false,
+            },
+          },
+          [],
+          em
+        );
+
+        if (existingByCode) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            `Imaging modality with code ${createImagingModalityDto.modalityCode} already exists`,
+            IMAGING_SERVICE
+          );
+        }
+      }
+
+      if (createImagingModalityDto.modalityName) {
+        const existingByName = await this.imagingModalityRepository.findOne(
+          {
+            where: { 
+              modalityName: createImagingModalityDto.modalityName,
+              isDeleted: false,
+            },
+          },
+          [],
+          em
+        );
+
+        if (existingByName) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            `Imaging modality with name ${createImagingModalityDto.modalityName} already exists`,
+            IMAGING_SERVICE
+          );
+        }
+      }
+
       return await this.imagingModalityRepository.create(
         createImagingModalityDto,
         em
@@ -80,6 +122,54 @@ export class ImagingModalitiesService {
         );
       }
 
+      if (
+        updateImagingModalityDto.modalityCode &&
+        updateImagingModalityDto.modalityCode !== modality.modalityCode
+      ) {
+        const existingByCode = await this.imagingModalityRepository.findOne(
+          {
+            where: { 
+              modalityCode: updateImagingModalityDto.modalityCode,
+              isDeleted: false,
+            },
+          },
+          [],
+          em
+        );
+
+        if (existingByCode && existingByCode.id !== id) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            `Imaging modality with code ${updateImagingModalityDto.modalityCode} already exists`,
+            IMAGING_SERVICE
+          );
+        }
+      }
+
+      if (
+        updateImagingModalityDto.modalityName &&
+        updateImagingModalityDto.modalityName !== modality.modalityName
+      ) {
+        const existingByName = await this.imagingModalityRepository.findOne(
+          {
+            where: { 
+              modalityName: updateImagingModalityDto.modalityName,
+              isDeleted: false,
+            },
+          },
+          [],
+          em
+        );
+
+        if (existingByName && existingByName.id !== id) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            `Imaging modality with name ${updateImagingModalityDto.modalityName} already exists`,
+            IMAGING_SERVICE
+          );
+        }
+      }
+
       return await this.imagingModalityRepository.update(
         id,
         updateImagingModalityDto,
@@ -117,6 +207,8 @@ export class ImagingModalitiesService {
   findMany = async (
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<ImagingModality>> => {
-    return await this.imagingModalityRepository.paginate(paginationDto);
+    return await this.imagingModalityRepository.paginate(paginationDto, {
+      relations,
+    });
   };
 }

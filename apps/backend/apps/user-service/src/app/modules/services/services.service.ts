@@ -58,7 +58,10 @@ export class ServicesService {
       }
       const existingService = await this.servicesRepository.findOne(
         {
-          where: { serviceCode: createServiceDto.serviceCode },
+          where: { 
+            serviceCode: createServiceDto.serviceCode,
+            isDeleted: false,
+          },
         },
         [],
         em
@@ -72,10 +75,12 @@ export class ServicesService {
         );
       }
 
-      // check for service name uniqueness
       const existingByName = await this.servicesRepository.findOne(
         {
-          where: { serviceName: createServiceDto.serviceName },
+          where: { 
+            serviceName: createServiceDto.serviceName,
+            isDeleted: false,
+          },
         },
         [],
         em
@@ -89,13 +94,12 @@ export class ServicesService {
         );
       }
 
-      // exist service code and name
-
       const existingByNameAndCode = await this.servicesRepository.findOne(
         {
           where: {
             serviceName: createServiceDto.serviceName,
             serviceCode: createServiceDto.serviceCode,
+            isDeleted: false,
           },
         },
         [],
@@ -159,6 +163,7 @@ export class ServicesService {
             where: {
               serviceCode: updateServiceDto.serviceCode,
               id: Not(id), // Exclude the current record
+              isDeleted: false,
             },
           },
           [],
@@ -183,6 +188,7 @@ export class ServicesService {
             where: {
               serviceName: updateServiceDto.serviceName,
               id: Not(id),
+              isDeleted: false,
             },
           },
           [],

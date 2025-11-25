@@ -66,6 +66,7 @@ export class ModalityMachinesController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
+    @Query('sortBy') sortBy?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
     const paginationDto = {
@@ -73,7 +74,7 @@ export class ModalityMachinesController {
       limit: limit ? Number(limit) : undefined,
       search,
       searchField,
-      sortField,
+      sortField: sortField || sortBy, // Support both sortField and sortBy for compatibility
       order,
     };
     return await firstValueFrom(

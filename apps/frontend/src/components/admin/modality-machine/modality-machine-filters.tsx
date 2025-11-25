@@ -10,7 +10,7 @@ import {
 import useDebounce from "@/hooks/useDebounce";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { extractApiData } from "@/utils/api";
 import { MachineStatus } from "@/enums/machine-status.enum";
@@ -37,13 +37,31 @@ export function ModalityMachineFiltersSection({
   const modalities = extractApiData(modalitiesData);
 
   const debouncedSearch = useDebounce(searchInputs.search, 500);
+  const prevDebouncedSearchRef = useRef<string>(debouncedSearch);
+  const filtersRef = useRef(filters);
 
   useEffect(() => {
-    onFiltersChange({
-      ...filters,
-      search: debouncedSearch || "",
-    });
-  }, [debouncedSearch, filters, onFiltersChange]);
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    if (filters.search !== searchInputs.search) {
+      setSearchInputs((prev) => ({
+        ...prev,
+        search: filters.search || "",
+      }));
+    }
+  }, [filters.search]);
+
+  useEffect(() => {
+    if (prevDebouncedSearchRef.current !== debouncedSearch) {
+      prevDebouncedSearchRef.current = debouncedSearch;
+      onFiltersChange({
+        ...filtersRef.current,
+        search: debouncedSearch || "",
+      });
+    }
+  }, [debouncedSearch, onFiltersChange]);
 
   const handleInputChange = (
     field: keyof typeof searchInputs,
