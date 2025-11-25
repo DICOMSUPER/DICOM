@@ -145,14 +145,31 @@ export default function ImagingModalityPage() {
     if (!modalityToDelete) return;
 
     try {
-      await deleteModality(modalityToDelete.id).unwrap();
-      toast.success("Imaging modality deleted successfully");
-      setModalityToDelete(null);
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(
-        error?.data?.message || "Failed to delete imaging modality"
-      );
+      const result = await deleteModality(modalityToDelete.id);
+      // API returns { success: true, data: true, statusCode: 200 } on success
+      const response = result.data as any;
+      if (response?.success === true || response?.statusCode === 200) {
+        toast.success("Imaging modality deleted successfully");
+        setModalityToDelete(null);
+        await refetch();
+      } else {
+        // If response doesn't indicate success, show error
+        toast.error(
+          response?.message || "Failed to delete imaging modality"
+        );
+      }
+    } catch (err: any) {
+      // Check if error is actually a success response
+      if (err?.data?.success === true || err?.data?.statusCode === 200) {
+        toast.success("Imaging modality deleted successfully");
+        setModalityToDelete(null);
+        await refetch();
+      } else {
+        const error = err as ApiError;
+        toast.error(
+          error?.data?.message || "Failed to delete imaging modality"
+        );
+      }
     }
   };
 
@@ -172,6 +189,7 @@ export default function ImagingModalityPage() {
       }
       setIsFormModalOpen(false);
       setSelectedModalityId(null);
+      await refetch();
     } catch (err) {
       const error = err as ApiError;
       toast.error(
@@ -257,12 +275,10 @@ export default function ImagingModalityPage() {
         limit={meta.limit}
       />
 
-      {meta.totalPages > 1 && (
-        <Pagination
-          pagination={meta}
-          onPageChange={handlePageChange}
-        />
-      )}
+      <Pagination
+        pagination={meta}
+        onPageChange={handlePageChange}
+      />
 
       <ImagingModalityFormModal
         open={isFormModalOpen}

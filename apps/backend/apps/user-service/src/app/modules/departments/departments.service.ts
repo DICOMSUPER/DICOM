@@ -23,7 +23,10 @@ export class DepartmentsService {
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
     try {
       const existingDepartment = await this.departmentRepository.findOne({
-        where: { departmentCode: createDepartmentDto.departmentCode },
+        where: { 
+          departmentCode: createDepartmentDto.departmentCode,
+          isDeleted: false,
+        },
       });
 
       if (existingDepartment) {
@@ -109,7 +112,10 @@ export class DepartmentsService {
         updateDepartmentDto.departmentCode !== department.departmentCode
       ) {
         const existingDepartment = await this.departmentRepository.findOne({
-          where: { departmentCode: updateDepartmentDto.departmentCode },
+          where: { 
+            departmentCode: updateDepartmentDto.departmentCode,
+            isDeleted: false,
+          },
         });
 
         if (existingDepartment) {

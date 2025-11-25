@@ -184,20 +184,20 @@ export function ImagingModalityFormModal({
                 control={form.control}
                 name="isActive"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active Status</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Enable or disable this imaging modality
-                      </div>
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-foreground">Status</FormLabel>
+                    <div className="flex items-center space-x-2 pt-2">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-foreground cursor-pointer">
+                        Active
+                      </FormLabel>
                     </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

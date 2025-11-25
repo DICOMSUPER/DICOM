@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import useDebounce from "@/hooks/useDebounce";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface ImagingModalityFiltersSectionProps {
   filters: PaginatedQuery;
@@ -21,13 +21,34 @@ export function ImagingModalityFiltersSection({
   });
 
   const debouncedSearch = useDebounce(searchInputs.search, 500);
+  const prevDebouncedSearchRef = useRef<string>(debouncedSearch);
+  const filtersRef = useRef(filters);
+
+  // Update filters ref when filters prop changes
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Sync local search input when filters.search changes externally (e.g., on reset)
+  useEffect(() => {
+    if (filters.search !== searchInputs.search) {
+      setSearchInputs((prev) => ({
+        ...prev,
+        search: filters.search || "",
+      }));
+    }
+  }, [filters.search]);
 
   useEffect(() => {
-    onFiltersChange({
-      ...filters,
-      search: debouncedSearch || "",
-    });
-  }, [debouncedSearch, filters, onFiltersChange]);
+    // Only update if debouncedSearch actually changed
+    if (prevDebouncedSearchRef.current !== debouncedSearch) {
+      prevDebouncedSearchRef.current = debouncedSearch;
+      onFiltersChange({
+        ...filtersRef.current,
+        search: debouncedSearch || "",
+      });
+    }
+  }, [debouncedSearch, onFiltersChange]);
 
   const handleInputChange = (
     field: keyof typeof searchInputs,

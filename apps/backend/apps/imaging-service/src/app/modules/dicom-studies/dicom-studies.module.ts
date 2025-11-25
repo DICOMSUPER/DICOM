@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BackendEntitiesModule, User } from '@backend/database';
+import { BackendEntitiesModule} from '@backend/database';
 import { DicomStudiesService } from './dicom-studies.service';
 import { DicomStudiesController } from './dicom-studies.controller';
 import { DicomStudy } from '@backend/shared-domain';
@@ -11,7 +11,6 @@ import { ImagingOrderRepository } from '../imaging-orders/imaging-orders.reposit
 import { BackendRedisModule } from '@backend/redis';
 import {
   PatientServiceClientModule,
-  UserServiceClientModule,
 } from '@backend/shared-client';
 
 @Module({

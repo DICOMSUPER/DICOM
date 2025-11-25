@@ -17,7 +17,7 @@ import { RoomScheduleService } from './room-schedule.service';
 export class RoomScheduleController {
   constructor(
     private readonly RoomScheduleService: RoomScheduleService
-  ) {}
+  ) { }
 
   @Post()
   @MessagePattern('UserService.RoomSchedule.Create')
@@ -65,14 +65,14 @@ export class RoomScheduleController {
         limit: filters.limit,
         offset: filters.offset,
       };
-      
+
       // Remove undefined values
       Object.keys(transformedFilters).forEach(key => {
-        if (transformedFilters[key] === undefined) {
-          delete transformedFilters[key];
+        if ((transformedFilters as any)[key] === undefined) {
+          delete (transformedFilters as any)[key];
         }
       });
-      
+
       return await this.RoomScheduleService.findAll(transformedFilters);
     } catch (error) {
       throw handleErrorFromMicroservices(
