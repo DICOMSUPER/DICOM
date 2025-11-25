@@ -1,4 +1,4 @@
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { AiAnalysis } from './ai-analysis.entity';
 

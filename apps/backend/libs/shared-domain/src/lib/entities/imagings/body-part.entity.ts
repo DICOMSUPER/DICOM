@@ -1,4 +1,4 @@
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('body_part')
@@ -11,5 +11,4 @@ export class BodyPart extends BaseEntity {
 
   @Column({ name: 'description', type: 'text', nullable: true })
   description?: string;
-
 }

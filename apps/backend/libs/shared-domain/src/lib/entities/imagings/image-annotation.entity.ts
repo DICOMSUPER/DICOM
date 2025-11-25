@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { DicomInstance } from './dicom-instance.entity';
 import { AnnotationType, AnnotationStatus } from '@backend/shared-enums';
-import { BaseEntity } from '@backend/entities';
+import { BaseEntity } from '@backend/database';
 
 @Entity('image_annotations')
 @Index(['instanceId'])
@@ -26,7 +26,7 @@ export class ImageAnnotation extends BaseEntity {
   @Column({ name: 'annotation_type', type: 'enum', enum: AnnotationType })
   annotationType!: AnnotationType;
 
-  @Column({ name: 'annotation_data', type: 'json'})
+  @Column({ name: 'annotation_data', type: 'json' })
   annotationData!: Record<string, any>;
 
   @Column({ name: 'coordinates', type: 'json', nullable: true })
