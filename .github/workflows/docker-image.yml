@@ -2,7 +2,7 @@ name: DICOM_BE CI/CD
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "quang", "test"] # branch phụ để test docker image
   pull_request:
     branches: ["main"]
 
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: "apps/backend/package-lock.json"  # ✅ Chỉ định đúng path
+          cache-dependency-path: "apps/backend/package-lock.json" # ✅ Chỉ định đúng path
 
       # 3️⃣ Install dependencies
       - name: Install dependencies
@@ -33,13 +33,13 @@ jobs:
       - name: Build NestJS services
         run: |
           cd apps/backend
-          npx nx run-many --target=build 
+          npx nx run-many --target=build
 
       # 5️⃣ Build Docker images
       - name: Build Docker image for user-service
         run: |
           cd apps/backend
-          docker build -t dicom/user-service:latest -f apps/user-service/Dockerfile .
+          docker build -t dicom/user-service:latest    -f apps/user-service/Dockerfile .
 
       - name: Build Docker image for patient-service
         run: |
@@ -49,7 +49,17 @@ jobs:
       - name: Build Docker image for imaging-service
         run: |
           cd apps/backend
-          docker build -t dicom/imaging-service:latest -f apps/imaging-service/Dockerfile .
+          docker build -t dicom/imaging-service:latest -f apps/imaging-service/Dockerfile .\
+
+      - name: Build Docker image for system-service
+        run: |
+          cd apps/backend
+          docker build -t dicom/system-service:latest -f apps/system-service/Dockerfile .
+
+      - name: Build Docker image for api-gateway
+        run: |
+          cd apps/backend
+          docker build -t dicom/api-gateway:latest -f apps/api-gateway/Dockerfile .
 
       # # 6️⃣ Login Docker Hub
       # - name: Docker Hub Login
