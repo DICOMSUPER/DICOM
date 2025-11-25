@@ -1,31 +1,43 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "lib": ["es2022"],
-    "baseUrl": ".",
-    "paths": {
-      "@backend/database": ["libs/database/src/index.ts"],
-      "@backend/redis": ["libs/redis/src/index.ts"],
-      "@backend/entities": ["libs/entities/src/index.ts"],
-      "@backend/shared-decorators": ["libs/shared-decorators/src/index.ts"],
-      "@backend/shared-domain": ["libs/shared-domain/src/index.ts"],
-      "@backend/shared-enums": ["libs/shared-enums/src/index.ts"],
-      "@backend/shared-exception": ["libs/shared-exception/src/index.ts"],
-      "@backend/shared-guards": ["libs/shared-guards/src/index.ts"],
-      "@backend/shared-interceptor": ["libs/shared-interceptor/src/index.ts"],
-      "@backend/shared-interfaces": ["libs/shared-interfaces/src/index.ts"],
-      "@backend/shared-utils": ["libs/shared-utils/src/index.ts"]
-    },
-    "skipLibCheck": true,
-    "strict": true,
-    "noUnusedLocals": false,
-    
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
+    "composite": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "importHelpers": true,
+    "isolatedModules": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "importHelpers": true
+    "lib": ["es2022"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "customConditions": ["development"],
+    "baseUrl": ".",
+    "paths": {
+      "@backend/entities": ["backend/libs/entities/src/index.ts"],
+      "@backend/shared-decorators": [
+        "backend/libs/shared-decorators/src/index.ts"
+      ],
+      "@backend/shared-domain": ["backend/libs/shared-domain/src/index.ts"],
+      "@backend/shared-enums": ["backend/libs/shared-enums/src/index.ts"],
+      "@backend/shared-exception": [
+        "backend/libs/shared-exception/src/index.ts"
+      ],
+      "@backend/shared-guards": ["backend/libs/shared-guards/src/index.ts"],
+      "@backend/shared-interceptor": [
+        "backend/libs/shared-interceptor/src/index.ts"
+      ],
+      "@backend/shared-interfaces": [
+        "backend/libs/shared-interfaces/src/index.ts"
+      ],
+      "@backend/shared-utils": ["backend/libs/shared-utils/src/index.ts"]
+    }
   }
 }
