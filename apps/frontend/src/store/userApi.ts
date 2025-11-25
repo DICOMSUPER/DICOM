@@ -93,6 +93,15 @@ export const userApi = createApi({
       }),
       providesTags: ["Profile"],
     }),
+
+    createStaffAccount: builder.mutation<User, Partial<User>>({
+      query: (data) => ({
+        url: "/users",
+        method: "POST",
+        data,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -101,6 +110,7 @@ export const {
   useGetUsersByRoomQuery,
   useGetUserByIdQuery,
   useCreateUserMutation,
+  useCreateStaffAccountMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetCurrentProfileQuery,

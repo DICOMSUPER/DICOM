@@ -10,7 +10,7 @@ import { useLogout } from "@/hooks/use-logout";
 
 export default function PatientsPage() {
   const [notificationCount] = useState(3);
-  const { logout: triggerLogout } = useLogout();
+  const { logout: triggerLogout, isLoggingOut } = useLogout();
 
   const handleNotificationClick = () => {
     console.log("Notifications clicked");
@@ -27,6 +27,7 @@ export default function PatientsPage() {
         notificationCount={notificationCount}
         onNotificationClick={handleNotificationClick}
         onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
       />
 
       {/* Workspace Layout */}

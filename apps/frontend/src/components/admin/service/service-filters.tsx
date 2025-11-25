@@ -27,8 +27,8 @@ export function ServiceFiltersSection({
     onFiltersChange({
       ...filters,
       search: debouncedSearch || "",
-      // patientName: debouncedPatientName || "",
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
   const handleInputChange = (
@@ -40,24 +40,6 @@ export function ServiceFiltersSection({
       [field]: value,
     }));
   };
-
-  // const handleSelectChange = (
-  //   key: keyof PaginatedQuery,
-  //   value: string
-  // ) => {
-  //   onFiltersChange({
-  //     ...filters,
-  //     [key]: value === "all" ? "" : value,
-  //   });
-  // };
-
-  // const handleNumberChange = (value: string) => {
-  //   const num = value === "" ? undefined : parseInt(value);
-  //   onFiltersChange({
-  //     ...filters,
-  //     orderNumber: num,
-  //   });
-  // };
 
   const handleReset = () => {
     setSearchInputs({
@@ -71,73 +53,27 @@ export function ServiceFiltersSection({
     return value !== undefined && value !== "" && value !== "all";
   }).length;
 
+  const hasActiveFilters = activeFiltersCount > 0;
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6 shadow-sm">
-      {/* Row 1: Search Inputs, Status, Priority, Queue Number */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div className="relative col-span-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search Service Name"
-            name="search"
-            value={searchInputs.search}
-            onChange={(e) => handleInputChange("search", e.target.value)}
-            className="pl-10"
-          />
+    <div className="border-border mb-6">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
+            <Input
+              placeholder="Search by service name..."
+              value={searchInputs.search}
+              onChange={(e) => handleInputChange("search", e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-
-        {/* <Select
-          value={filters.status || "all"}
-          onValueChange={(value) => handleSelectChange("status", value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value={DiagnosisStatus.ACTIVE}>Active</SelectItem>
-            <SelectItem value={DiagnosisStatus.RESOLVED}>Resolved</SelectItem>
-            <SelectItem value={DiagnosisStatus.INACTIVE}>Inactive</SelectItem>
-            <SelectItem value={DiagnosisStatus.RULED_OUT}>Ruled Out</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={filters.diagnosisType || "all"}
-          onValueChange={(value) => handleSelectChange("diagnosisType", value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Diagnosis Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Diagnosis Types</SelectItem>
-            <SelectItem value={DiagnosisType.DIFFERENTIAL}>
-              Differential
-            </SelectItem>
-            <SelectItem value={DiagnosisType.PRIMARY}>Primary</SelectItem>
-            <SelectItem value={DiagnosisType.PROVISIONAL}>Provisional</SelectItem>
-            <SelectItem value={DiagnosisType.RULE_OUT}>Ruled Out</SelectItem>
-            <SelectItem value={DiagnosisType.SECONDARY}>Secondary</SelectItem>
-          </SelectContent>
-        </Select> */}
-
-      </div>
-
-      {/* Action Bar */}
-      <div className="flex items-center justify-between pt-4 border-t">
-        <Button
-          variant="ghost"
-          onClick={handleReset}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Reset
-        </Button>
-        {activeFiltersCount > 0 && (
-          <span className="text-sm text-gray-500">
-            {activeFiltersCount}{" "}
-            {activeFiltersCount === 1 ? "filter" : "filters"} active
-          </span>
+        {hasActiveFilters && (
+          <Button variant="outline" onClick={handleReset} className="whitespace-nowrap h-9 px-4">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
         )}
       </div>
     </div>

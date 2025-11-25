@@ -110,73 +110,6 @@ export interface PaginatedResponse<T> {
   hasPreviousPage: boolean;
 }
 
-// Working Hours Interfaces
-export interface WorkingHours {
-  id: string;
-  dayOfWeek:
-    | "monday"
-    | "tuesday"
-    | "wednesday"
-    | "thursday"
-    | "friday"
-    | "saturday"
-    | "sunday";
-  startTime: string;
-  endTime: string;
-  isEnabled: boolean;
-  description?: string;
-  breakTimes?: BreakTime[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BreakTime {
-  id: string;
-  breakName: string;
-  startTime: string;
-  endTime: string;
-  workingHoursId: string;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SpecialHours {
-  id: string;
-  date: string;
-  startTime?: string;
-  endTime?: string;
-  isHoliday: boolean;
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WorkingHoursFormData {
-  dayOfWeek: string;
-  startTime: string;
-  endTime: string;
-  isEnabled: boolean;
-  description?: string;
-}
-
-export interface BreakTimeFormData {
-  breakName: string;
-  startTime: string;
-  endTime: string;
-  workingHoursId: string;
-  description?: string;
-}
-
-export interface SpecialHoursFormData {
-  date: string;
-  startTime?: string;
-  endTime?: string;
-  isHoliday: boolean;
-  description?: string;
-}
 
 export const scheduleApi = createApi({
   reducerPath: "scheduleApi",
@@ -186,9 +119,6 @@ export const scheduleApi = createApi({
     "ShiftTemplate",
     "Room",
     "ScheduleStats",
-    "WorkingHours",
-    "BreakTimes",
-    "SpecialHours",
   ],
   endpoints: (builder) => ({
     // Employee Schedules
@@ -428,211 +358,6 @@ export const scheduleApi = createApi({
       providesTags: ["ScheduleStats"],
     }),
 
-    // Working Hours
-    getWorkingHours: builder.query<
-      PaginatedResponse<WorkingHours>,
-      {
-        page?: number;
-        limit?: number;
-      }
-    >({
-      query: (params: any) => ({
-        url: "/working-hours",
-        method: "GET",
-        params,
-      }),
-      providesTags: ["WorkingHours"],
-    }),
-
-    getWorkingHoursById: builder.query<WorkingHours, string>({
-      query: (id: string) => ({
-        url: `/working-hours/${id}`,
-        method: "GET",
-      }),
-      providesTags: (result: any, error: any, id: string) => [
-        { type: "WorkingHours", id },
-      ],
-    }),
-
-    createWorkingHours: builder.mutation<WorkingHours, WorkingHoursFormData>({
-      query: (data: WorkingHoursFormData) => ({
-        url: "/working-hours",
-        method: "POST",
-        data: data,
-      }),
-      invalidatesTags: ["WorkingHours"],
-    }),
-
-    updateWorkingHours: builder.mutation<
-      WorkingHours,
-      { id: string; data: Partial<WorkingHoursFormData> }
-    >({
-      query: ({
-        id,
-        data,
-      }: {
-        id: string;
-        data: Partial<WorkingHoursFormData>;
-      }) => ({
-        url: `/working-hours/${id}`,
-        method: "PATCH",
-        data: data,
-      }),
-      invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
-        { type: "WorkingHours", id },
-        "WorkingHours",
-      ],
-    }),
-
-    deleteWorkingHours: builder.mutation<void, string>({
-      query: (id: string) => ({
-        url: `/working-hours/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["WorkingHours"],
-    }),
-
-    // Break Times
-    getBreakTimes: builder.query<BreakTime[], string>({
-      query: (workingHoursId: string) => ({
-        url: `/working-hours/break-times/${workingHoursId}`,
-        method: "GET",
-      }),
-      providesTags: ["BreakTimes"],
-    }),
-
-    createBreakTime: builder.mutation<BreakTime, BreakTimeFormData>({
-      query: (data: BreakTimeFormData) => ({
-        url: "/working-hours/break-times",
-        method: "POST",
-        data: data,
-      }),
-      invalidatesTags: ["BreakTimes", "WorkingHours"],
-    }),
-
-    updateBreakTime: builder.mutation<
-      BreakTime,
-      { id: string; data: Partial<BreakTimeFormData> }
-    >({
-      query: ({
-        id,
-        data,
-      }: {
-        id: string;
-        data: Partial<BreakTimeFormData>;
-      }) => ({
-        url: `/working-hours/break-times/${id}`,
-        method: "PATCH",
-        data: data,
-      }),
-      invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
-        { type: "BreakTimes", id },
-        "BreakTimes",
-        "WorkingHours",
-      ],
-    }),
-
-    deleteBreakTime: builder.mutation<void, string>({
-      query: (id: string) => ({
-        url: `/working-hours/break-times/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["BreakTimes", "WorkingHours"],
-    }),
-
-    // Special Hours
-    getSpecialHours: builder.query<
-      PaginatedResponse<SpecialHours>,
-      {
-        page?: number;
-        limit?: number;
-      }
-    >({
-      query: (params: any) => ({
-        url: "/working-hours/special-hours",
-        method: "GET",
-        params,
-      }),
-      providesTags: ["SpecialHours"],
-    }),
-
-    getSpecialHoursById: builder.query<SpecialHours, string>({
-      query: (id: string) => ({
-        url: `/working-hours/special-hours/${id}`,
-        method: "GET",
-      }),
-      providesTags: (result: any, error: any, id: string) => [
-        { type: "SpecialHours", id },
-      ],
-    }),
-
-    createSpecialHours: builder.mutation<SpecialHours, SpecialHoursFormData>({
-      query: (data: SpecialHoursFormData) => ({
-        url: "/working-hours/special-hours",
-        method: "POST",
-        data: data,
-      }),
-      invalidatesTags: ["SpecialHours"],
-    }),
-
-    updateSpecialHours: builder.mutation<
-      SpecialHours,
-      { id: string; data: Partial<SpecialHoursFormData> }
-    >({
-      query: ({
-        id,
-        data,
-      }: {
-        id: string;
-        data: Partial<SpecialHoursFormData>;
-      }) => ({
-        url: `/working-hours/special-hours/${id}`,
-        method: "PATCH",
-        data: data,
-      }),
-      invalidatesTags: (result: any, error: any, { id }: { id: string }) => [
-        { type: "SpecialHours", id },
-        "SpecialHours",
-      ],
-    }),
-
-    deleteSpecialHours: builder.mutation<void, string>({
-      query: (id: string) => ({
-        url: `/working-hours/special-hours/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["SpecialHours"],
-    }),
-
-    // Working Hours Utilities
-    checkTimeAvailability: builder.query<
-      boolean,
-      {
-        date: string;
-        start_time: string;
-        end_time: string;
-      }
-    >({
-      query: (params: any) => ({
-        url: "/working-hours/check-availability",
-        method: "GET",
-        params,
-      }),
-    }),
-
-    getWorkingHoursForDate: builder.query<
-      {
-        workingHours: WorkingHours | null;
-        specialHours: SpecialHours | null;
-      },
-      string
-    >({
-      query: (date: string) => ({
-        url: `/working-hours/for-date/${date}`,
-        method: "GET",
-      }),
-    }),
-
     // Bulk Operations
     createBulkSchedules: builder.mutation<
       RoomSchedule[],
@@ -710,19 +435,6 @@ export const scheduleApi = createApi({
       }),
     }),
 
-    validateSchedulesAgainstWorkingHours: builder.query<
-      {
-        valid: boolean;
-        violations: { schedule: RoomSchedule; reason: string }[];
-      },
-      { schedules: RoomSchedule[] }
-    >({
-      query: (data: { schedules: RoomSchedule[] }) => ({
-        url: "/room-schedules/validate-working-hours",
-        method: "POST",
-        data: data,
-      }),
-    }),
 
     // Template Operations
     duplicateShiftTemplate: builder.mutation<
@@ -809,26 +521,6 @@ export const {
   useUpdateRoomMutation,
   useDeleteRoomMutation,
   useGetScheduleStatsQuery,
-  // Working Hours
-  useGetWorkingHoursQuery,
-  useGetWorkingHoursByIdQuery,
-  useCreateWorkingHoursMutation,
-  useUpdateWorkingHoursMutation,
-  useDeleteWorkingHoursMutation,
-  // Break Times
-  useGetBreakTimesQuery,
-  useCreateBreakTimeMutation,
-  useUpdateBreakTimeMutation,
-  useDeleteBreakTimeMutation,
-  // Special Hours
-  useGetSpecialHoursQuery,
-  useGetSpecialHoursByIdQuery,
-  useCreateSpecialHoursMutation,
-  useUpdateSpecialHoursMutation,
-  useDeleteSpecialHoursMutation,
-  // Working Hours Utilities
-  useCheckTimeAvailabilityQuery,
-  useGetWorkingHoursForDateQuery,
   // Bulk Operations
   useCreateBulkSchedulesMutation,
   useUpdateBulkSchedulesMutation,
@@ -836,7 +528,6 @@ export const {
   useCopyWeekSchedulesMutation,
   // Conflict Detection
   useCheckScheduleConflictQuery,
-  useValidateSchedulesAgainstWorkingHoursQuery,
   // Template Operations
   useDuplicateShiftTemplateMutation,
   useCreateSchedulesFromTemplateMutation,

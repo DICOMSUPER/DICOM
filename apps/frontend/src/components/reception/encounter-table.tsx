@@ -1,14 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  TableRowEnhanced,
-  TableCellEnhanced,
-} from "@/components/ui/table-enhanced";
-import { PriorityBadge } from "@/components/ui/priority-badge";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getEncounterTypeBadge } from "@/utils/status-badge";
 import {
   Eye,
   Edit,
@@ -22,6 +17,9 @@ import {
   FileText,
 } from "lucide-react";
 import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { TableCellEnhanced, TableRowEnhanced } from "../ui/table-enhanced";
+import { Badge } from "../ui/badge";
+import { PriorityBadge } from "../ui/priority-badge";
 
 interface EncounterTableProps {
   encounters: PatientEncounter[];
@@ -103,10 +101,10 @@ export function EncounterTable({
   ];
 
   return (
-    <DataTable
-      headers={headers}
+    <DataTable<PatientEncounter>
+      rowKey={(encounter) => encounter.id}
+      data={encounters}
       isLoading={isLoading}
-      isEmpty={encounters.length === 0}
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}

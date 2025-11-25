@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 interface LoginFormProps {
   onLogin: (
@@ -10,42 +11,42 @@ interface LoginFormProps {
   ) => Promise<void> | void;
 }
 
-// Validation schema
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Please enter a valid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .required("Password is required"),
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address").min(1, "Email is required"),
+  password: z.string().min(1, "Password is required"),
 });
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const formik = useFormik({
-    initialValues: {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
       email: "",
       password: "",
     },
-    validationSchema,
-    onSubmit: async (values: { email: string; password: string }) => {
-      setIsLoading(true);
-      try {
-        await onLogin(values.email, values.password);
-      } catch (error) {
-        setIsLoading(false);
-      }
-    },
   });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    try {
+      await onLogin(values.email, values.password);
+    } catch (error) {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-md">
       <form 
-        onSubmit={(e) => {
-          e.preventDefault();
-          formik.handleSubmit(e);
-        }}
+        onSubmit={handleSubmit(onSubmit)}
         method="post"
         className="space-y-5" 
         autoComplete="on"
@@ -60,21 +61,18 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="relative group">
             <input
               id="email"
-              name="email"
               type="email"
               autoComplete="email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+              {...register("email")}
               className={`w-full px-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
-                formik.touched.email && formik.errors.email 
+                touchedFields.email && errors.email 
                   ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
                   : "border-gray-200 hover:border-gray-300"
               }`}
               placeholder="you@example.com"
             />
-            {formik.touched.email && formik.errors.email && (
-              <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{formik.errors.email}</p>
+            {touchedFields.email && errors.email && (
+              <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{errors.email.message}</p>
             )}
           </div>
         </div>
@@ -89,14 +87,11 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="relative group">
             <input
               id="password"
-              name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
+              {...register("password")}
               className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
-                formik.touched.password && formik.errors.password 
+                touchedFields.password && errors.password 
                   ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
                   : "border-gray-200 hover:border-gray-300"
               }`}
@@ -110,8 +105,8 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          {formik.touched.password && formik.errors.password && (
-            <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{formik.errors.password}</p>
+          {touchedFields.password && errors.password && (
+            <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{errors.password.message}</p>
           )}
         </div>
 

@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Room } from '@/interfaces/user/room.interface';
 import { RoomStatus } from '@/enums/room.enum';
 import {
@@ -37,17 +38,16 @@ interface RoomViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (room: Room) => void;
+  onAssignService?: (room: Room) => void;
 }
 
-export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalProps) {
-  if (!room) return null;
-
-  const roomId = room.id ?? '';
+export function RoomViewModal({ room, isOpen, onClose, onEdit, onAssignService }: RoomViewModalProps) {
+  const roomId = room?.id ?? '';
 
   const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
     roomId,
     { 
-      skip: !roomId || !isOpen,
+      skip: !roomId || !isOpen || !room,
       refetchOnMountOrArgChange: true 
     }
   );
@@ -61,6 +61,8 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
     if (!room?.serviceRooms) return [];
     return room.serviceRooms.filter((sr) => sr.isActive && sr.service);
   }, [room]);
+
+  if (!room) return null;
 
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -153,14 +155,19 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        {/* Fixed Header */}
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <DialogTitle className="text-xl font-semibold">Room Details</DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable Content */}
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
+          {!room ? (
+            <div className="space-y-8 pr-4 pb-2">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-8 pr-4 pb-2">
             {/* Hero Section */}
             <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-6">
@@ -171,22 +178,24 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </div>
                   <div>
                     <p className="text-3xl font-semibold text-foreground leading-tight">
-                      {room.roomType}
+                      {room.roomType || 'N/A'}
                     </p>
                     <div className="mt-3 grid gap-2 text-sm text-foreground">
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        Floor {room.floor} • {room.department?.departmentName || 'No Department'}
+                        {room.floor !== undefined ? `Floor ${room.floor}` : 'Floor N/A'} • {room.department?.departmentName || 'No Department'}
                       </p>
-                      <p className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        Capacity: {room.capacity} people
-                        {room.roomStats?.currentInProgress !== undefined && (
-                          <span className="text-xs text-foreground ml-2">
-                            ({room.roomStats.currentInProgress} currently assigned)
-                          </span>
-                        )}
-                      </p>
+                      {room.capacity !== undefined && (
+                        <p className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Capacity: {room.capacity} people
+                          {room.roomStats?.currentInProgress !== undefined && (
+                            <span className="text-xs text-foreground ml-2">
+                              ({room.roomStats.currentInProgress} currently assigned)
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -194,12 +203,14 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   <Badge className={`${getStatusColor(room.status)} px-4 py-1 text-xs font-semibold shadow-sm`}>
                     {getStatusLabel(room.status)}
                   </Badge>
-                  {room.pricePerDay && (
+                  {room.pricePerDay !== undefined && room.pricePerDay !== null && (
                     <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
                       <p className="uppercase text-xs tracking-wide">Price per Day</p>
                       <p className="text-base font-semibold text-foreground flex items-center gap-1 justify-end">
                         <DollarSign className="h-4 w-4" />
-                        {Number(room.pricePerDay).toLocaleString()} ₫
+                        {typeof room.pricePerDay === 'number' 
+                          ? room.pricePerDay.toLocaleString() 
+                          : Number(room.pricePerDay).toLocaleString()} ₫
                       </p>
                     </div>
                   )}
@@ -213,7 +224,7 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-foreground">Room Type</p>
-                    <p className="text-lg font-semibold text-foreground">{room.roomType}</p>
+                    <p className="text-lg font-semibold text-foreground">{room.roomType || 'N/A'}</p>
                     <p className="text-xs text-foreground">Category</p>
                   </div>
                 </div>
@@ -498,7 +509,8 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
                 </section>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </ScrollArea>
 
         {/* Fixed Footer */}
@@ -506,7 +518,12 @@ export function RoomViewModal({ room, isOpen, onClose, onEdit }: RoomViewModalPr
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {onEdit && (
+          {onAssignService && room && (
+            <Button variant="default" onClick={() => onAssignService(room)}>
+              Assign Service
+            </Button>
+          )}
+          {onEdit && room && (
             <Button variant="default" onClick={() => onEdit(room)}>
               Edit Room
             </Button>

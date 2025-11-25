@@ -20,6 +20,7 @@ import {
   Building,
   Calendar,
   FolderTree,
+  Link2
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -44,15 +45,9 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/admin/users",
-      label: "User Management",
+      label: "Users",
       icon: Users,
       description: "Manage system users and roles",
-    },
-    {
-      href: "/admin/working-hours",
-      label: "Working Hours",
-      icon: Timer,
-      description: "Configure clinic working hours and break times",
     },
     {
       href: "/admin/settings",
@@ -61,50 +56,26 @@ export const roleNavigation: RoleNavigation = {
       description: "Configure system settings",
     },
     {
-      href: "/admin/service",
-      label: "Service Management",
+      href: "/admin/services",
+      label: "Services",
       icon: Cog,
       description: "Manage clinic services and offerings",
     },
     {
-      href: "/admin/reports",
-      label: "Analytics & Reports",
-      icon: FileText,
-      description: "Generate system reports",
-    },
-    {
-      href: "/admin/security",
-      label: "Security & Audit",
-      icon: Shield,
-      description: "Monitor security and audit logs",
-    },
-    {
-      href: "/admin/database",
-      label: "Database Management",
-      icon: Database,
-      description: "Manage database and backups",
-    },
-    {
-      href: "/admin/docs",
-      label: "Documentation",
-      icon: BookOpen,
-      description: "System documentation and guides",
-    },
-    {
-      href: "/admin/monitoring",
-      label: "System Monitoring",
-      icon: Monitor,
-      description: "Monitor system performance",
-    },
-    {
       href: "/admin/rooms",
-      label: "Rooms Management",
+      label: "Rooms",
       icon: Building2,
       description: "Manage clinic rooms and resources",
     },
     {
+      href: "/admin/room-services",
+      label: "Room Services",
+      icon: Link2,
+      description: "Manage room service assignments",
+    },
+    {
       href: "/admin/departments",
-      label: "Departments Management",
+      label: "Departments",
       icon: Building,
       description: "Manage clinic departments and staff",
     },
@@ -113,6 +84,18 @@ export const roleNavigation: RoleNavigation = {
       label: "Room Assignments",
       icon: UserCheck,
       description: "Assign employees to room schedules",
+    },
+    {
+      href: "/admin/imaging-modalities",
+      label: "Imaging Modalities",
+      icon: Monitor,
+      description: "Manage imaging modalities",
+    },
+    {
+      href: "/admin/modality-machines",
+      label: "Modality Machines",
+      icon: Activity,
+      description: "Manage modality machines",
     },
   ],
 
@@ -186,7 +169,7 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physician/diagnosis-report",
-      label: "Reports Management",
+      label: "Reports",
       icon: Stethoscope,
       description: "Patient diagnoses management",
     },

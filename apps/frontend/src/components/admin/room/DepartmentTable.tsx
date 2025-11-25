@@ -106,7 +106,7 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (department: Department) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
               variant="ghost"

@@ -56,20 +56,6 @@ export const calculateDuration = (startTime: string, endTime: string): number =>
   return Math.round(diffMs / (1000 * 60 * 60)); // Return hours
 };
 
-export const isWithinWorkingHours = (
-  time: string, 
-  workingHours: { startTime: string; endTime: string }
-): boolean => {
-  const timeToCheck = parseTime(time);
-  const startTime = parseTime(workingHours.startTime);
-  const endTime = parseTime(workingHours.endTime);
-
-  if (!timeToCheck || !startTime || !endTime) {
-    return false;
-  }
-
-  return timeToCheck >= startTime && timeToCheck <= endTime;
-};
 
 // Date utilities
 export const formatScheduleDate = (date: string | Date): string => {
@@ -182,34 +168,6 @@ export const detectScheduleConflicts = (schedules: any[]): Array<{ schedule: any
   return conflicts;
 };
 
-// Working hours validation
-export const validateScheduleAgainstWorkingHours = (
-  schedule: { work_date: string; actual_start_time?: string; actual_end_time?: string },
-  workingHours: { dayOfWeek: string; startTime: string; endTime: string; isEnabled: boolean }[]
-): { valid: boolean; reason?: string } => {
-  if (!schedule.actual_start_time || !schedule.actual_end_time) {
-    return { valid: true }; // No time set, skip validation
-  }
-  
-  const scheduleDate = new Date(schedule.work_date);
-  const dayOfWeek = scheduleDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
-  
-  const dayWorkingHours = workingHours.find(wh => wh.dayOfWeek === dayOfWeek);
-  
-  if (!dayWorkingHours || !dayWorkingHours.isEnabled) {
-    return { valid: false, reason: 'Clinic is closed on this day' };
-  }
-  
-  if (!isWithinWorkingHours(schedule.actual_start_time, dayWorkingHours)) {
-    return { valid: false, reason: 'Start time is outside working hours' };
-  }
-  
-  if (!isWithinWorkingHours(schedule.actual_end_time, dayWorkingHours)) {
-    return { valid: false, reason: 'End time is outside working hours' };
-  }
-  
-  return { valid: true };
-};
 
 // Template utilities
 export const generateScheduleFromTemplate = (
@@ -295,7 +253,6 @@ export const scheduleHelpers = {
   getScheduleStatusColor,
   getScheduleStatusIcon,
   detectScheduleConflicts,
-  validateScheduleAgainstWorkingHours,
   generateScheduleFromTemplate,
   calculatePagination,
   filterSchedules,

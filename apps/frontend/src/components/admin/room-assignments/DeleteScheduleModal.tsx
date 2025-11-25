@@ -64,8 +64,9 @@ export function DeleteScheduleModal({
       toast.success("Schedule deleted successfully");
       onDeleted?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error?.data?.message || error?.message || "Failed to delete schedule");
+    } catch (error) {
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || "Failed to delete schedule");
     } finally {
       setIsDeleting(false);
       setConfirmDelete(false);

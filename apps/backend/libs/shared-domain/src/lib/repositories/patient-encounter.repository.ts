@@ -563,7 +563,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
   }): Promise<PaginatedResponseDto<PatientEncounter>> {
     // console.log('encounter filter data: ', data);
 
-    if (data.roomServiceIds && data.roomServiceIds.length === 0)
+    if (Array.isArray(data.roomServiceIds) && data.roomServiceIds.length === 0)
       return {
         data: [],
         limit: data?.paginationDto?.limit || 5,

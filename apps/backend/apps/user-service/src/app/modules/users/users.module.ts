@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RoomSchedule, User } from '@backend/shared-domain';
+import { RoomSchedule, User, Department } from '@backend/shared-domain';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OtpsModule } from '../otps/otps.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RoomSchedule]),
+    TypeOrmModule.forFeature([User, RoomSchedule, Department]),
     ConfigModule,
     OtpsModule,
     JwtModule.registerAsync({

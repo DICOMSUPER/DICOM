@@ -16,6 +16,10 @@ import { Loader2 } from "lucide-react";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
+import { AnnotationHoverTooltip } from "@/components/viewer/AnnotationHoverTooltip";
+import { annotation } from "@cornerstonejs/tools";
+import { AnnotationType } from "@/enums/image-dicom.enum";
+import type { Annotation } from "@cornerstonejs/tools/types";
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -33,10 +37,6 @@ const ViewPortMain = ({
   viewportId,
 }: ViewPortMainProps) => {
   const viewportIndex = viewportId ? parseInt(viewportId) : 0;
-
-  if (Number.isNaN(viewportIndex)) {
-    return null;
-  }
 
   const {
     getViewportId,
@@ -428,6 +428,67 @@ const ViewPortMain = ({
       }
     };
 
+    // Toggle annotation visibility handler
+    const handleToggleAnnotations = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { showAnnotations } = customEvent.detail || {};
+
+      if (!elementRef.current || !viewport) {
+        return;
+      }
+
+      console.log("👁️ Toggling annotation visibility:", showAnnotations);
+
+      try {
+        // Find all SVG elements containing annotations (Cornerstone.js renders annotations as SVG)
+        const svgElements = elementRef.current.querySelectorAll("svg");
+
+        // Toggle visibility using CSS
+        svgElements.forEach((svg) => {
+          // Check if this SVG contains annotation elements (not the main viewport canvas)
+          const hasAnnotationElements =
+            svg.querySelector("g[data-tool-name]") ||
+            svg.querySelector("g[data-annotation-uid]") ||
+            svg.classList.contains("annotation-svg");
+
+          if (hasAnnotationElements) {
+            if (showAnnotations === false) {
+              svg.style.display = "none";
+              svg.classList.add("annotations-hidden");
+            } else {
+              svg.style.display = "";
+              svg.classList.remove("annotations-hidden");
+            }
+          }
+        });
+
+        // Also try to find annotation canvas elements
+        const annotationCanvas = elementRef.current.querySelector(
+          "canvas.annotation-canvas"
+        );
+        if (annotationCanvas) {
+          if (showAnnotations === false) {
+            (annotationCanvas as HTMLElement).style.display = "none";
+          } else {
+            (annotationCanvas as HTMLElement).style.display = "";
+          }
+        }
+
+        // Force re-render of the viewport
+        if (viewport && typeof viewport.render === "function") {
+          viewport.render();
+        }
+
+        console.log(
+          `✅ Annotation visibility set to: ${
+            showAnnotations !== false ? "visible" : "hidden"
+          }`
+        );
+      } catch (error) {
+        console.error("❌ Error toggling annotation visibility:", error);
+      }
+    };
+
     element.addEventListener("keydown", handleKeyDown);
     element.addEventListener("wheel", wheelScrollHandler, { passive: false });
     window.addEventListener(
@@ -464,6 +525,10 @@ const ViewPortMain = ({
     window.addEventListener(
       "clearAIAnnotations",
       handleClearAIAnnotations as EventListener
+    );
+    window.addEventListener(
+      "toggleAnnotations",
+      handleToggleAnnotations as EventListener
     );
 
     return () => {
@@ -503,6 +568,10 @@ const ViewPortMain = ({
       window.removeEventListener(
         "clearAIAnnotations",
         handleClearAIAnnotations as EventListener
+      );
+      window.removeEventListener(
+        "toggleAnnotations",
+        handleToggleAnnotations as EventListener
       );
     };
   }, [
@@ -592,6 +661,10 @@ const ViewPortMain = ({
     () => totalFrames > 1 && !isLoading,
     [isLoading, totalFrames]
   );
+
+  if (Number.isNaN(viewportIndex)) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-900">
@@ -728,6 +801,15 @@ const ViewPortMain = ({
                   {Math.max(0, currentFrame) + 1} / {Math.max(totalFrames, 0)}
                 </div>
               </>
+            )}
+
+            {/* Annotation Hover Tooltip */}
+            {elementReady && elementRef.current && resolvedViewportId && (
+              <AnnotationHoverTooltip
+                viewportId={resolvedViewportId}
+                viewportIndex={viewportIndex}
+                element={elementRef.current}
+              />
             )}
           </>
         ) : (

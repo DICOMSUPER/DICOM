@@ -15,13 +15,15 @@ export function SidebarNav() {
   const userRole = getNavigationRoleFromUserRole(user?.role);
   const allNavItems = getNavigationForRole(userRole);
 
+  const navItemsToUse = allNavItems;
+
   const sortedNavItems = useMemo(
-    () => [...allNavItems].sort((a, b) => b.href.length - a.href.length),
-    [allNavItems]
+    () => [...navItemsToUse].sort((a, b) => b.href.length - a.href.length),
+    [navItemsToUse]
   );
 
   const navItems = useMemo(() => {
-    return allNavItems.map((item) => {
+    return navItemsToUse.map((item) => {
       const isExactMatch = pathname === item.href;
       const isPrefixMatch = item.href !== "/" && pathname.startsWith(item.href + "/");
 
@@ -38,7 +40,7 @@ export function SidebarNav() {
 
       return { ...item, active: isActive };
     });
-  }, [allNavItems, sortedNavItems, pathname]);
+  }, [navItemsToUse, sortedNavItems, pathname]);
 
   return (
     <nav className="p-4">
@@ -55,8 +57,8 @@ export function SidebarNav() {
                     : "text-slate-600"
                 }`}
               >
-                <Icon className="w-4 h-4 mr-2" />
-                {item.label}
+                <Icon className="w-4 h-4 mr-2 shrink-0" />
+                <span className="truncate">{item.label}</span>
               </Button>
             </Link>
           );

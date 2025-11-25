@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Like, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   CreateServiceRoomDto,
   FilterServiceRoomDto,
@@ -14,7 +14,7 @@ import {
   Services,
   UpdateServiceRoomDto,
 } from '@backend/shared-domain';
-import { PaginatedResponseDto, PaginationService } from '@backend/database';
+import { PaginatedResponseDto } from '@backend/database';
 
 @Injectable()
 export class ServiceRoomsService {
@@ -25,8 +25,7 @@ export class ServiceRoomsService {
     private readonly servicesRepository: Repository<Services>,
     @InjectRepository(Room)
     private readonly roomRepository: Repository<Room>,
-    private readonly entityManager: EntityManager,
-    private readonly paginationService: PaginationService
+    private readonly entityManager: EntityManager
   ) {}
 
   async create(data: CreateServiceRoomDto) {
@@ -70,98 +69,108 @@ export class ServiceRoomsService {
     });
   }
 
- async findAll(filter: FilterServiceRoomDto): Promise<PaginatedResponseDto<ServiceRoom>> {
-  const { page = 1, limit = 10, roomCode, serviceName, isActive } = filter;
+  async findAll(
+    filter: FilterServiceRoomDto
+  ): Promise<PaginatedResponseDto<ServiceRoom>> {
+    const { page = 1, limit = 10, roomCode, serviceName, isActive } = filter;
 
-  const qb = this.serviceRoomRepository
-    .createQueryBuilder('sr')
-    .leftJoinAndSelect('sr.service', 'service')
-    .leftJoinAndSelect('sr.room', 'room');
+    const qb = this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department');
 
-  // Apply filters
-  if (serviceName) {
-    qb.andWhere('service.serviceName LIKE :serviceName', { 
-      serviceName: `%${serviceName}%` 
-    });
+    if (serviceName) {
+      qb.andWhere('service.serviceName ILIKE :serviceName', {
+        serviceName: `%${serviceName}%`,
+      });
+    }
+
+    if (roomCode) {
+      qb.andWhere('room.roomCode ILIKE :roomCode', {
+        roomCode: `%${roomCode}%`,
+      });
+    }
+    if (isActive !== undefined) {
+      qb.andWhere('sr.isActive = :isActive', { isActive });
+    }
+
+    qb.orderBy('sr.createdAt', 'DESC');
+
+    const skip = (page - 1) * limit;
+    qb.skip(skip).take(limit);
+
+    try {
+      const [data, total] = await qb.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+      const hasNextPage = page < totalPages;
+      const hasPreviousPage = page > 1;
+
+      return new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      );
+    } catch (error) {
+      console.error('❌ Database error:', error);
+      throw new BadRequestException(
+        `Error querying service rooms: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
   }
 
-if (roomCode) {
-  qb.andWhere('room.roomCode LIKE :roomCode', { 
-    roomCode: `%${roomCode}%`
-  });
-}
-  if (isActive !== undefined) {
-    qb.andWhere('sr.isActive = :isActive', { isActive });
+  async findAllWithoutPagination(
+    filter: FilterServiceRoomDto
+  ): Promise<ServiceRoom[]> {
+    const { roomId, roomCode, serviceName, serviceId, isActive } = filter;
+
+    const qb = this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department');
+
+    if (serviceId) {
+      qb.andWhere('service.id = :serviceId', {
+        serviceId,
+      });
+    }
+    if (serviceName) {
+      qb.andWhere('service.serviceName ILIKE :serviceName', {
+        serviceName: `%${serviceName}%`,
+      });
+    }
+    if (roomId) {
+      qb.andWhere('room.id = :roomId', {
+        roomId,
+      });
+    }
+
+    if (roomCode) {
+      qb.andWhere('room.roomCode ILIKE :roomCode', {
+        roomCode: `%${roomCode}%`,
+      });
+    }
+
+    if (isActive !== undefined) {
+      qb.andWhere('sr.isActive = :isActive', { isActive });
+    }
+
+    qb.orderBy('sr.createdAt', 'DESC');
+
+    return await qb.getMany();
   }
-
-  // Order
-  qb.orderBy('sr.createdAt', 'DESC');
-
-  // Pagination
-  const skip = (page - 1) * limit;
-  qb.skip(skip).take(limit);
-
-  try {
-    const [data, total] = await qb.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-    const hasNextPage = page < totalPages;
-    const hasPreviousPage = page > 1;
-
-    return new PaginatedResponseDto(
-      data,
-      total,
-      page,
-      limit,
-      totalPages,
-      hasNextPage,
-      hasPreviousPage
-    );
-  } catch (error) {
-    console.error('❌ Database error:', error);
-    throw new BadRequestException('Error querying service rooms:');
-  }
-}
-
-async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoom[]> {
-  const { roomId,roomCode, serviceName, isActive } = filter;
-
-  const qb = this.serviceRoomRepository
-    .createQueryBuilder('sr')
-    .leftJoinAndSelect('sr.service', 'service')
-    .leftJoinAndSelect('sr.room', 'room');
-
-  // Apply filters
-  if (serviceName) {
-    qb.andWhere('service.serviceName LIKE :serviceName', { 
-      serviceName: `%${serviceName}%` 
-    });
-  }
-  if (roomId) {
-    qb.andWhere('room.id = :roomId', { 
-      roomId
-    });
-  }
-
-  if (roomCode) {
-    qb.andWhere('room.roomCode LIKE :roomCode', { 
-      roomCode: `%${roomCode}%` 
-    });
-  }
-
-  if (isActive !== undefined) {
-    qb.andWhere('sr.isActive = :isActive', { isActive });
-  }
-
-  qb.orderBy('sr.createdAt', 'DESC');
-
-  return await qb.getMany();
-}
-
 
   async findOne(id: string) {
     const serviceRoom = await this.serviceRoomRepository.findOne({
       where: { id },
-      relations: ['service', 'room'],
+      relations: ['service', 'room', 'room.department'],
     });
 
     if (!serviceRoom) {
@@ -172,17 +181,30 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
   }
 
   async findByService(serviceId: string) {
-    return await this.serviceRoomRepository.find({
-      where: { service: { id: serviceId } as any },
-      relations: ['service', 'room'],
-    });
+    const qb = await this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department')
+
+      .orderBy('sr.createdAt', 'DESC');
+
+    if (serviceId) {
+      qb.andWhere('service.id = :serviceId', { serviceId });
+    }
+
+    return await qb.getMany();
   }
 
   async findByRoom(roomId: string) {
-    return await this.serviceRoomRepository.find({
-      where: { room: { id: roomId } as any },
-      relations: ['service', 'room'],
-    });
+    return await this.serviceRoomRepository
+      .createQueryBuilder('sr')
+      .leftJoinAndSelect('sr.service', 'service')
+      .leftJoinAndSelect('sr.room', 'room')
+      .leftJoinAndSelect('room.department', 'department')
+      .where('room.id = :roomId', { roomId })
+      .orderBy('sr.createdAt', 'DESC')
+      .getMany();
   }
 
   async update(id: string, updatedData: UpdateServiceRoomDto) {
@@ -190,6 +212,10 @@ async findAllWithoutPagination(filter: FilterServiceRoomDto): Promise<ServiceRoo
 
     if (updatedData.isActive !== undefined) {
       serviceRoom.isActive = updatedData.isActive;
+    }
+
+    if (updatedData.notes !== undefined) {
+      serviceRoom.notes = updatedData.notes;
     }
 
     return await this.serviceRoomRepository.save(serviceRoom);

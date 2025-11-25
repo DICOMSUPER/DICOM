@@ -195,7 +195,11 @@ export function EditScheduleModal({
     setIsSubmitting(true);
 
     try {
-      const updateData: any = {};
+      const updateData: {
+        shift_template_id?: string;
+        actual_start_time?: string;
+        actual_end_time?: string;
+      } = {};
 
       if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") {
         const selectedTemplate = shiftTemplates.find(
@@ -207,7 +211,7 @@ export function EditScheduleModal({
           updateData.actual_end_time = selectedTemplate.end_time;
         }
       } else {
-        updateData.shift_template_id = null;
+        // Omit shift_template_id when not using template (undefined means don't update)
         updateData.actual_start_time = startTime;
         updateData.actual_end_time = endTime;
       }
@@ -220,8 +224,9 @@ export function EditScheduleModal({
       toast.success("Schedule updated successfully");
       onUpdated?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error?.data?.message || error?.message || "Failed to update schedule");
+    } catch (error) {
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || "Failed to update schedule");
     } finally {
       setIsSubmitting(false);
     }

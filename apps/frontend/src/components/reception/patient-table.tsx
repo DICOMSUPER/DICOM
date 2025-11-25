@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { getBooleanStatusBadge } from "@/utils/status-badge";
 import { Eye, Edit, Trash2, User, Calendar, Phone, MapPin } from "lucide-react";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 
@@ -134,7 +134,7 @@ export function PatientTable({
           headerClassName: "text-center",
           cell: (patient) => (
             <div className="flex justify-center">
-              <StatusBadge status={patient.isActive ? "active" : "inactive"} />
+              {getBooleanStatusBadge(patient.isActive ?? true)}
             </div>
           ),
         },
@@ -152,8 +152,9 @@ export function PatientTable({
         },
         {
           header: "Actions",
+          headerClassName: "text-center",
           cell: (patient) => (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               {onViewDetails && (
                 <Button
                   variant="ghost"
@@ -161,7 +162,7 @@ export function PatientTable({
                   onClick={() => onViewDetails(patient)}
                   className="h-8 w-8 p-0"
                 >
-                  <Eye className="h-4 w-4 text-teal-600" />
+                  <Eye className="h-4 w-4 text-green-600" />
                 </Button>
               )}
               {onEditPatient && (
@@ -171,7 +172,7 @@ export function PatientTable({
                   onClick={() => onEditPatient(patient)}
                   className="h-8 w-8 p-0"
                 >
-                  <Edit className="h-4 w-4 text-teal-600" />
+                  <Edit className="h-4 w-4 text-blue-600" />
                 </Button>
               )}
             </div>

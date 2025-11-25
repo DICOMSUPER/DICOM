@@ -1,10 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/radiologist/side-bar";
-import { Suspense } from "react";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -19,7 +19,13 @@ export default function RadiologistLayout({
   const isWorkTreeRoute = pathname?.startsWith("/radiologist/work-tree");
 
   // Conditionally render sidebar: Work Tree sidebar when on work tree route, otherwise normal navigation
-  const sidebarContent = isWorkTreeRoute ? <Sidebar /> : <SidebarNav />;
+  const sidebarContent = isWorkTreeRoute ? (
+    <Suspense fallback={<div className="p-4">Loading sidebar...</div>}>
+      <Sidebar />
+    </Suspense>
+  ) : (
+    <SidebarNav />
+  );
 
   return (
     <Suspense>

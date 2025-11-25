@@ -10,6 +10,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Department } from '@/interfaces/user/department.interface';
 import { Building, Mail, Phone, User, Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
@@ -27,7 +28,6 @@ export function DepartmentViewModal({
   onClose,
   onEdit,
 }: DepartmentViewModalProps) {
-  if (!department) return null;
 
   const getStatusColor = (isActive: boolean) => {
     return isActive
@@ -56,11 +56,16 @@ export function DepartmentViewModal({
           <DialogTitle className="text-xl font-semibold">Department Details</DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable Content */}
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-8 pr-4 pb-2">
-            {/* Hero Section */}
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+          {!department ? (
+            <div className="space-y-8 pr-4 pb-2">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-8 pr-4 pb-2">
+              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
@@ -252,7 +257,8 @@ export function DepartmentViewModal({
                 </section>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </ScrollArea>
 
         {/* Fixed Footer */}
@@ -260,7 +266,7 @@ export function DepartmentViewModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {onEdit && (
+          {onEdit && department && (
             <Button variant="default" onClick={() => onEdit(department)}>
               Edit Department
             </Button>

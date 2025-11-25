@@ -42,7 +42,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
     {
       header: 'Room Type',
       cell: (room: Room) => (
-        <div className="text-foreground">{room.roomType}</div>
+        <div className="text-foreground">{room.roomType || '—'}</div>
       ),
     },
     {
@@ -58,25 +58,29 @@ export const RoomTable: React.FC<RoomTableProps> = ({
     {
       header: 'Floor',
       cell: (room: Room) => (
-        <div className="text-foreground">{room.floor}</div>
+        <div className="text-foreground">{room.floor !== undefined ? room.floor : '—'}</div>
       ),
     },
     {
       header: 'Capacity',
       cell: (room: Room) => (
-        <div className="text-foreground">{room.capacity}</div>
+        <div className="text-foreground">{room.capacity !== undefined ? room.capacity : '—'}</div>
       ),
     },
     {
       header: 'Price/Day',
       cell: (room: Room) => (
-        <div className="text-foreground">{Number(room.pricePerDay).toLocaleString()} ₫</div>
+        <div className="text-foreground">
+          {room.pricePerDay !== undefined 
+            ? `${typeof room.pricePerDay === 'number' ? room.pricePerDay.toLocaleString() : Number(room.pricePerDay).toLocaleString()} ₫` 
+            : '—'}
+        </div>
       ),
     },
     {
       header: 'Description',
       cell: (room: Room) => (
-        <div className="max-w-[250px] truncate text-foreground">{room.description}</div>
+        <div className="max-w-[250px] truncate text-foreground">{room.description || '—'}</div>
       ),
     },
     {
@@ -173,7 +177,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (room: Room) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
               variant="ghost"

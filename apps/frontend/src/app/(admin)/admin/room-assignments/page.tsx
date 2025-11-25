@@ -24,12 +24,14 @@ import { ScheduleSidebar } from '@/components/schedule/ScheduleSidebar';
 import { Pagination } from '@/components/common/PaginationV1';
 import { ScheduleListFilters, ScheduleListFilters as FiltersType } from '@/components/schedule/ScheduleListFilters';
 
-import { RoomSchedule } from '@/interfaces/schedule/schedule.interface';
+import { RoomSchedule, RoomScheduleSearchFilters } from '@/interfaces/schedule/schedule.interface';
 import { ScheduleDetailModal } from '@/components/schedule/ScheduleDetailModal';
 import { AssignmentWithMeta } from '@/components/admin/room-assignments/types';
 import { User } from '@/interfaces/user/user.interface';
 import { Roles } from '@/enums/user.enum';
 import { extractApiData } from '@/utils/api';
+import { PaginationMeta } from '@/interfaces/pagination/pagination.interface';
+import { EmployeeRoomAssignmentStats } from '@/interfaces/user/employee-room-assignment.interface';
 
 const getStatsFromSchedules = (schedules: RoomSchedule[], optimisticCount: number) => {
   const allAssignments = schedules.flatMap(
@@ -92,6 +94,7 @@ export default function RoomAssignmentsPage() {
   >({});
   const [detailSchedule, setDetailSchedule] = useState<RoomSchedule | RoomSchedule[] | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [listPage, setListPage] = useState(1);
   const [listLimit] = useState(10);
   const [listFilters, setListFilters] = useState<FiltersType>({
@@ -153,7 +156,7 @@ export default function RoomAssignmentsPage() {
   const rooms = roomsData?.data || [];
 
   const paginatedFilters = useMemo(() => {
-    const filters: any = {};
+    const filters: RoomScheduleSearchFilters = {};
     
     if (scheduleSearch) {
       filters.search = scheduleSearch;
@@ -207,13 +210,13 @@ export default function RoomAssignmentsPage() {
   const schedulesLoading = activeView === 'calendar' ? allSchedulesLoading : paginatedSchedulesLoading;
   const schedulesFetching = activeView === 'calendar' ? allSchedulesFetching : paginatedSchedulesFetching;
   const schedulesError = activeView === 'calendar' ? allSchedulesError : paginatedSchedulesError;
-  const paginationMeta = paginatedSchedulesData ? {
+  const paginationMeta: PaginationMeta | null = paginatedSchedulesData ? {
     total: paginatedSchedulesData.total,
     page: paginatedSchedulesData.page,
     limit: listLimit,
     totalPages: paginatedSchedulesData.totalPages,
-    hasNextPage: (paginatedSchedulesData as any).hasNextPage ?? (paginatedSchedulesData.page < paginatedSchedulesData.totalPages),
-    hasPreviousPage: (paginatedSchedulesData as any).hasPreviousPage ?? (paginatedSchedulesData.page > 1),
+    hasNextPage: paginatedSchedulesData.page < paginatedSchedulesData.totalPages,
+    hasPreviousPage: paginatedSchedulesData.page > 1,
   } : null;
 
   const schedules = schedulesData ?? [];
@@ -287,7 +290,30 @@ export default function RoomAssignmentsPage() {
     optimisticAssignmentsCount
   );
 
-  const handleRefresh = async () => refetchSchedules();
+  const scheduleStats = useMemo<EmployeeRoomAssignmentStats>(() => {
+    const statsMap: EmployeeRoomAssignmentStats = {};
+    mergedSchedules.forEach((schedule) => {
+      if (schedule.work_date) {
+        const dateKey = typeof schedule.work_date === 'string' 
+          ? schedule.work_date.split('T')[0] 
+          : new Date(schedule.work_date).toISOString().split('T')[0];
+        const assignmentCount = schedule.employeeRoomAssignments?.length || 0;
+        statsMap[dateKey] = (statsMap[dateKey] || 0) + assignmentCount;
+      }
+    });
+    return statsMap;
+  }, [mergedSchedules]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchSchedules();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     setErrorMessage(schedulesError ? 'Failed to load room schedules. Please try again.' : null);
@@ -302,7 +328,11 @@ export default function RoomAssignmentsPage() {
           <div className="flex items-center gap-2">
             <Tabs
               value={activeView}
-              onValueChange={(value) => setActiveView(value as any)}
+              onValueChange={(value) => {
+                if (value === "list" || value === "calendar") {
+                  setActiveView(value);
+                }
+              }}
               className="w-auto"
             >
               <TabsList className="grid grid-cols-2">
@@ -319,7 +349,7 @@ export default function RoomAssignmentsPage() {
             </Button>
             <RefreshButton 
               onRefresh={handleRefresh} 
-              loading={schedulesLoading || schedulesFetching} 
+              loading={isRefreshing} 
             />
           </div>
         </div>
@@ -387,6 +417,7 @@ export default function RoomAssignmentsPage() {
               <ScheduleSidebar
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
+                scheduleStats={scheduleStats}
               />
             </div>
           </div>

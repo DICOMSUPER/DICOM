@@ -70,8 +70,9 @@ export function DeleteAssignmentModal({
       toast.success("Assignment deleted successfully");
       onDeleted?.(assignmentId);
       onClose();
-    } catch (error: any) {
-      toast.error(error?.data?.message || error?.message || "Failed to delete assignment");
+    } catch (error) {
+      const apiError = error as { data?: { message?: string }; message?: string };
+      toast.error(apiError?.data?.message || apiError?.message || "Failed to delete assignment");
     } finally {
       setIsDeleting(false);
       setConfirmDelete(false);

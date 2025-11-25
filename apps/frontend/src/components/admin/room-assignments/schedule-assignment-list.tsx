@@ -171,16 +171,17 @@ export function ScheduleAssignmentList({
                 ];
 
                 // Get room equipment
-                const roomEquipment = room ? [
-                  room.hasTV && { name: 'TV', icon: <Tv className="h-3 w-3" /> },
-                  room.hasAirConditioning && { name: 'AC', icon: <Thermometer className="h-3 w-3" /> },
-                  room.hasWiFi && { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> },
-                  room.hasTelephone && { name: 'Phone', icon: <Phone className="h-3 w-3" /> },
-                  room.hasAttachedBathroom && { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> },
-                  room.isWheelchairAccessible && { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> },
-                  room.hasOxygenSupply && { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> },
-                  room.hasNurseCallButton && { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> },
-                ].filter(Boolean) : [];
+                type EquipmentItem = { name: string; icon: React.ReactNode };
+                const roomEquipment: EquipmentItem[] = room ? ([] as (EquipmentItem | null)[]).concat(
+                  room.hasTV ? { name: 'TV', icon: <Tv className="h-3 w-3" /> } : null,
+                  room.hasAirConditioning ? { name: 'AC', icon: <Thermometer className="h-3 w-3" /> } : null,
+                  room.hasWiFi ? { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> } : null,
+                  room.hasTelephone ? { name: 'Phone', icon: <Phone className="h-3 w-3" /> } : null,
+                  room.hasAttachedBathroom ? { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> } : null,
+                  room.isWheelchairAccessible ? { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> } : null,
+                  room.hasOxygenSupply ? { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> } : null,
+                  room.hasNurseCallButton ? { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> } : null,
+                ).filter((item): item is EquipmentItem => item !== null) : [];
 
                 // Get room services
                 const roomServices = room?.serviceRooms?.filter(sr => sr.isActive && sr.service).map(sr => 
@@ -282,7 +283,7 @@ export function ScheduleAssignmentList({
                               {/* Equipment */}
                               {roomEquipment.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
-                                  {roomEquipment.slice(0, 6).map((eq: any, idx: number) => (
+                                  {roomEquipment.slice(0, 6).map((eq, idx: number) => (
                                     <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
                                       {eq.icon}
                                       {eq.name}
