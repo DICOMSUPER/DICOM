@@ -56,8 +56,9 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
 import { ModalApproveStudy } from "../diagnosis-report/modal-approve-study";
+import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
+import { EmptyReportState } from "./empty-report";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -76,7 +77,7 @@ export function DiagnosisReportDetail({
       templateType: TemplateType.STANDARD,
       bodyPartId: "",
     });
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     data: report,
     isLoading,
@@ -324,6 +325,15 @@ export function DiagnosisReportDetail({
     router.push(`/viewer?study=${report?.data.studyId}`);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   const handleDownloadReport = async () => {
     try {
       const result = await updateDicomStudy({
@@ -349,6 +359,16 @@ export function DiagnosisReportDetail({
     router.back();
   };
 
+  if (!reportId && !isReportLoading) {
+    return (
+      <EmptyReportState
+        onBack={handleBack}
+        onRefresh={handleRefresh}
+        isLoading={false}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <div className="max-full ">
@@ -365,7 +385,6 @@ export function DiagnosisReportDetail({
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex items-center gap-3">
-
                 <h1 className="text-3xl font-bold text-slate-900">
                   Diagnosis Report Detail
                 </h1>

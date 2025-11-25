@@ -22,7 +22,7 @@ export default function ClinicVisitDetailPage({
   if (isLoadingEncounter) {
     return (
       <div className="min-h-screen ">
-        <div className="max-w-7xl ">
+        <div className="w-full">
           <div className="flex items-center gap-4 mb-8">
             <Skeleton className="h-8 w-8" />
             <div className="space-y-2">
@@ -60,7 +60,7 @@ export default function ClinicVisitDetailPage({
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-7xl">
+      <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           {/* <div className="lg:col-span-1">

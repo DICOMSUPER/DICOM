@@ -92,7 +92,7 @@ export default function ImagingOrderFormPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl">
+      <div className="w-full">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">

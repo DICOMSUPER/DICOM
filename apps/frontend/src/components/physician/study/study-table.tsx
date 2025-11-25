@@ -52,6 +52,7 @@ import {
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
+import { format } from "date-fns";
 
 interface DicomStudyTableProps {
   dicomStudies: DicomStudy[];
@@ -225,14 +226,14 @@ export function DicomStudyTable({
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-center font-semibold text-xs text-slate-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
         >
-          Study Date
+           Date
           <ArrowUpDown className="ml-2 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="space-y-1 ml-6 ">
+        <div className="space-y-1 ml-2 ">
           <span className="font-semibold text-slate-900 text-sm">
-            {row.original.studyDate}
+            {format(new Date(row.original.studyDate), "dd/MM/yyyy")}
           </span>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <Clock className="w-3.5 h-3.5" />

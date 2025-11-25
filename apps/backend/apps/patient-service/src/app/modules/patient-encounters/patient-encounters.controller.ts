@@ -144,6 +144,34 @@ export class PatientEncounterController {
       );
     }
   }
+
+  //transfer update
+  @MessagePattern(
+    `${PATIENT_SERVICE}.${moduleName}.Transfer`
+  )
+  async transfer(
+    @Payload()
+    data: {
+      id: string;
+      updatePatientEncounterDto: UpdatePatientEncounterDto;
+      transferredBy: string;
+    }
+  ): Promise<PatientEncounter | null> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Transfer`
+    );
+    try {
+      const { id, updatePatientEncounterDto, transferredBy } = data;
+      return await this.patientEncounterService.transfer(id, updatePatientEncounterDto, transferredBy);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to transfer patient encounter with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
   // PatientService.Encounter.Create
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
   async remove(@Payload() data: { id: string }): Promise<boolean> {
