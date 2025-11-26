@@ -37,7 +37,7 @@ export interface DepartmentSearchFilters {
 export const departmentApi = createApi({
   reducerPath: "departmentApi",
   baseQuery: axiosBaseQuery("/departments"),
-  tagTypes: ["Department"],
+  tagTypes: ["Department", "Room"],
   endpoints: (builder) => ({
     // Get all departments with filters
     getDepartments: builder.query<PaginatedResponse<Department>, QueryParams>({
@@ -66,7 +66,7 @@ export const departmentApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Department"],
+      invalidatesTags: ["Department", "Room"],
     }),
 
     // Update department
@@ -82,6 +82,7 @@ export const departmentApi = createApi({
       invalidatesTags: (result, error, { id }) => [
         { type: "Department", id },
         "Department",
+        "Room",
       ],
     }),
 
@@ -91,7 +92,7 @@ export const departmentApi = createApi({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Department"],
+      invalidatesTags: ["Department", "Room"],
     }),
   }),
 });

@@ -335,6 +335,36 @@ export class UserController {
     }
   }
 
+  @Get('all')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get all users without pagination (for analytics)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách người dùng thành công',
+  })
+  async getAllUsersWithoutPagination(
+    @Query('isActive') isActive?: boolean,
+  ) {
+    try {
+      this.logger.log('Fetching all users without pagination for analytics');
+
+      const result = await firstValueFrom(
+        this.userClient.send('user.get-all-users-without-pagination', {
+          isActive,
+        })
+      );
+
+      return {
+        data: result.data || [],
+        count: result.data?.length || 0,
+        message: 'Lấy danh sách người dùng thành công',
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch all users', error);
+      throw handleError(error);
+    }
+  }
+
   @Post('users')
   @UseGuards(AuthGuard)
   @Role(Roles.SYSTEM_ADMIN)

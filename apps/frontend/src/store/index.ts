@@ -29,6 +29,7 @@ import { digitalSignatureApi } from "./digitalSignatureApi";
 import serviceRoomApi from "./serviceRoomApi";
 import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
 import { aiAnalysisApi } from "./aiAnalysisApi";
+import { analyticsApi } from "./analyticsApi";
 
 
 export const store = configureStore({
@@ -62,6 +63,7 @@ export const store = configureStore({
     [serviceRoomApi.reducerPath]: serviceRoomApi.reducer,
     [dicomStudySignatureApi.reducerPath]: dicomStudySignatureApi.reducer,
     [aiAnalysisApi.reducerPath]: aiAnalysisApi.reducer,
+    [analyticsApi.reducerPath]: analyticsApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -95,7 +97,8 @@ export const store = configureStore({
       .concat(digitalSignatureApi.middleware)
       .concat(serviceRoomApi.middleware)
       .concat(dicomStudySignatureApi.middleware)
-      .concat(aiAnalysisApi.middleware),
+      .concat(aiAnalysisApi.middleware)
+      .concat(analyticsApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

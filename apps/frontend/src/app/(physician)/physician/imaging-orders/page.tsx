@@ -39,13 +39,6 @@ export default function ImagingOrderFormPage() {
   const { data, isLoading, isFetching, error } =
     useGetImagingOrderFormPaginatedQuery({ filters: apiFilters });
 
-  // const { data: RoomScheduleData } = useGetMySchedulesByDateRangeQuery({
-  //   startDate: format(new Date(), "yyyy-MM-dd"),
-  //   endDate: format(new Date(), "yyyy-MM-dd"),
-  // });
-
-  // console.log("RoomScheduleData", RoomScheduleData);
-
   useEffect(() => {
     if (data) {
       setPaginationMeta({

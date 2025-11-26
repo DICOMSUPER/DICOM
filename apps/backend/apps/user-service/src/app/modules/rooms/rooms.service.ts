@@ -183,6 +183,50 @@ export class RoomsService {
     }
   }
 
+  async findAllWithoutPagination(query?: {
+    search?: string;
+    isActive?: boolean;
+    status?: string;
+    type?: string;
+    departmentId?: string;
+  }): Promise<Room[]> {
+    try {
+      const qb = this.roomRepository
+        .createQueryBuilder('room')
+        .leftJoinAndSelect('room.department', 'department')
+        .where('room.isDeleted = :isDeleted', { isDeleted: false })
+        .orderBy('room.createdAt', 'DESC');
+
+      if (query?.search) {
+        qb.andWhere(
+          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          { search: `%${query.search}%` }
+        );
+      }
+
+      if (query?.isActive !== undefined) {
+        qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
+      }
+
+      if (query?.status) {
+        qb.andWhere('room.status = :status', { status: query.status });
+      }
+
+      if (query?.type) {
+        qb.andWhere('room.roomType = :type', { type: query.type });
+      }
+
+      if (query?.departmentId) {
+        qb.andWhere('room.departmentId = :departmentId', { departmentId: query.departmentId });
+      }
+
+      return await qb.getMany();
+    } catch (error: any) {
+      this.logger.error(`Find all rooms without pagination error: ${error.message}`);
+      throw new DatabaseException('Lỗi khi lấy danh sách phòng');
+    }
+  }
+
   async update(id: string, updateRoomDto: UpdateRoomDto): Promise<Room> {
     try {
       this.logger.log(
@@ -616,6 +660,29 @@ export class RoomsService {
         }`,
         'UserService'
       );
+    }
+  }
+
+  async getStats(): Promise<{
+    totalRooms: number;
+    activeRooms: number;
+    inactiveRooms: number;
+  }> {
+    try {
+      const [totalRooms, activeRooms, inactiveRooms] = await Promise.all([
+        this.roomRepository.count({ where: { isDeleted: false } }),
+        this.roomRepository.count({ where: { isActive: true, isDeleted: false } }),
+        this.roomRepository.count({ where: { isActive: false, isDeleted: false } }),
+      ]);
+
+      return {
+        totalRooms,
+        activeRooms,
+        inactiveRooms,
+      };
+    } catch (error: any) {
+      this.logger.error(`Get stats error: ${error.message}`);
+      throw new DatabaseException('Lỗi khi lấy thống kê phòng');
     }
   }
 }

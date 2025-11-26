@@ -22,6 +22,7 @@ import {
 } from '@backend/shared-client';
 import { DicomStudySignaturesModule } from './modules/imaging-service/dicom-study-signatures/dicom-study-signatures.module';
 import { AiModelModule } from './modules/system-service/ai-model/ai-model.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 dotenv.config();
 
 @Module({
@@ -48,6 +49,7 @@ dotenv.config();
     PatientServiceModule,
     SeedingModule,
     DicomStudySignaturesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

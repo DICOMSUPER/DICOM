@@ -90,6 +90,32 @@ export class DepartmentsController {
       throw handleError(error);
     }
   }
+
+  @Get('all')
+  @Public()
+  @ApiOperation({ summary: 'Get all departments without pagination (for analytics)' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
+  async getAllDepartmentsWithoutPagination(
+    @Query('isActive') isActive?: boolean,
+  ) {
+    try {
+      this.logger.log('Fetching all departments without pagination for analytics');
+      
+      const result = await firstValueFrom(
+        this.departmentClient.send('department.get-all-without-pagination', {
+          isActive,
+        })
+      );
+
+      return {
+        data: result?.data || [],
+        count: result?.data?.length || 0,
+      };
+    } catch (error) {
+      this.logger.error('Failed to fetch all departments', error);
+      throw handleError(error);
+    }
+  }
   
   
 

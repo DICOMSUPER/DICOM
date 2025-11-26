@@ -90,6 +90,36 @@ export class DepartmentsService {
     );
   }
 
+  async findAllWithoutPagination(query?: {
+    search?: string;
+    isActive?: boolean;
+    departmentCode?: string[];
+  }): Promise<Department[]> {
+    const qb = this.departmentRepository
+      .createQueryBuilder('department')
+      .leftJoinAndSelect('department.headDepartment', 'headDepartment')
+      .leftJoinAndSelect('department.rooms', 'rooms')
+      .where('department.isDeleted = :isDeleted', { isDeleted: false })
+      .orderBy('department.createdAt', 'DESC');
+
+    if (query?.search) {
+      qb.andWhere(
+        '(department.departmentName ILIKE :search OR department.departmentCode ILIKE :search)',
+        { search: `%${query.search}%` },
+      );
+    }
+
+    if (query?.isActive !== undefined) {
+      qb.andWhere('department.isActive = :isActive', { isActive: query.isActive });
+    }
+
+    if (query?.departmentCode && query.departmentCode.length > 0) {
+      qb.andWhere('department.departmentCode IN (:...departmentCode)', { departmentCode: query.departmentCode });
+    }
+
+    return await qb.getMany();
+  }
+
   async findOne(id: string): Promise<Department> {
     const department = await this.departmentRepository.findOne({
       where: { id },
@@ -168,5 +198,27 @@ export class DepartmentsService {
       relations: ['headDepartment'],
       order: { departmentName: 'ASC' },
     });
+  }
+
+  async getStats(): Promise<{
+    totalDepartments: number;
+    activeDepartments: number;
+    inactiveDepartments: number;
+  }> {
+    try {
+      const [totalDepartments, activeDepartments, inactiveDepartments] = await Promise.all([
+        this.departmentRepository.count({ where: { isDeleted: false } }),
+        this.departmentRepository.count({ where: { isActive: true, isDeleted: false } }),
+        this.departmentRepository.count({ where: { isActive: false, isDeleted: false } }),
+      ]);
+
+      return {
+        totalDepartments,
+        activeDepartments,
+        inactiveDepartments,
+      };
+    } catch (error: any) {
+      throw new DepartmentUpdateFailedException('Lỗi khi lấy thống kê phòng ban');
+    }
   }
 }

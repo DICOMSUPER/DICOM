@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSystemStatusBadge } from "@/utils/status-badge";
 
 interface SystemService {
@@ -15,29 +16,24 @@ interface AdminSystemStatusProps {
 }
 
 export function AdminSystemStatus({ 
-  services = [
-    { name: 'API Server', status: 'online' as const, lastCheck: '2 minutes ago' },
-    { name: 'Database', status: 'online' as const, lastCheck: '1 minute ago' },
-    { name: 'File Storage', status: 'warning' as const, lastCheck: '5 minutes ago' },
-    { name: 'Email Service', status: 'online' as const, lastCheck: '3 minutes ago' },
-  ],
+  services = [],
   isLoading = false 
 }: AdminSystemStatusProps) {
   if (isLoading) {
     return (
-      <Card className="border-border">
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          <Skeleton className="h-6 w-32 mb-2" />
+          <Skeleton className="h-4 w-48" />
         </CardHeader>
         <CardContent className="space-y-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-muted animate-pulse rounded-full" />
-                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                <Skeleton className="w-2 h-2 rounded-full" />
+                <Skeleton className="h-4 w-20" />
               </div>
-              <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+              <Skeleton className="h-6 w-16" />
             </div>
           ))}
         </CardContent>
@@ -62,8 +58,24 @@ export function AdminSystemStatus({
     return getSystemStatusBadge(status);
   };
 
+  if (!services || services.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-foreground">System Status</CardTitle>
+          <CardDescription>
+            Current system health indicators
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No system status data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="border-0 shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">System Status</CardTitle>
         <CardDescription>

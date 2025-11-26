@@ -71,6 +71,41 @@ export class DepartmentsController {
     }
   }
 
+  @MessagePattern('department.get-all-without-pagination')
+  async findAllWithoutPagination(
+    @Payload()
+    query?: {
+      search?: string;
+      isActive?: boolean;
+      departmentCode?: string[];
+    }
+  ) {
+    try {
+      const result = await this.service.findAllWithoutPagination(query);
+      return { data: result };
+    } catch (error) {
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get departments',
+        'DepartmentsController.findAllWithoutPagination'
+      );
+    }
+  }
+
+  @MessagePattern('department.get-stats')
+  async getStats() {
+    try {
+      return await this.service.getStats();
+    } catch (error) {
+      this.logger.error(`Get department stats error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get department stats',
+        'DepartmentsController.getStats'
+      );
+    }
+  }
+
   @MessagePattern('department.get-by-id')
   async findOne(@Payload() data: { id: string }) {
     try {

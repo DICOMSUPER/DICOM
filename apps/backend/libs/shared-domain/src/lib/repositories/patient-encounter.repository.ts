@@ -359,7 +359,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       .where('encounter.created_at >= :dateFrom', {
         dateFrom: startDate.toISOString(),
       })
-      .andWhere('encounter.createdd_at <= :dateTo', {
+      .andWhere('encounter.created_at <= :dateTo', {
         dateTo: endDate.toISOString(),
       })
       .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
