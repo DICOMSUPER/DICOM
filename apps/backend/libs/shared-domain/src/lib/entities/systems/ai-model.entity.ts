@@ -1,6 +1,5 @@
 import { BaseEntity } from '@backend/entities';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { AiAnalysis } from './ai-analysis.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('ai_model')
 export class AiModel extends BaseEntity {

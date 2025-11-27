@@ -43,24 +43,6 @@ export default function ReceptionDashboard() {
   const recentEncountersArray = Array.isArray(recentEncounters)
     ? recentEncounters
     : (recentEncounters as any)?.data || [];
-  // const recentEncountersMappedArray = recentEncountersArray.map(
-  //   (encounter: any) => ({
-  //     id: encounter.id,
-  //     name: encounter.patient
-  //       ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
-  //       : "Unknown Patient",
-  //     time: new Date(encounter.encounterDate).toLocaleTimeString(),
-  //     priority: (encounter.priority || "normal") as any,
-  //   })
-  // );
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
 
   const handleGoToPatients = () => {
     router.push("/reception/patients");

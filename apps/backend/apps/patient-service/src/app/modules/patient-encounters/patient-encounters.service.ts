@@ -333,7 +333,7 @@ export class PatientEncounterService {
     return await this.encounterRepository.getStatsInDateRange(dateFrom, dateTo);
   };
 
-  async autoMarkLeavedEncounters(): Promise<{
+  async autoMarkCancelledEncounters(): Promise<{
     updatedCount: number;
     encounters: PatientEncounter[];
   }> {
@@ -362,10 +362,10 @@ export class PatientEncounterService {
           return { updatedCount: 0, encounters: [] };
         }
 
-        // Update all to UNARRIVED
+        // Update all to CANCELLED
         // const updatePromises = waitingEncounters.map((encounter) =>
         //   this.encounterRepository.update(encounter.id, {
-        //     status: EncounterStatus.LEAVED,
+        //     status: EncounterStatus.CANCELLED,
         //     updatedAt: new Date(),
         //   })
         // );
@@ -380,7 +380,7 @@ export class PatientEncounterService {
         const updatedEncounters = await this.encounterRepository.batchUpdate(
           encounterIds,
           {
-            status: EncounterStatus.LEAVED,
+            status: EncounterStatus.CANCELLED,
             updatedAt: new Date(),
           },
           transactionalEntityManager

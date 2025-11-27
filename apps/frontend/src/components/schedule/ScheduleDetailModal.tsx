@@ -92,7 +92,7 @@ export function ScheduleDetailModal({
     roomId,
     { 
       skip: !roomId || !isOpen,
-      refetchOnMountOrArgChange: true 
+      refetchOnMountOrArgChange: false 
     }
   );
   const modalities = useMemo(() => {

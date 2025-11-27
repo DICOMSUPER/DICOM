@@ -5,6 +5,7 @@ import {
   useViewer,
   type AnnotationHistoryEntry,
 } from "@/contexts/ViewerContext";
+import type { SegmentationHistoryEntry } from "@/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
 import {
   getCanvasAsBase64,
@@ -37,10 +38,6 @@ const ViewPortMain = ({
   viewportId,
 }: ViewPortMainProps) => {
   const viewportIndex = viewportId ? parseInt(viewportId) : 0;
-
-  if (Number.isNaN(viewportIndex)) {
-    return null;
-  }
 
   const {
     getViewportId,
@@ -313,6 +310,40 @@ const ViewPortMain = ({
         ?.redoAnnotation?.(historyEntry);
     };
 
+    const handleUndoSegmentation = (event?: Event) => {
+      let historyEntry: SegmentationHistoryEntry | undefined;
+      if (event) {
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: SegmentationHistoryEntry;
+        }>;
+        const { activeViewportId } = customEvent.detail || {};
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
+        historyEntry = customEvent.detail?.entry;
+      }
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.undoSegmentation?.(historyEntry);
+    };
+
+    const handleRedoSegmentation = (event?: Event) => {
+      let historyEntry: SegmentationHistoryEntry | undefined;
+      if (event) {
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: SegmentationHistoryEntry;
+        }>;
+        const { activeViewportId } = customEvent.detail || {};
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
+        historyEntry = customEvent.detail?.entry;
+      }
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.redoSegmentation?.(historyEntry);
+    };
+
     const handleInvertColorMap = () => {
       toolManagerRef.current?.getToolHandlers?.()?.invertColorMap?.();
     };
@@ -441,48 +472,55 @@ const ViewPortMain = ({
         return;
       }
 
-      console.log('👁️ Toggling annotation visibility:', showAnnotations);
+      console.log("👁️ Toggling annotation visibility:", showAnnotations);
 
       try {
         // Find all SVG elements containing annotations (Cornerstone.js renders annotations as SVG)
-        const svgElements = elementRef.current.querySelectorAll('svg');
-        
+        const svgElements = elementRef.current.querySelectorAll("svg");
+
         // Toggle visibility using CSS
         svgElements.forEach((svg) => {
           // Check if this SVG contains annotation elements (not the main viewport canvas)
-          const hasAnnotationElements = svg.querySelector('g[data-tool-name]') || 
-                                        svg.querySelector('g[data-annotation-uid]') ||
-                                        svg.classList.contains('annotation-svg');
-          
+          const hasAnnotationElements =
+            svg.querySelector("g[data-tool-name]") ||
+            svg.querySelector("g[data-annotation-uid]") ||
+            svg.classList.contains("annotation-svg");
+
           if (hasAnnotationElements) {
             if (showAnnotations === false) {
-              svg.style.display = 'none';
-              svg.classList.add('annotations-hidden');
+              svg.style.display = "none";
+              svg.classList.add("annotations-hidden");
             } else {
-              svg.style.display = '';
-              svg.classList.remove('annotations-hidden');
+              svg.style.display = "";
+              svg.classList.remove("annotations-hidden");
             }
           }
         });
 
         // Also try to find annotation canvas elements
-        const annotationCanvas = elementRef.current.querySelector('canvas.annotation-canvas');
+        const annotationCanvas = elementRef.current.querySelector(
+          "canvas.annotation-canvas"
+        );
         if (annotationCanvas) {
           if (showAnnotations === false) {
-            (annotationCanvas as HTMLElement).style.display = 'none';
+            (annotationCanvas as HTMLElement).style.display = "none";
           } else {
-            (annotationCanvas as HTMLElement).style.display = '';
+            (annotationCanvas as HTMLElement).style.display = "";
           }
         }
 
         // Force re-render of the viewport
-        if (viewport && typeof viewport.render === 'function') {
+        if (viewport && typeof viewport.render === "function") {
           viewport.render();
         }
 
-        console.log(`✅ Annotation visibility set to: ${showAnnotations !== false ? 'visible' : 'hidden'}`);
+        console.log(
+          `✅ Annotation visibility set to: ${
+            showAnnotations !== false ? "visible" : "hidden"
+          }`
+        );
       } catch (error) {
-        console.error('❌ Error toggling annotation visibility:', error);
+        console.error("❌ Error toggling annotation visibility:", error);
       }
     };
 
@@ -514,10 +552,27 @@ const ViewPortMain = ({
       "redoAnnotation",
       handleRedoAnnotation as EventListener
     );
+    window.addEventListener(
+      "undoSegmentation",
+      handleUndoSegmentation as EventListener
+    );
+    window.addEventListener(
+      "redoSegmentation",
+      handleRedoSegmentation as EventListener
+    );
     window.addEventListener("refreshViewport", handleRefresh);
-    window.addEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
-    window.addEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
-    window.addEventListener("toggleAnnotations", handleToggleAnnotations as EventListener);
+    window.addEventListener(
+      "diagnoseViewport",
+      handleAIDiagnosis as EventListener
+    );
+    window.addEventListener(
+      "clearAIAnnotations",
+      handleClearAIAnnotations as EventListener
+    );
+    window.addEventListener(
+      "toggleAnnotations",
+      handleToggleAnnotations as EventListener
+    );
 
     return () => {
       element.removeEventListener("keydown", handleKeyDown);
@@ -548,10 +603,27 @@ const ViewPortMain = ({
         "redoAnnotation",
         handleRedoAnnotation as EventListener
       );
+      window.removeEventListener(
+        "undoSegmentation",
+        handleUndoSegmentation as EventListener
+      );
+      window.removeEventListener(
+        "redoSegmentation",
+        handleRedoSegmentation as EventListener
+      );
       window.removeEventListener("refreshViewport", handleRefresh);
-      window.removeEventListener("diagnoseViewport", handleAIDiagnosis as EventListener);
-      window.removeEventListener("clearAIAnnotations", handleClearAIAnnotations as EventListener);
-      window.removeEventListener("toggleAnnotations", handleToggleAnnotations as EventListener);
+      window.removeEventListener(
+        "diagnoseViewport",
+        handleAIDiagnosis as EventListener
+      );
+      window.removeEventListener(
+        "clearAIAnnotations",
+        handleClearAIAnnotations as EventListener
+      );
+      window.removeEventListener(
+        "toggleAnnotations",
+        handleToggleAnnotations as EventListener
+      );
     };
   }, [
     viewportIndex,
@@ -640,6 +712,10 @@ const ViewPortMain = ({
     () => totalFrames > 1 && !isLoading,
     [isLoading, totalFrames]
   );
+
+  if (Number.isNaN(viewportIndex)) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-900">

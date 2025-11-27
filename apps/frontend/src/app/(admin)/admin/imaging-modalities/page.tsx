@@ -14,16 +14,7 @@ import { ImagingModalityViewModal } from '@/components/admin/imaging-modality/im
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import {
   PaginatedQuery,
   PaginationMeta,
@@ -37,6 +28,7 @@ import {
   useCreateImagingModalityMutation,
   useDeleteImagingModalityMutation,
   useGetImagingModalityPaginatedQuery,
+  useGetImagingModalityStatsQuery,
   useUpdateImagingModalityMutation,
 } from '@/store/imagingModalityApi';
 
@@ -47,13 +39,15 @@ interface ApiError {
 }
 
 export default function ImagingModalityPage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string }>({
+  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string; includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "modalityName",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -73,6 +67,12 @@ export default function ImagingModalityPage() {
     error: modalitiesError,
     refetch,
   } = useGetImagingModalityPaginatedQuery(filters);
+
+  const {
+    data: imagingModalityStatsData,
+    isLoading: imagingModalityStatsLoading,
+    refetch: refetchImagingModalityStats,
+  } = useGetImagingModalityStatsQuery();
 
   const [createModality, { isLoading: isCreating }] =
     useCreateImagingModalityMutation();
@@ -107,20 +107,12 @@ export default function ImagingModalityPage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    
-    modalities.forEach((m) => {
-      if (m.isActive) active++;
-      else inactive++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
+      total: imagingModalityStatsData?.totalModalities ?? 0,
+      active: imagingModalityStatsData?.activeModalities ?? 0,
+      inactive: imagingModalityStatsData?.inactiveModalities ?? 0,
     };
-  }, [modalities, meta.total]);
+  }, [imagingModalityStatsData]);
 
   const handleCreate = () => {
     setSelectedModalityId(null);
@@ -217,7 +209,7 @@ export default function ImagingModalityPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchImagingModalityStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -255,7 +247,7 @@ export default function ImagingModalityPage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={isLoading || imagingModalityStatsLoading}
       />
 
       <ImagingModalityFiltersSection
@@ -305,31 +297,22 @@ export default function ImagingModalityPage() {
         }}
       />
 
-      <AlertDialog
-        open={!!modalityToDelete}
-        onOpenChange={(open) => !open && setModalityToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Imaging Modality</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <strong>{modalityToDelete?.modalityName}</strong>? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        isOpen={!!modalityToDelete}
+        onClose={() => setModalityToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Imaging Modality"
+        description={
+          <>
+            Are you sure you want to delete imaging modality <strong>{modalityToDelete?.modalityName}</strong>? This action
+            cannot be undone and will permanently remove this modality from the system.
+          </>
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

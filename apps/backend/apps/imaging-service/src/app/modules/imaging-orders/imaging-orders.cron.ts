@@ -32,7 +32,7 @@ export class ImagingOrdersCronJob {
       );
 
       orders.forEach((o: ImagingOrder) => {
-        this.logger.debug(`Marking order: ${o.id} as LEAVED`);
+        this.logger.debug(`Marking order: ${o.id} as CANCELLED`);
       });
     } catch (error) {
       this.logger.error(`Failed to handle expired order`);

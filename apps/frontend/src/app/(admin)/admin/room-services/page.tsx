@@ -5,7 +5,7 @@ import { Plus, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { useGetServiceRoomsPaginatedQuery, useDeleteServiceRoomMutation } from '@/store/serviceRoomApi';
+import { useGetServiceRoomsPaginatedQuery, useGetServiceRoomStatsQuery, useDeleteServiceRoomMutation } from '@/store/serviceRoomApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
 import { useGetServicesQuery } from '@/store/serviceApi';
 import { RoomServiceTable } from '@/components/admin/room-service/RoomServiceTable';
@@ -47,10 +47,12 @@ export default function Page() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const queryParams: FilterServiceRoomDto = useMemo(() => {
-    const params: FilterServiceRoomDto = {
+  const queryParams: FilterServiceRoomDto & { includeInactive?: boolean; includeDeleted?: boolean } = useMemo(() => {
+    const params: FilterServiceRoomDto & { includeInactive?: boolean; includeDeleted?: boolean } = {
       page,
       limit,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -91,6 +93,12 @@ export default function Page() {
     refetch: refetchServices,
   } = useGetServicesQuery();
 
+  const {
+    data: serviceRoomStatsData,
+    isLoading: serviceRoomStatsLoading,
+    refetch: refetchServiceRoomStats,
+  } = useGetServiceRoomStatsQuery();
+
   const [deleteServiceRoom, { isLoading: isDeletingServiceRoom }] = useDeleteServiceRoomMutation();
 
   useEffect(() => {
@@ -121,12 +129,13 @@ export default function Page() {
   } : null;
 
   const stats = useMemo(() => {
-    const total = roomServicesRes?.total ?? 0;
-    const active = roomServices.filter((rs) => rs.isActive).length;
-    const inactive = roomServices.filter((rs) => !rs.isActive).length;
-    const uniqueRooms = new Set(roomServices.map((rs) => rs.roomId)).size;
-    return { total, active, inactive, totalRooms: uniqueRooms };
-  }, [roomServices, roomServicesRes?.total]);
+    return {
+      total: serviceRoomStatsData?.totalAssignments ?? 0,
+      active: serviceRoomStatsData?.activeAssignments ?? 0,
+      inactive: serviceRoomStatsData?.inactiveAssignments ?? 0,
+      totalRooms: serviceRoomStatsData?.uniqueRooms ?? 0,
+    };
+  }, [serviceRoomStatsData]);
 
   const getStatusBadge = (isActive: boolean) => {
     return getBooleanStatusBadge(isActive);
@@ -135,7 +144,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchRoomServices(), refetchRooms(), refetchServices()]);
+      await Promise.all([refetchRoomServices(), refetchServiceRoomStats(), refetchRooms(), refetchServices()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -236,7 +245,7 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         totalRooms={stats.totalRooms}
-        isLoading={roomServicesLoading}
+        isLoading={roomServicesLoading || serviceRoomStatsLoading}
       />
 
       <RoomServiceFilters

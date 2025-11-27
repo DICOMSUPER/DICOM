@@ -1,10 +1,7 @@
 import {
   IsBoolean,
-  IsEnum,
-  IsInt,
   IsOptional,
   IsString,
-  Min,
 } from 'class-validator';
 
 import { Transform } from 'class-transformer';

@@ -25,21 +25,63 @@ export class RoomScheduleCronService {
   async handleAutoMarkCompleted() {
     this.logger.debug('Running auto-mark completed schedules check');
 
-    try {
-      const result = await this.roomScheduleService.autoMarkCompletedSchedules();
-      if (result.updatedCount > 0) {
-        this.logger.log(
-          `✅ Auto-marked ${result.updatedCount} schedules as COMPLETED`
-        );
+    const maxRetries = 3;
+    let retryCount = 0;
+    let lastError: any;
 
-        result.schedules.forEach((schedule) => {
+    while (retryCount < maxRetries) {
+      try {
+        const result = await this.roomScheduleService.autoMarkCompletedSchedules();
+        if (result.updatedCount > 0) {
           this.logger.log(
-            `✓ Marked COMPLETED: Schedule ${schedule.schedule_id} - Room: ${schedule.room_id} - Date: ${schedule.work_date} - End Time: ${schedule.actual_end_time}`
+            `✅ Auto-marked ${result.updatedCount} schedules as COMPLETED`
           );
-        });
+
+          result.schedules.forEach((schedule) => {
+            this.logger.log(
+              `✓ Marked COMPLETED: Schedule ${schedule.schedule_id} - Room: ${schedule.room_id} - Date: ${schedule.work_date} - End Time: ${schedule.actual_end_time}`
+            );
+          });
+        }
+        return; // Success, exit retry loop
+      } catch (error: any) {
+        lastError = error;
+        retryCount++;
+
+        // Check if it's a connection timeout or database connection error
+        const isConnectionError = 
+          error?.message?.includes('connection timeout') ||
+          error?.message?.includes('Connection terminated') ||
+          error?.message?.includes('ECONNREFUSED') ||
+          error?.code === 'ECONNREFUSED' ||
+          error?.code === 'ETIMEDOUT';
+
+        if (isConnectionError && retryCount < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 10000); // Exponential backoff, max 10s
+          this.logger.warn(
+            `⚠️ Database connection error (attempt ${retryCount}/${maxRetries}). Retrying in ${delay}ms...`,
+            error?.message || error
+          );
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // If not a connection error or max retries reached, log and exit
+        this.logger.error(
+          `❌ Error during auto-mark completed job (attempt ${retryCount}/${maxRetries}):`,
+          error?.message || error,
+          error?.stack
+        );
+        break;
       }
-    } catch (error) {
-      this.logger.error('❌ Error during auto-mark completed job:', error);
+    }
+
+    // If we exhausted all retries, log final error but don't crash
+    if (retryCount >= maxRetries) {
+      this.logger.error(
+        `❌ Failed to complete auto-mark job after ${maxRetries} attempts. Will retry on next cron run.`,
+        lastError?.message || lastError
+      );
     }
   }
 }

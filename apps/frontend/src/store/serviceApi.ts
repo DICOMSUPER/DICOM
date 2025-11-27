@@ -11,10 +11,21 @@ import {
   PaginatedResponse,
 } from "@/interfaces/pagination/pagination.interface";
 
+export interface ServicePaginatedQuery extends PaginatedQuery {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
+export interface ServiceStats {
+  totalServices: number;
+  activeServices: number;
+  inactiveServices: number;
+}
+
 export const serviceApi = createApi({
   reducerPath: "serviceApi",
   baseQuery: axiosBaseQuery("/services"),
-  tagTypes: ["Service", "ServiceList"],
+  tagTypes: ["Service", "ServiceList", "ServiceRoom", "ServiceRoomList", "RoomService"],
   endpoints: (builder) => ({
     // Get all services (non-paginated)
     getServices: builder.query<ApiResponse<Services[]>, void>({
@@ -37,7 +48,7 @@ export const serviceApi = createApi({
     // Get paginated services
     getServicesPaginated: builder.query<
       PaginatedResponse<Services>,
-      PaginatedQuery | void
+      ServicePaginatedQuery | void
     >({
       query: (params = {}) => ({
         url: "/paginated",
@@ -49,6 +60,8 @@ export const serviceApi = createApi({
           searchField: params?.searchField,
           sortBy: params?.sortBy,
           order: params?.order,
+          includeInactive: params?.includeInactive,
+          includeDeleted: params?.includeDeleted,
         },
       }),
       providesTags: (result) =>
@@ -110,6 +123,9 @@ export const serviceApi = createApi({
       invalidatesTags: [
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
     }),
 
@@ -127,6 +143,9 @@ export const serviceApi = createApi({
         { type: "Service", id },
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
     }),
 
@@ -140,7 +159,20 @@ export const serviceApi = createApi({
         { type: "Service", id },
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
+    }),
+
+    // Get service stats
+    getServiceStats: builder.query<ServiceStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["Service"],
     }),
   }),
 });
@@ -153,4 +185,5 @@ export const {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
+  useGetServiceStatsQuery,
 } = serviceApi;

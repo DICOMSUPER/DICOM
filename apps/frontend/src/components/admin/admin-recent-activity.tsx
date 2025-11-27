@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { 
   UserCheck, 
@@ -26,55 +27,26 @@ interface AdminRecentActivityProps {
 }
 
 export function AdminRecentActivity({ 
-  activities = [
-    {
-      id: '1',
-      type: 'user',
-      message: 'New user registered',
-      timestamp: '2 minutes ago',
-      icon: UserCheck
-    },
-    {
-      id: '2',
-      type: 'system',
-      message: 'System backup completed',
-      timestamp: '15 minutes ago',
-      icon: CheckCircle
-    },
-    {
-      id: '3',
-      type: 'warning',
-      message: 'High memory usage detected',
-      timestamp: '1 hour ago',
-      icon: AlertTriangle
-    },
-    {
-      id: '4',
-      type: 'config',
-      message: 'System settings updated',
-      timestamp: '2 hours ago',
-      icon: Settings
-    }
-  ],
+  activities = [],
   isLoading = false 
 }: AdminRecentActivityProps) {
   if (isLoading) {
     return (
-      <Card className="border-border">
+      <Card className="border-0 shadow-sm">
         <CardHeader>
-          <div className="h-6 w-32 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          <Skeleton className="h-6 w-32 mb-2" />
+          <Skeleton className="h-4 w-48" />
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-muted animate-pulse rounded-full" />
+                <Skeleton className="w-8 h-8 rounded-full" />
                 <div className="flex-1">
-                  <div className="h-4 w-48 bg-muted animate-pulse rounded mb-1" />
-                  <div className="h-3 w-20 bg-muted animate-pulse rounded" />
+                  <Skeleton className="h-4 w-48 mb-1" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
-                <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+                <Skeleton className="h-6 w-16" />
               </div>
             ))}
           </div>
@@ -140,8 +112,24 @@ export function AdminRecentActivity({
     }
   };
 
+  if (!activities || activities.length === 0) {
+    return (
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-foreground">Recent Activity</CardTitle>
+          <CardDescription>
+            Latest system events and user actions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No recent activity</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="border-0 shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">Recent Activity</CardTitle>
         <CardDescription>

@@ -64,11 +64,6 @@ export default function QueuePage() {
   const { data: currentRoom, isLoading: isCurrentRoomLoading } =
     useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
   const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
-  console.log(
-    "RoomScheduleData",
-    currentRoom?.data as EmployeeRoomAssignment[]
-  );
-  console.log("RoomId", roomId);
 
   const { data, isLoading, isFetching, error } =
     useGetPatientEncountersInRoomQuery(
@@ -91,11 +86,10 @@ export default function QueuePage() {
       skip: !currentRoom?.data?.[0]?.roomScheduleId,
     }
   );
-  console.log("assignment", employeeAssignInRoom);
+
   const anotherEmployeeAssignInRoom = employeeAssignInRoom?.data.filter(
     (assignment) => assignment.employeeId !== currentRoom?.data?.[0]?.employeeId
   );
-  console.log("another assignment", anotherEmployeeAssignInRoom);
 
   const [updatePatientEncounter, { isLoading: isUpdating }] =
     useUpdatePatientEncounterMutation();
@@ -110,8 +104,6 @@ export default function QueuePage() {
       skip: !roomId,
     }
   );
-
-  console.log("statsData", statsData);
 
   useEffect(() => {
     if (data) {

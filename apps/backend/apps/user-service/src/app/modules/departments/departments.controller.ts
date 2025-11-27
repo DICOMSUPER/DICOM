@@ -57,6 +57,8 @@ export class DepartmentsController {
       search?: string;
       isActive?: boolean;
       departmentCode?: string[];
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
@@ -67,6 +69,43 @@ export class DepartmentsController {
         error,
         'Failed to get departments',
         'DepartmentsController.findAll'
+      );
+    }
+  }
+
+  @MessagePattern('department.get-all-without-pagination')
+  async findAllWithoutPagination(
+    @Payload()
+    query?: {
+      search?: string;
+      isActive?: boolean;
+      departmentCode?: string[];
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
+  ) {
+    try {
+      const result = await this.service.findAllWithoutPagination(query);
+      return { data: result };
+    } catch (error) {
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get departments',
+        'DepartmentsController.findAllWithoutPagination'
+      );
+    }
+  }
+
+  @MessagePattern('department.get-stats')
+  async getStats() {
+    try {
+      return await this.service.getStats();
+    } catch (error) {
+      this.logger.error(`Get department stats error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get department stats',
+        'DepartmentsController.getStats'
       );
     }
   }

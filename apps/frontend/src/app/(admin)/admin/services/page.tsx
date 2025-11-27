@@ -4,16 +4,7 @@ import { ServiceTable } from "@/components/admin/service/service-table";
 import { ServiceStatsCards } from "@/components/admin/service/service-stats-cards";
 import { ModalServiceForm } from "@/components/admin/service/modal-create-service";
 import { ModalServiceDetail } from "@/components/admin/service/modal-service-detail";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -31,6 +22,7 @@ import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
   useGetServicesPaginatedQuery,
+  useGetServiceStatsQuery,
   useUpdateServiceMutation,
 } from "@/store/serviceApi";
 import { Plus } from "lucide-react";
@@ -40,13 +32,15 @@ import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
 
 export default function ServicePage() {
-  const [filters, setFilters] = useState<PaginatedQuery>({
+  const [filters, setFilters] = useState<PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "serviceName",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
@@ -82,11 +76,19 @@ export default function ServicePage() {
     searchField: filters.searchField,
     sortBy: filters.sortBy,
     order: filters.order,
+    includeInactive: filters.includeInactive,
+    includeDeleted: filters.includeDeleted,
   });
 
   const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
+
+  const {
+    data: serviceStatsData,
+    isLoading: serviceStatsLoading,
+    refetch: refetchServiceStats,
+  } = useGetServiceStatsQuery();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -121,16 +123,16 @@ export default function ServicePage() {
   const services = data?.data || [];
   
   const stats = useMemo(() => {
-    const total = data?.total ?? 0;
-    const active = services.filter((s) => s.isActive).length;
-    const inactive = services.filter((s) => !s.isActive).length;
+    const total = serviceStatsData?.totalServices ?? 0;
+    const active = serviceStatsData?.activeServices ?? 0;
+    const inactive = serviceStatsData?.inactiveServices ?? 0;
     return { total, active, inactive };
-  }, [services, data?.total]);
+  }, [serviceStatsData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchServices();
+      await Promise.all([refetchServices(), refetchServiceStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -261,7 +263,7 @@ export default function ServicePage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={serviceStatsLoading}
       />
 
       <ServiceFiltersSection
@@ -312,34 +314,25 @@ export default function ServicePage() {
         />
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the
-                service from the system.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setDeleteDialogOpen(false);
-                  setSelectedServiceId("");
-                }}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmationModal
+          isOpen={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setSelectedServiceId("");
+          }}
+          onConfirm={handleConfirmDelete}
+          title="Delete Service"
+          description={
+            <>
+              Are you sure you want to delete service <strong>{services.find(s => s.id === selectedServiceId)?.serviceName || 'this service'}</strong>? This action
+              cannot be undone and will permanently remove this service from the system.
+            </>
+          }
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="danger"
+          isLoading={isDeleting}
+        />
 
         {/* Toggle Active Status Confirmation Dialog */}
         {/* <AlertDialog

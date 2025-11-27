@@ -51,8 +51,6 @@ export default function DicomStudyPage() {
       dateTo: format(new Date(), "yyyy-MM-dd") as string,
     });
 
-  console.log("statsData", statsData);
-
   useEffect(() => {
     if (data) {
       setPaginationMeta({

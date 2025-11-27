@@ -74,6 +74,8 @@ export class RoomsController {
       status?: string;
       type?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
@@ -85,6 +87,46 @@ export class RoomsController {
         error,
         'Failed to get rooms',
         'RoomsController.findAll'
+      );
+    }
+  }
+
+  @MessagePattern('room.get-all-without-pagination')
+  async findAllWithoutPagination(
+    @Payload()
+    query?: {
+      search?: string;
+      isActive?: boolean;
+      status?: string;
+      type?: string;
+      departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
+  ) {
+    try {
+      const result = await this.roomsService.findAllWithoutPagination(query);
+      return { data: result };
+    } catch (error) {
+      this.logger.error(`Get all rooms without pagination error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get rooms',
+        'RoomsController.findAllWithoutPagination'
+      );
+    }
+  }
+
+  @MessagePattern('room.get-stats')
+  async getStats() {
+    try {
+      return await this.roomsService.getStats();
+    } catch (error) {
+      this.logger.error(`Get room stats error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get room stats',
+        'RoomsController.getStats'
       );
     }
   }

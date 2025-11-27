@@ -143,6 +143,28 @@ export class PatientEncounterController {
     }
   }
 
+  @Get('all')
+  @Role(Roles.SYSTEM_ADMIN)
+  async findAllWithoutPagination(
+    @Query() filters: EncounterSearchFilters,
+  ) {
+    try {
+      const encountersData = await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.FindAll', {
+          ...filters,
+        })
+      );
+
+      return {
+        data: encountersData?.data || [],
+        count: encountersData?.data?.length || 0,
+      };
+    } catch (error) {
+      this.logger.error('Error fetching all encounters:', error);
+      throw error;
+    }
+  }
+
   @Get()
   async findAll(
     @Query() filters: EncounterSearchFilters,
@@ -217,6 +239,21 @@ export class PatientEncounterController {
     @Query('priority') priority?: EncounterPriorityLevel,
     @Query('type') type?: EncounterType
   ) {
+    console.log('Filter patient encounter data', {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+      status,
+      startDate,
+      endDate,
+      serviceId,
+      priority,
+      type,
+    });
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -225,16 +262,21 @@ export class PatientEncounterController {
       sortField,
       order,
     };
+    let serviceRoomIds = undefined;
+    if (serviceId) {
+      const serviceRooms = await firstValueFrom(
+        this.userService.send('UserService.ServiceRooms.FindByService', {
+          serviceId,
+        })
+      );
 
-    const serviceRooms = await firstValueFrom(
-      this.userService.send('UserService.ServiceRooms.FindByService', {
-        serviceId,
-      })
-    );
+      serviceRoomIds =
+        serviceRooms.map((sr: ServiceRoom) => {
+          return sr.id;
+        }) || ([] as string[]);
+    }
 
-    const serviceRoomIds = serviceRooms.map((sr: ServiceRoom) => {
-      return sr.id;
-    });
+    console.log('Service room ids', serviceRoomIds);
 
     const encountersData = await firstValueFrom(
       this.patientService.send(

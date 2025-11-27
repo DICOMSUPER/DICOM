@@ -67,7 +67,8 @@ export class ModalityMachinesController {
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
     @Query('sortBy') sortBy?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -76,10 +77,27 @@ export class ModalityMachinesController {
       searchField,
       sortField: sortField || sortBy, // Support both sortField and sortBy for compatibility
       order,
+      includeDeleted: includeDeleted === true,
     };
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindMany', {
         paginationDto,
+      })
+    );
+  }
+
+  @Get('stats')
+  async getStats() {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ModalityMachines.GetStats', {})
+    );
+  }
+
+  @Get('room/:roomId')
+  async findByRoomId(@Param('roomId') roomId: string) {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
+        roomId,
       })
     );
   }
@@ -89,15 +107,6 @@ export class ModalityMachinesController {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindOne', {
         id,
-      })
-    );
-  }
-
-  @Get('room/:roomId')
-  async findByRoomId(@Param('roomId') roomId: string) {
-    return await firstValueFrom(
-      this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
-        roomId,
       })
     );
   }

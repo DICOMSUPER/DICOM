@@ -5,7 +5,7 @@ import { Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getRoomStatusBadge } from '@/utils/status-badge';
-import { useGetRoomsQuery, useDeleteRoomMutation } from '@/store/roomsApi';
+import { useGetRoomsQuery, useGetRoomStatsQuery, useDeleteRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { RoomTable } from '@/components/admin/room/RoomTable';
 import { RoomStatsCards } from '@/components/admin/room/room-stats-cards';
@@ -48,10 +48,12 @@ export default function Page() {
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const queryParams: QueryParams = useMemo(() => {
-    const params: QueryParams = {
+  const queryParams = useMemo(() => {
+    const params: any = {
       page,
       limit,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -79,6 +81,12 @@ export default function Page() {
     error: roomsError,
     refetch: refetchRooms,
   } = useGetRoomsQuery(queryParams);
+
+  const {
+    data: roomStatsData,
+    isLoading: roomStatsLoading,
+    refetch: refetchRoomStats,
+  } = useGetRoomStatsQuery();
 
   const {
     data: departmentsData,
@@ -115,12 +123,13 @@ export default function Page() {
   } : null;
 
   const stats = useMemo(() => {
-    const total = roomsRes?.total ?? 0;
-    const available = rooms.filter((r) => r.status === RoomStatus.AVAILABLE).length;
-    const occupied = rooms.filter((r) => r.status === RoomStatus.OCCUPIED).length;
-    const maintenance = rooms.filter((r) => r.status === RoomStatus.MAINTENANCE).length;
-    return { total, available, occupied, maintenance };
-  }, [rooms, roomsRes?.total]);
+    return {
+      total: roomStatsData?.totalRooms ?? 0,
+      available: roomStatsData?.availableRooms ?? 0,
+      occupied: roomStatsData?.occupiedRooms ?? 0,
+      maintenance: roomStatsData?.maintenanceRooms ?? 0,
+    };
+  }, [roomStatsData]);
 
   const uniqueRoomTypes = useMemo(() => {
     const types = rooms.map((r) => r.roomType).filter((type): type is NonNullable<typeof type> => type !== undefined && type !== null);
@@ -134,7 +143,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchRooms(), refetchDepartments()]);
+      await Promise.all([refetchRooms(), refetchRoomStats(), refetchDepartments()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

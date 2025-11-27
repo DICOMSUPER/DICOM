@@ -1,10 +1,5 @@
-import { BaseEntity } from '@backend/entities';
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn
-} from 'typeorm';
+import { BaseEntity } from '@backend/database';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ModalityMachine } from './modality-machine.entity';
 
 @Entity('imaging_modalities')

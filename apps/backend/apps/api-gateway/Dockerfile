@@ -1,34 +1,26 @@
-# Stage 1: Build
+# Stage 1 – build with Nx
 FROM node:20-alpine AS builder
-WORKDIR /app
+WORKDIR /workspace
 
-# Copy root files
-COPY package*.json tsconfig.base.json tsconfig.build.json nx.json eslint.config.mjs ./
-
-# Copy source code
-COPY apps/api-gateway ./apps/api-gateway
+# copy only what the build needs
+COPY package*.json nx.json tsconfig*.json eslint.config.mjs ./
 COPY apps ./apps
 COPY libs ./libs
 COPY entities ./entities
 
-# Install all dependencies (dev + prod) để build
 RUN npm ci
+RUN npx nx build api-gateway
 
-# Build tất cả TypeScript projects (libs + apps)
-RUN npx tsc -b tsconfig.build.json
-
-# Stage 2: Production
+# Stage 2 – runtime image
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy built files của API Gateway (không copy toàn bộ source)
-COPY --from=builder /app/apps/api-gateway/dist ./ 
+# install runtime deps (root package.json is enough)
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Copy chỉ production dependencies, bỏ devDependencies
-RUN npm ci --omit=dev --production
+# copy compiled service from Nx dist folder
+COPY --from=builder /workspace/apps/api-gateway/dist ./
 
-# Expose port
 EXPOSE 5000
-
-# Run main file
 CMD ["node", "main.js"]

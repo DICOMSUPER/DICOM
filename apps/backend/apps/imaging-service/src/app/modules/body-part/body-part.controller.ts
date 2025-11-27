@@ -140,7 +140,7 @@ export class BodyPartController {
         page: paginationDto.page || 1,
         limit: paginationDto.limit || 5,
         search: paginationDto.search || '',
-        searchField: paginationDto.searchField || 'modalityName',
+        searchField: paginationDto.searchField || 'name',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
       });

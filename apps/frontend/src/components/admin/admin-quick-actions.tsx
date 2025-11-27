@@ -7,11 +7,9 @@ import {
   Calendar,
   Settings,
   BarChart3,
-  Shield,
-  Database,
-  BookOpen,
   Monitor,
-  Cog
+  Building2,
+  Stethoscope
 } from "lucide-react";
 
 interface AdminQuickActionsProps {
@@ -33,57 +31,51 @@ export function AdminQuickActions({ onActionClick }: AdminQuickActionsProps) {
       description: 'Manage staff schedules and assignments'
     },
     {
-      id: 'settings',
-      label: 'System Settings',
-      icon: Settings,
-      description: 'Configure system parameters'
-    },
-    {
-      id: 'configurations',
-      label: 'System Configurations',
-      icon: Cog,
-      description: 'Advanced system configurations'
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics & Reports',
-      icon: BarChart3,
-      description: 'View system analytics and reports'
-    },
-    {
-      id: 'security',
-      label: 'Security & Audit',
-      icon: Shield,
-      description: 'Monitor security and audit logs'
-    },
-    {
-      id: 'database',
-      label: 'Database Management',
-      icon: Database,
-      description: 'Manage database and backups'
-    },
-    {
-      id: 'docs',
-      label: 'Documentation',
-      icon: BookOpen,
-      description: 'System documentation and guides'
-    },
-    {
-      id: 'monitoring',
-      label: 'System Monitoring',
-      icon: Monitor,
-      description: 'Monitor system performance'
-    },
-    {
       id: 'rooms',
       label: 'Room Management',
       icon: Monitor,
       description: 'Manage rooms and equipment'
+    },
+    {
+      id: 'departments',
+      label: 'Departments',
+      icon: Building2,
+      description: 'Manage departments'
+    },
+    {
+      id: 'services',
+      label: 'Services',
+      icon: Stethoscope,
+      description: 'Manage medical services'
+    },
+    {
+      id: 'room-services',
+      label: 'Room Services',
+      icon: Settings,
+      description: 'Manage room-service assignments'
+    },
+    {
+      id: 'modalities',
+      label: 'Imaging Modalities',
+      icon: BarChart3,
+      description: 'Manage imaging modalities'
+    },
+    {
+      id: 'machines',
+      label: 'Modality Machines',
+      icon: Monitor,
+      description: 'Manage modality machines'
+    },
+    {
+      id: 'shift-templates',
+      label: 'Shift Templates',
+      icon: Calendar,
+      description: 'Manage shift templates'
     }
   ];
 
   return (
-    <Card>
+    <Card className="border-0 shadow-sm">
       <CardHeader>
         <CardTitle className="text-foreground">Quick Actions</CardTitle>
         <CardDescription>

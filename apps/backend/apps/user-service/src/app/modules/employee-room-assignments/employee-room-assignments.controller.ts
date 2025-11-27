@@ -256,6 +256,22 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
+  @MessagePattern('UserService.EmployeeRoomAssignments.GetStats')
+  async getStats() {
+    this.logger.log(
+      'Using pattern: UserService.EmployeeRoomAssignments.GetStats'
+    );
+    try {
+      return await this.employeeRoomAssignmentsService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get employee room assignment stats',
+        'USER_SERVICE'
+      );
+    }
+  }
+
   @MessagePattern(
     'UserService.EmployeeRoomAssignments.FindEmployeeRoomAssignmentForEmployeeInWorkDate'
   )

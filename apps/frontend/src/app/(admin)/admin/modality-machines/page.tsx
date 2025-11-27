@@ -13,16 +13,7 @@ import { ModalityMachineViewModal } from '@/components/admin/modality-machine/mo
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import {
   PaginatedQuery,
   PaginationMeta,
@@ -36,6 +27,7 @@ import {
   useCreateModalityMachineMutation,
   useDeleteModalityMachineMutation,
   useGetModalityMachinePaginatedQuery,
+  useGetModalityMachineStatsQuery,
   useUpdateModalityMachineMutation,
 } from '@/store/modalityMachineApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
@@ -49,13 +41,15 @@ interface ApiError {
 }
 
 export default function ModalityMachinePage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string }>({
+  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string; includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "name",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -77,6 +71,12 @@ export default function ModalityMachinePage() {
 
   const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({ page: 1, limit: 10000 });
   const rooms = roomsData?.data || [];
+
+  const {
+    data: modalityMachineStatsData,
+    isLoading: modalityMachineStatsLoading,
+    refetch: refetchModalityMachineStats,
+  } = useGetModalityMachineStatsQuery();
 
   const [createMachine, { isLoading: isCreating }] =
     useCreateModalityMachineMutation();
@@ -111,23 +111,13 @@ export default function ModalityMachinePage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    let maintenance = 0;
-    
-    machines.forEach((m) => {
-      if (m.status === MachineStatus.ACTIVE) active++;
-      else if (m.status === MachineStatus.INACTIVE) inactive++;
-      else if (m.status === MachineStatus.MAINTENANCE) maintenance++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
-      maintenance,
+      total: modalityMachineStatsData?.totalMachines ?? 0,
+      active: modalityMachineStatsData?.activeMachines ?? 0,
+      inactive: modalityMachineStatsData?.inactiveMachines ?? 0,
+      maintenance: modalityMachineStatsData?.maintenanceMachines ?? 0,
     };
-  }, [machines, meta.total]);
+  }, [modalityMachineStatsData]);
 
   const handleCreate = () => {
     setSelectedMachineId(null);
@@ -208,9 +198,7 @@ export default function ModalityMachinePage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
-      // Also refetch rooms since they're used in modals
-      await refetchRooms();
+      await Promise.all([refetch(), refetchModalityMachineStats(), refetchRooms()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -249,7 +237,7 @@ export default function ModalityMachinePage() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         maintenanceCount={stats.maintenance}
-        isLoading={isLoading}
+        isLoading={isLoading || modalityMachineStatsLoading}
       />
 
       <ModalityMachineFiltersSection
@@ -300,31 +288,22 @@ export default function ModalityMachinePage() {
         rooms={rooms}
       />
 
-      <AlertDialog
-        open={!!machineToDelete}
-        onOpenChange={(open) => !open && setMachineToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Modality Machine</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <strong>{machineToDelete?.name}</strong>? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        isOpen={!!machineToDelete}
+        onClose={() => setMachineToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Modality Machine"
+        description={
+          <>
+            Are you sure you want to delete modality machine <strong>{machineToDelete?.name}</strong>? This action
+            cannot be undone and will permanently remove this machine from the system.
+          </>
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

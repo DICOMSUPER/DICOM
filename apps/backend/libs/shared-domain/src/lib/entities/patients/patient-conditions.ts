@@ -6,8 +6,11 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { BaseEntity } from '@backend/entities';
-import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
+import { BaseEntity } from '@backend/database';
+import {
+  ClinicalStatus,
+  ConditionVerificationStatus,
+} from '@backend/shared-enums';
 import { Patient } from './patients.entity';
 
 @Entity('patient_conditions')
@@ -30,11 +33,21 @@ export class PatientCondition extends BaseEntity {
   codeDisplay?: string;
 
   @Index()
-  @Column({ name: 'clinical_status', type: 'enum', enum: ClinicalStatus, nullable: true })
+  @Column({
+    name: 'clinical_status',
+    type: 'enum',
+    enum: ClinicalStatus,
+    nullable: true,
+  })
   clinicalStatus?: ClinicalStatus;
 
   @Index()
-  @Column({ name: 'verification_status', type: 'enum', enum: ConditionVerificationStatus, nullable: true })
+  @Column({
+    name: 'verification_status',
+    type: 'enum',
+    enum: ConditionVerificationStatus,
+    nullable: true,
+  })
   verificationStatus?: ConditionVerificationStatus;
 
   // severity as simple string or code; keeping string for flexibility
@@ -50,13 +63,17 @@ export class PatientCondition extends BaseEntity {
   bodySite?: string;
 
   @Index()
-  @Column({ name: 'recorded_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    name: 'recorded_date',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   recordedDate!: Date;
-  
+
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
-  @ManyToOne(() => Patient, patient => patient.conditions)
+  @ManyToOne(() => Patient, (patient) => patient.conditions)
   @JoinColumn({ name: 'patient_id' })
   patient?: Patient;
 }

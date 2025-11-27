@@ -7,10 +7,10 @@
       "path": "../../entities"
     },
     {
-      "path": "../shared-utils"
+      "path": "../shared-interfaces"
     },
     {
-      "path": "../shared-interfaces"
+      "path": "../shared-utils"
     },
     {
       "path": "../database"

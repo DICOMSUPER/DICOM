@@ -20,7 +20,8 @@ import {
   Building,
   Calendar,
   FolderTree,
-  Link2
+  Link2,
+  Layers
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -50,16 +51,34 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage system users and roles",
     },
     {
-      href: "/admin/settings",
-      label: "System Settings",
-      icon: Settings,
-      description: "Configure system settings",
+      href: "/admin/room-assignments",
+      label: "Room Assignments",
+      icon: UserCheck,
+      description: "Assign employees to room schedules",
     },
     {
-      href: "/admin/services",
-      label: "Services",
-      icon: Cog,
-      description: "Manage clinic services and offerings",
+      href: "/admin/departments",
+      label: "Departments",
+      icon: Building,
+      description: "Manage clinic departments and staff",
+    },
+    {
+      href: "/admin/body-parts",
+      label: "Body Parts",
+      icon: Layers,
+      description: "Manage body parts",
+    },
+    {
+      href: "/admin/imaging-modalities",
+      label: "Imaging Modalities",
+      icon: Monitor,
+      description: "Manage imaging modalities",
+    },
+    {
+      href: "/admin/modality-machines",
+      label: "Modality Machines",
+      icon: Activity,
+      description: "Manage modality machines",
     },
     {
       href: "/admin/rooms",
@@ -74,28 +93,22 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage room service assignments",
     },
     {
-      href: "/admin/departments",
-      label: "Departments",
-      icon: Building,
-      description: "Manage clinic departments and staff",
+      href: "/admin/services",
+      label: "Services",
+      icon: Cog,
+      description: "Manage clinic services and offerings",
     },
     {
-      href: "/admin/room-assignments",
-      label: "Room Assignments",
-      icon: UserCheck,
-      description: "Assign employees to room schedules",
+      href: "/admin/shift-templates",
+      label: "Shift Templates",
+      icon: Clock,
+      description: "Manage shift templates",
     },
     {
-      href: "/admin/imaging-modalities",
-      label: "Imaging Modalities",
-      icon: Monitor,
-      description: "Manage imaging modalities",
-    },
-    {
-      href: "/admin/modality-machines",
-      label: "Modality Machines",
-      icon: Activity,
-      description: "Manage modality machines",
+      href: "/admin/settings",
+      label: "System Settings",
+      icon: Settings,
+      description: "Configure system settings",
     },
   ],
 

@@ -181,6 +181,8 @@ export class UsersController {
       role?: string;
       excludeRole?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
@@ -192,6 +194,46 @@ export class UsersController {
         error,
         'Failed to get users',
         'UsersController.getAllUsers'
+      );
+    }
+  }
+
+  @MessagePattern('user.get-all-users-without-pagination')
+  async getAllUsersWithoutPagination(
+    @Payload()
+    query?: {
+      search?: string;
+      isActive?: boolean;
+      role?: string;
+      excludeRole?: string;
+      departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
+  ) {
+    try {
+      const result = await this.usersService.findAllWithoutPagination(query);
+      return { data: result };
+    } catch (error) {
+      this.logger.error(`Get all users without pagination error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get users',
+        'UsersController.getAllUsersWithoutPagination'
+      );
+    }
+  }
+
+  @MessagePattern('user.get-stats')
+  async getStats() {
+    try {
+      return await this.usersService.getStats();
+    } catch (error) {
+      this.logger.error(`Get user stats error: ${(error as Error).message}`);
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get user stats',
+        'UsersController.getStats'
       );
     }
   }

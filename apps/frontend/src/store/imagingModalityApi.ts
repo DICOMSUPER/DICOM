@@ -16,10 +16,16 @@ export interface CreateImagingModalityDto {
 
 export type UpdateImagingModalityDto = Partial<CreateImagingModalityDto>;
 
+export interface ImagingModalityStats {
+  totalModalities: number;
+  activeModalities: number;
+  inactiveModalities: number;
+}
+
 export const imagingModalityApi = createApi({
   reducerPath: "imagingModalityApi",
   baseQuery: axiosBaseQuery("/imaging-modalities"),
-  tagTypes: ["ImagingModality", "ImagingModalityList"],
+  tagTypes: ["ImagingModality", "ImagingModalityList", "ModalityMachine"],
   endpoints: (builder) => ({
     getAllImagingModality: builder.query<
       ApiResponse<ImagingModality[]>,
@@ -43,7 +49,7 @@ export const imagingModalityApi = createApi({
 
     getImagingModalityPaginated: builder.query<
       PaginatedResponse<ImagingModality>,
-      PaginatedQuery | void
+      (PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }) | void
     >({
       query: (params = {}) => ({
         url: "/paginated",
@@ -55,6 +61,8 @@ export const imagingModalityApi = createApi({
           searchField: params?.searchField,
           sortBy: params?.sortBy,
           order: params?.order,
+          includeInactive: params?.includeInactive,
+          includeDeleted: params?.includeDeleted,
         },
       }),
       providesTags: (result) =>
@@ -91,7 +99,10 @@ export const imagingModalityApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: () => [{ type: "ImagingModalityList", id: "LIST" }],
+      invalidatesTags: () => [
+        { type: "ImagingModalityList", id: "LIST" },
+        { type: "ModalityMachine", id: "LIST" },
+      ],
     }),
 
     updateImagingModality: builder.mutation<
@@ -107,6 +118,7 @@ export const imagingModalityApi = createApi({
         { type: "ImagingModality", id },
         { type: "ImagingModalityList", id: "LIST" },
         { type: "ImagingModalityList", id: "PAGINATED" },
+        { type: "ModalityMachine", id: "LIST" },
       ],
     }),
 
@@ -122,7 +134,18 @@ export const imagingModalityApi = createApi({
         { type: "ImagingModality", id },
         { type: "ImagingModalityList", id: "LIST" },
         { type: "ImagingModalityList", id: "PAGINATED" },
+        { type: "ModalityMachine", id: "LIST" },
       ],
+    }),
+
+    // Get imaging modality stats
+    getImagingModalityStats: builder.query<ImagingModalityStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["ImagingModality"],
     }),
   }),
 });
@@ -134,4 +157,5 @@ export const {
   useCreateImagingModalityMutation,
   useUpdateImagingModalityMutation,
   useDeleteImagingModalityMutation,
+  useGetImagingModalityStatsQuery,
 } = imagingModalityApi;

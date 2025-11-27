@@ -9,6 +9,13 @@ import {
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
+export interface ServiceRoomStats {
+  totalAssignments: number;
+  activeAssignments: number;
+  inactiveAssignments: number;
+  uniqueRooms: number;
+}
+
 const serviceRoomApi = createApi({
   reducerPath: "serviceRoomApi",
   baseQuery: axiosBaseQuery("/service-rooms"),
@@ -134,6 +141,16 @@ const serviceRoomApi = createApi({
         "RoomService",
       ],
     }),
+
+    // Get service room stats
+    getServiceRoomStats: builder.query<ServiceRoomStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["ServiceRoomList"],
+    }),
   }),
 });
 
@@ -146,6 +163,7 @@ export const {
   useGetServiceRoomByIdQuery,
   useUpdateServiceRoomMutation,
   useDeleteServiceRoomMutation,
+  useGetServiceRoomStatsQuery,
 } = serviceRoomApi;
 
 export default serviceRoomApi;

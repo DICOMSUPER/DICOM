@@ -104,7 +104,7 @@ export class ServicesController {
 
   @MessagePattern(`UserService.Services.FindMany`)
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }
   ): Promise<PaginatedResponseDto<Services>> {
     this.logger.log(`Using pattern: UserService.Services.FindMany`);
     try {
@@ -116,6 +116,8 @@ export class ServicesController {
         searchField: paginationDto.searchField || 'serviceName',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
+        includeInactive: paginationDto.includeInactive,
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
@@ -138,6 +140,20 @@ export class ServicesController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to get services by departmentId`,
+        'UserService'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.Services.GetStats')
+  async getStats() {
+    this.logger.log(`Using pattern: UserService.Services.GetStats`);
+    try {
+      return await this.servicesService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get service stats',
         'UserService'
       );
     }

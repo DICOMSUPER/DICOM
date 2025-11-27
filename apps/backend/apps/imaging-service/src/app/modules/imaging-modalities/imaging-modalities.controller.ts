@@ -128,7 +128,7 @@ export class ImagingModalitiesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }
   ): Promise<PaginatedResponseDto<ImagingModality>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -142,11 +142,29 @@ export class ImagingModalitiesController {
         searchField: paginationDto.searchField || 'modalityName',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
+        includeInactive: paginationDto.includeInactive,
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find many modalities`,
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
+  async getStats() {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
+    );
+    try {
+      return await this.imagingModalitiesService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get imaging modality stats',
         IMAGING_SERVICE
       );
     }

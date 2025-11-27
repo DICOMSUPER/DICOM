@@ -58,6 +58,8 @@ export class DepartmentsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by name or code' })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' })
+  @ApiQuery({ name: 'includeInactive', required: false, type: Boolean, description: 'Include inactive records' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include deleted records' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
   async getAllDepartments(
     @Query('page') page?: number,
@@ -65,6 +67,8 @@ export class DepartmentsController {
     @Query('search') search?: string,
     @Query('isActive') isActive?: boolean,
     @Query('departmentCode') departmentCode?: string[],
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean,
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -78,7 +82,9 @@ export class DepartmentsController {
           limit: limitNum,
           search,
           isActive,
-          departmentCode
+          departmentCode,
+          includeInactive: includeInactive === true,
+          includeDeleted: includeDeleted === true,
         })
       );
 
@@ -87,6 +93,32 @@ export class DepartmentsController {
       return result;
     } catch (error) {
       this.logger.error('Failed to fetch departments', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('all')
+  @Public()
+  @ApiOperation({ summary: 'Get all departments without pagination (for analytics)' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
+  async getAllDepartmentsWithoutPagination(
+    @Query('isActive') isActive?: boolean,
+  ) {
+    try {
+      this.logger.log('Fetching all departments without pagination for analytics');
+      
+      const result = await firstValueFrom(
+        this.departmentClient.send('department.get-all-without-pagination', {
+          isActive,
+        })
+      );
+
+      return {
+        data: result?.data || [],
+        count: result?.data?.length || 0,
+      };
+    } catch (error) {
+      this.logger.error('Failed to fetch all departments', error);
       throw handleError(error);
     }
   }
@@ -114,6 +146,60 @@ export class DepartmentsController {
       };
     } catch (error) {
       this.logger.error(`❌ Department creation failed: ${createDto.departmentCode}`, error);
+      throw handleError(error);
+    }
+  }
+
+  // 🟢 Lấy các phòng ban đang hoạt động
+  @Role(Roles.SYSTEM_ADMIN)
+  @Get('active')
+  @ApiOperation({ summary: 'Get active departments' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban hoạt động thành công' })
+  async getActiveDepartments() {
+    try {
+      this.logger.log('🟢 Fetching active departments...');
+      const result = await firstValueFrom(
+        this.departmentClient.send('department.get-active', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch active departments', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('stats')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get department statistics' })
+  @ApiResponse({ status: 200, description: 'Lấy thống kê phòng ban thành công' })
+  async getStats() {
+    try {
+      this.logger.log('Fetching department statistics');
+      const result = await firstValueFrom(
+        this.departmentClient.send('department.get-stats', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch department stats', error);
+      throw handleError(error);
+    }
+  }
+
+  // 🔢 Lấy phòng ban theo mã code
+  @Role(Roles.SYSTEM_ADMIN)
+  @Get('code/:code')
+  @ApiOperation({ summary: 'Get department by code' })
+  @ApiParam({ name: 'code', description: 'Department Code' })
+  @ApiResponse({ status: 200, description: 'Lấy thông tin phòng ban thành công' })
+  async getByCode(@Param('code') code: string) {
+    try {
+      this.logger.log(`🔎 Fetching department by code: ${code}`);
+      const result = await firstValueFrom(
+        this.departmentClient.send('department.get-by-code', { code })
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(`❌ Failed to get department by code: ${code}`, error);
       throw handleError(error);
     }
   }
@@ -178,43 +264,6 @@ export class DepartmentsController {
       return { message: result.message || 'Xóa phòng ban thành công' };
     } catch (error) {
       this.logger.error(`❌ Failed to delete department ID: ${id}`, error);
-      throw handleError(error);
-    }
-  }
-
-  // 🔢 Lấy phòng ban theo mã code
-  @Role(Roles.SYSTEM_ADMIN)
-  @Get('code/:code')
-  @ApiOperation({ summary: 'Get department by code' })
-  @ApiParam({ name: 'code', description: 'Department Code' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin phòng ban thành công' })
-  async getByCode(@Param('code') code: string) {
-    try {
-      this.logger.log(`🔎 Fetching department by code: ${code}`);
-      const result = await firstValueFrom(
-        this.departmentClient.send('department.get-by-code', { code })
-      );
-      return result;
-    } catch (error) {
-      this.logger.error(`❌ Failed to get department by code: ${code}`, error);
-      throw handleError(error);
-    }
-  }
-
-  // 🟢 Lấy các phòng ban đang hoạt động
-  @Role(Roles.SYSTEM_ADMIN)
-  @Get('active')
-  @ApiOperation({ summary: 'Get active departments' })
-  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban hoạt động thành công' })
-  async getActiveDepartments() {
-    try {
-      this.logger.log('🟢 Fetching active departments...');
-      const result = await firstValueFrom(
-        this.departmentClient.send('department.get-active', {})
-      );
-      return result;
-    } catch (error) {
-      this.logger.error('❌ Failed to fetch active departments', error);
       throw handleError(error);
     }
   }

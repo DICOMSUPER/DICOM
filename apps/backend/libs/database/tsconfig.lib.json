@@ -1,22 +1,43 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "rootDir": "src",
-    "outDir": "dist",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
-    "emitDeclarationOnly": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["node"],
-    "target": "es2021",
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src/**/*.ts"],
-  "references": []
+      "composite": true,
+      "declarationMap": true,
+      "emitDeclarationOnly": true,
+      "importHelpers": true,
+      "isolatedModules": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "lib": ["es2022"],
+  "module": "nodenext",
+  "moduleResolution": "nodenext",
+      "noEmitOnError": true,
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitOverride": true,
+      "noImplicitReturns": true,
+      "noUnusedLocals": true,
+      "skipLibCheck": true,
+      "strict": true,
+      "target": "es2022",
+      "customConditions": ["development"],
+  "baseUrl": ".",
+  "paths": {
+        "@backend/entities": ["backend/libs/entities/src/index.ts"],
+        "@backend/shared-decorators": [
+          "backend/libs/shared-decorators/src/index.ts"
+        ],
+        "@backend/shared-domain": ["backend/libs/shared-domain/src/index.ts"],
+        "@backend/shared-enums": ["backend/libs/shared-enums/src/index.ts"],
+        "@backend/shared-exception": [
+          "backend/libs/shared-exception/src/index.ts"
+        ],
+        "@backend/shared-guards": ["backend/libs/shared-guards/src/index.ts"],
+        "@backend/shared-interceptor": [
+          "backend/libs/shared-interceptor/src/index.ts"
+        ],
+        "@backend/shared-interfaces": [
+          "backend/libs/shared-interfaces/src/index.ts"
+        ],
+        "@backend/shared-utils": ["backend/libs/shared-utils/src/index.ts"]
+      }     
+  }
 }

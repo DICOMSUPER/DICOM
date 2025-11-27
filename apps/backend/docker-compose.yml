@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    image: dicom/api-gateway:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - apps/api-gateway/.env
+    depends_on:
+      - user-service
+      - patient-service
+      - imaging-service
+      - system-service
+    networks:
+      - dicom-network
+    restart: unless-stopped
+
+  user-service:
+    image: dicom/user-service:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/user-service/Dockerfile
+    ports:
+      - "5002:5002"
+    env_file:
+      - apps/user-service/.env
+    networks:
+      - dicom-network
+    restart: unless-stopped
+
+  imaging-service:
+    image: dicom/imaging-service:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/imaging-service/Dockerfile
+    ports:
+      - "5003:5003"
+    env_file:
+      - apps/imaging-service/.env
+    networks:
+      - dicom-network
+    restart: unless-stopped
+
+  patient-service:
+    image: dicom/patient-service:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/patient-service/Dockerfile
+    ports:
+      - "5004:5004"
+    env_file:
+      - apps/patient-service/.env
+    networks:
+      - dicom-network
+    restart: unless-stopped
+
+  system-service:
+    image: dicom/system-service:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/system-service/Dockerfile
+    ports:
+      - "5005:5005"
+    env_file:
+      - apps/system-service/.env
+    networks:
+      - dicom-network
+    restart: unless-stopped
+
+networks:
+  dicom-network:
+    driver: bridge

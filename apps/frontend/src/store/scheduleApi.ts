@@ -64,6 +64,13 @@ export interface ShiftTemplate {
   updatedAt: string;
 }
 
+export interface ShiftTemplateStats {
+  totalTemplates: number;
+  activeTemplates: number;
+  inactiveTemplates: number;
+  templatesByType?: Array<{ type: string; count: string }>;
+}
+
 export interface RoomSchedule {
   schedule_id: string;
   employee_id: string;
@@ -215,6 +222,8 @@ export const scheduleApi = createApi({
         limit?: number;
         shift_type?: string;
         is_active?: boolean;
+        includeInactive?: boolean;
+        includeDeleted?: boolean;
       }
     >({
       query: (params: any) => ({
@@ -248,6 +257,15 @@ export const scheduleApi = createApi({
         url: "/shift-templates/active",
         method: "GET",
       }),
+      providesTags: ["ShiftTemplate"],
+    }),
+
+    getShiftTemplateStats: builder.query<ShiftTemplateStats, void>({
+      query: () => ({
+        url: "/shift-templates/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
       providesTags: ["ShiftTemplate"],
     }),
 
@@ -511,6 +529,7 @@ export const {
   useGetShiftTemplateByIdQuery,
   useGetShiftTemplatesByTypeQuery,
   useGetActiveShiftTemplatesQuery,
+  useGetShiftTemplateStatsQuery,
   useCreateShiftTemplateMutation,
   useUpdateShiftTemplateMutation,
   useDeleteShiftTemplateMutation,

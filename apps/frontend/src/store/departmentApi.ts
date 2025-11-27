@@ -5,6 +5,11 @@ import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 import { mapApiResponse } from "@/utils/adpater";
 import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 
+export interface DepartmentQueryParams extends QueryParams {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
 export interface CreateDepartmentDto {
   name: string;
   code: string;
@@ -33,14 +38,21 @@ export interface DepartmentSearchFilters {
   limit?: number;
 }
 
+export interface DepartmentStats {
+  totalDepartments: number;
+  activeDepartments: number;
+  inactiveDepartments: number;
+  totalRooms: number;
+}
+
 // ====== RTK QUERY API ======
 export const departmentApi = createApi({
   reducerPath: "departmentApi",
   baseQuery: axiosBaseQuery("/departments"),
-  tagTypes: ["Department"],
+  tagTypes: ["Department", "Room"],
   endpoints: (builder) => ({
     // Get all departments with filters
-    getDepartments: builder.query<PaginatedResponse<Department>, QueryParams>({
+    getDepartments: builder.query<PaginatedResponse<Department>, DepartmentQueryParams>({
       query: (filters) => ({
         url: "",
         method: "GET",
@@ -66,7 +78,7 @@ export const departmentApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Department"],
+      invalidatesTags: ["Department", "Room"],
     }),
 
     // Update department
@@ -82,6 +94,7 @@ export const departmentApi = createApi({
       invalidatesTags: (result, error, { id }) => [
         { type: "Department", id },
         "Department",
+        "Room",
       ],
     }),
 
@@ -91,7 +104,17 @@ export const departmentApi = createApi({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Department"],
+      invalidatesTags: ["Department", "Room"],
+    }),
+
+    // Get department stats
+    getDepartmentStats: builder.query<DepartmentStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["Department"],
     }),
   }),
 });
@@ -103,4 +126,5 @@ export const {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
+  useGetDepartmentStatsQuery,
 } = departmentApi;

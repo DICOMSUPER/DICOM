@@ -1,5 +1,5 @@
 import { DatabaseModule } from '@backend/database';
-import { BackendEntitiesModule } from '@backend/entities';
+import { BackendEntitiesModule } from '@backend/database';
 import {
   BodyPart,
   DicomInstance,

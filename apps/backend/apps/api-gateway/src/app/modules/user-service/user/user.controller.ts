@@ -299,7 +299,9 @@ export class UserController {
     @Query('search') search?: string,
     @Query('role') role?: string,
     @Query('excludeRole') excludeRole?: string,
-    @Query('departmentId') departmentId?: string
+    @Query('departmentId') departmentId?: string,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -315,6 +317,8 @@ export class UserController {
           role,
           excludeRole,
           departmentId,
+          includeInactive: includeInactive === true,
+          includeDeleted: includeDeleted === true,
         })
       );
 
@@ -331,6 +335,56 @@ export class UserController {
       };
     } catch (error) {
       this.logger.error('❌ Failed to fetch users', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('all')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get all users without pagination (for analytics)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách người dùng thành công',
+  })
+  async getAllUsersWithoutPagination(
+    @Query('isActive') isActive?: boolean,
+  ) {
+    try {
+      this.logger.log('Fetching all users without pagination for analytics');
+
+      const result = await firstValueFrom(
+        this.userClient.send('user.get-all-users-without-pagination', {
+          isActive,
+        })
+      );
+
+      return {
+        data: result.data || [],
+        count: result.data?.length || 0,
+        message: 'Lấy danh sách người dùng thành công',
+      };
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch all users', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('stats')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get user statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê người dùng thành công',
+  })
+  async getStats() {
+    try {
+      this.logger.log('Fetching user statistics');
+      const result = await firstValueFrom(
+        this.userClient.send('user.get-stats', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch user stats', error);
       throw handleError(error);
     }
   }

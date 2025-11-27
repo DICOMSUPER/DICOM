@@ -164,6 +164,8 @@ export class UsersService {
     role?: string;
     excludeRole?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }) {
     try {
       const page = query.page ?? 1;
@@ -198,6 +200,10 @@ export class UsersService {
         .skip(skip)
         .take(limit);
 
+      if (!query.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
+
       if (query.search) {
         qb.andWhere(
           '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
@@ -205,8 +211,10 @@ export class UsersService {
         );
       }
 
-      if (query.isActive !== undefined) {
+      if (query.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
       }
 
       if (query.role) {
@@ -237,6 +245,58 @@ export class UsersService {
         message: 'Lấy danh sách người dùng thành công',
       };
     } catch (error) {
+      throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
+    }
+  }
+
+  async findAllWithoutPagination(query?: {
+    search?: string;
+    isActive?: boolean;
+    role?: string;
+    excludeRole?: string;
+    departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
+  }): Promise<User[]> {
+    try {
+      const qb = this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.department', 'department')
+        .orderBy('user.createdAt', 'DESC');
+
+      if (!query?.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
+
+      if (query?.search) {
+        qb.andWhere(
+          '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+          { search: `%${query.search}%` }
+        );
+      }
+
+      if (query?.isActive !== undefined && !query.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query?.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
+      }
+
+      if (query?.role) {
+        qb.andWhere('user.role = :role', { role: query.role });
+      }
+
+      if (query?.excludeRole) {
+        qb.andWhere('user.role != :excludeRole', { excludeRole: query.excludeRole });
+      }
+
+      if (query?.departmentId) {
+        qb.andWhere('user.departmentId = :departmentId', { departmentId: query.departmentId });
+      }
+
+      const data = await qb.getMany();
+      return data;
+    } catch (error: any) {
+      console.error(`Error in findAllWithoutPagination: ${error?.message}`, error?.stack);
       throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
     }
   }
@@ -474,7 +534,7 @@ export class UsersService {
 
       const savedUser = await this.userRepository.save(newUser);
       const { passwordHash: _, ...userWithoutPassword } = savedUser;
-      return userWithoutPassword;
+      return userWithoutPassword as Omit<User, 'passwordHash'>;
     } catch (error: any) {
       if (
         error instanceof ValidationException ||
@@ -723,7 +783,7 @@ export class UsersService {
           );
         }
         const { passwordHash, ...userWithoutPassword } = updatedUser;
-        return userWithoutPassword;
+        return userWithoutPassword as Omit<User, 'passwordHash'>;
       } catch (saveError: any) {
         if (saveError?.code === '23505' || saveError?.message?.includes('duplicate')) {
           if (saveError?.message?.includes('email') || saveError?.constraint?.includes('email')) {
@@ -775,7 +835,7 @@ export class UsersService {
 
       const updatedUser = await this.userRepository.save(user);
       const { passwordHash, ...userWithoutPassword } = updatedUser;
-      return userWithoutPassword;
+      return userWithoutPassword as Omit<User, 'passwordHash'>;
     } catch (error: any) {
       if (
         error instanceof ValidationException ||
@@ -806,7 +866,7 @@ export class UsersService {
 
       const updatedUser = await this.userRepository.save(user);
       const { passwordHash, ...userWithoutPassword } = updatedUser;
-      return userWithoutPassword;
+      return userWithoutPassword as Omit<User, 'passwordHash'>;
     } catch (error: any) {
       if (
         error instanceof ValidationException ||
@@ -833,4 +893,29 @@ export class UsersService {
 
     return users;
   };
+
+  async getStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    inactiveUsers: number;
+    verifiedUsers: number;
+  }> {
+    try {
+      const [totalUsers, activeUsers, inactiveUsers, verifiedUsers] = await Promise.all([
+        this.userRepository.count({ where: { isDeleted: false } }),
+        this.userRepository.count({ where: { isActive: true, isDeleted: false } }),
+        this.userRepository.count({ where: { isActive: false, isDeleted: false } }),
+        this.userRepository.count({ where: { isVerified: true, isDeleted: false } }),
+      ]);
+
+      return {
+        totalUsers,
+        activeUsers,
+        inactiveUsers,
+        verifiedUsers,
+      };
+    } catch (error) {
+      throw new DatabaseException('Lỗi khi lấy thống kê người dùng');
+    }
+  }
 }

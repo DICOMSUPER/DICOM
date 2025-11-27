@@ -41,7 +41,9 @@ export class BodyPartController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -50,6 +52,8 @@ export class BodyPartController {
       searchField,
       sortField,
       order,
+      includeInactive: includeInactive === true,
+      includeDeleted: includeDeleted === true,
     };
     return await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindMany', {
