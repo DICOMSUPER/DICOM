@@ -5,6 +5,7 @@ import {
   useViewer,
   type AnnotationHistoryEntry,
 } from "@/contexts/ViewerContext";
+import type { SegmentationHistoryEntry } from "@/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
 import {
   getCanvasAsBase64,
@@ -309,6 +310,40 @@ const ViewPortMain = ({
         ?.redoAnnotation?.(historyEntry);
     };
 
+    const handleUndoSegmentation = (event?: Event) => {
+      let historyEntry: SegmentationHistoryEntry | undefined;
+      if (event) {
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: SegmentationHistoryEntry;
+        }>;
+        const { activeViewportId } = customEvent.detail || {};
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
+        historyEntry = customEvent.detail?.entry;
+      }
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.undoSegmentation?.(historyEntry);
+    };
+
+    const handleRedoSegmentation = (event?: Event) => {
+      let historyEntry: SegmentationHistoryEntry | undefined;
+      if (event) {
+        const customEvent = event as CustomEvent<{
+          activeViewportId?: string;
+          entry?: SegmentationHistoryEntry;
+        }>;
+        const { activeViewportId } = customEvent.detail || {};
+        const actualViewportId = getViewportId(viewportIndex);
+        if (activeViewportId && activeViewportId !== actualViewportId) return;
+        historyEntry = customEvent.detail?.entry;
+      }
+      toolManagerRef.current
+        ?.getToolHandlers?.()
+        ?.redoSegmentation?.(historyEntry);
+    };
+
     const handleInvertColorMap = () => {
       toolManagerRef.current?.getToolHandlers?.()?.invertColorMap?.();
     };
@@ -517,6 +552,14 @@ const ViewPortMain = ({
       "redoAnnotation",
       handleRedoAnnotation as EventListener
     );
+    window.addEventListener(
+      "undoSegmentation",
+      handleUndoSegmentation as EventListener
+    );
+    window.addEventListener(
+      "redoSegmentation",
+      handleRedoSegmentation as EventListener
+    );
     window.addEventListener("refreshViewport", handleRefresh);
     window.addEventListener(
       "diagnoseViewport",
@@ -559,6 +602,14 @@ const ViewPortMain = ({
       window.removeEventListener(
         "redoAnnotation",
         handleRedoAnnotation as EventListener
+      );
+      window.removeEventListener(
+        "undoSegmentation",
+        handleUndoSegmentation as EventListener
+      );
+      window.removeEventListener(
+        "redoSegmentation",
+        handleRedoSegmentation as EventListener
       );
       window.removeEventListener("refreshViewport", handleRefresh);
       window.removeEventListener(
