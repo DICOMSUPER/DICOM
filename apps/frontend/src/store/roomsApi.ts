@@ -22,7 +22,7 @@ export interface RoomSearchFilters {
 export const roomApi = createApi({
   reducerPath: "roomApi",
   baseQuery: axiosBaseQuery("/rooms"),
-  tagTypes: ["Room"],
+  tagTypes: ["Room", "ServiceRoom", "ServiceRoomList", "RoomService", "ModalityMachine"],
   endpoints: (builder) => ({
     // Get all rooms with filters
     getRooms: builder.query<PaginatedResponse<Room>, QueryParams>({
@@ -82,7 +82,13 @@ export const roomApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["Room"],
+      invalidatesTags: [
+        "Room",
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
+        { type: "ModalityMachine", id: "LIST" },
+      ],
     }),
 
     // Update room
@@ -95,6 +101,10 @@ export const roomApi = createApi({
       invalidatesTags: (result, error, { id }) => [
         { type: "Room", id },
         "Room",
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
+        { type: "ModalityMachine", id: "LIST" },
       ],
     }),
 
@@ -104,7 +114,13 @@ export const roomApi = createApi({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Room"],
+      invalidatesTags: [
+        "Room",
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
+        { type: "ModalityMachine", id: "LIST" },
+      ],
     }),
 
     getRoomsByDepartmentAndService: builder.query<

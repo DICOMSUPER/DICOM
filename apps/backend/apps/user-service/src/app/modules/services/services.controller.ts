@@ -142,4 +142,18 @@ export class ServicesController {
       );
     }
   }
+
+  @MessagePattern('UserService.Services.GetStats')
+  async getStats() {
+    this.logger.log(`Using pattern: UserService.Services.GetStats`);
+    try {
+      return await this.servicesService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get service stats',
+        'UserService'
+      );
+    }
+  }
 }

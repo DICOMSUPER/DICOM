@@ -19,7 +19,7 @@ export type UpdateImagingModalityDto = Partial<CreateImagingModalityDto>;
 export const imagingModalityApi = createApi({
   reducerPath: "imagingModalityApi",
   baseQuery: axiosBaseQuery("/imaging-modalities"),
-  tagTypes: ["ImagingModality", "ImagingModalityList"],
+  tagTypes: ["ImagingModality", "ImagingModalityList", "ModalityMachine"],
   endpoints: (builder) => ({
     getAllImagingModality: builder.query<
       ApiResponse<ImagingModality[]>,
@@ -91,7 +91,10 @@ export const imagingModalityApi = createApi({
         method: "POST",
         data,
       }),
-      invalidatesTags: () => [{ type: "ImagingModalityList", id: "LIST" }],
+      invalidatesTags: () => [
+        { type: "ImagingModalityList", id: "LIST" },
+        { type: "ModalityMachine", id: "LIST" },
+      ],
     }),
 
     updateImagingModality: builder.mutation<
@@ -107,6 +110,7 @@ export const imagingModalityApi = createApi({
         { type: "ImagingModality", id },
         { type: "ImagingModalityList", id: "LIST" },
         { type: "ImagingModalityList", id: "PAGINATED" },
+        { type: "ModalityMachine", id: "LIST" },
       ],
     }),
 
@@ -122,6 +126,7 @@ export const imagingModalityApi = createApi({
         { type: "ImagingModality", id },
         { type: "ImagingModalityList", id: "LIST" },
         { type: "ImagingModalityList", id: "PAGINATED" },
+        { type: "ModalityMachine", id: "LIST" },
       ],
     }),
   }),

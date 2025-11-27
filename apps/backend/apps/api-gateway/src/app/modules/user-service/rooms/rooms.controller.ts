@@ -111,6 +111,38 @@ export class RoomsController {
     }
   }
 
+  @Get('all')
+  @Public()
+  @ApiOperation({ summary: 'Get all rooms without pagination (for analytics)' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách phòng thành công' })
+  async getAllRoomsWithoutPagination(
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('departmentId') departmentId?: string,
+    @Query('isActive') isActive?: boolean,
+  ) {
+    try {
+      this.logger.log('Fetching all rooms without pagination for analytics');
+
+      const result = await firstValueFrom(
+        this.roomClient.send('room.get-all-without-pagination', {
+          status,
+          type,
+          departmentId,
+          isActive,
+        })
+      );
+
+      return {
+        data: result?.data || [],
+        count: result?.data?.length || 0,
+      };
+    } catch (error) {
+      this.logger.error('Failed to fetch all rooms', error);
+      throw handleError(error);
+    }
+  }
+
   @Post()
   @Role(Roles.SYSTEM_ADMIN)
   async createRoom(@Body() createRoomDto: CreateRoomDto, @Req() req: Request) {

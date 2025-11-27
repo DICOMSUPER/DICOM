@@ -19,11 +19,8 @@ interface FilterOption {
 interface ReceptionFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
-  priorityFilter: string;
-  onPriorityChange: (value: string) => void;
   statusFilter: string;
   onStatusChange: (value: string) => void;
-  priorityOptions?: FilterOption[];
   statusOptions?: FilterOption[];
   onFilterClick?: () => void;
   onSearch?: () => void;
@@ -31,13 +28,6 @@ interface ReceptionFiltersProps {
   isSearching?: boolean;
   className?: string;
 }
-
-const defaultPriorityOptions: FilterOption[] = [
-  { value: "all", label: "All Priority" },
-  { value: "high", label: "High" },
-  { value: "normal", label: "Normal" },
-  { value: "low", label: "Low" },
-];
 
 const defaultStatusOptions: FilterOption[] = [
   { value: "all", label: "All Status" },
@@ -49,11 +39,8 @@ const defaultStatusOptions: FilterOption[] = [
 export function ReceptionFilters({
   searchTerm,
   onSearchChange,
-  priorityFilter,
-  onPriorityChange,
   statusFilter,
   onStatusChange,
-  priorityOptions = defaultPriorityOptions,
   statusOptions = defaultStatusOptions,
   onFilterClick,
   onSearch,
@@ -61,8 +48,7 @@ export function ReceptionFilters({
   isSearching = false,
   className = "",
 }: ReceptionFiltersProps) {
-  const hasActiveFilters =
-    searchTerm || priorityFilter !== "all" || statusFilter !== "all";
+  const hasActiveFilters = searchTerm || statusFilter !== "all";
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && onSearch) {
@@ -96,45 +82,6 @@ export function ReceptionFilters({
           )}
         </div>
 
-        {/* Patient does not have priority or status */}
-        {/* <div className="flex gap-2">
-          <Select value={priorityFilter} onValueChange={onPriorityChange}>
-            <SelectTrigger className="w-32 h-9">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent className="border-border">
-              {priorityOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-32 h-9">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="border-border">
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {onFilterClick && (
-            <Button variant="outline" onClick={onFilterClick} className="h-9 px-4">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-          )}
-          {hasActiveFilters && onReset && (
-            <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
-              <X className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-          )}
-        </div> */}
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ import {
 export const serviceApi = createApi({
   reducerPath: "serviceApi",
   baseQuery: axiosBaseQuery("/services"),
-  tagTypes: ["Service", "ServiceList"],
+  tagTypes: ["Service", "ServiceList", "ServiceRoom", "ServiceRoomList", "RoomService"],
   endpoints: (builder) => ({
     // Get all services (non-paginated)
     getServices: builder.query<ApiResponse<Services[]>, void>({
@@ -110,6 +110,9 @@ export const serviceApi = createApi({
       invalidatesTags: [
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
     }),
 
@@ -127,6 +130,9 @@ export const serviceApi = createApi({
         { type: "Service", id },
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
     }),
 
@@ -140,6 +146,9 @@ export const serviceApi = createApi({
         { type: "Service", id },
         { type: "ServiceList", id: "LIST" },
         { type: "ServiceList", id: "PAGINATED" },
+        "ServiceRoomList",
+        { type: "ServiceRoom", id: "LIST" },
+        "RoomService",
       ],
     }),
   }),

@@ -160,9 +160,9 @@ export default function EncountersPage() {
     setAppliedStartDate(startDate);
     setAppliedEndDate(endDate);
     setAppliedServiceId(serviceId);
-    setPage(1);
     setAppliedPriorityFilter(priorityFilter);
     setAppliedType(type);
+    setPage(1);
   }, [
     searchTerm,
     statusFilter,
@@ -180,11 +180,13 @@ export default function EncountersPage() {
     setStartDate(undefined);
     setEndDate(undefined);
     setServiceId(undefined);
+    setType(undefined);
     setAppliedSearchTerm("");
     setAppliedStatusFilter(undefined);
     setAppliedStartDate(undefined);
     setAppliedEndDate(undefined);
     setAppliedServiceId(undefined);
+    setAppliedPriorityFilter(undefined);
     setAppliedType(undefined);
     setPage(1);
   }, []);
@@ -242,27 +244,6 @@ export default function EncountersPage() {
     todayEncounter: 0,
     todayStatEncounter: 0,
   };
-
-  console.log(encounterStats);
-  // Calculate stats from filtered data // TODO, using custom api later
-  const stats = useMemo(() => {
-    const scheduledCount = encountersArray.filter(
-      (e) => e.status === EncounterStatus.WAITING
-    ).length;
-    const inProgressCount = encountersArray.filter(
-      (e) => e.status === EncounterStatus.ARRIVED
-    ).length;
-    const completedCount = encountersArray.filter(
-      (e) => e.status === EncounterStatus.FINISHED
-    ).length;
-
-    return {
-      totalCount: encountersArray.length,
-      scheduledCount,
-      inProgressCount,
-      completedCount,
-    };
-  }, [encountersArray]);
 
   // Pagination metadata
   const paginationMeta = useMemo(() => {

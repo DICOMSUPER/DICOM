@@ -7,6 +7,8 @@ import {
   PopoverAnchor,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Info } from "lucide-react";
 import { eventTarget } from "@cornerstonejs/core";
 import { Enums as ToolEnums, annotation } from "@cornerstonejs/tools";
 import type { Annotation } from "@cornerstonejs/tools/types";
@@ -15,6 +17,7 @@ import { useViewer } from "@/contexts/ViewerContext";
 import { useLazyGetAnnotationsBySeriesIdQuery } from "@/store/annotationApi";
 import { extractApiData } from "@/utils/api";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationDetailModal } from "@/components/viewer/modals/AnnotationDetailModal";
 
 interface AnnotationHoverTooltipProps {
   viewportId: string;
@@ -36,9 +39,10 @@ export function AnnotationHoverTooltip({
   const { state } = useViewer();
   const [hoveredAnnotation, setHoveredAnnotation] =
     useState<HoveredAnnotation | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
   const dbAnnotationsCacheRef = useRef<Map<string, ImageAnnotation>>(new Map());
-  const mousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const hoveredAnnotationRef = useRef<HoveredAnnotation | null>(null);
 
   const formatDate = useCallback((value?: string) => {
     if (!value) return "—";
@@ -289,8 +293,13 @@ export function AnnotationHoverTooltip({
         if (foundAnnotation) break;
       }
 
-      if (foundAnnotation && foundAnnotation !== currentHoveredAnnotation) {
-        currentHoveredAnnotation = foundAnnotation;
+      if (foundAnnotation) {
+        // Update position even if it's the same annotation (for mouse movement)
+        const isNewAnnotation = foundAnnotation !== currentHoveredAnnotation;
+        
+        if (isNewAnnotation) {
+          currentHoveredAnnotation = foundAnnotation;
+        }
 
         if (hoverTimeout) {
           clearTimeout(hoverTimeout);
@@ -303,20 +312,27 @@ export function AnnotationHoverTooltip({
             y: event.clientY,
           };
 
-          const dbAnn = await loadDbAnnotation(foundAnnotation!);
+          // Only reload DB annotation if it's a new annotation
+          const dbAnn = isNewAnnotation 
+            ? await loadDbAnnotation(foundAnnotation!)
+            : hoveredAnnotationRef.current?.dbAnnotation;
 
-          setHoveredAnnotation({
+          const newHoveredAnnotation = {
             annotation: foundAnnotation!,
             position,
             dbAnnotation: dbAnn,
-          });
-        }, 300);
+          };
+          
+          hoveredAnnotationRef.current = newHoveredAnnotation;
+          setHoveredAnnotation(newHoveredAnnotation);
+        }, isNewAnnotation ? 300 : 100); // Faster update for same annotation
       } else if (!foundAnnotation && currentHoveredAnnotation) {
         currentHoveredAnnotation = null;
         if (hoverTimeout) {
           clearTimeout(hoverTimeout);
         }
         hoverTimeout = setTimeout(() => {
+          hoveredAnnotationRef.current = null;
           setHoveredAnnotation(null);
         }, 200);
       }
@@ -327,6 +343,7 @@ export function AnnotationHoverTooltip({
         clearTimeout(hoverTimeout);
       }
       currentHoveredAnnotation = null;
+      hoveredAnnotationRef.current = null;
       setHoveredAnnotation(null);
     };
 
@@ -497,8 +514,30 @@ export function AnnotationHoverTooltip({
               </>
             )}
           </div>
+
+          <div className="pt-2 border-t border-slate-800/50">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDetailModalOpen(true);
+              }}
+              className="w-full border-slate-700/60 bg-slate-900/90 text-slate-200 hover:bg-slate-800 hover:text-white hover:border-slate-600"
+            >
+              <Info className="h-3.5 w-3.5 mr-2" />
+              View Details
+            </Button>
+          </div>
         </div>
       </PopoverContent>
+
+      <AnnotationDetailModal
+        annotation={hoveredAnnotation?.annotation || null}
+        dbAnnotation={hoveredAnnotation?.dbAnnotation}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+      />
     </Popover>
   );
 }

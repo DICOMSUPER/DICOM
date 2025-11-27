@@ -14,16 +14,7 @@ import { ImagingModalityViewModal } from '@/components/admin/imaging-modality/im
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import {
   PaginatedQuery,
   PaginationMeta,
@@ -305,31 +296,22 @@ export default function ImagingModalityPage() {
         }}
       />
 
-      <AlertDialog
-        open={!!modalityToDelete}
-        onOpenChange={(open) => !open && setModalityToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Imaging Modality</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <strong>{modalityToDelete?.modalityName}</strong>? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        isOpen={!!modalityToDelete}
+        onClose={() => setModalityToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Imaging Modality"
+        description={
+          <>
+            Are you sure you want to delete imaging modality <strong>{modalityToDelete?.modalityName}</strong>? This action
+            cannot be undone and will permanently remove this modality from the system.
+          </>
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

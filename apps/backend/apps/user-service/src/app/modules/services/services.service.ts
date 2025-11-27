@@ -248,4 +248,29 @@ export class ServicesService {
       departmentId
     );
   };
+
+  async getStats(): Promise<{
+    totalServices: number;
+    activeServices: number;
+    inactiveServices: number;
+  }> {
+    try {
+      const allServices = await this.servicesRepository.findAll();
+      const totalServices = allServices.filter((s: any) => s.isDeleted !== true).length;
+      const activeServices = allServices.filter((s: any) => s.isActive === true && s.isDeleted !== true).length;
+      const inactiveServices = allServices.filter((s: any) => s.isActive === false && s.isDeleted !== true).length;
+
+      return {
+        totalServices,
+        activeServices,
+        inactiveServices,
+      };
+    } catch (error: any) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Lỗi khi lấy thống kê dịch vụ',
+        'UserService'
+      );
+    }
+  }
 }

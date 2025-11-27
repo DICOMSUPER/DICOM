@@ -35,37 +35,10 @@ export default function ReceptionPage() {
   const [page, setPage] = useState(1);
   const limit = 5;
   const [searchTerm, setSearchTerm] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
   const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
-
-  const queryParams = useMemo(() => {
-    const filters: Omit<PatientSearchFilters, "limit" | "offset"> = {};
-
-    if (appliedSearchTerm.trim()) {
-      filters.searchTerm = appliedSearchTerm.trim();
-    }
-
-    if (appliedStatusFilter !== "all") {
-      if (
-        appliedStatusFilter === "active" ||
-        appliedStatusFilter === "waiting" ||
-        appliedStatusFilter === "in-progress"
-      ) {
-        filters.isActive = true;
-      } else if (appliedStatusFilter === "completed") {
-        filters.isActive = false;
-      }
-    }
-
-    return {
-      page,
-      limit,
-      filters,
-    };
-  }, [page, limit, appliedSearchTerm, appliedStatusFilter]);
 
   const {
     data: patientsData,
@@ -99,7 +72,7 @@ export default function ReceptionPage() {
 
   const patientsArray = useMemo(() => {
     return (patientsData?.data ?? []).map((patient: Patient) => ({
-      id: patient.id,
+      ...patient,
       firstName: patient.firstName || "Unknown",
       lastName: patient.lastName || "Patient",
       patientCode: patient.patientCode || "N/A",
@@ -109,12 +82,7 @@ export default function ReceptionPage() {
           : patient.dateOfBirth.toISOString()
         : new Date().toISOString(),
       gender: patient.gender || "Unknown",
-      phoneNumber: patient.phoneNumber,
-      address: patient.address,
-      bloodType: patient.bloodType,
       isActive: patient.isActive ?? true,
-      priority: "normal",
-      encounters: patient.encounters || [],
     }));
   }, [patientsData?.data]);
 
@@ -135,25 +103,19 @@ export default function ReceptionPage() {
     setAppliedSearchTerm(searchTerm);
     setAppliedStatusFilter(statusFilter);
     setPage(1);
-    refetchPatients();
   }, [searchTerm, statusFilter]);
 
   const handleResetFilters = useCallback(() => {
     setSearchTerm("");
-    setPriorityFilter("all");
     setStatusFilter("all");
     setAppliedSearchTerm("");
     setAppliedStatusFilter("all");
     setPage(1);
   }, []);
 
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      setPage(newPage);
-      refetchPatients();
-    },
-    [refetchPatients]
-  );
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
 
   const handleViewDetails = (patient: {
     id: string;
@@ -233,8 +195,6 @@ export default function ReceptionPage() {
       <ReceptionFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
         onSearch={handleSearch}
