@@ -7,6 +7,20 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
+
+process.on('unhandledRejection', (reason, promise) => {
+  const logger = new Logger('UnhandledRejection');
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+});
+
+process.on('uncaughtException', (error) => {
+  const logger = new Logger('UncaughtException');
+  logger.error('Uncaught Exception:', error);
+  logger.error('Stack:', error.stack);
+  process.exit(1);
+});
+
 async function bootstrap() {
   const transport = Number(process.env.TRANSPORT) || Transport.TCP;
   const host = process.env.HOST || '0.0.0.0';

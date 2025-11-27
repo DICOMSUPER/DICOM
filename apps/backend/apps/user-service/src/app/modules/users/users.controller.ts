@@ -181,6 +181,8 @@ export class UsersController {
       role?: string;
       excludeRole?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
@@ -205,6 +207,8 @@ export class UsersController {
       role?: string;
       excludeRole?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {

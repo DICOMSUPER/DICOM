@@ -194,6 +194,25 @@ export class ServiceRoomsController {
     }
   }
 
+  @Get('stats')
+  @Public()
+  @ApiOperation({ summary: 'Get service room assignment statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê gán dịch vụ phòng thành công',
+  })
+  async getStats() {
+    try {
+      this.logger.log('📊 Fetching service room assignment stats');
+      return await firstValueFrom(
+        this.userServiceClient.send('UserService.ServiceRooms.GetStats', {})
+      );
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch service room assignment stats', error);
+      throw handleError(error);
+    }
+  }
+
   @Get(':id')
   @Role(Roles.SYSTEM_ADMIN, Roles.PHYSICIAN, Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Get service room assignment by ID' })

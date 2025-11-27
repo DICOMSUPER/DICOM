@@ -21,6 +21,15 @@ export interface UserFilters {
   excludeRole?: string;
   isActive?: boolean;
   departmentId?: string;
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
+export interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  verifiedUsers: number;
 }
 
 export const userApi = createApi({
@@ -94,6 +103,15 @@ export const userApi = createApi({
       providesTags: ["Profile"],
     }),
 
+    getUserStats: builder.query<UserStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["User"],
+    }),
+
     createStaffAccount: builder.mutation<User, Partial<User>>({
       query: (data) => ({
         url: "/users",
@@ -114,6 +132,7 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetCurrentProfileQuery,
+  useGetUserStatsQuery,
 } = userApi;
 
 export default userApi;

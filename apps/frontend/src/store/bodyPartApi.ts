@@ -1,76 +1,86 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
-import { PaginatedResponse } from "./scheduleApi";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { mapApiResponse } from "@/utils/adpater";
+import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 
+export interface CreateBodyPartDto {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateBodyPartDto {
+  name?: string;
+  description?: string;
+}
+
+// ====== RTK QUERY API ======
 export const bodyPartApi = createApi({
   reducerPath: "bodyPartApi",
-  baseQuery: axiosBaseQuery("/body-part/"),
+  baseQuery: axiosBaseQuery("/body-part"),
   tagTypes: ["BodyPart"],
   endpoints: (builder) => ({
-    // GET /body-part
-    getAllBodyParts: builder.query<ApiResponse<BodyPart[]>, void>({
-      query: () => ({ url: "", method: "GET" }),
-      providesTags: (result) =>
-        result
-          ? [...result.data.map((r) => ({ type: "BodyPart" as const, id: r.id })), { type: "BodyPart", id: "LIST" }]
-          : [{ type: "BodyPart", id: "LIST" }],
-    }),
-
-    getBodyPartsPaginated: builder.query<
-      PaginatedResponse<BodyPart>,
-      { page?: number; limit?: number; search?: string } | void
-    >({
-      query: (params) => ({
-        url: "paginated",
+    // Get all body parts with filters
+    getBodyParts: builder.query<PaginatedResponse<BodyPart>, BodyPartQueryParams>({
+      query: (filters) => ({
+        url: "/paginated",
         method: "GET",
-        params,
+        params: filters || {},
       }),
-      providesTags: (result) =>
-        result
-          ? [
-            ...result.data.map((r) => ({
-              type: "BodyPart" as const,
-              id: r.id,
-            })),
-            { type: "BodyPart", id: "LIST" },
-          ]
-          : [{ type: "BodyPart", id: "LIST" }],
+      transformResponse: (response: any) => mapApiResponse<BodyPart>(response),
+      providesTags: ["BodyPart"],
     }),
 
+    // Get body part by ID
     getBodyPartById: builder.query<BodyPart, string>({
-      query: (id) => ({ url: `${id}`, method: "GET" }),
+      query: (id) => ({
+        url: `/${id}`,
+        method: "GET",
+      }),
       providesTags: (result, error, id) => [{ type: "BodyPart", id }],
     }),
-    createBodyPart: builder.mutation<BodyPart, Partial<BodyPart>>({
-      query: (body) => ({ url: "", method: "POST", body }),
-      invalidatesTags: [{ type: "BodyPart", id: "LIST" }],
+
+    // Create body part
+    createBodyPart: builder.mutation<BodyPart, CreateBodyPartDto>({
+      query: (body) => ({
+        url: "",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["BodyPart"],
     }),
+
+    // Update body part
     updateBodyPart: builder.mutation<
       BodyPart,
-      { id: string; body: Partial<BodyPart> }
+      { id: string; data: UpdateBodyPartDto }
     >({
-      query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
+      query: ({ id, data }) => ({
+        url: `/${id}`,
+        method: "PATCH",
+        data,
+      }),
       invalidatesTags: (result, error, { id }) => [
         { type: "BodyPart", id },
-        { type: "BodyPart", id: "LIST" },
+        "BodyPart",
       ],
     }),
 
-    deleteBodyPart: builder.mutation<{ success: boolean }, string>({
-      query: (id) => ({ url: `${id}`, method: "DELETE" }),
-      invalidatesTags: (result, error, id) => [
-        { type: "BodyPart", id },
-        { type: "BodyPart", id: "LIST" },
-      ],
+    // Delete body part
+    deleteBodyPart: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["BodyPart"],
     }),
   }),
 });
 
+// ====== AUTO HOOKS ======
 export const {
-  useGetAllBodyPartsQuery,
-  useGetBodyPartsPaginatedQuery,
+  useGetBodyPartsQuery,
   useGetBodyPartByIdQuery,
   useCreateBodyPartMutation,
   useUpdateBodyPartMutation,

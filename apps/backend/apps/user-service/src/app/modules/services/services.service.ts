@@ -236,9 +236,54 @@ export class ServicesService {
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & {
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
   ): Promise<PaginatedResponseDto<Services>> => {
-    return await this.servicesRepository.paginate(paginationDto);
+    const { includeInactive, includeDeleted, ...restPaginationDto } = paginationDto;
+    
+    if (includeDeleted || includeInactive) {
+      const repository = this.entityManager.getRepository(Services);
+      const page = restPaginationDto.page || 1;
+      const limit = restPaginationDto.limit || 10;
+      const skip = (page - 1) * limit;
+      
+      const qb = repository
+        .createQueryBuilder('service')
+        .orderBy(`service.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')
+        .skip(skip)
+        .take(limit);
+      
+      if (!includeDeleted) {
+        qb.where('service.isDeleted = :isDeleted', { isDeleted: false });
+      }
+      
+      if (restPaginationDto.search && restPaginationDto.searchField) {
+        qb.andWhere(`service.${restPaginationDto.searchField} LIKE :search`, {
+          search: `%${restPaginationDto.search}%`,
+        });
+      }
+      
+      if (!includeInactive) {
+        qb.andWhere('service.isActive = :isActive', { isActive: true });
+      }
+      
+      const [data, total] = await qb.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+      
+      return new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      );
+    }
+    
+    return await this.servicesRepository.paginate(restPaginationDto);
   };
 
   getAllServiceProvidedByADepartment = async (

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
 import {
   useGetShiftTemplatesQuery,
+  useGetShiftTemplateStatsQuery,
   useDeleteShiftTemplateMutation,
   useUpdateShiftTemplateMutation,
 } from '@/store/scheduleApi';
@@ -49,6 +50,8 @@ export default function Page() {
     const params: any = {
       page,
       limit,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedTypeFilter !== 'all') {
@@ -71,6 +74,12 @@ export default function Page() {
 
   const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteShiftTemplateMutation();
   const [updateTemplate, { isLoading: isUpdatingTemplate }] = useUpdateShiftTemplateMutation();
+
+  const {
+    data: shiftTemplateStatsData,
+    isLoading: shiftTemplateStatsLoading,
+    refetch: refetchShiftTemplateStats,
+  } = useGetShiftTemplateStatsQuery();
 
   useEffect(() => {
     if (templatesError) {
@@ -98,12 +107,16 @@ export default function Page() {
   } : null;
 
   const stats = useMemo(() => {
-    const total = templatesRes?.total ?? 0;
-    const active = templates.filter((t) => t.is_active).length;
-    const inactive = templates.filter((t) => !t.is_active).length;
-    const morning = templates.filter((t) => t.shift_type === 'morning').length;
+    const total = shiftTemplateStatsData?.totalTemplates ?? 0;
+    const active = shiftTemplateStatsData?.activeTemplates ?? 0;
+    const inactive = shiftTemplateStatsData?.inactiveTemplates ?? 0;
+    // Get morning count from templatesByType if available, otherwise calculate from current page
+    const morningTypeData = shiftTemplateStatsData?.templatesByType?.find(
+      (t) => t.type === 'morning'
+    );
+    const morning = morningTypeData ? parseInt(morningTypeData.count, 10) : templates.filter((t) => t.shift_type === 'morning').length;
     return { total, active, inactive, morning };
-  }, [templates, templatesRes?.total]);
+  }, [shiftTemplateStatsData, templates]);
 
   const getStatusBadge = (isActive: boolean) => {
     return getBooleanStatusBadge(isActive);
@@ -112,7 +125,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchTemplates();
+      await Promise.all([refetchTemplates(), refetchShiftTemplateStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -210,7 +223,7 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         morningCount={stats.morning}
-        isLoading={templatesLoading}
+        isLoading={templatesLoading || shiftTemplateStatsLoading}
       />
 
       <ShiftTemplateFilters

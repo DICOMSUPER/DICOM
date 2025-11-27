@@ -164,6 +164,8 @@ export class UsersService {
     role?: string;
     excludeRole?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }) {
     try {
       const page = query.page ?? 1;
@@ -198,6 +200,10 @@ export class UsersService {
         .skip(skip)
         .take(limit);
 
+      if (!query.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
+
       if (query.search) {
         qb.andWhere(
           '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
@@ -205,8 +211,10 @@ export class UsersService {
         );
       }
 
-      if (query.isActive !== undefined) {
+      if (query.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
       }
 
       if (query.role) {
@@ -247,13 +255,18 @@ export class UsersService {
     role?: string;
     excludeRole?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }): Promise<User[]> {
     try {
       const qb = this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.department', 'department')
-        .where('user.isDeleted = :isDeleted', { isDeleted: false })
         .orderBy('user.createdAt', 'DESC');
+
+      if (!query?.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
 
       if (query?.search) {
         qb.andWhere(
@@ -262,8 +275,10 @@ export class UsersService {
         );
       }
 
-      if (query?.isActive !== undefined) {
+      if (query?.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query?.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
       }
 
       if (query?.role) {
@@ -883,18 +898,21 @@ export class UsersService {
     totalUsers: number;
     activeUsers: number;
     inactiveUsers: number;
+    verifiedUsers: number;
   }> {
     try {
-      const [totalUsers, activeUsers, inactiveUsers] = await Promise.all([
+      const [totalUsers, activeUsers, inactiveUsers, verifiedUsers] = await Promise.all([
         this.userRepository.count({ where: { isDeleted: false } }),
         this.userRepository.count({ where: { isActive: true, isDeleted: false } }),
         this.userRepository.count({ where: { isActive: false, isDeleted: false } }),
+        this.userRepository.count({ where: { isVerified: true, isDeleted: false } }),
       ]);
 
       return {
         totalUsers,
         activeUsers,
         inactiveUsers,
+        verifiedUsers,
       };
     } catch (error) {
       throw new DatabaseException('Lỗi khi lấy thống kê người dùng');

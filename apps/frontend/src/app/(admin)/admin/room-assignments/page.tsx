@@ -10,6 +10,7 @@ import {
 } from '@/store/roomScheduleApi';
 import { useGetAllUsersQuery } from '@/store/userApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
+import { useGetEmployeeRoomAssignmentStatsQuery } from '@/store/employeeRoomAssignmentApi';
 
 import { RoomAssignmentsHeader } from '@/components/admin/room-assignments/room-assignments-header';
 import { Button } from '@/components/ui/button';
@@ -33,26 +34,6 @@ import { extractApiData } from '@/utils/api';
 import { PaginationMeta } from '@/interfaces/pagination/pagination.interface';
 import { EmployeeRoomAssignmentStats } from '@/interfaces/user/employee-room-assignment.interface';
 
-const getStatsFromSchedules = (schedules: RoomSchedule[], optimisticCount: number) => {
-  const allAssignments = schedules.flatMap(
-    (schedule) => schedule.employeeRoomAssignments ?? []
-  );
-  const totalAssignments = allAssignments.length + optimisticCount;
-  const activeAssignments = allAssignments.filter((assignment) => assignment.isActive).length;
-  const uniqueRooms = new Set(
-    schedules.map((schedule) => schedule.room_id || schedule.room?.roomCode).filter(Boolean)
-  ).size;
-  const uniqueEmployees = new Set(
-    allAssignments.map((assignment) => assignment.employeeId)
-  ).size;
-
-  return {
-    totalAssignments,
-    activeAssignments,
-    uniqueRooms,
-    uniqueEmployees,
-  };
-};
 
 const statusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {
@@ -73,11 +54,6 @@ const statusBadgeClass = (status: string) => {
 };
 
 const ensureScheduleHasEmployee = (schedule: RoomSchedule): RoomSchedule | null => {
-  const assignments = schedule.employeeRoomAssignments as AssignmentWithMeta[] | undefined;
-  const hasValidAssignment = assignments?.some((assignment) => assignment.employee && assignment.isActive);
-  if (!hasValidAssignment) {
-    return null;
-  }
   return schedule;
 };
 
@@ -108,7 +84,6 @@ export default function RoomAssignmentsPage() {
       .filter((item): item is RoomSchedule => Boolean(item));
 
     if (!normalized.length) {
-      toast.error('Employee information is not available for these schedules.');
       return;
     }
 
@@ -154,6 +129,29 @@ export default function RoomAssignmentsPage() {
   });
 
   const rooms = roomsData?.data || [];
+
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetEmployeeRoomAssignmentStatsQuery();
+
+  const stats = useMemo(() => {
+    if (!statsData?.data) {
+      return {
+        totalAssignments: 0,
+        activeAssignments: 0,
+        uniqueRooms: 0,
+        uniqueEmployees: 0,
+      };
+    }
+    return {
+      totalAssignments: statsData.data.totalAssignments,
+      activeAssignments: statsData.data.activeAssignments,
+      uniqueRooms: statsData.data.uniqueRooms,
+      uniqueEmployees: statsData.data.uniqueEmployees,
+    };
+  }, [statsData]);
 
   const paginatedFilters = useMemo(() => {
     const filters: RoomScheduleSearchFilters = {};
@@ -276,20 +274,6 @@ export default function RoomAssignmentsPage() {
   const handleListFiltersChange = (filters: FiltersType) => setListFilters(filters);
   const handleListFiltersReset = () => setListFilters({ sortBy: "date_desc" });
 
-  const optimisticAssignmentsCount = useMemo(
-    () =>
-      Object.values(optimisticAssignments).reduce(
-        (total, assignments) => total + assignments.length,
-        0
-      ),
-    [optimisticAssignments]
-  );
-
-  const stats = getStatsFromSchedules(
-    mergedSchedules,
-    optimisticAssignmentsCount
-  );
-
   const scheduleStats = useMemo<EmployeeRoomAssignmentStats>(() => {
     const statsMap: EmployeeRoomAssignmentStats = {};
     mergedSchedules.forEach((schedule) => {
@@ -307,7 +291,7 @@ export default function RoomAssignmentsPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchSchedules();
+      await Promise.all([refetchSchedules(), refetchStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -364,7 +348,7 @@ export default function RoomAssignmentsPage() {
         activeAssignments={stats.activeAssignments}
         uniqueRooms={stats.uniqueRooms}
         uniqueEmployees={stats.uniqueEmployees}
-        isLoading={schedulesLoading}
+        isLoading={statsLoading || schedulesLoading}
       />
 
       <div className="space-y-6">

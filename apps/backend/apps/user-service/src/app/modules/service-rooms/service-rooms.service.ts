@@ -226,4 +226,37 @@ export class ServiceRoomsService {
     await this.serviceRoomRepository.remove(serviceRoom);
     return { success: true, message: 'ServiceRoom deleted successfully' };
   }
+
+  async getStats(): Promise<{
+    totalAssignments: number;
+    activeAssignments: number;
+    inactiveAssignments: number;
+    uniqueRooms: number;
+  }> {
+    try {
+      const [totalAssignments, activeAssignments, inactiveAssignments] = await Promise.all([
+        this.serviceRoomRepository.count(),
+        this.serviceRoomRepository.count({ where: { isActive: true } }),
+        this.serviceRoomRepository.count({ where: { isActive: false } }),
+      ]);
+
+      // Count unique rooms with active assignments
+      const uniqueRoomsResult = await this.serviceRoomRepository
+        .createQueryBuilder('sr')
+        .select('COUNT(DISTINCT sr.roomId)', 'count')
+        .where('sr.isActive = :isActive', { isActive: true })
+        .getRawOne();
+
+      const uniqueRooms = parseInt(uniqueRoomsResult?.count || '0', 10);
+
+      return {
+        totalAssignments,
+        activeAssignments,
+        inactiveAssignments,
+        uniqueRooms,
+      };
+    } catch (error: any) {
+      throw new BadRequestException('Lỗi khi lấy thống kê service-room assignments');
+    }
+  }
 }

@@ -21,6 +21,13 @@ export interface GetOne {
   data: ModalityMachine;
 }
 
+export interface ModalityMachineStats {
+  totalMachines: number;
+  activeMachines: number;
+  inactiveMachines: number;
+  maintenanceMachines: number;
+}
+
 export const modalityMachineApi = createApi({
   baseQuery: axiosBaseQuery("/modality-machines"),
   reducerPath: "ModalityMachine",
@@ -93,9 +100,9 @@ export const modalityMachineApi = createApi({
 
     getModalityMachinePaginated: builder.query<
       PaginatedResponse<ModalityMachine>,
-      PaginatedQuery
+      PaginatedQuery & { includeDeleted?: boolean }
     >({
-      query: (query: PaginatedQuery) => ({
+      query: (query: PaginatedQuery & { includeDeleted?: boolean }) => ({
         url: "/paginated",
         method: "GET",
         params: query,
@@ -193,6 +200,16 @@ export const modalityMachineApi = createApi({
             ]
           : [{ type: "ModalityMachine", id: "LIST" }],
     }),
+
+    // Get modality machine stats
+    getModalityMachineStats: builder.query<ModalityMachineStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["ModalityMachine"],
+    }),
   }),
 });
 
@@ -204,4 +221,5 @@ export const {
   useCreateModalityMachineMutation,
   useUpdateModalityMachineMutation,
   useDeleteModalityMachineMutation,
+  useGetModalityMachineStatsQuery,
 } = modalityMachineApi;

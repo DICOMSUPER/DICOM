@@ -5,6 +5,11 @@ import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 import { mapApiResponse } from "@/utils/adpater";
 import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
 
+export interface DepartmentQueryParams extends QueryParams {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
 export interface CreateDepartmentDto {
   name: string;
   code: string;
@@ -33,6 +38,13 @@ export interface DepartmentSearchFilters {
   limit?: number;
 }
 
+export interface DepartmentStats {
+  totalDepartments: number;
+  activeDepartments: number;
+  inactiveDepartments: number;
+  totalRooms: number;
+}
+
 // ====== RTK QUERY API ======
 export const departmentApi = createApi({
   reducerPath: "departmentApi",
@@ -40,7 +52,7 @@ export const departmentApi = createApi({
   tagTypes: ["Department", "Room"],
   endpoints: (builder) => ({
     // Get all departments with filters
-    getDepartments: builder.query<PaginatedResponse<Department>, QueryParams>({
+    getDepartments: builder.query<PaginatedResponse<Department>, DepartmentQueryParams>({
       query: (filters) => ({
         url: "",
         method: "GET",
@@ -94,6 +106,16 @@ export const departmentApi = createApi({
       }),
       invalidatesTags: ["Department", "Room"],
     }),
+
+    // Get department stats
+    getDepartmentStats: builder.query<DepartmentStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["Department"],
+    }),
   }),
 });
 
@@ -104,4 +126,5 @@ export const {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
+  useGetDepartmentStatsQuery,
 } = departmentApi;

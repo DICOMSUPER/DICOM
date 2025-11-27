@@ -168,7 +168,7 @@ export class ModalityMachinesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean } }
   ): Promise<PaginatedResponseDto<ModalityMachine>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -182,11 +182,28 @@ export class ModalityMachinesController {
         searchField: paginationDto?.searchField || 'name',
         sortField: paginationDto?.sortField || 'createdAt',
         order: paginationDto?.order || 'asc',
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find many modality machines',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
+  async getStats() {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
+    );
+    try {
+      return await this.modalityMachinesService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get modality machine stats',
         IMAGING_SERVICE
       );
     }

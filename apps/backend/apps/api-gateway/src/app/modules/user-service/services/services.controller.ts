@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { firstValueFrom, pluck } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
@@ -21,6 +21,7 @@ import { CreateServiceDto, UpdateServiceDto } from '@backend/shared-domain';
 import { Public } from '@backend/shared-decorators';
 import { handleError } from '@backend/shared-utils';
 import { Logger } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('services')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -49,7 +50,9 @@ export class ServicesController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -58,12 +61,31 @@ export class ServicesController {
       searchField,
       sortField,
       order,
+      includeInactive: includeInactive === true,
+      includeDeleted: includeDeleted === true,
     };
     return await firstValueFrom(
       this.userService.send('UserService.Services.FindMany', {
         paginationDto,
       })
     );
+  }
+
+  @Get('stats')
+  @Public()
+  @ApiOperation({ summary: 'Get service statistics' })
+  @ApiResponse({ status: 200, description: 'Lấy thống kê dịch vụ thành công' })
+  async getStats() {
+    try {
+      this.logger.log('Fetching service statistics');
+      const result = await firstValueFrom(
+        this.userService.send('UserService.Services.GetStats', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch service stats', error);
+      throw handleError(error);
+    }
   }
 
   @Get(':id/department')

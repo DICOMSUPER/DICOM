@@ -11,6 +11,17 @@ import {
   PaginatedResponse,
 } from "@/interfaces/pagination/pagination.interface";
 
+export interface ServicePaginatedQuery extends PaginatedQuery {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
+export interface ServiceStats {
+  totalServices: number;
+  activeServices: number;
+  inactiveServices: number;
+}
+
 export const serviceApi = createApi({
   reducerPath: "serviceApi",
   baseQuery: axiosBaseQuery("/services"),
@@ -37,7 +48,7 @@ export const serviceApi = createApi({
     // Get paginated services
     getServicesPaginated: builder.query<
       PaginatedResponse<Services>,
-      PaginatedQuery | void
+      ServicePaginatedQuery | void
     >({
       query: (params = {}) => ({
         url: "/paginated",
@@ -49,6 +60,8 @@ export const serviceApi = createApi({
           searchField: params?.searchField,
           sortBy: params?.sortBy,
           order: params?.order,
+          includeInactive: params?.includeInactive,
+          includeDeleted: params?.includeDeleted,
         },
       }),
       providesTags: (result) =>
@@ -151,6 +164,16 @@ export const serviceApi = createApi({
         "RoomService",
       ],
     }),
+
+    // Get service stats
+    getServiceStats: builder.query<ServiceStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["Service"],
+    }),
   }),
 });
 
@@ -162,4 +185,5 @@ export const {
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
+  useGetServiceStatsQuery,
 } = serviceApi;

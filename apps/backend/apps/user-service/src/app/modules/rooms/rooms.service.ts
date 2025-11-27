@@ -106,6 +106,8 @@ export class RoomsService {
     status?: string;
     type?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }) {
     try {
       const page = query.page ?? 1;
@@ -121,7 +123,7 @@ export class RoomsService {
         search || 'none'
       }:active=${isActive ?? 'all'}:status=${status ?? 'all'}:type=${
         type ?? 'all'
-      }:dept=${departmentId ?? 'all'}`;
+      }:dept=${departmentId ?? 'all'}:includeInactive=${query.includeInactive ?? false}:includeDeleted=${query.includeDeleted ?? false}`;
 
       const cachedData = await this.redisService.get<any>(cacheKey);
       if (cachedData) {
@@ -138,6 +140,10 @@ export class RoomsService {
         .skip(skip)
         .take(limit);
 
+      if (!query.includeDeleted) {
+        qb.where('room.isDeleted = :isDeleted', { isDeleted: false });
+      }
+
       if (search) {
         qb.andWhere(
           '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
@@ -145,8 +151,10 @@ export class RoomsService {
         );
       }
 
-      if (isActive !== undefined) {
+      if (isActive !== undefined && !query.includeInactive) {
         qb.andWhere('room.isActive = :isActive', { isActive });
+      } else if (!query.includeInactive) {
+        qb.andWhere('room.isActive = :isActive', { isActive: true });
       }
 
       if (status) {
@@ -189,13 +197,18 @@ export class RoomsService {
     status?: string;
     type?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }): Promise<Room[]> {
     try {
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
-        .where('room.isDeleted = :isDeleted', { isDeleted: false })
         .orderBy('room.createdAt', 'DESC');
+
+      if (!query?.includeDeleted) {
+        qb.where('room.isDeleted = :isDeleted', { isDeleted: false });
+      }
 
       if (query?.search) {
         qb.andWhere(
@@ -204,8 +217,10 @@ export class RoomsService {
         );
       }
 
-      if (query?.isActive !== undefined) {
+      if (query?.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('room.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query?.includeInactive) {
+        qb.andWhere('room.isActive = :isActive', { isActive: true });
       }
 
       if (query?.status) {
@@ -667,18 +682,27 @@ export class RoomsService {
     totalRooms: number;
     activeRooms: number;
     inactiveRooms: number;
+    availableRooms: number;
+    occupiedRooms: number;
+    maintenanceRooms: number;
   }> {
     try {
-      const [totalRooms, activeRooms, inactiveRooms] = await Promise.all([
+      const [totalRooms, activeRooms, inactiveRooms, availableRooms, occupiedRooms, maintenanceRooms] = await Promise.all([
         this.roomRepository.count({ where: { isDeleted: false } }),
         this.roomRepository.count({ where: { isActive: true, isDeleted: false } }),
         this.roomRepository.count({ where: { isActive: false, isDeleted: false } }),
+        this.roomRepository.count({ where: { status: RoomStatus.AVAILABLE, isDeleted: false } }),
+        this.roomRepository.count({ where: { status: RoomStatus.OCCUPIED, isDeleted: false } }),
+        this.roomRepository.count({ where: { status: RoomStatus.MAINTENANCE, isDeleted: false } }),
       ]);
 
       return {
         totalRooms,
         activeRooms,
         inactiveRooms,
+        availableRooms,
+        occupiedRooms,
+        maintenanceRooms,
       };
     } catch (error: any) {
       this.logger.error(`Get stats error: ${error.message}`);

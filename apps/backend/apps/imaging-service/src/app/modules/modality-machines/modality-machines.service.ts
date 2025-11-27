@@ -188,10 +188,75 @@ export class ModalityMachinesService {
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean }
   ): Promise<PaginatedResponseDto<ModalityMachine>> => {
-    return await this.modalityMachinesRepository.paginate(paginationDto, {
+    const { includeDeleted, ...restPaginationDto } = paginationDto;
+    
+    if (includeDeleted) {
+      const repository = this.entityManager.getRepository(ModalityMachine);
+      const page = restPaginationDto.page || 1;
+      const limit = restPaginationDto.limit || 10;
+      const skip = (page - 1) * limit;
+      
+      const qb = repository
+        .createQueryBuilder('machine')
+        .leftJoinAndSelect('machine.modality', 'modality')
+        .orderBy(`machine.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')
+        .skip(skip)
+        .take(limit);
+      
+      if (restPaginationDto.search && restPaginationDto.searchField) {
+        qb.where(`machine.${restPaginationDto.searchField} LIKE :search`, {
+          search: `%${restPaginationDto.search}%`,
+        });
+      }
+      
+      const [data, total] = await qb.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+      
+      return new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      );
+    }
+    
+    return await this.modalityMachinesRepository.paginate(restPaginationDto, {
       relations,
     });
   };
+
+  async getStats(): Promise<{
+    totalMachines: number;
+    activeMachines: number;
+    inactiveMachines: number;
+    maintenanceMachines: number;
+  }> {
+    try {
+      const repository = this.entityManager.getRepository(ModalityMachine);
+      const [totalMachines, activeMachines, inactiveMachines, maintenanceMachines] = await Promise.all([
+        repository.count({ where: { isDeleted: false } }),
+        repository.count({ where: { status: MachineStatus.ACTIVE, isDeleted: false } }),
+        repository.count({ where: { status: MachineStatus.INACTIVE, isDeleted: false } }),
+        repository.count({ where: { status: MachineStatus.MAINTENANCE, isDeleted: false } }),
+      ]);
+
+      return {
+        totalMachines,
+        activeMachines,
+        inactiveMachines,
+        maintenanceMachines,
+      };
+    } catch (error: any) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Lỗi khi lấy thống kê máy móc',
+        IMAGING_SERVICE
+      );
+    }
+  }
 }

@@ -43,7 +43,9 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
   }
 
   async findWithPagination(
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto,
+    includeInactive?: boolean,
+    includeDeleted?: boolean
   ): Promise<{
     templates: ShiftTemplate[];
     total: number;
@@ -55,8 +57,25 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
 
     const queryBuilder = this.repository.createQueryBuilder('shiftTemplate');
 
+    const whereConditions: string[] = [];
+    const whereParams: any = {};
+
+    if (!includeDeleted) {
+      whereConditions.push('shiftTemplate.isDeleted = :isDeleted');
+      whereParams.isDeleted = false;
+    }
+
+    if (!includeInactive) {
+      whereConditions.push('shiftTemplate.is_active = :isActive');
+      whereParams.isActive = true;
+    }
+
+    if (whereConditions.length > 0) {
+      queryBuilder.where(whereConditions.join(' AND '), whereParams);
+    }
+
     if (search) {
-      queryBuilder.where(
+      queryBuilder.andWhere(
         'shiftTemplate.shift_name ILIKE :search OR shiftTemplate.description ILIKE :search',
         { search: `%${search}%` }
       );
