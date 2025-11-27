@@ -15,14 +15,37 @@ export interface UpdateBodyPartDto {
   description?: string;
 }
 
+export interface BodyPartQueryParams extends QueryParams {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
+
 // ====== RTK QUERY API ======
 export const bodyPartApi = createApi({
   reducerPath: "bodyPartApi",
   baseQuery: axiosBaseQuery("/body-part"),
   tagTypes: ["BodyPart"],
   endpoints: (builder) => ({
-    // Get all body parts with filters
-    getBodyParts: builder.query<PaginatedResponse<BodyPart>, BodyPartQueryParams>({
+    // Get all body parts (non-paginated)
+    getAllBodyParts: builder.query<ApiResponse<BodyPart[]>, void>({
+      query: () => ({
+        url: "",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => {
+        if (response?.data && Array.isArray(response.data)) {
+          return { data: response.data };
+        }
+        if (Array.isArray(response)) {
+          return { data: response };
+        }
+        return response || { data: [] };
+      },
+      providesTags: ["BodyPart"],
+    }),
+
+    // Get all body parts with filters (paginated)
+    getBodyParts: builder.query<PaginatedResponse<BodyPart>, BodyPartQueryParams | void>({
       query: (filters) => ({
         url: "/paginated",
         method: "GET",
@@ -80,9 +103,13 @@ export const bodyPartApi = createApi({
 
 // ====== AUTO HOOKS ======
 export const {
+  useGetAllBodyPartsQuery,
   useGetBodyPartsQuery,
   useGetBodyPartByIdQuery,
   useCreateBodyPartMutation,
   useUpdateBodyPartMutation,
   useDeleteBodyPartMutation,
 } = bodyPartApi;
+
+// Alias for paginated query
+export const useGetBodyPartsPaginatedQuery = useGetBodyPartsQuery;

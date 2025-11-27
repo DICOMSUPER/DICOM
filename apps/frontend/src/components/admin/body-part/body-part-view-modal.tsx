@@ -42,7 +42,7 @@ export function BodyPartViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[50vw] max-w-[800px] sm:max-w-[50vw] max-h-[75vh] flex flex-col border-0 p-0 overflow-hidden">
         {/* Fixed Header */}
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <DialogTitle className="text-xl font-semibold">Body Part Details</DialogTitle>
@@ -61,7 +61,7 @@ export function BodyPartViewModal({
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="space-y-4">
                     <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                      <Activity className="h-3.5 w-3.5" />
+                      <Activity className="h-3.5 w-3.5 text-foreground" />
                       Body Part
                     </div>
                     <div>
@@ -76,13 +76,13 @@ export function BodyPartViewModal({
               {/* Overview Section */}
               <section className="rounded-2xl p-6 shadow border-border border space-y-4">
                 <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Activity className="h-5 w-5" />
+                  <Activity className="h-5 w-5 text-foreground" />
                   Body Part Overview
                 </div>
                 <div className="grid gap-4 md:grid-cols-1">
                   <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                     <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Activity className="h-4 w-4" />
+                      <Activity className="h-4 w-4 text-foreground" />
                       Name
                     </div>
                     <p className="text-base font-semibold text-foreground">
@@ -98,7 +98,7 @@ export function BodyPartViewModal({
                   {bodyPart.description && (
                     <section className="rounded-2xl p-6 shadow border-border border space-y-3">
                       <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Activity className="h-5 w-5" />
+                        <Activity className="h-5 w-5 text-foreground" />
                         Description
                       </div>
                       <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
@@ -112,7 +112,7 @@ export function BodyPartViewModal({
                   {/* Timestamps */}
                   <section className="rounded-2xl p-6 shadow border-border border space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Calendar className="h-5 w-5" />
+                      <Calendar className="h-5 w-5 text-foreground" />
                       Timestamps
                     </div>
                     <div className="space-y-3">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Activity } from 'lucide-react';
 import { BodyPart } from '@/interfaces/imaging/body-part.interface';
 import { DataTable } from '@/components/ui/data-table';
+import { formatDate } from '@/lib/formatTimeDate';
 
 interface BodyPartTableProps {
   bodyParts: BodyPart[];
@@ -45,6 +46,18 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
       ),
     },
     {
+      header: 'Created At',
+      cell: (bodyPart: BodyPart) => (
+        <div className="text-foreground">{formatDate(bodyPart.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated At',
+      cell: (bodyPart: BodyPart) => (
+        <div className="text-foreground">{formatDate(bodyPart.updatedAt)}</div>
+      ),
+    },
+    {
       header: 'Actions',
       headerClassName: 'text-center',
       cell: (bodyPart: BodyPart) => (
@@ -56,7 +69,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
               onClick={() => onViewDetails(bodyPart)}
               className="h-8 w-8 p-0"
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 text-green-600" />
             </Button>
           )}
           {onEditBodyPart && (
@@ -66,7 +79,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
               onClick={() => onEditBodyPart(bodyPart)}
               className="h-8 w-8 p-0"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 text-blue-600" />
             </Button>
           )}
           {onDeleteBodyPart && (
@@ -74,9 +87,9 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onDeleteBodyPart(bodyPart)}
-              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              className="h-8 w-8 p-0"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-red-600" />
             </Button>
           )}
         </div>
