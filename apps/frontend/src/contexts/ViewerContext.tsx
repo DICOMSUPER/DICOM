@@ -9,6 +9,7 @@ import React, {
   useRef,
   useEffect,
   useMemo,
+  useState,
 } from "react";
 import {
   RenderingEngine,
@@ -38,8 +39,17 @@ import {
   ensureViewportLabelmapSegmentation,
   captureSegmentationSnapshot,
   clearViewportLabelmapSegmentation,
+  segmentationIdForViewport,
+  restoreSegmentationSnapshot,
+  clearSegmentationData,
+  // saveSegmentationSnapshotToStorage,
+  // loadSegmentationSnapshotFromStorage,
   type SegmentationHistoryEntry,
+  SegmentationSnapshot,
+  type SegmentationHistoryStacks,
 } from "./viewer-context/segmentation-helper";
+// Replace your current import for uuid with this:
+import { v4 as uuidv4 } from "uuid"; // Rename v4 to uuidv4 for clarity
 
 export type ToolType =
   | "WindowLevel"
@@ -114,6 +124,10 @@ export interface ViewerState {
   viewportRuntimeStates: Map<number, ViewportRuntimeState>;
   history: ViewerState[];
   historyIndex: number;
+  segmentationLayers: Map<string, SegmentationSnapshot[]>;
+  segmentationLayerVisibility: Map<string, boolean>;
+  selectedSegmentationLayer: string | null;
+  isSegmentationControlModalOpen: boolean;
 }
 
 export interface AnnotationHistoryEntry {
@@ -186,6 +200,23 @@ export interface ViewerContextType {
     options: { modelId: string; modelName: string; versionName: string }
   ) => Promise<void>;
   clearAIAnnotations: (viewport: number) => void;
+  toggleSegmentationControlPanel: () => void;
+  isSegmentationControlPanelOpen: () => boolean;
+  addSegmentationLayer: () => void;
+  deleteSegmentationLayer: (layerId: string) => void;
+  selectSegmentationLayer: (layerId: string) => void;
+  toggleSegmentationLayerVisibility: (layerId: string) => void;
+  getSegmentationLayers: () => Array<{
+    id: string;
+    name: string;
+    active: boolean;
+    visible: boolean;
+  }>;
+  getCurrentSegmentationLayerIndex: () => number;
+  getSelectedLayerCount: () => number;
+  isSegmentationVisible: () => boolean;
+  toggleSegmentationView: () => void;
+  getSegmentationHistoryState: () => { canUndo: boolean; canRedo: boolean };
 }
 
 const defaultTransform: ViewportTransform = {
@@ -206,6 +237,18 @@ const defaultViewportRuntimeState: ViewportRuntimeState = {
   totalFrames: 0,
 };
 
+const INITIAL_SEGMENTATION_LAYER_ID = uuidv4();
+const MAX_LAYER_SNAPSHOTS_PER_LAYER = 10;
+
+const SEGMENTATION_HISTORY_IGNORED_REASONS = new Set([
+  "layer-sync-restore",
+  "layer-sync-clear",
+  "segmentation-view-toggle-show",
+  "segmentation-view-toggle-hide",
+  "history-undo",
+  "history-redo",
+]);
+
 const defaultState: ViewerState = {
   activeTool: "WindowLevel",
   layout: "1x1",
@@ -219,6 +262,10 @@ const defaultState: ViewerState = {
   viewportRuntimeStates: new Map(),
   history: [],
   historyIndex: -1,
+  segmentationLayers: new Map([[INITIAL_SEGMENTATION_LAYER_ID, []]]),
+  segmentationLayerVisibility: new Map([[INITIAL_SEGMENTATION_LAYER_ID, true]]),
+  selectedSegmentationLayer: INITIAL_SEGMENTATION_LAYER_ID,
+  isSegmentationControlModalOpen: false,
 };
 
 type ViewerAction =
@@ -245,7 +292,44 @@ type ViewerAction =
       recordHistory?: boolean;
     }
   | { type: "SET_TOOL_ACTIVE"; isActive: boolean }
-  | { type: "TOGGLE_ANNOTATIONS" };
+  | { type: "TOGGLE_ANNOTATIONS" }
+  | { type: "TOGGLE_SEGMENTATION_CONTROL_PANEL" }
+  | {
+      type: "SET_SEGMENTATION_LAYERS";
+      layers: Map<string, SegmentationSnapshot[]>;
+      selectedLayer: string | null;
+    }
+  | {
+      type: "SET_SELECTED_SEGMENTATION_LAYER";
+      layerId: string;
+    }
+  | {
+      type: "ADD_SEGMENTATION_LAYER";
+      layerId: string;
+      snapshots: SegmentationSnapshot[];
+    }
+  | {
+      type: "REMOVE_SEGMENTATION_LAYER";
+      layerId: string;
+    }
+  | {
+      type: "UPSERT_SEGMENTATION_LAYER_SNAPSHOT";
+      layerId: string;
+      snapshot: SegmentationSnapshot;
+    }
+  | {
+      type: "CLEAR_SEGMENTATION_LAYER_SNAPSHOTS";
+      layerId: string;
+    }
+  | {
+      type: "SET_SEGMENTATION_LAYER_VISIBILITY";
+      layerId: string;
+      visible: boolean;
+    }
+  | {
+      type: "POP_SEGMENTATION_LAYER_SNAPSHOT";
+      layerId: string;
+    };
 
 const shallowEqualRuntime = (
   a: ViewportRuntimeState,
@@ -443,6 +527,127 @@ const viewerReducer = (
       };
       return pushHistory(state, nextState, action.recordHistory);
     }
+
+    case "SET_SEGMENTATION_LAYERS": {
+      const nextVisibility = new Map<string, boolean>();
+      action.layers.forEach((_snapshots, layerId) => {
+        nextVisibility.set(
+          layerId,
+          state.segmentationLayerVisibility.get(layerId) ?? true
+        );
+      });
+      return {
+        ...state,
+        segmentationLayers: action.layers,
+        segmentationLayerVisibility: nextVisibility,
+        selectedSegmentationLayer:
+          action.selectedLayer ?? state.selectedSegmentationLayer,
+      };
+    }
+
+    case "SET_SELECTED_SEGMENTATION_LAYER": {
+      if (state.selectedSegmentationLayer === action.layerId) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedSegmentationLayer: action.layerId,
+      };
+    }
+
+    case "ADD_SEGMENTATION_LAYER": {
+      const nextLayers = new Map(state.segmentationLayers);
+      nextLayers.set(action.layerId, action.snapshots);
+      const nextVisibility = new Map(state.segmentationLayerVisibility);
+      nextVisibility.set(action.layerId, true);
+      return {
+        ...state,
+        segmentationLayers: nextLayers,
+        segmentationLayerVisibility: nextVisibility,
+        selectedSegmentationLayer: action.layerId,
+      };
+    }
+
+    case "REMOVE_SEGMENTATION_LAYER": {
+      if (!state.segmentationLayers.has(action.layerId)) {
+        return state;
+      }
+      const nextLayers = new Map(state.segmentationLayers);
+      nextLayers.delete(action.layerId);
+      const nextVisibility = new Map(state.segmentationLayerVisibility);
+      nextVisibility.delete(action.layerId);
+      const nextSelected =
+        state.selectedSegmentationLayer === action.layerId
+          ? nextLayers.keys().next().value ?? null
+          : state.selectedSegmentationLayer;
+      return {
+        ...state,
+        segmentationLayers: nextLayers,
+        segmentationLayerVisibility: nextVisibility,
+        selectedSegmentationLayer: nextSelected,
+      };
+    }
+
+    case "UPSERT_SEGMENTATION_LAYER_SNAPSHOT": {
+      const existing = state.segmentationLayers.get(action.layerId) ?? [];
+      const nextSnapshots = [...existing, action.snapshot];
+      if (nextSnapshots.length > MAX_LAYER_SNAPSHOTS_PER_LAYER) {
+        nextSnapshots.shift();
+      }
+      const nextLayers = new Map(state.segmentationLayers);
+      nextLayers.set(action.layerId, nextSnapshots);
+      return {
+        ...state,
+        segmentationLayers: nextLayers,
+      };
+    }
+
+    case "CLEAR_SEGMENTATION_LAYER_SNAPSHOTS": {
+      if (!state.segmentationLayers.has(action.layerId)) {
+        return state;
+      }
+      const nextLayers = new Map(state.segmentationLayers);
+      nextLayers.set(action.layerId, []);
+      return {
+        ...state,
+        segmentationLayers: nextLayers,
+      };
+    }
+
+    case "SET_SEGMENTATION_LAYER_VISIBILITY": {
+      const current =
+        state.segmentationLayerVisibility.get(action.layerId) ?? true;
+      if (current === action.visible) {
+        return state;
+      }
+      const nextVisibility = new Map(state.segmentationLayerVisibility);
+      nextVisibility.set(action.layerId, action.visible);
+      return {
+        ...state,
+        segmentationLayerVisibility: nextVisibility,
+      };
+    }
+
+    case "POP_SEGMENTATION_LAYER_SNAPSHOT": {
+      const existing = state.segmentationLayers.get(action.layerId);
+      if (!existing?.length) {
+        return state;
+      }
+      const nextSnapshots = existing.slice(0, existing.length - 1);
+      const nextLayers = new Map(state.segmentationLayers);
+      nextLayers.set(action.layerId, nextSnapshots);
+      return {
+        ...state,
+        segmentationLayers: nextLayers,
+      };
+    }
+
+    case "TOGGLE_SEGMENTATION_CONTROL_PANEL": {
+      return {
+        ...state,
+        isSegmentationControlModalOpen: !state.isSegmentationControlModalOpen,
+      };
+    }
     default:
       return state;
   }
@@ -605,7 +810,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const annotationHistoryRef = useRef<Map<number, AnnotationHistoryStacks>>(
     new Map()
   );
-  const segmentationHistoryRef = useRef(new Map<number, unknown>());
+
+  const segmentationHistoryRef = useRef<
+    Map<number, Map<string, SegmentationHistoryStacks>>
+  >(new Map());
+
   const seriesInstancesCacheRef = useRef<
     LRUCache<string, Record<string, any[]>>
   >(new LRUCache(SERIES_CACHE_MAX_ENTRIES));
@@ -618,6 +827,111 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       mountedRef.current = false;
     };
   }, []);
+
+  const [segmentationHistoryVersion, setSegmentationHistoryVersion] =
+    useState(0);
+
+  const notifySegmentationHistoryChange = useCallback(() => {
+    setSegmentationHistoryVersion((prev) => prev + 1);
+  }, []);
+
+  const selectedSegmentationLayerRef = useRef<string | null>(
+    state.selectedSegmentationLayer
+  );
+  const segmentationLayersRef = useRef(state.segmentationLayers);
+
+  useEffect(() => {
+    selectedSegmentationLayerRef.current = state.selectedSegmentationLayer;
+  }, [state.selectedSegmentationLayer]);
+
+  useEffect(() => {
+    segmentationLayersRef.current = state.segmentationLayers;
+  }, [state.segmentationLayers]);
+
+  const previousLayerSelectionRef = useRef<string | null>(
+    state.selectedSegmentationLayer
+  );
+  const previousActiveViewportRef = useRef<number>(state.activeViewport);
+  const previousViewportIdRef = useRef<string | undefined>(
+    state.viewportIds.get(state.activeViewport)
+  );
+
+  useEffect(() => {
+    const viewportIndex = state.activeViewport;
+    const layerChanged =
+      previousLayerSelectionRef.current !== state.selectedSegmentationLayer;
+    const viewportChanged = previousActiveViewportRef.current !== viewportIndex;
+    const currentViewportId = state.viewportIds.get(viewportIndex);
+    const viewportIdChanged =
+      previousViewportIdRef.current !== currentViewportId;
+
+    previousLayerSelectionRef.current = state.selectedSegmentationLayer;
+    previousActiveViewportRef.current = viewportIndex;
+    previousViewportIdRef.current = currentViewportId;
+
+    if (!layerChanged && !viewportChanged && !viewportIdChanged) {
+      return;
+    }
+
+    const stackViewport = viewportRefs.current.get(viewportIndex);
+    if (
+      !stackViewport ||
+      typeof stackViewport.getImageIds !== "function" ||
+      !currentViewportId
+    ) {
+      return;
+    }
+
+    const imageIds = stackViewport.getImageIds() ?? [];
+    if (!imageIds.length) {
+      return;
+    }
+
+    let cancelled = false;
+    const applySnapshot = async () => {
+      await ensureViewportLabelmapSegmentation({
+        viewportId: currentViewportId,
+        imageIds,
+      });
+
+      if (cancelled) {
+        return;
+      }
+
+      const segmentationId = segmentationIdForViewport(currentViewportId);
+      const layerId = state.selectedSegmentationLayer;
+      const layerSnapshots = layerId
+        ? state.segmentationLayers.get(layerId) ?? []
+        : [];
+      const latestSnapshot = layerSnapshots[layerSnapshots.length - 1] ?? null;
+      const layerVisible = layerId
+        ? state.segmentationLayerVisibility.get(layerId) ?? true
+        : true;
+
+      if (layerId && latestSnapshot && layerVisible) {
+        restoreSegmentationSnapshot(latestSnapshot, {
+          reason: "layer-sync-restore",
+        });
+      } else {
+        clearSegmentationData(segmentationId, {
+          reason: "layer-sync-clear",
+        });
+      }
+    };
+
+    void applySnapshot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    state.activeViewport,
+    state.selectedSegmentationLayer,
+    state.viewportIds,
+    state.segmentationLayers,
+    state.segmentationLayerVisibility,
+    ensureViewportLabelmapSegmentation,
+  ]);
 
   const ensureDbAnnotationTracker = useCallback(
     (viewport: number): Set<string> => {
@@ -714,18 +1028,17 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   // Segmentation history helpers (kept in a separate module for clarity)
   const {
-    ensureStacks: ensureSegmentationStacks,
+    ensureLayerStacks: ensureSegmentationStacks,
     recordEntry: recordSegmentationEntry,
     updateEntry: updateSegmentationEntry,
     removeEntry: removeSegmentationEntry,
+    clearLayerHistory,
     clearViewportHistory: clearSegmentationHistoryForViewport,
     consumeUndo: consumeSegmentationUndo,
     consumeRedo: consumeSegmentationRedo,
+    getLayerStacks: getSegmentationLayerStacks,
   } = useMemo(
-    () =>
-      createSegmentationHistoryHelpers(
-        segmentationHistoryRef as React.MutableRefObject<Map<number, any>>
-      ),
+    () => createSegmentationHistoryHelpers(segmentationHistoryRef),
     []
   );
 
@@ -838,6 +1151,68 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     [ensureDbAnnotationTracker, fetchAnnotationsBySeries]
+  );
+
+  const persistLayerSnapshot = useCallback(
+    (layerId: string, snapshot: SegmentationSnapshot | null) => {
+      if (!layerId || !snapshot) {
+        return;
+      }
+      dispatch({
+        type: "UPSERT_SEGMENTATION_LAYER_SNAPSHOT",
+        layerId,
+        snapshot,
+      });
+    },
+    [dispatch]
+  );
+
+  const removeLatestLayerSnapshot = useCallback(
+    (layerId: string) => {
+      if (!layerId) {
+        return;
+      }
+      dispatch({
+        type: "POP_SEGMENTATION_LAYER_SNAPSHOT",
+        layerId,
+      });
+    },
+    [dispatch]
+  );
+
+  const setLayerVisibility = useCallback(
+    (layerId: string, visible: boolean) => {
+      if (!layerId) {
+        return;
+      }
+      dispatch({
+        type: "SET_SEGMENTATION_LAYER_VISIBILITY",
+        layerId,
+        visible,
+      });
+    },
+    [dispatch]
+  );
+
+  const clearLayerHistoryAcrossViewports = useCallback(
+    (layerId: string) => {
+      if (!layerId) {
+        return;
+      }
+      segmentationHistoryRef.current.forEach((_layers, viewport) => {
+        clearLayerHistory(viewport, layerId);
+      });
+      notifySegmentationHistoryChange();
+    },
+    [clearLayerHistory, notifySegmentationHistoryChange]
+  );
+
+  const resetSegmentationHistoryForViewport = useCallback(
+    (viewport: number) => {
+      clearSegmentationHistoryForViewport(viewport);
+      notifySegmentationHistoryChange();
+    },
+    [clearSegmentationHistoryForViewport, notifySegmentationHistoryChange]
   );
 
   const getViewportRuntimeState = useCallback(
@@ -1053,12 +1428,32 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         }));
       };
 
-      const handleSegmentationModified = (evt: Event) => {
-        const customEvent = evt as CustomEvent<{ segmentationId?: string }>;
+      const handleSegmentationModified = async (evt: Event) => {
+        const customEvent = evt as CustomEvent<{
+          segmentationId?: string;
+          reason?: string;
+        }>;
         const segmentationId = customEvent.detail?.segmentationId;
         if (!segmentationId) {
           return;
         }
+        const reason = customEvent.detail?.reason;
+        if (reason && SEGMENTATION_HISTORY_IGNORED_REASONS.has(reason)) {
+          return;
+        }
+
+        const activeLayerId = selectedSegmentationLayerRef.current;
+        if (!activeLayerId) {
+          console.warn(
+            "[Segmentation] No active layer selected, skipping snapshot"
+          );
+          return;
+        }
+
+        const layerSnapshots =
+          segmentationLayersRef.current.get(activeLayerId) ?? [];
+        const previousSnapshot =
+          layerSnapshots[layerSnapshots.length - 1] ?? null;
 
         const snapshot = captureSegmentationSnapshot(segmentationId);
         if (!snapshot) {
@@ -1069,16 +1464,24 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        recordSegmentationEntry(viewport, {
-          id: `${segmentationId}-${snapshot.capturedAt}`,
+        const entryId = `${segmentationId}-${snapshot.capturedAt}`;
+        recordSegmentationEntry(viewport, activeLayerId, {
+          id: entryId,
           label: "Brush",
           snapshot,
+          layerId: activeLayerId,
+          previousSnapshot,
         } satisfies SegmentationHistoryEntry);
+        persistLayerSnapshot(activeLayerId, snapshot);
+        notifySegmentationHistoryChange();
+
+        // await saveSegmentationSnapshotToStorage(snapshot);
 
         console.log("[Segmentation] snapshot captured", {
           viewportIndex: viewport,
           viewportElementId: stackViewport.id,
           segmentationId,
+          layerId: activeLayerId,
           slices: snapshot.imageData.length,
           capturedAt: snapshot.capturedAt,
           snapshot: snapshot,
@@ -1100,7 +1503,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         segmentationModified: handleSegmentationModified,
       });
     },
-    [removeViewportListeners, setViewportRuntimeState, recordSegmentationEntry]
+    [
+      removeViewportListeners,
+      setViewportRuntimeState,
+      recordSegmentationEntry,
+      persistLayerSnapshot,
+      notifySegmentationHistoryChange,
+    ]
   );
 
   const setActiveTool = useCallback(
@@ -1265,6 +1674,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       setViewportId(viewport, "");
       clearAnnotationHistoryForViewport(viewport);
       clearDbAnnotationsForViewport(viewport);
+      resetSegmentationHistoryForViewport(viewport);
     },
     [
       getRenderingEngineId,
@@ -1274,6 +1684,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       setViewportId,
       clearAnnotationHistoryForViewport,
       clearDbAnnotationsForViewport,
+      resetSegmentationHistoryForViewport,
     ]
   );
 
@@ -1436,6 +1847,33 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const { signal } = controller;
 
       const bailIfStale = () => signal.aborted || !mountedRef.current;
+
+      // const restoreSegmentationFromLocalStorage = async (
+      //   viewportKey: string
+      // ) => {
+      //   const segmentationId = segmentationIdForViewport(viewportKey);
+      //   const storedSnapshot = await loadSegmentationSnapshotFromStorage(
+      //     segmentationId
+      //   );
+      //   if (!storedSnapshot) {
+      //     return false;
+      //   }
+      //   const restored = restoreSegmentationSnapshot(storedSnapshot);
+      //   if (restored) {
+      //     console.log("[Segmentation] Restored snapshot from localStorage", {
+      //       viewportKey,
+      //       segmentationId,
+      //       capturedAt: storedSnapshot?.capturedAt || new Date(),
+      //       slices: storedSnapshot?.imageData?.length,
+      //     });
+      //   } else {
+      //     console.warn(
+      //       "[Segmentation] Failed to restore stored snapshot",
+      //       segmentationId
+      //     );
+      //   }
+      //   return restored;
+      // };
 
       const safeUpdateRuntime = (
         updater:
@@ -1616,6 +2054,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
               imageIds,
             });
 
+            // restoreSegmentationFromLocalStorage(currentViewportId);
+
             addViewportListeners(viewport, existingViewport);
             prefetchImages(imageIds, 0);
             void loadDatabaseAnnotationsForViewport({
@@ -1706,6 +2146,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           viewportId: currentViewportId,
           imageIds,
         });
+
+        // await restoreSegmentationFromLocalStorage(currentViewportId);
+        // await restoreSegmentationFromLocalStorage(currentViewportId);
 
         addViewportListeners(viewport, readyViewport);
         prefetchImages(imageIds, 0);
@@ -1911,15 +2354,26 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const undoSegmentation = () => {
     const viewportIndex = state.activeViewport;
+    const layerId = state.selectedSegmentationLayer;
+    if (!layerId) {
+      console.warn("[Segmentation] Cannot undo without an active layer");
+      return;
+    }
     const activeViewportId =
       state.viewportIds.get(viewportIndex) || viewportIndex.toString();
-    const historyEntry = consumeSegmentationUndo(viewportIndex);
+    const historyEntry = consumeSegmentationUndo(viewportIndex, layerId);
+    if (!historyEntry) {
+      return;
+    }
+    removeLatestLayerSnapshot(layerId);
+    notifySegmentationHistoryChange();
 
     window.dispatchEvent(
       new CustomEvent("undoSegmentation", {
         detail: {
           activeViewportId,
-          entry: historyEntry ?? undefined,
+          layerId,
+          entry: historyEntry,
         },
       })
     );
@@ -1927,18 +2381,29 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const redoSegmentation = () => {
     const viewportIndex = state.activeViewport;
+    const layerId = state.selectedSegmentationLayer;
+    if (!layerId) {
+      console.warn("[Segmentation] Cannot redo without an active layer");
+      return;
+    }
     const activeViewportId =
       state.viewportIds.get(viewportIndex) || viewportIndex.toString();
-    const historyEntry = consumeSegmentationRedo(viewportIndex);
+    const historyEntry = consumeSegmentationRedo(viewportIndex, layerId);
 
     if (!historyEntry) {
       return;
     }
+    const snapshot = historyEntry.snapshot as SegmentationSnapshot | undefined;
+    if (snapshot) {
+      persistLayerSnapshot(layerId, snapshot);
+    }
+    notifySegmentationHistoryChange();
 
     window.dispatchEvent(
       new CustomEvent("redoSegmentation", {
         detail: {
           activeViewportId,
+          layerId,
           entry: historyEntry,
         },
       })
@@ -2017,6 +2482,128 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     console.log("👁️ Toggled annotation visibility:", !state.showAnnotations);
   }, [state.showAnnotations]);
 
+  const toggleSegmentationControlPanel = () => {
+    dispatch({ type: "TOGGLE_SEGMENTATION_CONTROL_PANEL" });
+  };
+
+  const isSegmentationControlPanelOpen = () => {
+    return state.isSegmentationControlModalOpen;
+  };
+  const addSegmentationLayer = useCallback(() => {
+    const newLayerId = uuidv4();
+    dispatch({
+      type: "ADD_SEGMENTATION_LAYER",
+      layerId: newLayerId,
+      snapshots: [],
+    });
+
+    console.log("Added new segmentation layer:", newLayerId);
+  }, [dispatch]);
+
+  const deleteSegmentationLayer = useCallback(
+    (layerId: string) => {
+      if (state.segmentationLayers.size <= 1) {
+        console.warn("Cannot delete the last segmentation layer");
+        return;
+      }
+      dispatch({
+        type: "REMOVE_SEGMENTATION_LAYER",
+        layerId,
+      });
+      clearLayerHistoryAcrossViewports(layerId);
+
+      console.log("Deleted segmentation layer:", layerId);
+    },
+    [state.segmentationLayers.size, clearLayerHistoryAcrossViewports]
+  );
+
+  const selectSegmentationLayer = useCallback(
+    (layerId: string) => {
+      if (state.selectedSegmentationLayer === layerId) return;
+
+      dispatch({
+        type: "SET_SELECTED_SEGMENTATION_LAYER",
+        layerId,
+      });
+
+      console.log("Selected segmentation layer:", layerId);
+    },
+    [state.selectedSegmentationLayer]
+  );
+
+  const toggleSegmentationLayerVisibility = useCallback(
+    (layerId: string) => {
+      if (!layerId) {
+        return;
+      }
+      const currentVisible =
+        state.segmentationLayerVisibility.get(layerId) ?? true;
+      setLayerVisibility(layerId, !currentVisible);
+      console.log("Toggled visibility for layer:", layerId, !currentVisible);
+    },
+    [setLayerVisibility, state.segmentationLayerVisibility]
+  );
+
+  const getSegmentationLayers = useCallback(() => {
+    return Array.from(state.segmentationLayers.keys()).map(
+      (layerId, index) => ({
+        id: layerId,
+        name: `Layer ${index + 1}`,
+        active: layerId === state.selectedSegmentationLayer,
+        visible: state.segmentationLayerVisibility.get(layerId) ?? true,
+      })
+    );
+  }, [
+    state.segmentationLayers,
+    state.selectedSegmentationLayer,
+    state.segmentationLayerVisibility,
+  ]);
+
+  const getCurrentSegmentationLayerIndex = useCallback(() => {
+    const layers = Array.from(state.segmentationLayers.keys());
+    return layers.findIndex(
+      (layerId) => layerId === state.selectedSegmentationLayer
+    );
+  }, [state.segmentationLayers, state.selectedSegmentationLayer]);
+
+  const getSelectedLayerCount = useCallback(() => {
+    return state.selectedSegmentationLayer ? 1 : 0;
+  }, [state.selectedSegmentationLayer]);
+
+  const isSegmentationVisible = useCallback(() => {
+    const layerId = state.selectedSegmentationLayer;
+    if (!layerId) {
+      return false;
+    }
+    return state.segmentationLayerVisibility.get(layerId) ?? true;
+  }, [state.selectedSegmentationLayer, state.segmentationLayerVisibility]);
+
+  const toggleSegmentationView = useCallback(() => {
+    const layerId = state.selectedSegmentationLayer;
+    if (!layerId) {
+      console.warn("[Segmentation] No active layer to toggle visibility");
+      return;
+    }
+    toggleSegmentationLayerVisibility(layerId);
+  }, [state.selectedSegmentationLayer, toggleSegmentationLayerVisibility]);
+
+  const getSegmentationHistoryState = useCallback(() => {
+    const layerId = state.selectedSegmentationLayer;
+    if (!layerId) {
+      return { canUndo: false, canRedo: false };
+    }
+    const stacks = getSegmentationLayerStacks(state.activeViewport, layerId);
+    return {
+      canUndo: Boolean(stacks?.undoStack.length),
+      canRedo: Boolean(stacks?.redoStack.length),
+    };
+  }, [
+    state.selectedSegmentationLayer,
+    state.activeViewport,
+    getSegmentationLayerStacks,
+    segmentationHistoryVersion,
+  ]);
+
   const value: ViewerContextType = {
     state,
     setActiveTool,
@@ -2054,6 +2641,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     refreshViewport,
     diagnosisViewport,
     clearAIAnnotations,
+    toggleSegmentationControlPanel,
+    isSegmentationControlPanelOpen,
+    addSegmentationLayer,
+    deleteSegmentationLayer,
+    selectSegmentationLayer,
+    toggleSegmentationLayerVisibility,
+    getSegmentationLayers,
+    getCurrentSegmentationLayerIndex,
+    getSelectedLayerCount,
+    isSegmentationVisible,
+    toggleSegmentationView,
+    getSegmentationHistoryState,
   };
 
   return (

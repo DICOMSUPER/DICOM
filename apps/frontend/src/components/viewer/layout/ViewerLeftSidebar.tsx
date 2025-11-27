@@ -21,7 +21,6 @@ import {
   Undo,
   Paintbrush,
   CircleDot,
-  Globe,
   Eraser,
   FileText,
   FileClock,
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useViewer } from "@/contexts/ViewerContext";
 import AIDiagnosisButton from "@/components/viewer/toolbar/AIDiagnosisButton";
+import SegmentationControlPanelModal from "../modals/segmentation-control-panel-modal";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -140,12 +140,12 @@ const annotationManagementTools = [
 // Action tools
 const actionTools = [
   { id: "reset", icon: RefreshCw, label: "Reset View", action: "reset" },
-  {
-    id: "clear-segmentation",
-    icon: Trash2,
-    label: "Clear Segmentation",
-    action: "clearSegmentation",
-  },
+  // {
+  //   id: "clear-segmentation",
+  //   icon: Trash2,
+  //   label: "Clear Segmentation",
+  //   action: "clearSegmentation",
+  // },
   {
     id: "invert",
     icon: MousePointer,
@@ -224,6 +224,20 @@ export default function ViewerLeftSidebar({
     clearViewportAnnotations,
     undoAnnotation,
     invertViewport,
+    addSegmentationLayer,
+    deleteSegmentationLayer,
+    selectSegmentationLayer,
+    toggleSegmentationLayerVisibility,
+    getSegmentationLayers,
+    getCurrentSegmentationLayerIndex,
+    getSelectedLayerCount,
+    isSegmentationVisible,
+    toggleSegmentationView,
+    undoSegmentation,
+    redoSegmentation,
+    toggleSegmentationControlPanel,
+    isSegmentationControlPanelOpen,
+    getSegmentationHistoryState,
   } = useViewer();
 
   // Map tool names for display
@@ -330,6 +344,13 @@ export default function ViewerLeftSidebar({
 
     return "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
   };
+  const selectedLayerCountValue = getSelectedLayerCount();
+  const {
+    canUndo: canUndoSegmentationHistory,
+    canRedo: canRedoSegmentationHistory,
+  } = getSegmentationHistoryState();
+  const segmentationToolsDisabled = selectedLayerCountValue === 0;
+
   return (
     <TooltipProvider>
       <div className="h-full border-r border-slate-800 flex flex-col">
@@ -595,41 +616,85 @@ export default function ViewerLeftSidebar({
             <p className="text-slate-400 text-xs mb-3">
               Segment and draw masks on images
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {segmentationTools.map((tool) => (
-                <Tooltip key={tool.id}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleToolSelect(tool.id)}
-                      className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
-                        selectedTool === getToolDisplayName(tool.id)
-                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
-                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
-                      }`}
+            <div className="grid grid-cols-1 gap-2">
+              <Button onClick={() => toggleSegmentationControlPanel()}>
+                Segmentation Control Panel
+              </Button>
+              {isSegmentationControlPanelOpen() && (
+                <SegmentationControlPanelModal
+                  onClose={() => toggleSegmentationControlPanel()}
+                  layers={getSegmentationLayers()}
+                  currentLayerIndex={getCurrentSegmentationLayerIndex()}
+                  onAddLayer={addSegmentationLayer}
+                  onDeleteLayer={(index) => {
+                    const layers = getSegmentationLayers();
+                    if (index >= 0 && index < layers.length) {
+                      deleteSegmentationLayer(layers[index].id);
+                    }
+                  }}
+                  onSelectLayer={(index) => {
+                    const layers = getSegmentationLayers();
+                    if (index >= 0 && index < layers.length) {
+                      selectSegmentationLayer(layers[index].id);
+                    }
+                  }}
+                  onToggleLayerVisibility={(index) => {
+                    const layers = getSegmentationLayers();
+                    if (index >= 0 && index < layers.length) {
+                      toggleSegmentationLayerVisibility(layers[index].id);
+                    }
+                  }}
+                  onUndo={undoSegmentation}
+                  onRedo={redoSegmentation}
+                  canUndo={canUndoSegmentationHistory}
+                  canRedo={canRedoSegmentationHistory}
+                  isSegmentationVisible={isSegmentationVisible()}
+                  onToggleSegmentationView={toggleSegmentationView}
+                  selectedLayerCount={selectedLayerCountValue}
+                />
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                {segmentationTools.map((tool) => (
+                  <Tooltip key={tool.id}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToolSelect(tool.id)}
+                        disabled={segmentationToolsDisabled}
+                        className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
+                          selectedTool === getToolDisplayName(tool.id)
+                            ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                            : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        title={
+                          segmentationToolsDisabled
+                            ? "Add and select a segmentation layer to enable tools"
+                            : undefined
+                        }
+                      >
+                        <div className="flex items-center gap-1 w-full justify-center">
+                          <tool.icon className="h-5 w-5 shrink-0" />
+                          <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+                            {tool.label}
+                          </span>
+                        </div>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="bg-slate-800 border-teal-700 text-white"
                     >
-                      <div className="flex items-center gap-1 w-full justify-center">
-                        <tool.icon className="h-5 w-5 shrink-0" />
-                        <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
-                          {tool.label}
-                        </span>
+                      <div className="text-center">
+                        <div>{tool.label}</div>
+                        <div className="text-xs text-slate-400">
+                          {tool.shortcut}
+                        </div>
                       </div>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="bg-slate-800 border-teal-700 text-white"
-                  >
-                    <div className="text-center">
-                      <div>{tool.label}</div>
-                      <div className="text-xs text-slate-400">
-                        {tool.shortcut}
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
             </div>
           </div>
 

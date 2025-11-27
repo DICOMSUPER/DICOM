@@ -57,6 +57,7 @@ import {
 } from "@/contexts/ViewerContext";
 import {
   restoreSegmentationSnapshot,
+  clearSegmentationData,
   type SegmentationHistoryEntry,
   type SegmentationSnapshot,
 } from "@/contexts/viewer-context/segmentation-helper";
@@ -1028,7 +1029,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         return;
       }
 
-      const restored = restoreSegmentationSnapshot(snapshot);
+      const restored = restoreSegmentationSnapshot(snapshot, {
+        reason: action === "undo" ? "history-undo" : "history-redo",
+      });
       if (restored) {
         viewport.render?.();
         console.log(`[Segmentation] ${action} applied`, {
@@ -1052,15 +1055,39 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         return;
       }
 
-      const snapshot = historyEntry?.snapshot as
-        | SegmentationSnapshot
-        | undefined;
-      if (!snapshot) {
+      if (!historyEntry) {
         console.log("No segmentation undo history entry provided.");
         return;
       }
 
-      applySegmentationSnapshot(snapshot, "undo");
+      const previousSnapshot = historyEntry.previousSnapshot as
+        | SegmentationSnapshot
+        | undefined;
+      if (previousSnapshot) {
+        applySegmentationSnapshot(previousSnapshot, "undo");
+        return;
+      }
+
+      const fallbackSnapshot = historyEntry.snapshot as
+        | SegmentationSnapshot
+        | undefined;
+      const segmentationId = fallbackSnapshot?.segmentationId;
+      if (segmentationId) {
+        try {
+          const cleared = clearSegmentationData(segmentationId, {
+            reason: "history-undo",
+          });
+          if (cleared) {
+            viewport.render?.();
+          }
+        } catch (error) {
+          console.error("Failed to clear segmentation during undo", error);
+        }
+      } else {
+        console.warn(
+          "[Segmentation] Unable to resolve segmentation to clear during undo."
+        );
+      }
     };
 
     const handleRedoSegmentation = (
