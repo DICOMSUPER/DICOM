@@ -30,7 +30,13 @@ function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
   const seriesId = searchParams.get("series");
-  const { state, setActiveViewport, setViewportSeries } = useViewer();
+  const {
+    state,
+    setActiveViewport,
+    setViewportSeries,
+    toggleSegmentationControlPanel,
+    isSegmentationControlPanelOpen,
+  } = useViewer();
 
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
@@ -38,11 +44,15 @@ function ViewerPageContent() {
   const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
 
-  const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
+  const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(
+    null
+  );
   const [series, setSeries] = useState<DicomSeries[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
-  const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<"all" | "draft" | null>(null);
+  const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<
+    "all" | "draft" | null
+  >(null);
 
   useEffect(() => {
     setActiveViewport(0);
@@ -74,7 +84,12 @@ function ViewerPageContent() {
   );
 
   const handleSeriesSelect = (series: DicomSeries) => {
-    console.log("Selected series:", series, "for viewport:", state.activeViewport);
+    console.log(
+      "Selected series:",
+      series,
+      "for viewport:",
+      state.activeViewport
+    );
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
   };
@@ -151,7 +166,9 @@ function ViewerPageContent() {
           minWidth={250}
           maxWidth={500}
           collapsed={leftSidebarCollapsed}
-          onToggleCollapse={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+          onToggleCollapse={() =>
+            setLeftSidebarCollapsed(!leftSidebarCollapsed)
+          }
         >
           <ViewerLeftSidebar
             seriesLayout={seriesLayout}
@@ -169,8 +186,12 @@ function ViewerPageContent() {
             <div className="flex-1 flex items-center justify-center bg-slate-900">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <div className="text-slate-400 text-lg mb-2">Đang tải series...</div>
-                <div className="text-slate-500 text-sm">Loading series data</div>
+                <div className="text-slate-400 text-lg mb-2">
+                  Đang tải series...
+                </div>
+                <div className="text-slate-500 text-sm">
+                  Loading series data
+                </div>
               </div>
             </div>
           )}
@@ -178,9 +199,13 @@ function ViewerPageContent() {
           {!loading && series.length === 0 && (
             <div className="flex-1 flex items-center justify-center bg-slate-900">
               <div className="text-center">
-                <div className="text-slate-400 text-lg mb-2">Không có dữ liệu để hiển thị</div>
+                <div className="text-slate-400 text-lg mb-2">
+                  Không có dữ liệu để hiển thị
+                </div>
                 <div className="text-slate-500 text-sm">
-                  {studyId ? "No series found for this study" : "Please provide a study ID to load series"}
+                  {studyId
+                    ? "No series found for this study"
+                    : "Please provide a study ID to load series"}
                 </div>
               </div>
             </div>
@@ -237,4 +262,3 @@ export default function ViewerPageClient() {
     </ViewerProvider>
   );
 }
-
