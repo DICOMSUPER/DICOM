@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle, AlertTriangle, Clock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStatsProps {
   stats: {
@@ -12,9 +13,10 @@ interface DashboardStatsProps {
     todayEncounters: number;
     todayStatEncounters: number;
   };
+  isLoading?: boolean;
 }
 
-export function DashboardStats({ stats }: DashboardStatsProps) {
+export function DashboardStats({ stats, isLoading = false }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Patients Waiting */}
@@ -26,9 +28,13 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <Users className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">
-            {stats.activePatient}
-          </div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20 mb-2" />
+          ) : (
+            <div className="text-2xl font-bold text-foreground">
+              {stats.activePatient}
+            </div>
+          )}
           <p className="text-xs text-foreground">Registered in the system</p>
         </CardContent>
       </Card>
@@ -42,9 +48,13 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <CheckCircle className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">
-            {stats.todayEncounters}
-          </div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20 mb-2" />
+          ) : (
+            <div className="text-2xl font-bold text-foreground">
+              {stats.todayEncounters}
+            </div>
+          )}
           <p className="text-xs text-foreground">Today&apos;s check-ins </p>
         </CardContent>
       </Card>
@@ -58,9 +68,13 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <AlertTriangle className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">
-            {stats.todayStatEncounters}
-          </div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20 mb-2" />
+          ) : (
+            <div className="text-2xl font-bold text-red-600">
+              {stats.todayStatEncounters}
+            </div>
+          )}
           <p className="text-xs text-foreground">Require attention</p>
         </CardContent>
       </Card>
@@ -74,9 +88,13 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <Clock className="h-4 w-4 text-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-foreground">
-            {stats.newPatientsThisMonth}
-          </div>
+          {isLoading ? (
+            <Skeleton className="h-8 w-20 mb-2" />
+          ) : (
+            <div className="text-2xl font-bold text-foreground">
+              {stats.newPatientsThisMonth}
+            </div>
+          )}
           <p className="text-xs text-foreground">
             Patients registerd this month
           </p>

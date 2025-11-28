@@ -607,6 +607,11 @@ export class UsersService {
       }
       throw new UserNotFoundException(undefined, 'Người dùng đã bị xóa');
     } catch (error) {
+      // Re-throw UserNotFoundException to preserve the original error
+      if (error instanceof UserNotFoundException) {
+        throw error;
+      }
+      // Only throw DatabaseException for actual database errors
       throw new DatabaseException('Lỗi khi lấy người dùng');
     }
   }

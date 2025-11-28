@@ -19,7 +19,7 @@ export default function RoomSelection({
   setSelectedRoom: (room: Room | null) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-foreground flex items-center gap-2">
         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
           3
@@ -59,7 +59,7 @@ export default function RoomSelection({
         rooms &&
         Array.isArray(rooms) &&
         rooms?.length > 0 && (
-          <div className="grid grid-cols-1 gap-3 max-h-[20vh] overflow-y-auto pr-2">
+          <div className="grid grid-cols-1 gap-3 max-h-[20vh] overflow-y-auto">
             {rooms.map((room) => {
               const maxQueue = room.roomStats?.maxWaiting ?? 1;
               const currentInProgress = room.roomStats?.currentInProgress ?? 0;
@@ -106,7 +106,7 @@ export default function RoomSelection({
                       : "border-border bg-background hover:border-primary/20 hover:bg-muted/50"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-semibold text-foreground">
                         {room.roomCode}
@@ -123,7 +123,7 @@ export default function RoomSelection({
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2 mt-3">
                     <p className="text-xs text-gray-600">Room availability</p>
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div

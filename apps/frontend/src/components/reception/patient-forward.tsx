@@ -12,20 +12,9 @@ import {
 } from "@/enums/patient-workflow.enum";
 import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
-import {
-  Stethoscope,
-  CheckCircle,
-  AlertCircle,
-  Users,
-  Zap,
-  Clock,
-  AlertTriangle,
-} from "lucide-react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { Stethoscope } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import React from "react";
-import Select from "react-select";
-import type { SingleValue } from "react-select";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { Department } from "@/interfaces/user/department.interface";
 import { useGetRoomsByDepartmentAndServiceQuery } from "@/store/roomsApi";
@@ -45,7 +34,6 @@ import PriorityLevelSelection from "./patient/forward/priority-level-selection";
 import NoteInput from "./patient/forward/note-input";
 import ForwardButton from "./patient/forward/forward-button";
 
-// Format encounter type for display
 const formatEncounterType = (type: string): string => {
   return type
     .split(/[-_]/)
@@ -53,31 +41,10 @@ const formatEncounterType = (type: string): string => {
     .join(" ");
 };
 
-// Priority level configurations
-const priorityLevelConfig = {
-  [EncounterPriorityLevel.ROUTINE]: {
-    icon: Clock,
-    className: "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100",
-    description: "Standard processing time",
-  },
-  [EncounterPriorityLevel.URGENT]: {
-    icon: Zap,
-    className:
-      "bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100",
-    description: "Expedited processing required",
-  },
-  [EncounterPriorityLevel.STAT]: {
-    icon: AlertTriangle,
-    className: "bg-red-50 text-red-700 border-red-300 hover:bg-red-100",
-    description: "Immediate attention required",
-  },
-};
-
 type DepartmentOption = Department & { value: string; label: string };
 
 export function PatientForward({ patientId }: { patientId: string }) {
   const router = useRouter();
-  //states
   const [encounterInfo, setEncounterInfo] = useState({
     patientId: patientId,
     encounterDate: "",
@@ -93,7 +60,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  //on changes
   const onChangeEncounterInfo = (
     field:
       | "patientId"
@@ -107,7 +73,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
     setEncounterInfo({ ...encounterInfo, [field]: value });
   };
 
-  //RTK hook
   const {
     data: departmentsData,
     isLoading: isLoadingDepartment,
@@ -149,7 +114,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
     refetchServices,
   ]);
 
-  // Transform departments data for react-select
   const departmentOptions: DepartmentOption[] =
     departmentsData?.data.map((dept) => ({
       value: dept.id,
@@ -157,7 +121,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
       ...dept,
     })) || [];
 
-  //submit
   const onSubmit = async () => {
     if (!selectedRoom || !selectedService) {
       toast.warning("Please select both a room and service");
@@ -199,7 +162,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
     }
   };
 
-  // Check if form is valid
   const isFormValid = !!(selectedDepartment && selectedService && selectedRoom);
 
   const EncounterTypeArray = [...Object.values(EncounterType)];
@@ -218,8 +180,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          {/* Step indicator */}
+        <div className="flex flex-col gap-6">
           <StepIndicator
             steps={[
               { completed: !!selectedDepartment },
@@ -228,7 +189,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
             ]}
           />
 
-          {/* Department Selection */}
           <DepartmentSelection
             selectedDepartment={selectedDepartment}
             departmentOptions={departmentOptions}
@@ -240,7 +200,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
             setSelectedRoom={setSelectedRoom}
           />
 
-          {/* Service Selection */}
           <ServiceSelection
             selectedDepartment={selectedDepartment}
             selectedService={selectedService}
@@ -250,7 +209,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
             Services={(ServicesData?.data as Services[]) || []}
           />
 
-          {/* Room Selection */}
           <RoomSelection
             selectedService={selectedService}
             selectedRoom={selectedRoom}
@@ -259,7 +217,6 @@ export function PatientForward({ patientId }: { patientId: string }) {
             isLoadingRoom={isLoadingRoom}
           />
 
-          {/* Encounter Type */}
           <EncounterTypeSelection
             EncounterTypeArray={EncounterTypeArray}
             encounterInfo={encounterInfo}
@@ -267,20 +224,17 @@ export function PatientForward({ patientId }: { patientId: string }) {
             onChangeEncounterInfo={onChangeEncounterInfo}
           />
 
-          {/* Priority Level */}
           <PriorityLevelSelection
             encounterInfo={encounterInfo}
             PriorityLevelArray={PriorityLevelArray}
             onChangeEncounterInfo={onChangeEncounterInfo}
           />
 
-          {/* Notes */}
           <NoteInput
             encounterInfo={encounterInfo}
             onChangeEncounterInfo={onChangeEncounterInfo}
           />
 
-          {/* Submit Button */}
           <ForwardButton
             encounterInfo={encounterInfo}
             onSubmit={onSubmit}

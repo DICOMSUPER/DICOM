@@ -122,7 +122,7 @@ export function AdminRecentActivity({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No recent activity</p>
+          <p className="text-sm text-foreground">No recent activity</p>
         </CardContent>
       </Card>
     );

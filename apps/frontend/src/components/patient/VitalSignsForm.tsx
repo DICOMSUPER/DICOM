@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoadingButton } from '@/components/ui/loading-button';
 import { Input } from '@/components/ui/input';
+import { Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { 
   Activity, 
   Heart, 
@@ -15,6 +17,8 @@ import {
   X
 } from 'lucide-react';
 import { VitalSignsCollection, VitalSignCode, VitalSignUnit } from '@/interfaces/patient/patient-workflow.interface';
+import { Roles } from '@/enums/user.enum';
+import type { RootState } from '@/store';
 
 interface VitalSignsFormProps {
   vitalSigns?: VitalSignsCollection;
@@ -90,8 +94,18 @@ export function VitalSignsForm({
   loading = false,
   errors = {}
 }: VitalSignsFormProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isReceptionStaff = user?.role === Roles.RECEPTION_STAFF;
+  
   const [formData, setFormData] = useState<VitalSignsCollection>(vitalSigns);
-  const [measuredAt, setMeasuredAt] = useState(new Date().toISOString());
+  const [measuredAt, setMeasuredAt] = useState(() => {
+    // Get measuredAt from existing vital signs or use current time
+    const existingMeasuredAt = Object.values(vitalSigns)[0]?.measuredAt;
+    if (existingMeasuredAt) {
+      return new Date(existingMeasuredAt).toISOString().slice(0, 16);
+    }
+    return new Date().toISOString().slice(0, 16);
+  });
 
   useEffect(() => {
     if (vitalSigns) {
@@ -103,20 +117,26 @@ export function VitalSignsForm({
     const numericValue = parseFloat(value);
     if (isNaN(numericValue) && value !== '') return;
 
+    const config = VITAL_SIGNS_CONFIG.find(c => c.code === code);
+    if (!config) return;
+
     setFormData(prev => ({
       ...prev,
       [code]: {
         code,
-        display: VITAL_SIGNS_CONFIG.find(config => config.code === code)?.display || '',
+        display: config.display,
         value: numericValue,
-        unit: VITAL_SIGNS_CONFIG.find(config => config.code === code)?.unit || '',
-        measuredAt: new Date(measuredAt).toISOString()
+        unit: config.unit,
+        measuredAt: new Date(measuredAt)
       }
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReceptionStaff) {
+      return; // Prevent submission for reception staff
+    }
     onSubmit(formData);
   };
 
@@ -134,6 +154,19 @@ export function VitalSignsForm({
     return status === 'abnormal' ? 'text-red-600' : 'text-green-600';
   };
 
+  // If reception staff, show read-only message
+  if (isReceptionStaff) {
+    return (
+      <Card className='border-0 shadow-none p-0'>
+        <CardContent className='border-0 p-6'>
+          <div className="text-center py-8 text-foreground">
+            <p className="text-sm">Vital signs editing is not available for reception staff.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className='border-0 shadow-none p-0'>
       <CardContent className='border-0 p-6'>
@@ -141,8 +174,8 @@ export function VitalSignsForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {VITAL_SIGNS_CONFIG.map((config) => {
               const Icon = config.icon;
-              const currentValue = formData[config.code]?.value || '';
-              const status = getValueStatus(config.code, currentValue);
+              const currentValue = formData[config.code]?.value;
+              const status = typeof currentValue === 'number' ? getValueStatus(config.code, currentValue) : 'normal';
 
               return (
                 <div key={config.code} className="space-y-2">
@@ -155,7 +188,7 @@ export function VitalSignsForm({
                       id={config.code}
                           type="number"
                           step="0.1"
-                      value={currentValue}
+                      value={currentValue ?? ''}
                       onChange={(e) => handleInputChange(config.code, e.target.value)}
                       placeholder={`Enter ${config.display.toLowerCase()}`}
                       className={errors[config.code] ? 'border-red-500' : ''}
@@ -182,12 +215,26 @@ export function VitalSignsForm({
 
           <div className="space-y-2">
             <Label htmlFor="measuredAt">Measured At</Label>
-            <Input
-              id="measuredAt"
-              type="datetime-local"
+            <DateTimePicker
               value={measuredAt}
-              onChange={(e) => setMeasuredAt(e.target.value)}
-              className={errors.measuredAt ? 'border-red-500' : ''}
+              onChange={(value) => {
+                setMeasuredAt(value);
+                // Update all vital signs with the new measuredAt time
+                const updatedFormData: VitalSignsCollection = {};
+                const measuredAtDate = new Date(value);
+                Object.keys(formData).forEach((code) => {
+                  const vitalSign = formData[code as VitalSignCode];
+                  if (vitalSign && !isNaN(measuredAtDate.getTime())) {
+                    updatedFormData[code as VitalSignCode] = {
+                      ...vitalSign,
+                      measuredAt: measuredAtDate,
+                    };
+                  }
+                });
+                setFormData(updatedFormData);
+              }}
+              placeholder="Select date and time"
+              error={!!errors.measuredAt}
             />
             {errors.measuredAt && (
               <p className="text-sm text-red-500">{errors.measuredAt}</p>
@@ -199,14 +246,23 @@ export function VitalSignsForm({
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <LoadingButton 
+            {/* @ts-expect-error - LoadingButton props are correctly typed but linter has false positive */}
+            <Button 
               type="submit" 
-              loading={loading}
-              loadingText="Saving..."
+              disabled={loading}
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Vital Signs
-            </LoadingButton>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Vital Signs
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </CardContent>

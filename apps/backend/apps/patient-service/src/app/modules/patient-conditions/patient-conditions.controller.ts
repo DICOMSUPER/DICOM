@@ -140,7 +140,7 @@ export class PatientConditionController {
       const { paginationDto } = data;
       return await this.patientConditionService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'conditionName',
         sortField: paginationDto.sortField || 'createdAt',

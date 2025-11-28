@@ -56,8 +56,21 @@ export const analyticsApi = createApi({
       },
       providesTags: ["AnalyticsStats"],
     }),
+    getReceptionAnalytics: builder.query<ApiResponse<AnalyticsData>, GetAnalyticsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.value) queryParams.append('value', params.value);
+        const queryString = queryParams.toString();
+        return {
+          url: `/reception-stats${queryString ? `?${queryString}` : ''}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["AnalyticsStats"],
+    }),
   }),
 });
 
-export const { useGetAnalyticsQuery } = analyticsApi;
+export const { useGetAnalyticsQuery, useGetReceptionAnalyticsQuery } = analyticsApi;
 

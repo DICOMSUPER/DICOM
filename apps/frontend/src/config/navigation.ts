@@ -115,7 +115,7 @@ export const roleNavigation: RoleNavigation = {
   // Reception Staff - Patient registration and queue management
   "Reception Staff": [
     {
-      href: "/reception",
+      href: "/reception/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "Daily overview",
