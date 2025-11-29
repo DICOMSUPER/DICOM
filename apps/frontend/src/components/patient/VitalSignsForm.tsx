@@ -246,7 +246,6 @@ export function VitalSignsForm({
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            {/* @ts-expect-error - LoadingButton props are correctly typed but linter has false positive */}
             <Button 
               type="submit" 
               disabled={loading}

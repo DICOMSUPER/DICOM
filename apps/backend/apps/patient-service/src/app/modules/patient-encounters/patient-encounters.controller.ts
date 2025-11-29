@@ -12,7 +12,6 @@ import {
 import { PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
-  PaginationDto,
   RepositoryPaginationDto,
 } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';

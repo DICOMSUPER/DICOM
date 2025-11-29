@@ -9,7 +9,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { DicomStudy } from './dicom-study.entity';
+import type { DicomStudy } from './dicom-study.entity';
 
 @Entity('dicom_study_signatures')
 @Index('idx_study_signature', ['studyId', 'signatureId'], { unique: true })
@@ -59,7 +59,7 @@ export class DicomStudySignature extends BaseEntity {
   @Column({ name: 'algorithm', default: 'RSA-SHA256' })
   algorithm!: string;
 
-  @ManyToOne(() => DicomStudy, { onDelete: 'CASCADE' })
+  @ManyToOne(() => require('./dicom-study.entity').DicomStudy, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'study_id' })
   study!: DicomStudy;
 

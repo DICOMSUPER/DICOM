@@ -25,11 +25,13 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 @Injectable()
 export class DiagnosesReportService {
   constructor(
-    @Inject()
+    @Inject(DiagnosisReportRepository)
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
+    @Inject(PatientEncounterRepository)
     private readonly encounterRepository: PatientEncounterRepository,
     @InjectRepository(DiagnosesReport)
     private readonly reportRepository: Repository<DiagnosesReport>,
+    @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
 
@@ -78,6 +80,7 @@ export class DiagnosesReportService {
 
     const data = {
       ...createDiagnosesReportDto,
+      diagnosisDate: date,
       diagnosisName:
         createDiagnosesReportDto.diagnosisName ??
         `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,

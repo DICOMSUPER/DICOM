@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Between, EntityManager } from 'typeorm';
 import { BaseRepository } from '@backend/database';
 import { RepositoryPaginationDto } from '@backend/database';
-import { PatientCondition } from '../entities/patients/patient-conditions';
+import { PatientCondition } from '../entities/patients/patient-conditions.entity';
 
 export interface PatientConditionSearchFilters {
   patientId?: string;

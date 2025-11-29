@@ -4,4 +4,3 @@ export * from './diagnosis-report.repository';
 export * from './patient-condition.repository';
 export * from './room-schedule.repository';
 export * from './shift-template.repository';
-export * from './weekly-schedule-pattern.repository';

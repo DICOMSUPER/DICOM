@@ -9,8 +9,7 @@ import {
 import { RoomType } from '@backend/shared-enums';
 import { BaseEntity } from '@backend/database';
 import { Department } from './department.entity';
-// import { RoomSchedule } from './room-schedules.entity';
-import { ServiceRoom } from './services-rooms.entity';
+import type { ServiceRoom } from './services-rooms.entity';
 import { RoomSchedule } from './room-schedules.entity';
 
 export enum RoomStatus {
@@ -97,6 +96,6 @@ export class Room extends BaseEntity {
   @OneToMany(() => RoomSchedule, (schedule) => schedule.room)
   schedules!: RoomSchedule[];
 
-  @OneToMany(() => ServiceRoom, (serviceRoom) => serviceRoom.room)
+  @OneToMany(() => require('./services-rooms.entity').ServiceRoom, (serviceRoom: ServiceRoom) => serviceRoom.room)
   serviceRooms!: ServiceRoom[];
 }

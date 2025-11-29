@@ -18,7 +18,7 @@ import { ReportTemplateRepository } from './report-templates.repository';
 @Injectable()
 export class ReportTemplatesService {
   constructor(
-    @Inject()
+    @Inject(ReportTemplateRepository)
     private readonly reportTemplateRepository: ReportTemplateRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
   ) { }

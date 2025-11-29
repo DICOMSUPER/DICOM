@@ -6,7 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ImagingModality } from './imaging-modality.entity';
+import type { ImagingModality } from './imaging-modality.entity';
 import { MachineStatus } from '@backend/shared-enums';
 
 @Entity('modality_machines')
@@ -20,7 +20,7 @@ export class ModalityMachine extends BaseEntity {
   @Column({ name: 'modality_id', type: 'uuid' })
   modalityId!: string;
 
-  @ManyToOne(() => ImagingModality, { nullable: true })
+  @ManyToOne(() => require('./imaging-modality.entity').ImagingModality, { nullable: true })
   @JoinColumn({ name: 'modality_id' })
   modality!: ImagingModality;
 

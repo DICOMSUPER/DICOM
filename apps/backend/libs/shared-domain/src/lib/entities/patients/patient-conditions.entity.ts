@@ -11,7 +11,7 @@ import {
   ClinicalStatus,
   ConditionVerificationStatus,
 } from '@backend/shared-enums';
-import { Patient } from './patients.entity';
+import type { Patient } from './patients.entity';
 
 @Entity('patient_conditions')
 export class PatientCondition extends BaseEntity {
@@ -73,7 +73,7 @@ export class PatientCondition extends BaseEntity {
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
-  @ManyToOne(() => Patient, (patient) => patient.conditions)
+  @ManyToOne(() => require('./patients.entity').Patient, (patient: Patient) => patient.conditions)
   @JoinColumn({ name: 'patient_id' })
   patient?: Patient;
 }

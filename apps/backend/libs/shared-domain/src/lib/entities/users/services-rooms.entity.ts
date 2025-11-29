@@ -1,7 +1,7 @@
 import { BaseEntity } from '@backend/database';
 import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
-import { Services } from './service.entity';
-import { Room } from './room.entity';
+import type { Services } from './service.entity';
+import type { Room } from './room.entity';
 import { PatientEncounter } from '../patients';
 
 @Entity('services_rooms')
@@ -16,13 +16,13 @@ export class ServiceRoom extends BaseEntity {
   roomId!: string;
 
 
-  @ManyToOne(() => Services, (service) => service.serviceRooms, {
+  @ManyToOne(() => require('./service.entity').Services, (service: Services) => service.serviceRooms, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'service_id' })
   service!: Services;
 
-  @ManyToOne(() => Room, (room) => room.serviceRooms, { 
+  @ManyToOne(() => require('./room.entity').Room, (room: Room) => room.serviceRooms, { 
     onDelete: 'CASCADE' 
   })
   @JoinColumn({ name: 'room_id' })

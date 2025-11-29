@@ -10,7 +10,7 @@ import { BaseEntity } from '@backend/database';
 import { Gender } from '@backend/shared-enums';
 import { BloodType } from '@backend/shared-enums';
 import { PatientEncounter } from './patient-encounters.entity';
-import { PatientCondition } from './patient-conditions';
+import { PatientCondition } from './patient-conditions.entity';
 
 @Entity('patients')
 @Index('idx_patient_code', ['patientCode'])
