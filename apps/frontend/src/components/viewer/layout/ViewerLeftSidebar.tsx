@@ -35,6 +35,16 @@ import {
 import { useViewer } from "@/contexts/ViewerContext";
 import AIDiagnosisButton from "@/components/viewer/toolbar/AIDiagnosisButton";
 import SegmentationControlPanelModal from "../modals/segmentation-control-panel-modal";
+import {
+  compressSnapshots,
+  getCurrentSegmentationSnapshot,
+} from "@/contexts/viewer-context/segmentation-helper";
+import {
+  useCreateImageSegmentationLayerMutation,
+  useDeleteImageSegmentationLayerMutation,
+} from "@/store/imageSegmentationLayerApi";
+import { create } from "domain";
+import { toast } from "sonner";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -227,6 +237,7 @@ export default function ViewerLeftSidebar({
     addSegmentationLayer,
     deleteSegmentationLayer,
     selectSegmentationLayer,
+    updateSegmentationLayerMetadata,
     toggleSegmentationLayerVisibility,
     getSegmentationLayers,
     getCurrentSegmentationLayerIndex,
@@ -238,9 +249,74 @@ export default function ViewerLeftSidebar({
     toggleSegmentationControlPanel,
     isSegmentationControlPanelOpen,
     getSegmentationHistoryState,
+    getCurrentSegmentationSnapshot,
+    getAllLayerSnapshots,
+    getAllCurrentLayerSnapshots,
+    refetchSegmentationLayers,
   } = useViewer();
 
-  // Map tool names for display
+  const [createImageSegmentationLayers] =
+    useCreateImageSegmentationLayerMutation();
+  const [deleteImageSegmentationLayer] =
+    useDeleteImageSegmentationLayerMutation();
+
+  const saveSegmentationLayerToDatabase = async (layerId: string) => {
+    try {
+      const layer = getSegmentationLayers().find((l) => l.id === layerId);
+
+      if (!layer) {
+        console.error("Layer not found:", layerId);
+        return;
+      }
+
+      console.log("Save segmentation layer to database", layerId, layer);
+
+      // Compress snapshots before saving to reduce payload size
+      // To decompress on fetch:
+      // 1. Decode Base64 to Uint8Array: Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+      // 2. Decompress with pako: pako.inflate(compressedUint8Array)
+      const compressedSnapshots = compressSnapshots(layer.snapshots);
+
+      await createImageSegmentationLayers({
+        layerName: layer.name,
+        instanceId: layer.instanceId as string,
+        notes: layer.notes,
+        frame: layer?.frame || 1,
+        snapshots: compressedSnapshots,
+      }).unwrap();
+
+      toast.success("Segmentation layer saved to database");
+
+      // Refetch all layers to get the new database layer, excluding the local one we just saved
+      // This effectively "converts" the local layer to a database layer in the UI
+      await refetchSegmentationLayers([layerId]);
+    } catch (error) {
+      console.error("Error saving segmentation layer:", error);
+      toast.error("Error saving segmentation layer to database");
+    }
+  };
+
+  const deleteSegmentationLayerFromDatabase = async (layerId: string) => {
+    try {
+      console.log("Delete segmentation layer from database", layerId);
+
+      await deleteImageSegmentationLayer(layerId);
+
+      deleteSegmentationLayer(layerId);
+
+      await refetchSegmentationLayers();
+
+      console.log(getSegmentationLayers(), getSegmentationLayers().length);
+      if (getSegmentationLayers().length === 0) {
+        handleToolSelect("WindowLevel");
+      }
+
+      toast.success("Segmentation layer deleted from database");
+    } catch (error) {
+      console.error("Error deleting segmentation layer:", error);
+      toast.error("Error deleting segmentation layer from database", error);
+    }
+  }; // Map tool names for display
   const getToolDisplayName = (toolId: string) => {
     const toolMapping: Record<string, string> = {
       WindowLevel: "WindowLevel",
@@ -349,7 +425,17 @@ export default function ViewerLeftSidebar({
     canUndo: canUndoSegmentationHistory,
     canRedo: canRedoSegmentationHistory,
   } = getSegmentationHistoryState();
-  const segmentationToolsDisabled = selectedLayerCountValue === 0;
+
+  // Disable segmentation tools if no layers exist OR no layer is selected
+  const layers = getSegmentationLayers();
+
+  const currentLayer = layers.find(
+    (layer) => layer.id === layers[getCurrentSegmentationLayerIndex()]?.id
+  );
+  const segmentationToolsDisabled =
+    layers.length === 0 ||
+    selectedLayerCountValue === 0 ||
+    currentLayer?.origin === "database";
 
   return (
     <TooltipProvider>
@@ -626,12 +712,7 @@ export default function ViewerLeftSidebar({
                   layers={getSegmentationLayers()}
                   currentLayerIndex={getCurrentSegmentationLayerIndex()}
                   onAddLayer={addSegmentationLayer}
-                  onDeleteLayer={(index) => {
-                    const layers = getSegmentationLayers();
-                    if (index >= 0 && index < layers.length) {
-                      deleteSegmentationLayer(layers[index].id);
-                    }
-                  }}
+                  onDeleteLayer={deleteSegmentationLayer}
                   onSelectLayer={(index) => {
                     const layers = getSegmentationLayers();
                     if (index >= 0 && index < layers.length) {
@@ -651,6 +732,16 @@ export default function ViewerLeftSidebar({
                   isSegmentationVisible={isSegmentationVisible()}
                   onToggleSegmentationView={toggleSegmentationView}
                   selectedLayerCount={selectedLayerCountValue}
+                  onSaveLayerToDatabase={(layerId: string) =>
+                    saveSegmentationLayerToDatabase(layerId)
+                  }
+                  onDeleteLayerFromDatabase={(layerId: string) =>
+                    deleteSegmentationLayerFromDatabase(layerId)
+                  }
+                  onUpdateLayerMetadata={(
+                    layerId: string,
+                    updates: { name?: string; notes?: string }
+                  ) => updateSegmentationLayerMetadata(layerId, updates)}
                 />
               )}
               <div className="grid grid-cols-2 gap-2">
@@ -663,10 +754,12 @@ export default function ViewerLeftSidebar({
                         onClick={() => handleToolSelect(tool.id)}
                         disabled={segmentationToolsDisabled}
                         className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
-                          selectedTool === getToolDisplayName(tool.id)
+                          segmentationToolsDisabled
+                            ? "bg-slate-900 text-slate-600 opacity-50 cursor-not-allowed pointer-events-none"
+                            : selectedTool === getToolDisplayName(tool.id)
                             ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
                             : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        }`}
                         title={
                           segmentationToolsDisabled
                             ? "Add and select a segmentation layer to enable tools"
