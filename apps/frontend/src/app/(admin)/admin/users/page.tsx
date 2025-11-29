@@ -5,7 +5,7 @@ import { Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { useGetAllUsersQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
+import { useGetAllUsersQuery, useGetUserStatsQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { UserTable } from '@/components/admin/user/UserTable';
 import { UserStatsCards } from '@/components/admin/user/user-stats-cards';
@@ -51,6 +51,8 @@ export default function Page() {
       page,
       limit,
       excludeRole: Roles.SYSTEM_ADMIN,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -78,6 +80,12 @@ export default function Page() {
     error: usersError,
     refetch: refetchUsers,
   } = useGetAllUsersQuery(queryParams);
+
+  const {
+    data: userStatsData,
+    isLoading: userStatsLoading,
+    refetch: refetchUserStats,
+  } = useGetUserStatsQuery();
 
   const {
     data: departmentsData,
@@ -115,12 +123,13 @@ export default function Page() {
   } : null;
 
   const stats = useMemo(() => {
-    const total = usersRes?.total ?? 0;
-    const active = users.filter((u) => u?.isActive).length;
-    const inactive = users.filter((u) => u && !u.isActive).length;
-    const verified = users.filter((u) => u?.isVerified).length;
-    return { total, active, inactive, verified };
-  }, [users, usersRes?.total]);
+    return {
+      total: userStatsData?.totalUsers ?? 0,
+      active: userStatsData?.activeUsers ?? 0,
+      inactive: userStatsData?.inactiveUsers ?? 0,
+      verified: userStatsData?.verifiedUsers ?? 0,
+    };
+  }, [userStatsData]);
 
   const getStatusBadge = (isActive: boolean) => {
     return getBooleanStatusBadge(isActive);
@@ -129,7 +138,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchUsers(), refetchDepartments()]);
+      await Promise.all([refetchUsers(), refetchUserStats(), refetchDepartments()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -242,7 +251,7 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         verifiedCount={stats.verified}
-        isLoading={usersLoading}
+        isLoading={userStatsLoading}
       />
 
       <UserFiltersComponent

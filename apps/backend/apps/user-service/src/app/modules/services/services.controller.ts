@@ -104,7 +104,7 @@ export class ServicesController {
 
   @MessagePattern(`UserService.Services.FindMany`)
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }
   ): Promise<PaginatedResponseDto<Services>> {
     this.logger.log(`Using pattern: UserService.Services.FindMany`);
     try {
@@ -116,6 +116,8 @@ export class ServicesController {
         searchField: paginationDto.searchField || 'serviceName',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
+        includeInactive: paginationDto.includeInactive,
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(

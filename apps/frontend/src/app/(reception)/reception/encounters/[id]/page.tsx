@@ -3,14 +3,12 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useGetPatientEncounterByIdQuery,
   useUpdatePatientEncounterMutation,
-  useDeletePatientEncounterMutation,
 } from "@/store/patientEncounterApi";
 import {
   Stethoscope,
@@ -19,7 +17,6 @@ import {
   Clock,
   FileText,
   Edit,
-  Trash2,
   ArrowLeft,
   Activity,
   AlertCircle,
@@ -28,15 +25,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { EncounterForm } from "@/components/patient/EncounterForm";
-import {
-  getStatusBadgeClass,
-  getEncounterTypeBadgeClass,
-  getPriorityColor,
-  formatDate,
-} from "@/utils/patient/[id]/color";
+import { formatDate } from "@/utils/patient/[id]/color";
+import { getEncounterStatusBadge, getEncounterTypeBadge, getEncounterPriorityBadge } from "@/utils/status-badge";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
-import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
 
 // Format status for display
 const capitalizeFirst = (str: string) => {
@@ -183,13 +175,12 @@ export default function EncounterDetailPage() {
   const {
     data: encounterData,
     isLoading,
+    isFetching,
     error,
     refetch: refetchEncounter,
   } = useGetPatientEncounterByIdQuery(encounterId);
   const [updateEncounter, { isLoading: isUpdating }] =
     useUpdatePatientEncounterMutation();
-  const [deleteEncounter, { isLoading: isDeleting }] =
-    useDeletePatientEncounterMutation();
 
   const encounter = encounterData?.data;
 
@@ -230,17 +221,6 @@ export default function EncounterDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this encounter?")) {
-      try {
-        await deleteEncounter(encounterId).unwrap();
-        router.push("/reception/encounters");
-      } catch (error) {
-        console.error("Error deleting encounter:", error);
-      }
-    }
-  };
-
   const handleBack = () => {
     router.push("/reception/encounters");
   };
@@ -276,7 +256,7 @@ export default function EncounterDetailPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
+            <RefreshButton onRefresh={handleRefresh} loading={isLoading || isFetching} />
           </div>
         </div>
 
@@ -302,7 +282,7 @@ export default function EncounterDetailPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
-            <RefreshButton onRefresh={handleRefresh} loading={false} />
+            <RefreshButton onRefresh={handleRefresh} loading={isFetching} />
           </div>
         </div>
 
@@ -344,23 +324,13 @@ export default function EncounterDetailPage() {
           </Button>
           <RefreshButton 
             onRefresh={handleRefresh} 
-            loading={isLoading || isLoadingRelated} 
+            loading={isLoading || isFetching || isLoadingRelated} 
           />
           {!isEditing && (
-            <>
-              <Button variant="outline" onClick={handleEdit}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isDeleting ? "Deleting..." : "Delete"}
-              </Button>
-            </>
+            <Button variant="outline" onClick={handleEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
           )}
         </div>
       </div>
@@ -408,26 +378,9 @@ export default function EncounterDetailPage() {
                 </div>
                 <div className="space-y-4 text-right">
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {encounter.priority && (
-                      <Badge
-                        className={`${getPriorityColor(encounter.priority as EncounterPriorityLevel)} px-4 py-1 text-xs font-semibold border shadow-sm`}
-                      >
-                        {encounter.priority === EncounterPriorityLevel.STAT && (
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                        )}
-                        {encounter.priority}
-                      </Badge>
-                    )}
-                    <Badge
-                      className={`${getStatusBadgeClass(encounter.status)} px-4 py-1 text-xs font-semibold border shadow-sm`}
-                    >
-                      {formatStatus(encounter.status)}
-                    </Badge>
-                    <Badge
-                      className={`${getEncounterTypeBadgeClass(encounter.encounterType)} px-4 py-1 text-xs font-semibold border shadow-sm`}
-                    >
-                      {formatEncounterType(encounter.encounterType)}
-                    </Badge>
+                    {getEncounterStatusBadge(encounter.status)}
+                    {getEncounterTypeBadge(encounter.encounterType)}
+                    {encounter.priority && getEncounterPriorityBadge(encounter.priority)}
                   </div>
                 </div>
               </div>
@@ -477,6 +430,78 @@ export default function EncounterDetailPage() {
                 </div>
               </div>
             </section>
+
+            {/* Patient Information - Full Width (Important Section) */}
+            {encounter.patient && (
+              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <User className="h-5 w-5" />
+                  Patient Information
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                    <p className="text-xs text-foreground mb-1">Full Name</p>
+                    <p className="text-sm font-semibold text-foreground break-words">
+                      {encounter.patient.firstName} {encounter.patient.lastName}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                    <p className="text-xs text-foreground mb-1">Patient ID</p>
+                    <p className="text-sm font-semibold text-foreground font-mono">
+                      {encounter.patient.patientCode}
+                    </p>
+                  </div>
+                  {encounter.patient.gender && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                      <p className="text-xs text-foreground mb-1">Gender</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatGender(encounter.patient.gender)}
+                      </p>
+                    </div>
+                  )}
+                  {encounter.patient.dateOfBirth && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                      <p className="text-xs text-foreground mb-1">Date of Birth</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                  {encounter.patient.phoneNumber && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                      <p className="text-xs text-foreground mb-1">Phone Number</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {encounter.patient.phoneNumber}
+                      </p>
+                    </div>
+                  )}
+                  {encounter.patient.bloodType && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                      <p className="text-xs text-foreground mb-1">Blood Type</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {encounter.patient.bloodType}
+                      </p>
+                    </div>
+                  )}
+                  {encounter.patient.insuranceNumber && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
+                      <p className="text-xs text-foreground mb-1">Insurance Number</p>
+                      <p className="text-sm font-semibold text-foreground font-mono">
+                        {encounter.patient.insuranceNumber}
+                      </p>
+                    </div>
+                  )}
+                  {encounter.patient.address && (
+                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10 sm:col-span-2 lg:col-span-4">
+                      <p className="text-xs text-foreground mb-1">Address</p>
+                      <p className="text-sm font-semibold text-foreground break-words">
+                        {encounter.patient.address}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             <div className="grid gap-6 lg:grid-cols-12">
               {/* Main Content - Left Side */}
@@ -580,60 +605,6 @@ export default function EncounterDetailPage() {
 
               {/* Sidebar - Right Side */}
               <div className="lg:col-span-5 space-y-4">
-                {/* Patient Information */}
-                {encounter.patient ? (
-                  <section className="rounded-2xl p-4 shadow border-border border space-y-3">
-                    <div className="flex items-center gap-2 text-base font-semibold">
-                      <User className="h-4 w-4" />
-                      Patient Information
-                    </div>
-                    <div className="grid gap-2.5">
-                      <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                        <p className="text-xs text-foreground mb-1">Name</p>
-                        <p className="text-sm font-semibold text-foreground break-words">
-                          {encounter.patient.firstName} {encounter.patient.lastName}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                          <p className="text-xs text-foreground mb-1">Patient ID</p>
-                          <p className="text-sm font-semibold text-foreground truncate">
-                            {encounter.patient.patientCode}
-                          </p>
-                        </div>
-                        {encounter.patient.gender && (
-                          <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                            <p className="text-xs text-foreground mb-1">Gender</p>
-                            <p className="text-sm font-semibold text-foreground">
-                              {formatGender(encounter.patient.gender)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      {encounter.patient.dateOfBirth && (
-                        <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                          <p className="text-xs text-foreground mb-1">Date of Birth</p>
-                          <p className="text-sm font-semibold text-foreground">
-                            {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                ) : (
-                  <section className="rounded-2xl p-4 shadow border-border border">
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <User className="h-12 w-12 text-foreground/40 mb-3" />
-                      <h3 className="text-base font-semibold text-foreground mb-1">
-                        No Patient Information
-                      </h3>
-                      <p className="text-xs text-foreground text-center">
-                        Patient information is not available.
-                      </p>
-                    </div>
-                  </section>
-                )}
-
                 {/* Location Information */}
                 {serviceRoom ? (
                   <section className="rounded-2xl p-4 shadow border-border border space-y-3">

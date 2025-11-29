@@ -177,6 +177,7 @@ export default function ReceptionSchedulePage() {
 
   const currentSchedules = getFilteredSchedules();
   const isLoading = schedulesLoading || schedulesFetching;
+  const isRefreshing = schedulesFetching;
   const { shiftTemplateMap } = useShiftTemplatesDictionary();
 
   const getSchedulesForDate = (date: Date) => {
@@ -434,7 +435,7 @@ export default function ReceptionSchedulePage() {
             </p>
           </div>
           <div className="flex items-center justify-end space-x-2">
-            <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
+            <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
             <Button
               variant="outline"
               size="sm"

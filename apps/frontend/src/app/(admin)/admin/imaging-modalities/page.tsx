@@ -28,6 +28,7 @@ import {
   useCreateImagingModalityMutation,
   useDeleteImagingModalityMutation,
   useGetImagingModalityPaginatedQuery,
+  useGetImagingModalityStatsQuery,
   useUpdateImagingModalityMutation,
 } from '@/store/imagingModalityApi';
 
@@ -38,13 +39,15 @@ interface ApiError {
 }
 
 export default function ImagingModalityPage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string }>({
+  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string; includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "modalityName",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -64,6 +67,12 @@ export default function ImagingModalityPage() {
     error: modalitiesError,
     refetch,
   } = useGetImagingModalityPaginatedQuery(filters);
+
+  const {
+    data: imagingModalityStatsData,
+    isLoading: imagingModalityStatsLoading,
+    refetch: refetchImagingModalityStats,
+  } = useGetImagingModalityStatsQuery();
 
   const [createModality, { isLoading: isCreating }] =
     useCreateImagingModalityMutation();
@@ -98,20 +107,12 @@ export default function ImagingModalityPage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    
-    modalities.forEach((m) => {
-      if (m.isActive) active++;
-      else inactive++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
+      total: imagingModalityStatsData?.totalModalities ?? 0,
+      active: imagingModalityStatsData?.activeModalities ?? 0,
+      inactive: imagingModalityStatsData?.inactiveModalities ?? 0,
     };
-  }, [modalities, meta.total]);
+  }, [imagingModalityStatsData]);
 
   const handleCreate = () => {
     setSelectedModalityId(null);
@@ -208,7 +209,7 @@ export default function ImagingModalityPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchImagingModalityStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -246,7 +247,7 @@ export default function ImagingModalityPage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={isLoading || imagingModalityStatsLoading}
       />
 
       <ImagingModalityFiltersSection

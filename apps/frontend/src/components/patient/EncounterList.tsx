@@ -38,7 +38,6 @@ interface EncounterListProps {
   encounters: PatientEncounter[];
   loading?: boolean;
   onEdit?: (encounter: PatientEncounter) => void;
-  onDelete?: (encounterId: string) => void;
   onView?: (encounter: PatientEncounter) => void;
   onCreate?: () => void;
   page: number;
@@ -124,13 +123,13 @@ export function EncounterList({
   }
 
   return (
-    <div className="rounded-2xl p-6 shadow border-border border space-y-4">
+    <div className="rounded-2xl p-6 shadow border-border border flex flex-col gap-4">
       <div className="flex items-center gap-2 text-lg font-semibold">
         <Stethoscope className="h-5 w-5" />
         Recent Encounters
       </div>
       
-      <div className="space-y-3 max-h-[30vh] overflow-y-auto pr-2">
+      <div className="flex flex-col gap-3 max-h-[30vh] overflow-y-auto">
         {encounters.map((encounter) => {
           const serviceRoom = ServiceRoomData?.data.find(
             (sr) => sr.id === encounter.serviceRoomId
@@ -184,10 +183,10 @@ function EncounterCard({
   return (
     <Card
       className={cn(
-        "border border-border hover:shadow-lg cursor-pointer hover:border-primary/60 transition-all duration-200 bg-card"
+        "border border-border hover:shadow-lg cursor-pointer hover:border-primary/60 transition-all duration-200 bg-card p-0"
       )}
     >
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 flex flex-col gap-3">
         {/* Header Row: Order Number and Status Badges */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -388,7 +387,7 @@ function EncounterCard({
 
         {/* Action Button */}
         {onView && (
-          <div className="flex justify-end pt-2 border-t border-border/30">
+          <div className="flex justify-end border-t border-border/30 pt-2">
             <Button
               variant="outline"
               size="sm"

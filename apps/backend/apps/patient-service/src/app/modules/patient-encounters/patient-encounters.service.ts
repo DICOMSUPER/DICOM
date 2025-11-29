@@ -45,7 +45,7 @@ export interface RoomEncounterFilters {
 @Injectable()
 export class PatientEncounterService {
   constructor(
-    @Inject() private readonly encounterRepository: PatientEncounterRepository,
+    @Inject(PatientEncounterRepository) private readonly encounterRepository: PatientEncounterRepository,
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy,

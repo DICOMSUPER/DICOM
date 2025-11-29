@@ -126,11 +126,27 @@ export const employeeRoomAssignmentApi = createApi({
     }),
 
     getEmployeeRoomAssignmentStats: builder.query<
+      ApiResponse<{
+        totalAssignments: number;
+        activeAssignments: number;
+        inactiveAssignments: number;
+        uniqueRooms: number;
+        uniqueEmployees: number;
+      }>,
+      void
+    >({
+      query: () => ({
+        url: `/stats`,
+        method: "GET",
+      }),
+    }),
+
+    getEmployeeRoomAssignmentStatsOverTime: builder.query<
       ApiResponse<EmployeeRoomAssignmentStats>,
       { id: string; startDate?: string | Date; endDate?: string | Date }
     >({
       query: ({ id, startDate, endDate }) => ({
-        url: `/stats`,
+        url: `/stats/employee`,
         method: "GET",
         params: {
           startDate:
@@ -167,5 +183,6 @@ export const {
   useUpdateEmployeeRoomAssignmentMutation,
   useDeleteEmployeeRoomAssignmentMutation,
   useGetEmployeeRoomAssignmentStatsQuery,
+  useGetEmployeeRoomAssignmentStatsOverTimeQuery,
   useGetEmployeeRoomAssignmentInWorkDateQuery,
 } = employeeRoomAssignmentApi;

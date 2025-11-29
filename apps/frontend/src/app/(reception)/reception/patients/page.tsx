@@ -43,6 +43,7 @@ export default function ReceptionPage() {
   const {
     data: patientsData,
     isLoading: patientsLoading,
+    isFetching: patientsFetching,
     error: patientsError,
     refetch: refetchPatients,
   } = useFilterPatientV2Query({
@@ -54,6 +55,7 @@ export default function ReceptionPage() {
   const {
     data: patientStats,
     isLoading: statsLoading,
+    isFetching: statsFetching,
     refetch: refetchStats,
   } = useGetPatientStatsQuery();
 
@@ -170,7 +172,7 @@ export default function ReceptionPage() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={patientsLoading || statsLoading}
+            loading={patientsLoading || patientsFetching || statsLoading || statsFetching}
           />
           <QuickActionsBar />
         </div>

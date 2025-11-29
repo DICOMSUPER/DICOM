@@ -21,7 +21,6 @@ export default function ServiceSelection({
   isLoadingServices: boolean;
   Services: Services[];
 }) {
-  // Transform services data into react-select format
   const serviceOptions =
     Services?.map((service) => ({
       value: service.id,
@@ -29,7 +28,6 @@ export default function ServiceSelection({
       data: service,
     })) || [];
 
-  // Find the selected option
   const selectedOption = selectedService
     ? serviceOptions.find((opt) => opt.value === selectedService.id)
     : null;
@@ -45,7 +43,6 @@ export default function ServiceSelection({
     setSelectedRoom(null);
   };
 
-  // Minimal custom styles for react-select
   const customStyles = {
     control: (base: any) => ({
       ...base,
@@ -54,7 +51,7 @@ export default function ServiceSelection({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <label
         htmlFor="service-select"
         className="text-sm font-medium text-foreground flex items-center gap-2"

@@ -50,4 +50,9 @@ export class ServiceRoomsController {
   async delete(@Payload() data: { id: string }) {
     return await this.serviceRoomsService.delete(data.id);
   }
+
+  @MessagePattern('UserService.ServiceRooms.GetStats')
+  async getStats() {
+    return await this.serviceRoomsService.getStats();
+  }
 }

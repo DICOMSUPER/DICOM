@@ -10,7 +10,6 @@ import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { ShiftTemplatesModule } from './modules/shift-templates/shift-templates.module';
-import { WeeklySchedulePatternsModule } from './modules/weekly-schedule-patterns/weekly-schedule-patterns.module';
 import { DigitalSignatureModule } from './modules/digital-signature/digital-signature.module';
 import { OtpsModule } from './modules/otps/otps.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
@@ -35,7 +34,6 @@ import { ServicesModule } from './modules/services/services.module';
     ScheduleModule,
     RoomsModule,
     ShiftTemplatesModule,
-    WeeklySchedulePatternsModule,
     OtpsModule,
     SeedingModule,
     DigitalSignatureModule,

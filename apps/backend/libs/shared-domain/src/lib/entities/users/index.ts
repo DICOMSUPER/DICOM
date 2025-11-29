@@ -4,7 +4,6 @@ export * from './qualification.entity';
 export * from './room.entity';
 export * from './shift-templates.entity';
 export * from './room-schedules.entity';
-export * from './weekly-schedule-patterns.entity';
 export * from './digital-signature.entity';
 export * from './otp.entity';
 export * from './service.entity';

@@ -17,6 +17,7 @@ import {
   useGetPatientEncounterStatsQuery,
   useGetPatientEncountersQuery,
 } from "@/store/patientEncounterApi";
+import { useGetReceptionAnalyticsQuery } from "@/store/analyticsApi";
 export default function QueuePage() {
   const [notificationCount] = useState(3);
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,6 +29,7 @@ export default function QueuePage() {
   const {
     data: encounters,
     isLoading: encountersLoading,
+    isFetching: encountersFetching,
     error: encountersError,
     refetch: refetchEncounters,
   } = useGetPatientEncountersQuery({
@@ -38,8 +40,16 @@ export default function QueuePage() {
   const {
     data: encounterStats,
     isLoading: statsLoading,
+    isFetching: statsFetching,
     refetch: refetchStats,
   } = useGetPatientEncounterStatsQuery(undefined);
+
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    isFetching: analyticsFetching,
+    refetch: refetchAnalytics,
+  } = useGetReceptionAnalyticsQuery();
 
   // Handle errors
   useEffect(() => {
@@ -149,20 +159,34 @@ export default function QueuePage() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([refetchEncounters(), refetchStats()]);
+    await Promise.all([refetchEncounters(), refetchStats(), refetchAnalytics()]);
   };
 
+  const encountersByStatus = analyticsData?.data?.encountersByStatus || [];
+  const getStatusCount = (statuses: string[]): number => {
+    return encountersByStatus
+      .filter((item: { status: string; count: number }) =>
+        statuses.some((s) => s.toLowerCase() === item.status.toLowerCase())
+      )
+      .reduce((sum: number, item: { status: string; count: number }) => sum + item.count, 0);
+  };
+
+  const waitingCount = getStatusCount(['waiting', 'pending']);
+  const inProgressCount = getStatusCount(['in-progress', 'in_progress', 'active', 'arrived']);
+  const completedCount = getStatusCount(['completed', 'finished', 'done']);
+  const totalCount = waitingCount + inProgressCount + completedCount;
+
   const tabs = [
-    { value: "waiting", label: "Waiting", count: waitingAssignments.length },
+    { value: "waiting", label: "Waiting", count: waitingCount },
     {
       value: "in-progress",
       label: "In Progress",
-      count: inProgressAssignments.length,
+      count: inProgressCount,
     },
     {
       value: "completed",
       label: "Completed",
-      count: completedAssignments.length,
+      count: completedCount,
     },
   ];
 
@@ -181,7 +205,7 @@ export default function QueuePage() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={encountersLoading || statsLoading}
+            loading={encountersLoading || encountersFetching || statsLoading || statsFetching || analyticsLoading || analyticsFetching}
           />
           <QuickActionsBar />
         </div>
@@ -194,15 +218,11 @@ export default function QueuePage() {
 
       {/* Stats Cards */}
       <QueueStatsCards
-        waitingCount={waitingAssignments.length}
-        inProgressCount={inProgressAssignments.length}
-        completedCount={completedAssignments.length}
-        totalCount={
-          waitingAssignments.length +
-          inProgressAssignments.length +
-          completedAssignments.length
-        }
-        isLoading={statsLoading}
+        waitingCount={waitingCount}
+        inProgressCount={inProgressCount}
+        completedCount={completedCount}
+        totalCount={totalCount}
+        isLoading={statsLoading || analyticsLoading}
       />
 
       {/* Filters */}

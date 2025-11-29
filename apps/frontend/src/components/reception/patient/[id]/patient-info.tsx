@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 import { Calendar, FileText, Heart, MapPin, Phone, User } from "lucide-react";
 import React from "react";
+import { formatDate } from "@/lib/formatTimeDate";
 
 // Format gender for display
 const formatGender = (gender: string | null | undefined): string => {
@@ -39,12 +40,7 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
                 <p className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   {patient?.dateOfBirth
-                    ? new Date(patient.dateOfBirth).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
+                    ? formatDate(patient.dateOfBirth)
                     : "Date of birth not set"}
                 </p>
                 <p className="flex items-center gap-2">
@@ -81,7 +77,7 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
               <p className="text-xs uppercase tracking-wide text-foreground">Date of Birth</p>
               <p className="text-lg font-semibold text-foreground">
                 {patient?.dateOfBirth
-                  ? new Date(patient.dateOfBirth).toLocaleDateString()
+                  ? formatDate(patient.dateOfBirth)
                   : "N/A"}
               </p>
               <p className="text-xs text-foreground">Birth date</p>

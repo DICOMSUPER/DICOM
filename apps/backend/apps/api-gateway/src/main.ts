@@ -14,6 +14,19 @@ import { AppModule } from './app/app.module';
 import { AllExceptionsFilter } from './utils/exception-filter.utils';
 import { urlencoded, json } from 'express';
 
+process.on('unhandledRejection', (reason, promise) => {
+  const logger = new Logger('UnhandledRejection');
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+});
+
+process.on('uncaughtException', (error) => {
+  const logger = new Logger('UncaughtException');
+  logger.error('Uncaught Exception:', error);
+  logger.error('Stack:', error.stack);
+  process.exit(1);
+});
+
 async function bootstrap() {
   const startTime = Date.now();
   const logger = new Logger('ApiGateway');

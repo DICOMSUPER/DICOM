@@ -5,7 +5,6 @@ export * from './lib/user-exceptions';
 export * from './lib/room-exceptions';
 export * from './lib/schedule-room-exception';
 export * from './lib/department-exception';
-export * from './lib/weekly-schedule-pattern.exception';
 export * from './lib/dicom-instance-exception';
 export * from './lib/dicom-series-exception';
 export * from './lib/digital-signature-exception';

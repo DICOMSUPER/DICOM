@@ -12,7 +12,6 @@ import {
 import { PatientEncounter } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
-  PaginationDto,
   RepositoryPaginationDto,
 } from '@backend/database';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
@@ -191,7 +190,7 @@ export class PatientEncounterController {
       const { paginationDto } = data;
       return await this.patientEncounterService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'chiefComplaint',
         sortField: paginationDto.sortField || 'createdAt',
@@ -286,7 +285,7 @@ export class PatientEncounterController {
       paginationDto: {
         ...data.paginationDto,
         page: data.paginationDto?.page || 1,
-        limit: data.paginationDto?.limit || 5,
+        limit: data.paginationDto?.limit || 10,
         sortField: data.paginationDto?.sortField || 'encounterDate',
         order: data.paginationDto?.order || 'desc',
         search: data.paginationDto?.search || '',

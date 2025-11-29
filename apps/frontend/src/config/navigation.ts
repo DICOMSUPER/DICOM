@@ -20,7 +20,8 @@ import {
   Building,
   Calendar,
   FolderTree,
-  Link2
+  Link2,
+  Layers
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -56,16 +57,16 @@ export const roleNavigation: RoleNavigation = {
       description: "Assign employees to room schedules",
     },
     {
-      href: "/admin/settings",
-      label: "System Settings",
-      icon: Settings,
-      description: "Configure system settings",
-    },
-    {
       href: "/admin/departments",
       label: "Departments",
       icon: Building,
       description: "Manage clinic departments and staff",
+    },
+    {
+      href: "/admin/body-parts",
+      label: "Body Parts",
+      icon: Layers,
+      description: "Manage body parts",
     },
     {
       href: "/admin/imaging-modalities",
@@ -103,12 +104,18 @@ export const roleNavigation: RoleNavigation = {
       icon: Clock,
       description: "Manage shift templates",
     },
+    {
+      href: "/admin/settings",
+      label: "System Settings",
+      icon: Settings,
+      description: "Configure system settings",
+    },
   ],
 
   // Reception Staff - Patient registration and queue management
   "Reception Staff": [
     {
-      href: "/reception",
+      href: "/reception/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "Daily overview",

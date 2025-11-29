@@ -27,6 +27,7 @@ import {
   useCreateModalityMachineMutation,
   useDeleteModalityMachineMutation,
   useGetModalityMachinePaginatedQuery,
+  useGetModalityMachineStatsQuery,
   useUpdateModalityMachineMutation,
 } from '@/store/modalityMachineApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
@@ -40,13 +41,15 @@ interface ApiError {
 }
 
 export default function ModalityMachinePage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string }>({
+  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string; includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "name",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -68,6 +71,12 @@ export default function ModalityMachinePage() {
 
   const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({ page: 1, limit: 10000 });
   const rooms = roomsData?.data || [];
+
+  const {
+    data: modalityMachineStatsData,
+    isLoading: modalityMachineStatsLoading,
+    refetch: refetchModalityMachineStats,
+  } = useGetModalityMachineStatsQuery();
 
   const [createMachine, { isLoading: isCreating }] =
     useCreateModalityMachineMutation();
@@ -102,23 +111,13 @@ export default function ModalityMachinePage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    let maintenance = 0;
-    
-    machines.forEach((m) => {
-      if (m.status === MachineStatus.ACTIVE) active++;
-      else if (m.status === MachineStatus.INACTIVE) inactive++;
-      else if (m.status === MachineStatus.MAINTENANCE) maintenance++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
-      maintenance,
+      total: modalityMachineStatsData?.totalMachines ?? 0,
+      active: modalityMachineStatsData?.activeMachines ?? 0,
+      inactive: modalityMachineStatsData?.inactiveMachines ?? 0,
+      maintenance: modalityMachineStatsData?.maintenanceMachines ?? 0,
     };
-  }, [machines, meta.total]);
+  }, [modalityMachineStatsData]);
 
   const handleCreate = () => {
     setSelectedMachineId(null);
@@ -199,9 +198,7 @@ export default function ModalityMachinePage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
-      // Also refetch rooms since they're used in modals
-      await refetchRooms();
+      await Promise.all([refetch(), refetchModalityMachineStats(), refetchRooms()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -240,7 +237,7 @@ export default function ModalityMachinePage() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         maintenanceCount={stats.maintenance}
-        isLoading={isLoading}
+        isLoading={isLoading || modalityMachineStatsLoading}
       />
 
       <ModalityMachineFiltersSection

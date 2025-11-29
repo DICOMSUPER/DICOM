@@ -40,12 +40,16 @@ export class ShiftTemplatesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'is_active', required: false, type: Boolean })
+  @ApiQuery({ name: 'includeInactive', required: false, type: Boolean, description: 'Include inactive shift templates' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include soft-deleted shift templates' })
   @ApiResponse({ status: 200, description: 'Shift templates retrieved successfully' })
   async getAllShiftTemplates(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('is_active') is_active?: boolean,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean,
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -59,13 +63,15 @@ export class ShiftTemplatesController {
             page: pageNum,
             limit: limitNum,
             search,
+            includeInactive,
+            includeDeleted,
           },
         }),
       );
 
-      // Filter by is_active if provided
+      // Filter by is_active if provided and includeInactive is not true
       let filteredData = result.data || [];
-      if (is_active !== undefined) {
+      if (is_active !== undefined && !includeInactive) {
         filteredData = filteredData.filter((template: any) => template.is_active === (is_active === true ));
       }
 

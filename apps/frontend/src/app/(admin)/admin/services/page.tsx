@@ -22,6 +22,7 @@ import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
   useGetServicesPaginatedQuery,
+  useGetServiceStatsQuery,
   useUpdateServiceMutation,
 } from "@/store/serviceApi";
 import { Plus } from "lucide-react";
@@ -31,13 +32,15 @@ import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
 
 export default function ServicePage() {
-  const [filters, setFilters] = useState<PaginatedQuery>({
+  const [filters, setFilters] = useState<PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "serviceName",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: true,
   });
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
@@ -73,11 +76,19 @@ export default function ServicePage() {
     searchField: filters.searchField,
     sortBy: filters.sortBy,
     order: filters.order,
+    includeInactive: filters.includeInactive,
+    includeDeleted: filters.includeDeleted,
   });
 
   const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
+
+  const {
+    data: serviceStatsData,
+    isLoading: serviceStatsLoading,
+    refetch: refetchServiceStats,
+  } = useGetServiceStatsQuery();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -112,16 +123,16 @@ export default function ServicePage() {
   const services = data?.data || [];
   
   const stats = useMemo(() => {
-    const total = data?.total ?? 0;
-    const active = services.filter((s) => s.isActive).length;
-    const inactive = services.filter((s) => !s.isActive).length;
+    const total = serviceStatsData?.totalServices ?? 0;
+    const active = serviceStatsData?.activeServices ?? 0;
+    const inactive = serviceStatsData?.inactiveServices ?? 0;
     return { total, active, inactive };
-  }, [services, data?.total]);
+  }, [serviceStatsData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchServices();
+      await Promise.all([refetchServices(), refetchServiceStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -252,7 +263,7 @@ export default function ServicePage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={serviceStatsLoading}
       />
 
       <ServiceFiltersSection

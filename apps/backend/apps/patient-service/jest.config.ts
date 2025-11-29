@@ -20,4 +20,7 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  // Handle circular dependencies by running tests sequentially
+  maxWorkers: 1,
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };

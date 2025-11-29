@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Calendar,
   Clock,
@@ -29,8 +30,8 @@ import {
   getEncounterTypeColor,
   getEncounterTypeLabel,
   getPriorityColor,
-  getStatusColor,
 } from "@/utils/patient/[id]/color";
+import { getEncounterStatusBadge } from "@/utils/status-badge";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 
@@ -80,6 +81,98 @@ export default function EncounterModal({
 
   const isLoading = isServiceRoomLoading || isUserDataLoading || isReceptionLoading;
 
+  // Skeleton component for encounter modal
+  function EncounterModalSkeleton() {
+    return (
+      <div className="space-y-8 pr-4 pb-2">
+        {/* Hero Section Skeleton */}
+        <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="space-y-4 flex-1">
+              <Skeleton className="h-6 w-32 rounded-full" />
+              <div className="space-y-3">
+                <Skeleton className="h-9 w-64" />
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-28 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3"
+              >
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-3">
+          <div className="xl:col-span-2 space-y-6">
+            {/* Overview Skeleton */}
+            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="grid gap-4 md:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-2xl" />
+                ))}
+              </div>
+            </section>
+
+            {/* Clinical Details Skeleton */}
+            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-32 rounded-2xl" />
+                ))}
+              </div>
+            </section>
+
+            {/* Additional Information Skeleton */}
+            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+              <Skeleton className="h-6 w-40" />
+              <div className="grid gap-4 md:grid-cols-2">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-2xl" />
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            {/* Timestamps Skeleton */}
+            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+              <Skeleton className="h-6 w-32" />
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-20 rounded-2xl" />
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Dialog open={!!encounter} onOpenChange={onClose}>
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
@@ -98,9 +191,7 @@ export default function EncounterModal({
         {/* Scrollable Content */}
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-sm text-foreground">Loading...</div>
-            </div>
+            <EncounterModalSkeleton />
           ) : (
             <div className="space-y-8 pr-4 pb-2">
               {/* Hero Section */}
@@ -138,9 +229,7 @@ export default function EncounterModal({
                           {encounter.priority}
                         </Badge>
                       )}
-                      <Badge className={`${getStatusColor(encounter.status)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                        {encounter.status}
-                      </Badge>
+                      {getEncounterStatusBadge(encounter.status)}
                       <Badge className={`${getEncounterTypeColor(encounter.encounterType)} px-4 py-1 text-xs font-semibold shadow-sm`}>
                         {getEncounterTypeLabel(encounter.encounterType)}
                       </Badge>

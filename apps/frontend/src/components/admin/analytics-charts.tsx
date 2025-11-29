@@ -23,9 +23,9 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { AnalyticsData } from "@/store/analyticsApi";
 
 interface AnalyticsChartsProps {
@@ -92,19 +92,6 @@ export function AnalyticsCharts({
     }));
   };
 
-  const getValueInputType = () => {
-    if (period === 'week') return 'week';
-    if (period === 'month') return 'month';
-    if (period === 'year') return 'number';
-    return 'week';
-  };
-
-  const getValuePlaceholder = () => {
-    if (period === 'week') return 'YYYY-WW';
-    if (period === 'month') return 'YYYY-MM';
-    if (period === 'year') return 'YYYY';
-    return '';
-  };
 
   const formatXAxisLabel = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -156,15 +143,11 @@ export function AnalyticsCharts({
             {period && (
               <div className="space-y-2">
                 <Label htmlFor="value">Period Value</Label>
-                <Input
-                  id="value"
-                  type={getValueInputType()}
-                  placeholder={getValuePlaceholder()}
-                  value={value || ''}
-                  onChange={(e) => onValueChange?.(e.target.value)}
-                  min={period === 'year' ? '2020' : undefined}
-                  max={period === 'year' ? new Date().getFullYear().toString() : undefined}
-                  className="max-w-[200px]"
+                <PeriodValuePicker
+                  period={period}
+                  value={value}
+                  onChange={onValueChange}
+                  disabled={isLoading}
                 />
               </div>
             )}

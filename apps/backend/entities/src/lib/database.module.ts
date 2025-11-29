@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User } from './user.entity';
 
 @Module({
   imports: [
@@ -15,7 +14,7 @@ import { User } from './user.entity';
         username: config.get<string>('DB_USERNAME', 'postgres'),
         password: config.get<string>('DB_PASSWORD', 'minhminh123.'),
         database: config.get<string>('DB_NAME', 'appdb'),
-        entities: [User],
+        entities: [],
         synchronize: config.get<string>('TYPEORM_SYNC', 'true') === 'true',
         logging: config.get<string>('TYPEORM_LOGGING', 'false') === 'true',
         ssl: {

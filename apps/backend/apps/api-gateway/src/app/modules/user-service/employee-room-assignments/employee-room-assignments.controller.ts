@@ -19,7 +19,6 @@ import {
   ApiParam,
   ApiResponse,
   ApiTags,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { handleError } from '@backend/shared-utils';
@@ -196,7 +195,7 @@ export class EmployeeRoomAssignmentsController {
     Roles.RECEPTION_STAFF,
     Roles.SYSTEM_ADMIN
   )
-  @Get('stats')
+  @Get('stats/employee')
   async getEmployeeRoomAssignmentStats(
     @Req() req: IAuthenticatedRequest,
     @Query('startDate') startDate?: Date | string,
@@ -208,6 +207,24 @@ export class EmployeeRoomAssignmentsController {
         { employeeId: req?.userInfo?.userId, startDate, endDate }
       )
     );
+  }
+
+  @Get('stats')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get employee room assignment statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê gán nhân viên phòng thành công',
+  })
+  async getStats() {
+    try {
+      return await firstValueFrom(
+        this.userServiceClient.send('UserService.EmployeeRoomAssignments.GetStats', {})
+      );
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch employee room assignment stats', error);
+      throw handleError(error);
+    }
   }
 
   @Role(Roles.IMAGING_TECHNICIAN, Roles.PHYSICIAN, Roles.RADIOLOGIST)

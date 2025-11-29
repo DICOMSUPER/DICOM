@@ -7,6 +7,11 @@ import {
   PaginatedResponse,
   QueryParams,
 } from "@/interfaces/pagination/pagination.interface";
+
+export interface RoomQueryParams extends QueryParams {
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+}
 import { mapApiResponse } from "@/utils/adpater";
 import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
 import { Roles } from "@/enums/user.enum";
@@ -18,6 +23,15 @@ export interface RoomSearchFilters {
   maxCapacity?: number;
 }
 
+export interface RoomStats {
+  totalRooms: number;
+  activeRooms: number;
+  inactiveRooms: number;
+  availableRooms: number;
+  occupiedRooms: number;
+  maintenanceRooms: number;
+}
+
 // ====== RTK QUERY API ======
 export const roomApi = createApi({
   reducerPath: "roomApi",
@@ -25,7 +39,7 @@ export const roomApi = createApi({
   tagTypes: ["Room", "ServiceRoom", "ServiceRoomList", "RoomService", "ModalityMachine"],
   endpoints: (builder) => ({
     // Get all rooms with filters
-    getRooms: builder.query<PaginatedResponse<Room>, QueryParams>({
+    getRooms: builder.query<PaginatedResponse<Room>, RoomQueryParams>({
       query: (params) => ({
         url: "",
         method: "GET",
@@ -133,6 +147,16 @@ export const roomApi = createApi({
         params: { serviceId, departmentId, role },
       }),
     }),
+
+    // Get room stats
+    getRoomStats: builder.query<RoomStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["Room"],
+    }),
   }),
 });
 
@@ -146,4 +170,5 @@ export const {
   useUpdateRoomMutation,
   useDeleteRoomMutation,
   useGetRoomsByDepartmentAndServiceQuery,
+  useGetRoomStatsQuery,
 } = roomApi;

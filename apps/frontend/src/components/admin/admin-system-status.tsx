@@ -68,7 +68,7 @@ export function AdminSystemStatus({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No system status data available</p>
+          <p className="text-sm text-foreground">No system status data available</p>
         </CardContent>
       </Card>
     );

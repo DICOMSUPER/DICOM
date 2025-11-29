@@ -74,6 +74,8 @@ export class RoomsController {
       status?: string;
       type?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
@@ -98,6 +100,8 @@ export class RoomsController {
       status?: string;
       type?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {
