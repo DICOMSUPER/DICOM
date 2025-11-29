@@ -9,6 +9,7 @@ export const MESSAGE_PATTERNS = {
   DELETE: `Delete`,
   FIND_MANY: 'FindMany',
   FIND_BY_ROOM_ID: 'FindByRoomId',
+  FIND_BY_SERIES_ID: 'FindBySeriesId',
 };
 
 //Optional, for consistent naming only

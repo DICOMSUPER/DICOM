@@ -22,6 +22,7 @@ export const handleErrorFromMicroservices = (
 
 type ParsedMicroserviceError = {
   code?: number;
+  statusCode?: number; // Add support for statusCode field
   message?: string;
   location?: string;
 };
@@ -31,6 +32,7 @@ const isParsedRPCException = (e: unknown): e is ParsedMicroserviceError => {
     typeof e === 'object' &&
     e !== null &&
     ('code' in (e as Record<string, unknown>) ||
+      'statusCode' in (e as Record<string, unknown>) ||
       'message' in (e as Record<string, unknown>) ||
       'location' in (e as Record<string, unknown>))
   );
@@ -70,12 +72,17 @@ export const handleError = (error: unknown): HttpException => {
     }
   }
 
+  // Check HttpException first before the broader isParsedRPCException check
+  if (error instanceof HttpException) {
+    return error;
+  }
+
   if (isParsedRPCException(error)) {
-    // Ensure code is a valid number, otherwise use default status
+    // Check both 'statusCode' and 'code' for compatibility
     const statusCode =
-      typeof error.code === 'number'
-        ? error.code
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      (typeof error.statusCode === 'number' ? error.statusCode : undefined) ??
+      (typeof error.code === 'number' ? error.code : undefined) ??
+      HttpStatus.INTERNAL_SERVER_ERROR;
 
     return new HttpException(
       {
@@ -84,9 +91,6 @@ export const handleError = (error: unknown): HttpException => {
       },
       statusCode
     );
-  }
-  if (error instanceof HttpException) {
-    return error;
   }
 
   if (error instanceof RpcException) {
@@ -100,7 +104,11 @@ export const handleError = (error: unknown): HttpException => {
     if (typeof errorData === 'object' && errorData !== null) {
       const errObj = errorData as Partial<ParsedMicroserviceError> &
         Record<string, unknown>;
+      // Check both 'statusCode' and 'code' for compatibility with different RpcException formats
       statusCode =
+        (typeof errObj.statusCode === 'number'
+          ? errObj.statusCode
+          : undefined) ??
         (typeof errObj.code === 'number' ? errObj.code : undefined) ??
         statusCode;
       message =
