@@ -1,7 +1,6 @@
 "use client";
 
 import { Notification } from "@/interfaces/system/notification.interface";
-// Import type AppDispatch từ store của bạn (như đã bàn ở trên)
 import { AppDispatch } from "@/store"; 
 import {
   notificationApi,
@@ -44,28 +43,22 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
-  // 1. State quản lý socket và connection
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  
-  // 2. State đếm số lượng chưa đọc (Có thể lấy từ API riêng hoặc tính toán từ list)
   const [unreadCount, setUnreadCount] = useState(0);
 
   const dispatch = useDispatch<AppDispatch>();
-
-  // 3. RTK Query hooks
   const {
-    data: notificationsResponse, // Đổi tên biến cho rõ nghĩa (ApiResponse)
+    data: notificationsResponse,
     refetch,
-  } = useGetNotificationsByUserQuery({}); // Lưu ý: Params phải khớp với cache key
+  } = useGetNotificationsByUserQuery({}); 
 
   const [markAsReadMutation] = useMarkAsReadMutation();
   const [markAllAsReadMutation] = useMarkAllAsReadMutation();
 
-  // Helper: Lấy list data an toàn
+
   const notifications = notificationsResponse?.data || [];
 
-  // 4. Effect: Đồng bộ unreadCount khi data thay đổi (khi mới load hoặc refetch)
   useEffect(() => {
     if (notificationsResponse?.data) {
       const count = notificationsResponse.data.filter((n) => !n.isRead).length;
@@ -96,7 +89,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     newSocket.on("new_notification", (notification: Notification) => {
       console.log("Received new notification:", notification);
 
-      // A. Hiện Toast
       toast(notification.title, {
         description: notification.message,
         action: {
@@ -105,12 +97,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         },
       });
 
-      // B. Cập nhật Cache RTK Query (Optimistic Update)
-      // Giúp UI hiển thị ngay lập tức mà không cần Refetch
       dispatch(
         notificationApi.util.updateQueryData(
           "getNotificationsByUser",
-          {}, // Phải khớp với params ở hook useGetNotificationsByUserQuery
+          {}, 
           (draft) => {
              // draft là ApiResponse<Notification[]>
              if (draft.success && Array.isArray(draft.data)) {
@@ -119,8 +109,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           }
         )
       );
-      
-      // C. Tăng số lượng chưa đọc
+    
       setUnreadCount((prev) => prev + 1);
     });
 
@@ -132,15 +121,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   }, [dispatch]);
 
 
-  // 6. Xử lý logic Mark as Read
+
   const markAsRead = async (notificationId: string) => {
     try {
-      // Gọi API (RTK Query sẽ tự invalidate tags và refetch list mới)
+     
       const response = await markAsReadMutation(notificationId).unwrap();
       
       if (response.success) {
-         // Nếu API config có invalidatesTags: ['LIST'] -> List sẽ tự reload
-         // Ta chỉ cần trừ unread count để phản hồi nhanh UI (hoặc đợi refetch cũng được)
+         
          setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
@@ -153,7 +141,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       const response = await markAllAsReadMutation().unwrap();
       if (response.success) {
         setUnreadCount(0);
-        // List sẽ tự reload nhờ invalidatesTags trong notificationApi
+       
       }
     } catch (error) {
       console.error("Error marking all as read:", error);
@@ -163,7 +151,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   return (
     <NotificationContext.Provider
       value={{
-        notifications, // Dùng biến lấy trực tiếp từ RTK Query
+        notifications, 
         unreadCount,
         isConnected,
         markAsRead,
