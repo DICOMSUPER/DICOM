@@ -47,4 +47,8 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsBoolean()
   isRead?: boolean = false;
+
+  @IsOptional()
+  @IsBoolean()
+  isDeleted?: boolean = false;
 }

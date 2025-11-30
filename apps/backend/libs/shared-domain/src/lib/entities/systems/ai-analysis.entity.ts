@@ -39,7 +39,5 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'version_name', length: 50, nullable: true })
   versionName?: string;
 
-  // @ManyToOne(() => AiModel, (model) => model.analyses)
-  // @JoinColumn({ name: 'ai_model_id' })
-  // aiModel!: AiModel;
+
 }

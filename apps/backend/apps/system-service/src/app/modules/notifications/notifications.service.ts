@@ -247,13 +247,16 @@ export class NotificationsService {
     return updatedNotification;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<Notification> {
     console.log(` Removing notification: ${id}`);
 
     const notification = await this.findOne(id);
+    if (!notification) {
+      throw new NotFoundException(`Notification with ID ${id} not found`);
+    }
 
-    await this.notificationRepository.remove(notification);
     console.log('Notification removed successfully:', id);
+    return await this.update(id, { isDeleted: true });
   }
 
   async markAsRead(id: string): Promise<Notification> {
@@ -261,16 +264,21 @@ export class NotificationsService {
     return await this.update(id, { isRead: true });
   }
 
-  async markAllAsRead(userId: string): Promise<void> {
-    console.log(`📖 Marking all notifications as read for user: ${userId}`);
+  // async markAllAsRead(userId: string): Promise<boolean> {
+  //   console.log(`📖 Marking all notifications as read for user: ${userId}`);
 
-    await this.notificationRepository.update(
-      { recipientId: userId, isRead: false },
-      { isRead: true }
-    );
+  //   if (!userId) {
+  //     throw new BadRequestException('User ID is required to mark notifications as read');
+  //     return false
+  //   }
+  //   await this.notificationRepository.update(
+  //     { recipientId: userId, isRead: false },
+  //     { isRead: true }
+  //   );
 
-    console.log('All notifications marked as read');
-  }
+  //   console.log('All notifications marked as read');
+  //   return true
+  // }
   async getUnreadCount(userId: string): Promise<number> {
     console.log(`Counting unread notifications for user: ${userId}`);
     const count = await this.notificationRepository.count({

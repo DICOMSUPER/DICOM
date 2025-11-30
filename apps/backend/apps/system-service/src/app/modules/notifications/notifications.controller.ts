@@ -46,7 +46,7 @@ export class NotificationsController {
   }
 
   @MessagePattern('notification.remove')
-  async remove(@Payload() data: { id: string }): Promise<void> {
+  async remove(@Payload() data: { id: string }): Promise<Notification> {
     return this.notificationsService.remove(data.id);
   }
 
@@ -55,8 +55,8 @@ export class NotificationsController {
     return this.notificationsService.markAsRead(data.id);
   }
 
-  @MessagePattern('notification.markAllAsRead')
-  async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
-    return this.notificationsService.markAllAsRead(data.userId);
-  }
+  // @MessagePattern('notification.markAllAsRead')
+  // async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
+  //   return this.notificationsService.markAllAsRead(data.userId);
+  // }
 }
