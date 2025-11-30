@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 interface ReceptionLayoutProps {
   children: React.ReactNode;
@@ -49,9 +50,11 @@ export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {children}
-      </WorkspaceLayout>
+      <NotificationProvider>
+        <WorkspaceLayout sidebar={<SidebarNav />}>
+          {children}
+        </WorkspaceLayout>
+      </NotificationProvider>
     </div>
   );
 }

@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared-client"
+    },
+    {
       "path": "../../libs/shared-enums"
     },
     {

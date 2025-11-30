@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiAnalysesService } from './ai-analyses.service';
 import { AiAnalysesController } from './ai-analyses.controller';
-import { TypeOrmModule } from '@nestjs/typeorm/dist/typeorm.module';
+import { TypeOrmModule } from '@nestjs/typeorm/dist';
 import { AiAnalysis, AiModel } from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';

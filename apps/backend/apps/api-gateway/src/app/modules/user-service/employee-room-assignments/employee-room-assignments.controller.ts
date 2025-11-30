@@ -188,6 +188,39 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
+  @Get('current-session-in-room/:roomId')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.RECEPTION_STAFF,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST
+  )
+  @ApiOperation({ summary: 'Get room assignments by room id' })
+  @ApiParam({ name: 'roomId', description: 'Room ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách gán phòng theo phòng thành công',
+  })
+  async findByRoomInCurrentSession(@Param('roomId') roomId: string) {
+    try {
+      console.log('roomId api gateway', roomId);
+      this.logger.log(`📋 Fetching room assignments for room: ${roomId}`);
+      const result = await firstValueFrom(
+        this.userServiceClient.send(
+          'UserService.EmployeeRoomAssignments.FindByRoomInCurrentSession',
+          roomId
+        )
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to fetch room assignments for room: ${roomId}`,
+        error
+      );
+      throw handleError(error);
+    }
+  }
+
   @Role(
     Roles.IMAGING_TECHNICIAN,
     Roles.PHYSICIAN,
@@ -219,10 +252,16 @@ export class EmployeeRoomAssignmentsController {
   async getStats() {
     try {
       return await firstValueFrom(
-        this.userServiceClient.send('UserService.EmployeeRoomAssignments.GetStats', {})
+        this.userServiceClient.send(
+          'UserService.EmployeeRoomAssignments.GetStats',
+          {}
+        )
       );
     } catch (error) {
-      this.logger.error('❌ Failed to fetch employee room assignment stats', error);
+      this.logger.error(
+        '❌ Failed to fetch employee room assignment stats',
+        error
+      );
       throw handleError(error);
     }
   }

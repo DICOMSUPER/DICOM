@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateRequestProcedureDto {
   @IsString()
@@ -17,7 +17,7 @@ export class CreateRequestProcedureDto {
   @IsOptional()
   description?: string;
 
-  // @IsOptional()
-  // @IsBoolean()
-  // isActive?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  isActive: boolean = true;
 }

@@ -47,6 +47,7 @@ import { ImagingOrderFormRepository } from './modules/imaging-order-form/imaging
 import { BackendRedisModule } from '@backend/redis';
 import {
   PatientServiceClientModule,
+  SystemServiceClientModule,
   UserServiceClientModule,
 } from '@backend/shared-client';
 import { DicomStudySignaturesModule } from './modules/dicom-study-signatures/dicom-study-signatures.module';
@@ -91,6 +92,7 @@ import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures
     BackendRedisModule,
     PatientServiceClientModule,
     UserServiceClientModule,
+    SystemServiceClientModule
   ],
   controllers: [AppController],
   providers: [

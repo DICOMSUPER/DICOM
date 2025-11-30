@@ -7,7 +7,7 @@ import { ImagingOrdersModule } from '../imaging-orders/imaging-orders.module';
 import { ImagingOrderFormController } from './imaging-order-form.controller';
 import { ImagingOrderFormRepository } from './imaging-order-form.repository';
 import { ImagingOrderFormService } from './imaging-order-form.service';
-import { PatientServiceClientModule } from '@backend/shared-client';
+import { PatientServiceClientModule, SystemServiceClientModule } from '@backend/shared-client';
 import { BackendRedisModule } from '@backend/redis';
 
 @Module({
@@ -15,6 +15,7 @@ import { BackendRedisModule } from '@backend/redis';
     BackendEntitiesModule.forFeature([ImagingOrder, ImagingOrderForm]),
     ImagingOrdersModule,
     PatientServiceClientModule,
+    SystemServiceClientModule,
     BackendRedisModule,
   ],
   controllers: [ImagingOrderFormController],
