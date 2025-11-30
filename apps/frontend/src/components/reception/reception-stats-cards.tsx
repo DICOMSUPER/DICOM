@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
 
 interface StatCard {
@@ -26,9 +27,13 @@ export function ReceptionStatsCards({ stats, className = "" }: ReceptionStatsCar
             <stat.icon className="h-4 w-4 text-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {stat.isLoading ? '...' : stat.value}
-            </div>
+            {stat.isLoading ? (
+              <Skeleton className="h-8 w-20 mb-2" />
+            ) : (
+              <div className="text-2xl font-bold text-foreground">
+                {stat.value}
+              </div>
+            )}
             <p className="text-xs text-foreground">
               {stat.description}
             </p>

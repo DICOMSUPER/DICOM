@@ -8,7 +8,6 @@ import { UserModule } from './user/user.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { DepartmentModule } from './department/department.module';
 import { RoomSchedulesModule } from './room-schedules/room-schedules.module';
-import { WeeklySchedulePatternsModule } from './weekly-schedule-patterns/weekly-schedule-patterns.module';
 import { ShiftTemplatesModule } from './shift-templates/shift-templates.module';
 import { DigitalSignatureModule } from './digital-signature/digital-signature.module';
 import { ServiceRoomsModule } from './service-rooms/service-rooms.module';
@@ -23,7 +22,6 @@ import { ServicesModule } from './services/services.module';
     RoomsModule,
     DepartmentModule,
     RoomSchedulesModule,
-    WeeklySchedulePatternsModule,
     ShiftTemplatesModule,
     PatientServiceClientModule,
     DigitalSignatureModule,
@@ -33,7 +31,6 @@ import { ServicesModule } from './services/services.module';
   ],
   exports: [
     UserServiceClientModule,
-    WeeklySchedulePatternsModule,
     UserModule,
     RoomsModule,
     DepartmentModule,

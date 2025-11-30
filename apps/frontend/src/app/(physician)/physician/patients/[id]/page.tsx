@@ -14,7 +14,7 @@ import {
   useGetPatientEncounterByIdQuery,
   useGetPatientEncountersByPatientIdQuery,
 } from "@/store/patientEncounterApi";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import CreateImagingOrder from "@/components/patients/detail/create-order-form";
 
 interface PatientDetailPageProps {
@@ -27,8 +27,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const resolvedParams = use(params);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: patientEncounterData, isLoading } =
+  const { data: patientEncounterData, isLoading, refetch: refetchEncounter } =
     useGetPatientEncounterByIdQuery(resolvedParams.id);
+
+  // Listen for patient update events to refetch encounter data
+  useEffect(() => {
+    const handlePatientUpdate = (event: CustomEvent) => {
+      if (event.detail?.patientId === patientEncounterData?.data?.patientId) {
+        refetchEncounter();
+      }
+    };
+    window.addEventListener('patient:updated', handlePatientUpdate as EventListener);
+    return () => {
+      window.removeEventListener('patient:updated', handlePatientUpdate as EventListener);
+    };
+  }, [patientEncounterData?.data?.patientId, refetchEncounter]);
 
   const { data: patientOverview, isLoading: isLoadingOverview } =
     useGetPatientOverviewQuery(

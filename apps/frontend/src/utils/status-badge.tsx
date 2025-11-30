@@ -176,3 +176,69 @@ export const getMachineStatusBadgeSimple = (status: string): React.ReactNode => 
   );
 };
 
+export const getEncounterStatusBadge = (status: string): React.ReactNode => {
+  const statusConfig: Record<string, StatusBadgeConfig> = {
+    'waiting': {
+      label: 'Waiting',
+      colorClass: 'bg-amber-100 text-amber-700',
+    },
+    'arrived': {
+      label: 'Arrived',
+      colorClass: 'bg-blue-100 text-blue-700',
+    },
+    'finished': {
+      label: 'Finished',
+      colorClass: 'bg-green-100 text-green-700',
+    },
+    'cancelled': {
+      label: 'Cancelled',
+      colorClass: 'bg-red-100 text-red-700',
+    },
+    'canceled': {
+      label: 'Cancelled',
+      colorClass: 'bg-red-100 text-red-700',
+    },
+    'in-progress': {
+      label: 'In Progress',
+      colorClass: 'bg-blue-100 text-blue-700',
+    },
+    'in_progress': {
+      label: 'In Progress',
+      colorClass: 'bg-blue-100 text-blue-700',
+    },
+    'completed': {
+      label: 'Completed',
+      colorClass: 'bg-emerald-100 text-emerald-700',
+    },
+    'scheduled': {
+      label: 'Scheduled',
+      colorClass: 'bg-purple-100 text-purple-700',
+    },
+    'pending': {
+      label: 'Pending',
+      colorClass: 'bg-yellow-100 text-yellow-700',
+    },
+  };
+
+  return getStatusBadge(status, statusConfig);
+};
+
+export const getEncounterPriorityBadge = (priority: string): React.ReactNode => {
+  const priorityConfig: Record<string, StatusBadgeConfig> = {
+    'stat': {
+      label: 'Stat',
+      colorClass: 'bg-red-100 text-red-700',
+    },
+    'urgent': {
+      label: 'Urgent',
+      colorClass: 'bg-orange-100 text-orange-700',
+    },
+    'routine': {
+      label: 'Routine',
+      colorClass: 'bg-blue-100 text-blue-700',
+    },
+  };
+
+  return getStatusBadge(priority, priorityConfig);
+};
+

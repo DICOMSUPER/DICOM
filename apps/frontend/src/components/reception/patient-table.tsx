@@ -5,23 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
-import { Eye, Edit, Trash2, User, Calendar, Phone, MapPin } from "lucide-react";
+import { Eye, Edit, Trash2 } from "lucide-react";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import { formatDate, formatDateTime } from "@/lib/formatTimeDate";
 
-// interface Patient {
-//   id: string;
-//   firstName: string;
-//   lastName: string;
-//   patientCode: string;
-//   dateOfBirth: string;
-//   gender: string;
-//   phoneNumber?: string;
-//   address?: string;
-//   bloodType?: string;
-//   isActive: boolean;
-//   priority?: string;
-//   lastVisit?: string;
-// }
 
 interface PatientTableProps {
   patients: Patient[];
@@ -44,9 +31,6 @@ export function PatientTable({
   onEditPatient,
   onDeletePatient,
 }: PatientTableProps) {
-  const formatTime = (date: string) => {
-    return new Date(date).toLocaleDateString();
-  };
 
   const formatAge = (dateOfBirth: string | Date) => {
     const today = new Date();
@@ -70,10 +54,12 @@ export function PatientTable({
   };
 
   const headers = [
-    "Patient",
+    "Name",
     "Patient Code",
-    "Age/Gender",
-    "Contact",
+    "Age",
+    "Gender",
+    "Phone",
+    "Address",
     "Status",
     "Last Visit",
     "Actions",
@@ -83,49 +69,35 @@ export function PatientTable({
     <DataTable<Patient>
       columns={[
         {
-          header: "Patient",
+          header: "Name",
           cell: (patient) => (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <div className="font-medium">
-                  {patient.firstName} {patient.lastName}
-                </div>
-                <div className="text-sm text-foreground">
-                  {patient.bloodType && `Blood Type: ${patient.bloodType}`}
-                </div>
-              </div>
+            <div className="font-medium">
+              {patient.firstName} {patient.lastName}
             </div>
           ),
         },
         { header: "Patient Code", cell: (patient) => patient.patientCode },
         {
-          header: "Age/Gender",
-          cell: (patient) =>
-            `${formatAge(patient?.dateOfBirth as Date)} years • ${formatGender(
-              patient.gender
-            )}`,
+          header: "Age",
+          cell: (patient) => `${formatAge(patient?.dateOfBirth as Date)} years`,
         },
         {
-          header: "Contact",
+          header: "Gender",
+          cell: (patient) => formatGender(patient.gender),
+        },
+        {
+          header: "Phone",
           cell: (patient) => (
             <div className="text-foreground">
-              {patient.phoneNumber ? (
-                <div className="flex items-center gap-1">
-                  <Phone className="w-3 h-3" />
-                  {patient.phoneNumber}
-                </div>
-              ) : (
-                <span className="text-foreground">No phone</span>
-              )}
-              {patient.address && (
-                <div className="flex items-center gap-1 text-sm text-foreground mt-1">
-                  <MapPin className="w-3 h-3" />
-                  {patient.address}
-                </div>
-              )}
+              {patient.phoneNumber || "N/A"}
+            </div>
+          ),
+        },
+        {
+          header: "Address",
+          cell: (patient) => (
+            <div className="text-foreground">
+              {patient.address || "N/A"}
             </div>
           ),
         },
@@ -147,7 +119,7 @@ export function PatientTable({
               encounter.encounterDate instanceof Date
                 ? encounter.encounterDate.toISOString()
                 : String(encounter.encounterDate);
-            return formatTime(encounterDate);
+            return formatDateTime(encounterDate);
           },
         },
         {

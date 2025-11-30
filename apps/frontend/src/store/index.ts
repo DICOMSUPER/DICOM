@@ -31,7 +31,7 @@ import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
 import { aiAnalysisApi } from "./aiAnalysisApi";
 import { analyticsApi } from "./analyticsApi";
 import { notificationApi } from "./notificationApi";
-
+import { ImageSegmentationLayerApi } from "./imageSegmentationLayerApi";
 
 export const store = configureStore({
   reducer: {
@@ -66,6 +66,7 @@ export const store = configureStore({
     [aiAnalysisApi.reducerPath]: aiAnalysisApi.reducer,
     [analyticsApi.reducerPath]: analyticsApi.reducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
+    [ImageSegmentationLayerApi.reducerPath]: ImageSegmentationLayerApi.reducer,
   },
   middleware: (getDefault) =>
     getDefault()
@@ -101,7 +102,8 @@ export const store = configureStore({
       .concat(dicomStudySignatureApi.middleware)
       .concat(aiAnalysisApi.middleware)
       .concat(analyticsApi.middleware)
-      .concat(notificationApi.middleware),
+      .concat(notificationApi.middleware)
+      .concat(ImageSegmentationLayerApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

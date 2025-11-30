@@ -457,5 +457,122 @@ export class AnalyticsService {
     }
   }
 
+  async getReceptionAnalytics(period?: 'week' | 'month' | 'year', value?: string) {
+    try {
+      const [
+        patientStatsResult,
+        encounterStatsResult,
+      ] = await Promise.all([
+        firstValueFrom(
+          this.patientService.send('PatientService.Patient.GetStats', {})
+        ).catch(() => ({ data: null })),
+        firstValueFrom(
+          this.patientService.send('PatientService.Encounter.GetStats', {})
+        ).catch(() => ({ data: null })),
+      ]);
+
+      const patientStats = patientStatsResult || {};
+      const encounterStats = encounterStatsResult || {};
+
+      const stats = {
+        totalPatients: patientStats?.totalPatients || 0,
+        activePatients: patientStats?.activePatients || 0,
+        newPatientsThisMonth: patientStats?.newPatientsThisMonth || 0,
+        inactivePatients: patientStats?.inactivePatients || 0,
+        totalEncounters: encounterStats?.totalEncounters || 0,
+        todayEncounters: encounterStats?.todayEncounter || 0,
+        todayStatEncounters: encounterStats?.todayStatEncounter || 0,
+        encountersThisMonth: encounterStats?.encountersThisMonth || 0,
+      };
+
+      const { startDate, endDate } = this.calculateDateRange(period, value);
+      
+      let encountersOverTimeData: any = { data: [] };
+      let patientsOverTimeData: any = { data: [] };
+      let allEncountersForType: any[] = [];
+      
+      try {
+        const allEncounters = await firstValueFrom(
+          this.patientService.send('PatientService.Encounter.FindAll', {})
+        ).catch(() => []);
+        
+        const encountersData = Array.isArray(allEncounters?.data) ? allEncounters.data : (Array.isArray(allEncounters) ? allEncounters : []);
+        const filteredEncounters = encountersData.filter((e: any) => {
+          if (e.isActive === false || e.isDeleted === true) return false;
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (!encounterDate) return false;
+          const date = new Date(encounterDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        allEncountersForType = filteredEncounters;
+        
+        const encounterDateMap = new Map<string, number>();
+        const patientDateMap = new Map<string, Set<string>>();
+        
+        filteredEncounters.forEach((e: any) => {
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (encounterDate) {
+            const date = new Date(encounterDate).toISOString().split('T')[0];
+            encounterDateMap.set(date, (encounterDateMap.get(date) || 0) + 1);
+            
+            if (e.patientId) {
+              if (!patientDateMap.has(date)) {
+                patientDateMap.set(date, new Set());
+              }
+              patientDateMap.get(date)?.add(e.patientId);
+            }
+          }
+        });
+        
+        encountersOverTimeData = {
+          data: Array.from(encounterDateMap.entries()).map(([date, count]) => ({
+            date,
+            count,
+            encounters: count,
+          })),
+        };
+        
+        patientsOverTimeData = {
+          data: Array.from(patientDateMap.entries()).map(([date, patientIds]) => ({
+            date,
+            count: patientIds.size,
+            patients: patientIds.size,
+          })),
+        };
+      } catch (error) {
+        this.logger.warn('Could not fetch encounters/patients by date range, using fallback', error);
+      }
+
+      const encountersOverTime = this.processTimeSeriesData(
+        encountersOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'encounters'
+      );
+      const patientsOverTime = this.processTimeSeriesData(
+        patientsOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'patients'
+      );
+      const encountersByType = this.processEncountersByType(allEncountersForType);
+      const encountersByStatus = await this.getEncountersByStatus();
+
+      return {
+        stats,
+        encountersOverTime,
+        patientsOverTime,
+        encountersByType,
+        encountersByStatus,
+      };
+    } catch (error) {
+      this.logger.error('Error aggregating reception analytics data:', error);
+      throw error;
+    }
+  }
+
 }
 

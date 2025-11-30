@@ -1,7 +1,7 @@
 import type { MutableRefObject } from "react";
 import { cache, eventTarget, imageLoader } from "@cornerstonejs/core";
 import { segmentation, Enums as ToolEnums } from "@cornerstonejs/tools";
-
+import pako from "pako";
 /**
  * Segmentation history types and helpers.
  *
@@ -34,7 +34,13 @@ export interface SegmentationHistoryStacks {
 
 export interface SegmentationSnapshot {
   segmentationId: string;
-  imageData: Array<{ imageId: string; pixelData: Uint8Array }>;
+  imageData: Array<{
+    imageId: string;
+    originalImageId: string; // Track original DICOM image ID
+    frameNumber: number; // Track frame number
+    instanceId?: string; // Track instance ID
+    pixelData: Uint8Array;
+  }>;
   capturedAt: number;
 }
 
@@ -52,7 +58,7 @@ export interface SegmentationHistoryHelpers {
     viewport: number,
     layerId: string,
     id: string,
-    snapshot: unknown
+    snapshot: SegmentationSnapshot
   ) => void;
   removeEntry: (viewport: number, layerId: string, id: string) => void;
   clearLayerHistory: (viewport: number, layerId: string) => void;
@@ -70,6 +76,55 @@ export interface SegmentationHistoryHelpers {
     layerId: string
   ) => SegmentationHistoryStacks | undefined;
 }
+// Helper functions for compression
+export const uint8ArrayToBase64 = (bytes: Uint8Array) => {
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+};
+
+export const compressSnapshots = (snapshots: any[]) => {
+  return snapshots.map((snapshot) => ({
+    ...snapshot,
+    imageData: snapshot.imageData.map((data: any) => {
+      if (data.pixelData instanceof Uint8Array) {
+        const compressed = pako.deflate(data.pixelData);
+        return {
+          ...data,
+          pixelData: uint8ArrayToBase64(compressed),
+          isCompressed: true,
+        };
+      }
+      return data;
+    }),
+  }));
+};
+
+export const decompressSnapshots = (snapshots: any[]) => {
+  return snapshots.map((snapshot) => ({
+    ...snapshot,
+    imageData: snapshot.imageData.map((data: any) => {
+      if (data.isCompressed && typeof data.pixelData === "string") {
+        const binaryString = window.atob(data.pixelData);
+        const len = binaryString.length;
+        const compressed = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          compressed[i] = binaryString.charCodeAt(i);
+        }
+        const decompressed = pako.inflate(compressed);
+        return {
+          ...data,
+          pixelData: decompressed,
+          isCompressed: false,
+        };
+      }
+      return data;
+    }),
+  }));
+};
 
 export const segmentationIdForViewport = (viewportId: string) =>
   `seg_${viewportId}`;
@@ -100,29 +155,97 @@ const disposeLabelmapImages = (viewportId: string) => {
   viewportReferenceImageIds.delete(viewportId);
 };
 
+// Store mapping between labelmap and original image IDs
+const viewportImageMappings = new Map<
+  string,
+  Map<
+    string,
+    {
+      originalImageId: string;
+      frameNumber: number;
+      instanceId?: string;
+    }
+  >
+>();
+
 const ensureLabelmapImagesForViewport = async (
   viewportId: string,
-  referenceImageIds: string[]
+  referenceImageIds: string[],
+  imageIdToInstanceMap?: Record<string, string>
 ): Promise<string[]> => {
   const existingReferenceIds = viewportReferenceImageIds.get(viewportId);
   if (!imageSetsMatch(existingReferenceIds, referenceImageIds)) {
     disposeLabelmapImages(viewportId);
+    viewportImageMappings.delete(viewportId); // Clear mappings
   }
 
   const prefix = labelmapPrefixForViewport(viewportId);
   const derivedImageIds: string[] = [];
 
+  // Initialize mapping for this viewport
+  if (!viewportImageMappings.has(viewportId)) {
+    viewportImageMappings.set(viewportId, new Map());
+  }
+  const mapping = viewportImageMappings.get(viewportId)!;
+
   for (let index = 0; index < referenceImageIds.length; index += 1) {
     const referencedImageId = referenceImageIds[index];
     const derivedImageId = `${prefix}:${index + 1}`;
 
+    // Extract frame number from original image ID
+    const frameNumber = extractFrameNumber(referencedImageId);
+
+    // Get instance ID from the provided map
+    const instanceId = imageIdToInstanceMap?.[referencedImageId];
+
+    // Store mapping
+    mapping.set(derivedImageId, {
+      originalImageId: referencedImageId,
+      frameNumber,
+      instanceId,
+    });
+
+    // Debug: Log first 3 and last 3 frames to see the pattern
+    if (index < 3 || index >= referenceImageIds.length - 3) {
+      console.log(`[Segmentation] Created mapping for ${derivedImageId}:`, {
+        index: index + 1,
+        referencedImageId,
+        extractedFrameNumber: frameNumber,
+        instanceId,
+        derivedImageId,
+        hasInstanceMapProvided: !!imageIdToInstanceMap,
+        instanceMapHasThisKey: imageIdToInstanceMap
+          ? referencedImageId in imageIdToInstanceMap
+          : false,
+      });
+    }
+
     if (!cache.getImageLoadObject(derivedImageId)) {
       try {
         await imageLoader.loadAndCacheImage(referencedImageId);
-        imageLoader.createAndCacheDerivedImage(referencedImageId, {
-          imageId: derivedImageId,
-          targetBuffer: { type: "Uint8Array" },
-        });
+        const derivedImage = imageLoader.createAndCacheDerivedImage(
+          referencedImageId,
+          {
+            imageId: derivedImageId,
+            targetBuffer: { type: "Uint8Array" },
+          }
+        );
+
+        // IMPORTANT: Ensure the derived labelmap image starts with all zeros
+        // This prevents segmentation from appearing on frames where nothing was drawn
+        if (derivedImage && typeof derivedImage.getPixelData === "function") {
+          const pixelData = derivedImage.getPixelData();
+          if (pixelData instanceof Uint8Array) {
+            pixelData.fill(0);
+            console.log(
+              `[Segmentation] Initialized labelmap ${derivedImageId} with ${pixelData.length} zero pixels`
+            );
+          }
+        } else {
+          console.warn(
+            `[Segmentation] Could not initialize labelmap ${derivedImageId} - no pixel data access`
+          );
+        }
       } catch (error) {
         console.error(
           "[Segmentation] Failed to prepare labelmap image",
@@ -130,6 +253,18 @@ const ensureLabelmapImagesForViewport = async (
           error
         );
         throw error;
+      }
+    } else {
+      // Labelmap already exists - ensure it's still cleared
+      const existingImage = cache.getImage(derivedImageId);
+      if (existingImage && typeof existingImage.getPixelData === "function") {
+        const pixelData = existingImage.getPixelData();
+        if (pixelData instanceof Uint8Array) {
+          const hasData = pixelData.some((p) => p !== 0);
+          console.log(
+            `[Segmentation] Existing labelmap ${derivedImageId}: hasData=${hasData}, pixels=${pixelData.length}`
+          );
+        }
       }
     }
 
@@ -154,6 +289,22 @@ const imageSetsMatch = (
     }
   }
   return true;
+};
+
+// Helper functions to extract information from image IDs
+const extractFrameNumber = (imageId: string): number => {
+  try {
+    const frameMatch = imageId.match(/[?&]frame=(\d+)/);
+    return frameMatch ? parseInt(frameMatch[1], 10) : 1;
+  } catch {
+    return 1;
+  }
+};
+
+const extractInstanceId = (imageId: string): string | undefined => {
+  // This would need to be implemented based on how you store instance mapping
+  // For now, returning undefined - you'll need to pass this from the viewport context
+  return undefined;
 };
 
 const safelyRemoveSegmentation = (segmentationId: string) => {
@@ -228,7 +379,7 @@ export const createSegmentationHistoryHelpers = (
     viewport: number,
     layerId: string,
     id: string,
-    snapshot: unknown
+    snapshot: SegmentationSnapshot
   ): void => {
     if (!id || !layerId) {
       return;
@@ -333,8 +484,9 @@ export const createSegmentationHistoryHelpers = (
 export async function ensureViewportLabelmapSegmentation(options: {
   viewportId: string;
   imageIds: string[];
+  imageIdToInstanceMap?: Record<string, string>;
 }) {
-  const { viewportId, imageIds } = options;
+  const { viewportId, imageIds, imageIdToInstanceMap } = options;
 
   if (!viewportId || !imageIds?.length) {
     return;
@@ -360,17 +512,30 @@ export async function ensureViewportLabelmapSegmentation(options: {
 
   const labelmapImageIds = await ensureLabelmapImagesForViewport(
     viewportId,
-    imageIds
+    imageIds,
+    imageIdToInstanceMap
   );
 
   if (!segmentation.state.getSegmentation(segmentationId)) {
+    // Create imageIdReferenceMap: maps original DICOM imageIds to labelmap imageIds
+    // This ensures each frame has its own independent segmentation data
+    const imageIdReferenceMap = new Map<string, string>();
+    imageIds.forEach((originalImageId, index) => {
+      const labelmapImageId = labelmapImageIds[index];
+      if (labelmapImageId) {
+        imageIdReferenceMap.set(originalImageId, labelmapImageId);
+      }
+    });
+
+    console.log(
+      `[Segmentation] Creating segmentation with ${imageIds.length} frames, using imageIdReferenceMap (ensures per-frame independence)`
+    );
+
     segmentation.addSegmentations([
       {
         segmentationId,
         representation: {
-          // Labelmap segmentation
           type: ToolEnums.SegmentationRepresentations.Labelmap,
-          // For stack viewports we can base it on imageIds rather than a volumeId
           data: {
             imageIds: labelmapImageIds,
           },
@@ -408,28 +573,122 @@ export async function ensureViewportLabelmapSegmentation(options: {
 }
 
 export function captureSegmentationSnapshot(
-  segmentationId: string
+  segmentationId: string,
+  viewportId?: string,
+  imageIdToInstanceMap?: Record<string, string>
 ): SegmentationSnapshot | null {
+  console.log("[Debug] captureSegmentationSnapshot called:", {
+    segmentationId,
+    viewportId,
+    hasImageIdToInstanceMap: !!imageIdToInstanceMap,
+  });
+
   if (!segmentationId) {
+    console.warn("[Segmentation] No segmentationId provided");
     return null;
   }
 
   const segState = segmentation.state.getSegmentation(segmentationId);
+  console.log("[Debug] Segmentation state:", {
+    hasSegState: !!segState,
+    segState: segState ? "exists" : "null",
+  });
+
   const labelmapData = segState?.representationData?.Labelmap;
-  const imageIds =
+  console.log("[Debug] Labelmap data:", {
+    hasLabelmapData: !!labelmapData,
+    labelmapDataKeys: labelmapData ? Object.keys(labelmapData) : [],
+  });
+
+  // Extract labelmap image IDs from imageIdReferenceMap (new format) or imageIds (legacy)
+  let imageIds: string[] = [];
+
+  if (labelmapData && "imageIdReferenceMap" in labelmapData) {
+    const refMap = labelmapData.imageIdReferenceMap as Map<string, string>;
+    imageIds = Array.from(refMap.values());
+    console.log("[Debug] Using imageIdReferenceMap:", {
+      imageIdsLength: imageIds.length,
+      firstTwo: imageIds.slice(0, 2),
+    });
+  } else if (
     labelmapData &&
     "imageIds" in labelmapData &&
     Array.isArray(labelmapData.imageIds)
-      ? (labelmapData.imageIds as string[])
-      : [];
+  ) {
+    imageIds = labelmapData.imageIds as string[];
+    console.log("[Debug] Using legacy imageIds array:", {
+      imageIdsLength: imageIds.length,
+      firstTwo: imageIds.slice(0, 2),
+    });
+  }
 
   if (!imageIds.length) {
+    console.warn("[Segmentation] No image IDs found in labelmap data");
     return null;
   }
 
-  const imageData: Array<{ imageId: string; pixelData: Uint8Array }> = [];
+  // DIAGNOSTIC: Check if multiple labelmap images share the same buffer
+  if (imageIds.length > 1) {
+    const img1 = cache.getImage(imageIds[0]);
+    const img2 = cache.getImage(imageIds[1]);
+    if (img1 && img2) {
+      const pixels1 =
+        typeof img1.getPixelData === "function" ? img1.getPixelData() : null;
+      const pixels2 =
+        typeof img2.getPixelData === "function" ? img2.getPixelData() : null;
+      if (pixels1 instanceof Uint8Array && pixels2 instanceof Uint8Array) {
+        const sameBuffer = pixels1.buffer === pixels2.buffer;
+        console.warn(
+          `[Segmentation] CRITICAL: Frame 1 and Frame 2 share same buffer: ${sameBuffer}`
+        );
+        if (sameBuffer) {
+          console.error(
+            "[Segmentation] BUG DETECTED: All frames are using the same memory buffer! This is why segmentation appears on all frames."
+          );
+        }
+      }
+    }
+  }
 
-  imageIds.forEach((imageId) => {
+  // Get the mapping for this viewport
+  const mapping = viewportId ? viewportImageMappings.get(viewportId) : null;
+
+  console.log("[Debug] Viewport mapping info:", {
+    viewportId,
+    hasMapping: !!mapping,
+    mappingSize: mapping?.size || 0,
+    hasImageIdToInstanceMap: !!imageIdToInstanceMap,
+    imageIdToInstanceMapKeys: imageIdToInstanceMap
+      ? Object.keys(imageIdToInstanceMap).slice(0, 3)
+      : [],
+    allViewportIds: Array.from(viewportImageMappings.keys()),
+    firstLabelmapId: imageIds[0],
+  });
+
+  // If no mapping found, log all available mappings for debugging
+  if (!mapping || mapping.size === 0) {
+    console.error("[Segmentation] CRITICAL: No mapping found for viewport!", {
+      requestedViewportId: viewportId,
+      availableViewportIds: Array.from(viewportImageMappings.keys()),
+      allMappings: Array.from(viewportImageMappings.entries()).map(
+        ([vid, map]) => ({
+          viewportId: vid,
+          mappingCount: map.size,
+          firstMapping: Array.from(map.entries())[0],
+        })
+      ),
+    });
+  }
+
+  const imageData: Array<{
+    imageId: string;
+    originalImageId: string;
+    frameNumber: number;
+    instanceId?: string;
+    pixelData: Uint8Array;
+  }> = [];
+
+  imageIds.forEach((imageId, idx) => {
     if (!imageId) {
       return;
     }
@@ -452,7 +711,42 @@ export function captureSegmentationSnapshot(
         ? new Uint8Array(sourcePixels)
         : new Uint8Array(sourcePixels.buffer.slice(0));
 
-    imageData.push({ imageId, pixelData: clone });
+    // Get original image info from mapping
+    const mappingInfo = mapping?.get(imageId);
+    const originalImageId = mappingInfo?.originalImageId || imageId;
+    const frameNumber = mappingInfo?.frameNumber || extractFrameNumber(imageId);
+
+    // Use the original image ID to look up the instance ID from the map
+    let instanceId: string | undefined = mappingInfo?.instanceId;
+    if (!instanceId && imageIdToInstanceMap && originalImageId) {
+      instanceId = imageIdToInstanceMap[originalImageId];
+    }
+
+    // Check if this frame actually has segmentation data (non-zero pixels)
+    const hasSegmentationData = clone.some((pixel) => pixel !== 0);
+
+    if (idx === 0 || hasSegmentationData) {
+      console.log(`[Debug] Frame ${idx + 1} mapping:`, {
+        labelmapImageId: imageId,
+        originalImageId,
+        frameNumber,
+        instanceId,
+        hasMappingInfo: !!mappingInfo,
+        hasSegmentationData,
+        nonZeroPixels: hasSegmentationData
+          ? clone.filter((p) => p !== 0).length
+          : 0,
+        totalPixels: clone.length,
+      });
+    }
+
+    imageData.push({
+      imageId,
+      originalImageId,
+      frameNumber,
+      instanceId,
+      pixelData: clone,
+    });
   });
 
   if (!imageData.length) {
@@ -464,6 +758,22 @@ export function captureSegmentationSnapshot(
     imageData,
     capturedAt: Date.now(),
   };
+}
+
+/**
+ * Get the current segmentation state for a layer (not history)
+ * This captures the current pixel data without adding to history
+ */
+export function getCurrentSegmentationSnapshot(
+  segmentationId: string,
+  viewportId?: string,
+  imageIdToInstanceMap?: Record<string, string>
+): SegmentationSnapshot | null {
+  return captureSegmentationSnapshot(
+    segmentationId,
+    viewportId,
+    imageIdToInstanceMap
+  );
 }
 
 export function restoreSegmentationSnapshot(

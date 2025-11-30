@@ -9,8 +9,8 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { EmployeeRoomAssignment } from './employee-room-assignments.entity';
-import { Room } from './room.entity';
+import type { EmployeeRoomAssignment } from './employee-room-assignments.entity';
+import type { Room } from './room.entity';
 import { ShiftTemplate } from './shift-templates.entity';
 
 @Entity('room_schedules')
@@ -56,12 +56,12 @@ export class RoomSchedule extends BaseEntity {
   created_by?: string;
 
   @OneToMany(
-    () => EmployeeRoomAssignment,
-    (assignment) => assignment.roomSchedule
+    () => require('./employee-room-assignments.entity').EmployeeRoomAssignment,
+    (assignment: EmployeeRoomAssignment) => assignment.roomSchedule
   )
   employeeRoomAssignments!: EmployeeRoomAssignment[];
 
-  @ManyToOne(() => Room)
+  @ManyToOne(() => require('./room.entity').Room)
   @JoinColumn({ name: 'room_id' })
   room?: Room;
 

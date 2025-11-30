@@ -3,11 +3,11 @@
 import { DataTable } from "@/components/ui/data-table";
 import { TableRowEnhanced, TableCellEnhanced } from "@/components/ui/table-enhanced";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
 import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/enums/priority.enum";
+import { getEncounterStatusBadge } from "@/utils/status-badge";
 
 interface Assignment {
   id: string;
@@ -122,7 +122,7 @@ export function AssignmentsTable({
             </div>
           </TableCellEnhanced>
           <TableCellEnhanced>
-            <StatusBadge status={assignment.status} />
+            {getEncounterStatusBadge(assignment.status)}
           </TableCellEnhanced>
           <TableCellEnhanced isLast>
             <DropdownMenu>

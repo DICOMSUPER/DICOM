@@ -15,6 +15,7 @@ import {
 import { PatientSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
 import { Gender, BloodType } from "@/enums/patient-workflow.enum";
 import { PriorityLevel, HIGH_PRIORITY_LEVELS } from "@/enums/priority.enum";
+import { formatDate } from "@/lib/formatTimeDate";
 import { 
   Search, 
   Filter, 
@@ -341,7 +342,7 @@ export function PatientSearch({
                           <div className="text-sm text-gray-600 flex items-center gap-3">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {new Date(patient.dateOfBirth).toLocaleDateString()}
+                              {formatDate(patient.dateOfBirth)}
                             </span>
                             {patient.phoneNumber && (
                               <span className="flex items-center gap-1">

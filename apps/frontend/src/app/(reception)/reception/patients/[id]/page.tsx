@@ -170,16 +170,16 @@ function PatientForwardSkeleton() {
 // Skeleton component for EncounterList
 function EncounterListSkeleton() {
   return (
-    <div className="rounded-2xl p-6 shadow border-border border space-y-4">
+    <div className="rounded-2xl shadow border-border border space-y-4 h-60 overflow-y-auto">
       <div className="flex items-center gap-2 text-lg font-semibold">
         <Stethoscope className="h-5 w-5" />
         Recent Encounters
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-lg border border-border p-4 space-y-3"
+            className="rounded-lg border border-border p-3 space-y-2"
           >
             {/* Header Row Skeleton */}
             <div className="flex items-start justify-between gap-3">
@@ -247,12 +247,14 @@ export default function PatientDetail() {
   const {
     data: patientData,
     isLoading: patientLoading,
+    isFetching: patientFetching,
     error: patientError,
     refetch: refetchPatient,
   } = useGetPatientByIdQuery(patientId);
   const {
     data: encountersData,
     isLoading: encountersLoading,
+    isFetching: encountersFetching,
     refetch: refetchEncounters,
   } = useGetPatientEncountersByPatientIdQuery({
     patientId,
@@ -262,6 +264,7 @@ export default function PatientDetail() {
   const {
     data: conditionsData,
     isLoading: conditionsLoading,
+    isFetching: conditionsFetching,
     refetch: refetchConditions,
   } = useGetConditionsByPatientIdQuery(patientId);
 
@@ -356,7 +359,7 @@ export default function PatientDetail() {
           </Button>
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={patientLoading || encountersLoading || conditionsLoading}
+            loading={patientLoading || patientFetching || encountersLoading || encountersFetching || conditionsLoading || conditionsFetching}
           />
           {!patientLoading && (
             <Button
@@ -390,9 +393,6 @@ export default function PatientDetail() {
               encounters={encounters}
               loading={encountersLoading}
               onEdit={handleEditEncounter}
-              onDelete={(encounterId) =>
-                console.log("Delete encounter:", encounterId)
-              }
               onView={(encounter) => setViewEncounter(encounter)}
               onCreate={handleCreateEncounter}
               page={encountersData?.page || 1}

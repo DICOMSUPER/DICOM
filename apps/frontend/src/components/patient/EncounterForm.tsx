@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingButton } from '@/components/ui/loading-button';
@@ -16,7 +17,6 @@ import {
 } from '@/components/ui/select';
 import { 
   Stethoscope, 
-  Calendar, 
   User, 
   FileText,
   Save,
@@ -29,7 +29,10 @@ import {
   VitalSignsCollection 
 } from '@/interfaces/patient/patient-workflow.interface';
 import { EncounterType } from '@/enums/patient-workflow.enum';
+import { Roles } from '@/enums/user.enum';
 import { VitalSignsForm } from './VitalSignsForm';
+import type { RootState } from '@/store';
+import { useGetUserByIdQuery } from '@/store/userApi';
 
 // Format encounter type for display
 const formatEncounterType = (type: string): string => {
@@ -56,6 +59,9 @@ export function EncounterForm({
   loading = false,
   errors = {}
 }: EncounterFormProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isReceptionStaff = user?.role === Roles.RECEPTION_STAFF;
+  
   const [formData, setFormData] = useState<CreatePatientEncounterDto>({
     patientId: patientId || '',
     encounterDate: new Date().toISOString().slice(0, 16),
@@ -68,6 +74,17 @@ export function EncounterForm({
   });
 
   const [showVitalSigns, setShowVitalSigns] = useState(false);
+
+  // Fetch physician details if assignedPhysicianId is available
+  // Use formData.assignedPhysicianId if available (for editing), otherwise use encounter's assignedPhysicianId
+  const physicianId = formData.assignedPhysicianId || encounter?.assignedPhysicianId;
+  const { data: physicianData, isLoading: isPhysicianLoading } = useGetUserByIdQuery(
+    physicianId as string,
+    {
+      skip: !physicianId,
+    }
+  );
+  const physician = physicianData?.data;
 
   useEffect(() => {
     if (encounter) {
@@ -132,8 +149,8 @@ export function EncounterForm({
                 )}
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="encounterType" className="text-sm font-medium">
+              <div className="space-y-2">
+                <Label htmlFor="encounterType">
                   Encounter Type
                 </Label>
                 <Select
@@ -190,16 +207,41 @@ export function EncounterForm({
 
             <div className="space-y-2">
               <Label htmlFor="assignedPhysicianId">Assigned Physician</Label>
-              <Input
-                id="assignedPhysicianId"
-                name="assignedPhysicianId"
-                value={formData.assignedPhysicianId}
-                onChange={handleInputChange}
-                placeholder="Physician ID"
-                className={errors.assignedPhysicianId ? 'border-red-500' : ''}
-              />
-              {errors.assignedPhysicianId && (
-                <p className="text-sm text-red-500">{errors.assignedPhysicianId}</p>
+              {isPhysicianLoading ? (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm text-foreground">Loading physician details...</p>
+                </div>
+              ) : physician ? (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-foreground" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        Dr. {physician.lastName} {physician.firstName}
+                      </p>
+                      {physician.employeeId && (
+                        <p className="text-xs text-foreground font-mono">
+                          ID: {physician.employeeId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : physicianId ? (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm text-foreground font-mono">
+                    {physicianId}
+                  </p>
+                  <p className="text-xs text-foreground mt-1">
+                    Physician details not available
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm text-foreground italic">
+                    No physician assigned
+                  </p>
+                </div>
               )}
             </div>
 
@@ -237,36 +279,38 @@ export function EncounterForm({
         </CardContent>
       </Card>
 
-      {/* Vital Signs Section */}
-      <Card className='border-border'>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Vital Signs
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowVitalSigns(!showVitalSigns)}
-            >
-              {showVitalSigns ? 'Hide' : 'Show'} Vital Signs
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        {showVitalSigns && (
-          <CardContent className='p-0 border-none'>
-            <VitalSignsForm
-              vitalSigns={formData.vitalSigns}
-              onSubmit={handleVitalSignsChange}
-              onCancel={() => setShowVitalSigns(false)}
-              loading={loading}
-              errors={errors}
-            />
-          </CardContent>
-        )}
-      </Card>
+      {/* Vital Signs Section - Hidden for Reception Staff */}
+      {!isReceptionStaff && (
+        <Card className='border-border'>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Vital Signs
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowVitalSigns(!showVitalSigns)}
+              >
+                {showVitalSigns ? 'Hide' : 'Show'} Vital Signs
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          {showVitalSigns && (
+            <CardContent className='p-0 border-none'>
+              <VitalSignsForm
+                vitalSigns={formData.vitalSigns}
+                onSubmit={handleVitalSignsChange}
+                onCancel={() => setShowVitalSigns(false)}
+                loading={loading}
+                errors={errors}
+              />
+            </CardContent>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

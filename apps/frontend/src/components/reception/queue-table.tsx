@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
 import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/enums/priority.enum";
+import { getEncounterStatusBadge } from "@/utils/status-badge";
 
 interface QueueAssignment {
   id: string;
@@ -127,7 +128,7 @@ export function QueueTable({
               );
             }
 
-            return <StatusBadge status="in-progress" />;
+            return getEncounterStatusBadge("in-progress");
           },
         },
         {

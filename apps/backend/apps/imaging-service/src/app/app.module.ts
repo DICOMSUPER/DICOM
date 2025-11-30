@@ -6,6 +6,7 @@ import {
   DicomSeries,
   DicomStudy,
   DicomStudySignature,
+  ImageSegmentationLayer,
   ImagingModality,
   ImagingOrder,
   ImagingOrderForm,
@@ -53,6 +54,9 @@ import {
 import { DicomStudySignaturesModule } from './modules/dicom-study-signatures/dicom-study-signatures.module';
 import { DicomStudySignaturesService } from './modules/dicom-study-signatures/dicom-study-signatures.service';
 import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures/dicom-study-signatures.repository';
+import { ImageSegmentationLayersModule } from './modules/image-segmentation-layers/image-segmentation-layers.module';
+import { ImageSegmentationLayersService } from './modules/image-segmentation-layers/image-segmentation-layers.service';
+import { ImageSegmentationLayersRepository } from './modules/image-segmentation-layers/image-segmentation-layers.repository';
 
 @Module({
   imports: [
@@ -71,6 +75,7 @@ import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures
       BodyPart,
       ImagingOrderForm,
       DicomStudySignature,
+      ImageSegmentationLayer,
     ]),
     DicomInstancesModule,
     DicomSeriesModule,
@@ -92,7 +97,8 @@ import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures
     BackendRedisModule,
     PatientServiceClientModule,
     UserServiceClientModule,
-    SystemServiceClientModule
+    SystemServiceClientModule,
+    ImageSegmentationLayersModule,
   ],
   controllers: [AppController],
   providers: [
@@ -115,6 +121,8 @@ import { DicomStudySignaturesRepository } from './modules/dicom-study-signatures
     ImagingOrderFormRepository,
     DicomStudySignaturesService,
     DicomStudySignaturesRepository,
+    ImageSegmentationLayersService,
+    ImageSegmentationLayersRepository,
   ],
 })
 export class AppModule {}

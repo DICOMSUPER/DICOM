@@ -13,7 +13,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Patient } from './patients.entity';
+import type { Patient } from './patients.entity';
 import { ServiceRoom } from '../users';
 
 @Entity('patient_encounters')
@@ -80,7 +80,7 @@ export class PatientEncounter extends BaseEntity {
   transferredBy?: string;
 
   // Relations
-  @ManyToOne(() => Patient, (patient) => patient.encounters)
+  @ManyToOne(() => require('./patients.entity').Patient, (patient: Patient) => patient.encounters)
   @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 

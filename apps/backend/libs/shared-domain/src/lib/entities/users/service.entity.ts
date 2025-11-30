@@ -1,6 +1,6 @@
 import { BaseEntity } from '@backend/database';
 import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ServiceRoom } from './services-rooms.entity';
+import type { ServiceRoom } from './services-rooms.entity';
 
 @Entity('services')
 @Index(['serviceCode'], { unique: true })
@@ -21,6 +21,6 @@ export class Services extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @OneToMany(() => ServiceRoom, (serviceRoom) => serviceRoom.service)
+  @OneToMany(() => require('./services-rooms.entity').ServiceRoom, (serviceRoom: ServiceRoom) => serviceRoom.service)
   serviceRooms!: ServiceRoom[];
 }

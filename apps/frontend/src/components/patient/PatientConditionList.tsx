@@ -127,7 +127,7 @@ export function PatientConditionList({
   }
 
   return (
-    <div className="rounded-2xl p-6 shadow border-border border space-y-4">
+    <div className="rounded-2xl p-6 shadow border-border border flex flex-col gap-4">
       <div className="flex items-center gap-2 text-lg font-semibold">
         <AlertCircle className="h-5 w-5" />
         Medical Conditions ({conditions.length})
@@ -136,13 +136,13 @@ export function PatientConditionList({
         Patient&apos;s recorded medical conditions and diagnoses
       </p>
 
-      <div className="space-y-3 max-h-[25vh] overflow-y-auto pr-2">
+      <div className="flex flex-col gap-3 max-h-[25vh] overflow-y-auto">
         {conditions.map((condition) => (
           <Card
             key={condition.id}
             className="border border-border hover:shadow-lg cursor-pointer hover:border-primary/60 transition-all duration-200 bg-card"
           >
-            <CardHeader className="pb-3">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {getStatusIcon(condition.clinicalStatus)}
@@ -194,7 +194,7 @@ export function PatientConditionList({
             </CardHeader>
 
             {expandedCondition === condition.id && (
-              <CardContent className="pt-0 space-y-3">
+              <CardContent className="pt-0 flex flex-col gap-3">
                 {(condition.severity ||
                   condition.stageSummary ||
                   condition.bodySite) && (
