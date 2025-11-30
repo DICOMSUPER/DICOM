@@ -136,6 +136,18 @@ export class PatientEncounterService {
     return await this.encounterRepository.update(id, updatePatientEncounterDto);
   };
 
+  transfer = async (
+    id: string,
+    updatePatientEncounterDto: UpdatePatientEncounterDto,
+    transferredBy: string
+  ): Promise<PatientEncounter | null> => {
+    const encounter = await this.findOne(id);
+    return await this.encounterRepository.update(id, {
+      ...updatePatientEncounterDto,
+      transferredBy,
+    });
+  };
+
   remove = async (id: string): Promise<boolean> => {
     await this.findOne(id);
     return await this.encounterRepository.softDelete(id, 'isDeleted');

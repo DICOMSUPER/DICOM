@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDate, formatTime } from '@/lib/formatTimeDate';
+import { useRouter } from 'next/navigation';
 
 interface EncounterHistoryTabProps {
   encounterHistory: PatientEncounter[];
@@ -32,6 +33,7 @@ const columnHelper = createColumnHelper<PatientEncounter>();
 
 export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const router = useRouter();
 
   const getEncounterTypeBadge = (type: string) => {
     const typeColors: Record<string, string> = {
@@ -42,6 +44,11 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
     };
     return typeColors[type] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
+
+
+  const handleViewDetail = (id: string) => {
+    router.push(`/physician/encounter/${id}`);
+  }
 
   const columns = [
     columnHelper.accessor('encounterDate', {
@@ -112,6 +119,7 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
             variant="ghost"
             size="sm"
             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            onClick={() => handleViewDetail(row.original.id)}
           >
             <Eye className="w-4 h-4 mr-1" />
             View Details
@@ -164,14 +172,14 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
           <h2 className="text-xl font-semibold text-gray-900">Encounter History</h2>
           <p className="text-gray-600 text-sm mt-1">Patient visit history and encounters.</p>
         </div>
-        <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+        {/* <Button className="bg-gray-900 hover:bg-gray-800 text-white">
           <Plus className="w-4 h-4 mr-2" />
           New Encounter
-        </Button>
+        </Button> */}
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

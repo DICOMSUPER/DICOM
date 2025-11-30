@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Suspense, useState } from "react";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 interface ImagingTechnicianLayoutProps {
   children: React.ReactNode;
@@ -36,7 +37,9 @@ export default function ImagingTechnicianLayout({
     <Suspense>
       <div className="min-h-screen bg-background">
         {/* Workspace Layout */}
-        <WorkspaceLayout sidebar={<SidebarNav />}>{children}</WorkspaceLayout>
+        <NotificationProvider>
+          <WorkspaceLayout sidebar={<SidebarNav />}>{children}</WorkspaceLayout>
+        </NotificationProvider>
       </div>
     </Suspense>
   );

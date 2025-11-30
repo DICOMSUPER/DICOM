@@ -94,6 +94,22 @@ export class EmployeeRoomAssignmentsController {
       );
     }
   }
+  @MessagePattern('UserService.EmployeeRoomAssignments.FindByRoomInCurrentSession')
+  async findByRoomInCurrentSession(
+    @Payload() roomId: string
+  ): Promise<EmployeeRoomAssignment[]> {
+    try {
+      return await this.employeeRoomAssignmentsService.findByRoomInCurrentSession(
+        roomId
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find employee room assignments in current session by room',
+        'USER_SERVICE'
+      );
+    }
+  }
 
   // find many
   @MessagePattern('UserService.EmployeeRoomAssignments.FindMany')

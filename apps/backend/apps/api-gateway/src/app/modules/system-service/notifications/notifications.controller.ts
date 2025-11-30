@@ -1,11 +1,30 @@
-import { Body, Controller, Delete, Get, Inject, Param, Post, Put, Query, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { 
-  CreateNotificationDto, 
-  FilterNotificationDto, 
-  UpdateNotificationDto 
+import {
+  CreateNotificationDto,
+  FilterNotificationDto,
+  UpdateNotificationDto,
 } from '@backend/shared-domain';
-import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
+import { Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
+import type { IAuthenticatedRequest } from 'libs/shared-interfaces/src';
 
 @Controller('notifications')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -13,10 +32,13 @@ export class NotificationsController {
   constructor(
     @Inject('SYSTEM_SERVICE') private readonly systemService: ClientProxy
   ) {}
-  
+
   @Post()
   async create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.systemService.send('notification.create', createNotificationDto);
+    return this.systemService.send(
+      'notification.create',
+      createNotificationDto
+    );
   }
 
   @Get()
@@ -24,17 +46,48 @@ export class NotificationsController {
     return this.systemService.send('notification.findAll', filter);
   }
 
+  // without pagination
+  @Get('/findMany')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.RECEPTION_STAFF,
+    Roles.RADIOLOGIST,
+    Roles.IMAGING_TECHNICIAN
+  )
+  async findMany(
+    @Query() filter: FilterNotificationDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    return this.systemService.send('notification.findMany', {
+      filter,
+      userId: req.userInfo.userId,
+    });
+  }
+  @Get('/unread-count')
+  async getUnreadCount(@Param('userId') userId: string) {
+    return this.systemService.send('notification.getUnreadCount', { userId });
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.systemService.send('notification.findOne', { id });
   }
+  @Patch('/read-all')
+  async markAllAsRead(@Req() req: IAuthenticatedRequest) {
+    return this.systemService.send('notification.markAllAsRead', {
+      userId: req.userInfo.userId,
+    });
+  }
 
   @Put(':id')
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() updateNotificationDto: UpdateNotificationDto
   ) {
-    return this.systemService.send('notification.update', { id, updateNotificationDto });
+    return this.systemService.send('notification.update', {
+      id,
+      updateNotificationDto,
+    });
   }
 
   @Delete(':id')
@@ -42,18 +95,10 @@ export class NotificationsController {
     return this.systemService.send('notification.remove', { id });
   }
 
-  @Put(':id/read')
+  @Patch(':id/read')
   async markAsRead(@Param('id') id: string) {
     return this.systemService.send('notification.markAsRead', { id });
   }
 
-  @Put('user/:userId/read-all')
-  async markAllAsRead(@Param('userId') userId: string) {
-    return this.systemService.send('notification.markAllAsRead', { userId });
-  }
-
-  @Get('user/:userId')
-  async findByUser(@Param('userId') userId: string, @Query() filter: FilterNotificationDto) {
-    return this.systemService.send('notification.findAll', { ...filter, userId });
-  }
+  // unread count
 }

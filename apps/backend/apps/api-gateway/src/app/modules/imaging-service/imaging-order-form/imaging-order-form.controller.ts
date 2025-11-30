@@ -32,8 +32,10 @@ import { firstValueFrom } from 'rxjs';
 export class ImagingOrderFormController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
-    private readonly imagingService: ClientProxy
-  ) { }
+    private readonly imagingService: ClientProxy,
+    @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
+    private readonly userService: ClientProxy
+  ) {}
 
   @Post()
   @Role(Roles.PHYSICIAN)
@@ -43,10 +45,32 @@ export class ImagingOrderFormController {
   ) {
     console.log('create imaging order form', createImagingOrderFormDto);
     const userId = req.userInfo.userId;
+    console.log("Sender Id", userId);
+    
+    const roomAssignmentInCurrentSession = await firstValueFrom(
+      this.userService.send(
+        'UserService.EmployeeRoomAssignments.FindByRoomInCurrentSession',
+        createImagingOrderFormDto.roomId as string
+      )
+    );
+    if (!roomAssignmentInCurrentSession) {
+      throw new Error('No room assignment found for the current session');
+    }
+
+    const uniqueEmployeeIds = [
+      ...new Set(
+        roomAssignmentInCurrentSession.map(
+          (assignment: any) => assignment.employeeId
+        )
+      ),
+    ];
+    console.log('unique employee', uniqueEmployeeIds);
+
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.Create', {
         createImagingOrderFormDto,
         userId,
+        employeesInRoom: uniqueEmployeeIds,
       })
     );
   }
@@ -59,10 +83,10 @@ export class ImagingOrderFormController {
   ) {
     const userId = req.userInfo.userId;
     return await firstValueFrom(
-      this.imagingService.send(
-        'ImagingService.ImagingOrderForm.FindAll',
-        { filter, userId }
-      )
+      this.imagingService.send('ImagingService.ImagingOrderForm.FindAll', {
+        filter,
+        userId,
+      })
     );
   }
 

@@ -306,6 +306,14 @@ export class EmployeeRoomAssignmentsService {
       employeeId
     );
   };
+  findByRoomInCurrentSession = async (
+    roomId: string
+  ): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findByRoomInCurrentSession(
+      roomId
+    );
+  }
+
   findOne = async (id: string): Promise<EmployeeRoomAssignment | null> => {
     const employeeRoomAssignment =
       await this.employeeRoomAssignmentsRepository.findOne({

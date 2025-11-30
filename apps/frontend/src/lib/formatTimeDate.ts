@@ -22,6 +22,7 @@
     const timeStr = formatTime(date);
     return `${dateStr}, ${timeStr}`;
   };
+
   export const calculateAge = (dateOfBirth: Date): number => {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -34,4 +35,14 @@
     
     return age;
   }
-  
+
+
+
+export const formatTimeVN = (date?: Date) => {
+  if (!date) return "—";
+  return new Date(date).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};

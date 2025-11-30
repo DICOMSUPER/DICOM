@@ -82,6 +82,7 @@ export function ProcedureForm({
               Modality <span className="text-red-500">*</span>
             </Label>
             <Select
+              
               value={procedure.modality}
               onValueChange={(value) => {
                 updateProcedure(procedure.id, "modality", value);
@@ -99,7 +100,7 @@ export function ProcedureForm({
                 {imagingModalitiesData?.map((modality: ModalityMachine) => (
                   modality.modality && (
                     <SelectItem
-                      key={modality.modality.id}
+                      key={`${modality.modality.id}-${index}`}
                       value={modality.modality.id}
                     >
                       {modality.modality.modalityName}
@@ -129,7 +130,7 @@ export function ProcedureForm({
               </SelectTrigger>
               <SelectContent>
                 {bodyPartsData?.map((bodyPart: BodyPart) => (
-                  <SelectItem key={bodyPart.id} value={bodyPart.id}>
+                  <SelectItem key={`${bodyPart.id}-${index}`} value={bodyPart.id}>
                     {bodyPart.name}
                   </SelectItem>
                 ))}
@@ -176,8 +177,8 @@ export function ProcedureForm({
               </SelectTrigger>
               <SelectContent>
                 {availableProcedures.length > 0 ? (
-                  availableProcedures.map((proc: RequestProcedure) => (
-                    <SelectItem key={proc.id} value={proc.id}>
+                  availableProcedures.map((proc: RequestProcedure, index: number) => (
+                    <SelectItem key={`${proc.id}-${index}`} value={proc.id}>
                       {proc.name}
                     </SelectItem>
                   ))

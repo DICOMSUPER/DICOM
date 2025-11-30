@@ -1,5 +1,13 @@
 import { EncounterType } from '@backend/shared-enums';
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { VitalSignsDto } from './vital-signs.dto';
 
 export class UpdatePatientEncounterDto {
@@ -32,4 +40,16 @@ export class UpdatePatientEncounterDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isTransferred?: boolean;
+
+  @IsOptional()
+  @IsString()
+  transferNotes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  transferredBy?: string;
 }

@@ -79,6 +79,7 @@ export interface PatientEncounter extends BaseEntity {
   symptoms?: string;
   vitalSigns?: VitalSignsSimplified;
   assignedPhysicianId?: string;
+
   notes?: string;
   status: EncounterStatus;
   priority?: EncounterPriorityLevel;
@@ -90,6 +91,9 @@ export interface PatientEncounter extends BaseEntity {
   createdBy?: string;
   serviceRoomId?: string;
   serviceRoom: ServiceRoom;
+  isTransferred?: boolean;
+  transferNotes?: string;
+  transferredBy?: string;
 
   assignedPhysician?: User;
   createdByUser?: User;
@@ -190,6 +194,8 @@ export interface UpdatePatientEncounterDto {
   assignedPhysicianId?: string;
   notes?: string;
   status?: EncounterStatus;
+  isTransferred?: boolean;
+  transferNotes?: string;
 }
 
 export interface CreateDiagnosisReportDto {

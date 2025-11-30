@@ -2,12 +2,13 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreateImagingModalityDto, ImagingModality, UpdateImagingModalityDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  CreateImagingModalityDto,
+  ImagingModality,
+  UpdateImagingModalityDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
@@ -128,7 +129,13 @@ export class ImagingModalitiesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }
+    @Payload()
+    data: {
+      paginationDto: RepositoryPaginationDto & {
+        includeInactive?: boolean;
+        includeDeleted?: boolean;
+      };
+    }
   ): Promise<PaginatedResponseDto<ImagingModality>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -156,15 +163,32 @@ export class ImagingModalitiesController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
   async getStats() {
-    this.logger.log(
-      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
-    );
+    this.logger.log(`Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.imagingModalitiesService.getStats();
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         'Failed to get imaging modality stats',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.HARD_DELETE}`
+  )
+  async hardRemove(@Payload() data: { id: string }): Promise<boolean> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.HARD_DELETE}`
+    );
+    try {
+      const { id } = data;
+      return await this.imagingModalitiesService.hardRemove(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to hard delete modality with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }

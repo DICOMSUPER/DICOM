@@ -30,6 +30,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared-enums/tsconfig.lib.json"
     },
     {

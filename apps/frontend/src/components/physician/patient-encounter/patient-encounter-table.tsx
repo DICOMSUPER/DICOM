@@ -12,13 +12,27 @@ import {
   AlertCircle,
   CheckCircle2,
   Zap,
+  UserStar,
 } from "lucide-react";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDate, formatTime, formatTimeVN } from "@/lib/formatTimeDate";
+import Pagination, {
+  type PaginationMeta,
+} from "@/components/common/PaginationV1";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
 import {
   EncounterPriorityLevel,
   EncounterStatus,
 } from "@/enums/patient-workflow.enum";
+import { is } from "date-fns/locale";
+import { format } from "date-fns";
+import TransferDetailModal from "./transfer-detail-modal";
+import { TooltipProvider } from "@/components/ui-next/Tooltip/Tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -53,6 +67,16 @@ export function PatientEncounterTable({
   onSort,
   initialSort,
 }: PatientEncounterTableProps) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [showTransferModal, setShowTransferModal] = React.useState(false);
+  const [selectedEncounter, setSelectedEncounter] =
+    React.useState<PatientEncounter | null>(null);
+
+  const handleShowTransferDetail = (encounter: PatientEncounter) => {
+    setSelectedEncounter(encounter);
+    setShowTransferModal(true);
+  };
+
   const getStatusBadge = (status: EncounterStatus) => {
     switch (status) {
       case EncounterStatus.WAITING:

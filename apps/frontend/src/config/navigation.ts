@@ -21,7 +21,8 @@ import {
   Calendar,
   FolderTree,
   Link2,
-  Layers
+  Layers,
+  GitPullRequest
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -97,6 +98,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Services",
       icon: Cog,
       description: "Manage clinic services and offerings",
+    },
+         {
+      href: "/admin/procedure",
+      label: "Procedure Management",
+      icon: GitPullRequest,
+      description: "Manage request procedures and modalities",
     },
     {
       href: "/admin/shift-templates",

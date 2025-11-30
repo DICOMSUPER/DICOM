@@ -15,13 +15,19 @@ import { Repository } from 'typeorm';
 
 import {
   CreateImagingOrderFormDto,
+  CreateNotificationDto,
   FilterImagingOrderFormDto,
   ImagingOrder,
   ImagingOrderForm,
   Patient,
   UpdateImagingOrderFormDto,
 } from '@backend/shared-domain';
-import { OrderFormStatus, OrderStatus } from '@backend/shared-enums';
+import {
+  NotificationType,
+  OrderFormStatus,
+  OrderStatus,
+  RelatedEntityType,
+} from '@backend/shared-enums';
 import { createCacheKey } from '@backend/shared-utils';
 import { RedisService } from '@backend/redis';
 import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
@@ -47,12 +53,15 @@ export class ImagingOrderFormService {
     private readonly redisService: RedisService,
     private readonly imagingOrdersService: ImagingOrdersService,
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    private readonly patientService: ClientProxy
+    private readonly patientService: ClientProxy,
+    @Inject(process.env.SYSTEM_SERVICE_NAME || 'SYSTEM_SERVICE')
+    private readonly systemService: ClientProxy
   ) {}
 
   async create(
     createOrderFormDto: CreateImagingOrderFormDto,
-    userId: string
+    userId: string,
+    employeesInRoom: string[]
   ): Promise<ImagingOrderForm> {
     const { imagingOrders, ...formData } = createOrderFormDto;
 
@@ -74,16 +83,35 @@ export class ImagingOrderFormService {
               ),
               procedureId: orderDto.request_procedure_id,
             });
+            //
             return await manager.save(order);
           })
         );
+        for (const order of createdOrders) {
+          for (const employeeId of employeesInRoom) {
+            const notificationPayload: CreateNotificationDto = {
+              recipientId: employeeId,
+              senderId: userId,
+              notificationType: NotificationType.ASSIGNMENT,
+              title: 'New Imaging Order',
+              relatedEntityType: RelatedEntityType.ORDER,
+              relatedEntityId: order.id,
+              message: `A new imaging order (${order.id}) has been created.`,
+            };
+            await firstValueFrom(
+              this.systemService.send(
+                'notification.create',
+                notificationPayload
+              )
+            );
+          }
+        }
 
         form.imagingOrders = createdOrders;
         return form;
       }
     );
   }
-
 
   async findAll(
     filter: FilterImagingOrderFormDto,

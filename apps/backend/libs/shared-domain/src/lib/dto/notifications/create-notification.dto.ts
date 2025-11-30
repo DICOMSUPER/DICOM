@@ -1,12 +1,22 @@
-import { NotificationPriority, NotificationType, RelatedEntityType } from '@backend/shared-enums';
-import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  NotificationPriority,
+  NotificationType,
+  RelatedEntityType,
+} from '@backend/shared-enums';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()
   @IsNotEmpty()
   recipientId!: string;
 
-@IsString()
+  @IsString()
   @IsNotEmpty()
   senderId!: string;
 
@@ -24,7 +34,7 @@ export class CreateNotificationDto {
 
   @IsOptional()
   @IsEnum(NotificationPriority)
-  priority?: NotificationPriority;
+  priority?: NotificationPriority = NotificationPriority.LOW;
 
   @IsOptional()
   @IsEnum(RelatedEntityType)
@@ -36,6 +46,5 @@ export class CreateNotificationDto {
 
   @IsOptional()
   @IsBoolean()
-  isRead?: boolean;
-
+  isRead?: boolean = false;
 }

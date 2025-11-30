@@ -56,7 +56,12 @@ export default function ViewportGrid({
     }
 
     prevSelectedSeriesIdRef.current = selectedId;
-  }, [selectedSeries, state.activeViewport, getViewportSeries, setViewportSeries]);
+  }, [
+    selectedSeries,
+    state.activeViewport,
+    getViewportSeries,
+    setViewportSeries,
+  ]);
 
   // Local state to track viewport IDs to avoid setState during render
   const [localViewportIds, setLocalViewportIds] = useState<
@@ -184,17 +189,22 @@ export default function ViewportGrid({
             <div className="flex items-center justify-between text-xs text-white">
               {/* Left: VP Badge + Body Part + Series Description */}
               <div className="flex items-center gap-2">
-                <div className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
-                  viewport.isActive 
-                    ? 'bg-blue-600/90 text-white border-blue-400' 
-                    : 'bg-slate-700/90 text-slate-300 border-slate-600'
-                }`}>
+                <div
+                  className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
+                    viewport.isActive
+                      ? "bg-blue-600/90 text-white border-blue-400"
+                      : "bg-slate-700/90 text-slate-300 border-slate-600"
+                  }`}
+                >
                   VP {viewport.index + 1}
                 </div>
                 <span className="bg-gradient-to-r from-teal-600 to-teal-500 text-white px-2 py-1 rounded text-xs font-bold border border-teal-400/30">
                   {viewport.series?.bodyPartExamined || "N/A"}
                 </span>
-                <span className="text-teal-100 font-medium truncate max-w-[200px]" title={viewport.series?.seriesDescription}>
+                <span
+                  className="text-teal-100 font-medium truncate max-w-[200px]"
+                  title={viewport.series?.seriesDescription}
+                >
                   {viewport.series?.seriesDescription || "No series loaded"}
                 </span>
                 {viewport.isActive && viewport.series && (

@@ -2,12 +2,13 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { BodyPart, CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  BodyPart,
+  CreateBodyPartDto,
+  UpdateBodyPartDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
@@ -19,9 +20,7 @@ const moduleName = 'BodyPart';
 @Controller()
 export class BodyPartController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(
-    private readonly bodyPartService: BodyPartService
-  ) {}
+  constructor(private readonly bodyPartService: BodyPartService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -31,9 +30,7 @@ export class BodyPartController {
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      return await this.bodyPartService.create(
-        createBodyPartDto
-      );
+      return await this.bodyPartService.create(createBodyPartDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -64,9 +61,7 @@ export class BodyPartController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(
-    @Payload() data: { id: string }
-  ): Promise<BodyPart | null> {
+  async findOne(@Payload() data: { id: string }): Promise<BodyPart | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -95,10 +90,7 @@ export class BodyPartController {
     );
     try {
       const { id, updateBodyPartDto } = data;
-      return await this.bodyPartService.update(
-        id,
-        updateBodyPartDto
-      );
+      return await this.bodyPartService.update(id, updateBodyPartDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

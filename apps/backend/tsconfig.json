@@ -68,6 +68,12 @@
     },
     {
       "path": "./libs/shared-guards"
+    },
+    {
+      "path": "./apps/ws-gateway-e2e"
+    },
+    {
+      "path": "./apps/ws-gateway"
     }
   ]
 }

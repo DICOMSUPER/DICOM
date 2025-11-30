@@ -66,7 +66,8 @@
         "patient-service-e2e/**/*",
         "apps/patient-service-e2e/**/*",
         "apps/imaging-service-e2e/**/*",
-        "apps/system-service-e2e/**/*"
+        "apps/system-service-e2e/**/*",
+        "apps/ws-gateway-e2e/**/*"
       ]
     },
     {
@@ -114,6 +115,7 @@
     },
     "test": {
       "dependsOn": ["^build"]
-    }
+    },
+    "useDaemonProcess": true
   }
 }

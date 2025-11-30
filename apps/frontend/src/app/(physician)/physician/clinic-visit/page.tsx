@@ -88,10 +88,10 @@ export default function QueuePage() {
 
   const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
-      filter: { roomScheduleId: currentRoom?.data?.[0]?.id },
+      filter: { roomScheduleId: currentRoom?.data?.[0]?.roomScheduleId },
     },
     {
-      skip: !currentRoom?.data?.[0]?.id,
+      skip: !currentRoom?.data?.[0]?.roomScheduleId,
     }
   );
 

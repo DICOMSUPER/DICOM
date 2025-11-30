@@ -56,15 +56,17 @@ export function VitalSignForm({
 
 
 
-
   useEffect(() => {
     if (initialData && open) {
-      Object.entries(initialData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== 0) {
-          form.setValue(key as keyof VitalSignFormValues, value);
-        } else {
-          form.setValue(key as keyof VitalSignFormValues, undefined);
-        }
+      form.reset({
+        temperature: initialData.temperature ?? undefined,
+        heartRate: initialData.heartRate ?? undefined,
+        bpSystolic: initialData.bpSystolic ?? undefined,
+        bpDiastolic: initialData.bpDiastolic ?? undefined,
+        respiratoryRate: initialData.respiratoryRate ?? undefined,
+        oxygenSaturation: initialData.oxygenSaturation ?? undefined,
+        weight: initialData.weight ?? undefined,
+        height: initialData.height ?? undefined,
       });
     } else if (open) {
       // Reset form for create mode
@@ -77,10 +79,9 @@ export function VitalSignForm({
         oxygenSaturation: undefined,
         weight: undefined,
         height: undefined,
-
       });
     }
-  }, [initialData, open, form]);
+  }, [initialData, open]);
 
   function handleSubmit(values: VitalSignFormValues) {
     // Filter out undefined values
