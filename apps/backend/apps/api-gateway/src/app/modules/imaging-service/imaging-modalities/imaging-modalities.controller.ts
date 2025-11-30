@@ -66,6 +66,16 @@ export class ImagingModalitiesController {
     );
   }
 
+  // Test hard delete for testing e2e
+  // @Get(':id/hard-delete')
+  // async hardDeleteImagingModality(@Param('id') id: string) {
+  //   return await firstValueFrom(
+  //     this.imagingService.send('ImagingService.ImagingModalities.HardDelete', {
+  //       id,
+  //     })
+  //   );
+  // }
+
   @Get(':id')
   async getImagingModalityById(@Param('id') id: string) {
     return await firstValueFrom(

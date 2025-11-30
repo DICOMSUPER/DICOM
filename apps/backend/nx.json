@@ -114,6 +114,7 @@
     },
     "test": {
       "dependsOn": ["^build"]
-    }
+    },
+    "useDaemonProcess": true
   }
 }
