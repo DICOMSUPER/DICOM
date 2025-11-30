@@ -34,7 +34,7 @@ export class ImageSegmentationLayersService {
   create = async (
     createImageSegmentationLayerDto: CreateImageSegmentationLayerDto
   ): Promise<ImageSegmentationLayer> => {
-    console.log('Body in create layer: ', createImageSegmentationLayerDto);
+    // console.log('Body in create layer: ', createImageSegmentationLayerDto);
     return await this.em.transaction(async (transactionalEntityManager) => {
       await this.checkDicomInstanceExists(
         createImageSegmentationLayerDto.instanceId
