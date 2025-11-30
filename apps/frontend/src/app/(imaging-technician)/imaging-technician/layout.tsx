@@ -32,22 +32,6 @@ interface ImagingTechnicianLayoutProps {
 export default function ImagingTechnicianLayout({
   children,
 }: ImagingTechnicianLayoutProps) {
-  const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Imaging Technician");
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
-
-  const handleRoleChange = (newRole: string) => {
-    setCurrentRole(newRole);
-    console.log("Role changed to:", newRole);
-  };
-
   return (
     <Suspense>
       <div className="min-h-screen bg-background">

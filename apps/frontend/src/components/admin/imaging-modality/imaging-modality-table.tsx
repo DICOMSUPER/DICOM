@@ -7,6 +7,7 @@ import { ImagingModality } from '@/interfaces/image-dicom/imaging_modality.inter
 import { DataTable } from '@/components/ui/data-table';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
 import { formatDate } from '@/lib/formatTimeDate';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface ImagingModalityTableProps {
   modalityItems: ImagingModality[];
@@ -20,6 +21,8 @@ interface ImagingModalityTableProps {
   onDelete?: (modality: ImagingModality) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
@@ -34,11 +37,15 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
   onDelete,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
 
   const columns = [
     {
       header: 'Modality Code',
+      sortable: true,
+      sortField: 'modalityCode',
       cell: (modality: ImagingModality) => (
         <div className="font-medium text-blue-600">
           {modality.modalityCode || '—'}
@@ -47,6 +54,8 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
     },
     {
       header: 'Modality Name',
+      sortable: true,
+      sortField: 'modalityName',
       cell: (modality: ImagingModality) => (
         <div className="text-foreground">
           {modality.modalityName || '—'}
@@ -55,18 +64,22 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
     },
     {
       header: 'Description',
+      sortable: false,
       cell: (modality: ImagingModality) => (
         <div className="text-foreground">{modality.description || '—'}</div>
       ),
     },
     {
       header: 'Created At',
+      sortable: true,
+      sortField: 'createdAt',
       cell: (modality: ImagingModality) => (
         <div className="text-foreground">{formatDate(modality.createdAt)}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (modality: ImagingModality) => getStatusBadge(modality.isActive ?? true),
     },
     {
@@ -121,6 +134,8 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
       showNumberColumn={true}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

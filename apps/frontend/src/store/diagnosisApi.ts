@@ -90,6 +90,12 @@ export const diagnosisApi = createApi({
       void
     >({
       query: () => ({ url: "/stats", method: "GET" }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response.data;
+        }
+        return response;
+      },
       providesTags: ["Diagnosis"],
     }),
 

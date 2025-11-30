@@ -8,6 +8,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatRole } from '@/utils/role-formatter';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface RoomAssignmentsTableProps {
   assignments: EmployeeRoomAssignment[];
@@ -15,6 +16,8 @@ interface RoomAssignmentsTableProps {
   onDelete: (id: string) => void;
   isDeleting: boolean;
   isLoading?: boolean;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export function RoomAssignmentsTable({
@@ -23,12 +26,15 @@ export function RoomAssignmentsTable({
   onDelete,
   isDeleting,
   isLoading = false,
+  onSort,
+  initialSort,
 }: RoomAssignmentsTableProps) {
   return (
     <DataTable<EmployeeRoomAssignment>
       columns={[
         {
           header: 'Employee',
+          sortable: false,
           cell: (assignment) => (
             <div className="flex flex-col items-start gap-2">
               <div className="font-medium text-foreground">
@@ -42,6 +48,7 @@ export function RoomAssignmentsTable({
         },
         {
           header: 'Contact',
+          sortable: false,
           cell: (assignment) => (
             <p className="text-sm text-foreground">
               {assignment.employee?.email || 'No email available'}
@@ -50,6 +57,7 @@ export function RoomAssignmentsTable({
         },
         {
           header: 'Room',
+          sortable: false,
           cell: (assignment) => (
             <div className="text-foreground">
               {assignment.roomSchedule?.room?.roomCode || '—'}
@@ -58,6 +66,8 @@ export function RoomAssignmentsTable({
         },
         {
           header: 'Work Date',
+          sortable: true,
+          sortField: 'workDate',
           cell: (assignment) => (
             <div className="text-foreground">
               {assignment.roomSchedule?.work_date
@@ -68,6 +78,7 @@ export function RoomAssignmentsTable({
         },
         {
           header: 'Shift',
+          sortable: false,
           cell: (assignment) => (
             <div className="text-foreground">
               {assignment.roomSchedule?.shift_template?.shift_name || '—'}
@@ -77,6 +88,7 @@ export function RoomAssignmentsTable({
         {
           header: 'Status',
           headerClassName: 'text-center',
+          sortable: false,
           cell: (assignment) => (
             <div className="flex justify-center">
               <StatusBadge status={assignment.isActive ? 'active' : 'inactive'} />
@@ -109,6 +121,8 @@ export function RoomAssignmentsTable({
       emptyStateIcon={<ClipboardList className="h-12 w-12 text-foreground" />}
       emptyStateTitle="No assignments"
       emptyStateDescription="Create an assignment to see it listed here."
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 }

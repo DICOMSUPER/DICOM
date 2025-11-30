@@ -8,7 +8,7 @@ import { getBooleanStatusBadge } from "@/utils/status-badge";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
 import { formatDate, formatDateTime } from "@/lib/formatTimeDate";
-
+import { SortConfig } from "@/components/ui/data-table";
 
 interface PatientTableProps {
   patients: Patient[];
@@ -19,6 +19,8 @@ interface PatientTableProps {
   onViewDetails?: (patient: Patient) => void;
   onEditPatient?: (patient: Patient) => void;
   onDeletePatient?: (patient: Patient) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export function PatientTable({
@@ -30,6 +32,8 @@ export function PatientTable({
   onViewDetails,
   onEditPatient,
   onDeletePatient,
+  onSort,
+  initialSort,
 }: PatientTableProps) {
 
   const formatAge = (dateOfBirth: string | Date) => {
@@ -70,23 +74,43 @@ export function PatientTable({
       columns={[
         {
           header: "Name",
+          sortable: true,
+          sortField: "lastName",
           cell: (patient) => (
             <div className="font-medium">
               {patient.firstName} {patient.lastName}
             </div>
           ),
         },
-        { header: "Patient Code", cell: (patient) => patient.patientCode },
+        { 
+          header: "Patient Code", 
+          sortable: true,
+          sortField: "patientCode",
+          cell: (patient) => patient.patientCode 
+        },
         {
           header: "Age",
-          cell: (patient) => `${formatAge(patient?.dateOfBirth as Date)} years`,
+          sortable: true,
+          sortField: "dateOfBirth",
+          cell: (patient) => (
+            <div className="text-foreground text-center">
+              {formatAge(patient?.dateOfBirth as Date)}
+            </div>
+          ),
         },
         {
           header: "Gender",
-          cell: (patient) => formatGender(patient.gender),
+          sortable: true,
+          sortField: "gender",
+          cell: (patient) => (
+            <div className="text-foreground text-center">
+              {formatGender(patient.gender)}
+            </div>
+          ),
         },
         {
           header: "Phone",
+          sortable: false,
           cell: (patient) => (
             <div className="text-foreground">
               {patient.phoneNumber || "N/A"}
@@ -95,6 +119,7 @@ export function PatientTable({
         },
         {
           header: "Address",
+          sortable: false,
           cell: (patient) => (
             <div className="text-foreground">
               {patient.address || "N/A"}
@@ -104,6 +129,7 @@ export function PatientTable({
         {
           header: "Status",
           headerClassName: "text-center",
+          sortable: false,
           cell: (patient) => (
             <div className="flex justify-center">
               {getBooleanStatusBadge(patient.isActive ?? true)}
@@ -112,6 +138,7 @@ export function PatientTable({
         },
         {
           header: "Last Visit",
+          sortable: false,
           cell: (patient) => {
             const encounter = patient.encounters?.[0];
             if (!encounter?.encounterDate) return "Never";
@@ -156,6 +183,8 @@ export function PatientTable({
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 }

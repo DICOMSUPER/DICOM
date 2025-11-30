@@ -23,6 +23,8 @@ export interface UserFilters {
   departmentId?: string;
   includeInactive?: boolean;
   includeDeleted?: boolean;
+  sortBy?: string; // Field to sort by
+  order?: "asc" | "desc"; // Sort order
 }
 
 export interface UserStats {
@@ -41,7 +43,11 @@ export const userApi = createApi({
       query: (params) => ({
         url: "/users",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortBy || params?.sort,
+          order: params?.order,
+        },
       }),
       providesTags: ["User"],
     }),

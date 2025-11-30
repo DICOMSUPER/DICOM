@@ -452,10 +452,20 @@ export interface EncounterStatsInDateRange {
 }
 
 export interface DicomStudyStatsInDateRange {
-  totalDicomStudies: number;
-  totalScannedStudies: number;
-  totalPendingApprovalStudies: number;
-  totalApprovedStudies: number;
-  totalTechnicianVerifiedStudies: number;
-  totalResultPrintedStudies: number;
+  today: {
+    totalDicomStudies: number;
+    totalScannedStudies: number;
+    totalPendingApprovalStudies: number;
+    totalApprovedStudies: number;
+    totalTechnicianVerifiedStudies: number;
+    totalResultPrintedStudies: number;
+  };
+  total: {
+    totalDicomStudies: number;
+    totalScannedStudies: number;
+    totalPendingApprovalStudies: number;
+    totalApprovedStudies: number;
+    totalTechnicianVerifiedStudies: number;
+    totalResultPrintedStudies: number;
+  };
 }

@@ -39,7 +39,11 @@ const serviceRoomApi = createApi({
       query: (params) => ({
         url: "/paginated",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortBy, // Map sortBy to sortField for backend
+          order: params?.order,
+        },
       }),
       providesTags: (result) =>
         result

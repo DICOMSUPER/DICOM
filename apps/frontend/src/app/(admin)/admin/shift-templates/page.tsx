@@ -22,7 +22,8 @@ import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
 import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { extractApiData } from '@/utils/api';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -36,7 +37,6 @@ export default function Page() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [appliedTypeFilter, setAppliedTypeFilter] = useState('all');
   const [appliedStatusFilter, setAppliedStatusFilter] = useState('all');
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,7 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams = useMemo(() => {
     const params: any = {
@@ -62,18 +63,22 @@ export default function Page() {
       params.is_active = appliedStatusFilter === 'true';
     }
 
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedTypeFilter, appliedStatusFilter]);
+  }, [page, limit, appliedTypeFilter, appliedStatusFilter, sortConfig]);
 
   const {
     data: templatesRes,
     isLoading: templatesLoading,
     error: templatesError,
     refetch: refetchTemplates,
-  } = useGetShiftTemplatesQuery(queryParams);
+  } = useGetShiftTemplatesQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteShiftTemplateMutation();
-  const [updateTemplate, { isLoading: isUpdatingTemplate }] = useUpdateShiftTemplateMutation();
 
   const {
     data: shiftTemplateStatsData,
@@ -110,12 +115,23 @@ export default function Page() {
     const total = shiftTemplateStatsData?.totalTemplates ?? 0;
     const active = shiftTemplateStatsData?.activeTemplates ?? 0;
     const inactive = shiftTemplateStatsData?.inactiveTemplates ?? 0;
-    // Get morning count from templatesByType if available, otherwise calculate from current page
-    const morningTypeData = shiftTemplateStatsData?.templatesByType?.find(
-      (t) => t.type === 'morning'
-    );
-    const morning = morningTypeData ? parseInt(morningTypeData.count, 10) : templates.filter((t) => t.shift_type === 'morning').length;
-    return { total, active, inactive, morning };
+    
+    const getCountByType = (type: string) => {
+      const typeData = shiftTemplateStatsData?.templatesByType?.find(
+        (t) => t.type === type
+      );
+      return typeData ? parseInt(typeData.count, 10) : templates.filter((t) => t.shift_type === type).length;
+    };
+
+    return {
+      total,
+      active,
+      inactive,
+      morning: getCountByType('morning'),
+      afternoon: getCountByType('afternoon'),
+      night: getCountByType('night'),
+      fullDay: getCountByType('full_day'),
+    };
   }, [shiftTemplateStatsData, templates]);
 
   const getStatusBadge = (isActive: boolean) => {
@@ -134,17 +150,15 @@ export default function Page() {
   };
 
   const handleSearch = useCallback(() => {
-    setAppliedSearchTerm(searchTerm);
     setAppliedTypeFilter(typeFilter);
     setAppliedStatusFilter(statusFilter);
     setPage(1);
-  }, [searchTerm, typeFilter, statusFilter]);
+  }, [typeFilter, statusFilter]);
 
   const handleResetFilters = useCallback(() => {
     setSearchTerm('');
     setTypeFilter('all');
     setStatusFilter('all');
-    setAppliedSearchTerm('');
     setAppliedTypeFilter('all');
     setAppliedStatusFilter('all');
     setPage(1);
@@ -152,6 +166,11 @@ export default function Page() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1);
   }, []);
 
   const handleViewDetails = (template: ShiftTemplate) => {
@@ -223,6 +242,9 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         morningCount={stats.morning}
+        afternoonCount={stats.afternoon}
+        nightCount={stats.night}
+        fullDayCount={stats.fullDay}
         isLoading={templatesLoading || shiftTemplateStatsLoading}
       />
 
@@ -250,6 +272,8 @@ export default function Page() {
         onDeleteTemplate={handleDeleteTemplate}
         page={paginationMeta?.page ?? page}
         limit={limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

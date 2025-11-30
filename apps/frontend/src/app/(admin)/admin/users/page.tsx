@@ -21,6 +21,8 @@ import { Department } from '@/interfaces/user/department.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { extractApiData } from '@/utils/api';
 import { Roles } from '@/enums/user.enum';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -45,6 +47,7 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams: UserFilters = useMemo(() => {
     const params: UserFilters = {
@@ -71,15 +74,21 @@ export default function Page() {
       params.isActive = appliedStatusFilter === 'true';
     }
 
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedRoleFilter, appliedDepartmentFilter, appliedStatusFilter]);
+  }, [page, limit, appliedSearchTerm, appliedRoleFilter, appliedDepartmentFilter, appliedStatusFilter, sortConfig]);
 
   const {
     data: usersRes,
     isLoading: usersLoading,
     error: usersError,
     refetch: refetchUsers,
-  } = useGetAllUsersQuery(queryParams);
+  } = useGetAllUsersQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const {
     data: userStatsData,
@@ -220,6 +229,11 @@ export default function Page() {
     }
   };
 
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
@@ -281,6 +295,8 @@ export default function Page() {
         onToggleStatus={handleToggleStatus}
         page={paginationMeta?.page ?? page}
         limit={limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

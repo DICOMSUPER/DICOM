@@ -72,6 +72,8 @@ export class RoomsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'Get all rooms' })
+  @ApiQuery({ name: 'sortField', required: false, type: String, description: 'Field to sort by' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng thành công' })
   async getAllRooms(
     @Query('page') page?: number,
@@ -81,7 +83,9 @@ export class RoomsController {
     @Query('type') type?: string,
     @Query('departmentId') departmentId?: string,
     @Query('includeInactive') includeInactive?: boolean,
-    @Query('includeDeleted') includeDeleted?: boolean
+    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc',
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -99,6 +103,8 @@ export class RoomsController {
           departmentId,
           includeInactive: includeInactive === true,
           includeDeleted: includeDeleted === true,
+          sortField,
+          order,
         })
       );
 

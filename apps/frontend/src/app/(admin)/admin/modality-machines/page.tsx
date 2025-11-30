@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
@@ -31,8 +31,9 @@ import {
   useUpdateModalityMachineMutation,
 } from '@/store/modalityMachineApi';
 import { useGetRoomsQuery } from '@/store/roomsApi';
-import { MachineStatus } from '@/enums/machine-status.enum';
 import { Room } from '@/interfaces/user/room.interface';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -61,13 +62,23 @@ export default function ModalityMachinePage() {
   const [machineToDelete, setMachineToDelete] =
     useState<ModalityMachine | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+
+  const queryParams = useMemo(() => {
+    const params = { ...filters };
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    return params;
+  }, [filters, sortConfig]);
 
   const {
     data: machinesData,
     isLoading,
     error: machinesError,
     refetch,
-  } = useGetModalityMachinePaginatedQuery(filters);
+  } = useGetModalityMachinePaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({ page: 1, limit: 10000 });
   const rooms = roomsData?.data || [];
@@ -189,7 +200,13 @@ export default function ModalityMachinePage() {
       sortBy: "createdAt",
       order: "desc",
     });
+    setSortConfig({});
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
@@ -244,6 +261,10 @@ export default function ModalityMachinePage() {
         filters={filters}
         onFiltersChange={setFilters}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading}
       />
 
       <ModalityMachineTable
@@ -254,6 +275,8 @@ export default function ModalityMachinePage() {
         onDelete={handleDelete}
         page={meta.page}
         limit={meta.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
       <Pagination

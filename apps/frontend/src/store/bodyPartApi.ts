@@ -18,6 +18,8 @@ export interface UpdateBodyPartDto {
 export interface BodyPartQueryParams extends QueryParams {
   includeInactive?: boolean;
   includeDeleted?: boolean;
+  sortBy?: string; // Alias for sort field
+  order?: "asc" | "desc"; // Sort order
 }
 
 // ====== RTK QUERY API ======
@@ -49,7 +51,11 @@ export const bodyPartApi = createApi({
       query: (filters) => ({
         url: "/paginated",
         method: "GET",
-        params: filters || {},
+        params: {
+          ...filters,
+          sortField: filters?.sortBy || filters?.sort,
+          order: filters?.order,
+        },
       }),
       transformResponse: (response: any) => mapApiResponse<BodyPart>(response),
       providesTags: ["BodyPart"],

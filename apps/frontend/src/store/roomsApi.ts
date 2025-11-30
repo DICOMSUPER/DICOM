@@ -43,7 +43,11 @@ export const roomApi = createApi({
       query: (params) => ({
         url: "",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sort || params?.sortBy, // Map sort/sortBy to sortField for backend
+          order: params?.order,
+        },
       }),
       transformResponse: (response: any) => mapApiResponse<Room>(response),
       providesTags: ["Room"],

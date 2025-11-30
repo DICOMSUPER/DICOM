@@ -48,7 +48,11 @@ export function SidebarNav() {
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link href={item.href} key={item.href} className="block">
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block w-full`}
+            >
               <Button
                 variant="ghost"
                 className={`w-full justify-start hover:bg-slate-100 hover:text-slate-700 transition-colors ${

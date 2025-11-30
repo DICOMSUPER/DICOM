@@ -166,6 +166,8 @@ export class UsersService {
     departmentId?: string;
     includeInactive?: boolean;
     includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
   }) {
     try {
       const page = query.page ?? 1;
@@ -196,9 +198,26 @@ export class UsersService {
           'department.description',
           'department.isActive',
         ])
-        .orderBy('user.createdAt', 'DESC')
         .skip(skip)
         .take(limit);
+
+      const mapSortField = (fieldName: string): string => {
+        const allowedSortFields = ['username', 'email', 'employeeId'];
+        
+        if (!allowedSortFields.includes(fieldName)) {
+          return 'user.createdAt';
+        }
+        
+        return `user.${fieldName}`;
+      };
+
+      if (query.sortField && query.order) {
+        const field = mapSortField(query.sortField);
+        const direction = query.order.toUpperCase() as 'ASC' | 'DESC';
+        qb.orderBy(field, direction);
+      } else {
+        qb.orderBy('user.createdAt', 'DESC');
+      }
 
       if (!query.includeDeleted) {
         qb.where('user.isDeleted = :isDeleted', { isDeleted: false });

@@ -59,6 +59,8 @@ export class DepartmentsController {
       departmentCode?: string[];
       includeInactive?: boolean;
       includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
     }
   ) {
     try {

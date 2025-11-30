@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, RotateCcw } from "lucide-react";
 
 interface FilterOption {
   value: string;
@@ -70,6 +70,14 @@ export function ReceptionFilters({
               className="pl-10"
             />
           </div>
+        </div>
+        <div className="flex gap-2">
+          {onReset && (
+            <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          )}
           {onSearch && (
             <Button
               onClick={onSearch}
@@ -81,7 +89,6 @@ export function ReceptionFilters({
             </Button>
           )}
         </div>
-
       </div>
     </div>
   );

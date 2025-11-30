@@ -76,6 +76,8 @@ export class RoomsController {
       departmentId?: string;
       includeInactive?: boolean;
       includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
     }
   ) {
     try {

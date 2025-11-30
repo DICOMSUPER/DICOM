@@ -226,7 +226,7 @@ export class ImagingOrdersService {
 
   filterImagingOrderByRoomId = async (
     data: FilterByRoomIdType
-  ): Promise<ImagingOrder[]> => {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> => {
     return await this.imagingOrderRepository.filterImagingOrderByRoomId(data);
   };
 

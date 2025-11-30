@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Stethoscope } from 'lucide-react';
 import { Services } from '@/interfaces/user/service.interface';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, SortConfig } from '@/components/ui/data-table';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
 import { formatDate } from '@/lib/formatTimeDate';
 
@@ -20,6 +20,8 @@ interface ServiceTableProps {
   onDelete?: (service: Services) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const ServiceTable: React.FC<ServiceTableProps> = ({
@@ -34,11 +36,15 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
   onDelete,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
 
   const columns = [
     {
       header: 'Service Code',
+      sortable: true,
+      sortField: 'serviceCode',
       cell: (service: Services) => (
         <div className="font-medium text-blue-600">
           {service.serviceCode || '—'}
@@ -47,6 +53,8 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
     },
     {
       header: 'Service Name',
+      sortable: true,
+      sortField: 'serviceName',
       cell: (service: Services) => (
         <div className="text-foreground">
           {service.serviceName || '—'}
@@ -55,18 +63,22 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
     },
     {
       header: 'Description',
+      sortable: false,
       cell: (service: Services) => (
         <div className="text-foreground">{service.description || '—'}</div>
       ),
     },
     {
       header: 'Created At',
+      sortable: true,
+      sortField: 'createdAt',
       cell: (service: Services) => (
         <div className="text-foreground">{formatDate(service.createdAt)}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (service: Services) => getStatusBadge(service.isActive ?? true),
     },
     {
@@ -120,6 +132,8 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
       rowKey={(service) => service.id}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

@@ -7,6 +7,7 @@ import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.inter
 import { DataTable } from '@/components/ui/data-table';
 import { formatDate } from '@/lib/formatTimeDate';
 import { getMachineStatusBadgeSimple } from '@/utils/status-badge';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface ModalityMachineTableProps {
   machineItems: ModalityMachine[];
@@ -19,6 +20,8 @@ interface ModalityMachineTableProps {
   onDelete?: (machine: ModalityMachine) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
@@ -32,11 +35,15 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
   onDelete,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
 
   const columns = [
     {
       header: 'Machine Name',
+      sortable: true,
+      sortField: 'name',
       cell: (machine: ModalityMachine) => (
         <div className="font-medium text-blue-600">
           {machine.name || '—'}
@@ -45,8 +52,8 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
     },
     {
       header: 'Imaging Modality',
+      sortable: false,
       cell: (machine: ModalityMachine) => {
-        // Debug logging (remove in production)
         if (!machine.modality && machine.modalityId) {
           console.warn('Modality relation missing for machine:', machine.id, 'modalityId:', machine.modalityId);
         }
@@ -59,22 +66,29 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
     },
     {
       header: 'Manufacturer',
+      sortable: true,
+      sortField: 'manufacturer',
       cell: (machine: ModalityMachine) => (
         <div className="text-foreground">{machine.manufacturer || '—'}</div>
       ),
     },
     {
       header: 'Model',
+      sortable: true,
+      sortField: 'model',
       cell: (machine: ModalityMachine) => (
         <div className="text-foreground">{machine.model || '—'}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (machine: ModalityMachine) => getMachineStatusBadgeSimple(machine.status),
     },
     {
       header: 'Created At',
+      sortable: true,
+      sortField: 'createdAt',
       cell: (machine: ModalityMachine) => (
         <div className="text-foreground">{formatDate(machine.createdAt)}</div>
       ),
@@ -131,6 +145,8 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
       showNumberColumn={true}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

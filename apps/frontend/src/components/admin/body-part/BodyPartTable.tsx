@@ -7,6 +7,8 @@ import { BodyPart } from '@/interfaces/imaging/body-part.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { formatDate } from '@/lib/formatTimeDate';
 
+import { SortConfig } from '@/components/ui/data-table';
+
 interface BodyPartTableProps {
   bodyParts: BodyPart[];
   isLoading?: boolean;
@@ -16,6 +18,8 @@ interface BodyPartTableProps {
   onViewDetails?: (bodyPart: BodyPart) => void;
   onEditBodyPart?: (bodyPart: BodyPart) => void;
   onDeleteBodyPart?: (bodyPart: BodyPart) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const BodyPartTable: React.FC<BodyPartTableProps> = ({
@@ -27,10 +31,14 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
   onViewDetails,
   onEditBodyPart,
   onDeleteBodyPart,
+  onSort,
+  initialSort,
 }) => {
   const columns = [
     {
       header: 'Name',
+      sortable: true,
+      sortField: 'name',
       cell: (bodyPart: BodyPart) => (
         <div className="font-medium text-blue-600">
           {bodyPart.name}
@@ -39,6 +47,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
     },
     {
       header: 'Description',
+      sortable: false,
       cell: (bodyPart: BodyPart) => (
         <div className="text-foreground">
           {bodyPart.description || '—'}
@@ -47,12 +56,16 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
     },
     {
       header: 'Created At',
+      sortable: true,
+      sortField: 'createdAt',
       cell: (bodyPart: BodyPart) => (
         <div className="text-foreground">{formatDate(bodyPart.createdAt)}</div>
       ),
     },
     {
       header: 'Updated At',
+      sortable: true,
+      sortField: 'updatedAt',
       cell: (bodyPart: BodyPart) => (
         <div className="text-foreground">{formatDate(bodyPart.updatedAt)}</div>
       ),
@@ -105,6 +118,8 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

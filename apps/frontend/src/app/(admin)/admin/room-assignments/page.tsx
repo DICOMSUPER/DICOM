@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -60,6 +60,7 @@ const ensureScheduleHasEmployee = (schedule: RoomSchedule): RoomSchedule | null 
 export default function RoomAssignmentsPage() {
   const router = useRouter();
   const [scheduleSearch, setScheduleSearch] = useState('');
+  const [appliedScheduleSearch, setAppliedScheduleSearch] = useState('');
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "room">("day");
@@ -156,8 +157,8 @@ export default function RoomAssignmentsPage() {
   const paginatedFilters = useMemo(() => {
     const filters: RoomScheduleSearchFilters = {};
     
-    if (scheduleSearch) {
-      filters.search = scheduleSearch;
+    if (appliedScheduleSearch) {
+      filters.search = appliedScheduleSearch;
     }
     
     if (listFilters.employeeId) {
@@ -184,7 +185,7 @@ export default function RoomAssignmentsPage() {
     }
     
     return filters;
-  }, [scheduleSearch, listFilters]);
+  }, [appliedScheduleSearch, listFilters]);
 
   const {
     data: paginatedSchedulesData,
@@ -269,7 +270,12 @@ export default function RoomAssignmentsPage() {
     if (activeView === 'list') {
       setListPage(1);
     }
-  }, [activeView, scheduleSearch, listFilters]);
+  }, [activeView, appliedScheduleSearch, listFilters]);
+
+  const handleScheduleSearch = useCallback(() => {
+    setAppliedScheduleSearch(scheduleSearch);
+    setListPage(1);
+  }, [scheduleSearch]);
 
   const handleListFiltersChange = (filters: FiltersType) => setListFilters(filters);
   const handleListFiltersReset = () => setListFilters({ sortBy: "date_desc" });
@@ -368,6 +374,8 @@ export default function RoomAssignmentsPage() {
               onSelectSchedule={setSelectedScheduleId}
               scheduleSearch={scheduleSearch}
               onScheduleSearchChange={setScheduleSearch}
+              onSearch={handleScheduleSearch}
+              isSearching={schedulesLoading}
               optimisticAssignments={optimisticAssignments}
               isLoading={schedulesLoading}
               onScheduleDetails={openScheduleDetails}

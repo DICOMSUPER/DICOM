@@ -136,7 +136,11 @@ export class ImagingOrdersController {
     @Query('patientFirstName') patientFirstName?: string,
     @Query('patientLastName') patientLastName?: string,
     @Query('startDate') startDate?: Date,
-    @Query('endDate') endDate?: Date
+    @Query('endDate') endDate?: Date,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
     let startDateValue = startDate;
     let endDateValue = endDate;
@@ -144,7 +148,7 @@ export class ImagingOrdersController {
     if (!startDateValue) startDateValue = new Date();
     if (!endDateValue) endDateValue = new Date();
 
-    const orders = await firstValueFrom(
+    const ordersResponse = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FilterByRoomId', {
         roomId: id,
         modalityId,
@@ -153,36 +157,53 @@ export class ImagingOrdersController {
         bodyPart,
         startDate: startDateValue,
         endDate: endDateValue,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 10,
+        sortBy,
+        order,
       })
     );
 
+    const orders = ordersResponse.data || [];
     const patientIds = orders.map((o: ImagingOrder) => {
       return o.imagingOrderForm?.patientId;
-    });
+    }).filter(Boolean);
 
-    const patients = await firstValueFrom(
-      this.patientService.send('PatientService.Patient.Filter', {
-        patientIds,
-        patientFirstName,
-        patientLastName,
-        patientCode: mrn,
-      })
-    );
+    let patients: Patient[] = [];
+    if (patientIds.length > 0) {
+      patients = await firstValueFrom(
+        this.patientService.send('PatientService.Patient.Filter', {
+          patientIds,
+          patientFirstName,
+          patientLastName,
+          patientCode: mrn,
+        })
+      ) || [];
+    }
 
     const physicianIds = orders.map((o: ImagingOrder) => {
       return o?.imagingOrderForm?.orderingPhysicianId;
-    });
+    }).filter(Boolean);
 
-    const physicians = await firstValueFrom(
-      this.userService.send('UserService.Users.GetUsersByIds', {
-        userIds: physicianIds,
-      })
-    );
+    let physicians: User[] = [];
+    if (physicianIds.length > 0) {
+      physicians = await firstValueFrom(
+        this.userService.send('UserService.Users.GetUsersByIds', {
+          userIds: physicianIds,
+        })
+      ) || [];
+    }
+
     const hasPatientFilter = Boolean(
       patientFirstName || patientLastName || mrn
     );
-    if ((patientFirstName || patientLastName || mrn) && patients.length === 0) {
-      return [];
+    
+    if (hasPatientFilter && patients.length === 0) {
+      return {
+        ...ordersResponse,
+        data: [],
+        total: 0,
+      };
     }
 
     const combined = orders.map((order: ImagingOrder) => {
@@ -197,11 +218,17 @@ export class ImagingOrdersController {
       };
     });
 
-    return hasPatientFilter
+    const filteredOrders = hasPatientFilter
       ? combined.filter((orderWithPatient: FilteredOrder) =>
           Boolean(orderWithPatient.patient)
         )
       : combined;
+
+    return {
+      ...ordersResponse,
+      data: filteredOrders,
+      total: hasPatientFilter ? filteredOrders.length : ordersResponse.total,
+    };
   }
 
   //get the room all time order stats

@@ -141,7 +141,7 @@ export class ImagingOrderFormController {
       const { paginationDto } = data;
       return await this.imagingOrderFormService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'patientId',
         sortField: paginationDto.sortField || 'createdAt',

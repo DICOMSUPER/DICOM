@@ -148,14 +148,26 @@ export const imagingOrderApi = createApi({
     }),
 
     getImagingOrderByRoomIdFilter: builder.query<
-      ApiResponse<ImagingOrder[]>,
-      RoomFilter
+      PaginatedResponse<ImagingOrder>,
+      RoomFilter & { page?: number; limit?: number; sortBy?: string; order?: 'asc' | 'desc' }
     >({
-      query: ({ id, filterParams }) => ({
+      query: ({ id, filterParams, page, limit, sortBy, order }) => ({
         url: `/${id}/room/filter`,
         method: "GET",
-        params: filterParams,
+        params: {
+          ...filterParams,
+          page,
+          limit,
+          sortBy,
+          order,
+        },
       }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response.data;
+        }
+        return response;
+      },
     }),
 
     getOrderStatsForRoom: builder.query<ApiResponse<QueueInfo>, string>({

@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 
 interface BodyPartFiltersProps {
   searchTerm: string;
@@ -54,9 +54,9 @@ export function BodyPartFilters({
             </Button>
           )}
         </div>
-        {hasActiveFilters && onReset && (
+        {onReset && (
           <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
-            <X className="h-4 w-4 mr-2" />
+            <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
         )}

@@ -59,7 +59,7 @@ export const imagingModalityApi = createApi({
           limit: params?.limit,
           search: params?.search,
           searchField: params?.searchField,
-          sortBy: params?.sortBy,
+          sortField: params?.sortBy, // Map sortBy to sortField for backend
           order: params?.order,
           includeInactive: params?.includeInactive,
           includeDeleted: params?.includeDeleted,

@@ -33,15 +33,17 @@ interface TableRowEnhancedProps {
   children: React.ReactNode;
   className?: string;
   isHeader?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-export function TableRowEnhanced({ children, className = '', isHeader = false }: TableRowEnhancedProps) {
+export function TableRowEnhanced({ children, className = '', isHeader = false, onMouseEnter, onMouseLeave }: TableRowEnhancedProps) {
   const baseClasses = isHeader 
     ? 'border-b border-border bg-muted/50' 
-    : 'border-b border-border hover:bg-muted/30 transition-colors';
+    : 'border-b border-border hover:bg-muted/40 active:bg-muted/50 focus:bg-muted/50 transition-colors duration-150';
   
   return (
-    <TableRow className={`${baseClasses} ${className}`}>
+    <TableRow className={`${baseClasses} ${className}`} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       {children}
     </TableRow>
   );

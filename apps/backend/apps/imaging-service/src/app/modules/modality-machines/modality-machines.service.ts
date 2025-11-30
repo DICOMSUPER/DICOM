@@ -106,37 +106,85 @@ export class ModalityMachinesService {
     manufacturer?: string;
     serialNumber?: string;
     model?: string;
-  }): Promise<ModalityMachine[]> => {
-    let whereClause: FindOptionsWhere<ModalityMachine> = { isDeleted: false };
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+  }): Promise<PaginatedResponseDto<ModalityMachine>> => {
+    const page = data.page || 1;
+    const limit = data.limit || 10;
+    const skip = (page - 1) * limit;
 
-    if (data.modalityId)
-      whereClause = { ...whereClause, modalityId: data.modalityId };
+    const repository = this.entityManager.getRepository(ModalityMachine);
+    const qb = repository
+      .createQueryBuilder('machine')
+      .leftJoinAndSelect('machine.modality', 'modality')
+      .where('machine.isDeleted = :isDeleted', { isDeleted: false });
 
-    if (data.roomId) whereClause = { ...whereClause, roomId: data.roomId };
+    if (data.modalityId) {
+      qb.andWhere('machine.modalityId = :modalityId', {
+        modalityId: data.modalityId,
+      });
+    }
 
-    if (data.status) whereClause = { ...whereClause, status: data.status };
+    if (data.roomId) {
+      qb.andWhere('machine.roomId = :roomId', { roomId: data.roomId });
+    }
 
-    if (data.machineName)
-      whereClause = { ...whereClause, name: ILike(`%${data.machineName}%`) };
+    if (data.status) {
+      qb.andWhere('machine.status = :status', { status: data.status });
+    }
 
-    if (data.manufacturer)
-      whereClause = {
-        ...whereClause,
-        manufacturer: ILike(`%${data.manufacturer}%`),
-      };
+    if (data.machineName) {
+      qb.andWhere('machine.name ILIKE :machineName', {
+        machineName: `%${data.machineName}%`,
+      });
+    }
 
-    if (data.serialNumber)
-      whereClause = {
-        ...whereClause,
-        serialNumber: ILike(`%${data.serialNumber}%`),
-      };
+    if (data.manufacturer) {
+      qb.andWhere('machine.manufacturer ILIKE :manufacturer', {
+        manufacturer: `%${data.manufacturer}%`,
+      });
+    }
 
-    if (data.model)
-      whereClause = { ...whereClause, model: ILike(`%${data.model}%`) };
+    if (data.serialNumber) {
+      qb.andWhere('machine.serialNumber ILIKE :serialNumber', {
+        serialNumber: `%${data.serialNumber}%`,
+      });
+    }
 
-    const query = { where: whereClause, relations: relations };
+    if (data.model) {
+      qb.andWhere('machine.model ILIKE :model', {
+        model: `%${data.model}%`,
+      });
+    }
 
-    return await this.modalityMachinesRepository.findAll(query);
+    if (data.sortBy && data.order) {
+      const sortField = data.sortBy === 'name' ? 'name' :
+                       data.sortBy === 'createdAt' ? 'createdAt' :
+                       data.sortBy === 'updatedAt' ? 'updatedAt' : 'createdAt';
+      qb.orderBy(`machine.${sortField}`, data.order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      qb.orderBy('machine.createdAt', 'DESC');
+    }
+
+    qb.skip(skip).take(limit);
+
+    const [dataResult, total] = await qb.getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return new PaginatedResponseDto<ModalityMachine>(
+      dataResult,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
+    );
   };
 
   findOne = async (id: string): Promise<ModalityMachine | null> => {
@@ -188,11 +236,11 @@ export class ModalityMachinesService {
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean }
+    paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean; modalityId?: string; status?: MachineStatus }
   ): Promise<PaginatedResponseDto<ModalityMachine>> => {
-    const { includeDeleted, ...restPaginationDto } = paginationDto;
+    const { includeDeleted, modalityId, status, ...restPaginationDto } = paginationDto;
     
-    if (includeDeleted) {
+    if (includeDeleted || modalityId || status) {
       const repository = this.entityManager.getRepository(ModalityMachine);
       const page = restPaginationDto.page || 1;
       const limit = restPaginationDto.limit || 10;
@@ -200,16 +248,39 @@ export class ModalityMachinesService {
       
       const qb = repository
         .createQueryBuilder('machine')
-        .leftJoinAndSelect('machine.modality', 'modality')
-        .orderBy(`machine.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')
-        .skip(skip)
-        .take(limit);
+        .leftJoinAndSelect('machine.modality', 'modality');
+      
+      const whereConditions: string[] = [];
+      const whereParams: any = {};
+      
+      if (!includeDeleted) {
+        whereConditions.push('machine.isDeleted = :isDeleted');
+        whereParams.isDeleted = false;
+      }
+      
+      if (modalityId) {
+        whereConditions.push('machine.modalityId = :modalityId');
+        whereParams.modalityId = modalityId;
+      }
+      
+      if (status) {
+        whereConditions.push('machine.status = :status');
+        whereParams.status = status;
+      }
+      
+      if (whereConditions.length > 0) {
+        qb.where(whereConditions.join(' AND '), whereParams);
+      }
       
       if (restPaginationDto.search && restPaginationDto.searchField) {
-        qb.where(`machine.${restPaginationDto.searchField} LIKE :search`, {
+        qb.andWhere(`machine.${restPaginationDto.searchField} LIKE :search`, {
           search: `%${restPaginationDto.search}%`,
         });
       }
+      
+      qb.orderBy(`machine.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')
+        .skip(skip)
+        .take(limit);
       
       const [data, total] = await qb.getManyAndCount();
       const totalPages = Math.ceil(total / limit);
@@ -230,7 +301,7 @@ export class ModalityMachinesService {
     });
   };
 
-  async getStats(): Promise<{
+  async getStats(roomId?: string): Promise<{
     totalMachines: number;
     activeMachines: number;
     inactiveMachines: number;
@@ -238,11 +309,16 @@ export class ModalityMachinesService {
   }> {
     try {
       const repository = this.entityManager.getRepository(ModalityMachine);
+      const baseWhere: any = { isDeleted: false };
+      if (roomId) {
+        baseWhere.roomId = roomId;
+      }
+
       const [totalMachines, activeMachines, inactiveMachines, maintenanceMachines] = await Promise.all([
-        repository.count({ where: { isDeleted: false } }),
-        repository.count({ where: { status: MachineStatus.ACTIVE, isDeleted: false } }),
-        repository.count({ where: { status: MachineStatus.INACTIVE, isDeleted: false } }),
-        repository.count({ where: { status: MachineStatus.MAINTENANCE, isDeleted: false } }),
+        repository.count({ where: baseWhere }),
+        repository.count({ where: { ...baseWhere, status: MachineStatus.ACTIVE } }),
+        repository.count({ where: { ...baseWhere, status: MachineStatus.INACTIVE } }),
+        repository.count({ where: { ...baseWhere, status: MachineStatus.MAINTENANCE } }),
       ]);
 
       return {

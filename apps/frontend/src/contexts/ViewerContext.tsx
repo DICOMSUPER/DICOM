@@ -34,6 +34,7 @@ import { extractApiData } from "@/utils/api";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import type { Annotation } from "@cornerstonejs/tools/types";
+import { AnnotationType } from "@/enums/image-dicom.enum";
 import {
   createSegmentationHistoryHelpers,
   ensureViewportLabelmapSegmentation,
@@ -818,6 +819,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const seriesInstancesCacheRef = useRef<
     LRUCache<string, Record<string, any[]>>
   >(new LRUCache(SERIES_CACHE_MAX_ENTRIES));
+  const annotationsCacheRef = useRef<
+    LRUCache<string, ImageAnnotation[]>
+  >(new LRUCache(SERIES_CACHE_MAX_ENTRIES));
   const cornerstoneInitializedRef = useRef(false);
   const cornerstoneInitPromiseRef = useRef<Promise<void> | null>(null);
   const mountedRef = useRef(true);
@@ -839,6 +843,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     state.selectedSegmentationLayer
   );
   const segmentationLayersRef = useRef(state.segmentationLayers);
+  const showAnnotationsRef = useRef(state.showAnnotations);
 
   useEffect(() => {
     selectedSegmentationLayerRef.current = state.selectedSegmentationLayer;
@@ -847,6 +852,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     segmentationLayersRef.current = state.segmentationLayers;
   }, [state.segmentationLayers]);
+
+  useEffect(() => {
+    showAnnotationsRef.current = state.showAnnotations;
+  }, [state.showAnnotations]);
 
   const previousLayerSelectionRef = useRef<string | null>(
     state.selectedSegmentationLayer
@@ -946,6 +955,51 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const clearDbAnnotationsForViewport = useCallback((viewport: number) => {
     dbAnnotationsRenderedRef.current.delete(viewport);
   }, []);
+
+  const unloadAnnotationsFromViewport = useCallback(
+    (viewport: number, viewportElement: HTMLDivElement | null) => {
+      if (!viewportElement) {
+        return;
+      }
+
+      const tracker = dbAnnotationsRenderedRef.current.get(viewport);
+      if (!tracker || tracker.size === 0) {
+        return;
+      }
+
+      const annotationUIDs = Array.from(tracker);
+      annotationUIDs.forEach((annotationId) => {
+        try {
+          // Get all annotations for all tool types
+          const toolNames = Object.values(AnnotationType);
+          for (const toolName of toolNames) {
+            const annotations = annotation.state.getAnnotations(
+              toolName,
+              viewportElement
+            );
+            if (!annotations || annotations.length === 0) continue;
+
+            annotations.forEach((ann) => {
+              const metadata = ann.metadata as Record<string, unknown> | undefined;
+              const dbAnnotationId = metadata?.dbAnnotationId as string | undefined;
+              if (dbAnnotationId === annotationId && ann.annotationUID) {
+                try {
+                  annotation.state.removeAnnotation(ann.annotationUID);
+                } catch (error) {
+                  console.error("Failed to remove annotation", ann.annotationUID, error);
+                }
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Error unloading annotation", annotationId, error);
+        }
+      });
+
+      tracker.clear();
+    },
+    []
+  );
 
   const ensureAnnotationHistoryStacks = useCallback(
     (viewport: number): AnnotationHistoryStacks => {
@@ -1081,14 +1135,23 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       viewportId,
       viewportElement,
       bailIfStale,
+      forceReload = false,
+      checkShowAnnotations = true,
     }: {
       viewport: number;
       seriesId: string;
       viewportId?: string;
       viewportElement: HTMLDivElement | null;
       bailIfStale?: () => boolean;
+      forceReload?: boolean;
+      checkShowAnnotations?: boolean;
     }) => {
       if (!viewportElement || !seriesId) {
+        return;
+      }
+
+      // Only load if annotations are enabled (unless explicitly bypassed)
+      if (checkShowAnnotations && !showAnnotationsRef.current) {
         return;
       }
 
@@ -1096,59 +1159,77 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      try {
-        const response = await fetchAnnotationsBySeries(seriesId).unwrap();
-        if (bailIfStale?.()) {
-          return;
-        }
-        const annotations = extractApiData<ImageAnnotation>(response);
-        if (!Array.isArray(annotations) || annotations.length === 0) {
-          return;
-        }
+      // Check cache first
+      let annotations: ImageAnnotation[] | undefined;
+      if (!forceReload) {
+        annotations = annotationsCacheRef.current.get(seriesId);
+      }
 
-        const addAnnotationApi = (
-          annotation.state as unknown as {
-            addAnnotation?: (
-              annotation: Annotation,
-              element: HTMLDivElement
-            ) => void;
-          }
-        ).addAnnotation;
-
-        if (typeof addAnnotationApi !== "function") {
-          return;
-        }
-
-        const tracker = ensureDbAnnotationTracker(viewport);
-
-        annotations.forEach((record) => {
-          if (!record?.id || tracker.has(record.id)) {
+      // If not in cache, fetch from API
+      if (!annotations) {
+        try {
+          const response = await fetchAnnotationsBySeries(seriesId).unwrap();
+          if (bailIfStale?.()) {
             return;
           }
-          const payload = buildDatabaseAnnotationPayload(
-            record,
-            seriesId,
-            viewportId
-          );
-          if (!payload || bailIfStale?.()) {
+          annotations = extractApiData<ImageAnnotation>(response);
+          if (!Array.isArray(annotations) || annotations.length === 0) {
+            // Cache empty array to avoid re-fetching
+            annotationsCacheRef.current.set(seriesId, []);
             return;
           }
-          try {
-            addAnnotationApi(payload, viewportElement);
-            tracker.add(record.id);
-          } catch (addError) {
-            console.error("Failed to render annotation", record.id, addError);
+          // Cache the annotations
+          annotationsCacheRef.current.set(seriesId, annotations);
+        } catch (error) {
+          if (!bailIfStale?.()) {
+            console.error(
+              "Failed to load annotations for series",
+              seriesId,
+              error
+            );
           }
-        });
-      } catch (error) {
-        if (!bailIfStale?.()) {
-          console.error(
-            "Failed to load annotations for series",
-            seriesId,
-            error
-          );
+          return;
         }
       }
+
+      if (bailIfStale?.()) {
+        return;
+      }
+
+      const addAnnotationApi = (
+        annotation.state as unknown as {
+          addAnnotation?: (
+            annotation: Annotation,
+            element: HTMLDivElement
+          ) => void;
+        }
+      ).addAnnotation;
+
+      if (typeof addAnnotationApi !== "function") {
+        return;
+      }
+
+      const tracker = ensureDbAnnotationTracker(viewport);
+
+      annotations.forEach((record) => {
+        if (!record?.id || tracker.has(record.id)) {
+          return;
+        }
+        const payload = buildDatabaseAnnotationPayload(
+          record,
+          seriesId,
+          viewportId
+        );
+        if (!payload || bailIfStale?.()) {
+          return;
+        }
+        try {
+          addAnnotationApi(payload, viewportElement);
+          tracker.add(record.id);
+        } catch (addError) {
+          console.error("Failed to render annotation", record.id, addError);
+        }
+      });
     },
     [ensureDbAnnotationTracker, fetchAnnotationsBySeries]
   );
@@ -2470,17 +2551,54 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const toggleAnnotations = useCallback(() => {
+    const newShowAnnotations = !state.showAnnotations;
+    
+    // Update ref immediately for synchronous access
+    showAnnotationsRef.current = newShowAnnotations;
+    
+    // Dispatch state update
     dispatch({ type: "TOGGLE_ANNOTATIONS" });
+
+    // Load or unload annotations for all viewports
+    // Use refs to get current values to avoid stale closures
+    const currentViewportSeries = state.viewportSeries;
+    const currentViewportIds = state.viewportIds;
+    
+    if (newShowAnnotations) {
+      // Load annotations for all viewports that have series loaded
+      currentViewportSeries.forEach((series, viewport) => {
+        const viewportElement = viewportElementsRef.current.get(viewport);
+        const viewportId = currentViewportIds.get(viewport);
+        if (viewportElement && series?.id) {
+          void loadDatabaseAnnotationsForViewport({
+            viewport,
+            seriesId: series.id,
+            viewportId,
+            viewportElement,
+            forceReload: false,
+            checkShowAnnotations: false, // Bypass check since we know we're enabling
+          });
+        }
+      });
+    } else {
+      // Unload annotations from all viewports
+      currentViewportSeries.forEach((series, viewport) => {
+        const viewportElement = viewportElementsRef.current.get(viewport);
+        if (viewportElement) {
+          unloadAnnotationsFromViewport(viewport, viewportElement);
+        }
+      });
+    }
 
     // Dispatch event to all viewports to toggle annotation visibility
     window.dispatchEvent(
       new CustomEvent("toggleAnnotations", {
-        detail: { showAnnotations: !state.showAnnotations },
+        detail: { showAnnotations: newShowAnnotations },
       })
     );
 
-    console.log("👁️ Toggled annotation visibility:", !state.showAnnotations);
-  }, [state.showAnnotations]);
+    console.log("👁️ Toggled annotation visibility:", newShowAnnotations);
+  }, [state.showAnnotations, state.viewportSeries, state.viewportIds, loadDatabaseAnnotationsForViewport, unloadAnnotationsFromViewport]);
 
   const toggleSegmentationControlPanel = () => {
     dispatch({ type: "TOGGLE_SEGMENTATION_CONTROL_PANEL" });

@@ -38,6 +38,26 @@ export class RepositoryPaginationDto {
   @IsIn(['asc', 'desc'])
   order?: string = 'desc';
 
+  // Support for multiple sort fields (n fields)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sortFields?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(['asc', 'desc'], { each: true })
+  sortOrders?: string[];
+
+  // Alternative: comma-separated format
+  @IsOptional()
+  @IsString()
+  sortFieldsString?: string; // e.g., "name,createdAt"
+
+  @IsOptional()
+  @IsString()
+  sortOrdersString?: string; // e.g., "asc,desc"
+
   @IsOptional()
   @IsArray()
   relation?: string[];

@@ -107,7 +107,7 @@ export class EmployeeRoomAssignmentsController {
       const { paginationDto } = data;
       return await this.employeeRoomAssignmentsService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'modalityName',
         sortField: paginationDto.sortField || 'createdAt',

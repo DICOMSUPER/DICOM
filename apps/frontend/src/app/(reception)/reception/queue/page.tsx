@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 // WorkspaceLayout and SidebarNav moved to layout.tsx
 import { QuickActionsBar } from "@/components/reception/quick-actions-bar";
 import { ReceptionFilters } from "@/components/reception/reception-filters";
@@ -21,8 +21,11 @@ import { useGetReceptionAnalyticsQuery } from "@/store/analyticsApi";
 export default function QueuePage() {
   const [notificationCount] = useState(3);
   const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [appliedPriorityFilter, setAppliedPriorityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
 
   // Fetch real data
@@ -33,9 +36,9 @@ export default function QueuePage() {
     error: encountersError,
     refetch: refetchEncounters,
   } = useGetPatientEncountersQuery({
-    searchTerm: searchTerm || undefined,
-    priority: priorityFilter !== "all" ? priorityFilter : undefined,
-    status: statusFilter !== "all" ? statusFilter : undefined,
+    searchTerm: appliedSearchTerm || undefined,
+    priority: appliedPriorityFilter !== "all" ? appliedPriorityFilter : undefined,
+    status: appliedStatusFilter !== "all" ? appliedStatusFilter : undefined,
   });
   const {
     data: encounterStats,
@@ -162,6 +165,21 @@ export default function QueuePage() {
     await Promise.all([refetchEncounters(), refetchStats(), refetchAnalytics()]);
   };
 
+  const handleSearch = useCallback(() => {
+    setAppliedSearchTerm(searchTerm);
+    setAppliedPriorityFilter(priorityFilter);
+    setAppliedStatusFilter(statusFilter);
+  }, [searchTerm, priorityFilter, statusFilter]);
+
+  const handleResetFilters = useCallback(() => {
+    setSearchTerm("");
+    setPriorityFilter("all");
+    setStatusFilter("all");
+    setAppliedSearchTerm("");
+    setAppliedPriorityFilter("all");
+    setAppliedStatusFilter("all");
+  }, []);
+
   const encountersByStatus = analyticsData?.data?.encountersByStatus || [];
   const getStatusCount = (statuses: string[]): number => {
     return encountersByStatus
@@ -229,10 +247,11 @@ export default function QueuePage() {
       <ReceptionFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
+        onSearch={handleSearch}
+        onReset={handleResetFilters}
+        isSearching={encountersLoading || encountersFetching}
       />
 
       {/* Queue Tables */}

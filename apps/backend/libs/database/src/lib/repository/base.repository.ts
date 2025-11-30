@@ -186,6 +186,10 @@ export class BaseRepository<T extends ObjectLiteral> {
       limit = 10,
       sortField,
       order,
+      sortFields,
+      sortOrders,
+      sortFieldsString,
+      sortOrdersString,
       relation,
       searchField,
       search,
@@ -253,8 +257,51 @@ export class BaseRepository<T extends ObjectLiteral> {
       });
     }
 
-    // Sorting - prioritize paginationDto sorting over options
-    if (sortField && order) {
+    // Sorting - support multiple sort fields (n fields)
+    // Priority: sortFields/sortOrders arrays > sortFieldsString/sortOrdersString > sortField/order > options.order
+    
+    // Handle multiple sort fields (arrays)
+    if (sortFields && sortFields.length > 0 && sortOrders && sortOrders.length > 0) {
+      const minLength = Math.min(sortFields.length, sortOrders.length);
+      for (let i = 0; i < minLength; i++) {
+        if (sortFields[i] && sortOrders[i]) {
+          if (i === 0) {
+            query.orderBy(
+              `entity.${sortFields[i]}`,
+              sortOrders[i].toUpperCase() as 'ASC' | 'DESC'
+            );
+          } else {
+            query.addOrderBy(
+              `entity.${sortFields[i]}`,
+              sortOrders[i].toUpperCase() as 'ASC' | 'DESC'
+            );
+          }
+        }
+      }
+    }
+    // Handle comma-separated format
+    else if (sortFieldsString && sortOrdersString) {
+      const fields = sortFieldsString.split(',').map(f => f.trim()).filter(f => f);
+      const orders = sortOrdersString.split(',').map(o => o.trim()).filter(o => o);
+      const minLength = Math.min(fields.length, orders.length);
+      for (let i = 0; i < minLength; i++) {
+        if (fields[i] && orders[i]) {
+          if (i === 0) {
+            query.orderBy(
+              `entity.${fields[i]}`,
+              orders[i].toUpperCase() as 'ASC' | 'DESC'
+            );
+          } else {
+            query.addOrderBy(
+              `entity.${fields[i]}`,
+              orders[i].toUpperCase() as 'ASC' | 'DESC'
+            );
+          }
+        }
+      }
+    }
+    // Handle single sort field (backward compatibility)
+    else if (sortField && order) {
       query.orderBy(
         `entity.${sortField}`,
         order.toUpperCase() as 'ASC' | 'DESC'

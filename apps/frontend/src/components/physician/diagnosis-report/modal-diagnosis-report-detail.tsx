@@ -212,9 +212,6 @@ export function ModalDiagnosisReportDetail({
     }
   }, [selectedReportTemplate, selectedReportTemplateId, isEditDescriptionOpen]);
 
-  useEffect(() => {
-    console.log("editedReportDescription changed:", editedReportDescription);
-  }, [editedReportDescription]);
 
   const handleEditDescriptionOpen = useCallback(() => {
     setIsEditDescriptionOpen(true);
@@ -268,7 +265,6 @@ export function ModalDiagnosisReportDetail({
   const handleSaveDescription = useCallback(async () => {
     try {
       const descriptionToSave = editedReportDescription.trim();
-      console.log("Description to save (trimmed):", descriptionToSave);
 
       if (!descriptionToSave) {
         toast.error("Description cannot be empty");
@@ -323,11 +319,15 @@ export function ModalDiagnosisReportDetail({
   }, [onClose]);
 
   const getStatusBadge = (status: DiagnosisStatus) => {
+    const capitalizeFirst = (str: string) => {
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+
     switch (status) {
       case DiagnosisStatus.ACTIVE:
         return (
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200 transition-colors">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2" />
+          <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-200 transition-colors">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
             Active
           </Badge>
         );
@@ -346,7 +346,7 @@ export function ModalDiagnosisReportDetail({
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{capitalizeFirst(status || "Unknown")}</Badge>;
     }
   };
 
@@ -387,7 +387,6 @@ export function ModalDiagnosisReportDetail({
       }).unwrap();
 
       if (result.success) {
-        console.log("result", result);
         DiagnosisReportPDF({
           diagnosisReportPDF: { report: report?.data! },
           dicomStudy: dicomStudyData?.data,
