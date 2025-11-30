@@ -190,6 +190,8 @@ export class PatientEncounterService {
       patientName,
       orderNumber,
       roomId,
+      sortBy,
+      order,
     } = filterEncounter;
     console.log('filter', filterEncounter);
 
@@ -285,14 +287,21 @@ export class PatientEncounterService {
 
     // whereConditions.encounterDate = Between(fromDate, toDate);
 
+    let orderBy: any = { orderNumber: 'ASC' };
+    if (sortBy && order) {
+      if (sortBy === 'orderNumber') {
+        orderBy = { orderNumber: order.toUpperCase() };
+      } else if (sortBy === 'createdAt') {
+        orderBy = { createdAt: order.toUpperCase() };
+      }
+    }
+
     return this.paginationService.paginate(
       PatientEncounter,
       { page, limit },
       {
         where: whereConditions,
-        order: {
-          orderNumber: 'ASC',
-        },
+        order: orderBy,
         relations: {
           patient: true,
         },

@@ -92,7 +92,6 @@ export function VitalSignForm({
       ...filteredValues, 
 
     };
-    console.log(`Form ${mode}d:`, payload);
     
     if (onSubmit) {
       onSubmit(payload);

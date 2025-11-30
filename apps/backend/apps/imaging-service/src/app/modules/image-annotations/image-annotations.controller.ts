@@ -150,7 +150,7 @@ export class ImageAnnotationsController {
       const { paginationDto } = data;
       return await this.imageAnnotationsService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'textContent',
         sortField: paginationDto.sortField || 'createdAt',
@@ -181,7 +181,7 @@ export class ImageAnnotationsController {
       const { id, type, paginationDto } = data;
       return await this.imageAnnotationsService.findByReferenceId(id, type, {
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'textContent',
         sortField: paginationDto.sortField || 'createdAt',

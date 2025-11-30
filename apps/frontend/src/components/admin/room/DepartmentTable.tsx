@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2, Phone, Mail } from 'lucide-react';
 import { Department } from '@/interfaces/user/department.interface';
 import { DataTable } from '@/components/ui/data-table';
+import { SortConfig } from '@/components/ui/data-table';
+import { formatRole } from '@/utils/role-formatter';
 
 interface DepartmentTableProps {
   departments: Department[];
@@ -16,6 +18,8 @@ interface DepartmentTableProps {
   onViewDetails?: (department: Department) => void;
   onEditDepartment?: (department: Department) => void;
   onDeleteDepartment?: (department: Department) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const DepartmentTable: React.FC<DepartmentTableProps> = ({
@@ -28,10 +32,14 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
   onViewDetails,
   onEditDepartment,
   onDeleteDepartment,
+  onSort,
+  initialSort,
 }) => {
   const columns = [
     {
       header: 'Department Code',
+      sortable: true,
+      sortField: 'departmentCode',
       cell: (department: Department) => (
         <div className="font-medium text-blue-600">
           {department.departmentCode}
@@ -40,6 +48,8 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
     },
     {
       header: 'Department Name',
+      sortable: true,
+      sortField: 'departmentName',
       cell: (department: Department) => (
         <div className="text-foreground">{department.departmentName}</div>
       ),
@@ -47,6 +57,7 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
     {
       header: 'Status',
       headerClassName: 'text-center',
+      sortable: false,
       cell: (department: Department) => (
         <div className="flex justify-center">
           {getStatusBadge(department.isActive)}
@@ -68,17 +79,25 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       cell: (department: Department) => (
         <div className="text-foreground">
           {department.headDepartment?.email ? (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Mail className="w-3 h-3" />
               {department.headDepartment.email}
             </div>
           ) : (
-            <span className="text-foreground">No email</span>
+            <div className="flex items-center gap-2 text-sm text-foreground mt-1">
+              <Mail className="w-3 h-3" />
+              <span className="text-foreground">No email</span>
+            </div>
           )}
-          {department.headDepartment?.phone && (
-            <div className="flex items-center gap-1 text-sm text-foreground mt-1">
+          {department.headDepartment?.phone ? (
+            <div className="flex items-center gap-2 text-sm text-foreground mt-1">
               <Phone className="w-3 h-3" />
               {department.headDepartment.phone}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-foreground mt-1">
+              <Phone className="w-3 h-3" />
+              <span className="text-foreground">No phone number</span>
             </div>
           )}
         </div>
@@ -87,7 +106,7 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
     {
       header: 'Role',
       cell: (department: Department) => (
-        <div className="text-foreground">{department.headDepartment?.role || '—'}</div>
+        <div className="text-foreground">{department.headDepartment?.role ? formatRole(department.headDepartment.role) : '—'}</div>
       ),
     },
     {
@@ -151,6 +170,8 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(department) => department.id}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

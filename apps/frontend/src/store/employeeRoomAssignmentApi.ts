@@ -29,7 +29,11 @@ export const employeeRoomAssignmentApi = createApi({
       query: ({ filter }) => ({
         url: `/`,
         method: "GET",
-        params: filter,
+        params: {
+          ...filter,
+          sortField: filter?.sortBy, // Map sortBy to sortField for backend
+          order: filter?.order,
+        },
       }),
       providesTags: ["EmployeeRoomAssignment"],
     }),

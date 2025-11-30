@@ -117,7 +117,7 @@ export class ImagingOrderFormService {
     filter: FilterImagingOrderFormDto,
     userId: string
   ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
-    const { page = 1, limit = 10, patientName, status } = filter;
+    const { page = 1, limit = 10, patientName, status, sortBy, order } = filter;
 
     const keyName = createCacheKey.system(
       'imaging_order_forms',
@@ -168,7 +168,12 @@ export class ImagingOrderFormService {
       });
     }
 
-    queryBuilder.orderBy('orderForm.createdAt', 'DESC');
+    if (sortBy && order) {
+      const sortField = sortBy === 'id' ? 'id' : sortBy === 'createdAt' ? 'createdAt' : 'createdAt';
+      queryBuilder.orderBy(`orderForm.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy('orderForm.createdAt', 'DESC');
+    }
 
     const [data, total] = await queryBuilder
       .skip(skip)

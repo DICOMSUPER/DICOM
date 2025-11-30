@@ -224,12 +224,18 @@ export const scheduleApi = createApi({
         is_active?: boolean;
         includeInactive?: boolean;
         includeDeleted?: boolean;
+        sortBy?: string;
+        order?: "asc" | "desc";
       }
     >({
       query: (params: any) => ({
         url: "/shift-templates",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortBy || params?.sort_field, // Map sortBy to sortField for backend
+          order: params?.order,
+        },
       }),
       providesTags: ["ShiftTemplate"],
     }),

@@ -48,6 +48,10 @@ export interface FilterByRoomIdType {
   bodyPart?: string;
   startDate?: Date;
   endDate?: Date;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  order?: 'asc' | 'desc';
 }
 
 export type ReferenceFieldOrderType =
@@ -241,7 +245,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
   async filterImagingOrderByRoomId(
     data: FilterByRoomIdType
-  ): Promise<ImagingOrder[]> {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
     let startDate: Date | undefined;
     let endDate: Date | undefined;
 
@@ -255,6 +259,10 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       endDate.setHours(23, 59, 59, 999);
     }
 
+    const page = data.page || 1;
+    const limit = data.limit || 10;
+    const skip = (page - 1) * limit;
+
     const repository = this.getRepository();
     const qb = repository
       .createQueryBuilder('order')
@@ -264,8 +272,8 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       .innerJoinAndSelect('procedure.modality', 'modality')
       .innerJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .leftJoinAndSelect('order.studies', 'studies')
-      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
-      .addOrderBy('order.createdAt', 'ASC');
+      .andWhere('order.isDeleted = :notDeleted', { notDeleted: false });
+    
     if (data.modalityId) {
       qb.andWhere('procedure.modalityId = :modalityId', {
         modalityId: data.modalityId,
@@ -298,7 +306,32 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       qb.andWhere('order.createdAt <= :endDate', { endDate });
     }
 
-    return qb.getMany();
+    if (data.sortBy && data.order) {
+      const sortField = data.sortBy === 'orderNumber' ? 'orderNumber' : 
+                       data.sortBy === 'createdAt' ? 'createdAt' : 
+                       data.sortBy === 'completedDate' ? 'completedDate' : 'createdAt';
+      qb.orderBy(`order.${sortField}`, data.order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      qb.orderBy('order.createdAt', 'ASC');
+    }
+
+    qb.skip(skip).take(limit);
+
+    const [orders, total] = await qb.getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return new PaginatedResponseDto<ImagingOrder>(
+      orders,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
+    );
   }
 
   async getRoomStatsInDateRange(data: {

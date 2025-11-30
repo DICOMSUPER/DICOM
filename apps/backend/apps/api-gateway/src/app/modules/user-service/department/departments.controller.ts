@@ -60,6 +60,8 @@ export class DepartmentsController {
   @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean, description: 'Include inactive records' })
   @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include deleted records' })
+  @ApiQuery({ name: 'sortField', required: false, type: String, description: 'Field to sort by' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng ban thành công' })
   async getAllDepartments(
     @Query('page') page?: number,
@@ -69,6 +71,8 @@ export class DepartmentsController {
     @Query('departmentCode') departmentCode?: string[],
     @Query('includeInactive') includeInactive?: boolean,
     @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc',
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -85,6 +89,8 @@ export class DepartmentsController {
           departmentCode,
           includeInactive: includeInactive === true,
           includeDeleted: includeDeleted === true,
+          sortField,
+          order,
         })
       );
 

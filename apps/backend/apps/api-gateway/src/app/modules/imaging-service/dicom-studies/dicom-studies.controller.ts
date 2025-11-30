@@ -264,16 +264,19 @@ export class DicomStudiesController {
   @Get('stats-in-date-range')
   @Role(Roles.SYSTEM_ADMIN, Roles.IMAGING_TECHNICIAN, Roles.RADIOLOGIST, Roles.PHYSICIAN)
   async getStatsInDateRange(
+    @Req() req: IAuthenticatedRequest,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
-    @Query('roomId') roomId?: string,
-    @Req() req?: IAuthenticatedRequest
-
+    @Query('roomId') roomId?: string
   ) {
+    const today = new Date().toISOString().split('T')[0];
+    const finalDateFrom = dateFrom || today;
+    const finalDateTo = dateTo || today;
+
     return await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.GetStatsInDateRange', {
-        dateFrom,
-        dateTo,
+        dateFrom: finalDateFrom,
+        dateTo: finalDateTo,
         roomId,
         userInfo: req?.userInfo
       })

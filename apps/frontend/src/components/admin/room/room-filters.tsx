@@ -3,8 +3,9 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 import { Department } from "@/interfaces/user/department.interface";
+import { RoomType, RoomStatus } from "@/enums/room.enum";
 
 interface RoomFiltersProps {
   searchTerm: string;
@@ -16,7 +17,6 @@ interface RoomFiltersProps {
   departmentFilter: string;
   onDepartmentChange: (value: string) => void;
   departments?: Department[];
-  roomTypes?: string[];
   onSearch?: () => void;
   onReset?: () => void;
   isSearching?: boolean;
@@ -33,7 +33,6 @@ export function RoomFilters({
   departmentFilter,
   onDepartmentChange,
   departments = [],
-  roomTypes = [],
   onSearch,
   onReset,
   isSearching = false,
@@ -46,6 +45,16 @@ export function RoomFilters({
       onSearch();
     }
   };
+
+  const roomTypeOptions = Object.values(RoomType).map(type => ({
+    value: type,
+    label: type === 'XRAY' ? 'X-RAY' : type === 'ULTRASOUND' ? 'Ultrasound' : type === 'RESPIRATORY' ? 'Respiratory' : type === 'GENERAL' ? 'General' : type,
+  }));
+
+  const roomStatusOptions = Object.values(RoomStatus).map(status => ({
+    value: status,
+    label: status.charAt(0) + status.slice(1).toLowerCase(),
+  }));
 
   return (
     <div className={`border-border mb-6 ${className}`}>
@@ -79,10 +88,11 @@ export function RoomFilters({
             </SelectTrigger>
             <SelectContent className="border-border">
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="AVAILABLE">Available</SelectItem>
-              <SelectItem value="OCCUPIED">Occupied</SelectItem>
-              <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-              <SelectItem value="RESERVED">Reserved</SelectItem>
+              {roomStatusOptions.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={onTypeChange}>
@@ -91,9 +101,9 @@ export function RoomFilters({
             </SelectTrigger>
             <SelectContent className="border-border">
               <SelectItem value="all">All Types</SelectItem>
-              {roomTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
+              {roomTypeOptions.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -111,9 +121,9 @@ export function RoomFilters({
               ))}
             </SelectContent>
           </Select>
-          {hasActiveFilters && onReset && (
+          {onReset && (
             <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
-              <X className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
           )}

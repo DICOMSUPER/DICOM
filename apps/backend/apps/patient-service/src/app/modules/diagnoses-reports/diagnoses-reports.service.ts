@@ -192,6 +192,8 @@ export class DiagnosesReportService {
       diagnosisDateFrom,
       diagnosisDateTo,
       diagnosisType,
+      sortBy,
+      order,
     } = filter;
 
 
@@ -271,7 +273,12 @@ export class DiagnosesReportService {
       });
     }
 
-    queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
+    if (sortBy && order) {
+      const sortField = sortBy === 'diagnosisDate' ? 'diagnosisDate' : sortBy === 'id' ? 'id' : 'createdAt';
+      queryBuilder.orderBy(`diagnosisReport.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
+    }
 
     const [data, total] = await queryBuilder
       .skip(skip)
@@ -293,4 +300,16 @@ export class DiagnosesReportService {
 
     return response;
   }
+
+  getStats = async (
+    userInfo?: { userId: string; role: string }
+  ): Promise<{
+    total: number;
+    active: number;
+    resolved: number;
+    critical: number;
+    today: number;
+  }> => {
+    return await this.diagnosisReportRepository.getStats(userInfo);
+  };
 }

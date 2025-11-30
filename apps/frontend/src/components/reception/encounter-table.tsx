@@ -7,6 +7,7 @@ import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interfac
 import { DataTable } from '@/components/ui/data-table';
 import { getEncounterStatusBadge, getEncounterTypeBadge, getEncounterPriorityBadge } from '@/utils/status-badge';
 import { formatDate } from '@/lib/formatTimeDate';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface EncounterTableProps {
   encounters: PatientEncounter[];
@@ -18,6 +19,8 @@ interface EncounterTableProps {
   onEditEncounter?: (encounter: PatientEncounter) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const EncounterTable: React.FC<EncounterTableProps> = ({
@@ -30,6 +33,8 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
   onEditEncounter,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
   const formatDateTime = (date: string | Date | undefined) => {
     if (!date) return { date: "N/A", time: "" };
@@ -51,6 +56,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
   const columns = [
     {
       header: 'Patient',
+      sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div className="min-w-0">
           <div className="font-medium text-sm text-foreground">
@@ -64,6 +70,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div>
           {getEncounterStatusBadge(encounter.status)}
@@ -72,6 +79,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
     },
     {
       header: 'Type',
+      sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div>
           {getEncounterTypeBadge(encounter.encounterType)}
@@ -80,6 +88,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
     },
     {
       header: 'Priority',
+      sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div>
           {encounter.priority ? (
@@ -92,6 +101,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
     },
     {
       header: 'Chief Complaint',
+      sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div className="max-w-[300px]">
           {encounter.chiefComplaint ? (
@@ -115,6 +125,8 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
     },
     {
       header: 'Date & Time',
+      sortable: true,
+      sortField: 'encounterDate',
       cell: (encounter: PatientEncounter) => {
         const dateTime = formatDateTime(encounter?.encounterDate);
         return (
@@ -198,6 +210,8 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
       rowKey={(encounter) => encounter.id}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

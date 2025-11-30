@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Power, Users, Mail, Phone } from 'lucide-react';
 import { User } from '@/interfaces/user/user.interface';
 import { DataTable } from '@/components/ui/data-table';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface UserTableProps {
   users: User[];
@@ -18,6 +19,8 @@ interface UserTableProps {
   onToggleStatus?: (user: User) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -32,6 +35,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   onToggleStatus,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
 
   const getRoleLabel = (role?: string) => {
@@ -42,6 +47,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   const columns = [
     {
       header: 'Username',
+      sortable: true,
+      sortField: 'username',
       cell: (user: User) => (
         <div className="font-medium text-blue-600">
           {user.username}
@@ -50,6 +57,7 @@ export const UserTable: React.FC<UserTableProps> = ({
     },
     {
       header: 'Name',
+      sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">
           {user.firstName} {user.lastName}
@@ -58,6 +66,8 @@ export const UserTable: React.FC<UserTableProps> = ({
     },
     {
       header: 'Email',
+      sortable: true,
+      sortField: 'email',
       cell: (user: User) => (
         <div className="flex items-center gap-1 text-foreground">
           <Mail className="w-3 h-3" />
@@ -67,34 +77,41 @@ export const UserTable: React.FC<UserTableProps> = ({
     },
     {
       header: 'Phone',
+      sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">{user.phone || '—'}</div>
       ),
     },
     {
       header: 'Role',
+      sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">{getRoleLabel(user.role)}</div>
       ),
     },
     {
       header: 'Department',
+      sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">{user.department?.departmentName || '—'}</div>
       ),
     },
     {
       header: 'Employee ID',
+      sortable: true,
+      sortField: 'employeeId',
       cell: (user: User) => (
         <div className="text-foreground">{user.employeeId || '—'}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (user: User) => getStatusBadge(user.isActive ?? true),
     },
     {
       header: 'Verified',
+      sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">{user.isVerified ? 'Yes' : 'No'}</div>
       ),
@@ -151,6 +168,8 @@ export const UserTable: React.FC<UserTableProps> = ({
       rowKey={(user) => user.id}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

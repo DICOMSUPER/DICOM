@@ -26,19 +26,24 @@ import {
   useUpdateServiceMutation,
 } from "@/store/serviceApi";
 import { Plus } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 export default function ServicePage() {
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
+    field: 'createdAt', 
+    direction: 'desc' 
+  });
+  
   const [filters, setFilters] = useState<PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "serviceName",
-    sortBy: "createdAt",
-    order: "desc",
     includeInactive: true,
     includeDeleted: true,
   });
@@ -62,6 +67,24 @@ export default function ServicePage() {
   const [editMode, setEditMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Build query params with sort
+  const queryParams = useMemo(() => {
+    const params: any = {
+      page: filters.page,
+      limit: filters.limit,
+      search: filters.search,
+      searchField: filters.searchField,
+      includeInactive: filters.includeInactive,
+      includeDeleted: filters.includeDeleted,
+    };
+    
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    
+    return params;
+  }, [filters, sortConfig]);
+
   // RTK Query hooks
   const { 
     data, 
@@ -69,15 +92,8 @@ export default function ServicePage() {
     isFetching,
     error: servicesError,
     refetch: refetchServices,
-  } = useGetServicesPaginatedQuery({
-    page: filters.page,
-    limit: filters.limit,
-    search: filters.search,
-    searchField: filters.searchField,
-    sortBy: filters.sortBy,
-    order: filters.order,
-    includeInactive: filters.includeInactive,
-    includeDeleted: filters.includeDeleted,
+  } = useGetServicesPaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
   });
 
   const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
@@ -228,10 +244,14 @@ export default function ServicePage() {
       limit: 10,
       search: "",
       searchField: "serviceName",
-      sortBy: "createdAt",
-      order: "desc",
     });
+    setSortConfig({ field: 'createdAt', direction: 'desc' });
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 })); // Reset to first page when sorting changes
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -270,9 +290,15 @@ export default function ServicePage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading || isFetching}
       />
 
       <ServiceTable
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
         serviceItems={services}
         getStatusBadge={getBooleanStatusBadge}
         onViewDetails={handleViewDetails}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionStatsCards } from "./reception-stats-cards";
+import { StatsCards } from "@/components/ui/stats-cards";
 import { Clock, Users, CheckCircle, UserPlus } from "lucide-react";
 
 interface AssignmentsStatsCardsProps {
@@ -49,5 +49,5 @@ export function AssignmentsStatsCards({
     },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }

@@ -136,7 +136,7 @@ export class DicomStudiesController {
         type,
         {
           page: paginationDto?.page || 1,
-          limit: paginationDto?.limit || 5,
+          limit: paginationDto?.limit || 10,
           search: paginationDto?.search || '',
           searchField: paginationDto?.searchField || 'studyDescription',
           sortField: paginationDto?.sortField || 'createdAt',
@@ -165,7 +165,7 @@ export class DicomStudiesController {
       const { paginationDto } = data;
       return await this.dicomStudiesService.findMany({
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'studyDescription',
         sortField: paginationDto?.sortField || 'createdAt',
@@ -201,14 +201,14 @@ export class DicomStudiesController {
     @Payload()
     data: {
       filter: any;
-      userInfo: {
+      userInfo?: {
         userId: string;
         role: string;
       };
     }
   ): Promise<PaginatedResponseDto<DicomStudy>> {
     this.logger.log(
-      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FilterWithPagination`
     );
     try {
       return await this.dicomStudiesService.filterWithPagination(
@@ -218,7 +218,7 @@ export class DicomStudiesController {
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        'Failed to find all imaging order forms',
+        'Failed to filter dicom studies with pagination',
         IMAGING_SERVICE
       );
     }

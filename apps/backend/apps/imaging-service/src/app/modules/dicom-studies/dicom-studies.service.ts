@@ -16,11 +16,11 @@ import {
   createCacheKey,
   ThrowMicroserviceException,
 } from '@backend/shared-utils';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { RedisService } from '@backend/redis';
-import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
+import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 import { EntityManager } from 'typeorm';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { ImagingModalityRepository } from '../imaging-modalities/imaging-modalities.repository';
@@ -42,6 +42,8 @@ const relation = [
 
 @Injectable()
 export class DicomStudiesService {
+  private readonly logger = new Logger(DicomStudiesService.name);
+
   constructor(
     @Inject()
     private readonly dicomStudiesRepository: DicomStudiesRepository,
@@ -51,7 +53,6 @@ export class DicomStudiesService {
     private readonly imagingOrdersRepository: ImagingOrderRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager,
     private readonly redisService: RedisService,
-
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy
   ) {}
@@ -129,13 +130,11 @@ export class DicomStudiesService {
       );
     }
 
-    //not allow creating studies for completed and cancelled order
-    //could be adjust later
-    if (
-      [OrderStatus.CANCELLED, OrderStatus.COMPLETED].includes(
-        imagingOrder?.orderStatus
-      )
-    ) {
+      if (
+        [OrderStatus.CANCELLED, OrderStatus.COMPLETED].includes(
+          imagingOrder?.orderStatus
+        )
+      ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Failed to create dicom study: can not create studies for completed or canceled order',
@@ -149,10 +148,7 @@ export class DicomStudiesService {
     createDicomStudyDto: CreateDicomStudyDto
   ): Promise<DicomStudy> => {
     return this.entityManager.transaction(async (em) => {
-      //check imaging order
       await this.checkImagingOrder(createDicomStudyDto.orderId, em);
-
-      //check imaging modality
       await this.checkImagingModality(createDicomStudyDto.modalityId, em);
 
       return await this.dicomStudiesRepository.create(createDicomStudyDto, em);
@@ -164,7 +160,6 @@ export class DicomStudiesService {
   };
 
   findOne = async (id: string): Promise<DicomStudy | null> => {
-    //check studies
     await this.checkDicomStudy(id);
 
     return await this.dicomStudiesRepository.findOne(
@@ -178,21 +173,16 @@ export class DicomStudiesService {
     updateDicomStudyDto: UpdateDicomStudyDto
   ): Promise<DicomStudy | null> => {
     return this.entityManager.transaction(async (em) => {
-      //check dicom study
       const dicomStudy = await this.checkDicomStudy(id, em);
 
-      //check  imaging order if provided›
       if (
         updateDicomStudyDto.orderId &&
         dicomStudy.orderId !== updateDicomStudyDto.orderId
-      )
-        await this.checkImagingOrder(updateDicomStudyDto.orderId, em);
-
-      //check imaging modality if provided
-      if (
-        updateDicomStudyDto.modalityId
-        // dicomStudy.modalityId !== updateDicomStudyDto.modalityId
       ) {
+        await this.checkImagingOrder(updateDicomStudyDto.orderId, em);
+      }
+
+      if (updateDicomStudyDto.modalityId) {
         await this.checkImagingModality(updateDicomStudyDto.modalityId, em);
       }
 
@@ -238,7 +228,7 @@ export class DicomStudiesService {
   };
   async filterWithPagination(
     filter: FilterDicomStudyFormDto,
-    userInfo: { userId: string; role: string }
+    userInfo?: { userId: string; role: string }
   ): Promise<PaginatedResponseDto<DicomStudy>> {
     const {
       page = 1,
@@ -249,6 +239,8 @@ export class DicomStudiesService {
       dateTo,
       modalityMachineId,
       orderId,
+      sortBy,
+      order,
     } = filter;
 
     const keyName = createCacheKey.system(
@@ -262,62 +254,42 @@ export class DicomStudiesService {
       PaginatedResponseDto<DicomStudy>
     >(keyName);
     if (cachedService) {
-      console.log('📦 ImagingOrderForms retrieved from cache');
       return cachedService;
     }
 
     const skip = (page - 1) * limit;
-
     const queryBuilder = this.dicomStudiesRepository
       .createQueryBuilder('dicomStudy')
       .leftJoinAndSelect('dicomStudy.imagingOrder', 'imagingOrder')
       .leftJoinAndSelect('imagingOrder.imagingOrderForm', 'imagingOrderForm')
       .leftJoinAndSelect('dicomStudy.modalityMachine', 'modalityMachine')
       .where('dicomStudy.isDeleted = :isDeleted', { isDeleted: false });
-    if (patientName) {
-      const patients = await firstValueFrom(
-        this.patientService.send('PatientService.Patient.FindByName', {
-          patientName,
-        })
-      );
 
-      if (!patients || patients.length === 0) {
+    if (patientName) {
+      const patientIds = await this.fetchPatientIdsByName(patientName);
+      if (patientIds.length === 0) {
         return new PaginatedResponseDto([], 0, page, limit, 0, false, false);
       }
-
-      const patientIds: string[] = patients.map(
-        (patient: Patient) => patient.id
-      );
       queryBuilder.andWhere('dicomStudy.patientId IN (:...patientIds)', {
         patientIds,
       });
     }
+
     if (status) {
       queryBuilder.andWhere('dicomStudy.studyStatus = :status', { status });
     }
 
-    // if (dateFrom) {
-    //   const fromDate = new Date(dateFrom + 'T00:00:00');
-    //   queryBuilder.andWhere('dicomStudy.studyDate >= :dateFrom', {
-    //     dateFrom: fromDate.toISOString().split('T')[0], // '2025-11-21'
-    //   });
-    // }
-
-    // if (dateTo) {
-    //   const toDate = new Date(dateTo + 'T23:59:59');
-    //   queryBuilder.andWhere('dicomStudy.studyDate <= :dateTo', {
-    //     dateTo: toDate.toISOString().split('T')[0],
-    //   });
-    // }
     if (dateFrom) {
+      const fromDate = new Date(dateFrom + 'T00:00:00');
       queryBuilder.andWhere('dicomStudy.studyDate >= :dateFrom', {
-        dateFrom, // '2025-11-21'
+        dateFrom: fromDate,
       });
     }
 
     if (dateTo) {
+      const toDate = new Date(dateTo + 'T23:59:59.999');
       queryBuilder.andWhere('dicomStudy.studyDate <= :dateTo', {
-        dateTo, // '2025-11-21'
+        dateTo: toDate,
       });
     }
 
@@ -327,10 +299,12 @@ export class DicomStudiesService {
         { modalityMachineId }
       );
     }
+
     if (orderId) {
       queryBuilder.andWhere('dicomStudy.orderId = :orderId', { orderId });
     }
-    if (userInfo.role === 'physician') {
+
+    if (userInfo && userInfo.role === 'physician') {
       queryBuilder.andWhere('imagingOrderForm.orderingPhysicianId = :userId', {
         userId: userInfo.userId,
       });
@@ -339,48 +313,23 @@ export class DicomStudiesService {
       });
     }
 
-    queryBuilder.orderBy('dicomStudy.createdAt', 'DESC');
+    if (sortBy && order) {
+      const sortField = sortBy === 'studyDate' ? 'studyDate' : sortBy;
+      queryBuilder.orderBy(
+        `dicomStudy.${sortField}`,
+        order.toUpperCase() as 'ASC' | 'DESC'
+      );
+    } else {
+      queryBuilder.orderBy('dicomStudy.createdAt', 'DESC');
+    }
 
     const [data, total] = await queryBuilder
       .skip(skip)
       .take(limit)
       .getManyAndCount();
 
-    // Fetch patient details
     if (data.length > 0) {
-      const patientIds = [
-        ...new Set(data.map((dicomStudy) => dicomStudy.patientId)),
-      ];
-      try {
-        console.log('Sending request to PatientService.Patient.Filter...');
-        const patientByIds = await firstValueFrom(
-          this.patientService.send('PatientService.Patient.Filter', {
-            patientIds,
-          })
-        );
-
-        if (patientByIds) {
-          const patientMap = new Map(
-            patientByIds.map((patient: any) => [patient.id, patient])
-          );
-
-          data.forEach((dicomStudy: any, index) => {
-            const patient = patientMap.get(dicomStudy.patientId);
-
-            if (patient) {
-              dicomStudy.patient = patient;
-              console.log('  - Patient attached:', dicomStudy.patient);
-            }
-          });
-        } else {
-          console.log('No patient data in response');
-          console.log('Response structure:', patientByIds);
-        }
-      } catch (error) {
-        console.error('Error fetching patients:', error);
-      }
-    } else {
-      console.log('No orders to process');
+      await this.attachPatientData(data);
     }
 
     const totalPages = Math.ceil(total / limit);
@@ -394,10 +343,71 @@ export class DicomStudiesService {
       page > 1
     );
 
-    // Disable cache for now
-    await this.redisService.set(keyName, response, 1800);
+    try {
+      await this.redisService.set(keyName, response, 1800);
+    } catch (error) {
+      this.logger.warn('Failed to cache response', error);
+    }
 
     return response;
+  }
+
+  private async fetchPatientIdsByName(
+    patientName: string
+  ): Promise<string[]> {
+    try {
+      const patients = await firstValueFrom(
+        this.patientService
+          .send('PatientService.Patient.FindByName', { patientName })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.error('Error fetching patients by name', error);
+              return of([]);
+            })
+          )
+      );
+
+      return patients?.map((patient: Patient) => patient.id) || [];
+    } catch (error) {
+      this.logger.error('Error fetching patients by name', error);
+      return [];
+    }
+  }
+
+  private async attachPatientData(studies: DicomStudy[]): Promise<void> {
+    const patientIds = [
+      ...new Set(studies.map((study) => study.patientId)),
+    ];
+
+    try {
+      const patients = await firstValueFrom(
+        this.patientService
+          .send('PatientService.Patient.Filter', { patientIds })
+          .pipe(
+            timeout(5000),
+            catchError((error) => {
+              this.logger.error('Error fetching patients by IDs', error);
+              return of([]);
+            })
+          )
+      );
+
+      if (patients && patients.length > 0) {
+        const patientMap = new Map(
+          patients.map((patient: Patient) => [patient.id, patient])
+        );
+
+        studies.forEach((study) => {
+          const patient = patientMap.get(study.patientId);
+          if (patient) {
+            (study as any).patient = patient;
+          }
+        });
+      }
+    } catch (error) {
+      this.logger.error('Error attaching patient data', error);
+    }
   }
 
   findByOrderId = async (orderId: string): Promise<DicomStudy[]> => {
@@ -420,37 +430,34 @@ export class DicomStudiesService {
     roomId?: string,
     userInfo?: { userId: string; role: string }
   ): Promise<any> => {
-    const startDate = new Date(dateFrom || '');
-    const endDate = new Date(dateTo || '');
+    const today = new Date().toISOString().split('T')[0];
+    const finalDateFrom = dateFrom || today;
+    const finalDateTo = dateTo || today;
 
-    // if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    //   throw new Error('Invalid date format. Expected format: YYYY-MM-DD');
-    // }
+    const startDate = new Date(finalDateFrom);
+    const endDate = new Date(finalDateTo);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error('Invalid date format. Expected format: YYYY-MM-DD');
+    }
 
     if (startDate > endDate) {
       throw new Error('dateFrom cannot be greater than dateTo');
     }
-    // if (roomId) {
-    //   const serviceRooms = await firstValueFrom(
-    //     this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
-    //   );
-    //   console.log('getStatsInDateRange serviceRooms', serviceRooms);
-    //   if (serviceRooms && serviceRooms.length > 0) {
-    //     const serviceRoomIds = serviceRooms.map((sr: any) => sr.id);
-    //     return await this.dicomStudiesRepository.getStatsInDateRange(
-    //       dateFrom,
-    //       dateTo,
-    //       serviceRoomIds,
-    //       userInfo
-    //     );
-    //   }
-    // }
 
-    return await this.dicomStudiesRepository.getStatsInDateRange(
-      dateFrom,
-      dateTo,
-      roomId,
-      userInfo
-    );
+    const [todayStats, totalStats] = await Promise.all([
+      this.dicomStudiesRepository.getStatsInDateRange(
+        finalDateFrom,
+        finalDateTo,
+        roomId,
+        userInfo
+      ),
+      this.dicomStudiesRepository.getTotalStats(roomId, userInfo),
+    ]);
+
+    return {
+      today: todayStats,
+      total: totalStats,
+    };
   };
 }

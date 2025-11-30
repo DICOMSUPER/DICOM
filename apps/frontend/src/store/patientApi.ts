@@ -143,10 +143,16 @@ export const patientApi = createApi({
 
     filterPatientV2: builder.query<PaginatedResponse<Patient>, PatientFilterV2>(
       {
-        query: ({ page, limit, search, order, sortField }) => ({
+        query: ({ page, limit, search, order, sortField, sortBy }) => ({
           url: `/filter-v2`,
           method: "GET",
-          params: { page, limit, search, order, sortField },
+          params: {
+            page,
+            limit,
+            search,
+            order,
+            sortField: sortField || sortBy, // Support both sortField and sortBy
+          },
         }),
       }
     ),

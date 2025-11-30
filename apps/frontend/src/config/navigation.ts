@@ -145,18 +145,6 @@ export const roleNavigation: RoleNavigation = {
       icon: Search,
       description: "Search and filter patient encounters",
     },
-    // {
-    //   href: "/reception/queue",
-    //   label: "Queue",
-    //   icon: Clock,
-    //   description: "Waiting room management",
-    // },
-    // {
-    //   href: "/reception/assignments",
-    //   label: "Assignments",
-    //   icon: UserCheck,
-    //   description: "Patient assignments",
-    // },
     {
       href: "/reception/schedule",
       label: "Schedule",
@@ -179,25 +167,25 @@ export const roleNavigation: RoleNavigation = {
       label: "Clinic Visit",
 
       icon: FileText,
-      description: "Manage patient queue assignments",
+      description: "Manage patient clinic visit",
     },
     {
       href: "/physician/imaging-orders",
       label: "Imaging Orders List",
       icon: Logs,
-      description: "Patient diagnoses management",
+      description: "Manage patient imaging orders",
     },
     {
-      href: "/physician/diagnosis-report",
-      label: "Reports",
+      href: "/physician/diagnosis-reports",
+      label: "Diagnosis Reports",
       icon: Stethoscope,
-      description: "Patient diagnoses management",
+      description: "Manage patient diagnosis reports",
     },
     {
       href: "/physician/patient-study",
-      label: "Reports",
+      label: "Patient Studies",
       icon: Settings,
-      description: "View Your Patient Studies",
+      description: "View your patient studies",
     },
         {
       href: "/physician/schedule",
@@ -211,21 +199,21 @@ export const roleNavigation: RoleNavigation = {
   "Imaging Technician": [
     {
       href: "/imaging-technician",
-      label: "Orders List",
+      label: "Imaging Orders",
       icon: BarChart3,
-      description: "Imaging overview",
+      description: "Manage imaging orders",
     },
     {
       href: "/imaging-technician/order",
-      label: "Imaging",
+      label: "DICOM Viewer",
       icon: Camera,
-      description: "DICOM image management",
+      description: "View and manage DICOM studies",
     },
     {
       href: "/imaging-technician/machines",
-      label: "Machines",
+      label: "Modality Machines",
       icon: Activity,
-      description: "Imaging machines status",
+      description: "Manage modality machines",
     },
     {
       href: "/imaging-technician/schedule",

@@ -69,8 +69,50 @@ export const analyticsApi = createApi({
       },
       providesTags: ["AnalyticsStats"],
     }),
+    getPhysicianAnalytics: builder.query<ApiResponse<PhysicianAnalyticsData>, GetAnalyticsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.value) queryParams.append('value', params.value);
+        const queryString = queryParams.toString();
+        return {
+          url: `/physician-stats${queryString ? `?${queryString}` : ''}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["AnalyticsStats"],
+    }),
   }),
 });
 
-export const { useGetAnalyticsQuery, useGetReceptionAnalyticsQuery } = analyticsApi;
+export interface PhysicianAnalyticsStats {
+  totalPatients: number;
+  activePatients: number;
+  todayEncounters: number;
+  pendingEncounters: number;
+  completedReports: number;
+  pendingReports: number;
+  totalImagingOrders: number;
+  pendingImagingOrders: number;
+  completedImagingOrders: number;
+}
+
+export interface PhysicianChartDataPoint {
+  date: string;
+  encounters?: number;
+  reports?: number;
+  imagingOrders?: number;
+}
+
+export interface PhysicianAnalyticsData {
+  stats: PhysicianAnalyticsStats;
+  encountersOverTime: PhysicianChartDataPoint[];
+  reportsOverTime: PhysicianChartDataPoint[];
+  imagingOrdersOverTime: PhysicianChartDataPoint[];
+  encountersByStatus?: { status: string; count: number }[];
+  reportsByStatus?: { status: string; count: number }[];
+  imagingOrdersByStatus?: { status: string; count: number }[];
+}
+
+export const { useGetAnalyticsQuery, useGetReceptionAnalyticsQuery, useGetPhysicianAnalyticsQuery } = analyticsApi;
 

@@ -72,13 +72,21 @@ export class ServiceRoomsService {
   async findAll(
     filter: FilterServiceRoomDto
   ): Promise<PaginatedResponseDto<ServiceRoom>> {
-    const { page = 1, limit = 10, roomCode, serviceName, isActive } = filter;
+    const { page = 1, limit = 10, roomCode, serviceName, isActive, roomId, serviceId } = filter;
 
     const qb = this.serviceRoomRepository
       .createQueryBuilder('sr')
       .leftJoinAndSelect('sr.service', 'service')
       .leftJoinAndSelect('sr.room', 'room')
       .leftJoinAndSelect('room.department', 'department');
+
+    if (roomId) {
+      qb.andWhere('sr.roomId = :roomId', { roomId });
+    }
+
+    if (serviceId) {
+      qb.andWhere('sr.serviceId = :serviceId', { serviceId });
+    }
 
     if (serviceName) {
       qb.andWhere('service.serviceName ILIKE :serviceName', {
@@ -137,7 +145,7 @@ export class ServiceRoomsService {
       .leftJoinAndSelect('room.department', 'department');
 
     if (serviceId) {
-      qb.andWhere('service.id = :serviceId', {
+      qb.andWhere('sr.serviceId = :serviceId', {
         serviceId,
       });
     }
@@ -147,7 +155,7 @@ export class ServiceRoomsService {
       });
     }
     if (roomId) {
-      qb.andWhere('room.id = :roomId', {
+      qb.andWhere('sr.roomId = :roomId', {
         roomId,
       });
     }

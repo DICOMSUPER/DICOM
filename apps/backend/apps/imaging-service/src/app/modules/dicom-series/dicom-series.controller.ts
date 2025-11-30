@@ -134,7 +134,7 @@ export class DicomSeriesController {
       const { paginationDto } = data;
       return await this.dicomSeriesService.findMany({
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'seriesDescription',
         sortField: paginationDto?.sortField || 'createdAt',
@@ -165,7 +165,7 @@ export class DicomSeriesController {
       const { id, type, paginationDto } = data;
       return await this.dicomSeriesService.findByReferenceId(id, type, {
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'seriesDescription',
         sortField: paginationDto?.sortField || 'createdAt',

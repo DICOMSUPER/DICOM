@@ -16,8 +16,9 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
 import { Department } from '@/interfaces/user/department.interface';
-import { QueryParams } from '@/interfaces/pagination/pagination.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -38,6 +39,7 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams = useMemo(() => {
     const params: any = {
@@ -55,15 +57,20 @@ export default function Page() {
       params.isActive = appliedStatusFilter === 'active';
     }
 
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedStatusFilter]);
+  }, [page, limit, appliedSearchTerm, appliedStatusFilter, sortConfig]);
 
   const {
     data: departmentsData,
     isLoading: departmentsLoading,
     error: departmentsError,
     refetch: refetchDepartments,
-  } = useGetDepartmentsQuery(queryParams);
+  } = useGetDepartmentsQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const {
     data: departmentStatsData,
@@ -138,6 +145,11 @@ export default function Page() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1);
   }, []);
 
   const handleViewDetails = (department: Department) => {
@@ -234,6 +246,8 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditDepartment={handleEditDepartment}
         onDeleteDepartment={handleDeleteDepartment}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

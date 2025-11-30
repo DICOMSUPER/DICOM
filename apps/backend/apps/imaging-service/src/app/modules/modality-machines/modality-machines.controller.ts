@@ -168,7 +168,7 @@ export class ModalityMachinesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean } }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean; modalityId?: string; status?: string } }
   ): Promise<PaginatedResponseDto<ModalityMachine>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -177,12 +177,14 @@ export class ModalityMachinesController {
       const { paginationDto } = data;
       return await this.modalityMachinesService.findMany({
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'name',
         sortField: paginationDto?.sortField || 'createdAt',
         order: paginationDto?.order || 'asc',
         includeDeleted: paginationDto.includeDeleted,
+        modalityId: paginationDto.modalityId,
+        status: paginationDto.status as MachineStatus | undefined,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
@@ -194,12 +196,12 @@ export class ModalityMachinesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
-  async getStats() {
+  async getStats(@Payload() data: { roomId?: string }) {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
     );
     try {
-      return await this.modalityMachinesService.getStats();
+      return await this.modalityMachinesService.getStats(data?.roomId);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

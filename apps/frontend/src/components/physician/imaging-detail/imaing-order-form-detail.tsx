@@ -81,7 +81,6 @@ const ImagingOrderFormDetail = ({
       skip: !imagingOrderForm?.roomId,
     }
   );
-  console.log("room data", roomData?.data);
 
 
 

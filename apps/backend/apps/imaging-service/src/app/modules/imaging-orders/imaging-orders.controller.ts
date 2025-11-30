@@ -142,7 +142,7 @@ export class ImagingOrdersController {
         type,
         {
           page: paginationDto.page || 1,
-          limit: paginationDto.limit || 5,
+          limit: paginationDto.limit || 10,
           search: paginationDto.search || '',
           searchField: paginationDto.searchField || 'orderNumber',
           sortField: paginationDto.sortField || 'createdAt',
@@ -171,7 +171,7 @@ export class ImagingOrdersController {
       const { paginationDto } = data;
       return await this.imagingOrdersService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'modalityName',
         sortField: paginationDto.sortField || 'createdAt',
@@ -189,7 +189,7 @@ export class ImagingOrdersController {
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`)
   async filterOrderByRoomIdType(
     @Payload() data: FilterByRoomIdType
-  ): Promise<ImagingOrder[]> {
+  ): Promise<PaginatedResponseDto<ImagingOrder>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.FilterByRoomId`
     );

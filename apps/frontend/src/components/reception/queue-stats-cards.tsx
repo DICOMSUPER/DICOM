@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionStatsCards } from "./reception-stats-cards";
+import { StatsCards } from "@/components/ui/stats-cards";
 import { Clock, Users, CheckCircle } from "lucide-react";
 
 interface QueueStatsCardsProps {
@@ -49,5 +49,5 @@ export function QueueStatsCards({
     },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }

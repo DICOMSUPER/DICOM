@@ -108,6 +108,8 @@ export class RoomsService {
     departmentId?: string;
     includeInactive?: boolean;
     includeDeleted?: boolean;
+    sortField?: string;
+    order?: 'asc' | 'desc';
   }) {
     try {
       const page = query.page ?? 1;
@@ -123,7 +125,7 @@ export class RoomsService {
         search || 'none'
       }:active=${isActive ?? 'all'}:status=${status ?? 'all'}:type=${
         type ?? 'all'
-      }:dept=${departmentId ?? 'all'}:includeInactive=${query.includeInactive ?? false}:includeDeleted=${query.includeDeleted ?? false}`;
+      }:dept=${departmentId ?? 'all'}:includeInactive=${query.includeInactive ?? false}:includeDeleted=${query.includeDeleted ?? false}:sortField=${query.sortField ?? 'createdAt'}:order=${query.order ?? 'desc'}`;
 
       const cachedData = await this.redisService.get<any>(cacheKey);
       if (cachedData) {
@@ -135,10 +137,15 @@ export class RoomsService {
 
       const qb = this.roomRepository
         .createQueryBuilder('room')
-        .leftJoinAndSelect('room.department', 'department')
-        .orderBy('room.createdAt', 'DESC')
-        .skip(skip)
-        .take(limit);
+        .leftJoinAndSelect('room.department', 'department');
+
+      if (query.sortField && query.order) {
+        qb.orderBy(`room.${query.sortField}`, query.order.toUpperCase() as 'ASC' | 'DESC');
+      } else {
+        qb.orderBy('room.createdAt', 'DESC');
+      }
+
+      qb.skip(skip).take(limit);
 
       if (!query.includeDeleted) {
         qb.where('room.isDeleted = :isDeleted', { isDeleted: false });

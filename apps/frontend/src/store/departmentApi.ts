@@ -56,7 +56,11 @@ export const departmentApi = createApi({
       query: (filters) => ({
         url: "",
         method: "GET",
-        params: filters || {},
+        params: {
+          ...(filters || {}),
+          sortField: filters?.sort || filters?.sortBy, // Map sort/sortBy to sortField for backend
+          order: filters?.order,
+        },
       }),
       transformResponse: (response: any) => mapApiResponse<Department>(response),
       providesTags: ["Department"],
