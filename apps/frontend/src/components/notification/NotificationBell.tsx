@@ -6,7 +6,10 @@ import { Bell, Check, CheckCheck, Clock, Calendar, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { formatDistanceToNow } from "date-fns";
-import { useNotifications } from "@/contexts/NotificationContext";
+import {
+  NotificationProvider,
+  useNotifications,
+} from "@/contexts/NotificationContext";
 import { Notification } from "@/interfaces/system/notification.interface";
 import {
   DropdownMenu,

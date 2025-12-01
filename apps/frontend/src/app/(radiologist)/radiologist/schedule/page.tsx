@@ -45,7 +45,10 @@ import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
 import Cookies from "js-cookie";
 import { formatDateLocal } from "@/utils/schedule/utils";
-import { useGetEmployeeRoomAssignmentStatsQuery } from "@/store/employeeRoomAssignmentApi";
+import {
+  useGetEmployeeRoomAssignmentStatsOverTimeQuery,
+  useGetEmployeeRoomAssignmentStatsQuery,
+} from "@/store/employeeRoomAssignmentApi";
 
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },
@@ -92,7 +95,7 @@ export default function RadiologistSchedulePage() {
     };
   }, [viewedMonth]);
 
-  const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsQuery(
+  const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsOverTimeQuery(
     {
       id: userId || "",
       startDate,

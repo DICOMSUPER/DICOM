@@ -133,6 +133,10 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
 
   const modalityMachines = Array.isArray(modalityMachinesData?.data)
     ? modalityMachinesData.data
+    : Array.isArray(modalityMachinesData)
+    ? modalityMachinesData
+    : Array.isArray(modalityMachinesData?.data?.data)
+    ? modalityMachinesData?.data?.data
     : [];
 
   const patient = patientData?.data;

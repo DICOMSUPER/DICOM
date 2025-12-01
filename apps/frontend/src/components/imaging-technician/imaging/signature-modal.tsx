@@ -7,6 +7,7 @@ import SignatureAnimation from "signature-animation";
 import { useTechnicianVerifyStudyMutation } from "@/store/dicomStudySignatureApi";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
+import SignatureDisplay from "@/components/common/signature-display";
 
 export default function SignatureModal({
   isOpen,
@@ -162,14 +163,10 @@ export default function SignatureModal({
                   {isLoadingUserData ? (
                     <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-200 border-t-blue-600"></div>
                   ) : user ? (
-                    <>
-                      <SignatureAnimation duration={1} delay={0.3}>
-                        {`${user?.lastName} ${user?.firstName}`}
-                      </SignatureAnimation>
-                      <p className="italic text-sm text-gray-600 mt-2">
-                        {`KY Thuật Viên ${user?.lastName} ${user?.firstName}`}
-                      </p>
-                    </>
+                    <SignatureDisplay
+                      firstName={user?.firstName}
+                      lastName={user?.lastName}
+                    />
                   ) : (
                     <p className="text-gray-400 text-sm">
                       No signature available
@@ -264,12 +261,14 @@ export default function SignatureModal({
               <div className="flex justify-center mb-6 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                 <div className="text-center">
                   <p className="text-gray-400 text-sm mb-2">
-                    No signature found
+                    No signature found, please consider setting up your
+                    signature.
                   </p>
                   {user && (
-                    <SignatureAnimation duration={1} delay={0.3}>
-                      {`${user?.lastName} ${user?.firstName}`}
-                    </SignatureAnimation>
+                    <SignatureDisplay
+                      firstName={user?.firstName}
+                      lastName={user?.lastName}
+                    />
                   )}
                 </div>
               </div>
