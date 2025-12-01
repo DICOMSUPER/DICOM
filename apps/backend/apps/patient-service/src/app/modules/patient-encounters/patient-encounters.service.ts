@@ -4,6 +4,7 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 import {
+  CreateNotificationDto,
   CreatePatientEncounterDto,
   FilterPatientEncounterDto,
   PatientEncounter,
@@ -15,6 +16,8 @@ import {
   EncounterPriorityLevel,
   EncounterStatus,
   EncounterType,
+  NotificationType,
+  RelatedEntityType,
   Roles,
 } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -45,11 +48,14 @@ export interface RoomEncounterFilters {
 @Injectable()
 export class PatientEncounterService {
   constructor(
-    @Inject(PatientEncounterRepository) private readonly encounterRepository: PatientEncounterRepository,
+    @Inject(PatientEncounterRepository)
+    private readonly encounterRepository: PatientEncounterRepository,
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy,
-    @InjectEntityManager() private readonly entityManager: EntityManager
+    @InjectEntityManager() private readonly entityManager: EntityManager,
+    @Inject(process.env.SYSTEM_SERVICE_NAME || 'SYSTEM_SERVICE')
+    private readonly systemService: ClientProxy
   ) {}
 
   getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
@@ -77,20 +83,53 @@ export class PatientEncounterService {
   };
 
   create = async (
-    createPatientEncounterDto: CreatePatientEncounterDto
+    createPatientEncounterDto: CreatePatientEncounterDto,
+    employeesInRoom: string[]
   ): Promise<PatientEncounter> => {
     const orderNumber = await this.getOrderNumberInDate(
       createPatientEncounterDto?.serviceRoomId as string
     );
-
     const data = {
       ...createPatientEncounterDto,
       orderNumber,
       status: EncounterStatus.WAITING,
     };
-
     console.log('create body:', data);
-    return await this.encounterRepository.create(data);
+    const result = await this.encounterRepository.create(data);
+
+    // for (const employeeId of employeesInRoom) {
+    //   const notificationPayload: CreateNotificationDto = {
+    //     recipientId: employeeId,
+    //     senderId: createPatientEncounterDto.createdBy as string,
+    //     notificationType: NotificationType.ASSIGNMENT,
+    //     title: 'New Encounter',
+    //     relatedEntityType: RelatedEntityType.ENCOUNTER,
+    //     relatedEntityId: result.id,
+    //     message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+    //   };
+    //   await firstValueFrom(
+    //     this.systemService.send('notification.create', notificationPayload)
+    //   );
+    // }
+
+    await Promise.all(
+      employeesInRoom.map((employeeId) => {
+        const notificationPayload: CreateNotificationDto = {
+          recipientId: employeeId,
+          senderId: createPatientEncounterDto.createdBy as string,
+          notificationType: NotificationType.ASSIGNMENT,
+          title: 'New Encounter',
+          relatedEntityType: RelatedEntityType.ENCOUNTER,
+          relatedEntityId: result.id,
+          message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+        };
+        return firstValueFrom(
+          this.systemService.send('notification.create', notificationPayload)
+        );
+      })
+    );
+
+    return result;
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {

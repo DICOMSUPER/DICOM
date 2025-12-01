@@ -35,16 +35,17 @@ export class PatientEncounterController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() createPatientEncounterDto: CreatePatientEncounterDto
+    @Payload() data: {createPatientEncounterDto: CreatePatientEncounterDto,employeesInRoom: string[]}
   ): Promise<PatientEncounter> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      console.log('create encounter dto', createPatientEncounterDto);
+      console.log('create encounter dto', data.createPatientEncounterDto);
 
       return await this.patientEncounterService.create(
-        createPatientEncounterDto
+        data.createPatientEncounterDto,
+        data.employeesInRoom
       );
     } catch (error) {
       throw handleErrorFromMicroservices(

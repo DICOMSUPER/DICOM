@@ -8,11 +8,16 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { Notification } from "@/interfaces/system/notification.interface";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { NotificationType } from "@/enums/notification.enum";
 import { ScrollArea } from "../ui/scroll-area";
+import { NotificationItem } from "./NotificationItem";
 
 const NotificationBell: React.FC = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, isConnected } =
@@ -49,7 +54,6 @@ const NotificationBell: React.FC = () => {
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
-
   };
 
   return (
@@ -110,96 +114,13 @@ const NotificationBell: React.FC = () => {
               <p className="text-sm text-gray-500">No notifications yet</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={cn(
-                    "p-3 hover:bg-gray-50 cursor-pointer border-l-4 transition-colors",
-                    notification.isRead
-                      ? "border-l-transparent bg-white"
-                      : "border-l-blue-500 bg-blue-50"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.notificationType)}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4
-                          className={cn(
-                            "text-sm truncate",
-                            notification.isRead
-                              ? "font-normal"
-                              : "font-semibold"
-                          )}
-                        >
-                          {notification.title}
-                        </h4>
-
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs",
-                            getNotificationBadgeColor(notification.notificationType)
-                          )}
-                        >
-                          {notification.notificationType.replace("_", " ").toLowerCase()}
-                        </Badge>
-                      </div>
-
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                        {notification.message}
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {notification.createdAt
-                            ? formatDistanceToNow(
-                                new Date(
-                                  new Date(notification.createdAt).getTime() 
-                                ),
-                                { addSuffix: true }
-                              )
-                            : "Unknown time"}
-                        </span>
-
-                        {!notification.isRead && (
-                          <div className="h-2 w-2 bg-blue-500 rounded-full ml-auto" />
-                        )}
-                      </div>
-
-                      {/* {notification && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          {notification.data.patientName && (
-                            <span>
-                              Patient: {notification.data.patientName}
-                            </span>
-                          )}
-                          {notification.data.consultantName && (
-                            <span>
-                              Consultant: {notification.data.consultantName}
-                            </span>
-                          )}
-                          {notification.data.bookingTime && (
-                            <div>
-                              Time:{" "}
-                              {new Date(
-                                notification.data.bookingTime
-                              ).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                      )} */}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkAsRead={markAsRead}
+              />
+            ))
           )}
         </ScrollArea>
 
