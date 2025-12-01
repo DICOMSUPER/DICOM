@@ -344,7 +344,7 @@ export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
    */
   async getRecentDiagnoses(
     patientId: string,
-    limit: number = 5
+    limit: number = 10
   ): Promise<DiagnosesReport[]> {
     return await this.getRepository()
       .createQueryBuilder('diagnosis')
@@ -372,6 +372,84 @@ export class DiagnosisReportRepository extends BaseRepository<DiagnosesReport> {
       });
 
     return qb.getMany();
+  }
+
+  async getStats(
+    userInfo?: { userId: string; role: string }
+  ): Promise<{
+    total: number;
+    active: number;
+    resolved: number;
+    critical: number;
+    today: number;
+  }> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const queryBuilder = this.getRepository()
+        .createQueryBuilder('report')
+        .select('COUNT(report.id)', 'total')
+        .addSelect(
+          `COUNT(CASE WHEN report.diagnosis_status = :activeStatus THEN 1 END)`,
+          'active'
+        )
+        .addSelect(
+          `COUNT(CASE WHEN report.diagnosis_status = :resolvedStatus THEN 1 END)`,
+          'resolved'
+        )
+        .addSelect(
+          `COUNT(CASE WHEN report.severity = :criticalSeverity THEN 1 END)`,
+          'critical'
+        )
+        .addSelect(
+          `COUNT(CASE WHEN report.diagnosis_date >= :todayStart AND report.diagnosis_date < :todayEnd THEN 1 END)`,
+          'today'
+        )
+        .leftJoin('report.encounter', 'encounter')
+        .where('report.is_deleted = :isDeleted', { isDeleted: false })
+        .setParameter('activeStatus', DiagnosisStatus.ACTIVE)
+        .setParameter('resolvedStatus', DiagnosisStatus.RESOLVED)
+        .setParameter('criticalSeverity', 'critical')
+        .setParameter('todayStart', today)
+        .setParameter('todayEnd', tomorrow);
+
+      if (userInfo && userInfo.role === 'physician') {
+        queryBuilder.andWhere('encounter.assigned_physician_id = :userId', {
+          userId: userInfo.userId,
+        });
+      }
+
+      const result = await queryBuilder.getRawOne();
+
+      if (!result) {
+        return {
+          total: 0,
+          active: 0,
+          resolved: 0,
+          critical: 0,
+          today: 0,
+        };
+      }
+
+      return {
+        total: parseInt(result?.total || '0', 10),
+        active: parseInt(result?.active || '0', 10),
+        resolved: parseInt(result?.resolved || '0', 10),
+        critical: parseInt(result?.critical || '0', 10),
+        today: parseInt(result?.today || '0', 10),
+      };
+    } catch (error) {
+      return {
+        total: 0,
+        active: 0,
+        resolved: 0,
+        critical: 0,
+        today: 0,
+      };
+    }
   }
 
 }

@@ -11,8 +11,13 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { RequestProcedureRepository } from './request-procedure.repository';
-import { InjectEntityManager } from '@nestjs/typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { ImagingOrder } from '@backend/shared-domain';
+import {
+  RequestProcedureDeletionFailedException,
+  RequestProcedureNotFoundException,
+} from '@backend/shared-exception';
 
 @Injectable()
 export class RequestProcedureService {
@@ -20,7 +25,8 @@ export class RequestProcedureService {
     @Inject()
     private readonly requestProcedureRepository: RequestProcedureRepository,
     @InjectEntityManager() private readonly entityManager: EntityManager
-  ) {}
+  ) // @InjectRepository(ImagingOrder) private readonly imagingOrderRepository: Repository<ImagingOrder>,
+  {}
   create = async (
     createRequestProcedureDto: CreateRequestProcedureDto
   ): Promise<RequestProcedure> => {
@@ -39,7 +45,7 @@ export class RequestProcedureService {
       }
       return await this.requestProcedureRepository.create({
         ...createRequestProcedureDto,
-        isActive: true,
+        // isActive: true,
       });
     });
   };
@@ -114,10 +120,17 @@ export class RequestProcedureService {
       });
 
       if (!procedure) {
-        throw ThrowMicroserviceException(
-          HttpStatus.NOT_FOUND,
-          'Procedure not found',
-          IMAGING_SERVICE
+        throw new RequestProcedureNotFoundException(id);
+      }
+
+      const imagingOrderRepo = em.getRepository(ImagingOrder);
+      const existsInOrder = await imagingOrderRepo.find({
+        where: { procedure: { id } },
+      });
+      if (existsInOrder) {
+        throw new RequestProcedureDeletionFailedException(
+          id,
+          'Procedure is referenced in existing imaging orders'
         );
       }
 
@@ -128,6 +141,9 @@ export class RequestProcedureService {
   findMany = async (
     paginationDto: RepositoryPaginationDto
   ): Promise<PaginatedResponseDto<RequestProcedure>> => {
-    return await this.requestProcedureRepository.paginate(paginationDto);
+    return await this.requestProcedureRepository.paginate({
+      ...paginationDto,
+      relation: ['bodyPart', 'modality'],
+    });
   };
 }

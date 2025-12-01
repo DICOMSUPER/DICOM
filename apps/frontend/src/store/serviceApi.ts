@@ -58,7 +58,7 @@ export const serviceApi = createApi({
           limit: params?.limit,
           search: params?.search,
           searchField: params?.searchField,
-          sortBy: params?.sortBy,
+          sortField: params?.sortBy,
           order: params?.order,
           includeInactive: params?.includeInactive,
           includeDeleted: params?.includeDeleted,

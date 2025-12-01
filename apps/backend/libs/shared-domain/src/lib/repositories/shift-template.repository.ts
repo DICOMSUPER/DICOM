@@ -43,7 +43,7 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
   }
 
   async findWithPagination(
-    paginationDto: RepositoryPaginationDto,
+    paginationDto: RepositoryPaginationDto & { shift_type?: string },
     includeInactive?: boolean,
     includeDeleted?: boolean
   ): Promise<{
@@ -52,7 +52,7 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
     page: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 10, search, sortField, order = 'ASC' } = paginationDto;
+    const { page = 1, limit = 10, search, shift_type, sortField, order = 'ASC' } = paginationDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.repository.createQueryBuilder('shiftTemplate');
@@ -68,6 +68,11 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
     if (!includeInactive) {
       whereConditions.push('shiftTemplate.is_active = :isActive');
       whereParams.isActive = true;
+    }
+
+    if (shift_type) {
+      whereConditions.push('shiftTemplate.shift_type = :shiftType');
+      whereParams.shiftType = shift_type;
     }
 
     if (whereConditions.length > 0) {

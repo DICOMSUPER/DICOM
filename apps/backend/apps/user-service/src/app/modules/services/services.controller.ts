@@ -111,7 +111,7 @@ export class ServicesController {
       const { paginationDto } = data;
       return await this.servicesService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'serviceName',
         sortField: paginationDto.sortField || 'createdAt',

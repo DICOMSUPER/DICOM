@@ -18,6 +18,7 @@ import {
   PaginatedQuery,
   PaginatedResponse as PaginationResponse,
 } from "@/interfaces/pagination/pagination.interface";
+import { tr } from "date-fns/locale";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
@@ -32,7 +33,11 @@ export const patientEncounterApi = createApi({
       query: (filters) => ({
         url: "",
         method: "GET",
-        params: filters,
+        params: {
+          ...filters,
+          sortField: filters?.sortBy || filters?.sortField, // Map sortBy to sortField for backend
+          order: filters?.sortOrder || filters?.order, // Support both sortOrder and order
+        },
       }),
       providesTags: ["PatientEncounter"],
     }),
@@ -48,7 +53,13 @@ export const patientEncounterApi = createApi({
     >({
       query: ({ page, limit, filters }) => ({
         url: "/paginated",
-        params: { page, limit, ...filters },
+        params: {
+          page,
+          limit,
+          ...filters,
+          sortField: filters?.sortBy || filters?.sortField, // Map sortBy to sortField for backend
+          order: filters?.sortOrder || filters?.order, // Support both sortOrder and order
+        },
         method: "GET",
       }),
       providesTags: ["PatientEncounter"],
@@ -136,7 +147,20 @@ export const patientEncounterApi = createApi({
         "PatientEncounter",
       ],
     }),
-
+    transferPatientEncounter: builder.mutation<
+      ApiResponse<PatientEncounter>,
+      { id: string; data: UpdatePatientEncounterDto }
+    >({
+      query: ({ id, data }) => ({
+        url: `/transfer/${id}`,
+        method: "PATCH",
+        data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PatientEncounter", id },
+        "PatientEncounter",
+      ],
+    }),
     // Delete encounter
     deletePatientEncounter: builder.mutation<void, string>({
       query: (id) => ({
@@ -194,7 +218,11 @@ export const patientEncounterApi = createApi({
       query: (params) => ({
         url: "/filter",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortField || params?.sortBy, // Map sortBy to sortField for backend
+          order: params?.order,
+        },
       }),
       providesTags: ["PatientEncounter"],
     }),
@@ -215,4 +243,5 @@ export const {
   useGetStatsInDateRangeQuery,
   useSkipEncounterMutation,
   useFilterEncounterWithPaginationQuery,
+  useTransferPatientEncounterMutation,
 } = patientEncounterApi;

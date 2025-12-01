@@ -94,6 +94,8 @@ export class PatientController {
     }
   }
 
+  // transfer updat
+
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
     @Payload()
@@ -116,6 +118,7 @@ export class PatientController {
       );
     }
   }
+
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
   async remove(@Payload() data: { id: string }): Promise<boolean> {

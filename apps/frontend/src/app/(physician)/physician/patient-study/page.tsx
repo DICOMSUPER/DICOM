@@ -1,23 +1,25 @@
 "use client";
 import { DicomStudyFiltersSection } from "@/components/physician/study/study-filters";
 import { DicomStudyTable } from "@/components/physician/study/study-table";
+import Pagination from "@/components/common/PaginationV1";
 import { DicomStudyFilters } from "@/interfaces/image-dicom/dicom-study.interface";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate } from "@/lib/formatTimeDate";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 import {
   useGetDicomStudiesFilteredWithPaginationQuery,
   useGetStatsInDateRangeQuery,
 } from "@/store/dicomStudyApi";
-
+import { StudyStatsCards } from "@/components/physician/study/study-stats-cards";
 import { prepareApiFilters } from "@/utils/filter-utils";
 import { format } from "date-fns/format";
-import { CheckCircle, Notebook, Users } from "lucide-react";
-
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { RefreshButton } from "@/components/ui/refresh-button";
 
 export default function DicomStudyPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState<DicomStudyFilters>({
     status: "all",
     patientName: "",
@@ -26,29 +28,36 @@ export default function DicomStudyPage() {
 
   const [pagination, setPagination] = useState<PaginationParams>({
     page: 1,
-    limit: 5,
+    limit: 10,
   });
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
     total: 0,
     page: 1,
-    limit: 5,
+    limit: 10,
     totalPages: 0,
     hasNextPage: false,
     hasPreviousPage: false,
   });
 
-  const apiFilters = prepareApiFilters(filters, pagination, {
-    // dateFields: ["assignmentDateFrom", "assignmentDateTo"],
-  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
-  const { data, isLoading, isFetching, error } =
-    useGetDicomStudiesFilteredWithPaginationQuery({ filters: apiFilters });
+  const apiFilters = useMemo(() => {
+    const baseFilters = prepareApiFilters(filters, pagination, {});
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    return { ...baseFilters, ...sortParams };
+  }, [filters, pagination, sortConfig]);
 
-  const { data: statsData, isLoading: isStatsLoading } =
-    useGetStatsInDateRangeQuery({
-      dateFrom: format(new Date(), "yyyy-MM-dd") as string,
-      dateTo: format(new Date(), "yyyy-MM-dd") as string,
+  const { data, isLoading, isFetching, refetch: refetchStudies } =
+    useGetDicomStudiesFilteredWithPaginationQuery({ filters: apiFilters }, {
+      refetchOnMountOrArgChange: false,
+      refetchOnFocus: false,
+      refetchOnReconnect: false,
+    });
+
+  const { data: statsData, isLoading: isStatsLoading, isFetching: isStatsFetching, isError: isStatsError, refetch: refetchStats } =
+    useGetStatsInDateRangeQuery({}, {
+      refetchOnMountOrArgChange: false,
     });
 
   useEffect(() => {
@@ -56,7 +65,7 @@ export default function DicomStudyPage() {
       setPaginationMeta({
         total: data.total || 0,
         page: data.page || 1,
-        limit: data.limit || 5,
+        limit: data.limit || 10,
         totalPages: data.totalPages || 0,
         hasNextPage: data.hasNextPage || false,
         hasPreviousPage: data.hasPreviousPage || false,
@@ -64,7 +73,6 @@ export default function DicomStudyPage() {
     }
   }, [data, pagination.page]);
 
-  const router = useRouter();
 
   const handleViewDetails = (id: string) => {
     router.push(`/physician/patient-study/${id}`);
@@ -75,95 +83,67 @@ export default function DicomStudyPage() {
     setPagination({ ...pagination, page: 1 });
   };
 
+
   const handlePageChange = (newPage: number) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
-  const handleLimitChange = (newLimit: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      limit: newLimit,
-      page: 1,
-    }));
-  };
 
   const handleReset = () => {
     setFilters({
       status: "all",
       patientName: "",
+      orderId: "",
     });
     setPagination((prev) => ({ ...prev, page: 1 }));
+    setSortConfig({});
   };
 
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([refetchStudies(), refetchStats()]);
+  }, [refetchStudies, refetchStats]);
+
   return (
-    <div className="min-h-screen">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Patient Diagnosis Reports
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Patient Studies
           </h1>
-          <div className=" bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* Date */}
-            <div className="text-sm text-gray-500">
-              Today:{" "}
-              <span className="font-medium text-gray-700">
-                {formatDate(new Date())}
-              </span>
-            </div>
-            {/* Stats */}
-            <div className="flex flex-wrap gap-3 sm:gap-4">
-              {/* Total Visited */}
-              <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg shadow-sm hover:bg-emerald-200 transition">
-                <Users size={16} />
-                <span className="text-sm font-semibold">
-                  Pending Approve:{" "}
-                  {isStatsLoading
-                    ? "..."
-                    : statsData?.data.totalPendingApprovalStudies || 0}
-                </span>
-              </div>
-
-              {/* Total */}
-              <div className="flex items-center gap-2 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg shadow-sm hover:bg-yellow-200 transition">
-                <CheckCircle size={16} />
-                <span className="text-sm font-semibold">
-                  Approved:{" "}
-                  {isStatsLoading
-                    ? "..."
-                    : statsData?.data.totalApprovedStudies || 0}
-                </span>
-              </div>
-
-              {/* Completed */}
-              <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg shadow-sm hover:bg-blue-200 transition">
-                <Notebook size={16} />
-                <span className="text-sm font-semibold">
-                  Total:{" "}
-                  {isStatsLoading
-                    ? "..."
-                    : statsData?.data.totalDicomStudies || 0}
-                </span>
-              </div>
-            </div>
-          </div>
+          <p className="text-foreground">Search and manage patient studies</p>
         </div>
+        <RefreshButton onRefresh={handleRefresh} loading={isFetching || isStatsLoading} />
       </div>
+
+      <StudyStatsCards stats={statsData?.data} isLoading={isStatsLoading || isStatsFetching} />
 
       <DicomStudyFiltersSection
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onReset={handleReset}
+        isSearching={isLoading}
       />
 
       <DicomStudyTable
         dicomStudies={data?.data || []}
         onViewDetails={handleViewDetails}
-        pagination={paginationMeta}
-        onPageChange={handlePageChange}
-        isFetching={isFetching}
-        // isUpdating={isUpdating}
         isLoading={isLoading}
+        page={paginationMeta?.page ?? pagination.page}
+        limit={pagination.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
+      {paginationMeta && (
+        <Pagination
+          pagination={paginationMeta}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 }

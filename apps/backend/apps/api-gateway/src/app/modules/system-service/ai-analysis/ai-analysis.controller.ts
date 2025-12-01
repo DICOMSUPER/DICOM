@@ -15,6 +15,7 @@ import {
   Get,
   Inject,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -91,7 +92,7 @@ export class AiAnalysisController {
     return this.systemService.send('ai_analysis.findOne', { id });
   }
 
-  @Put(':id')
+  @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateAiAnalysisDto: UpdateAiAnalysisDto

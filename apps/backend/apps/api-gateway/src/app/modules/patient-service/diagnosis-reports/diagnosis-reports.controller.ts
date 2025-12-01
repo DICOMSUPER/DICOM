@@ -166,6 +166,21 @@ export class DiagnosisReportsController {
     }
   }
 
+  @Get('stats')
+  @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN, Roles.RADIOLOGIST)
+  async getStats(@Req() req: IAuthenticatedRequest) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.DiagnosesReport.GetStats', {
+          userInfo: req?.userInfo,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error getting diagnosis report stats:', error);
+      throw error;
+    }
+  }
+
   @Get(':id')
   @Role(
     Roles.RADIOLOGIST,
@@ -205,6 +220,5 @@ export class DiagnosisReportsController {
       throw error;
     }
   }
-
 
 }

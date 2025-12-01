@@ -17,6 +17,8 @@ import { Pagination } from '@/components/common/PaginationV1';
 import { BodyPart } from '@/interfaces/imaging/body-part.interface';
 import { QueryParams } from '@/interfaces/pagination/pagination.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -35,6 +37,7 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams = useMemo(() => {
     const params: any = {
@@ -48,15 +51,24 @@ export default function Page() {
       params.search = appliedSearchTerm.trim();
     }
 
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    if (Object.keys(sortParams).length > 0) {
+      Object.assign(params, sortParams);
+    }
+
     return params;
-  }, [page, limit, appliedSearchTerm]);
+  }, [page, limit, appliedSearchTerm, sortConfig]);
 
   const {
     data: bodyPartsData,
     isLoading: bodyPartsLoading,
     error: bodyPartsError,
     refetch: refetchBodyParts,
-  } = useGetBodyPartsQuery(queryParams);
+  } = useGetBodyPartsQuery(queryParams, {
+    // Refetch when query params change (including sort)
+    refetchOnMountOrArgChange: true,
+  });
 
   const [deleteBodyPart, { isLoading: isDeletingBodyPart }] = useDeleteBodyPartMutation();
 
@@ -156,6 +168,12 @@ export default function Page() {
     refetchBodyParts();
   };
 
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    console.log('🔄 Sort changed:', newSortConfig);
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
@@ -204,6 +222,8 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditBodyPart={handleEditBodyPart}
         onDeleteBodyPart={handleDeleteBodyPart}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

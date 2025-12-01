@@ -29,14 +29,14 @@ export class ImagingOrderFormController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: { createImagingOrderFormDto: any, userId: string }
+    @Payload() data: { createImagingOrderFormDto: any, userId: string, employeesInRoom: string[] }
   ) {
 
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      return await this.imagingOrderFormService.create(data.createImagingOrderFormDto, data.userId);
+      return await this.imagingOrderFormService.create(data.createImagingOrderFormDto, data.userId, data.employeesInRoom);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -141,7 +141,7 @@ export class ImagingOrderFormController {
       const { paginationDto } = data;
       return await this.imagingOrderFormService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'patientId',
         sortField: paginationDto.sortField || 'createdAt',

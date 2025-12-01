@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionStatsCards } from "@/components/reception/reception-stats-cards";
+import { StatsCards } from "@/components/ui/stats-cards";
 import { Link2, CheckCircle, XCircle, Activity } from "lucide-react";
 
 interface RoomServiceStatsCardsProps {
@@ -49,6 +49,6 @@ export function RoomServiceStatsCards({
     },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }
 

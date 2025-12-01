@@ -18,10 +18,10 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
 import { Room } from '@/interfaces/user/room.interface';
-import { RoomStatus } from '@/enums/room.enum';
 import { Department } from '@/interfaces/user/department.interface';
-import { QueryParams } from '@/interfaces/pagination/pagination.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -47,6 +47,7 @@ export default function Page() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams = useMemo(() => {
     const params: any = {
@@ -72,15 +73,20 @@ export default function Page() {
       params.departmentId = appliedDepartmentFilter;
     }
 
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedStatusFilter, appliedTypeFilter, appliedDepartmentFilter]);
+  }, [page, limit, appliedSearchTerm, appliedStatusFilter, appliedTypeFilter, appliedDepartmentFilter, sortConfig]);
 
   const {
     data: roomsRes,
     isLoading: roomsLoading,
     error: roomsError,
     refetch: refetchRooms,
-  } = useGetRoomsQuery(queryParams);
+  } = useGetRoomsQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const {
     data: roomStatsData,
@@ -131,10 +137,6 @@ export default function Page() {
     };
   }, [roomStatsData]);
 
-  const uniqueRoomTypes = useMemo(() => {
-    const types = rooms.map((r) => r.roomType).filter((type): type is NonNullable<typeof type> => type !== undefined && type !== null);
-    return [...new Set(types.map(String))];
-  }, [rooms]);
 
   const getStatusRoomBadge = (status: string) => {
     return getRoomStatusBadge(status);
@@ -173,6 +175,11 @@ export default function Page() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1);
   }, []);
 
   const handleViewDetails = (room: Room) => {
@@ -266,7 +273,6 @@ export default function Page() {
         departmentFilter={departmentFilter}
         onDepartmentChange={setDepartmentFilter}
         departments={departments}
-        roomTypes={uniqueRoomTypes}
         onSearch={handleSearch}
         onReset={handleResetFilters}
         isSearching={roomsLoading}
@@ -282,6 +288,8 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditRoom={handleEditRoom}
         onDeleteRoom={handleDeleteRoom}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

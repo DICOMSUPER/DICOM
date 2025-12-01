@@ -22,6 +22,17 @@ export class NotificationsController {
   async findAll(@Payload() filter: FilterNotificationDto): Promise<PaginatedResponseDto<Notification>> {
     return this.notificationsService.findAll(filter);
   }
+
+  // find all
+    @MessagePattern('notification.findMany')
+  async findMany(@Payload() data: {filter: FilterNotificationDto, userId: string}): Promise<Notification[]> {
+    return this.notificationsService.findMany(data.filter, data.userId);
+  }
+  @MessagePattern('notification.getUnreadCount')
+  async getUnreadCount(@Payload() data: { userId: string }): Promise<number> {
+    return this.notificationsService.getUnreadCount(data.userId);
+  }
+
   
 
   @MessagePattern('notification.findOne')
@@ -35,7 +46,7 @@ export class NotificationsController {
   }
 
   @MessagePattern('notification.remove')
-  async remove(@Payload() data: { id: string }): Promise<void> {
+  async remove(@Payload() data: { id: string }): Promise<Notification> {
     return this.notificationsService.remove(data.id);
   }
 
@@ -44,8 +55,8 @@ export class NotificationsController {
     return this.notificationsService.markAsRead(data.id);
   }
 
-  @MessagePattern('notification.markAllAsRead')
-  async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
-    return this.notificationsService.markAllAsRead(data.userId);
-  }
+  // @MessagePattern('notification.markAllAsRead')
+  // async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
+  //   return this.notificationsService.markAllAsRead(data.userId);
+  // }
 }

@@ -24,6 +24,8 @@ import { EncounterFilter } from "@/components/reception/encounter-filter";
 import { FilterEncounterWithPaginationParams } from "@/interfaces/patient/patient-visit.interface";
 import { Pagination } from "@/components/common/PaginationV1";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -34,7 +36,7 @@ interface ApiError {
 export default function EncountersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
 
   // UI state (what user is typing/selecting)
   const [searchTerm, setSearchTerm] = useState("");
@@ -71,14 +73,16 @@ export default function EncountersPage() {
     undefined
   );
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
+    field: 'encounterDate', 
+    direction: 'desc' 
+  });
 
   // Build query params from applied filters
   const queryParams = useMemo<FilterEncounterWithPaginationParams>(() => {
-    return {
+    const params: any = {
       page,
       limit,
-      order: "desc",
-      sortField: "encounterDate",
       search: appliedSearchTerm.trim() || undefined,
       status: appliedStatusFilter,
       startDate: appliedStartDate,
@@ -87,6 +91,12 @@ export default function EncountersPage() {
       priority: appliedPriorityFilter,
       type: appliedType,
     };
+
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
+    return params;
   }, [
     page,
     limit,
@@ -97,6 +107,7 @@ export default function EncountersPage() {
     appliedServiceId,
     appliedPriorityFilter,
     appliedType,
+    sortConfig,
   ]);
 
   // API hooks
@@ -106,7 +117,9 @@ export default function EncountersPage() {
     isFetching,
     error: encountersError,
     refetch,
-  } = useFilterEncounterWithPaginationQuery(queryParams);
+  } = useFilterEncounterWithPaginationQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const { data: encounterStatsData, isLoading: isLoadingEncounterStats, refetch: refetchStats } =
     useGetPatientEncounterStatsQuery();
@@ -169,6 +182,11 @@ export default function EncountersPage() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
   }, []);
 
   const handleViewEncounter = useCallback(
@@ -282,6 +300,8 @@ export default function EncountersPage() {
         emptyStateDescription="No encounters match your search criteria. Try adjusting your filters or search terms."
         onViewDetails={handleViewEncounter}
         onEditEncounter={handleEditEncounter}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
       {/* Pagination */}

@@ -1,13 +1,16 @@
 "use client";
 
-import { ReceptionStatsCards } from "@/components/reception/reception-stats-cards";
-import { Clock, CheckCircle, XCircle, Sun } from "lucide-react";
+import { StatsCards } from "@/components/ui/stats-cards";
+import { Clock, CheckCircle, XCircle, Sun, Sunset, Moon } from "lucide-react";
 
 interface ShiftTemplateStatsCardsProps {
   totalCount: number;
   activeCount: number;
   inactiveCount: number;
   morningCount: number;
+  afternoonCount: number;
+  nightCount: number;
+  fullDayCount: number;
   isLoading?: boolean;
 }
 
@@ -16,6 +19,9 @@ export function ShiftTemplateStatsCards({
   activeCount,
   inactiveCount,
   morningCount,
+  afternoonCount,
+  nightCount,
+  fullDayCount,
   isLoading = false,
 }: ShiftTemplateStatsCardsProps) {
   const stats = [
@@ -47,8 +53,29 @@ export function ShiftTemplateStatsCards({
       icon: Sun,
       isLoading,
     },
+    {
+      title: "Afternoon Shifts",
+      value: afternoonCount,
+      description: "Afternoon shift templates",
+      icon: Sunset,
+      isLoading,
+    },
+    {
+      title: "Night Shifts",
+      value: nightCount,
+      description: "Night shift templates",
+      icon: Moon,
+      isLoading,
+    },
+    {
+      title: "Full Day Shifts",
+      value: fullDayCount,
+      description: "Full day shift templates",
+      icon: Clock,
+      isLoading,
+    },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }
 

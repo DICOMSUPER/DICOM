@@ -32,6 +32,9 @@
   ],
   "references": [
     {
+      "path": "../../entities/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/redis/tsconfig.lib.json"
     },
     {

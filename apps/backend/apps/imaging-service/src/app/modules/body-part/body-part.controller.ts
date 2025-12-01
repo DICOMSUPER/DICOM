@@ -130,7 +130,7 @@ export class BodyPartController {
       const { paginationDto } = data;
       return await this.bodyPartService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'name',
         sortField: paginationDto.sortField || 'createdAt',

@@ -1,28 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import dotenv from 'dotenv';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
 import { ImagingServiceModule } from './modules/imaging-service/imaging-service.module';
 import { PatientServiceModule } from './modules/patient-service/patient-service.module';
-import dotenv from 'dotenv';
-import { SystemLogsModule } from './modules/system-service/system-logs/system-logs.module';
-import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
-import { AuditLogModule } from './modules/system-service/audit-log/audit-log.module';
-import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
+
+import {
+  ImagingServiceClientModule,
+  PatientServiceClientModule,
+  UserServiceClientModule,
+} from '@backend/shared-client';
+import { AuthGuard, RoleGuard } from '@backend/shared-guards';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { UserServiceModule } from './modules/user-service/user-service.module';
-import { AuthGuard } from '@backend/shared-guards';
-import { RoleGuard } from '@backend/shared-guards';
-import { SeedingModule } from './modules/seeding/seeding.module';
-import {
-  UserServiceClientModule,
-  PatientServiceClientModule,
-  ImagingServiceClientModule,
-} from '@backend/shared-client';
-import { DicomStudySignaturesModule } from './modules/imaging-service/dicom-study-signatures/dicom-study-signatures.module';
-import { AiModelModule } from './modules/system-service/ai-model/ai-model.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { DicomStudySignaturesModule } from './modules/imaging-service/dicom-study-signatures/dicom-study-signatures.module';
+import { SeedingModule } from './modules/seeding/seeding.module';
+import { AiAnalysisModule } from './modules/system-service/ai-analysis/ai-analysis.module';
+import { NotificationsModule } from './modules/system-service/notifications/notifications.module';
+import { UserServiceModule } from './modules/user-service/user-service.module';
 dotenv.config();
 
 @Module({
@@ -41,11 +38,10 @@ dotenv.config();
     // Feature Modules
     UserServiceModule,
     ImagingServiceModule,
-    SystemLogsModule,
+
     AiAnalysisModule,
-    AuditLogModule,
+
     NotificationsModule,
-    AiModelModule,
     PatientServiceModule,
     SeedingModule,
     DicomStudySignaturesModule,

@@ -19,7 +19,7 @@ import { ArrowRight, Loader2, UserCheck, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
+import { useTransferPatientEncounterMutation, useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
 
 interface ModalTransferPhysicianProps {
@@ -39,7 +39,7 @@ const ModalTransferPhysician = ({
   const [notes, setNotes] = useState<string>("");
 
   const [updateEncounter, { isLoading: isTransferring }] =
-    useUpdatePatientEncounterMutation();
+    useTransferPatientEncounterMutation();
 
   const handleTransfer = async () => {
     if (!selectedPhysicianId) {
@@ -51,6 +51,8 @@ const ModalTransferPhysician = ({
         id: encounterId,
         data: {
           assignedPhysicianId: selectedPhysicianId,
+          isTransferred: true,
+          transferNotes: notes,
         },
       }).unwrap();
       toast.success("Patient transferred successfully");
@@ -74,7 +76,10 @@ const ModalTransferPhysician = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        className="sm:max-w-[500px]"
+      >
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
@@ -87,12 +92,7 @@ const ModalTransferPhysician = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-center">
-            <ArrowRight className="w-5 h-5 text-slate-400" />
-          </div>
-
-          {/* Select New Physician */}
+        <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="physician" className="text-sm font-semibold">
               Transfer to Physician In Room *

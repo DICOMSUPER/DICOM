@@ -19,6 +19,7 @@ import {
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useLogout } from "@/hooks/use-logout";
+import NotificationBell from "./notification/NotificationBell";
 
 interface AppHeaderProps {
   notificationCount?: number;
@@ -61,7 +62,7 @@ export function AppHeader({
           <div className="flex items-center space-x-4 px-4 py-2">
             {/* Notifications */}
             <div className="relative">
-              <Button 
+              {/* <Button 
                 variant="outline" 
                 size="sm" 
                 className="border-border relative"
@@ -74,7 +75,8 @@ export function AppHeader({
                     {notificationCount}
                   </Badge>
                 )}
-              </Button>
+              </Button> */}
+              <NotificationBell />
             </div>
 
             {/* User Dropdown */}

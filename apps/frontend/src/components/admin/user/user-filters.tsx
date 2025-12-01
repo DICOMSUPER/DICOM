@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, RotateCcw } from "lucide-react";
 import { Department } from "@/interfaces/user/department.interface";
 import { Roles } from "@/enums/user.enum";
 
@@ -113,9 +113,9 @@ export function UserFilters({
               <SelectItem value="false">Inactive</SelectItem>
             </SelectContent>
           </Select>
-          {hasActiveFilters && onReset && (
+          {onReset && (
             <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
-              <X className="h-4 w-4 mr-2" />
+              <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
           )}

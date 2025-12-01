@@ -30,6 +30,7 @@ import serviceRoomApi from "./serviceRoomApi";
 import { dicomStudySignatureApi } from "./dicomStudySignatureApi";
 import { aiAnalysisApi } from "./aiAnalysisApi";
 import { analyticsApi } from "./analyticsApi";
+import { notificationApi } from "./notificationApi";
 import { ImageSegmentationLayerApi } from "./imageSegmentationLayerApi";
 
 export const store = configureStore({
@@ -64,6 +65,7 @@ export const store = configureStore({
     [dicomStudySignatureApi.reducerPath]: dicomStudySignatureApi.reducer,
     [aiAnalysisApi.reducerPath]: aiAnalysisApi.reducer,
     [analyticsApi.reducerPath]: analyticsApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
     [ImageSegmentationLayerApi.reducerPath]: ImageSegmentationLayerApi.reducer,
   },
   middleware: (getDefault) =>
@@ -100,6 +102,7 @@ export const store = configureStore({
       .concat(dicomStudySignatureApi.middleware)
       .concat(aiAnalysisApi.middleware)
       .concat(analyticsApi.middleware)
+      .concat(notificationApi.middleware)
       .concat(ImageSegmentationLayerApi.middleware),
 });
 

@@ -6,6 +6,10 @@ export interface FilterEmployeeRoomAssignment {
   roomScheduleId?: string;
   employeeId?: string;
   isActive?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  order?: "asc" | "desc";
 }
 
 export interface EmployeeRoomAssignment extends BaseEntity {

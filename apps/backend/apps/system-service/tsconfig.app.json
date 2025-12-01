@@ -13,10 +13,7 @@
     "src/**/*.ts",
     "../../libs/shared-domain/src/lib/entities/systems/ai-analysis.entity.ts",
     "../../libs/shared-domain/src/lib/entities/systems/notification.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/systems/system-log.entity.ts",
-    "../../libs/shared-domain/src/lib/entities/systems/audit-log.entity.ts",
-    "src/**/*.dto.ts",
-    "../../libs/shared-domain/src/lib/dto/systems/filter-system-log.dto.ts"
+    "src/**/*.dto.ts"
   ],
   "exclude": [
     "out-tsc",
@@ -29,6 +26,9 @@
     "eslint.config.mjs"
   ],
   "references": [
+    {
+      "path": "../../libs/shared-client/tsconfig.lib.json"
+    },
     {
       "path": "../../libs/shared-enums/tsconfig.lib.json"
     },

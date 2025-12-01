@@ -24,34 +24,21 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 interface ReceptionLayoutProps {
   children: React.ReactNode;
 }
 
 export default function ReceptionLayout({ children }: ReceptionLayoutProps) {
-  const [notificationCount] = useState(3);
-  const [currentRole, setCurrentRole] = useState("Reception Staff");
-
-  const handleNotificationClick = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleLogout = () => {
-    console.log("Logout clicked");
-  };
-
-  const handleRoleChange = (newRole: string) => {
-    setCurrentRole(newRole);
-    console.log("Role changed to:", newRole);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {children}
-      </WorkspaceLayout>
+      <NotificationProvider>
+        <WorkspaceLayout sidebar={<SidebarNav />}>
+          {children}
+        </WorkspaceLayout>
+      </NotificationProvider>
     </div>
   );
 }

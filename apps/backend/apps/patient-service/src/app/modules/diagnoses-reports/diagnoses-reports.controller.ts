@@ -165,7 +165,7 @@ export class DiagnosesReportController {
       const { paginationDto } = data;
       return await this.diagnosesReportService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'diagnosisName',
         sortField: paginationDto.sortField || 'createdAt',
@@ -213,6 +213,31 @@ export class DiagnosesReportController {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find diagnoses reports by studyId: ${data.studyId}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.GetStats`)
+  async getStats(
+    @Payload()
+    data: {
+      userInfo?: {
+        userId: string;
+        role: string;
+      };
+    }
+  ) {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.GetStats`
+    );
+    try {
+      const { userInfo } = data;
+      return await this.diagnosesReportService.getStats(userInfo);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get diagnosis report stats',
         PATIENT_SERVICE
       );
     }

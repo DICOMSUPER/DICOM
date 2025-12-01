@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
@@ -31,6 +31,8 @@ import {
   useGetImagingModalityStatsQuery,
   useUpdateImagingModalityMutation,
 } from '@/store/imagingModalityApi';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -60,13 +62,23 @@ export default function ImagingModalityPage() {
     useState<ImagingModality | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+
+  const queryParams = useMemo(() => {
+    const params = { ...filters };
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    return params;
+  }, [filters, sortConfig]);
 
   const {
     data: modalitiesData,
     isLoading,
     error: modalitiesError,
     refetch,
-  } = useGetImagingModalityPaginatedQuery(filters);
+  } = useGetImagingModalityPaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const {
     data: imagingModalityStatsData,
@@ -138,20 +150,17 @@ export default function ImagingModalityPage() {
 
     try {
       const result = await deleteModality(modalityToDelete.id);
-      // API returns { success: true, data: true, statusCode: 200 } on success
       const response = result.data as any;
       if (response?.success === true || response?.statusCode === 200) {
         toast.success("Imaging modality deleted successfully");
         setModalityToDelete(null);
         await refetch();
       } else {
-        // If response doesn't indicate success, show error
         toast.error(
           response?.message || "Failed to delete imaging modality"
         );
       }
     } catch (err: any) {
-      // Check if error is actually a success response
       if (err?.data?.success === true || err?.data?.statusCode === 200) {
         toast.success("Imaging modality deleted successfully");
         setModalityToDelete(null);
@@ -200,7 +209,13 @@ export default function ImagingModalityPage() {
       sortBy: "createdAt",
       order: "desc",
     });
+    setSortConfig({});
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
@@ -254,6 +269,10 @@ export default function ImagingModalityPage() {
         filters={filters}
         onFiltersChange={setFilters}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading}
       />
 
       <ImagingModalityTable
@@ -265,6 +284,8 @@ export default function ImagingModalityPage() {
         onDelete={handleDelete}
         page={meta.page}
         limit={meta.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
       <Pagination

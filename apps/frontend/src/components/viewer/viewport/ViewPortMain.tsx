@@ -17,7 +17,6 @@ import { Loader2 } from "lucide-react";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
-import { AnnotationHoverTooltip } from "@/components/viewer/AnnotationHoverTooltip";
 import { annotation } from "@cornerstonejs/tools";
 import { AnnotationType } from "@/enums/image-dicom.enum";
 import type { Annotation } from "@cornerstonejs/tools/types";
@@ -854,14 +853,6 @@ const ViewPortMain = ({
               </>
             )}
 
-            {/* Annotation Hover Tooltip */}
-            {elementReady && elementRef.current && resolvedViewportId && (
-              <AnnotationHoverTooltip
-                viewportId={resolvedViewportId}
-                viewportIndex={viewportIndex}
-                element={elementRef.current}
-              />
-            )}
           </>
         ) : (
           <div className="w-full h-full bg-black flex items-center justify-center">

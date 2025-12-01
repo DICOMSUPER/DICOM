@@ -96,17 +96,15 @@ export function ScheduleListFilters({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReset}
-              className="text-xs h-7"
-            >
-              <X className="h-3 w-3 mr-1" />
-              Clear all
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="text-xs h-7"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear all
+          </Button>
           <Button
             variant="outline"
             size="sm"

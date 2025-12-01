@@ -80,5 +80,34 @@ export class AnalyticsController {
       throw handleError(error);
     }
   }
+
+  @Get('physician-stats')
+  @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get physician analytics and statistics' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
+  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Physician analytics data retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getPhysicianAnalytics(
+    @Query('period') period?: 'week' | 'month' | 'year',
+    @Query('value') value?: string,
+  ) {
+    try {
+      this.logger.log('Fetching physician analytics data');
+      const analytics = await this.analyticsService.getPhysicianAnalytics(period, value);
+      this.logger.log('Physician analytics data retrieved successfully');
+
+      return analytics;
+    } catch (error) {
+      this.logger.error('Failed to fetch physician analytics data', error);
+      throw handleError(error);
+    }
+  }
 }
 

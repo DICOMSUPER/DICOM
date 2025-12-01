@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionStatsCards } from "@/components/reception/reception-stats-cards";
+import { StatsCards } from "@/components/ui/stats-cards";
 import { Users, UserCheck, UserX, Shield } from "lucide-react";
 
 interface UserStatsCardsProps {
@@ -49,6 +49,6 @@ export function UserStatsCards({
     },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }
 

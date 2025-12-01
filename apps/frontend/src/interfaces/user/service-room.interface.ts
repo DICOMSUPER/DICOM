@@ -35,4 +35,6 @@ export interface FilterServiceRoomDto {
   roomCode?: string;
   serviceName?: string;
   isActive?: boolean;
+  sortBy?: string;
+  order?: "asc" | "desc";
 }

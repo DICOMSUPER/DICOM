@@ -143,7 +143,7 @@ export class DicomInstancesController {
       const { paginationDto } = data;
       return await this.dicomInstancesService.findMany({
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'fileName',
         sortField: paginationDto?.sortField || 'createdAt',
@@ -174,7 +174,7 @@ export class DicomInstancesController {
       const { id, type, paginationDto } = data;
       return await this.dicomInstancesService.findByReferenceId(id, type, {
         page: paginationDto?.page || 1,
-        limit: paginationDto?.limit || 5,
+        limit: paginationDto?.limit || 10,
         search: paginationDto?.search || '',
         searchField: paginationDto?.searchField || 'fileName',
         sortField: paginationDto?.sortField || 'createdAt',

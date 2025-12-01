@@ -51,6 +51,8 @@ export class DepartmentsService {
     departmentCode?: string[];
     includeInactive?: boolean;
     includeDeleted?: boolean;
+    sortField?: string;
+    order?: 'asc' | 'desc';
   }) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
@@ -59,10 +61,15 @@ export class DepartmentsService {
     const qb = this.departmentRepository
       .createQueryBuilder('department')
       .leftJoinAndSelect('department.headDepartment', 'headDepartment')
-      .leftJoinAndSelect('department.rooms', 'rooms')
-      .orderBy('department.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+      .leftJoinAndSelect('department.rooms', 'rooms');
+
+    if (query.sortField && query.order) {
+      qb.orderBy(`department.${query.sortField}`, query.order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      qb.orderBy('department.createdAt', 'DESC');
+    }
+
+    qb.skip(skip).take(limit);
 
     if (!query.includeDeleted) {
       qb.where('department.isDeleted = :isDeleted', { isDeleted: false });

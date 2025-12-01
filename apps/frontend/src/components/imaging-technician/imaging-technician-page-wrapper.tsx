@@ -1,37 +1,64 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
-import FilterBar from "./filter-bar";
-import DataTable from "./data-table";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { OrderFiltersSection, ImagingOrderFilters } from "./order/order-filters";
+import { OrderTable } from "./order/order-table";
 import { useSearchParams } from "next/navigation";
-import { useGetImagingOrderByRoomIdFilterQuery } from "@/store/imagingOrderApi";
+import {
+  useGetImagingOrderByRoomIdFilterQuery,
+  useGetOrderStatsForRoomInDateQuery,
+  useUpdateImagingOrderMutation,
+} from "@/store/imagingOrderApi";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
 import Loading from "../common/Loading";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import CurrentStatus from "./current-status";
+import CurrentStatus, { CurrentStatusRef } from "./current-status";
+import { useRef } from "react";
 import Cookies from "js-cookie";
 import UserNotFoundInCookies from "../common/user-not-found-in-cookies";
 import UserDontHaveRoomAssignment from "../common/user-dont-have-room-assignment";
+import { Pagination } from "@/components/common/PaginationV1";
+import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
+import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { prepareApiFilters } from "@/utils/filter-utils";
+import { toast } from "sonner";
+import { RefreshButton } from "@/components/ui/refresh-button";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
   const [userId, setUserId] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const initial = useMemo(() => {
-    const p = new URLSearchParams(searchParams.toString());
-    return {
-      mrn: p.get("mrn") ?? "",
-      patientFirstName: p.get("patientFirstName") ?? "",
-      patientLastName: p.get("patientLastName") ?? "",
-      bodyPart: p.get("bodyPart") ?? "",
-      modalityId: p.get("modalityId") ?? "",
-      orderStatus: p.get("orderStatus") ?? "",
-      procedureId: p.get("procedureId") ?? "",
-      startDate: p.get("startDate") ?? "",
-      endDate: p.get("endDate") ?? "",
-    };
-  }, [searchParams]);
 
-  // Parse user from cookies - must be done before hooks
+  const [filters, setFilters] = useState<ImagingOrderFilters>({
+    patientFirstName: searchParams.get("patientFirstName") || undefined,
+    patientLastName: searchParams.get("patientLastName") || undefined,
+    mrn: searchParams.get("mrn") || undefined,
+    bodyPart: searchParams.get("bodyPart") || undefined,
+    modalityId: searchParams.get("modalityId") || undefined,
+    orderStatus: searchParams.get("orderStatus") || undefined,
+    procedureId: searchParams.get("procedureId") || undefined,
+    startDate: searchParams.get("startDate") || undefined,
+    endDate: searchParams.get("endDate") || undefined,
+  });
+
+  const [pagination, setPagination] = useState<PaginationParams>({
+    page: 1,
+    limit: 10,
+  });
+
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  });
+
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+  const statsRef = useRef<CurrentStatusRef>(null);
+
   useEffect(() => {
     setIsClient(true);
     const userString = Cookies.get("user");
@@ -46,7 +73,6 @@ export default function ImageTechnicianPageWrapper() {
     }
   }, []);
 
-  // Call hooks before any conditional returns
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
@@ -54,40 +80,148 @@ export default function ImageTechnicianPageWrapper() {
     skip: !userId,
   });
 
-  // Extract roomId from the response: data.roomSchedule.room_id
   const currentRoomId =
     currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;
 
-  // Filter order by roomId
+  const apiFilters = useMemo(() => {
+    const baseFilters = prepareApiFilters(filters, pagination, {
+      dateFields: ["startDate", "endDate"],
+    });
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    return { ...baseFilters, ...sortParams };
+  }, [filters, pagination, sortConfig]);
+
   const {
     data: orderData,
     isLoading: isLoadingStudy,
+    isFetching: isFetchingOrders,
     refetch: refetchOrder,
-    error: studyError,
   } = useGetImagingOrderByRoomIdFilterQuery(
     {
       id: currentRoomId || "",
       filterParams: {
-        modalityId: initial.modalityId || undefined,
-        orderStatus: initial.orderStatus
-          ? (initial.orderStatus as ImagingOrderStatus)
+        modalityId: filters.modalityId,
+        orderStatus: filters.orderStatus
+          ? (filters.orderStatus as ImagingOrderStatus)
           : undefined,
-        bodyPart: initial.bodyPart || undefined,
-        mrn: initial.mrn || undefined,
-        patientFirstName: initial.patientFirstName || undefined,
-        patientLastName: initial.patientLastName || undefined,
-        procedureId: initial.procedureId || undefined,
-        startDate: initial.startDate || undefined,
-        endDate: initial.endDate || undefined,
+        bodyPart: filters.bodyPart,
+        mrn: filters.mrn,
+        patientFirstName: filters.patientFirstName,
+        patientLastName: filters.patientLastName,
+        procedureId: filters.procedureId,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
       },
+      page: apiFilters.page,
+      limit: apiFilters.limit,
+      sortBy: apiFilters.sortBy,
+      order: apiFilters.order,
     },
     {
       skip: isLoadingCurrentEmployeeSchedule || !currentRoomId,
+      refetchOnMountOrArgChange: false,
     }
   );
 
-  // Early returns after all hooks are called
-  if (!userId) {
+  useEffect(() => {
+    if (orderData) {
+      setPaginationMeta({
+        total: orderData.total || 0,
+        page: orderData.page || 1,
+        limit: orderData.limit || 10,
+        totalPages: orderData.totalPages || 0,
+        hasNextPage: orderData.hasNextPage || false,
+        hasPreviousPage: orderData.hasPreviousPage || false,
+      });
+    }
+  }, [orderData]);
+
+  const [updateImagingOrder] = useUpdateImagingOrderMutation();
+
+  const handleViewDetails = (id: string) => {
+    window.location.href = `/imaging-technician/order/${id}`;
+  };
+
+  const handleCallIn = async (id: string) => {
+    try {
+      await updateImagingOrder({
+        id,
+        body: { orderStatus: ImagingOrderStatus.IN_PROGRESS },
+      }).unwrap();
+      toast.success("Order status updated successfully");
+      refetchOrder();
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      toast.error("Failed to process order");
+    }
+  };
+
+  const handleMarkCompleted = async (id: string) => {
+    try {
+      await updateImagingOrder({
+        id,
+        body: { orderStatus: ImagingOrderStatus.COMPLETED },
+      }).unwrap();
+      toast.success("Order marked as completed");
+      refetchOrder();
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      toast.error("Failed to mark order as completed");
+    }
+  };
+
+  const handleMarkCancelled = async (id: string) => {
+    try {
+      await updateImagingOrder({
+        id,
+        body: { orderStatus: ImagingOrderStatus.CANCELLED },
+      }).unwrap();
+      toast.success("Order marked as cancelled");
+      refetchOrder();
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+      toast.error("Failed to mark order as cancelled");
+    }
+  };
+
+  const handleFiltersChange = (newFilters: ImagingOrderFilters) => {
+    setFilters(newFilters);
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleReset = () => {
+    setFilters({
+      patientFirstName: undefined,
+      patientLastName: undefined,
+      mrn: undefined,
+      bodyPart: undefined,
+      modalityId: undefined,
+      orderStatus: undefined,
+      procedureId: undefined,
+      startDate: undefined,
+      endDate: undefined,
+    });
+    setPagination({ ...pagination, page: 1 });
+    setSortConfig({});
+  };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      refetchOrder(),
+      statsRef.current?.refetch(),
+    ]);
+  }, [refetchOrder]);
+
+  if (!isClient || !userId) {
     return <UserNotFoundInCookies />;
   }
 
@@ -95,37 +229,57 @@ export default function ImageTechnicianPageWrapper() {
     return <Loading />;
   }
 
-  if (!currentEmployeeSchedule?.data?.roomSchedule?.room_id) {
-    return <UserDontHaveRoomAssignment />;
-  }
-
-  if (!currentRoomId) {
+  if (!currentEmployeeSchedule?.data?.roomSchedule?.room_id || !currentRoomId) {
     return <UserDontHaveRoomAssignment />;
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
-      <div>
-        {" "}
-        {currentRoomId && (
-          <CurrentStatus
-            roomId={currentRoomId}
-            startDate={initial?.startDate}
-            endDate={initial?.endDate}
-          ></CurrentStatus>
-        )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Imaging Orders
+          </h1>
+          <p className="text-foreground">Search and manage imaging orders</p>
+        </div>
+        <RefreshButton onRefresh={handleRefresh} loading={isFetchingOrders} />
       </div>
-      <FilterBar
-        onRefetch={refetchOrder}
-        caseNumber={(orderData?.data || []).length}
-        maxCases={(orderData?.data || []).length}
+
+      {currentRoomId && (
+        <CurrentStatus
+          ref={statsRef}
+          roomId={currentRoomId}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
+        />
+      )}
+
+      <OrderFiltersSection
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onReset={handleReset}
+        isSearching={isLoadingStudy}
       />
-      <DataTable
+
+      <OrderTable
         orders={orderData?.data || []}
+        onViewDetails={handleViewDetails}
+        onCallIn={handleCallIn}
+        onMarkCompleted={handleMarkCompleted}
+        onMarkCancelled={handleMarkCancelled}
         isLoading={isLoadingStudy}
-        refetch={refetchOrder}
-        error={!!studyError}
+        page={paginationMeta?.page ?? pagination.page}
+        limit={pagination.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
+
+      {paginationMeta && (
+        <Pagination
+          pagination={paginationMeta}
+          onPageChange={handlePageChange}
+        />
+      )}
     </div>
   );
 }

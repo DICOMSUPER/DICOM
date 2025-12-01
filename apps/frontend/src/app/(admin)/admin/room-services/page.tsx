@@ -22,6 +22,8 @@ import { Room } from '@/interfaces/user/room.interface';
 import { Services } from '@/interfaces/user/service.interface';
 import { FilterServiceRoomDto } from '@/interfaces/user/service-room.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -46,6 +48,7 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams: FilterServiceRoomDto & { includeInactive?: boolean; includeDeleted?: boolean } = useMemo(() => {
     const params: FilterServiceRoomDto & { includeInactive?: boolean; includeDeleted?: boolean } = {
@@ -71,15 +74,20 @@ export default function Page() {
       params.isActive = appliedStatusFilter === 'true';
     }
 
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedRoomFilter, appliedServiceFilter, appliedStatusFilter]);
+  }, [page, limit, appliedSearchTerm, appliedRoomFilter, appliedServiceFilter, appliedStatusFilter, sortConfig]);
 
   const {
     data: roomServicesRes,
     isLoading: roomServicesLoading,
     error: roomServicesError,
     refetch: refetchRoomServices,
-  } = useGetServiceRoomsPaginatedQuery(queryParams);
+  } = useGetServiceRoomsPaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
   const {
     data: roomsData,
@@ -174,6 +182,11 @@ export default function Page() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1);
   }, []);
 
   const handleViewDetails = (roomService: ServiceRoom) => {
@@ -274,6 +287,8 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditRoomService={handleEditRoomService}
         onDeleteRoomService={handleDeleteRoomService}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

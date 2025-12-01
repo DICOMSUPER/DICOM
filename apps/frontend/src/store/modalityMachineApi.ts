@@ -34,7 +34,7 @@ export const modalityMachineApi = createApi({
   tagTypes: ["Modality", "ModalityMachine"],
   endpoints: (builder) => ({
     getAllModalityMachine: builder.query<
-      ApiResponse<ModalityMachine[]>,
+      PaginatedResponse<ModalityMachine>,
       {
         modalityId?: string;
         roomId?: string;
@@ -43,6 +43,10 @@ export const modalityMachineApi = createApi({
         manufacturer?: string;
         serialNumber?: string;
         model?: string;
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        order?: 'asc' | 'desc';
       }
     >({
       query: ({
@@ -53,6 +57,10 @@ export const modalityMachineApi = createApi({
         manufacturer,
         serialNumber,
         model,
+        page,
+        limit,
+        sortBy,
+        order,
       }) => ({
         url: "",
         method: "GET",
@@ -64,8 +72,18 @@ export const modalityMachineApi = createApi({
           manufacturer,
           serialNumber,
           model,
+          page,
+          limit,
+          sortBy,
+          order,
         },
       }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response.data;
+        }
+        return response;
+      },
       providesTags: (result) =>
         result && Array.isArray(result.data)
           ? [
@@ -105,7 +123,11 @@ export const modalityMachineApi = createApi({
       query: (query: PaginatedQuery & { includeDeleted?: boolean }) => ({
         url: "/paginated",
         method: "GET",
-        params: query,
+        params: {
+          ...query,
+          sortField: query?.sortBy, // Map sortBy to sortField for backend
+          order: query?.order,
+        },
       }),
       transformResponse: (response: any) => {
         // Handle nested response structure
@@ -202,10 +224,14 @@ export const modalityMachineApi = createApi({
     }),
 
     // Get modality machine stats
-    getModalityMachineStats: builder.query<ModalityMachineStats, void>({
-      query: () => ({
+    getModalityMachineStats: builder.query<
+      ModalityMachineStats,
+      { roomId?: string }
+    >({
+      query: ({ roomId }) => ({
         url: "/stats",
         method: "GET",
+        params: { roomId },
       }),
       transformResponse: (response: any) => response?.data || response,
       providesTags: ["ModalityMachine"],
