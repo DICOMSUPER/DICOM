@@ -4,7 +4,20 @@ import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import {
+  format,
+  addDays,
+  subDays,
+  addWeeks,
+  subWeeks,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+} from "date-fns";
 import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
 import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
@@ -12,12 +25,19 @@ import { MonthView } from "@/components/schedule/MonthView";
 import { ListView } from "@/components/schedule/ListView";
 import { RoomView } from "@/components/schedule/RoomView";
 import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
-import { ScheduleListFilters, ScheduleListFilters as FiltersType } from "@/components/schedule/ScheduleListFilters";
+import {
+  ScheduleListFilters,
+  ScheduleListFilters as FiltersType,
+} from "@/components/schedule/ScheduleListFilters";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { useGetAllUsersQuery } from "@/store/userApi";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { RoomSchedule, ViewMode, RoomScheduleSearchFilters } from "@/interfaces/schedule/schedule.interface";
+import {
+  RoomSchedule,
+  ViewMode,
+  RoomScheduleSearchFilters,
+} from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -41,10 +61,12 @@ const timeSlots = [
 export default function AdminSchedulePage() {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = user?.role === Roles.SYSTEM_ADMIN;
-  
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("day");
-  const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<RoomSchedule | null>(
+    null
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [listFilters, setListFilters] = useState<FiltersType>({
@@ -77,9 +99,13 @@ export default function AdminSchedulePage() {
         baseFilters.work_date_to = listFilters.dateTo;
       }
       if (listFilters.sortBy) {
-        if (listFilters.sortBy === "date_asc" || listFilters.sortBy === "date_desc") {
+        if (
+          listFilters.sortBy === "date_asc" ||
+          listFilters.sortBy === "date_desc"
+        ) {
           baseFilters.sort_by = "work_date";
-          baseFilters.sort_order = listFilters.sortBy === "date_asc" ? "ASC" : "DESC";
+          baseFilters.sort_order =
+            listFilters.sortBy === "date_asc" ? "ASC" : "DESC";
         }
       }
     }
@@ -87,23 +113,23 @@ export default function AdminSchedulePage() {
     return baseFilters;
   }, [selectedDate, viewMode, listFilters]);
 
-  const { 
-    data: allSchedulesData = [], 
-    isLoading: schedulesLoading, 
+  const {
+    data: allSchedulesData = [],
+    isLoading: schedulesLoading,
     isFetching: schedulesFetching,
     error: schedulesError,
-    refetch: refetchSchedules 
+    refetch: refetchSchedules,
   } = useGetRoomSchedulesQuery(queryFilters);
 
   const allSchedules = useMemo(() => {
     return Array.isArray(allSchedulesData) ? allSchedulesData : [];
   }, [allSchedulesData]);
 
-  const { data: usersData } = useGetAllUsersQuery({ 
-    page: 1, 
-    limit: 1000, 
+  const { data: usersData } = useGetAllUsersQuery({
+    page: 1,
+    limit: 1000,
     isActive: true,
-    excludeRole: Roles.SYSTEM_ADMIN
+    excludeRole: Roles.SYSTEM_ADMIN,
   });
 
   const employees = useMemo(() => {
@@ -121,7 +147,7 @@ export default function AdminSchedulePage() {
 
   const getFilteredSchedules = (): RoomSchedule[] => {
     let filtered: RoomSchedule[] = [];
-    
+
     switch (viewMode) {
       case "day": {
         const dayStr = format(selectedDate, "yyyy-MM-dd");
@@ -129,9 +155,17 @@ export default function AdminSchedulePage() {
         break;
       }
       case "week": {
-        const weekStart = format(startOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-        const weekEnd = format(endOfWeek(selectedDate, { weekStartsOn: 0 }), "yyyy-MM-dd");
-        filtered = allSchedules.filter((s) => s.work_date >= weekStart && s.work_date <= weekEnd);
+        const weekStart = format(
+          startOfWeek(selectedDate, { weekStartsOn: 0 }),
+          "yyyy-MM-dd"
+        );
+        const weekEnd = format(
+          endOfWeek(selectedDate, { weekStartsOn: 0 }),
+          "yyyy-MM-dd"
+        );
+        filtered = allSchedules.filter(
+          (s) => s.work_date >= weekStart && s.work_date <= weekEnd
+        );
         break;
       }
       case "month":
@@ -152,7 +186,9 @@ export default function AdminSchedulePage() {
 
   const getSchedulesForDate = (date: Date) => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return currentSchedules.filter((schedule) => schedule.work_date === dateStr);
+    return currentSchedules.filter(
+      (schedule) => schedule.work_date === dateStr
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -212,21 +248,25 @@ export default function AdminSchedulePage() {
     setIsRefreshing(true);
     try {
       const result = await refetchSchedules();
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       // Update selectedSchedule with fresh data
       if (selectedSchedule) {
         const scheduleId = selectedSchedule.schedule_id;
         if (scheduleId) {
-          const updatedSchedules = Array.isArray(result.data) ? result.data : [];
-          const updatedSchedule = updatedSchedules.find(s => s.schedule_id === scheduleId);
+          const updatedSchedules = Array.isArray(result.data)
+            ? result.data
+            : [];
+          const updatedSchedule = updatedSchedules.find(
+            (s) => s.schedule_id === scheduleId
+          );
           if (updatedSchedule) {
             setSelectedSchedule(updatedSchedule);
           }
         }
       }
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -283,28 +323,38 @@ export default function AdminSchedulePage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Monthly Schedule</h2>
+          <h2 className="text-lg lg:text-xl font-semibold text-gray-900">
+            Monthly Schedule
+          </h2>
           <p className="text-xs lg:text-sm text-gray-600">
             {format(selectedDate, "MMMM yyyy")}
           </p>
         </div>
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateMonth("prev")}
+          >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigateMonth("next")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateMonth("next")}
+          >
             Next
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       </div>
-      <MonthView 
-        calendarDays={calendarDays} 
-        schedules={currentSchedules} 
-        selectedDate={selectedDate} 
-        isLoading={isLoading} 
-        onScheduleClick={handleScheduleClick} 
+      <MonthView
+        calendarDays={calendarDays}
+        schedules={currentSchedules}
+        selectedDate={selectedDate}
+        isLoading={isLoading}
+        onScheduleClick={handleScheduleClick}
       />
     </div>
   );
@@ -313,7 +363,9 @@ export default function AdminSchedulePage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
-          <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Schedules List</h2>
+          <h2 className="text-lg lg:text-xl font-semibold text-gray-900">
+            Schedules List
+          </h2>
           <p className="text-xs lg:text-sm text-gray-600">
             All schedules for {format(selectedDate, "MMMM yyyy")}
           </p>
@@ -329,11 +381,11 @@ export default function AdminSchedulePage() {
         onReset={handleListFiltersReset}
       />
 
-      <ListView 
-        schedules={currentSchedules} 
-        getStatusColor={getStatusColor} 
-        isLoading={isLoading} 
-        onScheduleClick={handleScheduleClick} 
+      <ListView
+        schedules={currentSchedules}
+        getStatusColor={getStatusColor}
+        isLoading={isLoading}
+        onScheduleClick={handleScheduleClick}
       />
     </div>
   );
@@ -352,17 +404,22 @@ export default function AdminSchedulePage() {
             </p>
           </div>
           <div className="flex items-center justify-end space-x-2">
-            <RefreshButton 
-              onRefresh={handleRefresh} 
-              loading={isRefreshing}
-            />
-            <Button variant="outline" size="sm" onClick={() => navigateDate("prev")}>
+            <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate("prev")}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium min-w-[140px] text-center text-gray-900">
               {format(selectedDate, "MMMM d, yyyy")}
             </span>
-            <Button variant="outline" size="sm" onClick={() => navigateDate("next")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate("next")}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -372,26 +429,47 @@ export default function AdminSchedulePage() {
       {/* Main Content */}
       <div className="flex-1 bg-white grid grid-cols-1 lg:grid-cols-3 gap-0">
         {/* Left Panel - Calendar and Filters */}
-        <ScheduleSidebar selectedDate={selectedDate} onSelectDate={(d) => setSelectedDate(d)} />
+        <ScheduleSidebar
+          selectedDate={selectedDate}
+          onSelectDate={(d) => setSelectedDate(d)}
+        />
 
         {/* Right Panel - Schedule View */}
         <div className="lg:col-span-2 p-4 lg:p-6">
           <div className="mb-4 lg:mb-6">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <Tabs
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+            >
               <TabsList className="bg-gray-100 w-full grid grid-cols-5">
-                <TabsTrigger value="day" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="day"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Day
                 </TabsTrigger>
-                <TabsTrigger value="week" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="week"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Week
                 </TabsTrigger>
-                <TabsTrigger value="month" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="month"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Month
                 </TabsTrigger>
-                <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="list"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   List
                 </TabsTrigger>
-                <TabsTrigger value="room" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm">
+                <TabsTrigger
+                  value="room"
+                  className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-xs lg:text-sm"
+                >
                   Room
                 </TabsTrigger>
               </TabsList>
@@ -403,7 +481,9 @@ export default function AdminSchedulePage() {
               {viewMode === "day" && (
                 <div>
                   <div className="mb-4 xl:mb-6">
-                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Daily Schedule</h1>
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">
+                      Daily Schedule
+                    </h1>
                     <p className="text-xs xl:text-sm text-gray-600">
                       Schedule for {format(selectedDate, "MMMM d, yyyy")}
                     </p>
@@ -412,30 +492,21 @@ export default function AdminSchedulePage() {
                 </div>
               )}
 
-              {viewMode === "week" && (
-                <div>
-                  {renderWeekView()}
-                </div>
-              )}
+              {viewMode === "week" && <div>{renderWeekView()}</div>}
 
-              {viewMode === "month" && (
-                <div>
-                  {renderMonthView()}
-                </div>
-              )}
+              {viewMode === "month" && <div>{renderMonthView()}</div>}
 
-              {viewMode === "list" && (
-                <div>
-                  {renderListView()}
-                </div>
-              )}
+              {viewMode === "list" && <div>{renderListView()}</div>}
 
               {viewMode === "room" && (
                 <div>
                   <div className="mb-4 xl:mb-6">
-                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">Room Schedule</h1>
+                    <h1 className="text-xl xl:text-2xl font-bold text-gray-900">
+                      Room Schedule
+                    </h1>
                     <p className="text-xs xl:text-sm text-gray-600">
-                      Schedules grouped by room for {format(selectedDate, "MMMM d, yyyy")}
+                      Schedules grouped by room for{" "}
+                      {format(selectedDate, "MMMM d, yyyy")}
                     </p>
                   </div>
                   <RoomView
@@ -453,7 +524,7 @@ export default function AdminSchedulePage() {
           )}
         </div>
       </div>
-      
+
       {/* Schedule Detail Modal */}
       <ScheduleDetailModal
         schedule={selectedSchedule}
