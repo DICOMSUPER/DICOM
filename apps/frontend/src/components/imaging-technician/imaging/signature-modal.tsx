@@ -166,6 +166,7 @@ export default function SignatureModal({
                     <SignatureDisplay
                       firstName={user?.firstName}
                       lastName={user?.lastName}
+                      role="Kỹ thuật viên"
                     />
                   ) : (
                     <p className="text-gray-400 text-sm">
@@ -268,6 +269,7 @@ export default function SignatureModal({
                     <SignatureDisplay
                       firstName={user?.firstName}
                       lastName={user?.lastName}
+                      role="Kỹ thuật viên"
                     />
                   )}
                 </div>

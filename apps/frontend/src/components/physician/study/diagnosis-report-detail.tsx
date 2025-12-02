@@ -294,7 +294,11 @@ export function DiagnosisReportDetail({
           </Badge>
         );
       default:
-        return <Badge variant="outline">{capitalizeFirst(status || "Unknown")}</Badge>;
+        return (
+          <Badge variant="outline">
+            {capitalizeFirst(status || "Unknown")}
+          </Badge>
+        );
     }
   };
 
@@ -757,7 +761,7 @@ export function DiagnosisReportDetail({
                                     variant="outline"
                                     className="text-xs font-mono"
                                   >
-                                    Series #{series.seriesNumber}
+                                    Series #{series?.seriesNumber}
                                   </Badge>
                                   <div className="text-sm font-medium text-slate-900">
                                     {series.seriesDescription}

@@ -1,10 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -46,7 +43,7 @@ interface EncounterListProps {
 
 const capitalizeFirst = (str: string) => {
   if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  return str?.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 const formatStatus = (status: string) => {
@@ -99,8 +96,12 @@ export function EncounterList({
         </div>
         <div className="flex flex-col items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
-          <p className="text-sm font-medium text-foreground">Loading encounters...</p>
-          <p className="text-xs text-foreground mt-1">Please wait while we fetch the data</p>
+          <p className="text-sm font-medium text-foreground">
+            Loading encounters...
+          </p>
+          <p className="text-xs text-foreground mt-1">
+            Please wait while we fetch the data
+          </p>
         </div>
       </div>
     );
@@ -128,7 +129,7 @@ export function EncounterList({
         <Stethoscope className="h-5 w-5" />
         Recent Encounters
       </div>
-      
+
       <div className="flex flex-col gap-3 max-h-[30vh] overflow-y-auto">
         {encounters.map((encounter) => {
           const serviceRoom = ServiceRoomData?.data.find(

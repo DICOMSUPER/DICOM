@@ -39,20 +39,23 @@ export function ImagingModalityViewModal({
   const modalityMachines = modality?.modalityMachines || [];
 
   const getStatusBadgeClass = (status: string | undefined): string => {
-    const statusStr = String(status || '').toUpperCase();
-    if (statusStr === 'ACTIVE' || statusStr === 'AVAILABLE') {
-      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    } else if (statusStr === 'INACTIVE' || statusStr === 'UNAVAILABLE') {
-      return 'bg-gray-100 text-gray-700 border-gray-200';
-    } else if (statusStr === 'MAINTENANCE') {
-      return 'bg-amber-100 text-amber-700 border-amber-200';
+    const statusStr = String(status || "").toUpperCase();
+    if (statusStr === "ACTIVE" || statusStr === "AVAILABLE") {
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    } else if (statusStr === "INACTIVE" || statusStr === "UNAVAILABLE") {
+      return "bg-gray-100 text-gray-700 border-gray-200";
+    } else if (statusStr === "MAINTENANCE") {
+      return "bg-amber-100 text-amber-700 border-amber-200";
     }
-    return 'bg-gray-100 text-gray-700 border-gray-200';
+    return "bg-gray-100 text-gray-700 border-gray-200";
   };
 
   const getStatusLabelForBadge = (status: string | undefined): string => {
-    const statusStr = String(status || 'Unknown').toLowerCase();
-    return statusStr.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const statusStr = String(status || "Unknown").toLowerCase();
+    return statusStr
+      .split(" ")
+      .map((word) => word?.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   if (isLoading) {
@@ -84,7 +87,9 @@ export function ImagingModalityViewModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">Imaging Modality Details</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Imaging Modality Details
+          </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="flex-1 min-h-0 h-full px-6">
@@ -94,11 +99,11 @@ export function ImagingModalityViewModal({
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
                     <Scan className="h-3.5 w-3.5" />
-                    {modality.modalityCode || 'N/A'}
+                    {modality.modalityCode || "N/A"}
                   </div>
                   <div>
                     <p className="text-3xl font-semibold text-foreground leading-tight">
-                      {modality.modalityName || '—'}
+                      {modality.modalityName || "—"}
                     </p>
                     {modality.description && (
                       <p className="mt-3 text-sm text-foreground">
@@ -124,19 +129,27 @@ export function ImagingModalityViewModal({
                     <Scan className="h-4 w-4" />
                     Modality Code
                   </div>
-                  <p className="text-base font-semibold text-blue-600">{modality.modalityCode || '—'}</p>
+                  <p className="text-base font-semibold text-blue-600">
+                    {modality.modalityCode || "—"}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <Scan className="h-4 w-4" />
                     Modality Name
                   </div>
-                  <p className="text-base font-semibold text-foreground">{modality.modalityName || '—'}</p>
+                  <p className="text-base font-semibold text-foreground">
+                    {modality.modalityName || "—"}
+                  </p>
                 </div>
                 {modality.description && (
                   <div className="md:col-span-2 rounded-2xl bg-primary/10 p-4 shadow-sm ring-1 ring-border/10">
-                    <p className="text-sm font-medium text-foreground mb-2">Description</p>
-                    <p className="text-sm text-foreground leading-relaxed">{modality.description}</p>
+                    <p className="text-sm font-medium text-foreground mb-2">
+                      Description
+                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {modality.description}
+                    </p>
                   </div>
                 )}
               </div>
@@ -151,13 +164,13 @@ export function ImagingModalityViewModal({
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Created At</p>
                   <p className="text-base font-semibold text-foreground">
-                    {modality.createdAt ? formatDate(modality.createdAt) : '—'}
+                    {modality.createdAt ? formatDate(modality.createdAt) : "—"}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Updated At</p>
                   <p className="text-base font-semibold text-foreground">
-                    {modality.updatedAt ? formatDate(modality.updatedAt) : '—'}
+                    {modality.updatedAt ? formatDate(modality.updatedAt) : "—"}
                   </p>
                 </div>
               </div>
@@ -171,10 +184,13 @@ export function ImagingModalityViewModal({
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {modalityMachines.map((machine: ModalityMachine) => {
-                    const displayName = machine.name || 
-                      `${machine.manufacturer || ''} ${machine.model || ''}`.trim() ||
+                    const displayName =
+                      machine.name ||
+                      `${machine.manufacturer || ""} ${
+                        machine.model || ""
+                      }`.trim() ||
                       "Unnamed Machine";
-                    
+
                     return (
                       <div
                         key={machine.id}
@@ -184,20 +200,30 @@ export function ImagingModalityViewModal({
                           {displayName}
                         </p>
                         {machine.model && (
-                          <p className="text-xs text-foreground">Model: {machine.model}</p>
+                          <p className="text-xs text-foreground">
+                            Model: {machine.model}
+                          </p>
                         )}
                         {machine.manufacturer && (
-                          <p className="text-xs text-foreground">Manufacturer: {machine.manufacturer}</p>
+                          <p className="text-xs text-foreground">
+                            Manufacturer: {machine.manufacturer}
+                          </p>
                         )}
                         {machine.serialNumber && (
-                          <p className="text-xs text-foreground">Serial: {machine.serialNumber}</p>
+                          <p className="text-xs text-foreground">
+                            Serial: {machine.serialNumber}
+                          </p>
                         )}
                         {machine.roomId && (
-                          <p className="text-xs text-foreground">Room ID: {machine.roomId}</p>
+                          <p className="text-xs text-foreground">
+                            Room ID: {machine.roomId}
+                          </p>
                         )}
                         {machine.status && (
                           <Badge
-                            className={`${getStatusBadgeClass(machine.status)} text-xs font-medium mt-1 border`}
+                            className={`${getStatusBadgeClass(
+                              machine.status
+                            )} text-xs font-medium mt-1 border`}
                           >
                             {getStatusLabelForBadge(machine.status)}
                           </Badge>
@@ -213,7 +239,9 @@ export function ImagingModalityViewModal({
                   <Activity className="h-5 w-5" />
                   Modality Machines
                 </div>
-                <p className="text-sm text-foreground/70 italic">No modality machines assigned to this imaging modality</p>
+                <p className="text-sm text-foreground/70 italic">
+                  No modality machines assigned to this imaging modality
+                </p>
               </section>
             )}
           </div>
@@ -233,4 +261,3 @@ export function ImagingModalityViewModal({
     </Dialog>
   );
 }
-

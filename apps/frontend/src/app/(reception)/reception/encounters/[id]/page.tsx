@@ -37,7 +37,7 @@ import { useGetUserByIdQuery } from "@/store/userApi";
 // Format status for display
 const capitalizeFirst = (str: string) => {
   if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  return str?.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 const formatStatus = (status: string) => {
@@ -51,7 +51,7 @@ const formatStatus = (status: string) => {
 const formatEncounterType = (type: string): string => {
   return type
     .split(/[-_]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word?.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 };
 
@@ -74,7 +74,7 @@ const formatDateTime = (dateValue?: string | Date | null) => {
 // Format gender for display
 const formatGender = (gender: string | null | undefined): string => {
   if (!gender) return "N/A";
-  return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  return gender?.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
 };
 
 // Skeleton component for encounter details

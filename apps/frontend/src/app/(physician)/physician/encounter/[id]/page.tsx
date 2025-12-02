@@ -41,7 +41,7 @@ import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
 // Format status for display
 const capitalizeFirst = (str: string) => {
   if (!str) return "";
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  return str?.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 const formatStatus = (status: string) => {
@@ -55,7 +55,7 @@ const formatStatus = (status: string) => {
 const formatEncounterType = (type: string): string => {
   return type
     .split(/[-_]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word?.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 };
 
@@ -78,7 +78,7 @@ const formatDateTime = (dateValue?: string | Date | null) => {
 // Format gender for display
 const formatGender = (gender: string | null | undefined): string => {
   if (!gender) return "N/A";
-  return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+  return gender?.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
 };
 
 // Skeleton component for encounter details
@@ -259,7 +259,8 @@ export default function EncounterDetailPage() {
   // @ts-ignore - API response structure may vary
   const serviceRoom = serviceRoomData?.data?.data || serviceRoomData?.data;
   const createdBy = createdByData?.data;
-  const isLoadingRelated = isServiceRoomLoading || isPhysicianLoading || isCreatedByLoading;
+  const isLoadingRelated =
+    isServiceRoomLoading || isPhysicianLoading || isCreatedByLoading;
 
   // Loading state with skeleton
   if (isLoading) {
@@ -295,7 +296,9 @@ export default function EncounterDetailPage() {
         {/* Fixed Header */}
         <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Encounter Details</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Encounter Details
+            </h1>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleBack}>
@@ -313,7 +316,8 @@ export default function EncounterDetailPage() {
             Encounter Not Found
           </h2>
           <p className="text-sm text-foreground text-center max-w-md mb-6">
-            The requested encounter could not be found. It may have been deleted or the ID is invalid.
+            The requested encounter could not be found. It may have been deleted
+            or the ID is invalid.
           </p>
           <Button onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -329,7 +333,9 @@ export default function EncounterDetailPage() {
       {/* Fixed Header */}
       <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Encounter Details</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Encounter Details
+          </h1>
           <p className="text-sm text-foreground mt-1">
             {encounter.patient
               ? `${encounter.patient.firstName} ${encounter.patient.lastName}`
@@ -364,7 +370,9 @@ export default function EncounterDetailPage() {
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
                     <FileText className="h-3.5 w-3.5" />
-                    {encounter.orderNumber ? `Order #${encounter.orderNumber}` : encounter.id.slice(0, 8)}
+                    {encounter.orderNumber
+                      ? `Order #${encounter.orderNumber}`
+                      : encounter.id.slice(0, 8)}
                   </div>
                   <div>
                     <p className="text-3xl font-semibold text-foreground leading-tight">
@@ -390,7 +398,9 @@ export default function EncounterDetailPage() {
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {encounter.priority && (
                       <Badge
-                        className={`${getPriorityColor(encounter.priority as EncounterPriorityLevel)} px-4 py-1 text-xs font-semibold border shadow-sm`}
+                        className={`${getPriorityColor(
+                          encounter.priority as EncounterPriorityLevel
+                        )} px-4 py-1 text-xs font-semibold border shadow-sm`}
                       >
                         {encounter.priority === EncounterPriorityLevel.STAT && (
                           <AlertCircle className="w-3 h-3 mr-1" />
@@ -399,12 +409,16 @@ export default function EncounterDetailPage() {
                       </Badge>
                     )}
                     <Badge
-                      className={`${getStatusBadgeClass(encounter.status)} px-4 py-1 text-xs font-semibold border shadow-sm`}
+                      className={`${getStatusBadgeClass(
+                        encounter.status
+                      )} px-4 py-1 text-xs font-semibold border shadow-sm`}
                     >
                       {formatStatus(encounter.status)}
                     </Badge>
                     <Badge
-                      className={`${getEncounterTypeBadgeClass(encounter.encounterType)} px-4 py-1 text-xs font-semibold border shadow-sm`}
+                      className={`${getEncounterTypeBadgeClass(
+                        encounter.encounterType
+                      )} px-4 py-1 text-xs font-semibold border shadow-sm`}
                     >
                       {formatEncounterType(encounter.encounterType)}
                     </Badge>
@@ -418,7 +432,9 @@ export default function EncounterDetailPage() {
                     <Calendar className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">Encounter Date</p>
+                    <p className="text-xs uppercase tracking-wide text-foreground">
+                      Encounter Date
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
                       {encounter.encounterDate
                         ? new Date(encounter.encounterDate).toLocaleDateString()
@@ -432,7 +448,9 @@ export default function EncounterDetailPage() {
                     <User className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">Physician</p>
+                    <p className="text-xs uppercase tracking-wide text-foreground">
+                      Physician
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
                       {physician
                         ? `Dr. ${physician.firstName} ${physician.lastName}`
@@ -446,7 +464,9 @@ export default function EncounterDetailPage() {
                     <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">Service Room</p>
+                    <p className="text-xs uppercase tracking-wide text-foreground">
+                      Service Room
+                    </p>
                     <p className="text-lg font-semibold text-foreground">
                       {serviceRoom?.room?.roomCode || "Not assigned"}
                     </p>
@@ -501,7 +521,9 @@ export default function EncounterDetailPage() {
                 </section>
 
                 {/* Clinical Details */}
-                {(encounter.chiefComplaint || encounter.symptoms || encounter.notes) ? (
+                {encounter.chiefComplaint ||
+                encounter.symptoms ||
+                encounter.notes ? (
                   <section className="rounded-2xl p-6 shadow border-border border space-y-4">
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Stethoscope className="h-5 w-5" />
@@ -551,7 +573,8 @@ export default function EncounterDetailPage() {
                         No Clinical Details
                       </h3>
                       <p className="text-sm text-foreground text-center max-w-md">
-                        No clinical details have been recorded for this encounter yet.
+                        No clinical details have been recorded for this
+                        encounter yet.
                       </p>
                     </div>
                   </section>
@@ -571,19 +594,24 @@ export default function EncounterDetailPage() {
                       <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
                         <p className="text-xs text-foreground mb-1">Name</p>
                         <p className="text-sm font-semibold text-foreground break-words">
-                          {encounter.patient.firstName} {encounter.patient.lastName}
+                          {encounter.patient.firstName}{" "}
+                          {encounter.patient.lastName}
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-2.5">
                         <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                          <p className="text-xs text-foreground mb-1">Patient ID</p>
+                          <p className="text-xs text-foreground mb-1">
+                            Patient ID
+                          </p>
                           <p className="text-sm font-semibold text-foreground truncate">
                             {encounter.patient.patientCode}
                           </p>
                         </div>
                         {encounter.patient.gender && (
                           <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                            <p className="text-xs text-foreground mb-1">Gender</p>
+                            <p className="text-xs text-foreground mb-1">
+                              Gender
+                            </p>
                             <p className="text-sm font-semibold text-foreground">
                               {formatGender(encounter.patient.gender)}
                             </p>
@@ -592,9 +620,13 @@ export default function EncounterDetailPage() {
                       </div>
                       {encounter.patient.dateOfBirth && (
                         <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                          <p className="text-xs text-foreground mb-1">Date of Birth</p>
+                          <p className="text-xs text-foreground mb-1">
+                            Date of Birth
+                          </p>
                           <p className="text-sm font-semibold text-foreground">
-                            {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
+                            {new Date(
+                              encounter.patient.dateOfBirth
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                       )}

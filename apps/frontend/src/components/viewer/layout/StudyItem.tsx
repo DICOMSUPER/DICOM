@@ -49,6 +49,7 @@ export const StudyItem = ({
           {filteredSeries.length > 0 ? (
             filteredSeries.map((series: DicomSeries) => (
               <SeriesCard
+                onClick={() => onSeriesClick(series)}
                 key={series.id}
                 series={series}
                 isSelected={selectedSeries === series.id}
