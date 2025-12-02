@@ -5,9 +5,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DicomSeries } from './dicom-series.entity';
+import { ImageAnnotation } from './image-annotation.entity';
 
 @Entity('dicom_instances')
 @Index('idx_series_id', ['seriesId'])
@@ -71,4 +73,7 @@ export class DicomInstance extends BaseEntity {
   @ManyToOne(() => DicomSeries, (series) => series.instances)
   @JoinColumn({ name: 'series_id' })
   series!: DicomSeries;
+
+  @OneToMany(() => ImageAnnotation, (annotation) => annotation.instance)
+  imageAnnotations!: ImageAnnotation[];
 }

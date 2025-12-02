@@ -13,11 +13,9 @@ export class CreateRequestProcedureDto {
   @IsUUID()
   bodyPartId!: string;
 
-  @IsString()
   @IsOptional()
   description?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isActive: boolean = true;
+  isActive?: boolean = true;
 }

@@ -110,3 +110,4 @@ export class SignatureCreationFailedException extends RpcException {
     });
   }
 }
+

@@ -196,6 +196,20 @@ export class ImagingModalitiesService {
         );
       }
 
+      // Check if modality is referenced in request procedures
+      const requestProcedureRepo = em.getRepository('RequestProcedure');
+      const referencedInProcedures = await requestProcedureRepo.count({
+        where: { modalityId: id, isDeleted: false },
+      });
+
+      if (referencedInProcedures > 0) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Cannot delete modality that is referenced in existing request procedures',
+          IMAGING_SERVICE
+        );
+      }
+
       return await this.imagingModalityRepository.softDelete(
         id,
         'isDeleted',
@@ -232,12 +246,12 @@ export class ImagingModalitiesService {
       const whereConditions: string[] = [];
       const whereParams: any = {};
 
-      if (!includeDeleted) {
+      if (includeDeleted !== true) {
         whereConditions.push('modality.isDeleted = :isDeleted');
         whereParams.isDeleted = false;
       }
 
-      if (!includeInactive) {
+      if (includeInactive !== true) {
         whereConditions.push('modality.isActive = :isActive');
         whereParams.isActive = true;
       }

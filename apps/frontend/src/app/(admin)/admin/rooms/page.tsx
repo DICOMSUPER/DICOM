@@ -54,7 +54,7 @@ export default function Page() {
       page,
       limit,
       includeInactive: true,
-      includeDeleted: true,
+      includeDeleted: false,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -344,6 +344,7 @@ export default function Page() {
           setSelectedRoom(null);
         }}
         onSuccess={handleAssignmentSuccess}
+        
       />
     </div>
   );

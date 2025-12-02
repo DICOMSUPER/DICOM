@@ -133,7 +133,7 @@ const serviceRoomApi = createApi({
     }),
 
     // Delete service room
-    deleteServiceRoom: builder.mutation<{ message: string }, string>({
+    deleteServiceRoom: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",

@@ -50,12 +50,12 @@ export class ImagingModalityUpdateFailedException extends RpcException {
 }
 
 export class ImagingModalityDeletionFailedException extends RpcException {
-  constructor(imagingModalityId?: string, details?: any) {
+  constructor(message?: string, imagingModalityId?: string) {
     super({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to delete imaging modality${imagingModalityId ? ` '${imagingModalityId}'` : ''}`,
+      message: message || `Failed to delete imaging modality${imagingModalityId ? ` '${imagingModalityId}'` : ''}`,
       errorCode: 'IMAGING_MODALITY_DELETION_FAILED',
-      details: { imagingModalityId, ...details },
+      details: { imagingModalityId },
     });
   }
 }

@@ -122,10 +122,7 @@ export const imagingModalityApi = createApi({
       ],
     }),
 
-    deleteImagingModality: builder.mutation<
-      ApiResponse<boolean>,
-      string
-    >({
+    deleteImagingModality: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",

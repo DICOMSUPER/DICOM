@@ -78,7 +78,6 @@ export const NotificationItem = ({
         router.push(`/physician/patient-study/${notification.relatedEntityId}`);
         break;
       default:
-        // Mặc định hoặc log lỗi
         console.warn("Unknown entity type for navigation");
         break;
     }

@@ -110,13 +110,18 @@ export class RequestProcedureController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }){
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
     try {
       const { id } = data;
-      return await this.requestProcedureService.remove(id);
+      await this.requestProcedureService.remove(id)
+      
+      return {
+        success:true,
+        message: 'Request procedure deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

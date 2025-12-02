@@ -109,13 +109,18 @@ export class ImagingModalitiesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<any> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
     try {
       const { id } = data;
-      return await this.imagingModalitiesService.remove(id);
+      const result = await this.imagingModalitiesService.remove(id);
+      return {
+        success: true,
+        data: result,
+        message: 'Imaging modality deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

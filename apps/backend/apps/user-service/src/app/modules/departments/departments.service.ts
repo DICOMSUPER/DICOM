@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Department } from '@backend/shared-domain';
+import { Department, Room } from '@backend/shared-domain';
 import { CreateDepartmentDto } from '@backend/shared-domain';
 import { UpdateDepartmentDto } from '@backend/shared-domain';
 import { PaginatedResponseDto } from '@backend/database';
@@ -18,6 +18,8 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(Room)
+    private readonly roomRepository: Repository<Room>,
   ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
@@ -192,10 +194,21 @@ export class DepartmentsService {
   async remove(id: string): Promise<void> {
     try {
       const department = await this.findOne(id);
+      // Check if there are rooms associated with this department
+      const associatedRooms = await this.roomRepository.find({
+        where: { department: { id: department.id }, isDeleted: false },
+      });
+      if (associatedRooms.length > 0) {
+        throw new DepartmentDeletionFailedException(
+          'Cannot delete department with associated rooms',
+          department.id
+        );
+      }
       await this.departmentRepository.remove(department);
     } catch (error: any) {
       if (error instanceof DepartmentNotFoundException) throw error;
-      throw new DepartmentDeletionFailedException(error.message);
+      if (error instanceof DepartmentDeletionFailedException) throw error;
+      throw new DepartmentDeletionFailedException(error.message, id);
     }
   }
 

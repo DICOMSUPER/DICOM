@@ -240,7 +240,7 @@ export class ModalityMachinesService {
   ): Promise<PaginatedResponseDto<ModalityMachine>> => {
     const { includeDeleted, modalityId, status, ...restPaginationDto } = paginationDto;
     
-    if (includeDeleted || modalityId || status) {
+    if (includeDeleted !== undefined || modalityId || status) {
       const repository = this.entityManager.getRepository(ModalityMachine);
       const page = restPaginationDto.page || 1;
       const limit = restPaginationDto.limit || 10;
@@ -253,7 +253,7 @@ export class ModalityMachinesService {
       const whereConditions: string[] = [];
       const whereParams: any = {};
       
-      if (!includeDeleted) {
+      if (includeDeleted !== true) {
         whereConditions.push('machine.isDeleted = :isDeleted');
         whereParams.isDeleted = false;
       }

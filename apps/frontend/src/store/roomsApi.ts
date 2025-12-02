@@ -36,7 +36,13 @@ export interface RoomStats {
 export const roomApi = createApi({
   reducerPath: "roomApi",
   baseQuery: axiosBaseQuery("/rooms"),
-  tagTypes: ["Room", "ServiceRoom", "ServiceRoomList", "RoomService", "ModalityMachine"],
+  tagTypes: [
+    "Room",
+    "ServiceRoom",
+    "ServiceRoomList",
+    "RoomService",
+    "ModalityMachine",
+  ],
   endpoints: (builder) => ({
     // Get all rooms with filters
     getRooms: builder.query<PaginatedResponse<Room>, RoomQueryParams>({
@@ -94,7 +100,7 @@ export const roomApi = createApi({
     }),
 
     // Create new room
-    createRoom: builder.mutation<Room, CreateRoomDto>({
+    createRoom: builder.mutation<ApiResponse<{ room: Room }>, CreateRoomDto>({
       query: (data) => ({
         url: "",
         method: "POST",
