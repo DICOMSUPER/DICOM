@@ -29,7 +29,9 @@ function ViewerLoading() {
 function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
+  const patientId = searchParams.get("patient");
   const seriesId = searchParams.get("series");
+
   const {
     state,
     setActiveViewport,
@@ -44,15 +46,11 @@ function ViewerPageContent() {
   const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
 
-  const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(
-    null
-  );
+  const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
   const [series, setSeries] = useState<DicomSeries[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
-  const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<
-    "all" | "draft" | null
-  >(null);
+  const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<"all" | "draft" | null>(null);
 
   useEffect(() => {
     setActiveViewport(0);
@@ -84,12 +82,7 @@ function ViewerPageContent() {
   );
 
   const handleSeriesSelect = (series: DicomSeries) => {
-    console.log(
-      "Selected series:",
-      series,
-      "for viewport:",
-      state.activeViewport
-    );
+    console.log("Selected series:", series, "for viewport:", state.activeViewport);
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
   };
@@ -110,34 +103,30 @@ function ViewerPageContent() {
   );
 
   const handleRefresh = async () => {
-    if (studyId) {
-      setLoading(true);
-      try {
-        const seriesResponse = await fetchSeriesByReference({
-          id: studyId,
-          type: "study",
-          params: { page: 1, limit: 50 },
-        }).unwrap();
-        const refreshedSeries = extractApiData<DicomSeries>(seriesResponse);
-        setSeries(refreshedSeries);
-        handleSeriesLoaded(refreshedSeries);
-        setSelectedTool("WindowLevel");
+    if (!studyId) return;
+    setLoading(true);
+    try {
+      const seriesResponse = await fetchSeriesByReference({
+        id: studyId,
+        type: "study",
+        params: { page: 1, limit: 50 },
+      }).unwrap();
+      const refreshedSeries = extractApiData<DicomSeries>(seriesResponse);
+      setSeries(refreshedSeries);
+      handleSeriesLoaded(refreshedSeries);
+      setSelectedTool("WindowLevel");
 
-        window.dispatchEvent(
-          new CustomEvent("refreshViewport", {
-            detail: { studyId },
-          })
-        );
-      } catch (error) {
-        console.error("Error refreshing series:", error);
-      } finally {
-        setLoading(false);
-      }
+      window.dispatchEvent(new CustomEvent("refreshViewport", { detail: { studyId } }));
+    } catch (error) {
+      console.error("Error refreshing series:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col">
+      {/* Header */}
       <div className="flex flex-col shrink-0">
         <ViewerHeader
           isCollapsed={headerCollapsed}
@@ -145,7 +134,6 @@ function ViewerPageContent() {
           loading={loading}
           onRefresh={handleRefresh}
         />
-
         {headerCollapsed && (
           <div className="bg-slate-900 border-b border-slate-800 flex items-center justify-center transition-all duration-300">
             <button
@@ -159,6 +147,7 @@ function ViewerPageContent() {
         )}
       </div>
 
+      {/* Main Viewer */}
       <div className="flex-1 flex min-h-0">
         <ResizablePanel
           side="left"
@@ -166,9 +155,7 @@ function ViewerPageContent() {
           minWidth={250}
           maxWidth={500}
           collapsed={leftSidebarCollapsed}
-          onToggleCollapse={() =>
-            setLeftSidebarCollapsed(!leftSidebarCollapsed)
-          }
+          onToggleCollapse={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
         >
           <ViewerLeftSidebar
             seriesLayout={seriesLayout}
@@ -186,12 +173,8 @@ function ViewerPageContent() {
             <div className="flex-1 flex items-center justify-center bg-slate-900">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <div className="text-slate-400 text-lg mb-2">
-                  Đang tải series...
-                </div>
-                <div className="text-slate-500 text-sm">
-                  Loading series data
-                </div>
+                <div className="text-slate-400 text-lg mb-2">Đang tải series...</div>
+                <div className="text-slate-500 text-sm">Loading series data</div>
               </div>
             </div>
           )}
@@ -199,9 +182,7 @@ function ViewerPageContent() {
           {!loading && series.length === 0 && (
             <div className="flex-1 flex items-center justify-center bg-slate-900">
               <div className="text-center">
-                <div className="text-slate-400 text-lg mb-2">
-                  Không có dữ liệu để hiển thị
-                </div>
+                <div className="text-slate-400 text-lg mb-2">Không có dữ liệu để hiển thị</div>
                 <div className="text-slate-500 text-sm">
                   {studyId
                     ? "No series found for this study"
@@ -234,11 +215,13 @@ function ViewerPageContent() {
             onSeriesSelect={handleSeriesSelect}
             series={series}
             studyId={studyId || undefined}
+            patientId={patientId || undefined}
             onSeriesLoaded={handleSeriesLoaded}
           />
         </ResizablePanel>
       </div>
 
+      {/* Annotation Modals */}
       <SeriesAnnotationsModal
         open={activeAnnotationsModal === "all"}
         onOpenChange={handleAnnotationModalOpenChange("all")}

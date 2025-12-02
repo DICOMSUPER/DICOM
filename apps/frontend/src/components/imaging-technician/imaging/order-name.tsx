@@ -19,7 +19,7 @@ const getStatusBadgeColor = (status: ImagingOrderStatus) => {
 
 const getStatusLabel = (status: ImagingOrderStatus) => {
   const text = String(status).toLowerCase().replace(/_/g, " ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return text?.charAt(0).toUpperCase() + text.slice(1);
 };
 export default function OrderName({ order }: { order: ImagingOrder }) {
   return (

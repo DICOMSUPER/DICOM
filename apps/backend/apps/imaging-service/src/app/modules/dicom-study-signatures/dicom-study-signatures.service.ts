@@ -104,10 +104,6 @@ export class DicomStudySignaturesService {
       studyStatus: DicomStudyStatus.TECHNICIAN_VERIFIED,
       performingTechnicianId: userId,
     });
-    //update related imaging order status
-    await this.imagingOrdersService.update(study?.imagingOrder?.id as string, {
-      orderStatus: OrderStatus.COMPLETED,
-    });
 
     this.logger.log(
       `Technician ${userId} verified study ${studyId} successfully`

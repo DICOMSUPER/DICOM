@@ -20,18 +20,13 @@ interface MedicalRecordPageProps {
 export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecordPageProps) {
 
 
-  const {
-    data: studyData,
-    isLoading: isLoadingStudy,
-    refetch: refetchStudy,
-    error: studyError,
-  } = useGetDicomStudiesFilteredQuery({ studyUID });
+
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
 
-  if (!isLoadingStudy && !studyError)
-    patientId = studyData?.data[0]?.patientId ?? patientId;
   const { getPatientById } = usePatientService();
+  
+  
 
 
   const {
@@ -47,7 +42,7 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
 
   const examHistory = useMemo(() => {
     const list = imagingOrdersData?.data || [];
-    console.log("check 2", list)
+
     return list.map((order: any) => {
       const modalityName =
         order.procedure?.modality?.modalityCode || "Không rõ";
@@ -64,11 +59,12 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
       };
     });
   }, [imagingOrdersData]);
-  console.log("check", examHistory)
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(
     null
   );
 
+  console.log("check 1 : ", examHistory)
+  console.log("selectedStudyId: ", selectedStudyId)
   const handleSelectExam = useCallback(
     (studyId: string | null, encounterId?: string | null) => {
       setSelectedStudyId(studyId);
@@ -120,6 +116,7 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
         diagnosisData={diagnosisData}
         isDiagnosisLoading={isDiagnosisLoading}
         encounterId={selectedEncounterId}
+        patientId={patientId}
       />
     </div>
   );
