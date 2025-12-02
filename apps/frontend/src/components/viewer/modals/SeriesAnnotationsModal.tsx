@@ -58,7 +58,9 @@ export function SeriesAnnotationsModal({
   cachedSeriesList,
 }: SeriesAnnotationsModalProps) {
   const { state } = useViewer();
-  const user = useSelector((candidateState: RootState) => candidateState.auth.user);
+  const user = useSelector(
+    (candidateState: RootState) => candidateState.auth.user
+  );
   const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
   const [updateAnnotation] = useUpdateAnnotationMutation();
 
@@ -345,7 +347,7 @@ export function SeriesAnnotationsModal({
       try {
         await updateAnnotation({
           id: annotationId,
-          data: { 
+          data: {
             annotationStatus: AnnotationStatus.REVIEWED,
             reviewDate: new Date(),
           },
@@ -513,7 +515,7 @@ export function SeriesAnnotationsModal({
                         <div className="sticky top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 rounded-2xl border border-transparent bg-slate-900 px-5 py-4 transition-colors duration-200 group-hover:border-emerald-400/30 group-hover:bg-slate-900">
                           <div>
                             <p className="text-lg font-semibold text-white">
-                              Series #{series.seriesNumber}:{" "}
+                              Series #{series?.seriesNumber}:{" "}
                               {series.seriesDescription || series.id}
                             </p>
                             <p className="text-xs text-slate-400">
@@ -679,35 +681,35 @@ export function SeriesAnnotationsModal({
                                               className="border-amber-400/60 text-amber-300 shrink-0 h-6 w-6"
                                             />
                                             <div className="flex flex-col gap-2">
-                                            <label
-                                              htmlFor={`finalize-${annotation.id}`}
-                                              className="flex-1 text-sm leading-tight text-amber-100"
-                                            >
-                                              I confirm this annotation is
-                                              complete and ready to be marked as
-                                              final. This action cannot be
-                                              reverted.
-                                            </label>
-                                            <p className="text-xs text-amber-200/80">
-                                              Final annotations are locked for
-                                              editing.
-                                            </p>
+                                              <label
+                                                htmlFor={`finalize-${annotation.id}`}
+                                                className="flex-1 text-sm leading-tight text-amber-100"
+                                              >
+                                                I confirm this annotation is
+                                                complete and ready to be marked
+                                                as final. This action cannot be
+                                                reverted.
+                                              </label>
+                                              <p className="text-xs text-amber-200/80">
+                                                Final annotations are locked for
+                                                editing.
+                                              </p>
                                             </div>
                                           </div>
-                                           <Button
-                                             size="sm"
-                                             variant="outline"
-                                             className="border-amber-400/60 bg-amber-500/10 text-amber-100 hover:bg-red-600! hover:border-red-600 hover:text-white shrink-0"
-                                             disabled={
-                                               !finalizationConfirmed ||
-                                               isFinalizing
-                                             }
-                                             onClick={() =>
-                                               handleFinalizeAnnotation(
-                                                 annotation.id
-                                               )
-                                             }
-                                           >
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="border-amber-400/60 bg-amber-500/10 text-amber-100 hover:bg-red-600! hover:border-red-600 hover:text-white shrink-0"
+                                            disabled={
+                                              !finalizationConfirmed ||
+                                              isFinalizing
+                                            }
+                                            onClick={() =>
+                                              handleFinalizeAnnotation(
+                                                annotation.id
+                                              )
+                                            }
+                                          >
                                             {isFinalizing && (
                                               <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                             )}
@@ -717,60 +719,72 @@ export function SeriesAnnotationsModal({
                                       </div>
                                     )}
 
-                                    {currentStatus === AnnotationStatus.FINAL && user?.role === Roles.PHYSICIAN && annotation.annotationStatus !== AnnotationStatus.REVIEWED && (
-                                      <div className="mt-4 rounded-xl border border-blue-500/40 bg-blue-500/5 px-4 py-3 text-sm text-blue-100">
-                                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:justify-between">
-                                          <div className="flex-1 flex gap-3 items-center">
-                                            <Checkbox
-                                              id={`review-${annotation.id}`}
-                                              checked={reviewConfirmations[annotation.id] ?? false}
-                                              onCheckedChange={(checked) =>
-                                                setReviewConfirmations(
-                                                  (prev) => ({
-                                                    ...prev,
-                                                    [annotation.id]:
-                                                      Boolean(checked),
-                                                  })
+                                    {currentStatus === AnnotationStatus.FINAL &&
+                                      user?.role === Roles.PHYSICIAN &&
+                                      annotation.annotationStatus !==
+                                        AnnotationStatus.REVIEWED && (
+                                        <div className="mt-4 rounded-xl border border-blue-500/40 bg-blue-500/5 px-4 py-3 text-sm text-blue-100">
+                                          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4 md:justify-between">
+                                            <div className="flex-1 flex gap-3 items-center">
+                                              <Checkbox
+                                                id={`review-${annotation.id}`}
+                                                checked={
+                                                  reviewConfirmations[
+                                                    annotation.id
+                                                  ] ?? false
+                                                }
+                                                onCheckedChange={(checked) =>
+                                                  setReviewConfirmations(
+                                                    (prev) => ({
+                                                      ...prev,
+                                                      [annotation.id]:
+                                                        Boolean(checked),
+                                                    })
+                                                  )
+                                                }
+                                                className="border-blue-400/60 text-blue-300 shrink-0 h-6 w-6"
+                                              />
+                                              <div className="flex flex-col gap-2">
+                                                <label
+                                                  htmlFor={`review-${annotation.id}`}
+                                                  className="flex-1 text-sm leading-tight text-blue-100"
+                                                >
+                                                  I confirm I have reviewed this
+                                                  annotation and it is ready to
+                                                  be marked as reviewed.
+                                                </label>
+                                                <p className="text-xs text-blue-200/80">
+                                                  Reviewed annotations confirm
+                                                  completion of review.
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="border-blue-400/60 bg-blue-500/10 text-blue-100 hover:bg-blue-600 hover:border-blue-600 hover:text-white shrink-0"
+                                              disabled={
+                                                !reviewConfirmations[
+                                                  annotation.id
+                                                ] ||
+                                                reviewingAnnotationId ===
+                                                  annotation.id
+                                              }
+                                              onClick={() =>
+                                                handleReviewAnnotation(
+                                                  annotation.id
                                                 )
                                               }
-                                              className="border-blue-400/60 text-blue-300 shrink-0 h-6 w-6"
-                                            />
-                                            <div className="flex flex-col gap-2">
-                                              <label
-                                                htmlFor={`review-${annotation.id}`}
-                                                className="flex-1 text-sm leading-tight text-blue-100"
-                                              >
-                                                I confirm I have reviewed this
-                                                annotation and it is ready to be
-                                                marked as reviewed.
-                                              </label>
-                                              <p className="text-xs text-blue-200/80">
-                                                Reviewed annotations confirm completion of review.
-                                              </p>
-                                            </div>
+                                            >
+                                              {reviewingAnnotationId ===
+                                                annotation.id && (
+                                                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                              )}
+                                              Mark as Reviewed
+                                            </Button>
                                           </div>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-blue-400/60 bg-blue-500/10 text-blue-100 hover:bg-blue-600 hover:border-blue-600 hover:text-white shrink-0"
-                                            disabled={
-                                              !reviewConfirmations[annotation.id] ||
-                                              reviewingAnnotationId === annotation.id
-                                            }
-                                            onClick={() =>
-                                              handleReviewAnnotation(
-                                                annotation.id
-                                              )
-                                            }
-                                          >
-                                            {reviewingAnnotationId === annotation.id && (
-                                              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                            )}
-                                            Mark as Reviewed
-                                          </Button>
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
 
                                     {annotation.textContent && (
                                       <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/90 px-4 py-3 text-sm text-slate-200">

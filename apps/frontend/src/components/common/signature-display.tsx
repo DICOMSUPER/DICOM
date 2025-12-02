@@ -8,11 +8,13 @@ const SignatureDisplay = memo(
     lastName,
     duration = 1,
     delay = 0.3,
+    role,
   }: {
     firstName: string;
     lastName: string;
     duration?: number;
     delay?: number;
+    role?: string;
   }) => {
     return (
       <>
@@ -20,7 +22,7 @@ const SignatureDisplay = memo(
           {`${lastName} ${firstName}`}
         </SignatureAnimation>
         <p className="italic text-sm text-gray-600 mt-2">
-          {`KY Thuật Viên ${lastName} ${firstName}`}
+          {`${role} ${lastName} ${firstName}`}
         </p>
       </>
     );

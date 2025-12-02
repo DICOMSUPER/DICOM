@@ -257,7 +257,7 @@ export function PhysicianCharts({
                       const statusStr =
                         typeof status === "string" ? status : String(status);
                       const capitalizedName =
-                        statusStr.charAt(0).toUpperCase() +
+                        statusStr?.charAt(0).toUpperCase() +
                         statusStr.slice(1).toLowerCase().replace(/_/g, " ");
                       return `${capitalizedName}: ${(percent * 100).toFixed(
                         0
@@ -283,7 +283,7 @@ export function PhysicianCharts({
                     }}
                     labelFormatter={(label: string) => {
                       return (
-                        label.charAt(0).toUpperCase() +
+                        label?.charAt(0).toUpperCase() +
                         label.slice(1).toLowerCase().replace(/_/g, " ")
                       );
                     }}
@@ -317,7 +317,7 @@ export function PhysicianCharts({
                       const statusStr =
                         typeof status === "string" ? status : String(status);
                       const capitalizedName =
-                        statusStr.charAt(0).toUpperCase() +
+                        statusStr?.charAt(0).toUpperCase() +
                         statusStr.slice(1).toLowerCase().replace(/_/g, " ");
                       return `${capitalizedName}: ${(percent * 100).toFixed(
                         0
@@ -343,7 +343,7 @@ export function PhysicianCharts({
                     }}
                     labelFormatter={(label: string) => {
                       return (
-                        label.charAt(0).toUpperCase() +
+                        label?.charAt(0).toUpperCase() +
                         label.slice(1).toLowerCase().replace(/_/g, " ")
                       );
                     }}
@@ -384,7 +384,7 @@ export function PhysicianCharts({
                         const statusStr =
                           typeof status === "string" ? status : String(status);
                         const capitalizedName =
-                          statusStr.charAt(0).toUpperCase() +
+                          statusStr?.charAt(0).toUpperCase() +
                           statusStr.slice(1).toLowerCase().replace(/_/g, " ");
                         return `${capitalizedName}: ${(percent * 100).toFixed(
                           0

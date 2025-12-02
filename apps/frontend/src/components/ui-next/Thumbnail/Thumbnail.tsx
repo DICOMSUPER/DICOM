@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
-import classnames from 'classnames';
+import React, { useRef, useState } from "react";
+import classnames from "classnames";
 
-import { DisplaySetMessageListTooltip } from '../DisplaySetMessageListTooltip';
-import { TooltipTrigger, TooltipContent, Tooltip } from '../Tooltip';
-import { AudioWaveform, CircleX, Layers, Link2, Rows2 } from 'lucide-react';
+import { DisplaySetMessageListTooltip } from "../DisplaySetMessageListTooltip";
+import { TooltipTrigger, TooltipContent, Tooltip } from "../Tooltip";
+import { AudioWaveform, CircleX, Layers, Link2, Rows2 } from "lucide-react";
 
 type DragData = {
   type: string;
@@ -12,7 +12,7 @@ type DragData = {
 
 type Message = {
   id: string;
-  type: 'info' | 'warning' | 'error';
+  type: "info" | "warning" | "error";
   message: string;
 };
 
@@ -30,9 +30,9 @@ interface ThumbnailProps {
   isActive: boolean;
   onClick: (e: React.MouseEvent | React.TouchEvent) => void;
   onDoubleClick: (e: React.MouseEvent | React.TouchEvent) => void;
-  thumbnailType?: 'thumbnail' | 'thumbnailTracked' | 'thumbnailNoImage';
+  thumbnailType?: "thumbnail" | "thumbnailTracked" | "thumbnailNoImage";
   modality?: string;
-  viewPreset?: 'thumbnails' | 'list';
+  viewPreset?: "thumbnails" | "list";
   isHydratedForDerivedDisplaySet?: boolean;
   isTracked?: boolean;
   canReject?: boolean;
@@ -65,7 +65,7 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
   onDoubleClick,
   thumbnailType,
   modality,
-  viewPreset = 'thumbnails',
+  viewPreset = "thumbnails",
   isHydratedForDerivedDisplaySet = false,
   isTracked = false,
   canReject = false,
@@ -76,19 +76,18 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
 }) => {
   const dragRef = useRef<HTMLDivElement>(null);
 
-
   const [lastTap, setLastTap] = useState(0);
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const currentTime = new Date().getTime();
     const tapLength = currentTime - lastTap;
-    
+
     if (tapLength < 300 && tapLength > 0) {
       onDoubleClick(e);
     } else {
       onClick(e);
     }
-    
+
     setLastTap(currentTime);
   };
 
@@ -96,8 +95,8 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
     return (
       <div
         className={classnames(
-          'flex h-full w-full flex-col items-center justify-center gap-[2px] p-[4px]',
-          isActive && 'bg-popover rounded'
+          "flex h-full w-full flex-col items-center justify-center gap-[2px] p-[4px]",
+          isActive && "bg-popover rounded"
         )}
       >
         <div className="h-[114px] w-[128px]">
@@ -117,12 +116,16 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
             <div className="absolute bottom-0 left-0 flex h-[14px] items-center gap-[4px] rounded-tr pt-[10px] pb-[10px] pr-[6px] pl-[5px]">
               <div
                 className={classnames(
-                  'h-[10px] w-[10px] rounded-[2px]',
-                  isActive || isHydratedForDerivedDisplaySet ? 'bg-highlight' : 'bg-primary/65',
-                  loadingProgress && loadingProgress < 1 && 'bg-primary/25'
+                  "h-[10px] w-[10px] rounded-[2px]",
+                  isActive || isHydratedForDerivedDisplaySet
+                    ? "bg-highlight"
+                    : "bg-primary/65",
+                  loadingProgress && loadingProgress < 1 && "bg-primary/25"
                 )}
               />
-              <div className="text-[11px] font-semibold text-white">{modality}</div>
+              <div className="text-[11px] font-semibold text-white">
+                {modality}
+              </div>
             </div>
 
             {/* Top right messages and tracking */}
@@ -151,7 +154,9 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
                       </div>
                       <div className="flex flex-1 flex-col">
                         <span className="text-white">
-                          {isTracked ? 'Series is tracked' : 'Series is untracked'}
+                          {isTracked
+                            ? "Series is tracked"
+                            : "Series is untracked"}
                         </span>
                       </div>
                     </div>
@@ -183,11 +188,12 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
           </Tooltip>
 
           <div className="flex h-[12px] items-center gap-[7px] overflow-hidden">
-            <div className="text-foreground pl-1 text-[11px]">S:{seriesNumber}</div>
+            <div className="text-foreground pl-1 text-[11px]">
+              S:{seriesNumber}
+            </div>
             <div className="text-foreground text-[11px]">
               <div className="flex items-center gap-[4px]">
-
-                  <Rows2 className="w-3" />
+                <Rows2 className="w-3" />
 
                 <div>{numInstances}</div>
               </div>
@@ -202,22 +208,26 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
     return (
       <div
         className={classnames(
-          'flex h-full w-full items-center justify-between pr-[8px] pl-[8px] pt-[4px] pb-[4px]',
-          isActive && 'bg-popover rounded'
+          "flex h-full w-full items-center justify-between pr-[8px] pl-[8px] pt-[4px] pb-[4px]",
+          isActive && "bg-popover rounded"
         )}
       >
         <div className="relative flex h-[32px] w-full items-center gap-[8px] overflow-hidden">
           <div
             className={classnames(
-              'h-[32px] w-[4px] min-w-[4px] rounded',
-              isActive || isHydratedForDerivedDisplaySet ? 'bg-highlight' : 'bg-primary/65',
-              loadingProgress && loadingProgress < 1 && 'bg-primary/25'
+              "h-[32px] w-[4px] min-w-[4px] rounded",
+              isActive || isHydratedForDerivedDisplaySet
+                ? "bg-highlight"
+                : "bg-primary/65",
+              loadingProgress && loadingProgress < 1 && "bg-primary/25"
             )}
           />
 
           <div className="flex h-full w-[calc(100%-12px)] flex-col justify-start">
             <div className="flex items-center gap-[7px]">
-              <div className="text-[13px] font-semibold text-white">{modality}</div>
+              <div className="text-[13px] font-semibold text-white">
+                {modality}
+              </div>
               <Tooltip>
                 <TooltipContent>{description}</TooltipContent>
                 <TooltipTrigger className="w-full overflow-hidden">
@@ -229,11 +239,12 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
             </div>
 
             <div className="flex h-[12px] items-center gap-[7px] overflow-hidden">
-              <div className="text-foreground text-[12px]">S:{seriesNumber}</div>
+              <div className="text-foreground text-[12px]">
+                S:{seriesNumber}
+              </div>
               <div className="text-foreground text-[12px]">
                 <div className="flex items-center gap-[4px]">
-
-                   <Layers className="w-3" />
+                  <Layers className="w-3" />
 
                   <div>{numInstances}</div>
                 </div>
@@ -267,7 +278,7 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
                   </div>
                   <div className="flex flex-1 flex-col">
                     <span className="text-white">
-                      {isTracked ? 'Series is tracked' : 'Series is untracked'}
+                      {isTracked ? "Series is tracked" : "Series is untracked"}
                     </span>
                   </div>
                 </div>
@@ -288,15 +299,15 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
     <div
       className={classnames(
         className,
-        'bg-muted hover:bg-primary/30 group flex cursor-pointer select-none flex-col rounded outline-none',
-        viewPreset === 'thumbnails' && 'h-[170px] w-[135px]',
-        viewPreset === 'list' && 'h-[40px] w-full'
+        "bg-muted hover:bg-primary/30 group flex cursor-pointer select-none flex-col rounded outline-none",
+        viewPreset === "thumbnails" && "h-[170px] w-[135px]",
+        viewPreset === "list" && "h-[40px] w-full"
       )}
       id={`thumbnail-${displaySetInstanceUID}`}
       data-cy={
-        thumbnailType === 'thumbnailNoImage'
-          ? 'study-browser-thumbnail-no-image'
-          : 'study-browser-thumbnail'
+        thumbnailType === "thumbnailNoImage"
+          ? "study-browser-thumbnail-no-image"
+          : "study-browser-thumbnail"
       }
       data-series={seriesNumber}
       onClick={onClick}
@@ -305,12 +316,9 @@ export const Thumbnail: React.FC<ThumbnailProps> = ({
       role="button"
       tabIndex={0}
     >
-      <div
-        ref={dragRef}
-        className="h-full w-full"
-      >
-        {viewPreset === 'thumbnails' && renderThumbnailPreset()}
-        {viewPreset === 'list' && renderListPreset()}
+      <div ref={dragRef} className="h-full w-full">
+        {viewPreset === "thumbnails" && renderThumbnailPreset()}
+        {viewPreset === "list" && renderListPreset()}
       </div>
     </div>
   );

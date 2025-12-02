@@ -32,6 +32,7 @@ export const FolderItem = ({
 
   const studies = data?.data || [];
 
+  console.log(studies);
   return (
     <div>
       {/* Folder Header */}
