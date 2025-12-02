@@ -13,6 +13,11 @@ import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { extractApiData } from "@/utils/api";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import DatePickerDropdown from "@/components/radiologist/date-picker";
+import { Label } from "recharts";
+import { setFilters } from "@/store/patientSlice";
+import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
+import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
 
 export interface ImagingOrderFilters {
   patientFirstName?: string;
@@ -45,13 +50,19 @@ export function OrderFiltersSection({
     mrn: filters.mrn || "",
     bodyPart: filters.bodyPart || "",
   });
+  const [localStartDate, setLocalStartDate] = useState<Date | undefined>(
+    filters.startDate ? new Date(filters.startDate) : undefined
+  );
+  const [localEndDate, setLocalEndDate] = useState<Date | undefined>(
+    filters.endDate ? new Date(filters.endDate) : undefined
+  );
 
   const { data: modalitiesData } = useGetAllImagingModalityQuery();
-  const modalities = extractApiData(modalitiesData);
+  const modalities: ImagingModality[] = extractApiData(modalitiesData);
 
   const { data: proceduresData, isLoading: isLoadingProcedures } =
     useGetAllRequestProceduresQuery();
-  const procedures = extractApiData(proceduresData);
+  const procedures: RequestProcedure[] = extractApiData(proceduresData);
 
   const handleInputChange = (
     field: keyof typeof searchInputs,
@@ -64,13 +75,42 @@ export function OrderFiltersSection({
   };
 
   const handleSearch = () => {
+    let startDateISO = localStartDate
+      ? localStartDate.toISOString()
+      : undefined;
+    let endDateISO = localEndDate ? localEndDate.toISOString() : undefined;
+    // If endDate is before startDate, clear endDate
+    if (
+      startDateISO &&
+      endDateISO &&
+      localEndDate &&
+      localStartDate &&
+      localEndDate < localStartDate
+    ) {
+      endDateISO = undefined;
+      setLocalEndDate(undefined);
+    }
     onFiltersChange({
       ...filters,
       patientFirstName: searchInputs.patientFirstName || undefined,
       patientLastName: searchInputs.patientLastName || undefined,
       mrn: searchInputs.mrn || undefined,
       bodyPart: searchInputs.bodyPart || undefined,
+      startDate: startDateISO,
+      endDate: endDateISO,
     });
+  };
+
+  // Date change handlers (local only)
+  const handleStartDateChange = (date: Date | undefined) => {
+    setLocalStartDate(date);
+    // If endDate is before new startDate, clear endDate
+    if (date && localEndDate && localEndDate < date) {
+      setLocalEndDate(undefined);
+    }
+  };
+  const handleEndDateChange = (date: Date | undefined) => {
+    setLocalEndDate(date);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -96,6 +136,8 @@ export function OrderFiltersSection({
       mrn: "",
       bodyPart: "",
     });
+    setLocalStartDate(undefined);
+    setLocalEndDate(undefined);
     onReset();
   };
 
@@ -103,9 +145,9 @@ export function OrderFiltersSection({
 
   return (
     <div className="border-border mb-6">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[140px]">
+      <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
             <Input
               placeholder="Patient First Name..."
@@ -117,7 +159,7 @@ export function OrderFiltersSection({
               className="pl-10"
             />
           </div>
-          <div className="relative flex-1 min-w-[140px]">
+          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
             <Input
               placeholder="Patient Last Name..."
@@ -129,7 +171,7 @@ export function OrderFiltersSection({
               className="pl-10"
             />
           </div>
-          <div className="relative flex-1 min-w-[140px]">
+          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
             <Input
               placeholder="MRN..."
@@ -139,7 +181,7 @@ export function OrderFiltersSection({
               className="pl-10"
             />
           </div>
-          <div className="relative flex-1 min-w-[140px]">
+          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
             <Input
               placeholder="Body Part..."
@@ -150,7 +192,7 @@ export function OrderFiltersSection({
             />
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-end">
           <Select
             value={filters.modalityId || "all"}
             onValueChange={(value) => handleSelectChange("modalityId", value)}
@@ -180,9 +222,9 @@ export function OrderFiltersSection({
               <SelectItem value="all">All Status</SelectItem>
               {orderStatusArray.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {status.replace(/_/g, " ").replace(/\b\w/g, (l) =>
-                    l.toUpperCase()
-                  )}
+                  {status
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -198,12 +240,38 @@ export function OrderFiltersSection({
             <SelectContent className="border-border">
               <SelectItem value="all">All Procedures</SelectItem>
               {procedures.map((procedure) => (
-                <SelectItem key={procedure.id} value={procedure.id}>
-                  {procedure.name}
+                <SelectItem key={procedure?.id} value={procedure?.id}>
+                  {procedure?.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-semibold text-gray-700">
+              Start Date
+            </Label>
+            <DatePickerDropdown
+              date={localStartDate}
+              onSelect={handleStartDateChange}
+              placeholder="Start date"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-semibold text-gray-700">
+              End Date
+            </Label>
+            <DatePickerDropdown
+              date={localEndDate}
+              onSelect={handleEndDateChange}
+              placeholder="End date"
+              disabled={(date) =>
+                localStartDate
+                  ? date.getTime() < localStartDate.getTime()
+                  : false
+              }
+            />
+          </div>
           <Button
             variant="outline"
             onClick={handleReset}
@@ -225,4 +293,3 @@ export function OrderFiltersSection({
     </div>
   );
 }
-
