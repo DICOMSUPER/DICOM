@@ -106,7 +106,7 @@ const serviceRoomApi = createApi({
     }),
 
     // Get single service room by ID
-    getServiceRoomById: builder.query<ApiResponse<ServiceRoom>, string>({
+    getServiceRoomById: builder.query<ApiResponse<{data:ServiceRoom}>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",

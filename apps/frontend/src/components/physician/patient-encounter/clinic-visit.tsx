@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
 import { VisitInformationForm } from "./visit-information-form";
 import { VisitInformationFormValues } from "@/lib/validation/visit-information-form";
+import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 
 interface ClinicVisitProps {
   detail: PatientEncounter;
@@ -45,11 +46,16 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const [vitalSignsData, setVitalSignsData] = useState(
     detail.vitalSigns || null
   );
-  const [visitInformationData, setVisitInformationData] = useState<Partial<VisitInformationFormValues> | null>(
-    {
+  const [visitInformationData, setVisitInformationData] =
+    useState<Partial<VisitInformationFormValues> | null>({
       chiefComplaint: detail.chiefComplaint,
       symptoms: detail.symptoms,
-    } 
+    });
+  const { data: serviceRoom } = useGetServiceRoomByIdQuery(
+    detail.serviceRoomId as string,
+    {
+      skip: !detail.serviceRoomId,
+    }
   );
   const router = useRouter();
   const [updatePatientEncounter, { isLoading: isUpdating }] =
@@ -259,7 +265,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   };
 
   return (
-    <div className="max-full mx-auto p-6 bg-linear-to-br from-gray-50 to-blue-50 min-h-screen">
+    <div className="max-full mx-auto bg-linear-to-br from-gray-50 to-blue-50 min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm rounded-lg p-6 mb-6 border border-gray-200">
         <div className="flex justify-between items-center">
@@ -465,6 +471,16 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                 </span>
                 <span className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                   {detail.encounterType}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="font-medium text-gray-600 flex items-center gap-2">
+                  <ChartBarStacked className="text-gray-400" />
+                  Service Name:
+                </span>
+                <span className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                  {serviceRoom?.data.data.service?.serviceName ||
+                    "No service room assigned"}
                 </span>
               </div>
             </div>

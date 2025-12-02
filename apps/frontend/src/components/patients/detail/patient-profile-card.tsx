@@ -190,7 +190,7 @@ export function PatientProfileCard({ patient }: PatientProfileCardProps) {
 
     {/* Edit Patient Modal */}
     <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl! max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Patient Information</DialogTitle>
         </DialogHeader>
