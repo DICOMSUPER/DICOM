@@ -29,7 +29,10 @@ function ViewerLoading() {
 function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
+  const patientId = searchParams.get("patient");
   const seriesId = searchParams.get("series");
+
+
   const { state, setActiveViewport, setViewportSeries } = useViewer();
 
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -46,7 +49,7 @@ function ViewerPageContent() {
 
   useEffect(() => {
     setActiveViewport(0);
-    console.log("Page loaded - set viewport 0 as active");
+    console.log("Page loaded - set viewport 0 as active");  
   }, [setActiveViewport]);
 
   const handleLayoutChange = (layout: string) => {
@@ -209,6 +212,7 @@ function ViewerPageContent() {
             onSeriesSelect={handleSeriesSelect}
             series={series}
             studyId={studyId || undefined}
+            patientId={patientId || undefined}
             onSeriesLoaded={handleSeriesLoaded}
           />
         </ResizablePanel>

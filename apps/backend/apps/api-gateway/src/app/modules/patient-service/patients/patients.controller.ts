@@ -193,6 +193,7 @@ export class PatientServiceController {
     }
   }
 
+  @Role(RoleEnum.RECEPTION_STAFF, RoleEnum.PHYSICIAN, RoleEnum.RADIOLOGIST)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     try {

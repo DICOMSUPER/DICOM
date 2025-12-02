@@ -77,6 +77,9 @@ const recreateTab = (sTab: SerializableTabData): TabData => {
         <Sidebar />
       </Suspense>
     );
+  } else if (sTab.id.startsWith("patient-")) {
+    const patientId = sTab.id.replace("patient-", "");
+    tabContent = <MedicalRecordPage patientId={patientId} />;
   }
 
   return {
@@ -99,7 +102,6 @@ export default function TabProvider({ children }: { children: ReactNode }) {
         </Suspense>
       ),
       canNotClose: true,
-      hasSideBar: true,
       SidebarContent: (
         <Suspense fallback={<div className="p-4">Loading sidebar...</div>}>
           <Sidebar />
@@ -108,7 +110,6 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     },
   ]);
 
-  // ✅ Sửa đúng cú pháp openTab
   const openTab = (
     id: string,
     name: string,
@@ -129,20 +130,6 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     setActiveTabId(id);
   };
 
-  // ✅ Tự động mở tab từ localStorage
-  useEffect(() => {
-    const savedPatientId = localStorage.getItem("patientId");
-
-    if (savedPatientId) {
-      openTab(
-        "patient-" + savedPatientId,
-        "Hồ sơ bệnh nhân",
-        <MedicalRecordPage patientId={savedPatientId} />
-      );
-    }
-  }, []);
-
-  // ✅ Sửa đúng cú pháp closeTab
   const closeTab = (id: string) => {
     if (id === "0") return;
 
@@ -163,25 +150,60 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // ✅ Restore tab từ sessionStorage
+  // ✅ Restore tabs và mở patient tab (chỉ chạy 1 lần khi mount)
   useEffect(() => {
     try {
       const storedTabs = sessionStorage.getItem("browser-tabs");
       const storedActiveId = sessionStorage.getItem("browser-active-tab");
+      const savedPatientId = localStorage.getItem("patientId");
 
+      // Nếu có sessionStorage, restore tabs
       if (storedTabs) {
         const parsed: SerializableTabData[] = JSON.parse(storedTabs);
-
+        
         if (Array.isArray(parsed) && parsed.length > 0) {
           const recreated = parsed.map(recreateTab);
+          
+          // Kiểm tra xem có patient tab trong restored tabs không
+          const hasPatientTab = recreated.some(
+            (t) => t.id === "patient-" + savedPatientId
+          );
+          
+          // Nếu có patientId nhưng chưa có tab, thêm vào
+          if (savedPatientId && !hasPatientTab) {
+            const newTab: TabData = {
+              id: "patient-" + savedPatientId,
+              name: "Hồ sơ bệnh nhân",
+              tabContent: <MedicalRecordPage patientId={savedPatientId} />,
+              hasSideBar: true,
+            };
+            recreated.push(newTab);
+            setActiveTabId(newTab.id);
+          } else {
+            setActiveTabId(storedActiveId || parsed[0].id);
+          }
+          
           setAvailableTabs(recreated);
-          setActiveTabId(storedActiveId || parsed[0].id);
+          return;
         }
       }
-    } catch {
-      console.error("Failed to load tabs");
+
+      // Nếu KHÔNG có sessionStorage nhưng CÓ patientId
+      if (savedPatientId) {
+        const newTab: TabData = {
+          id: "patient-" + savedPatientId,
+          name: "Hồ sơ bệnh nhân",
+          tabContent: <MedicalRecordPage patientId={savedPatientId} />,
+          hasSideBar: false,
+        };
+        
+        setAvailableTabs((prev) => [...prev, newTab]);
+        setActiveTabId(newTab.id);
+      }
+    } catch (error) {
+      console.error("Failed to load tabs:", error);
     }
-  }, []);
+  }, []); // ✅ Empty deps - chỉ chạy 1 lần
 
   // ✅ Lưu tabs vào sessionStorage
   useEffect(() => {
@@ -191,8 +213,8 @@ export default function TabProvider({ children }: { children: ReactNode }) {
       );
       sessionStorage.setItem("browser-tabs", JSON.stringify(serializable));
       sessionStorage.setItem("browser-active-tab", activeTabId);
-    } catch {
-      console.error("Failed to save tabs");
+    } catch (error) {
+      console.error("Failed to save tabs:", error);
     }
   }, [availableTabs, activeTabId]);
 
@@ -200,7 +222,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
     <TabContext.Provider
       value={{ availableTabs, activeTabId, setActiveTabId, openTab, closeTab }}
     >
-      <Suspense fallback={<>Loading...</>}> {children}</Suspense>
+      <Suspense fallback={<>Loading...</>}>{children}</Suspense>
     </TabContext.Provider>
   );
 }
