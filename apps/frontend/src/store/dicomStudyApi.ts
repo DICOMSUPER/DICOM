@@ -60,6 +60,7 @@ export const dicomStudyApi = createApi({
         method: "GET",
         params: filters,
       }),
+      keepUnusedDataFor: 60, // Keep cached data for 60 seconds
       providesTags: (result) =>
         result
           ? [
@@ -202,6 +203,12 @@ export const dicomStudyApi = createApi({
           roomId,
         },
       }),
+      transformResponse: (response: any) => {
+        if (response?.data) {
+          return response;
+        }
+        return response;
+      },
       providesTags: ["DicomStudy"],
     }),
   }),

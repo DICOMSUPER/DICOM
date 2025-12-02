@@ -4,6 +4,7 @@ import {
   RepositoryPaginationDto,
 } from '@backend/database';
 import {
+  CreateNotificationDto,
   CreatePatientEncounterDto,
   FilterPatientEncounterDto,
   PatientEncounter,
@@ -15,6 +16,8 @@ import {
   EncounterPriorityLevel,
   EncounterStatus,
   EncounterType,
+  NotificationType,
+  RelatedEntityType,
   Roles,
 } from '@backend/shared-enums';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
@@ -45,11 +48,14 @@ export interface RoomEncounterFilters {
 @Injectable()
 export class PatientEncounterService {
   constructor(
-    @Inject() private readonly encounterRepository: PatientEncounterRepository,
+    @Inject(PatientEncounterRepository)
+    private readonly encounterRepository: PatientEncounterRepository,
     private readonly paginationService: PaginationService,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy,
-    @InjectEntityManager() private readonly entityManager: EntityManager
+    @InjectEntityManager() private readonly entityManager: EntityManager,
+    @Inject(process.env.SYSTEM_SERVICE_NAME || 'SYSTEM_SERVICE')
+    private readonly systemService: ClientProxy
   ) {}
 
   getOrderNumberInDate = async (serviceRoomId: string): Promise<number> => {
@@ -77,20 +83,53 @@ export class PatientEncounterService {
   };
 
   create = async (
-    createPatientEncounterDto: CreatePatientEncounterDto
+    createPatientEncounterDto: CreatePatientEncounterDto,
+    employeesInRoom: string[]
   ): Promise<PatientEncounter> => {
     const orderNumber = await this.getOrderNumberInDate(
       createPatientEncounterDto?.serviceRoomId as string
     );
-
     const data = {
       ...createPatientEncounterDto,
       orderNumber,
       status: EncounterStatus.WAITING,
     };
-
     console.log('create body:', data);
-    return await this.encounterRepository.create(data);
+    const result = await this.encounterRepository.create(data);
+
+    // for (const employeeId of employeesInRoom) {
+    //   const notificationPayload: CreateNotificationDto = {
+    //     recipientId: employeeId,
+    //     senderId: createPatientEncounterDto.createdBy as string,
+    //     notificationType: NotificationType.ASSIGNMENT,
+    //     title: 'New Encounter',
+    //     relatedEntityType: RelatedEntityType.ENCOUNTER,
+    //     relatedEntityId: result.id,
+    //     message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+    //   };
+    //   await firstValueFrom(
+    //     this.systemService.send('notification.create', notificationPayload)
+    //   );
+    // }
+
+    await Promise.all(
+      employeesInRoom.map((employeeId) => {
+        const notificationPayload: CreateNotificationDto = {
+          recipientId: employeeId,
+          senderId: createPatientEncounterDto.createdBy as string,
+          notificationType: NotificationType.ASSIGNMENT,
+          title: 'New Encounter',
+          relatedEntityType: RelatedEntityType.ENCOUNTER,
+          relatedEntityId: result.id,
+          message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+        };
+        return firstValueFrom(
+          this.systemService.send('notification.create', notificationPayload)
+        );
+      })
+    );
+
+    return result;
   };
 
   findAll = async (): Promise<PatientEncounter[]> => {
@@ -136,6 +175,18 @@ export class PatientEncounterService {
     return await this.encounterRepository.update(id, updatePatientEncounterDto);
   };
 
+  transfer = async (
+    id: string,
+    updatePatientEncounterDto: UpdatePatientEncounterDto,
+    transferredBy: string
+  ): Promise<PatientEncounter | null> => {
+    const encounter = await this.findOne(id);
+    return await this.encounterRepository.update(id, {
+      ...updatePatientEncounterDto,
+      transferredBy,
+    });
+  };
+
   remove = async (id: string): Promise<boolean> => {
     await this.findOne(id);
     return await this.encounterRepository.softDelete(id, 'isDeleted');
@@ -178,6 +229,8 @@ export class PatientEncounterService {
       patientName,
       orderNumber,
       roomId,
+      sortBy,
+      order,
     } = filterEncounter;
     console.log('filter', filterEncounter);
 
@@ -273,14 +326,21 @@ export class PatientEncounterService {
 
     // whereConditions.encounterDate = Between(fromDate, toDate);
 
+    let orderBy: any = { orderNumber: 'ASC' };
+    if (sortBy && order) {
+      if (sortBy === 'orderNumber') {
+        orderBy = { orderNumber: order.toUpperCase() };
+      } else if (sortBy === 'createdAt') {
+        orderBy = { createdAt: order.toUpperCase() };
+      }
+    }
+
     return this.paginationService.paginate(
       PatientEncounter,
       { page, limit },
       {
         where: whereConditions,
-        order: {
-          orderNumber: 'ASC',
-        },
+        order: orderBy,
         relations: {
           patient: true,
         },

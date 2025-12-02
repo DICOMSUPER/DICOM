@@ -2,12 +2,13 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { CreateImagingModalityDto, ImagingModality, UpdateImagingModalityDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  CreateImagingModalityDto,
+  ImagingModality,
+  UpdateImagingModalityDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
@@ -108,13 +109,18 @@ export class ImagingModalitiesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<any> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
     try {
       const { id } = data;
-      return await this.imagingModalitiesService.remove(id);
+      const result = await this.imagingModalitiesService.remove(id);
+      return {
+        success: true,
+        data: result,
+        message: 'Imaging modality deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -128,7 +134,13 @@ export class ImagingModalitiesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload()
+    data: {
+      paginationDto: RepositoryPaginationDto & {
+        includeInactive?: boolean;
+        includeDeleted?: boolean;
+      };
+    }
   ): Promise<PaginatedResponseDto<ImagingModality>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -137,16 +149,51 @@ export class ImagingModalitiesController {
       const { paginationDto } = data;
       return await this.imagingModalitiesService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'modalityName',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
+        includeInactive: paginationDto.includeInactive,
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
         `Failed to find many modalities`,
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
+  async getStats() {
+    this.logger.log(`Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`);
+    try {
+      return await this.imagingModalitiesService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get imaging modality stats',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.HARD_DELETE}`
+  )
+  async hardRemove(@Payload() data: { id: string }): Promise<boolean> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.HARD_DELETE}`
+    );
+    try {
+      const { id } = data;
+      return await this.imagingModalitiesService.hardRemove(id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to hard delete modality with this id: ${data.id}`,
         IMAGING_SERVICE
       );
     }

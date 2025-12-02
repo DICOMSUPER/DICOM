@@ -40,18 +40,28 @@ export class ShiftTemplatesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'is_active', required: false, type: Boolean })
+  @ApiQuery({ name: 'shift_type', required: false, type: String, description: 'Filter by shift type' })
+  @ApiQuery({ name: 'includeInactive', required: false, type: Boolean, description: 'Include inactive shift templates' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Include soft-deleted shift templates' })
+  @ApiQuery({ name: 'sortField', required: false, type: String, description: 'Field to sort by' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
   @ApiResponse({ status: 200, description: 'Shift templates retrieved successfully' })
   async getAllShiftTemplates(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
     @Query('is_active') is_active?: boolean,
+    @Query('shift_type') shift_type?: string,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc',
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
       const limitNum = limit ? Number(limit) : 10;
 
-      this.logger.log(`📋 Fetching shift templates - Page: ${pageNum}, Limit: ${limitNum}, Is Active: ${is_active}`);
+      this.logger.log(`📋 Fetching shift templates - Page: ${pageNum}, Limit: ${limitNum}, Is Active: ${is_active}, Shift Type: ${shift_type}`);
 
       const result = await firstValueFrom(
         this.shiftTemplateClient.send('UserService.ShiftTemplate.FindMany', {
@@ -59,13 +69,18 @@ export class ShiftTemplatesController {
             page: pageNum,
             limit: limitNum,
             search,
+            shift_type,
+            includeInactive,
+            includeDeleted,
+            sortField,
+            order,
           },
         }),
       );
 
-      // Filter by is_active if provided
+      // Filter by is_active if provided and includeInactive is not true
       let filteredData = result.data || [];
-      if (is_active !== undefined) {
+      if (is_active !== undefined && !includeInactive) {
         filteredData = filteredData.filter((template: any) => template.is_active === (is_active === true ));
       }
 

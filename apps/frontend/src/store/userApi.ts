@@ -21,6 +21,17 @@ export interface UserFilters {
   excludeRole?: string;
   isActive?: boolean;
   departmentId?: string;
+  includeInactive?: boolean;
+  includeDeleted?: boolean;
+  sortBy?: string; // Field to sort by
+  order?: "asc" | "desc"; // Sort order
+}
+
+export interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  verifiedUsers: number;
 }
 
 export const userApi = createApi({
@@ -32,7 +43,11 @@ export const userApi = createApi({
       query: (params) => ({
         url: "/users",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortBy || params?.sort,
+          order: params?.order,
+        },
       }),
       providesTags: ["User"],
     }),
@@ -94,6 +109,15 @@ export const userApi = createApi({
       providesTags: ["Profile"],
     }),
 
+    getUserStats: builder.query<UserStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["User"],
+    }),
+
     createStaffAccount: builder.mutation<User, Partial<User>>({
       query: (data) => ({
         url: "/users",
@@ -114,6 +138,7 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useGetCurrentProfileQuery,
+  useGetUserStatsQuery,
 } = userApi;
 
 export default userApi;

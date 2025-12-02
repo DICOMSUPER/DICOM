@@ -1,4 +1,4 @@
-  export const formatTime = (date?: Date) => {
+  export const formatTime = (date?: Date | string) => {
     if (!date) return '—';
     return new Date(date).toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -7,14 +7,22 @@
     });
   };
 
-  export const formatDate = (date?: Date) => {
+  export const formatDate = (date?: Date | string) => {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
-      day: '2-digit',
+      day: 'numeric',
       year: 'numeric',
     });
   };
+
+  export const formatDateTime = (date?: Date | string) => {
+    if (!date) return '—';
+    const dateStr = formatDate(date);
+    const timeStr = formatTime(date);
+    return `${dateStr}, ${timeStr}`;
+  };
+
   export const calculateAge = (dateOfBirth: Date): number => {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -27,4 +35,14 @@
     
     return age;
   }
-  
+
+
+
+export const formatTimeVN = (date?: Date) => {
+  if (!date) return "—";
+  return new Date(date).toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};

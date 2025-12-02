@@ -1,4 +1,3 @@
-import { Department, DiagnosesReport, DigitalSignature, Qualification, WeeklySchedulePattern } from '@backend/shared-domain';
 import { Roles } from '@backend/shared-enums';
 import {
   Column,
@@ -9,7 +8,11 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { BaseEntity } from '@backend/database';
-import { EmployeeRoomAssignment } from './employee-room-assignments.entity';
+import type { EmployeeRoomAssignment } from './employee-room-assignments.entity';
+import type { Department } from './department.entity';
+import type { DiagnosesReport } from '../patients/diagnoses-reports.entity';
+import type { DigitalSignature } from './digital-signature.entity';
+import type { Qualification } from './qualification.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -53,7 +56,7 @@ export class User extends BaseEntity {
   createdBy!: string;
 
   // Relations
-  @ManyToOne(() => Department, (department) => department.users)
+  @ManyToOne(() => require('./department.entity').Department, (department: Department) => department.users)
   @JoinColumn({ name: 'department_id' })
   department!: Department;
 
@@ -61,20 +64,17 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'created_by' })
   creator!: User;
 
-  @OneToMany(() => Qualification, (qualification) => qualification.employee)
+  @OneToMany(() => require('./qualification.entity').Qualification, (qualification: Qualification) => qualification.employee)
   qualifications!: Qualification[];
-
-  @OneToMany(() => WeeklySchedulePattern, pattern => pattern.user)
-  weeklySchedulePatterns!: WeeklySchedulePattern[];
 
   // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
   // roomAssignments!: RoomAssignment[];
   @OneToMany(
-    () => EmployeeRoomAssignment,
-    (employeeRoomAssignment) => employeeRoomAssignment.employee
+    () => require('./employee-room-assignments.entity').EmployeeRoomAssignment,
+    (employeeRoomAssignment: EmployeeRoomAssignment) => employeeRoomAssignment.employee
   )
   employeeRoomAssignments!: EmployeeRoomAssignment[];
-  @OneToMany(() => DigitalSignature, (sig) => sig.user)
+  @OneToMany(() => require('./digital-signature.entity').DigitalSignature, (sig: DigitalSignature) => sig.user)
   digitalSignatures!: DigitalSignature[];
   
   diagnosisReports!: DiagnosesReport[];

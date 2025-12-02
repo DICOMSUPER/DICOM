@@ -164,6 +164,10 @@ export class UsersService {
     role?: string;
     excludeRole?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
   }) {
     try {
       const page = query.page ?? 1;
@@ -194,9 +198,30 @@ export class UsersService {
           'department.description',
           'department.isActive',
         ])
-        .orderBy('user.createdAt', 'DESC')
         .skip(skip)
         .take(limit);
+
+      const mapSortField = (fieldName: string): string => {
+        const allowedSortFields = ['username', 'email', 'employeeId'];
+        
+        if (!allowedSortFields.includes(fieldName)) {
+          return 'user.createdAt';
+        }
+        
+        return `user.${fieldName}`;
+      };
+
+      if (query.sortField && query.order) {
+        const field = mapSortField(query.sortField);
+        const direction = query.order.toUpperCase() as 'ASC' | 'DESC';
+        qb.orderBy(field, direction);
+      } else {
+        qb.orderBy('user.createdAt', 'DESC');
+      }
+
+      if (!query.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
 
       if (query.search) {
         qb.andWhere(
@@ -205,8 +230,10 @@ export class UsersService {
         );
       }
 
-      if (query.isActive !== undefined) {
+      if (query.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
       }
 
       if (query.role) {
@@ -247,13 +274,18 @@ export class UsersService {
     role?: string;
     excludeRole?: string;
     departmentId?: string;
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }): Promise<User[]> {
     try {
       const qb = this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.department', 'department')
-        .where('user.isDeleted = :isDeleted', { isDeleted: false })
         .orderBy('user.createdAt', 'DESC');
+
+      if (!query?.includeDeleted) {
+        qb.where('user.isDeleted = :isDeleted', { isDeleted: false });
+      }
 
       if (query?.search) {
         qb.andWhere(
@@ -262,8 +294,10 @@ export class UsersService {
         );
       }
 
-      if (query?.isActive !== undefined) {
+      if (query?.isActive !== undefined && !query.includeInactive) {
         qb.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+      } else if (!query?.includeInactive) {
+        qb.andWhere('user.isActive = :isActive', { isActive: true });
       }
 
       if (query?.role) {
@@ -592,6 +626,11 @@ export class UsersService {
       }
       throw new UserNotFoundException(undefined, 'Người dùng đã bị xóa');
     } catch (error) {
+      // Re-throw UserNotFoundException to preserve the original error
+      if (error instanceof UserNotFoundException) {
+        throw error;
+      }
+      // Only throw DatabaseException for actual database errors
       throw new DatabaseException('Lỗi khi lấy người dùng');
     }
   }
@@ -883,18 +922,21 @@ export class UsersService {
     totalUsers: number;
     activeUsers: number;
     inactiveUsers: number;
+    verifiedUsers: number;
   }> {
     try {
-      const [totalUsers, activeUsers, inactiveUsers] = await Promise.all([
+      const [totalUsers, activeUsers, inactiveUsers, verifiedUsers] = await Promise.all([
         this.userRepository.count({ where: { isDeleted: false } }),
         this.userRepository.count({ where: { isActive: true, isDeleted: false } }),
         this.userRepository.count({ where: { isActive: false, isDeleted: false } }),
+        this.userRepository.count({ where: { isVerified: true, isDeleted: false } }),
       ]);
 
       return {
         totalUsers,
         activeUsers,
         inactiveUsers,
+        verifiedUsers,
       };
     } catch (error) {
       throw new DatabaseException('Lỗi khi lấy thống kê người dùng');

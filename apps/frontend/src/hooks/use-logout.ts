@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { logout as logoutAction } from "@/store/authSlice";
+import { notificationApi } from "@/store/notificationApi";
 
 export function useLogout() {
   const dispatch = useDispatch();
@@ -21,6 +22,7 @@ export function useLogout() {
         credentials: "include",
       });
       dispatch(logoutAction());
+      dispatch(notificationApi.util.resetApiState());
       toast.success("Logged out successfully");
       router.push("/login");
     } catch (error) {

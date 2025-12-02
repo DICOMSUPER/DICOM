@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Users, Clock, CalendarDays, DoorOpen, User, Building2, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
+import { Users, Clock, CalendarDays, DoorOpen, User, Building2, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
@@ -23,6 +23,8 @@ interface ScheduleAssignmentListProps {
   onSelectSchedule: (scheduleId: string) => void;
   scheduleSearch: string;
   onScheduleSearchChange: (value: string) => void;
+  onSearch?: () => void;
+  isSearching?: boolean;
   optimisticAssignments: Record<string, AssignmentWithMeta[]>;
   isLoading?: boolean;
   onScheduleDetails?: (schedule: RoomSchedule | RoomSchedule[]) => void;
@@ -68,13 +70,21 @@ export function ScheduleAssignmentList({
   onSelectSchedule,
   scheduleSearch,
   onScheduleSearchChange,
+  onSearch,
+  isSearching = false,
   optimisticAssignments,
   isLoading,
   onScheduleDetails,
 }: ScheduleAssignmentListProps) {
   const filteredSchedules = useMemo(() => {
     return schedules;
-  }, [scheduleSearch, schedules]);
+  }, [schedules]);
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onSearch) {
+      onSearch();
+    }
+  };
 
   const renderAssignments = (
     schedule: RoomSchedule
@@ -126,12 +136,28 @@ export function ScheduleAssignmentList({
     <div className="space-y-4">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <Input
-            value={scheduleSearch}
-            onChange={(event) => onScheduleSearchChange(event.target.value)}
-            placeholder="Search schedules by room, notes, or shift"
-            className="flex-1"
-          />
+          <div className="flex-1 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
+              <Input
+                value={scheduleSearch}
+                onChange={(event) => onScheduleSearchChange(event.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Search schedules by room, notes, or shift"
+                className="pl-10"
+              />
+            </div>
+            {onSearch && (
+              <Button 
+                onClick={onSearch} 
+                disabled={isSearching}
+                className="h-9 px-4"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            )}
+          </div>
           <Badge variant="outline" className="whitespace-nowrap">
             {filteredSchedules.length} schedules
           </Badge>

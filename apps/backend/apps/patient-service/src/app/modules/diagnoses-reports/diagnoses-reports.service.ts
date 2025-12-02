@@ -25,11 +25,13 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 @Injectable()
 export class DiagnosesReportService {
   constructor(
-    @Inject()
+    @Inject(DiagnosisReportRepository)
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
+    @Inject(PatientEncounterRepository)
     private readonly encounterRepository: PatientEncounterRepository,
     @InjectRepository(DiagnosesReport)
     private readonly reportRepository: Repository<DiagnosesReport>,
+    @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
 
@@ -78,6 +80,7 @@ export class DiagnosesReportService {
 
     const data = {
       ...createDiagnosesReportDto,
+      diagnosisDate: date,
       diagnosisName:
         createDiagnosesReportDto.diagnosisName ??
         `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,
@@ -189,6 +192,8 @@ export class DiagnosesReportService {
       diagnosisDateFrom,
       diagnosisDateTo,
       diagnosisType,
+      sortBy,
+      order,
     } = filter;
 
 
@@ -268,7 +273,12 @@ export class DiagnosesReportService {
       });
     }
 
-    queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
+    if (sortBy && order) {
+      const sortField = sortBy === 'diagnosisDate' ? 'diagnosisDate' : sortBy === 'id' ? 'id' : 'createdAt';
+      queryBuilder.orderBy(`diagnosisReport.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
+    }
 
     const [data, total] = await queryBuilder
       .skip(skip)
@@ -290,4 +300,16 @@ export class DiagnosesReportService {
 
     return response;
   }
+
+  getStats = async (
+    userInfo?: { userId: string; role: string }
+  ): Promise<{
+    total: number;
+    active: number;
+    resolved: number;
+    critical: number;
+    today: number;
+  }> => {
+    return await this.diagnosisReportRepository.getStats(userInfo);
+  };
 }

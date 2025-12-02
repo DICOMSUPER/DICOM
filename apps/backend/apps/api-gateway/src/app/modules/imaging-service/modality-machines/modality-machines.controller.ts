@@ -20,8 +20,7 @@ import {
   CreateModalityMachineDto,
   UpdateModalityMachineDto,
 } from '@backend/shared-domain';
-import { Public, Role } from '@backend/shared-decorators';
-import { Roles } from '@backend/shared-enums';
+import { Public } from '@backend/shared-decorators';
 
 @Controller('modality-machines')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -40,7 +39,11 @@ export class ModalityMachinesController {
     @Query('machineName') machineName?: string,
     @Query('manufacturer') manufacturer?: string,
     @Query('serialNumber') serialNumber?: string,
-    @Query('model') model?: string
+    @Query('model') model?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
     try {
       return await firstValueFrom(
@@ -52,6 +55,10 @@ export class ModalityMachinesController {
           manufacturer,
           serialNumber,
           model,
+          page: page ? Number(page) : undefined,
+          limit: limit ? Number(limit) : undefined,
+          sortBy,
+          order,
         })
       );
     } catch (error) {
@@ -67,7 +74,10 @@ export class ModalityMachinesController {
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
     @Query('sortBy') sortBy?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('modalityId') modalityId?: string,
+    @Query('status') status?: string
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -76,6 +86,9 @@ export class ModalityMachinesController {
       searchField,
       sortField: sortField || sortBy, // Support both sortField and sortBy for compatibility
       order,
+      includeDeleted: includeDeleted === true,
+      modalityId,
+      status,
     };
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindMany', {
@@ -84,11 +97,11 @@ export class ModalityMachinesController {
     );
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
+  @Get('stats')
+  async getStats(@Query('roomId') roomId?: string) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.ModalityMachines.FindOne', {
-        id,
+      this.imagingService.send('ImagingService.ModalityMachines.GetStats', {
+        roomId,
       })
     );
   }
@@ -98,6 +111,15 @@ export class ModalityMachinesController {
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
         roomId,
+      })
+    );
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ModalityMachines.FindOne', {
+        id,
       })
     );
   }

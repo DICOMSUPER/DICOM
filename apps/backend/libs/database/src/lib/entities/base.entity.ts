@@ -1,19 +1,10 @@
-import { Column } from 'typeorm';
+import { Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { BaseEntity as TypeOrmBaseEntity } from 'typeorm';
 export abstract class BaseEntity extends TypeOrmBaseEntity {
-  @Column({
-    name: 'created_at',
-    type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @Column({
-    name: 'updated_at',
-    type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 
   @Column({ name: 'is_deleted', default: false })

@@ -5,6 +5,7 @@ import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/radiologist/side-bar";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -31,7 +32,9 @@ export default function RadiologistLayout({
     <Suspense>
       <div className="min-h-screen bg-background">
         {/* Workspace Layout - same as other roles */}
-        <WorkspaceLayout sidebar={sidebarContent}>{children}</WorkspaceLayout>
+        <NotificationProvider>
+          <WorkspaceLayout sidebar={sidebarContent}>{children}</WorkspaceLayout>
+        </NotificationProvider> 
       </div>
     </Suspense>
   );

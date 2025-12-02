@@ -1,7 +1,7 @@
 import { BaseEntity } from '@backend/database';
 import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
-import { RoomSchedule } from './room-schedules.entity';
-import { User } from './user.entity';
+import type { RoomSchedule } from './room-schedules.entity';
+import type { User } from './user.entity';
 
 @Entity('employee_room_assignments')
 export class EmployeeRoomAssignment extends BaseEntity {
@@ -14,13 +14,13 @@ export class EmployeeRoomAssignment extends BaseEntity {
   @Column({ name: 'employee_id', type: 'uuid' })
   employeeId!: string;
 
-  @ManyToOne(() => RoomSchedule, (roomSchedule) => roomSchedule.employeeRoomAssignments, { 
+  @ManyToOne(() => require('./room-schedules.entity').RoomSchedule, (roomSchedule: RoomSchedule) => roomSchedule.employeeRoomAssignments, { 
     onDelete: 'CASCADE' 
   })
   @JoinColumn({ name: 'room_schedule_id' })
   roomSchedule!: RoomSchedule;
 
-  @ManyToOne(() => User, (user) => user.employeeRoomAssignments, { 
+  @ManyToOne(() => require('./user.entity').User, (user: User) => user.employeeRoomAssignments, { 
     onDelete: 'CASCADE' 
   })
   @JoinColumn({ name: 'employee_id' })

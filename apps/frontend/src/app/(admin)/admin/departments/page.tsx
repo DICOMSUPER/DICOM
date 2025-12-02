@@ -5,7 +5,7 @@ import { Plus, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { useGetDepartmentsQuery, useDeleteDepartmentMutation } from '@/store/departmentApi';
+import { useGetDepartmentsQuery, useGetDepartmentStatsQuery, useDeleteDepartmentMutation } from '@/store/departmentApi';
 import { DepartmentTable } from '@/components/admin/room/DepartmentTable';
 import { DepartmentStatsCards } from '@/components/admin/room/department-stats-cards';
 import { DepartmentFilters } from '@/components/admin/room/department-filters';
@@ -16,8 +16,9 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
 import { Department } from '@/interfaces/user/department.interface';
-import { QueryParams } from '@/interfaces/pagination/pagination.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -38,11 +39,14 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
-  const queryParams: QueryParams = useMemo(() => {
-    const params: QueryParams = {
+  const queryParams = useMemo(() => {
+    const params: any = {
       page,
       limit,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -53,15 +57,26 @@ export default function Page() {
       params.isActive = appliedStatusFilter === 'active';
     }
 
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedStatusFilter]);
+  }, [page, limit, appliedSearchTerm, appliedStatusFilter, sortConfig]);
 
   const {
     data: departmentsData,
     isLoading: departmentsLoading,
     error: departmentsError,
     refetch: refetchDepartments,
-  } = useGetDepartmentsQuery(queryParams);
+  } = useGetDepartmentsQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
+
+  const {
+    data: departmentStatsData,
+    isLoading: departmentStatsLoading,
+    refetch: refetchDepartmentStats,
+  } = useGetDepartmentStatsQuery();
 
   const [deleteDepartment, { isLoading: isDeletingDepartment }] = useDeleteDepartmentMutation();
 
@@ -91,12 +106,13 @@ export default function Page() {
   };
 
   const stats = useMemo(() => {
-    const total = departmentsData?.total ?? 0;
-    const active = departments.filter((d) => d.isActive).length;
-    const inactive = departments.filter((d) => !d.isActive).length;
-    const totalRooms = departments.reduce((sum, d) => sum + (d.rooms?.length || 0), 0);
-    return { total, active, inactive, totalRooms };
-  }, [departments, departmentsData?.total]);
+    return {
+      total: departmentStatsData?.totalDepartments ?? 0,
+      active: departmentStatsData?.activeDepartments ?? 0,
+      inactive: departmentStatsData?.inactiveDepartments ?? 0,
+      totalRooms: departmentStatsData?.totalRooms ?? 0,
+    };
+  }, [departmentStatsData]);
 
   const getStatusDepartmentBadge = (isActive: boolean) => {
     return getBooleanStatusBadge(isActive);
@@ -105,7 +121,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchDepartments();
+      await Promise.all([refetchDepartments(), refetchDepartmentStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -129,6 +145,11 @@ export default function Page() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1);
   }, []);
 
   const handleViewDetails = (department: Department) => {
@@ -202,7 +223,7 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         totalRooms={stats.totalRooms}
-        isLoading={departmentsLoading}
+        isLoading={departmentStatsLoading}
       />
 
       <DepartmentFilters
@@ -225,6 +246,8 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditDepartment={handleEditDepartment}
         onDeleteDepartment={handleDeleteDepartment}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

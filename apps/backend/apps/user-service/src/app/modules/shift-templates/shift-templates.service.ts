@@ -38,11 +38,14 @@ export class ShiftTemplateService {
   }
 
   async findMany(
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean; shift_type?: string }
   ): Promise<PaginatedResponseDto<ShiftTemplate>> {
     try {
+      const { includeInactive, includeDeleted, ...restPaginationDto } = paginationDto;
       const result = await this.shiftTemplateRepository.findWithPagination(
-        paginationDto
+        restPaginationDto,
+        includeInactive,
+        includeDeleted
       );
       return {
         data: result.templates,

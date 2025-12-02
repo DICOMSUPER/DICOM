@@ -23,6 +23,8 @@ import {
   PatientSearchFilters,
 } from "@/interfaces/patient/patient-workflow.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -33,27 +35,42 @@ interface ApiError {
 export default function ReceptionPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
   const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+
+  const queryParams = useMemo(() => {
+    const params: any = {
+      page,
+      limit,
+      search: appliedSearchTerm,
+    };
+    
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    
+    return params;
+  }, [page, limit, appliedSearchTerm, sortConfig]);
 
   const {
     data: patientsData,
     isLoading: patientsLoading,
+    isFetching: patientsFetching,
     error: patientsError,
     refetch: refetchPatients,
-  } = useFilterPatientV2Query({
-    page,
-    limit,
-    search: appliedSearchTerm,
+  } = useFilterPatientV2Query(queryParams, {
+    refetchOnMountOrArgChange: true,
   });
 
   const {
     data: patientStats,
     isLoading: statsLoading,
+    isFetching: statsFetching,
     refetch: refetchStats,
   } = useGetPatientStatsQuery();
 
@@ -117,6 +134,11 @@ export default function ReceptionPage() {
     setPage(newPage);
   }, []);
 
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
+  }, []);
+
   const handleViewDetails = (patient: {
     id: string;
     firstName: string;
@@ -170,7 +192,7 @@ export default function ReceptionPage() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={patientsLoading || statsLoading}
+            loading={patientsLoading || patientsFetching || statsLoading || statsFetching}
           />
           <QuickActionsBar />
         </div>
@@ -211,6 +233,8 @@ export default function ReceptionPage() {
         onViewDetails={handleViewDetails as any}
         onEditPatient={handleEditPatient as any}
         onDeletePatient={handleDeletePatient as any}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

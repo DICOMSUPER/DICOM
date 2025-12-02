@@ -1,32 +1,28 @@
+import { PaginatedResponseDto, PaginationService } from '@backend/database';
+import { RedisService } from '@backend/redis';
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import {
-  AiModel,
+  AiAnalysis,
   CreateAiAnalysisDto,
   FilterAiAnalysisDto,
   UpdateAiAnalysisDto,
 } from '@backend/shared-domain';
-import { AiAnalysis } from '@backend/shared-domain';
-import { RedisService } from '@backend/redis';
-import { createCacheKey } from '@backend/shared-utils';
-import { PaginatedResponseDto, PaginationService } from '@backend/database';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { AiResultDiagnosis } from '@backend/shared-interfaces';
-import axios from 'axios';
 import { AnalysisStatus } from '@backend/shared-enums';
+import { AiResultDiagnosis } from '@backend/shared-interfaces';
+import { createCacheKey } from '@backend/shared-utils';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AiAnalysesService {
   constructor(
     @InjectRepository(AiAnalysis)
     private readonly aiAnalysisRepository: Repository<AiAnalysis>,
-    @InjectRepository(AiModel)
-    private readonly aiModelRepository: Repository<AiModel>,
     private readonly redisService: RedisService,
     private readonly paginationService: PaginationService
   ) // private readonly cloudinaryService: CloudinaryService
@@ -199,10 +195,5 @@ export class AiAnalysesService {
     return updatedAnalysis;
   }
 
-  async remove(id: string): Promise<void> {
-    console.log(`🗑️ Removing AI analysis: ${id}`);
-    const aiAnalysis = await this.findOne(id);
-    await this.aiAnalysisRepository.remove(aiAnalysis);
-    console.log('✅ AI analysis removed successfully:', id);
-  }
+
 }

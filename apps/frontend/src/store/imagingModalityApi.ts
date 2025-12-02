@@ -16,6 +16,12 @@ export interface CreateImagingModalityDto {
 
 export type UpdateImagingModalityDto = Partial<CreateImagingModalityDto>;
 
+export interface ImagingModalityStats {
+  totalModalities: number;
+  activeModalities: number;
+  inactiveModalities: number;
+}
+
 export const imagingModalityApi = createApi({
   reducerPath: "imagingModalityApi",
   baseQuery: axiosBaseQuery("/imaging-modalities"),
@@ -43,7 +49,7 @@ export const imagingModalityApi = createApi({
 
     getImagingModalityPaginated: builder.query<
       PaginatedResponse<ImagingModality>,
-      PaginatedQuery | void
+      (PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }) | void
     >({
       query: (params = {}) => ({
         url: "/paginated",
@@ -53,8 +59,10 @@ export const imagingModalityApi = createApi({
           limit: params?.limit,
           search: params?.search,
           searchField: params?.searchField,
-          sortBy: params?.sortBy,
+          sortField: params?.sortBy, // Map sortBy to sortField for backend
           order: params?.order,
+          includeInactive: params?.includeInactive,
+          includeDeleted: params?.includeDeleted,
         },
       }),
       providesTags: (result) =>
@@ -114,10 +122,7 @@ export const imagingModalityApi = createApi({
       ],
     }),
 
-    deleteImagingModality: builder.mutation<
-      ApiResponse<boolean>,
-      string
-    >({
+    deleteImagingModality: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",
@@ -129,6 +134,16 @@ export const imagingModalityApi = createApi({
         { type: "ModalityMachine", id: "LIST" },
       ],
     }),
+
+    // Get imaging modality stats
+    getImagingModalityStats: builder.query<ImagingModalityStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["ImagingModality"],
+    }),
   }),
 });
 
@@ -139,4 +154,5 @@ export const {
   useCreateImagingModalityMutation,
   useUpdateImagingModalityMutation,
   useDeleteImagingModalityMutation,
+  useGetImagingModalityStatsQuery,
 } = imagingModalityApi;

@@ -22,22 +22,30 @@ import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
   useGetServicesPaginatedQuery,
+  useGetServiceStatsQuery,
   useUpdateServiceMutation,
 } from "@/store/serviceApi";
 import { Plus } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 export default function ServicePage() {
-  const [filters, setFilters] = useState<PaginatedQuery>({
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
+    field: 'createdAt', 
+    direction: 'desc' 
+  });
+  
+  const [filters, setFilters] = useState<PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "serviceName",
-    sortBy: "createdAt",
-    order: "desc",
+    includeInactive: true,
+    includeDeleted: false,
   });
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
@@ -59,6 +67,24 @@ export default function ServicePage() {
   const [editMode, setEditMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Build query params with sort
+  const queryParams = useMemo(() => {
+    const params: any = {
+      page: filters.page,
+      limit: filters.limit,
+      search: filters.search,
+      searchField: filters.searchField,
+      includeInactive: filters.includeInactive,
+      includeDeleted: filters.includeDeleted,
+    };
+    
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    
+    return params;
+  }, [filters, sortConfig]);
+
   // RTK Query hooks
   const { 
     data, 
@@ -66,18 +92,19 @@ export default function ServicePage() {
     isFetching,
     error: servicesError,
     refetch: refetchServices,
-  } = useGetServicesPaginatedQuery({
-    page: filters.page,
-    limit: filters.limit,
-    search: filters.search,
-    searchField: filters.searchField,
-    sortBy: filters.sortBy,
-    order: filters.order,
+  } = useGetServicesPaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
   });
 
   const [createService, { isLoading: isCreating }] = useCreateServiceMutation();
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService, { isLoading: isDeleting }] = useDeleteServiceMutation();
+
+  const {
+    data: serviceStatsData,
+    isLoading: serviceStatsLoading,
+    refetch: refetchServiceStats,
+  } = useGetServiceStatsQuery();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -112,16 +139,16 @@ export default function ServicePage() {
   const services = data?.data || [];
   
   const stats = useMemo(() => {
-    const total = data?.total ?? 0;
-    const active = services.filter((s) => s.isActive).length;
-    const inactive = services.filter((s) => !s.isActive).length;
+    const total = serviceStatsData?.totalServices ?? 0;
+    const active = serviceStatsData?.activeServices ?? 0;
+    const inactive = serviceStatsData?.inactiveServices ?? 0;
     return { total, active, inactive };
-  }, [services, data?.total]);
+  }, [serviceStatsData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchServices();
+      await Promise.all([refetchServices(), refetchServiceStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -217,10 +244,14 @@ export default function ServicePage() {
       limit: 10,
       search: "",
       searchField: "serviceName",
-      sortBy: "createdAt",
-      order: "desc",
     });
+    setSortConfig({ field: 'createdAt', direction: 'desc' });
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 })); // Reset to first page when sorting changes
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -252,16 +283,22 @@ export default function ServicePage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={serviceStatsLoading}
       />
 
       <ServiceFiltersSection
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading || isFetching}
       />
 
       <ServiceTable
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
         serviceItems={services}
         getStatusBadge={getBooleanStatusBadge}
         onViewDetails={handleViewDetails}

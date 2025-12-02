@@ -13,6 +13,8 @@ export class AnalyticsService {
     private readonly userService: ClientProxy,
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy,
+    @Inject(process.env.IMAGING_SERVICE_NAME || 'IMAGING_SERVICE')
+    private readonly imagingService: ClientProxy,
   ) {}
 
   async getAnalytics(period?: 'week' | 'month' | 'year', value?: string) {
@@ -237,9 +239,11 @@ export class AnalyticsService {
     period?: 'week' | 'month' | 'year',
     startDate?: string,
     endDate?: string,
-    dataType: 'encounters' | 'patients' = 'encounters'
-  ): Array<{ date: string; encounters?: number; patients?: number }> {
-    const dataKey = dataType === 'encounters' ? 'encounters' : 'patients';
+    dataType: 'encounters' | 'patients' | 'reports' | 'imagingOrders' = 'encounters'
+  ): Array<{ date: string; encounters?: number; patients?: number; reports?: number; imagingOrders?: number }> {
+    const dataKey = dataType === 'encounters' ? 'encounters' : 
+                   dataType === 'patients' ? 'patients' :
+                   dataType === 'reports' ? 'reports' : 'imagingOrders';
     
     if (!startDate || !endDate) {
       const result: Array<{ date: string; [key: string]: any }> = [];
@@ -453,6 +457,355 @@ export class AnalyticsService {
       return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
     } catch (error) {
       this.logger.error('Error fetching encounters by status:', error);
+      return [];
+    }
+  }
+
+  async getReceptionAnalytics(period?: 'week' | 'month' | 'year', value?: string) {
+    try {
+      const [
+        patientStatsResult,
+        encounterStatsResult,
+      ] = await Promise.all([
+        firstValueFrom(
+          this.patientService.send('PatientService.Patient.GetStats', {})
+        ).catch(() => ({ data: null })),
+        firstValueFrom(
+          this.patientService.send('PatientService.Encounter.GetStats', {})
+        ).catch(() => ({ data: null })),
+      ]);
+
+      const patientStats = patientStatsResult || {};
+      const encounterStats = encounterStatsResult || {};
+
+      const stats = {
+        totalPatients: patientStats?.totalPatients || 0,
+        activePatients: patientStats?.activePatients || 0,
+        newPatientsThisMonth: patientStats?.newPatientsThisMonth || 0,
+        inactivePatients: patientStats?.inactivePatients || 0,
+        totalEncounters: encounterStats?.totalEncounters || 0,
+        todayEncounters: encounterStats?.todayEncounter || 0,
+        todayStatEncounters: encounterStats?.todayStatEncounter || 0,
+        encountersThisMonth: encounterStats?.encountersThisMonth || 0,
+      };
+
+      const { startDate, endDate } = this.calculateDateRange(period, value);
+      
+      let encountersOverTimeData: any = { data: [] };
+      let patientsOverTimeData: any = { data: [] };
+      let allEncountersForType: any[] = [];
+      
+      try {
+        const allEncounters = await firstValueFrom(
+          this.patientService.send('PatientService.Encounter.FindAll', {})
+        ).catch(() => []);
+        
+        const encountersData = Array.isArray(allEncounters?.data) ? allEncounters.data : (Array.isArray(allEncounters) ? allEncounters : []);
+        const filteredEncounters = encountersData.filter((e: any) => {
+          if (e.isActive === false || e.isDeleted === true) return false;
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (!encounterDate) return false;
+          const date = new Date(encounterDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        allEncountersForType = filteredEncounters;
+        
+        const encounterDateMap = new Map<string, number>();
+        const patientDateMap = new Map<string, Set<string>>();
+        
+        filteredEncounters.forEach((e: any) => {
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (encounterDate) {
+            const date = new Date(encounterDate).toISOString().split('T')[0];
+            encounterDateMap.set(date, (encounterDateMap.get(date) || 0) + 1);
+            
+            if (e.patientId) {
+              if (!patientDateMap.has(date)) {
+                patientDateMap.set(date, new Set());
+              }
+              patientDateMap.get(date)?.add(e.patientId);
+            }
+          }
+        });
+        
+        encountersOverTimeData = {
+          data: Array.from(encounterDateMap.entries()).map(([date, count]) => ({
+            date,
+            count,
+            encounters: count,
+          })),
+        };
+        
+        patientsOverTimeData = {
+          data: Array.from(patientDateMap.entries()).map(([date, patientIds]) => ({
+            date,
+            count: patientIds.size,
+            patients: patientIds.size,
+          })),
+        };
+      } catch (error) {
+        this.logger.warn('Could not fetch encounters/patients by date range, using fallback', error);
+      }
+
+      const encountersOverTime = this.processTimeSeriesData(
+        encountersOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'encounters'
+      );
+      const patientsOverTime = this.processTimeSeriesData(
+        patientsOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'patients'
+      );
+      const encountersByType = this.processEncountersByType(allEncountersForType);
+      const encountersByStatus = await this.getEncountersByStatus();
+
+      return {
+        stats,
+        encountersOverTime,
+        patientsOverTime,
+        encountersByType,
+        encountersByStatus,
+      };
+    } catch (error) {
+      this.logger.error('Error aggregating reception analytics data:', error);
+      throw error;
+    }
+  }
+
+  async getPhysicianAnalytics(period?: 'week' | 'month' | 'year', value?: string) {
+    try {
+      const [
+        patientStatsResult,
+        encounterStatsResult,
+        diagnosisReportsResult,
+        imagingOrdersResult,
+      ] = await Promise.all([
+        firstValueFrom(
+          this.patientService.send('PatientService.Patient.GetStats', {})
+        ).catch(() => ({ data: null })),
+        firstValueFrom(
+          this.patientService.send('PatientService.Encounter.GetStats', {})
+        ).catch(() => ({ data: null })),
+        firstValueFrom(
+          this.patientService.send('PatientService.DiagnosisReport.GetStats', {})
+        ).catch(() => ({ data: null })),
+        firstValueFrom(
+          this.imagingService.send('ImagingService.ImagingOrder.GetStats', {})
+        ).catch(() => ({ data: null })),
+      ]);
+
+      const patientStats = patientStatsResult || {};
+      const encounterStats = encounterStatsResult || {};
+      const diagnosisStats = diagnosisReportsResult || {};
+      const imagingStats = imagingOrdersResult || {};
+
+      const stats = {
+        totalPatients: patientStats?.totalPatients || 0,
+        activePatients: patientStats?.activePatients || 0,
+        todayEncounters: encounterStats?.todayEncounter || 0,
+        pendingEncounters: encounterStats?.pendingEncounters || 0,
+        completedReports: diagnosisStats?.completedReports || 0,
+        pendingReports: diagnosisStats?.pendingReports || 0,
+        totalImagingOrders: imagingStats?.totalOrders || 0,
+        pendingImagingOrders: imagingStats?.pendingOrders || 0,
+        completedImagingOrders: imagingStats?.completedOrders || 0,
+      };
+
+      const { startDate, endDate } = this.calculateDateRange(period, value);
+      
+      let encountersOverTimeData: any = { data: [] };
+      let reportsOverTimeData: any = { data: [] };
+      let imagingOrdersOverTimeData: any = { data: [] };
+      
+      try {
+        const [allEncounters, allReports, allImagingOrders] = await Promise.all([
+          firstValueFrom(
+            this.patientService.send('PatientService.Encounter.FindAll', {})
+          ).catch(() => []),
+          firstValueFrom(
+            this.patientService.send('PatientService.DiagnosisReport.FindAll', {})
+          ).catch(() => []),
+          firstValueFrom(
+            this.imagingService.send('ImagingService.ImagingOrder.FindAll', {})
+          ).catch(() => []),
+        ]);
+        
+        const encountersData = Array.isArray(allEncounters?.data) ? allEncounters.data : (Array.isArray(allEncounters) ? allEncounters : []);
+        const reportsData = Array.isArray(allReports?.data) ? allReports.data : (Array.isArray(allReports) ? allReports : []);
+        const imagingOrdersData = Array.isArray(allImagingOrders?.data) ? allImagingOrders.data : (Array.isArray(allImagingOrders) ? allImagingOrders : []);
+        
+        const filteredEncounters = encountersData.filter((e: any) => {
+          if (e.isActive === false || e.isDeleted === true) return false;
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (!encounterDate) return false;
+          const date = new Date(encounterDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        const filteredReports = reportsData.filter((r: any) => {
+          if (r.isActive === false || r.isDeleted === true) return false;
+          const reportDate = r.createdAt || r.diagnosisDate || r.date;
+          if (!reportDate) return false;
+          const date = new Date(reportDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        const filteredImagingOrders = imagingOrdersData.filter((o: any) => {
+          if (o.isActive === false || o.isDeleted === true) return false;
+          const orderDate = o.createdAt || o.orderDate || o.date;
+          if (!orderDate) return false;
+          const date = new Date(orderDate).toISOString().split('T')[0];
+          return date >= startDate && date <= endDate;
+        });
+        
+        const encounterDateMap = new Map<string, number>();
+        const reportDateMap = new Map<string, number>();
+        const imagingOrderDateMap = new Map<string, number>();
+        
+        filteredEncounters.forEach((e: any) => {
+          const encounterDate = e.createdAt || e.encounterDate || e.date;
+          if (encounterDate) {
+            const date = new Date(encounterDate).toISOString().split('T')[0];
+            encounterDateMap.set(date, (encounterDateMap.get(date) || 0) + 1);
+          }
+        });
+        
+        filteredReports.forEach((r: any) => {
+          const reportDate = r.createdAt || r.diagnosisDate || r.date;
+          if (reportDate) {
+            const date = new Date(reportDate).toISOString().split('T')[0];
+            reportDateMap.set(date, (reportDateMap.get(date) || 0) + 1);
+          }
+        });
+        
+        filteredImagingOrders.forEach((o: any) => {
+          const orderDate = o.createdAt || o.orderDate || o.date;
+          if (orderDate) {
+            const date = new Date(orderDate).toISOString().split('T')[0];
+            imagingOrderDateMap.set(date, (imagingOrderDateMap.get(date) || 0) + 1);
+          }
+        });
+        
+        encountersOverTimeData = {
+          data: Array.from(encounterDateMap.entries()).map(([date, count]) => ({
+            date,
+            count,
+            encounters: count,
+          })),
+        };
+        
+        reportsOverTimeData = {
+          data: Array.from(reportDateMap.entries()).map(([date, count]) => ({
+            date,
+            count,
+            reports: count,
+          })),
+        };
+        
+        imagingOrdersOverTimeData = {
+          data: Array.from(imagingOrderDateMap.entries()).map(([date, count]) => ({
+            date,
+            count,
+            imagingOrders: count,
+          })),
+        };
+      } catch (error) {
+        this.logger.warn('Could not fetch physician data by date range, using fallback', error);
+      }
+
+      const encountersOverTime = this.processTimeSeriesData(
+        encountersOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'encounters'
+      );
+      const reportsOverTime = this.processTimeSeriesData(
+        reportsOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'reports'
+      );
+      const imagingOrdersOverTime = this.processTimeSeriesData(
+        imagingOrdersOverTimeData?.data || [],
+        period,
+        startDate,
+        endDate,
+        'imagingOrders'
+      );
+      
+      const encountersByStatus = await this.getEncountersByStatus();
+      const reportsByStatus = await this.getReportsByStatus();
+      const imagingOrdersByStatus = await this.getImagingOrdersByStatus();
+
+      return {
+        stats,
+        encountersOverTime,
+        reportsOverTime,
+        imagingOrdersOverTime,
+        encountersByStatus,
+        reportsByStatus,
+        imagingOrdersByStatus,
+      };
+    } catch (error) {
+      this.logger.error('Error aggregating physician analytics data:', error);
+      throw error;
+    }
+  }
+
+  private async getReportsByStatus(): Promise<Array<{ status: string; count: number }>> {
+    try {
+      const result = await firstValueFrom(
+        this.patientService.send('PatientService.DiagnosisReport.FindAll', {})
+      ).catch(() => []);
+      
+      const reportsData = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+      const reports = reportsData.filter((r: any) => 
+        r.isActive !== false && r.isDeleted !== true
+      );
+      
+      const statusMap = new Map<string, number>();
+      
+      reports.forEach((report: any) => {
+        const status = report.diagnosisStatus || report.status || 'Unknown';
+        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+      });
+      
+      return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
+    } catch (error) {
+      this.logger.error('Error fetching reports by status:', error);
+      return [];
+    }
+  }
+
+  private async getImagingOrdersByStatus(): Promise<Array<{ status: string; count: number }>> {
+    try {
+      const result = await firstValueFrom(
+        this.imagingService.send('ImagingService.ImagingOrder.FindAll', {})
+      ).catch(() => []);
+      
+      const ordersData = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+      const orders = ordersData.filter((o: any) => 
+        o.isActive !== false && o.isDeleted !== true
+      );
+      
+      const statusMap = new Map<string, number>();
+      
+      orders.forEach((order: any) => {
+        const status = order.orderStatus || order.status || 'Unknown';
+        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+      });
+      
+      return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
+    } catch (error) {
+      this.logger.error('Error fetching imaging orders by status:', error);
       return [];
     }
   }

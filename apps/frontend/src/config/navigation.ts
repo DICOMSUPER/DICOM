@@ -20,7 +20,10 @@ import {
   Building,
   Calendar,
   FolderTree,
-  Link2
+  Link2,
+  Layers,
+  GitPullRequest,
+  File,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -56,16 +59,16 @@ export const roleNavigation: RoleNavigation = {
       description: "Assign employees to room schedules",
     },
     {
-      href: "/admin/settings",
-      label: "System Settings",
-      icon: Settings,
-      description: "Configure system settings",
-    },
-    {
       href: "/admin/departments",
       label: "Departments",
       icon: Building,
       description: "Manage clinic departments and staff",
+    },
+    {
+      href: "/admin/body-parts",
+      label: "Body Parts",
+      icon: Layers,
+      description: "Manage body parts",
     },
     {
       href: "/admin/imaging-modalities",
@@ -98,17 +101,29 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage clinic services and offerings",
     },
     {
+      href: "/admin/procedure",
+      label: "Procedure Management",
+      icon: GitPullRequest,
+      description: "Manage request procedures and modalities",
+    },
+    {
       href: "/admin/shift-templates",
       label: "Shift Templates",
       icon: Clock,
       description: "Manage shift templates",
+    },
+    {
+      href: "/admin/settings",
+      label: "System Settings",
+      icon: Settings,
+      description: "Configure system settings",
     },
   ],
 
   // Reception Staff - Patient registration and queue management
   "Reception Staff": [
     {
-      href: "/reception",
+      href: "/reception/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "Daily overview",
@@ -131,18 +146,6 @@ export const roleNavigation: RoleNavigation = {
       icon: Search,
       description: "Search and filter patient encounters",
     },
-    // {
-    //   href: "/reception/queue",
-    //   label: "Queue",
-    //   icon: Clock,
-    //   description: "Waiting room management",
-    // },
-    // {
-    //   href: "/reception/assignments",
-    //   label: "Assignments",
-    //   icon: UserCheck,
-    //   description: "Patient assignments",
-    // },
     {
       href: "/reception/schedule",
       label: "Schedule",
@@ -165,27 +168,27 @@ export const roleNavigation: RoleNavigation = {
       label: "Clinic Visit",
 
       icon: FileText,
-      description: "Manage patient queue assignments",
+      description: "Manage patient clinic visit",
     },
     {
       href: "/physician/imaging-orders",
       label: "Imaging Orders List",
       icon: Logs,
-      description: "Patient diagnoses management",
+      description: "Manage patient imaging orders",
     },
     {
-      href: "/physician/diagnosis-report",
-      label: "Reports",
+      href: "/physician/diagnosis-reports",
+      label: "Diagnosis Reports",
       icon: Stethoscope,
-      description: "Patient diagnoses management",
+      description: "Manage patient diagnosis reports",
     },
     {
       href: "/physician/patient-study",
-      label: "Reports",
+      label: "Patient Studies",
       icon: Settings,
-      description: "View Your Patient Studies",
+      description: "View your patient studies",
     },
-        {
+    {
       href: "/physician/schedule",
       label: "Schedule",
       icon: Clock,
@@ -197,21 +200,21 @@ export const roleNavigation: RoleNavigation = {
   "Imaging Technician": [
     {
       href: "/imaging-technician",
-      label: "Orders List",
+      label: "Imaging Orders",
       icon: BarChart3,
-      description: "Imaging overview",
+      description: "Manage imaging orders",
     },
     {
       href: "/imaging-technician/order",
-      label: "Imaging",
-      icon: Camera,
-      description: "DICOM image management",
+      label: "Order Details",
+      icon: File,
+      description: "View and manage DICOM studies",
     },
     {
       href: "/imaging-technician/machines",
-      label: "Machines",
+      label: "Modality Machines",
       icon: Activity,
-      description: "Imaging machines status",
+      description: "Manage modality machines",
     },
     {
       href: "/imaging-technician/schedule",

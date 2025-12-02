@@ -7,10 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import useDebounce from "@/hooks/useDebounce";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { extractApiData } from "@/utils/api";
 import { MachineStatus } from "@/enums/machine-status.enum";
@@ -22,12 +21,16 @@ interface ModalityMachineFiltersSectionProps {
   };
   onFiltersChange: (filters: PaginatedQuery & { modalityId?: string; status?: string }) => void;
   onReset: () => void;
+  onSearch?: () => void;
+  isSearching?: boolean;
 }
 
 export function ModalityMachineFiltersSection({
   filters,
   onFiltersChange,
   onReset,
+  onSearch,
+  isSearching = false,
 }: ModalityMachineFiltersSectionProps) {
   const [searchInputs, setSearchInputs] = useState({
     search: filters.search || "",
@@ -35,14 +38,6 @@ export function ModalityMachineFiltersSection({
 
   const { data: modalitiesData } = useGetAllImagingModalityQuery();
   const modalities = extractApiData(modalitiesData);
-
-  const debouncedSearch = useDebounce(searchInputs.search, 500);
-  const prevDebouncedSearchRef = useRef<string>(debouncedSearch);
-  const filtersRef = useRef(filters);
-
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
 
   useEffect(() => {
     if (filters.search !== searchInputs.search) {
@@ -53,16 +48,6 @@ export function ModalityMachineFiltersSection({
     }
   }, [filters.search]);
 
-  useEffect(() => {
-    if (prevDebouncedSearchRef.current !== debouncedSearch) {
-      prevDebouncedSearchRef.current = debouncedSearch;
-      onFiltersChange({
-        ...filtersRef.current,
-        search: debouncedSearch || "",
-      });
-    }
-  }, [debouncedSearch, onFiltersChange]);
-
   const handleInputChange = (
     field: keyof typeof searchInputs,
     value: string
@@ -71,6 +56,23 @@ export function ModalityMachineFiltersSection({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleSearch = () => {
+    onFiltersChange({
+      ...filters,
+      search: searchInputs.search || "",
+      page: 1,
+    });
+    if (onSearch) {
+      onSearch();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const handleModalityChange = (value: string) => {
@@ -111,48 +113,57 @@ export function ModalityMachineFiltersSection({
               placeholder="Search by machine name..."
               value={searchInputs.search}
               onChange={(e) => handleInputChange("search", e.target.value)}
+              onKeyPress={handleKeyPress}
               className="pl-10"
             />
           </div>
         </div>
-        <Select
-          value={filters.modalityId || "all"}
-          onValueChange={handleModalityChange}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Modalities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Modalities</SelectItem>
-            {modalities
-              .filter((m) => m.isActive)
-              .map((modality) => (
-                <SelectItem key={modality.id} value={modality.id}>
-                  {modality.modalityName}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={filters.status || "all"}
-          onValueChange={handleStatusChange}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value={MachineStatus.ACTIVE}>Active</SelectItem>
-            <SelectItem value={MachineStatus.INACTIVE}>Inactive</SelectItem>
-            <SelectItem value={MachineStatus.MAINTENANCE}>Maintenance</SelectItem>
-          </SelectContent>
-        </Select>
-        {hasActiveFilters && (
+        <div className="flex gap-2">
+          <Select
+            value={filters.modalityId || "all"}
+            onValueChange={handleModalityChange}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Modalities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Modalities</SelectItem>
+              {modalities
+                .filter((m) => m.isActive)
+                .map((modality) => (
+                  <SelectItem key={modality.id} value={modality.id}>
+                    {modality.modalityName}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.status || "all"}
+            onValueChange={handleStatusChange}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value={MachineStatus.ACTIVE}>Active</SelectItem>
+              <SelectItem value={MachineStatus.INACTIVE}>Inactive</SelectItem>
+              <SelectItem value={MachineStatus.MAINTENANCE}>Maintenance</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" onClick={handleReset} className="whitespace-nowrap h-9 px-4">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-        )}
+          <Button 
+            onClick={handleSearch} 
+            disabled={isSearching}
+            className="h-9 px-4"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search
+          </Button>
+        </div>
       </div>
     </div>
   );

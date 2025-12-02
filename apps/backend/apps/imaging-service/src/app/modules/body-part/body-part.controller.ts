@@ -2,12 +2,13 @@ import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { BodyPart, CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
 import {
-  Controller,
-  Logger
-} from '@nestjs/common';
+  BodyPart,
+  CreateBodyPartDto,
+  UpdateBodyPartDto,
+} from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 import {
   IMAGING_SERVICE,
@@ -19,9 +20,7 @@ const moduleName = 'BodyPart';
 @Controller()
 export class BodyPartController {
   private logger = new Logger(IMAGING_SERVICE);
-  constructor(
-    private readonly bodyPartService: BodyPartService
-  ) {}
+  constructor(private readonly bodyPartService: BodyPartService) {}
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
@@ -31,9 +30,7 @@ export class BodyPartController {
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
-      return await this.bodyPartService.create(
-        createBodyPartDto
-      );
+      return await this.bodyPartService.create(createBodyPartDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -64,9 +61,7 @@ export class BodyPartController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
   )
-  async findOne(
-    @Payload() data: { id: string }
-  ): Promise<BodyPart | null> {
+  async findOne(@Payload() data: { id: string }): Promise<BodyPart | null> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ONE}`
     );
@@ -95,10 +90,7 @@ export class BodyPartController {
     );
     try {
       const { id, updateBodyPartDto } = data;
-      return await this.bodyPartService.update(
-        id,
-        updateBodyPartDto
-      );
+      return await this.bodyPartService.update(id, updateBodyPartDto);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -109,17 +101,23 @@ export class BodyPartController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<any> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
+    this.logger.log(`Deleting body part with ID: ${data.id}`);
     try {
       const { id } = data;
-      return await this.bodyPartService.remove(id);
+      const result = await this.bodyPartService.remove(id);
+      this.logger.log(`✅ Body part deleted successfully, result: ${result}`);
+      return {
+        success: true,
+        message: 'Body part deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to delete for modality with this id: ${data.id}`,
+        `Failed to delete body part with id: ${data.id}`,
         IMAGING_SERVICE
       );
     }
@@ -138,9 +136,9 @@ export class BodyPartController {
       const { paginationDto } = data;
       return await this.bodyPartService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
-        searchField: paginationDto.searchField || 'modalityName',
+        searchField: paginationDto.searchField || 'name',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
       });

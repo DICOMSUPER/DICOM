@@ -5,7 +5,7 @@ import { Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { useGetAllUsersQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
+import { useGetAllUsersQuery, useGetUserStatsQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { UserTable } from '@/components/admin/user/UserTable';
 import { UserStatsCards } from '@/components/admin/user/user-stats-cards';
@@ -21,6 +21,8 @@ import { Department } from '@/interfaces/user/department.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { extractApiData } from '@/utils/api';
 import { Roles } from '@/enums/user.enum';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -45,12 +47,15 @@ export default function Page() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isToggleStatusModalOpen, setIsToggleStatusModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const queryParams: UserFilters = useMemo(() => {
     const params: UserFilters = {
       page,
       limit,
       excludeRole: Roles.SYSTEM_ADMIN,
+      includeInactive: true,
+      includeDeleted: true,
     };
 
     if (appliedSearchTerm.trim()) {
@@ -69,15 +74,27 @@ export default function Page() {
       params.isActive = appliedStatusFilter === 'true';
     }
 
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
     return params;
-  }, [page, limit, appliedSearchTerm, appliedRoleFilter, appliedDepartmentFilter, appliedStatusFilter]);
+  }, [page, limit, appliedSearchTerm, appliedRoleFilter, appliedDepartmentFilter, appliedStatusFilter, sortConfig]);
 
   const {
     data: usersRes,
     isLoading: usersLoading,
     error: usersError,
     refetch: refetchUsers,
-  } = useGetAllUsersQuery(queryParams);
+  } = useGetAllUsersQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
+
+  const {
+    data: userStatsData,
+    isLoading: userStatsLoading,
+    refetch: refetchUserStats,
+  } = useGetUserStatsQuery();
 
   const {
     data: departmentsData,
@@ -115,12 +132,13 @@ export default function Page() {
   } : null;
 
   const stats = useMemo(() => {
-    const total = usersRes?.total ?? 0;
-    const active = users.filter((u) => u?.isActive).length;
-    const inactive = users.filter((u) => u && !u.isActive).length;
-    const verified = users.filter((u) => u?.isVerified).length;
-    return { total, active, inactive, verified };
-  }, [users, usersRes?.total]);
+    return {
+      total: userStatsData?.totalUsers ?? 0,
+      active: userStatsData?.activeUsers ?? 0,
+      inactive: userStatsData?.inactiveUsers ?? 0,
+      verified: userStatsData?.verifiedUsers ?? 0,
+    };
+  }, [userStatsData]);
 
   const getStatusBadge = (isActive: boolean) => {
     return getBooleanStatusBadge(isActive);
@@ -129,7 +147,7 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchUsers(), refetchDepartments()]);
+      await Promise.all([refetchUsers(), refetchUserStats(), refetchDepartments()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -211,6 +229,11 @@ export default function Page() {
     }
   };
 
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
@@ -242,7 +265,7 @@ export default function Page() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         verifiedCount={stats.verified}
-        isLoading={usersLoading}
+        isLoading={userStatsLoading}
       />
 
       <UserFiltersComponent
@@ -272,6 +295,8 @@ export default function Page() {
         onToggleStatus={handleToggleStatus}
         page={paginationMeta?.page ?? page}
         limit={limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
       {paginationMeta && (
         <Pagination

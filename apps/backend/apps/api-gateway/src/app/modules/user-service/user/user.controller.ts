@@ -299,7 +299,12 @@ export class UserController {
     @Query('search') search?: string,
     @Query('role') role?: string,
     @Query('excludeRole') excludeRole?: string,
-    @Query('departmentId') departmentId?: string
+    @Query('departmentId') departmentId?: string,
+    @Query('isActive') isActive?: boolean,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc'
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -315,19 +320,34 @@ export class UserController {
           role,
           excludeRole,
           departmentId,
+          isActive,
+          includeInactive: includeInactive === true,
+          includeDeleted: includeDeleted === true,
+          sortField,
+          order,
         })
       );
 
+      // Extract data from service response structure
+      const users = result.data?.data || [];
+      const total = result.data?.pagination?.total || users.length;
+      const resultPage = result.data?.pagination?.page || pageNum;
+      const resultLimit = result.data?.pagination?.limit || limitNum;
+      const totalPages = result.data?.pagination?.totalPages || Math.ceil(total / resultLimit);
+
       this.logger.log(
-        `Retrieved ${result.data?.length || 0} users (Total: ${
-          result.total || 0
-        })`
+        `Retrieved ${users.length} users (Total: ${total})`
       );
 
       return {
-        data: result.data,
-        count: result.total || result.data?.length || 0,
-        message: 'Lấy danh sách người dùng thành công',
+        data: users,
+        total,
+        page: resultPage,
+        limit: resultLimit,
+        totalPages,
+        hasNextPage: resultPage < totalPages,
+        hasPreviousPage: resultPage > 1,
+        message: result.message || 'Lấy danh sách người dùng thành công',
       };
     } catch (error) {
       this.logger.error('❌ Failed to fetch users', error);
@@ -361,6 +381,26 @@ export class UserController {
       };
     } catch (error) {
       this.logger.error('❌ Failed to fetch all users', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('stats')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get user statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thống kê người dùng thành công',
+  })
+  async getStats() {
+    try {
+      this.logger.log('Fetching user statistics');
+      const result = await firstValueFrom(
+        this.userClient.send('user.get-stats', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch user stats', error);
       throw handleError(error);
     }
   }

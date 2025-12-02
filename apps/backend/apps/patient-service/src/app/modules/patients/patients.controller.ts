@@ -94,6 +94,8 @@ export class PatientController {
     }
   }
 
+  // transfer updat
+
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.UPDATE}`)
   async update(
     @Payload()
@@ -116,6 +118,7 @@ export class PatientController {
       );
     }
   }
+
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
   async remove(@Payload() data: { id: string }): Promise<boolean> {
@@ -147,7 +150,7 @@ export class PatientController {
       const { paginationDto } = data;
       return await this.patientService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'patientCode',
         sortField: paginationDto.sortField || 'createdAt',
@@ -315,7 +318,7 @@ export class PatientController {
       const { paginationDto } = data;
       return await this.patientService.findManyWithFilter({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',

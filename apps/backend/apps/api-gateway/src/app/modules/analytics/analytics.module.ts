@@ -5,12 +5,14 @@ import { SharedInterceptorModule } from '@backend/shared-interceptor';
 import {
   UserServiceClientModule,
   PatientServiceClientModule,
+  ImagingServiceClientModule,
 } from '@backend/shared-client';
 
 @Module({
   imports: [
     UserServiceClientModule,
     PatientServiceClientModule,
+    ImagingServiceClientModule,
     SharedInterceptorModule,
   ],
   controllers: [AnalyticsController],

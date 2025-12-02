@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
 import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/enums/priority.enum";
+import { getEncounterStatusBadge } from "@/utils/status-badge";
+import { SortConfig } from "@/components/ui/data-table";
 
 interface QueueAssignment {
   id: string;
@@ -35,6 +37,8 @@ interface QueueTableProps {
   onMarkComplete?: (assignment: QueueAssignment) => void;
   showWaitTime?: boolean;
   showCompletedTime?: boolean;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export function QueueTable({
@@ -50,6 +54,8 @@ export function QueueTable({
   onMarkComplete,
   showWaitTime = false,
   showCompletedTime = false,
+  onSort,
+  initialSort,
 }: QueueTableProps) {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
@@ -71,11 +77,14 @@ export function QueueTable({
       columns={[
         {
           header: "Queue #",
+          sortable: true,
+          sortField: "queueNumber",
           cell: (assignment) => `#${assignment.queueNumber}`,
           className: "font-medium",
         },
         {
           header: "Patient",
+          sortable: false,
           cell: (assignment) => (
             <div className="flex flex-col">
               <span className="font-medium">
@@ -90,16 +99,21 @@ export function QueueTable({
         },
         {
           header: "Priority",
+          sortable: false,
           cell: (assignment) => (
             <PriorityBadge priority={assignment.priority as PriorityLevel} />
           ),
         },
         {
           header: "Room",
+          sortable: true,
+          sortField: "roomId",
           cell: (assignment) => assignment.roomId || "Unassigned",
         },
         {
           header: "Assigned Time",
+          sortable: true,
+          sortField: "assignmentDate",
           cell: (assignment) => formatTime(assignment.assignmentDate),
         },
         {
@@ -127,7 +141,7 @@ export function QueueTable({
               );
             }
 
-            return <StatusBadge status="in-progress" />;
+            return getEncounterStatusBadge("in-progress");
           },
         },
         {
@@ -178,6 +192,8 @@ export function QueueTable({
           : undefined
       }
       rowKey={(assignment) => assignment.id}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 }

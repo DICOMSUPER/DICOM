@@ -7,5 +7,15 @@
     "noImplicitAny": false
   },
   "include": ["jest.config.ts", "src/**/*.ts"],
-  "references": []
+  "references": [
+    {
+      "path": "../../libs/database"
+    },
+    {
+      "path": "../../libs/shared-enums"
+    },
+    {
+      "path": "../../libs/shared-domain"
+    }
+  ]
 }

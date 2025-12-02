@@ -1,35 +1,28 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import useDebounce from "@/hooks/useDebounce";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface ImagingModalityFiltersSectionProps {
   filters: PaginatedQuery;
   onFiltersChange: (filters: PaginatedQuery) => void;
   onReset: () => void;
+  onSearch?: () => void;
+  isSearching?: boolean;
 }
 
 export function ImagingModalityFiltersSection({
   filters,
   onFiltersChange,
   onReset,
+  onSearch,
+  isSearching = false,
 }: ImagingModalityFiltersSectionProps) {
   const [searchInputs, setSearchInputs] = useState({
     search: filters.search || "",
   });
 
-  const debouncedSearch = useDebounce(searchInputs.search, 500);
-  const prevDebouncedSearchRef = useRef<string>(debouncedSearch);
-  const filtersRef = useRef(filters);
-
-  // Update filters ref when filters prop changes
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
-  // Sync local search input when filters.search changes externally (e.g., on reset)
   useEffect(() => {
     if (filters.search !== searchInputs.search) {
       setSearchInputs((prev) => ({
@@ -39,17 +32,6 @@ export function ImagingModalityFiltersSection({
     }
   }, [filters.search]);
 
-  useEffect(() => {
-    // Only update if debouncedSearch actually changed
-    if (prevDebouncedSearchRef.current !== debouncedSearch) {
-      prevDebouncedSearchRef.current = debouncedSearch;
-      onFiltersChange({
-        ...filtersRef.current,
-        search: debouncedSearch || "",
-      });
-    }
-  }, [debouncedSearch, onFiltersChange]);
-
   const handleInputChange = (
     field: keyof typeof searchInputs,
     value: string
@@ -58,6 +40,23 @@ export function ImagingModalityFiltersSection({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleSearch = () => {
+    onFiltersChange({
+      ...filters,
+      search: searchInputs.search || "",
+      page: 1,
+    });
+    if (onSearch) {
+      onSearch();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const handleReset = () => {
@@ -84,16 +83,25 @@ export function ImagingModalityFiltersSection({
               placeholder="Search by modality name or code..."
               value={searchInputs.search}
               onChange={(e) => handleInputChange("search", e.target.value)}
+              onKeyPress={handleKeyPress}
               className="pl-10"
             />
           </div>
         </div>
-        {hasActiveFilters && (
+        <div className="flex gap-2">
           <Button variant="outline" onClick={handleReset} className="whitespace-nowrap h-9 px-4">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-        )}
+          <Button 
+            onClick={handleSearch} 
+            disabled={isSearching}
+            className="h-9 px-4"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search
+          </Button>
+        </div>
       </div>
     </div>
   );

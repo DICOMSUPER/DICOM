@@ -9,5 +9,5 @@ export interface RequestProcedure extends BaseEntity {
   bodyPartId: string;
   bodyPart?: BodyPart | null;
   description?: string | null;
-  isActive: boolean;
+  isActive?: boolean;
 }

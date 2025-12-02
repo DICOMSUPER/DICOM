@@ -25,9 +25,9 @@ export interface PatientOverview {
 @Injectable()
 export class PatientService {
   constructor(
-    @Inject()
+    @Inject(DiagnosisReportRepository)
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
-    @Inject() private readonly patientRepository: PatientRepository
+    @Inject(PatientRepository) private readonly patientRepository: PatientRepository
   ) {}
 
   private checkPatient = async (id: string): Promise<Patient> => {
@@ -46,7 +46,7 @@ export class PatientService {
     patientCode: string
   ): Promise<Patient | null> => {
     const patient = await this.patientRepository.findByPatientCode(patientCode);
-    if (patient && patient.isDeleted !== false) {
+    if (patient && !patient.isDeleted) {
       throw ThrowMicroserviceException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         'Payment code generated has been taken, please try again',
@@ -56,17 +56,27 @@ export class PatientService {
     return patient;
   };
 
+  private static codeCounter = 0;
+
   private generatePatientCode = (): string => {
-    const timestamp = Date.now().toString(36); // base36 timestamp
-    const rand = Math.floor(Math.random() * 46656)
+    // Use timestamp, counter, and multiple random values to ensure uniqueness
+    const timestamp = Date.now().toString(36);
+    PatientService.codeCounter = (PatientService.codeCounter + 1) % 46656;
+    const counter = PatientService.codeCounter.toString(36).padStart(3, '0');
+    const rand1 = Math.floor(Math.random() * 46656)
       .toString(36)
       .padStart(3, '0');
-    return (timestamp + rand).toUpperCase().slice(0, 8);
+    const rand2 = Math.floor(Math.random() * 46656)
+      .toString(36)
+      .padStart(3, '0');
+    // Combine and take first 8 chars, ensuring we have enough entropy
+    const combined = (timestamp + counter + rand1 + rand2).toUpperCase();
+    return combined.slice(-8); // Take last 8 to ensure we get the random parts
   };
 
   create = async (createPatientDto: CreatePatientDto): Promise<Patient> => {
     const patientCode = this.generatePatientCode();
-    this.checkPatientCode(patientCode);
+    await this.checkPatientCode(patientCode);
     return await this.patientRepository.create({
       ...createPatientDto,
       patientCode,

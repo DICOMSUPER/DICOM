@@ -438,17 +438,34 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { Filter, FolderOpen, Database, Grid3X3, List } from 'lucide-react';
+=======
+import { Filter, FolderOpen, Database, Loader2, Grid3X3, List, FileText } from 'lucide-react';
+>>>>>>> main
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { useViewer } from '@/contexts/ViewerContext';
+<<<<<<< HEAD
 import SeriesFilter from '../sidebar/SeriesFilter';
 import { useGetImagingOrdersByPatientIdQuery } from '@/store/imagingOrderApi';
 import {FolderItem} from './FoderItems';
 import {formatDateVN} from '@/utils/FormatDate';
 
+=======
+import { useLazyGetDicomSeriesByReferenceQuery } from '@/store/dicomSeriesApi';
+import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
+import { useLazyGetAnnotationsBySeriesIdQuery } from '@/store/annotationApi';
+import SeriesCard from '../sidebar/SeriesCard';
+import SeriesFilter from '../sidebar/SeriesFilter';
+import AnnotationsSegmentationsList from '../sidebar/AnnotationsSegmentationsList';
+import { extractApiData } from '@/utils/api';
+import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
+import { ImageAnnotation } from '@/interfaces/image-dicom/image-annotation.interface';
+import { SegmentationSnapshot } from '@/contexts/viewer-context/segmentation-helper';
+>>>>>>> main
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
@@ -462,6 +479,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
   const [showFilter, setShowFilter] = useState(false);
   const [filterModality, setFilterModality] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+<<<<<<< HEAD
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
@@ -469,6 +487,21 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
     { patientId: patientId ?? "" },
     { skip: !patientId }
   );
+=======
+  const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
+  const [seriesInstances, setSeriesInstances] = useState<Record<string, DicomInstance[]>>({});
+  const [loadingInstances, setLoadingInstances] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'annotations'>('grid');
+  const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
+  const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
+  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
+  const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
+  const [annotations, setAnnotations] = useState<ImageAnnotation[]>([]);
+  const [segmentations, setSegmentations] = useState<SegmentationSnapshot[]>([]);
+>>>>>>> main
 
   useEffect(() => {
     const activeViewportSeries = getViewportSeries(state.activeViewport);
@@ -476,6 +509,46 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
       setSelectedSeries(activeViewportSeries.id);
     }
   }, [state.activeViewport, getViewportSeries, selectedSeries]);
+<<<<<<< HEAD
+=======
+
+  // Load annotations and segmentations when view mode is 'annotations' and series is selected
+  useEffect(() => {
+    if (viewMode !== 'annotations' || !selectedSeries) {
+      setAnnotations([]);
+      setSegmentations([]);
+      return;
+    }
+
+    const loadAnnotationsAndSegmentations = async () => {
+      // Load annotations
+      try {
+        const response = await fetchAnnotationsBySeries(selectedSeries).unwrap();
+        const fetchedAnnotations = extractApiData<ImageAnnotation>(response);
+        setAnnotations(fetchedAnnotations || []);
+      } catch (error) {
+        console.error('Failed to load annotations:', error);
+        setAnnotations([]);
+      }
+
+      // Load segmentations from viewer context
+      const activeSeries = getViewportSeries(state.activeViewport);
+      if (activeSeries?.id === selectedSeries) {
+        // Get segmentations from state
+        const segmentationLayers = Array.from(state.segmentationLayers.values()).flat();
+        const currentSnapshots = segmentationLayers.map(layer => 
+          layer[layer.length - 1]
+        ).filter((snapshot): snapshot is SegmentationSnapshot => snapshot !== undefined);
+        setSegmentations(currentSnapshots);
+      } else {
+        setSegmentations([]);
+      }
+    };
+
+    void loadAnnotationsAndSegmentations();
+  }, [viewMode, selectedSeries, state.activeViewport, state.segmentationLayers, fetchAnnotationsBySeries, getViewportSeries]);
+  
+>>>>>>> main
 
   const handleSeriesClick = (series: DicomSeries) => {
     setSelectedSeries(series.id);
@@ -503,6 +576,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
             <div className="p-1.5 bg-teal-600/20 rounded-lg border border-teal-500/30">
               <Database className="h-4 w-4 text-teal-400" />
             </div>
+<<<<<<< HEAD
             <div>
               <h2 className="text-teal-300 font-bold text-sm tracking-wide">IMAGE </h2>
               <Badge
@@ -534,6 +608,85 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
                 </TooltipTrigger>
                 <TooltipContent className="bg-slate-700 border-slate-600">Grid view</TooltipContent>
               </Tooltip>
+=======
+             <div>
+               <h2 className="text-teal-300 font-bold text-sm tracking-wide">
+                 {viewMode === 'annotations' ? 'ANNOTATIONS & SEGMENTATIONS' : 'IMAGE SERIES'}
+               </h2>
+                 <Badge
+                   variant="secondary"
+                   className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
+                 >
+                   {viewMode === 'annotations' 
+                     ? `${annotations.length} Annotations, ${segmentations.length} Segmentations`
+                     : `${seriesList.length} Total`}
+               </Badge>
+             </div>
+          </div>
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === 'grid'
+                          ? 'text-teal-300 bg-teal-900/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Grid3X3 className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>Grid view</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === 'list'
+                          ? 'text-teal-300 bg-teal-900/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <List className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>List view</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode('annotations')}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === 'annotations'
+                          ? 'text-teal-300 bg-teal-900/40'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>Annotations & Segmentations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+>>>>>>> main
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -587,6 +740,7 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
           />
         )}
 
+<<<<<<< HEAD
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-2 space-y-1">
@@ -613,6 +767,38 @@ const ViewerRightSidebar = ({ onSeriesSelect, patientId }: ViewerRightSidebarPro
             )}
           </div>
         </div>
+=======
+         {/* Content */}
+         <div className="flex-1 overflow-y-auto">
+           {viewMode === 'annotations' ? (
+             <AnnotationsSegmentationsList
+               annotations={annotations}
+               segmentations={segmentations}
+             />
+           ) : (
+             <div className="p-2 space-y-1">
+               {loading ? (
+                 <div className="flex items-center justify-center py-8">
+                   <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
+                   <span className="ml-2 text-white">Loading series...</span>
+                 </div>
+               ) : filteredSeries.length > 0 ? (
+                 <div className={viewMode === 'grid' ? 'space-y-1' : 'space-y-1'}>
+                   {filteredSeries.map((s) =>
+                     renderSeriesCard(s)
+                   )}
+                 </div>
+               ) : (
+                 <div className="text-center text-slate-500 py-8">
+                   <FolderOpen className="h-12 w-12 mx-auto mb-3 text-slate-600" />
+                   <div className="text-sm">No series available</div>
+                   <div className="text-xs mt-1">Load series to view them here</div>
+                 </div>
+               )}
+             </div>
+           )}
+         </div>
+>>>>>>> main
       </div>
     </TooltipProvider>
   );

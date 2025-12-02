@@ -6,6 +6,7 @@ import { Eye, Edit, Trash2, Clock } from 'lucide-react';
 import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { formatDate } from '@/lib/formatTimeDate';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface ShiftTemplateTableProps {
   templates: ShiftTemplate[];
@@ -19,6 +20,8 @@ interface ShiftTemplateTableProps {
   onDeleteTemplate?: (template: ShiftTemplate) => void;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
@@ -33,6 +36,8 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
   onDeleteTemplate,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }) => {
 
   const getShiftTypeLabel = (type?: string) => {
@@ -56,6 +61,8 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
   const columns = [
     {
       header: 'Template Name',
+      sortable: true,
+      sortField: 'shift_name',
       cell: (template: ShiftTemplate) => (
         <div className="font-medium text-blue-600">
           {template.shift_name || '—'}
@@ -64,24 +71,30 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
     },
     {
       header: 'Shift Type',
+      sortable: false,
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground">{getShiftTypeLabel(template.shift_type)}</div>
       ),
     },
     {
       header: 'Start Time',
+      sortable: true,
+      sortField: 'start_time',
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground">{formatTime(template.start_time)}</div>
       ),
     },
     {
       header: 'End Time',
+      sortable: true,
+      sortField: 'end_time',
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground">{formatTime(template.end_time)}</div>
       ),
     },
     {
       header: 'Break Time',
+      sortable: false,
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground">
           {template.break_start_time && template.break_end_time
@@ -92,16 +105,20 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
     },
     {
       header: 'Description',
+      sortable: false,
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground max-w-xs truncate">{template.description || '—'}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (template: ShiftTemplate) => getStatusBadge(template.is_active ?? true),
     },
     {
       header: 'Created At',
+      sortable: true,
+      sortField: 'createdAt',
       cell: (template: ShiftTemplate) => (
         <div className="text-foreground">{formatDate(template.createdAt)}</div>
       ),
@@ -157,6 +174,8 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
       rowKey={(template) => template.shift_template_id}
       page={page}
       limit={limit}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

@@ -82,4 +82,14 @@ export class FilterPatientEncounterDto extends PaginationDto {
   @IsOptional()
   @IsUUID()
   assignedPhysicianId?: string;
+
+  @ApiPropertyOptional({ description: 'Sort field' })
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @ApiPropertyOptional({ description: 'Sort order', enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsString()
+  order?: 'asc' | 'desc';
 }

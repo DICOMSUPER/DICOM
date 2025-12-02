@@ -29,7 +29,7 @@ export class ShiftTemplateController {
 
   @Get()
   @MessagePattern('UserService.ShiftTemplate.FindMany')
-  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto }) {
+  async findMany(@Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }) {
     try {
       return await this.shiftTemplateService.findMany(data.paginationDto);
     } catch (error) {

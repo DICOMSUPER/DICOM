@@ -13,6 +13,7 @@ import { Clock, ArrowRight } from "lucide-react";
 import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
 import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
 import { useRouter } from "next/navigation";
+import { formatDate, formatTime } from "@/lib/formatTimeDate";
 
 interface QueuePreviewProps {
   encounters: PatientEncounter[];
@@ -45,13 +46,10 @@ export function QueuePreview({
               ? new Date(encounter.encounterDate)
               : null;
             const formattedDate = encounterDate
-              ? encounterDate.toLocaleDateString()
+              ? formatDate(encounterDate)
               : "Unknown date";
             const formattedTime = encounterDate
-              ? encounterDate.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
+              ? formatTime(encounterDate)
               : "Unknown time";
 
             return (
@@ -60,10 +58,10 @@ export function QueuePreview({
                   router.push(`/reception/encounters/${encounter.id}`);
                 }}
                 key={encounter.id}
-                className="group flex items-center justify-between p-3 border border-border rounded-lg cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/30 hover:shadow-sm"
+                className="group flex items-center justify-between p-4 border border-border rounded-lg cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/30 hover:shadow-sm"
               >
                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                     <span className="text-sm font-semibold text-primary">
                       {index + 1}
                     </span>
@@ -81,7 +79,7 @@ export function QueuePreview({
                 </div>
                 <Badge
                   variant="secondary"
-                  className={`flex-shrink-0 ml-2 font-medium ${
+                  className={`shrink-0 ml-2 font-medium ${
                     encounter.priority === EncounterPriorityLevel.STAT
                       ? "bg-red-100 text-red-800 border-red-200"
                       : encounter.priority === EncounterPriorityLevel.URGENT

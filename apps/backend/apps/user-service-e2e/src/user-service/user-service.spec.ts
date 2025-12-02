@@ -1,10 +1,7 @@
-import axios from 'axios';
 
-describe('GET /api', () => {
-  it('should return a message', async () => {
-    const res = await axios.get(`/api`);
+import './modules/services/services.test';
+import './modules/shift-template/shift-template.test';
+import { runUserE2ETests } from './modules/user/user.test';
 
-    expect(res.status).toBe(200);
-    expect(res.data).toEqual({ message: 'Hello API' });
-  });
-});
+
+runUserE2ETests();

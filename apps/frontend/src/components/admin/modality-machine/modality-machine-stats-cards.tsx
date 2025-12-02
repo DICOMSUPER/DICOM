@@ -1,6 +1,6 @@
 "use client";
 
-import { ReceptionStatsCards } from "@/components/reception/reception-stats-cards";
+import { StatsCards } from "@/components/ui/stats-cards";
 import { Monitor, CheckCircle, XCircle, Wrench } from "lucide-react";
 import { MachineStatus } from "@/enums/machine-status.enum";
 
@@ -50,6 +50,6 @@ export function ModalityMachineStatsCards({
     },
   ];
 
-  return <ReceptionStatsCards stats={stats} />;
+  return <StatsCards stats={stats} />;
 }
 

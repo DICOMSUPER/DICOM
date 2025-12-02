@@ -1,9 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ServiceRoomsService } from './service-rooms.service';
-import { CreateServiceRoomDto, FilterServiceRoomDto, ServiceRoom, UpdateServiceRoomDto } from '@backend/shared-domain';
+import {
+  CreateServiceRoomDto,
+  FilterServiceRoomDto,
+  ServiceRoom,
+  UpdateServiceRoomDto,
+} from '@backend/shared-domain';
 import { PaginatedResponseDto } from '@backend/database';
-
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
 
 @Controller()
 export class ServiceRoomsController {
@@ -15,21 +20,23 @@ export class ServiceRoomsController {
   }
 
   @MessagePattern('UserService.ServiceRooms.FindAll')
-  async findAll(@Payload() filter: FilterServiceRoomDto) : Promise<PaginatedResponseDto<ServiceRoom>> {
+  async findAll(
+    @Payload() filter: FilterServiceRoomDto
+  ): Promise<PaginatedResponseDto<ServiceRoom>> {
     return await this.serviceRoomsService.findAll(filter);
   }
 
-    @MessagePattern('UserService.ServiceRooms.FindAllWithoutPagination')
-  async findAllWithoutPagination(@Payload() filter: FilterServiceRoomDto) : Promise<ServiceRoom[]> {
+  @MessagePattern('UserService.ServiceRooms.FindAllWithoutPagination')
+  async findAllWithoutPagination(
+    @Payload() filter: FilterServiceRoomDto
+  ): Promise<ServiceRoom[]> {
     return await this.serviceRoomsService.findAllWithoutPagination(filter);
   }
-
 
   @MessagePattern('UserService.ServiceRooms.FindOne')
   async findOne(@Payload() id: string) {
     return await this.serviceRoomsService.findOne(id);
   }
-
 
   @MessagePattern('UserService.ServiceRooms.FindByService')
   async findByService(@Payload() serviceId: string) {
@@ -42,12 +49,35 @@ export class ServiceRoomsController {
   }
 
   @MessagePattern('UserService.ServiceRooms.Update')
-  async update(@Payload() data: { id: string; updatedData: UpdateServiceRoomDto }) {
-    return await this.serviceRoomsService.update(data.id, data.updatedData);
+  async update(
+    @Payload() data: { id: string; updatedData: UpdateServiceRoomDto }
+  ) {
+    try {
+      return await this.serviceRoomsService.update(data.id, data.updatedData);
+    } catch (error) {
+      handleErrorFromMicroservices(
+        error,
+        'Failed to update service room',
+        'USER_SERVICE'
+      );
+    }
   }
 
   @MessagePattern('UserService.ServiceRooms.Delete')
   async delete(@Payload() data: { id: string }) {
-    return await this.serviceRoomsService.delete(data.id);
+    try {
+      return await this.serviceRoomsService.delete(data.id);
+    } catch (error) {
+      handleErrorFromMicroservices(
+        error,
+        'Failed to get rooms',
+        'USER_SERVICE'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.ServiceRooms.GetStats')
+  async getStats() {
+    return await this.serviceRoomsService.getStats();
   }
 }

@@ -1,37 +1,39 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { Plus } from 'lucide-react';
-import { toast } from 'sonner';
-import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { Button } from '@/components/ui/button';
-import { ModalityMachineFiltersSection } from '@/components/admin/modality-machine/modality-machine-filters';
-import { ModalityMachineTable } from '@/components/admin/modality-machine/modality-machine-table';
-import { ModalityMachineStatsCards } from '@/components/admin/modality-machine/modality-machine-stats-cards';
-import { ModalityMachineFormModal } from '@/components/admin/modality-machine/modality-machine-form-modal';
-import { ModalityMachineViewModal } from '@/components/admin/modality-machine/modality-machine-view-modal';
-import { RefreshButton } from '@/components/ui/refresh-button';
-import { ErrorAlert } from '@/components/ui/error-alert';
-import { Pagination } from '@/components/common/PaginationV1';
-import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { Button } from "@/components/ui/button";
+import { ModalityMachineFiltersSection } from "@/components/admin/modality-machine/modality-machine-filters";
+import { ModalityMachineTable } from "@/components/admin/modality-machine/modality-machine-table";
+import { ModalityMachineStatsCards } from "@/components/admin/modality-machine/modality-machine-stats-cards";
+import { ModalityMachineFormModal } from "@/components/admin/modality-machine/modality-machine-form-modal";
+import { ModalityMachineViewModal } from "@/components/admin/modality-machine/modality-machine-view-modal";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { Pagination } from "@/components/common/PaginationV1";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import {
   PaginatedQuery,
   PaginationMeta,
-} from '@/interfaces/pagination/pagination.interface';
+} from "@/interfaces/pagination/pagination.interface";
 import {
   CreateModalityMachineDto,
   UpdateModalityMachineDto,
-} from '@/interfaces/image-dicom/modality-machine.interface';
-import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
+} from "@/interfaces/image-dicom/modality-machine.interface";
+import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import {
   useCreateModalityMachineMutation,
   useDeleteModalityMachineMutation,
   useGetModalityMachinePaginatedQuery,
+  useGetModalityMachineStatsQuery,
   useUpdateModalityMachineMutation,
-} from '@/store/modalityMachineApi';
-import { useGetRoomsQuery } from '@/store/roomsApi';
-import { MachineStatus } from '@/enums/machine-status.enum';
-import { Room } from '@/interfaces/user/room.interface';
+} from "@/store/modalityMachineApi";
+import { useGetRoomsQuery } from "@/store/roomsApi";
+import { Room } from "@/interfaces/user/room.interface";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 
 interface ApiError {
   data?: {
@@ -40,13 +42,24 @@ interface ApiError {
 }
 
 export default function ModalityMachinePage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { modalityId?: string; status?: string; searchField?: string; sortField?: string }>({
+  const [filters, setFilters] = useState<
+    PaginatedQuery & {
+      modalityId?: string;
+      status?: string;
+      searchField?: string;
+      sortField?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
+  >({
     page: 1,
     limit: 10,
     search: "",
     searchField: "name",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: false,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -58,16 +71,35 @@ export default function ModalityMachinePage() {
   const [machineToDelete, setMachineToDelete] =
     useState<ModalityMachine | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+
+  const queryParams = useMemo(() => {
+    const params = { ...filters };
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    return params;
+  }, [filters, sortConfig]);
 
   const {
     data: machinesData,
     isLoading,
     error: machinesError,
     refetch,
-  } = useGetModalityMachinePaginatedQuery(filters);
+  } = useGetModalityMachinePaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
-  const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({ page: 1, limit: 10000 });
+  const { data: roomsData, refetch: refetchRooms } = useGetRoomsQuery({
+    page: 1,
+    limit: 10000,
+  });
   const rooms = roomsData?.data || [];
+
+  const {
+    data: modalityMachineStatsData,
+    isLoading: modalityMachineStatsLoading,
+    refetch: refetchModalityMachineStats,
+  } = useGetModalityMachineStatsQuery();
 
   const [createMachine, { isLoading: isCreating }] =
     useCreateModalityMachineMutation();
@@ -79,12 +111,10 @@ export default function ModalityMachinePage() {
   useEffect(() => {
     if (machinesError) {
       const error = machinesError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
           ? (error.data as { message: string }).message
-          : 'Failed to load modality machine data. Please try again.';
+          : "Failed to load modality machine data. Please try again.";
       setError(errorMessage);
     } else {
       setError(null);
@@ -102,23 +132,13 @@ export default function ModalityMachinePage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    let maintenance = 0;
-    
-    machines.forEach((m) => {
-      if (m.status === MachineStatus.ACTIVE) active++;
-      else if (m.status === MachineStatus.INACTIVE) inactive++;
-      else if (m.status === MachineStatus.MAINTENANCE) maintenance++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
-      maintenance,
+      total: modalityMachineStatsData?.totalMachines ?? 0,
+      active: modalityMachineStatsData?.activeMachines ?? 0,
+      inactive: modalityMachineStatsData?.inactiveMachines ?? 0,
+      maintenance: modalityMachineStatsData?.maintenanceMachines ?? 0,
     };
-  }, [machines, meta.total]);
+  }, [modalityMachineStatsData]);
 
   const handleCreate = () => {
     setSelectedMachineId(null);
@@ -141,16 +161,22 @@ export default function ModalityMachinePage() {
 
   const confirmDelete = async () => {
     if (!machineToDelete) return;
-
     try {
       await deleteMachine({ id: machineToDelete.id }).unwrap();
-      toast.success("Modality machine deleted successfully");
+      toast.success(
+        `Modality machine ${machineToDelete.name} deleted successfully`
+      );
       setMachineToDelete(null);
       await refetch();
-    } catch (err) {
-      const error = err as ApiError;
+    } catch (error) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
       toast.error(
-        error?.data?.message || "Failed to delete modality machine"
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to delete modality machine"
       );
     }
   };
@@ -176,7 +202,9 @@ export default function ModalityMachinePage() {
       const error = err as ApiError;
       toast.error(
         error?.data?.message ||
-          `Failed to ${selectedMachineId ? "update" : "create"} modality machine`
+          `Failed to ${
+            selectedMachineId ? "update" : "create"
+          } modality machine`
       );
     }
   };
@@ -190,7 +218,13 @@ export default function ModalityMachinePage() {
       sortBy: "createdAt",
       order: "desc",
     });
+    setSortConfig({});
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
@@ -199,11 +233,13 @@ export default function ModalityMachinePage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
-      // Also refetch rooms since they're used in modals
-      await refetchRooms();
+      await Promise.all([
+        refetch(),
+        refetchModalityMachineStats(),
+        refetchRooms(),
+      ]);
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -213,14 +249,15 @@ export default function ModalityMachinePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Modality Machines</h1>
-          <p className="text-foreground">Manage modality machines and their assignments</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Modality Machines
+          </h1>
+          <p className="text-foreground">
+            Manage modality machines and their assignments
+          </p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton
-            onRefresh={handleRefresh}
-            loading={isRefreshing}
-          />
+          <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
           <Button
             onClick={handleCreate}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -232,7 +269,11 @@ export default function ModalityMachinePage() {
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load modality machines" message={error} className="mb-4" />
+        <ErrorAlert
+          title="Failed to load modality machines"
+          message={error}
+          className="mb-4"
+        />
       )}
 
       <ModalityMachineStatsCards
@@ -240,13 +281,17 @@ export default function ModalityMachinePage() {
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         maintenanceCount={stats.maintenance}
-        isLoading={isLoading}
+        isLoading={isLoading || modalityMachineStatsLoading}
       />
 
       <ModalityMachineFiltersSection
         filters={filters}
         onFiltersChange={setFilters}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading}
       />
 
       <ModalityMachineTable
@@ -257,12 +302,11 @@ export default function ModalityMachinePage() {
         onDelete={handleDelete}
         page={meta.page}
         limit={meta.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
-      <Pagination
-        pagination={meta}
-        onPageChange={handlePageChange}
-      />
+      <Pagination pagination={meta} onPageChange={handlePageChange} />
 
       <ModalityMachineFormModal
         open={isFormModalOpen}
@@ -298,8 +342,9 @@ export default function ModalityMachinePage() {
         title="Delete Modality Machine"
         description={
           <>
-            Are you sure you want to delete modality machine <strong>{machineToDelete?.name}</strong>? This action
-            cannot be undone and will permanently remove this machine from the system.
+            Are you sure you want to delete modality machine{" "}
+            <strong>{machineToDelete?.name}</strong>? This action cannot be
+            undone and will permanently remove this machine from the system.
           </>
         }
         confirmText="Delete"
@@ -310,4 +355,3 @@ export default function ModalityMachinePage() {
     </div>
   );
 }
-

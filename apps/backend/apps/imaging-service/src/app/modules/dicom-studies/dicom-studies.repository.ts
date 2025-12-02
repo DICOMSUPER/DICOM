@@ -104,14 +104,12 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       referenceId: id,
     });
 
-    //  Search filter, only support main entity for now
     if (search && searchField) {
       query.andWhere(`${searchField} LIKE :search`, {
         search: `%${search}%`,
       });
     }
 
-    //  Relations
     if (relation?.length) {
       relation.forEach((r) => {
         const parts = r.split('.');
@@ -120,9 +118,8 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
 
         for (const part of parts) {
           currentPath = `${parentAlias}.${part}`;
-          const alias = `${parentAlias}_${part}`; // unique alias using underscores
+          const alias = `${parentAlias}_${part}`;
 
-          // Only join if this alias doesn’t already exist
           const alreadyJoined = query.expressionMap.joinAttributes.some(
             (join) => join.alias.name === alias
           );
@@ -131,12 +128,11 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
             query.leftJoinAndSelect(currentPath, alias);
           }
 
-          parentAlias = alias; // move deeper for next iteration
+          parentAlias = alias;
         }
       });
     }
 
-    // Sorting, , only support main entity for now
     if (sortField && order) {
       query.orderBy(
         `entity.${sortField}`,
@@ -144,7 +140,6 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       );
     }
 
-    //  Exclude soft-deleted
     if (this.hasIsDeletedColumn()) {
       query.andWhere('entity.isDeleted = :isDeleted', { isDeleted: false });
     }
@@ -238,7 +233,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
   ): Promise<DicomStudiesStatsSummary> {
     const queryBuilder = this.getRepository()
       .createQueryBuilder('study')
-      .select('COUNT(*)', 'totalStudies')
+      .select('COUNT(study.id)', 'totalStudies')
       .addSelect(
         `COUNT(CASE WHEN study.study_status = :scannedStatus THEN 1 END)`,
         'totalScannedStudies'
@@ -261,7 +256,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       )
       .leftJoin('study.imagingOrder', 'order')
       .leftJoin('order.imagingOrderForm', 'imagingOrderForm')
-      .where('study.is_deleted = :isDeleted', { isDeleted: false })
+      .where('study.isDeleted = :isDeleted', { isDeleted: false })
       .setParameter('scannedStatus', DicomStudyStatus.SCANNED)
       .setParameter('pendingApprovalStatus', DicomStudyStatus.PENDING_APPROVAL)
       .setParameter('approvedStatus', DicomStudyStatus.APPROVED)
@@ -272,19 +267,15 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       .setParameter('resultPrintedStatus', DicomStudyStatus.RESULT_PRINTED);
 
     if (dateFrom && dateTo) {
-      const startDate = new Date(dateFrom + 'T00:00:00');
-      const endDate = new Date(dateTo + 'T23:59:59.999');
       queryBuilder
-        .andWhere('study.studyDate >= :dateFrom', { dateFrom: startDate })
-        .andWhere('study.studyDate <= :dateTo', { dateTo: endDate });
+        .andWhere('study.studyDate >= :dateFrom', { dateFrom })
+        .andWhere('study.studyDate <= :dateTo', { dateTo });
     } else if (dateFrom && !dateTo) {
-      const startDate = new Date(dateFrom + 'T00:00:00');
       queryBuilder.andWhere('study.studyDate >= :dateFrom', {
-        dateFrom: startDate,
+        dateFrom,
       });
     } else if (!dateFrom && dateTo) {
-      const endDate = new Date(dateTo + 'T23:59:59.999');
-      queryBuilder.andWhere('study.studyDate <= :dateTo', { dateTo: endDate });
+      queryBuilder.andWhere('study.studyDate <= :dateTo', { dateTo });
     }
     if (roomId) {
       queryBuilder.andWhere('imagingOrderForm.roomId = :roomId', {
@@ -298,10 +289,101 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       });
     }
 
-    console.log('🔍 SQL:', queryBuilder.getSql());
-    console.log('🔍 Params:', queryBuilder.getParameters());
+    const result = await queryBuilder.getRawOne();
+
+    if (!result) {
+      return {
+        totalDicomStudies: 0,
+        totalScannedStudies: 0,
+        totalPendingApprovalStudies: 0,
+        totalApprovedStudies: 0,
+        totalTechnicianVerifiedStudies: 0,
+        totalResultPrintedStudies: 0,
+      };
+    }
+
+    return {
+      totalDicomStudies: parseInt(result?.totalStudies || '0', 10),
+      totalScannedStudies: parseInt(result?.totalScannedStudies || '0', 10),
+      totalPendingApprovalStudies: parseInt(
+        result?.totalPendingApprovalStudies || '0',
+        10
+      ),
+      totalApprovedStudies: parseInt(result?.totalApprovedStudies || '0', 10),
+      totalTechnicianVerifiedStudies: parseInt(
+        result?.totalTechnicianVerifiedStudies || '0',
+        10
+      ),
+      totalResultPrintedStudies: parseInt(
+        result?.totalResultPrintedStudies || '0',
+        10
+      ),
+    };
+  }
+
+  async getTotalStats(
+    roomId?: string,
+    userInfo?: { userId: string; role: string }
+  ): Promise<DicomStudiesStatsSummary> {
+    const queryBuilder = this.getRepository()
+      .createQueryBuilder('study')
+      .select('COUNT(study.id)', 'totalStudies')
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :scannedStatus THEN 1 END)`,
+        'totalScannedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :pendingApprovalStatus THEN 1 END)`,
+        'totalPendingApprovalStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :approvedStatus THEN 1 END)`,
+        'totalApprovedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :technicianVerifiedStatus THEN 1 END)`,
+        'totalTechnicianVerifiedStudies'
+      )
+      .addSelect(
+        `COUNT(CASE WHEN study.study_status = :resultPrintedStatus THEN 1 END)`,
+        'totalResultPrintedStudies'
+      )
+      .leftJoin('study.imagingOrder', 'order')
+      .leftJoin('order.imagingOrderForm', 'imagingOrderForm')
+      .where('study.isDeleted = :isDeleted', { isDeleted: false })
+      .setParameter('scannedStatus', DicomStudyStatus.SCANNED)
+      .setParameter('pendingApprovalStatus', DicomStudyStatus.PENDING_APPROVAL)
+      .setParameter('approvedStatus', DicomStudyStatus.APPROVED)
+      .setParameter(
+        'technicianVerifiedStatus',
+        DicomStudyStatus.TECHNICIAN_VERIFIED
+      )
+      .setParameter('resultPrintedStatus', DicomStudyStatus.RESULT_PRINTED);
+
+    if (roomId) {
+      queryBuilder.andWhere('imagingOrderForm.roomId = :roomId', {
+        roomId,
+      });
+    }
+
+    if (userInfo && userInfo.role === Roles.PHYSICIAN) {
+      queryBuilder.andWhere('imagingOrderForm.orderingPhysicianId = :userId', {
+        userId: userInfo.userId,
+      });
+    }
 
     const result = await queryBuilder.getRawOne();
+
+    if (!result) {
+      return {
+        totalDicomStudies: 0,
+        totalScannedStudies: 0,
+        totalPendingApprovalStudies: 0,
+        totalApprovedStudies: 0,
+        totalTechnicianVerifiedStudies: 0,
+        totalResultPrintedStudies: 0,
+      };
+    }
 
     return {
       totalDicomStudies: parseInt(result?.totalStudies || '0', 10),

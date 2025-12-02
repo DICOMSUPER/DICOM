@@ -38,7 +38,9 @@ export class ImagingModalitiesController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -47,6 +49,8 @@ export class ImagingModalitiesController {
       searchField,
       sortField,
       order,
+      includeInactive: includeInactive === true,
+      includeDeleted: includeDeleted === true,
     };
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.FindMany', {
@@ -54,6 +58,23 @@ export class ImagingModalitiesController {
       })
     );
   }
+
+  @Get('stats')
+  async getStats() {
+    return await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingModalities.GetStats', {})
+    );
+  }
+
+  // Test hard delete for testing e2e
+  // @Get(':id/hard-delete')
+  // async hardDeleteImagingModality(@Param('id') id: string) {
+  //   return await firstValueFrom(
+  //     this.imagingService.send('ImagingService.ImagingModalities.HardDelete', {
+  //       id,
+  //     })
+  //   );
+  // }
 
   @Get(':id')
   async getImagingModalityById(@Param('id') id: string) {

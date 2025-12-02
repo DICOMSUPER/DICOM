@@ -1,35 +1,28 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import useDebounce from "@/hooks/useDebounce";
 import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 
 interface ServiceFiltersSectionProps {
   filters: PaginatedQuery;
   onFiltersChange: (filters: PaginatedQuery) => void;
   onReset: () => void;
+  onSearch?: () => void;
+  isSearching?: boolean;
 }
 
 export function ServiceFiltersSection({
   filters,
   onFiltersChange,
   onReset,
+  onSearch,
+  isSearching = false,
 }: ServiceFiltersSectionProps) {
   const [searchInputs, setSearchInputs] = useState({
     search: filters.search || "",
   });
-
-  const debouncedSearch = useDebounce(searchInputs.search, 500);
-
-  useEffect(() => {
-    onFiltersChange({
-      ...filters,
-      search: debouncedSearch || "",
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
 
   const handleInputChange = (
     field: keyof typeof searchInputs,
@@ -39,6 +32,23 @@ export function ServiceFiltersSection({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleSearch = () => {
+    onFiltersChange({
+      ...filters,
+      search: searchInputs.search || "",
+      page: 1,
+    });
+    if (onSearch) {
+      onSearch();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const handleReset = () => {
@@ -65,16 +75,25 @@ export function ServiceFiltersSection({
               placeholder="Search by service name..."
               value={searchInputs.search}
               onChange={(e) => handleInputChange("search", e.target.value)}
+              onKeyPress={handleKeyPress}
               className="pl-10"
             />
           </div>
         </div>
-        {hasActiveFilters && (
+        <div className="flex gap-2">
           <Button variant="outline" onClick={handleReset} className="whitespace-nowrap h-9 px-4">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-        )}
+          <Button 
+            onClick={handleSearch} 
+            disabled={isSearching}
+            className="h-9 px-4"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Search
+          </Button>
+        </div>
       </div>
     </div>
   );

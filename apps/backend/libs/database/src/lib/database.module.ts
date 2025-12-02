@@ -50,6 +50,7 @@ export class DatabaseModule {
             ),
             autoLoadEntities: true,
             ssl: { rejectUnauthorized: false },
+          
             // Connection pool configuration to prevent exhaustion
             extra: {
               max: configService.get<number>(

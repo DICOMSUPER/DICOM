@@ -203,7 +203,9 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         toast.success('Room updated successfully');
       } else {
         const result = await createRoom(payload).unwrap();
-        roomId = (result as Room)?.id || (result as any)?.data?.id || '';
+        console.log('Create room result:', result);
+        
+        roomId = (result.data.room as Room)?.id || (result as any)?.data?.id || '';
         if (!roomId) {
           toast.error('Failed to get room ID after creation');
           return;

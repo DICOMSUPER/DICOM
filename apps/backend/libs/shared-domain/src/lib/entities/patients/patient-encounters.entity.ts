@@ -13,7 +13,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Patient } from './patients.entity';
+import type { Patient } from './patients.entity';
 import { ServiceRoom } from '../users';
 
 @Entity('patient_encounters')
@@ -70,8 +70,17 @@ export class PatientEncounter extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
+    @Column({ name: 'is_transferred', type: 'boolean', default: false })
+  isTransferred?: boolean;
+
+  @Column({ name: 'transfer_notes', type: 'text', nullable: true })
+  transferNotes?: string;
+
+  @Column({ name: 'transferred_by', type: 'uuid', nullable: true })
+  transferredBy?: string;
+
   // Relations
-  @ManyToOne(() => Patient, (patient) => patient.encounters)
+  @ManyToOne(() => require('./patients.entity').Patient, (patient: Patient) => patient.encounters)
   @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 

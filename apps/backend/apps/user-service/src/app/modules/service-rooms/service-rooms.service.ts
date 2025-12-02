@@ -72,13 +72,21 @@ export class ServiceRoomsService {
   async findAll(
     filter: FilterServiceRoomDto
   ): Promise<PaginatedResponseDto<ServiceRoom>> {
-    const { page = 1, limit = 10, roomCode, serviceName, isActive } = filter;
+    const { page = 1, limit = 10, roomCode, serviceName, isActive, roomId, serviceId } = filter;
 
     const qb = this.serviceRoomRepository
       .createQueryBuilder('sr')
       .leftJoinAndSelect('sr.service', 'service')
       .leftJoinAndSelect('sr.room', 'room')
       .leftJoinAndSelect('room.department', 'department');
+
+    if (roomId) {
+      qb.andWhere('sr.roomId = :roomId', { roomId });
+    }
+
+    if (serviceId) {
+      qb.andWhere('sr.serviceId = :serviceId', { serviceId });
+    }
 
     if (serviceName) {
       qb.andWhere('service.serviceName ILIKE :serviceName', {
@@ -137,7 +145,7 @@ export class ServiceRoomsService {
       .leftJoinAndSelect('room.department', 'department');
 
     if (serviceId) {
-      qb.andWhere('service.id = :serviceId', {
+      qb.andWhere('sr.serviceId = :serviceId', {
         serviceId,
       });
     }
@@ -147,7 +155,7 @@ export class ServiceRoomsService {
       });
     }
     if (roomId) {
-      qb.andWhere('room.id = :roomId', {
+      qb.andWhere('sr.roomId = :roomId', {
         roomId,
       });
     }
@@ -222,8 +230,48 @@ export class ServiceRoomsService {
   }
 
   async delete(id: string) {
-    const serviceRoom = await this.findOne(id);
-    await this.serviceRoomRepository.remove(serviceRoom);
-    return { success: true, message: 'ServiceRoom deleted successfully' };
+    try {
+      const serviceRoom = await this.findOne(id);
+      await this.serviceRoomRepository.remove(serviceRoom);
+      return { success: true, message: 'ServiceRoom deleted successfully' };
+    } catch (error: any) {
+      if (error instanceof NotFoundException) throw error;
+      throw new BadRequestException(
+        `Failed to delete service room: ${error.message}`
+      );
+    }
+  }
+
+  async getStats(): Promise<{
+    totalAssignments: number;
+    activeAssignments: number;
+    inactiveAssignments: number;
+    uniqueRooms: number;
+  }> {
+    try {
+      const [totalAssignments, activeAssignments, inactiveAssignments] = await Promise.all([
+        this.serviceRoomRepository.count(),
+        this.serviceRoomRepository.count({ where: { isActive: true } }),
+        this.serviceRoomRepository.count({ where: { isActive: false } }),
+      ]);
+
+      // Count unique rooms with active assignments
+      const uniqueRoomsResult = await this.serviceRoomRepository
+        .createQueryBuilder('sr')
+        .select('COUNT(DISTINCT sr.roomId)', 'count')
+        .where('sr.isActive = :isActive', { isActive: true })
+        .getRawOne();
+
+      const uniqueRooms = parseInt(uniqueRoomsResult?.count || '0', 10);
+
+      return {
+        totalAssignments,
+        activeAssignments,
+        inactiveAssignments,
+        uniqueRooms,
+      };
+    } catch (error: any) {
+      throw new BadRequestException('Lỗi khi lấy thống kê service-room assignments');
+    }
   }
 }

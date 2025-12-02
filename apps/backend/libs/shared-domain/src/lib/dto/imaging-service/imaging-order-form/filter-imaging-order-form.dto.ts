@@ -10,6 +10,14 @@ export class FilterImagingOrderFormDto extends PaginationDto {
   @IsEnum(OrderFormStatus)
   @IsOptional()
   status?: OrderFormStatus;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  order?: 'asc' | 'desc';
 }
 
 export class FilterImagingOrderFormServiceDto extends PaginationDto {

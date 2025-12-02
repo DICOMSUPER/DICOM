@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Department } from '@backend/shared-domain';
+import { Department, Room } from '@backend/shared-domain';
 import { CreateDepartmentDto } from '@backend/shared-domain';
 import { UpdateDepartmentDto } from '@backend/shared-domain';
 import { PaginatedResponseDto } from '@backend/database';
@@ -18,6 +18,8 @@ export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(Room)
+    private readonly roomRepository: Repository<Room>,
   ) { }
 
   async create(createDepartmentDto: CreateDepartmentDto): Promise<Department> {
@@ -49,6 +51,10 @@ export class DepartmentsService {
     search?: string;
     isActive?: boolean;
     departmentCode?: string[];
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
+    sortField?: string;
+    order?: 'asc' | 'desc';
   }) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
@@ -57,10 +63,19 @@ export class DepartmentsService {
     const qb = this.departmentRepository
       .createQueryBuilder('department')
       .leftJoinAndSelect('department.headDepartment', 'headDepartment')
-      .leftJoinAndSelect('department.rooms', 'rooms')
-      .orderBy('department.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+      .leftJoinAndSelect('department.rooms', 'rooms');
+
+    if (query.sortField && query.order) {
+      qb.orderBy(`department.${query.sortField}`, query.order.toUpperCase() as 'ASC' | 'DESC');
+    } else {
+      qb.orderBy('department.createdAt', 'DESC');
+    }
+
+    qb.skip(skip).take(limit);
+
+    if (!query.includeDeleted) {
+      qb.where('department.isDeleted = :isDeleted', { isDeleted: false });
+    }
 
     if (query.search) {
       qb.andWhere(
@@ -69,8 +84,10 @@ export class DepartmentsService {
       );
     }
 
-    if (query.isActive !== undefined) {
+    if (query.isActive !== undefined && !query.includeInactive) {
       qb.andWhere('department.isActive = :isActive', { isActive: query.isActive });
+    } else if (!query.includeInactive) {
+      qb.andWhere('department.isActive = :isActive', { isActive: true });
     }
 
     if (query.departmentCode && query.departmentCode.length > 0) {
@@ -94,13 +111,18 @@ export class DepartmentsService {
     search?: string;
     isActive?: boolean;
     departmentCode?: string[];
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
   }): Promise<Department[]> {
     const qb = this.departmentRepository
       .createQueryBuilder('department')
       .leftJoinAndSelect('department.headDepartment', 'headDepartment')
       .leftJoinAndSelect('department.rooms', 'rooms')
-      .where('department.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('department.createdAt', 'DESC');
+
+    if (!query?.includeDeleted) {
+      qb.where('department.isDeleted = :isDeleted', { isDeleted: false });
+    }
 
     if (query?.search) {
       qb.andWhere(
@@ -109,8 +131,10 @@ export class DepartmentsService {
       );
     }
 
-    if (query?.isActive !== undefined) {
+    if (query?.isActive !== undefined && !query.includeInactive) {
       qb.andWhere('department.isActive = :isActive', { isActive: query.isActive });
+    } else if (!query?.includeInactive) {
+      qb.andWhere('department.isActive = :isActive', { isActive: true });
     }
 
     if (query?.departmentCode && query.departmentCode.length > 0) {
@@ -170,10 +194,21 @@ export class DepartmentsService {
   async remove(id: string): Promise<void> {
     try {
       const department = await this.findOne(id);
+      // Check if there are rooms associated with this department
+      const associatedRooms = await this.roomRepository.find({
+        where: { department: { id: department.id }, isDeleted: false },
+      });
+      if (associatedRooms.length > 0) {
+        throw new DepartmentDeletionFailedException(
+          'Cannot delete department with associated rooms',
+          department.id
+        );
+      }
       await this.departmentRepository.remove(department);
     } catch (error: any) {
       if (error instanceof DepartmentNotFoundException) throw error;
-      throw new DepartmentDeletionFailedException(error.message);
+      if (error instanceof DepartmentDeletionFailedException) throw error;
+      throw new DepartmentDeletionFailedException(error.message, id);
     }
   }
 
@@ -204,6 +239,7 @@ export class DepartmentsService {
     totalDepartments: number;
     activeDepartments: number;
     inactiveDepartments: number;
+    totalRooms: number;
   }> {
     try {
       const [totalDepartments, activeDepartments, inactiveDepartments] = await Promise.all([
@@ -212,10 +248,22 @@ export class DepartmentsService {
         this.departmentRepository.count({ where: { isActive: false, isDeleted: false } }),
       ]);
 
+      // Count total rooms across all departments
+      const totalRoomsResult = await this.departmentRepository
+        .createQueryBuilder('department')
+        .leftJoin('department.rooms', 'room')
+        .select('COUNT(DISTINCT room.id)', 'count')
+        .where('department.isDeleted = :isDeleted', { isDeleted: false })
+        .andWhere('room.isDeleted = :roomDeleted', { roomDeleted: false })
+        .getRawOne();
+
+      const totalRooms = parseInt(totalRoomsResult?.count || '0', 10);
+
       return {
         totalDepartments,
         activeDepartments,
         inactiveDepartments,
+        totalRooms,
       };
     } catch (error: any) {
       throw new DepartmentUpdateFailedException('Lỗi khi lấy thống kê phòng ban');

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 import {
   RenderingEngine,
   Enums,
@@ -36,7 +36,12 @@ interface CornerstoneViewportProps {
   imageIds?: string[];
 }
 
-const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: CornerstoneViewportProps) => {
+const CornerstoneViewport = ({
+  viewportId,
+  isActive,
+  onClick,
+  imageIds,
+}: CornerstoneViewportProps) => {
   const elementRef = useRef<HTMLDivElement>(null);
   const [initialized, setInitialized] = useState(false);
   const renderingEngineRef = useRef<RenderingEngine | null>(null);
@@ -53,7 +58,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
 
     // Set active tool based on context
     switch (activeTool) {
-      case 'WindowLevel':
+      case "WindowLevel":
         toolGroup.setToolActive(WindowLevelTool.toolName, {
           bindings: [{ mouseButton: 1 }],
         });
@@ -61,7 +66,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
           bindings: [{ mouseButton: 2 }],
         });
         break;
-      case 'Zoom':
+      case "Zoom":
         toolGroup.setToolActive(ZoomTool.toolName, {
           bindings: [{ mouseButton: 1 }],
         });
@@ -69,7 +74,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
           bindings: [{ mouseButton: 2 }],
         });
         break;
-      case 'Pan':
+      case "Pan":
         toolGroup.setToolActive(PanTool.toolName, {
           bindings: [{ mouseButton: 1 }],
         });
@@ -103,7 +108,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
         if (!window.cornerstoneInitialized) {
           await csRenderInit();
           await csToolsInit();
-        dicomImageLoaderInit({ maxWebWorkers: 4 });
+          dicomImageLoaderInit({ maxWebWorkers: 4 });
           window.cornerstoneInitialized = true;
         }
 
@@ -125,7 +130,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
         // Setup tools
         const toolGroupId = `toolGroup-${viewportId}`;
         const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-        
+
         // Add tools (only if not already added globally)
         if (!window.cornerstoneToolsAdded) {
           addTool(ZoomTool);
@@ -151,13 +156,14 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
 
         // Load images if provided
         if (imageIds && imageIds.length > 0) {
-          const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
-           viewport.setStack(imageIds, 0);
+          const viewport = renderingEngine.getViewport(
+            viewportId
+          ) as Types.IStackViewport;
+          viewport.setStack(imageIds, 0);
           viewport.render();
         }
-
       } catch (error) {
-        console.error('Error initializing Cornerstone viewport:', error);
+        console.error("Error initializing Cornerstone viewport:", error);
       }
     };
 
@@ -169,7 +175,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
         try {
           renderingEngineRef.current.destroy();
         } catch (error) {
-          console.error('Error destroying rendering engine:', error);
+          console.error("Error destroying rendering engine:", error);
         }
       }
     };
@@ -194,7 +200,7 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
 
   useEffect(() => {
     if (!initialized || !toolGroupRef.current) return;
-    
+
     setToolBindings(toolGroupRef.current, state.activeTool);
   }, [state.activeTool, initialized]);
 
@@ -203,9 +209,9 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
   };
 
   return (
-    <div 
+    <div
       className={`relative bg-black border-2 cursor-pointer transition-colors h-full ${
-        isActive ? 'border-blue-500' : 'border-gray-700 hover:border-gray-600'
+        isActive ? "border-blue-500" : "border-gray-700 hover:border-gray-600"
       }`}
       onClick={onClick}
       onContextMenu={handleRightClick}
@@ -219,11 +225,13 @@ const CornerstoneViewport = ({ viewportId, isActive, onClick, imageIds }: Corner
           border: "1px solid #ccc",
         }}
       />
-      
+
       {/* Viewport Info */}
       <div className="absolute top-2 left-2 text-xs text-white bg-black/70 px-2 py-1 rounded">
         <div>{viewportId}</div>
-        {imageIds?.length && <div className="text-blue-400">{imageIds.length} images</div>}
+        {imageIds?.length && (
+          <div className="text-blue-400">{imageIds.length} images</div>
+        )}
       </div>
 
       {/* Image Info */}

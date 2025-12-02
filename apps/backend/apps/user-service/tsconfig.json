@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../../entities"
+    },
+    {
+      "path": "../../libs/shared-client"
+    },
+    {
       "path": "../../libs/redis"
     },
     {

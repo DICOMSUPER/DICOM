@@ -14,7 +14,7 @@ import {
   useGetPatientEncounterByIdQuery,
   useGetPatientEncountersByPatientIdQuery,
 } from "@/store/patientEncounterApi";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import CreateImagingOrder from "@/components/patients/detail/create-order-form";
 
 interface PatientDetailPageProps {
@@ -27,8 +27,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const resolvedParams = use(params);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: patientEncounterData, isLoading } =
+  const { data: patientEncounterData, isLoading, refetch: refetchEncounter } =
     useGetPatientEncounterByIdQuery(resolvedParams.id);
+
+  // Listen for patient update events to refetch encounter data
+  useEffect(() => {
+    const handlePatientUpdate = (event: CustomEvent) => {
+      if (event.detail?.patientId === patientEncounterData?.data?.patientId) {
+        refetchEncounter();
+      }
+    };
+    window.addEventListener('patient:updated', handlePatientUpdate as EventListener);
+    return () => {
+      window.removeEventListener('patient:updated', handlePatientUpdate as EventListener);
+    };
+  }, [patientEncounterData?.data?.patientId, refetchEncounter]);
 
   const { data: patientOverview, isLoading: isLoadingOverview } =
     useGetPatientOverviewQuery(
@@ -72,11 +85,13 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen ">
-        <div className="flex items-center gap-4 mb-8">
-          <Skeleton className="h-8 w-8" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
+        <div className="w-full">
+          <div className="flex items-center gap-4 mb-8">
+            <Skeleton className="h-8 w-8" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -108,7 +123,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-7xl">
+      <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Patient Profile Sidebar */}
           <div className="lg:col-span-1">

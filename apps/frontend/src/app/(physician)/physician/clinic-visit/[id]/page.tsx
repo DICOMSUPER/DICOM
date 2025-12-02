@@ -21,11 +21,13 @@ export default function ClinicVisitDetailPage({
   if (isLoadingEncounter) {
     return (
       <div className="min-h-screen ">
-        <div className="flex items-center gap-4 mb-8">
-          <Skeleton className="h-8 w-8" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
+        <div className="w-full">
+          <div className="flex items-center gap-4 mb-8">
+            <Skeleton className="h-8 w-8" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -57,9 +59,10 @@ export default function ClinicVisitDetailPage({
 
   return (
     <div className="min-h-screen ">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Patient Profile Sidebar */}
-        {/* <div className="lg:col-span-1">
+      <div className="w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Patient Profile Sidebar */}
+          {/* <div className="lg:col-span-1">
             <PatientProfileCard patient={patientEncounter?.data?.patient} />
           </div> */}
 
@@ -68,6 +71,7 @@ export default function ClinicVisitDetailPage({
           <ClinicVisit detail={patientEncounter.data} />
         </div>
       </div>
+    </div>
     </div>
   );
 }

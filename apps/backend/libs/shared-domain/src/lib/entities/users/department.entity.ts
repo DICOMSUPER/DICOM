@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { BaseEntity } from '@backend/database';
-import { User } from './user.entity';
-import { Room } from './room.entity';
+import type { User } from './user.entity';
+import type { Room } from './room.entity';
 
 @Entity('departments')
 export class Department extends BaseEntity {
@@ -24,13 +24,13 @@ export class Department extends BaseEntity {
   isActive!: boolean;
 
   // Relations
-  @ManyToOne(() => User)
+  @ManyToOne(() => require('./user.entity').User)
   @JoinColumn({ name: 'head_department_id' })
   headDepartment!: User;
   
-  @OneToMany(() => Room, room => room.department)
+  @OneToMany(() => require('./room.entity').Room, (room: Room) => room.department)
   rooms!: Room[];
 
-  @OneToMany(() => User, user => user.department)
+  @OneToMany(() => require('./user.entity').User, (user: User) => user.department)
   users!: User[];
 }

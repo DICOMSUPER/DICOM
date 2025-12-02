@@ -207,38 +207,99 @@ export class ServicesService {
       return await this.servicesRepository.update(id, updateServiceDto, em);
     });
   };
-  remove = async (id: string): Promise<boolean> => {
-    return await this.entityManager.transaction(async (em) => {
-      const service = await this.servicesRepository.findOne({
-        where: { id },
-      });
+  remove = async (id: string) => {
+    try {
+      return await this.entityManager.transaction(async (em) => {
+        const service = await this.servicesRepository.findOne({
+          where: { id },
+        });
 
-      if (!service) {
-        throw ThrowMicroserviceException(
-          HttpStatus.NOT_FOUND,
-          'Service not found',
-          'UserService'
-        );
-      }
-      const assignedRooms = await this.serviceRoomsService.findAllWithoutPagination({
-        serviceId: id,
-      });
-      if (assignedRooms.length > 0) {
-        throw ThrowMicroserviceException(
-          HttpStatus.CONFLICT,
-          'Cannot delete service with assigned rooms',
-          'UserService'
-        );
-      }
+        if (!service) {
+          throw ThrowMicroserviceException(
+            HttpStatus.NOT_FOUND,
+            'Service not found',
+            'UserService'
+          );
+        }
+        
+        // Check if service is assigned to any rooms
+        const assignedRooms = await this.serviceRoomsService.findAllWithoutPagination({
+          serviceId: id,
+        });
+        
+        if (assignedRooms.length > 0) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            'Cannot delete service with assigned rooms',
+            'UserService'
+          );
+        }
 
-      return await this.servicesRepository.softDelete(id, 'isDeleted');
-    });
+        return await this.servicesRepository.softDelete(id, 'isDeleted');
+      });
+    } catch (error: any) {
+      // Re-throw known exceptions
+      if (error.statusCode === HttpStatus.NOT_FOUND) throw error;
+      if (error.statusCode === HttpStatus.CONFLICT) throw error;
+      
+      // Wrap unknown errors
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        `Failed to delete service: ${error.message}`,
+        'UserService'
+      );
+    }
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & {
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
   ): Promise<PaginatedResponseDto<Services>> => {
-    return await this.servicesRepository.paginate(paginationDto);
+    const { includeInactive, includeDeleted, ...restPaginationDto } = paginationDto;
+    
+    if (includeDeleted || includeInactive) {
+      const repository = this.entityManager.getRepository(Services);
+      const page = restPaginationDto.page || 1;
+      const limit = restPaginationDto.limit || 10;
+      const skip = (page - 1) * limit;
+      
+      const qb = repository
+        .createQueryBuilder('service')
+        .orderBy(`service.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')
+        .skip(skip)
+        .take(limit);
+      
+      if (!includeDeleted) {
+        qb.where('service.isDeleted = :isDeleted', { isDeleted: false });
+      }
+      
+      if (restPaginationDto.search && restPaginationDto.searchField) {
+        qb.andWhere(`service.${restPaginationDto.searchField} LIKE :search`, {
+          search: `%${restPaginationDto.search}%`,
+        });
+      }
+      
+      if (!includeInactive) {
+        qb.andWhere('service.isActive = :isActive', { isActive: true });
+      }
+      
+      const [data, total] = await qb.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+      
+      return new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      );
+    }
+    
+    return await this.servicesRepository.paginate(restPaginationDto);
   };
 
   getAllServiceProvidedByADepartment = async (

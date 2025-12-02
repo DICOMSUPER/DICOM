@@ -88,11 +88,15 @@ export class ServicesController {
   }
 
   @MessagePattern(`UserService.Services.Delete`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }) {
     this.logger.log(`Using pattern: UserService.Services.Delete`);
     try {
       const { id } = data;
-      return await this.servicesService.remove(id);
+      await this.servicesService.remove(id)
+      return {
+        message: 'Service deleted successfully',
+        success: true,
+      }
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -104,18 +108,20 @@ export class ServicesController {
 
   @MessagePattern(`UserService.Services.FindMany`)
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeInactive?: boolean; includeDeleted?: boolean } }
   ): Promise<PaginatedResponseDto<Services>> {
     this.logger.log(`Using pattern: UserService.Services.FindMany`);
     try {
       const { paginationDto } = data;
       return await this.servicesService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'serviceName',
         sortField: paginationDto.sortField || 'createdAt',
         order: paginationDto.order || 'asc',
+        includeInactive: paginationDto.includeInactive,
+        includeDeleted: paginationDto.includeDeleted,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(

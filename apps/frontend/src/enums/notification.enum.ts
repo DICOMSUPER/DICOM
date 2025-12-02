@@ -1,20 +1,19 @@
 export enum NotificationType {
-  URGENT = 'urgent',
-  SYSTEM = 'system',
-  INFO = 'info',
-  WARNING = 'warning',
-  SUCCESS = 'success'
+  AI_RESULT = 'ai_result',
+  URGENT_CASE = 'urgent_case',
+  ASSIGNMENT = 'assignment',
 }
 
 export enum NotificationPriority {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+
 }
 
-export enum NotificationStatus {
-  UNREAD = 'unread',
-  READ = 'read',
-  ARCHIVED = 'archived'
+export enum RelatedEntityType {
+  REPORT = 'Report',
+  ORDER = 'Order',
+  STUDY = 'Study',
+  ENCOUNTER = 'Encounter',
 }

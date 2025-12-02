@@ -26,6 +26,14 @@ export class FilterDicomStudyFormDto extends PaginationDto {
   @IsOptional()
   @IsString()
   orderId?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  @IsString()
+  order?: 'asc' | 'desc';
 }
 
 export class FilterDicomStudyServiceDto extends PaginationDto {

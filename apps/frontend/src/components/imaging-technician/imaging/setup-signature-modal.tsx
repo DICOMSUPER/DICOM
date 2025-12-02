@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import SignatureAnimation from "signature-animation";
 import { toast } from "sonner";
+import SignatureDisplay from "@/components/common/signature-display";
 
 export default function SetupSignatureModal({
   isOpen,
@@ -134,12 +135,10 @@ export default function SetupSignatureModal({
                 <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600"></div>
               ) : user ? (
                 <>
-                  <SignatureAnimation duration={1} delay={0.3}>
-                    {`${user?.lastName} ${user?.firstName}`}
-                  </SignatureAnimation>
-                  <p className="italic text-sm text-gray-600 mt-2">
-                    {`KY Thuật Viên ${user?.lastName} ${user?.firstName}`}
-                  </p>
+                  <SignatureDisplay
+                    firstName={user?.firstName}
+                    lastName={user?.lastName}
+                  />
                 </>
               ) : (
                 <p className="text-gray-400">No signature available</p>

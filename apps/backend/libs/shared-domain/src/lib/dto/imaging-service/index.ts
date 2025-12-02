@@ -32,4 +32,5 @@ export * from './imaging-order-form/filter-imaging-order-form.dto';
 export * from './dicom-study-signatures/sign-study.dto';
 export * from './dicom-study-signatures/verify-study-signature.dto';
 
-
+export * from './image-segmentation-layer/create-image-segmentation-layer.dto';
+export * from './image-segmentation-layer/update-image-segmentation-layer.dto';

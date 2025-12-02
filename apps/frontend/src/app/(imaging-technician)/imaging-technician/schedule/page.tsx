@@ -43,7 +43,10 @@ import {
 } from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
-import { useGetEmployeeRoomAssignmentStatsQuery } from "@/store/employeeRoomAssignmentApi";
+import {
+  useGetEmployeeRoomAssignmentStatsOverTimeQuery,
+  useGetEmployeeRoomAssignmentStatsQuery,
+} from "@/store/employeeRoomAssignmentApi";
 import { formatDateLocal } from "@/utils/schedule/utils";
 import Cookies from "js-cookie";
 
@@ -92,7 +95,7 @@ export default function ImagingTechnicianSchedulePage() {
     };
   }, [viewedMonth]);
 
-  const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsQuery(
+  const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsOverTimeQuery(
     {
       id: userId || "",
       startDate,

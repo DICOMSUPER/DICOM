@@ -32,6 +32,12 @@
   ],
   "references": [
     {
+      "path": "../../entities/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/redis/tsconfig.lib.json"
     },
     {

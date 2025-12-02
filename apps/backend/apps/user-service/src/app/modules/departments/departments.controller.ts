@@ -57,6 +57,10 @@ export class DepartmentsController {
       search?: string;
       isActive?: boolean;
       departmentCode?: string[];
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
     }
   ) {
     try {
@@ -78,6 +82,8 @@ export class DepartmentsController {
       search?: string;
       isActive?: boolean;
       departmentCode?: string[];
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {

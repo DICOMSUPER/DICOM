@@ -3,45 +3,17 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 // WorkspaceLayout and SidebarNav moved to layout.tsx
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-
-import {
-  useGetPatientEncountersQuery,
-  useDeletePatientEncounterMutation,
   useFilterEncounterWithPaginationQuery,
   useGetPatientEncounterStatsQuery,
 } from "@/store/patientEncounterApi";
 import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
-import { EncounterSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
 import {
   EncounterPriorityLevel,
   EncounterStatus,
   EncounterType,
 } from "@/enums/patient-workflow.enum";
-import {
-  Stethoscope,
-  Search,
-  Filter,
-  Calendar,
-  User,
-  Clock,
-  FileText,
-  Edit,
-  Trash2,
-  Eye,
-  Plus,
-} from "lucide-react";
+import { Stethoscope } from "lucide-react";
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
@@ -50,6 +22,8 @@ import { EncounterFilter } from "@/components/reception/encounter-filter";
 import { FilterEncounterWithPaginationParams } from "@/interfaces/patient/patient-visit.interface";
 import { Pagination } from "@/components/common/PaginationV1";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 
 interface ApiError {
   data?: {
@@ -60,7 +34,7 @@ interface ApiError {
 export default function EncountersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
 
   // UI state (what user is typing/selecting)
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,14 +71,16 @@ export default function EncountersPage() {
     undefined
   );
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: "encounterDate",
+    direction: "desc",
+  });
 
   // Build query params from applied filters
   const queryParams = useMemo<FilterEncounterWithPaginationParams>(() => {
-    return {
+    const params: any = {
       page,
       limit,
-      order: "desc",
-      sortField: "encounterDate",
       search: appliedSearchTerm.trim() || undefined,
       status: appliedStatusFilter,
       startDate: appliedStartDate,
@@ -113,6 +89,12 @@ export default function EncountersPage() {
       priority: appliedPriorityFilter,
       type: appliedType,
     };
+
+    // Add sort parameters (supports n fields)
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+
+    return params;
   }, [
     page,
     limit,
@@ -123,17 +105,25 @@ export default function EncountersPage() {
     appliedServiceId,
     appliedPriorityFilter,
     appliedType,
+    sortConfig,
   ]);
 
   // API hooks
   const {
     data: encounters,
     isLoading,
+    isFetching,
     error: encountersError,
     refetch,
-  } = useFilterEncounterWithPaginationQuery(queryParams);
+  } = useFilterEncounterWithPaginationQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
 
-  const [deleteEncounter] = useDeletePatientEncounterMutation();
+  const {
+    data: encounterStatsData,
+    isLoading: isLoadingEncounterStats,
+    refetch: refetchStats,
+  } = useGetPatientEncounterStatsQuery();
 
   // Error handling
   useEffect(() => {
@@ -151,8 +141,8 @@ export default function EncountersPage() {
 
   // Handlers
   const handleRefresh = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    await Promise.all([refetch(), refetchStats()]);
+  }, [refetch, refetchStats]);
 
   const handleSearch = useCallback(() => {
     setAppliedSearchTerm(searchTerm);
@@ -195,20 +185,10 @@ export default function EncountersPage() {
     setPage(newPage);
   }, []);
 
-  const handleDeleteEncounter = useCallback(
-    async (encounter: PatientEncounter) => {
-      if (confirm("Are you sure you want to delete this encounter?")) {
-        try {
-          await deleteEncounter(encounter.id).unwrap();
-          await refetch();
-        } catch (err) {
-          const error = err as ApiError;
-          console.error("Error deleting encounter:", error?.data?.message);
-        }
-      }
-    },
-    [deleteEncounter, refetch]
-  );
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setPage(1); // Reset to first page when sorting changes
+  }, []);
 
   const handleViewEncounter = useCallback(
     (encounter: PatientEncounter) => {
@@ -228,9 +208,6 @@ export default function EncountersPage() {
   const encountersArray = useMemo(() => {
     return encounters?.data ?? [];
   }, [encounters?.data]);
-
-  const { data: encounterStatsData, isLoading: isLoadingEncounterStats } =
-    useGetPatientEncounterStatsQuery();
 
   const encounterStats = encounterStatsData?.data || {
     totalEncounters: 0,
@@ -270,7 +247,10 @@ export default function EncountersPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={isLoading || isFetching || isLoadingEncounterStats}
+          />
         </div>
       </div>
 
@@ -324,7 +304,8 @@ export default function EncountersPage() {
         emptyStateDescription="No encounters match your search criteria. Try adjusting your filters or search terms."
         onViewDetails={handleViewEncounter}
         onEditEncounter={handleEditEncounter}
-        onDeleteEncounter={handleDeleteEncounter}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
       {/* Pagination */}

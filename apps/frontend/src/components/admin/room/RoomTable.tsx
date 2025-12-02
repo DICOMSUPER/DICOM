@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2, Check, X } from 'lucide-react';
 import { Room } from '@/interfaces/user/room.interface';
 import { DataTable } from '@/components/ui/data-table';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface RoomTableProps {
   rooms: Room[];
@@ -16,6 +17,8 @@ interface RoomTableProps {
   onViewDetails?: (room: Room) => void;
   onEditRoom?: (room: Room) => void;
   onDeleteRoom?: (room: Room) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const RoomTable: React.FC<RoomTableProps> = ({
@@ -28,11 +31,15 @@ export const RoomTable: React.FC<RoomTableProps> = ({
   onViewDetails,
   onEditRoom,
   onDeleteRoom,
+  onSort,
+  initialSort,
 }) => {
 
   const columns = [
     {
       header: 'Room Code',
+      sortable: true,
+      sortField: 'roomCode',
       cell: (room: Room) => (
         <div className="font-medium text-blue-600">
           {room.roomCode}
@@ -41,28 +48,35 @@ export const RoomTable: React.FC<RoomTableProps> = ({
     },
     {
       header: 'Room Type',
+      sortable: false,
       cell: (room: Room) => (
         <div className="text-foreground">{room.roomType || '—'}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (room: Room) => getStatusBadge(room.status),
     },
     {
       header: 'Department',
+      sortable: false,
       cell: (room: Room) => (
         <div className="text-foreground">{room.department?.departmentName || '—'}</div>
       ),
     },
     {
       header: 'Floor',
+      sortable: true,
+      sortField: 'floor',
       cell: (room: Room) => (
         <div className="text-foreground">{room.floor !== undefined ? room.floor : '—'}</div>
       ),
     },
     {
       header: 'Capacity',
+      sortable: true,
+      sortField: 'capacity',
       cell: (room: Room) => (
         <div className="text-foreground">{room.capacity !== undefined ? room.capacity : '—'}</div>
       ),
@@ -222,6 +236,8 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(room) => room.id}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

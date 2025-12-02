@@ -6,6 +6,7 @@ import { Eye, Edit, Trash2, Link2, Check, X } from 'lucide-react';
 import { ServiceRoom } from '@/interfaces/user/service-room.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { SortConfig } from '@/components/ui/data-table';
 
 interface RoomServiceTableProps {
   roomServices: ServiceRoom[];
@@ -17,6 +18,8 @@ interface RoomServiceTableProps {
   onViewDetails?: (roomService: ServiceRoom) => void;
   onEditRoomService?: (roomService: ServiceRoom) => void;
   onDeleteRoomService?: (roomService: ServiceRoom) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
@@ -29,11 +32,14 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
   onViewDetails,
   onEditRoomService,
   onDeleteRoomService,
+  onSort,
+  initialSort,
 }) => {
 
   const columns = [
     {
       header: 'Room Code',
+      sortable: false,
       cell: (roomService: ServiceRoom) => (
         <div className="font-medium text-blue-600">
           {roomService.room?.roomCode || '—'}
@@ -42,12 +48,14 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
     },
     {
       header: 'Room Type',
+      sortable: false,
       cell: (roomService: ServiceRoom) => (
         <div className="text-foreground">{roomService.room?.roomType || '—'}</div>
       ),
     },
     {
       header: 'Service Name',
+      sortable: false,
       cell: (roomService: ServiceRoom) => (
         <div className="font-medium text-foreground">
           {roomService.service?.serviceName || '—'}
@@ -56,12 +64,14 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
     },
     {
       header: 'Service Code',
+      sortable: false,
       cell: (roomService: ServiceRoom) => (
         <div className="text-foreground">{roomService.service?.serviceCode || '—'}</div>
       ),
     },
     {
       header: 'Status',
+      sortable: false,
       cell: (roomService: ServiceRoom) => getStatusBadge(roomService.isActive),
     },
     {
@@ -125,6 +135,8 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(roomService) => roomService.id}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

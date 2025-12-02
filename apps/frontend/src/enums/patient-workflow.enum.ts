@@ -19,8 +19,8 @@ export enum DiagnosisType {
   PRIMARY = "primary",
   SECONDARY = "secondary",
   DIFFERENTIAL = "differential",
-  RULE_OUT = "rule_out",
   PROVISIONAL = "provisional",
+  FINAL = "final",
 }
 
 export enum DiagnosisStatus {

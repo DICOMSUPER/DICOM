@@ -60,7 +60,6 @@ export function ModalSetUpSignature({
   }, [open, form]);
 
   const handleSubmit = (data: SetUpFormValues) => {
-    console.log("user",userId);
     
     onConfirm(userId, data.pin);
   };

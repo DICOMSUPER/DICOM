@@ -50,12 +50,12 @@ export class DepartmentUpdateFailedException extends RpcException {
 }
 
 export class DepartmentDeletionFailedException extends RpcException {
-  constructor(departmentId?: string, details?: any) {
+  constructor(message?: string, departmentId?: string) {
     super({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to delete department${departmentId ? ` '${departmentId}'` : ''}`,
+      message: message || `Failed to delete department${departmentId ? ` '${departmentId}'` : ''}`,
       errorCode: 'DEPARTMENT_DELETION_FAILED',
-      details: { departmentId, ...details },
+      details: { departmentId },
     });
   }
 }

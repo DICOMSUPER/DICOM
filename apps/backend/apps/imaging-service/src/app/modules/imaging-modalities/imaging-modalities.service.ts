@@ -29,7 +29,7 @@ export class ImagingModalitiesService {
       if (createImagingModalityDto.modalityCode) {
         const existingByCode = await this.imagingModalityRepository.findOne(
           {
-            where: { 
+            where: {
               modalityCode: createImagingModalityDto.modalityCode,
               isDeleted: false,
             },
@@ -50,7 +50,7 @@ export class ImagingModalitiesService {
       if (createImagingModalityDto.modalityName) {
         const existingByName = await this.imagingModalityRepository.findOne(
           {
-            where: { 
+            where: {
               modalityName: createImagingModalityDto.modalityName,
               isDeleted: false,
             },
@@ -128,7 +128,7 @@ export class ImagingModalitiesService {
       ) {
         const existingByCode = await this.imagingModalityRepository.findOne(
           {
-            where: { 
+            where: {
               modalityCode: updateImagingModalityDto.modalityCode,
               isDeleted: false,
             },
@@ -152,7 +152,7 @@ export class ImagingModalitiesService {
       ) {
         const existingByName = await this.imagingModalityRepository.findOne(
           {
-            where: { 
+            where: {
               modalityName: updateImagingModalityDto.modalityName,
               isDeleted: false,
             },
@@ -196,6 +196,20 @@ export class ImagingModalitiesService {
         );
       }
 
+      // Check if modality is referenced in request procedures
+      const requestProcedureRepo = em.getRepository('RequestProcedure');
+      const referencedInProcedures = await requestProcedureRepo.count({
+        where: { modalityId: id, isDeleted: false },
+      });
+
+      if (referencedInProcedures > 0) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Cannot delete modality that is referenced in existing request procedures',
+          IMAGING_SERVICE
+        );
+      }
+
       return await this.imagingModalityRepository.softDelete(
         id,
         'isDeleted',
@@ -205,10 +219,117 @@ export class ImagingModalitiesService {
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & {
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+    }
   ): Promise<PaginatedResponseDto<ImagingModality>> => {
-    return await this.imagingModalityRepository.paginate(paginationDto, {
+    const { includeInactive, includeDeleted, ...restPaginationDto } =
+      paginationDto;
+
+    if (includeDeleted || includeInactive) {
+      const repository = this.entityManager.getRepository(ImagingModality);
+      const page = restPaginationDto.page || 1;
+      const limit = restPaginationDto.limit || 10;
+      const skip = (page - 1) * limit;
+
+      const qb = repository
+        .createQueryBuilder('modality')
+        .leftJoinAndSelect('modality.modalityMachines', 'modalityMachines')
+        .orderBy(
+          `modality.${restPaginationDto.sortField || 'createdAt'}`,
+          (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC'
+        )
+        .skip(skip)
+        .take(limit);
+
+      const whereConditions: string[] = [];
+      const whereParams: any = {};
+
+      if (includeDeleted !== true) {
+        whereConditions.push('modality.isDeleted = :isDeleted');
+        whereParams.isDeleted = false;
+      }
+
+      if (includeInactive !== true) {
+        whereConditions.push('modality.isActive = :isActive');
+        whereParams.isActive = true;
+      }
+
+      if (whereConditions.length > 0) {
+        qb.where(whereConditions.join(' AND '), whereParams);
+      }
+
+      if (restPaginationDto.search && restPaginationDto.searchField) {
+        qb.andWhere(`modality.${restPaginationDto.searchField} LIKE :search`, {
+          search: `%${restPaginationDto.search}%`,
+        });
+      }
+
+      const [data, total] = await qb.getManyAndCount();
+      const totalPages = Math.ceil(total / limit);
+
+      return new PaginatedResponseDto(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
+      );
+    }
+
+    return await this.imagingModalityRepository.paginate(restPaginationDto, {
       relations,
+    });
+  };
+
+  async getStats(): Promise<{
+    totalModalities: number;
+    activeModalities: number;
+    inactiveModalities: number;
+  }> {
+    try {
+      const repository = this.entityManager.getRepository(ImagingModality);
+      const [totalModalities, activeModalities, inactiveModalities] =
+        await Promise.all([
+          repository.count({ where: { isDeleted: false } }),
+          repository.count({ where: { isActive: true, isDeleted: false } }),
+          repository.count({ where: { isActive: false, isDeleted: false } }),
+        ]);
+
+      return {
+        totalModalities,
+        activeModalities,
+        inactiveModalities,
+      };
+    } catch (error: any) {
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Lỗi khi lấy thống kê imaging modality',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  hardRemove = async (id: string): Promise<boolean> => {
+    return await this.entityManager.transaction(async (em) => {
+      const modality = await this.imagingModalityRepository.findOne(
+        {
+          where: { id },
+        },
+        [],
+        em
+      );
+      if (!modality) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          'Modality not found',
+          IMAGING_SERVICE
+        );
+      }
+      return await this.imagingModalityRepository.delete(id, em);
     });
   };
 }

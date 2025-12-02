@@ -17,6 +17,7 @@ import { ImagingServiceController } from './imaging-service.controller';
 import { ModalityMachinesModule } from './modality-machines/modality-machines.module';
 import { RequestProcedureModule } from './request-procedure/request-procedure.module';
 import { ImagingOrderFormModule } from './imaging-order-form/imaging-order-form.module';
+import { ImageSegmentationLayersModule } from './image-segmentation-layers/image-segmentation-layers.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ImagingOrderFormModule } from './imaging-order-form/imaging-order-form.
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,
+    ImageSegmentationLayersModule,
   ],
   exports: [
     ImagingModalitiesModule,

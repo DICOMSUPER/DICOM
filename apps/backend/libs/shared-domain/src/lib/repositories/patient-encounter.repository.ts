@@ -566,7 +566,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     if (Array.isArray(data.roomServiceIds) && data.roomServiceIds.length === 0)
       return {
         data: [],
-        limit: data?.paginationDto?.limit || 5,
+        limit: data?.paginationDto?.limit || 10,
         page: data?.paginationDto?.page || 1,
         total: 0,
         totalPages: 0,

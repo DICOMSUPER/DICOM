@@ -306,6 +306,14 @@ export class EmployeeRoomAssignmentsService {
       employeeId
     );
   };
+  findByRoomInCurrentSession = async (
+    roomId: string
+  ): Promise<EmployeeRoomAssignment[]> => {
+    return await this.employeeRoomAssignmentsRepository.findByRoomInCurrentSession(
+      roomId
+    );
+  }
+
   findOne = async (id: string): Promise<EmployeeRoomAssignment | null> => {
     const employeeRoomAssignment =
       await this.employeeRoomAssignmentsRepository.findOne({
@@ -510,6 +518,60 @@ export class EmployeeRoomAssignmentsService {
       data
     );
   };
+
+  async getStats(): Promise<{
+    totalAssignments: number;
+    activeAssignments: number;
+    inactiveAssignments: number;
+    uniqueRooms: number;
+    uniqueEmployees: number;
+  }> {
+    try {
+      const repository = this.entityManager.getRepository(EmployeeRoomAssignment);
+      
+      const [totalAssignments, activeAssignments, inactiveAssignments] = await Promise.all([
+        repository.count({ where: { isDeleted: false } }),
+        repository.count({ where: { isActive: true, isDeleted: false } }),
+        repository.count({ where: { isActive: false, isDeleted: false } }),
+      ]);
+
+      // Count unique rooms with active assignments
+      const uniqueRoomsResult = await repository
+        .createQueryBuilder('era')
+        .innerJoin('era.roomSchedule', 'rs')
+        .select('COUNT(DISTINCT rs.room_id)', 'count')
+        .where('era.isActive = :isActive', { isActive: true })
+        .andWhere('era.isDeleted = :isDeleted', { isDeleted: false })
+        .getRawOne();
+
+      const uniqueRooms = parseInt(uniqueRoomsResult?.count || '0', 10);
+
+      // Count unique employees with active assignments
+      const uniqueEmployeesResult = await repository
+        .createQueryBuilder('era')
+        .select('COUNT(DISTINCT era.employeeId)', 'count')
+        .where('era.isActive = :isActive', { isActive: true })
+        .andWhere('era.isDeleted = :isDeleted', { isDeleted: false })
+        .getRawOne();
+
+      const uniqueEmployees = parseInt(uniqueEmployeesResult?.count || '0', 10);
+
+      return {
+        totalAssignments,
+        activeAssignments,
+        inactiveAssignments,
+        uniqueRooms,
+        uniqueEmployees,
+      };
+    } catch (error: any) {
+      this.logger.error('Error getting employee room assignment stats', error);
+      throw ThrowMicroserviceException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Lỗi khi lấy thống kê gán nhân viên phòng',
+        'USER_SERVICE'
+      );
+    }
+  }
 
   findEmployeeRoomAssignmentForEmployeeInWorkDate = async (data: {
     id: string;

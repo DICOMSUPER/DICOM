@@ -11,13 +11,25 @@ import {
   TableBodyEnhanced,
 } from "@/components/ui/table-enhanced";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState, useEffect } from "react";
 
-interface DataTableColumn<T> {
+export type SortDirection = "asc" | "desc" | null;
+
+export interface SortConfig {
+  field?: string;
+  direction?: SortDirection;
+}
+
+export interface DataTableColumn<T> {
   header: ReactNode;
   cell: (row: T) => ReactNode;
   className?: string;
   headerClassName?: string;
+  sortable?: boolean;
+  sortField?: string;
 }
 
 interface DataTableProps<T> {
@@ -38,9 +50,11 @@ interface DataTableProps<T> {
   showNumberColumn?: boolean;
   page?: number;
   limit?: number;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
-export function DataTable<T>({
+export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   children,
@@ -58,11 +72,72 @@ export function DataTable<T>({
   showNumberColumn = true,
   page = 1,
   limit = 10,
+  onSort,
+  initialSort,
 }: DataTableProps<T>) {
+  const [sortConfig, setSortConfig] = useState<SortConfig>(
+    initialSort || {}
+  );
+  const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (initialSort) {
+      setSortConfig(initialSort);
+    }
+  }, [initialSort]);
+  
   const useColumns = Array.isArray(columns) && Array.isArray(data);
   const resolvedColumnCount = useColumns ? (columns!.length + (showNumberColumn ? 1 : 0)) : (headers ? headers.length + (showNumberColumn ? 1 : 0) : skeletonColumns);
   const resolvedRows = useColumns ? data || [] : [];
   const showEmptyState = !isLoading && (useColumns ? resolvedRows.length === 0 : Boolean(isEmpty));
+
+  const handleSort = (column: DataTableColumn<T>, index: number, event?: React.MouseEvent) => {
+    if (!column.sortable) return;
+    
+    if (!onSort) {
+      console.warn('onSort callback not provided. Sorting will not trigger API call.');
+      return;
+    }
+
+    const sortField = column.sortField || `column_${index}`;
+    
+    let newDirection: SortDirection = "asc";
+    
+    if (sortConfig.field === sortField) {
+      if (sortConfig.direction === "asc") {
+        newDirection = "desc";
+      } else if (sortConfig.direction === "desc") {
+        newDirection = null;
+      }
+    }
+
+    const newSortConfig: SortConfig = newDirection 
+      ? { field: sortField, direction: newDirection }
+      : {};
+    
+    setSortConfig(newSortConfig);
+    onSort(newSortConfig);
+  };
+
+  const getSortIcon = (column: DataTableColumn<T>, index: number) => {
+    if (!column.sortable) return null;
+
+    const sortField = column.sortField || `column_${index}`;
+    
+    if (sortConfig.field !== sortField) {
+      return <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-foreground" />;
+    }
+
+    if (sortConfig.direction === "asc") {
+      return <ArrowUp className="ml-2 h-3.5 w-3.5 text-foreground" />;
+    }
+
+    if (sortConfig.direction === "desc") {
+      return <ArrowDown className="ml-2 h-3.5 w-3.5 text-foreground" />;
+    }
+
+    return <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-foreground" />;
+  };
 
   return (
     <Card className={`border-border p-0 ${className}`}>
@@ -86,7 +161,19 @@ export function DataTable<T>({
                       isLast={index === columns.length - 1 && !showNumberColumn}
                       className={column.headerClassName}
                     >
-                      {column.header}
+                      {column.sortable ? (
+                        <Button
+                          variant="ghost"
+                          onClick={(e) => handleSort(column, index, e)}
+                          className="h-auto p-0 font-semibold text-foreground hover:bg-transparent hover:text-foreground transition-colors flex items-center [&_svg]:text-foreground"
+                          title={column.sortable ? "Click to sort" : undefined}
+                        >
+                          {column.header}
+                          {getSortIcon(column, index)}
+                        </Button>
+                      ) : (
+                        column.header
+                      )}
                     </TableHeadEnhanced>
                   ))
                 : headers
@@ -108,10 +195,13 @@ export function DataTable<T>({
               (useColumns && columns
                 ? resolvedRows.map((row, rowIndex) => {
                     const rowNumber = (page - 1) * limit + rowIndex + 1;
+                    const isHovered = hoveredRowIndex === rowIndex;
                     return (
                       <TableRowEnhanced
                         key={rowKey ? rowKey(row, rowIndex) : rowIndex}
-                        className={rowClassName?.(row, rowIndex)}
+                        className={`${rowClassName?.(row, rowIndex)} ${isHovered ? 'bg-muted/40' : ''}`}
+                        onMouseEnter={() => setHoveredRowIndex(rowIndex)}
+                        onMouseLeave={() => setHoveredRowIndex(null)}
                       >
                         {showNumberColumn && (
                           <TableCellEnhanced

@@ -35,7 +35,7 @@ export const requestProcedureApi = createApi({
       { page?: number; limit?: number; search?: string } | void
     >({
       query: (params) => ({
-        url: "paginated",
+        url: "/paginated",
         method: "GET",
         params,
       }),
@@ -52,7 +52,7 @@ export const requestProcedureApi = createApi({
     }),
 
     getRequestProcedureById: builder.query<RequestProcedure, string>({
-      query: (id) => ({ url: `${id}`, method: "GET" }),
+      query: (id) => ({ url: `/${id}`, method: "GET" }),
       providesTags: (result, error, id) => [{ type: "RequestProcedure", id }],
     }),
 
@@ -60,15 +60,15 @@ export const requestProcedureApi = createApi({
       RequestProcedure,
       Partial<RequestProcedure>
     >({
-      query: (body) => ({ url: "", method: "POST", body }),
+      query: (data) => ({ url: "", method: "POST", data }),
       invalidatesTags: [{ type: "RequestProcedure", id: "LIST" }],
     }),
 
     updateRequestProcedure: builder.mutation<
       RequestProcedure,
-      { id: string; body: Partial<RequestProcedure> }
+      { id: string; data: Partial<RequestProcedure> }
     >({
-      query: ({ id, body }) => ({ url: `${id}`, method: "PATCH", body }),
+      query: ({ id, data }) => ({ url: `/${id}`, method: "PATCH", data }),
       invalidatesTags: (result, error, { id }) => [
         { type: "RequestProcedure", id },
         { type: "RequestProcedure", id: "LIST" },
@@ -76,7 +76,7 @@ export const requestProcedureApi = createApi({
     }),
 
     deleteRequestProcedure: builder.mutation<{ success: boolean }, string>({
-      query: (id) => ({ url: `${id}`, method: "DELETE" }),
+      query: (id) => ({ url: `/${id}`, method: "DELETE" }),
       invalidatesTags: (result, error, id) => [
         { type: "RequestProcedure", id },
         { type: "RequestProcedure", id: "LIST" },

@@ -9,6 +9,13 @@ import {
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
+export interface ServiceRoomStats {
+  totalAssignments: number;
+  activeAssignments: number;
+  inactiveAssignments: number;
+  uniqueRooms: number;
+}
+
 const serviceRoomApi = createApi({
   reducerPath: "serviceRoomApi",
   baseQuery: axiosBaseQuery("/service-rooms"),
@@ -32,7 +39,11 @@ const serviceRoomApi = createApi({
       query: (params) => ({
         url: "/paginated",
         method: "GET",
-        params,
+        params: {
+          ...params,
+          sortField: params?.sortBy, // Map sortBy to sortField for backend
+          order: params?.order,
+        },
       }),
       providesTags: (result) =>
         result
@@ -122,7 +133,7 @@ const serviceRoomApi = createApi({
     }),
 
     // Delete service room
-    deleteServiceRoom: builder.mutation<{ message: string }, string>({
+    deleteServiceRoom: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",
@@ -133,6 +144,16 @@ const serviceRoomApi = createApi({
         "ServiceRoomList",
         "RoomService",
       ],
+    }),
+
+    // Get service room stats
+    getServiceRoomStats: builder.query<ServiceRoomStats, void>({
+      query: () => ({
+        url: "/stats",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => response?.data || response,
+      providesTags: ["ServiceRoomList"],
     }),
   }),
 });
@@ -146,6 +167,7 @@ export const {
   useGetServiceRoomByIdQuery,
   useUpdateServiceRoomMutation,
   useDeleteServiceRoomMutation,
+  useGetServiceRoomStatsQuery,
 } = serviceRoomApi;
 
 export default serviceRoomApi;

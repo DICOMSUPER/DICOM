@@ -7,6 +7,7 @@ import { PatientFilters } from "@/components/patients/patient-filters";
 import { AppHeader } from "@/components/app-header";
 import { useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function PatientsPage() {
   const [notificationCount] = useState(3);
@@ -21,25 +22,26 @@ export default function PatientsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-        isLoggingOut={isLoggingOut}
-      />
+    <NotificationProvider>
+      {" "}
+      <div className="min-h-screen bg-background">
+        {/* App Header */}
+        <AppHeader
+          notificationCount={notificationCount}
+          onNotificationClick={handleNotificationClick}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+        />
 
-      {/* Workspace Layout */}
-      <WorkspaceLayout
-        sidebar={<SidebarNav />}
-      >
-        <div className="flex flex-col gap-6">
-          <PatientToolbar />
-          <PatientFilters />
-          <PatientList />
-        </div>
-      </WorkspaceLayout>
-    </div>
+        {/* Workspace Layout */}
+        <WorkspaceLayout sidebar={<SidebarNav />}>
+          <div className="flex flex-col gap-6">
+            <PatientToolbar />
+            <PatientFilters />
+            <PatientList />
+          </div>
+        </WorkspaceLayout>
+      </div>
+    </NotificationProvider>
   );
 }

@@ -17,7 +17,7 @@ import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
 @Injectable()
 export class PatientConditionService {
   constructor(
-    @Inject()
+    @Inject(PatientConditionRepository)
     private readonly patientConditionRepository: PatientConditionRepository
   ) {}
 

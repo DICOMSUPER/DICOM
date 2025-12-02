@@ -131,10 +131,52 @@ export class PatientEncounterController {
     try {
       const userId = req.userInfo.userId;
       createPatientEncounterDto.createdBy = userId;
+
+      // get room by service room id
+      const serviceRoom = await firstValueFrom(
+        this.userService.send(
+          'UserService.ServiceRooms.FindOne',
+          createPatientEncounterDto.serviceRoomId
+        )
+      );
+      if (!serviceRoom) {
+        throw new BadRequestException(
+          `Service room not found: ${createPatientEncounterDto.serviceRoomId}`
+        );
+      }
+      console.log('service room', serviceRoom);
+
+      const roomAssignmentInCurrentSession = await firstValueFrom(
+        this.userService.send(
+          'UserService.EmployeeRoomAssignments.FindByRoomInCurrentSession',
+          serviceRoom.roomId as string
+        )
+      );
+      console.log('room assignment', roomAssignmentInCurrentSession);
+
+      if (!roomAssignmentInCurrentSession) {
+        throw new Error('No room assignment found for the current session');
+      }
+
+      const uniqueEmployeeIds = [
+        ...new Set(
+          roomAssignmentInCurrentSession.map(
+            (assignment: any) => assignment.employeeId
+          )
+        ),
+      ];
+      console.log('unique employee', uniqueEmployeeIds);
+      const createdEncounter = {
+        ...createPatientEncounterDto,
+        createdBy: userId,
+      };
+
+      console.log("crated encounter", createdEncounter);
+      
       return await firstValueFrom(
         this.patientService.send('PatientService.Encounter.Create', {
-          ...createPatientEncounterDto,
-          createdBy: userId,
+          createPatientEncounterDto: createdEncounter,
+          employeesInRoom: uniqueEmployeeIds,
         })
       );
     } catch (error) {
@@ -145,9 +187,7 @@ export class PatientEncounterController {
 
   @Get('all')
   @Role(Roles.SYSTEM_ADMIN)
-  async findAllWithoutPagination(
-    @Query() filters: EncounterSearchFilters,
-  ) {
+  async findAllWithoutPagination(@Query() filters: EncounterSearchFilters) {
     try {
       const encountersData = await firstValueFrom(
         this.patientService.send('PatientService.Encounter.FindAll', {
@@ -430,6 +470,31 @@ export class PatientEncounterController {
       );
     } catch (error) {
       this.logger.error('Error updating encounter:', error);
+      throw error;
+    }
+  }
+
+  // update transfer patient encounter
+  @Patch('transfer/:id')
+  @Role(Roles.PHYSICIAN)
+  async transfer(
+    @Param('id') id: string,
+    @Body() updatePatientEncounterDto: UpdatePatientEncounterDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    try {
+      if (!ValidationUtils.isValidUUID(id)) {
+        throw new BadRequestException(`Invalid UUID format: ${id}`);
+      }
+      return await firstValueFrom(
+        this.patientService.send('PatientService.Encounter.Transfer', {
+          id,
+          updatePatientEncounterDto,
+          transferredBy: req.userInfo.userId,
+        })
+      );
+    } catch (error) {
+      this.logger.error('Error transferring encounter:', error);
       throw error;
     }
   }

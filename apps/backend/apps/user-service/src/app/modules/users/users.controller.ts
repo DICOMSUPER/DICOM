@@ -181,6 +181,10 @@ export class UsersController {
       role?: string;
       excludeRole?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
+      sortField?: string;
+      order?: 'asc' | 'desc';
     }
   ) {
     try {
@@ -205,6 +209,8 @@ export class UsersController {
       role?: string;
       excludeRole?: string;
       departmentId?: string;
+      includeInactive?: boolean;
+      includeDeleted?: boolean;
     }
   ) {
     try {

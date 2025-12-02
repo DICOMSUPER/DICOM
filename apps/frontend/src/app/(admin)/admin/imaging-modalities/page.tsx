@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
@@ -28,8 +28,11 @@ import {
   useCreateImagingModalityMutation,
   useDeleteImagingModalityMutation,
   useGetImagingModalityPaginatedQuery,
+  useGetImagingModalityStatsQuery,
   useUpdateImagingModalityMutation,
 } from '@/store/imagingModalityApi';
+import { SortConfig } from '@/components/ui/data-table';
+import { sortConfigToQueryParams } from '@/utils/sort-utils';
 
 interface ApiError {
   data?: {
@@ -38,13 +41,15 @@ interface ApiError {
 }
 
 export default function ImagingModalityPage() {
-  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string }>({
+  const [filters, setFilters] = useState<PaginatedQuery & { searchField?: string; includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
     search: "",
     searchField: "modalityName",
     sortBy: "createdAt",
     order: "desc",
+    includeInactive: true,
+    includeDeleted: false,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -57,13 +62,29 @@ export default function ImagingModalityPage() {
     useState<ImagingModality | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({});
+
+  const queryParams = useMemo(() => {
+    const params = { ...filters };
+    const sortParams = sortConfigToQueryParams(sortConfig);
+    Object.assign(params, sortParams);
+    return params;
+  }, [filters, sortConfig]);
 
   const {
     data: modalitiesData,
     isLoading,
     error: modalitiesError,
     refetch,
-  } = useGetImagingModalityPaginatedQuery(filters);
+  } = useGetImagingModalityPaginatedQuery(queryParams, {
+    refetchOnMountOrArgChange: true,
+  });
+
+  const {
+    data: imagingModalityStatsData,
+    isLoading: imagingModalityStatsLoading,
+    refetch: refetchImagingModalityStats,
+  } = useGetImagingModalityStatsQuery();
 
   const [createModality, { isLoading: isCreating }] =
     useCreateImagingModalityMutation();
@@ -98,20 +119,12 @@ export default function ImagingModalityPage() {
   };
 
   const stats = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    
-    modalities.forEach((m) => {
-      if (m.isActive) active++;
-      else inactive++;
-    });
-    
     return {
-      total: meta.total,
-      active,
-      inactive,
+      total: imagingModalityStatsData?.totalModalities ?? 0,
+      active: imagingModalityStatsData?.activeModalities ?? 0,
+      inactive: imagingModalityStatsData?.inactiveModalities ?? 0,
     };
-  }, [modalities, meta.total]);
+  }, [imagingModalityStatsData]);
 
   const handleCreate = () => {
     setSelectedModalityId(null);
@@ -134,33 +147,23 @@ export default function ImagingModalityPage() {
 
   const confirmDelete = async () => {
     if (!modalityToDelete) return;
-
     try {
-      const result = await deleteModality(modalityToDelete.id);
-      // API returns { success: true, data: true, statusCode: 200 } on success
-      const response = result.data as any;
-      if (response?.success === true || response?.statusCode === 200) {
-        toast.success("Imaging modality deleted successfully");
-        setModalityToDelete(null);
-        await refetch();
-      } else {
-        // If response doesn't indicate success, show error
-        toast.error(
-          response?.message || "Failed to delete imaging modality"
-        );
-      }
-    } catch (err: any) {
-      // Check if error is actually a success response
-      if (err?.data?.success === true || err?.data?.statusCode === 200) {
-        toast.success("Imaging modality deleted successfully");
-        setModalityToDelete(null);
-        await refetch();
-      } else {
-        const error = err as ApiError;
-        toast.error(
-          error?.data?.message || "Failed to delete imaging modality"
-        );
-      }
+      await deleteModality(modalityToDelete.id).unwrap();
+      toast.success(
+        `Imaging modality ${modalityToDelete.modalityName} deleted successfully`
+      );
+      setModalityToDelete(null);
+      await refetch();
+    } catch (error) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      toast.error(
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to delete imaging modality"
+      );
     }
   };
 
@@ -199,7 +202,13 @@ export default function ImagingModalityPage() {
       sortBy: "createdAt",
       order: "desc",
     });
+    setSortConfig({});
   };
+
+  const handleSort = useCallback((newSortConfig: SortConfig) => {
+    setSortConfig(newSortConfig);
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setFilters((prev) => ({ ...prev, page: newPage }));
@@ -208,7 +217,7 @@ export default function ImagingModalityPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchImagingModalityStats()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -246,13 +255,17 @@ export default function ImagingModalityPage() {
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
-        isLoading={isLoading}
+        isLoading={isLoading || imagingModalityStatsLoading}
       />
 
       <ImagingModalityFiltersSection
         filters={filters}
         onFiltersChange={setFilters}
         onReset={handleReset}
+        onSearch={() => {
+          setFilters((prev) => ({ ...prev, page: 1 }));
+        }}
+        isSearching={isLoading}
       />
 
       <ImagingModalityTable
@@ -264,6 +277,8 @@ export default function ImagingModalityPage() {
         onDelete={handleDelete}
         page={meta.page}
         limit={meta.limit}
+        onSort={handleSort}
+        initialSort={sortConfig.field ? sortConfig : undefined}
       />
 
       <Pagination

@@ -41,15 +41,42 @@ export class BodyPartController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('sortFields') sortFields?: string | string[],
+    @Query('sortOrders') sortOrders?: string | string[],
+    @Query('sortFieldsString') sortFieldsString?: string,
+    @Query('sortOrdersString') sortOrdersString?: string,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean
   ) {
+    // Handle array format (from query string, arrays come as comma-separated or repeated params)
+    const sortFieldsArray = Array.isArray(sortFields) 
+      ? sortFields 
+      : typeof sortFields === 'string' 
+        ? sortFields.split(',').map(f => f.trim()).filter(f => f)
+        : undefined;
+    
+    const sortOrdersArray = Array.isArray(sortOrders)
+      ? sortOrders
+      : typeof sortOrders === 'string'
+        ? sortOrders.split(',').map(o => o.trim()).filter(o => o)
+        : undefined;
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
       search,
       searchField,
+      // Single field (backward compatibility)
       sortField,
       order,
+      // Multiple fields (n fields)
+      sortFields: sortFieldsArray,
+      sortOrders: sortOrdersArray,
+      sortFieldsString,
+      sortOrdersString,
+      includeInactive: includeInactive === true,
+      includeDeleted: includeDeleted === true,
     };
     return await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindMany', {

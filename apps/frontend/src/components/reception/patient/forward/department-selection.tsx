@@ -27,7 +27,7 @@ export default function DepartmentSelection({
   setSelectedRoom: (room: Room | null) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-foreground flex items-center gap-2">
         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
           1

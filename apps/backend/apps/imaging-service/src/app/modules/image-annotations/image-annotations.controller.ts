@@ -150,7 +150,7 @@ export class ImageAnnotationsController {
       const { paginationDto } = data;
       return await this.imageAnnotationsService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'textContent',
         sortField: paginationDto.sortField || 'createdAt',
@@ -181,7 +181,7 @@ export class ImageAnnotationsController {
       const { id, type, paginationDto } = data;
       return await this.imageAnnotationsService.findByReferenceId(id, type, {
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'textContent',
         sortField: paginationDto.sortField || 'createdAt',
@@ -191,6 +191,26 @@ export class ImageAnnotationsController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to find by reference for image annotation',
+        IMAGING_SERVICE
+      );
+    }
+  }
+
+  // check whether annotation reviewd in a study
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.IsReviewedInStudy`)
+  async isReviewedInStudy(studyId: string): Promise<{
+    message: string;
+    isReviewed: boolean;
+  }> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.IsReviewedInStudy`
+    );
+    try {
+      return await this.imageAnnotationsService.isReviewedInStudy(studyId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to check reviewed in study for image annotation',
         IMAGING_SERVICE
       );
     }

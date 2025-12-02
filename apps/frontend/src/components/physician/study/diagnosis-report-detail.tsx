@@ -56,8 +56,9 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
 import { ModalApproveStudy } from "../diagnosis-report/modal-approve-study";
+import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
+import { EmptyReportState } from "./empty-report";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -76,7 +77,7 @@ export function DiagnosisReportDetail({
       templateType: TemplateType.STANDARD,
       bodyPartId: "",
     });
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     data: report,
     isLoading,
@@ -266,11 +267,15 @@ export function DiagnosisReportDetail({
   };
 
   const getStatusBadge = (status: DiagnosisStatus) => {
+    const capitalizeFirst = (str: string) => {
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+
     switch (status) {
       case DiagnosisStatus.ACTIVE:
         return (
-          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200 transition-colors">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2" />
+          <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-200 transition-colors">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
             Active
           </Badge>
         );
@@ -289,7 +294,7 @@ export function DiagnosisReportDetail({
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{capitalizeFirst(status || "Unknown")}</Badge>;
     }
   };
 
@@ -324,6 +329,15 @@ export function DiagnosisReportDetail({
     router.push(`/viewer?study=${report?.data.studyId}`);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   const handleDownloadReport = async () => {
     try {
       const result = await updateDicomStudy({
@@ -349,6 +363,16 @@ export function DiagnosisReportDetail({
     router.back();
   };
 
+  if (!reportId && !isReportLoading) {
+    return (
+      <EmptyReportState
+        onBack={handleBack}
+        onRefresh={handleRefresh}
+        isLoading={false}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen">
       <div className="max-full ">
@@ -365,7 +389,6 @@ export function DiagnosisReportDetail({
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex items-center gap-3">
-
                 <h1 className="text-3xl font-bold text-slate-900">
                   Diagnosis Report Detail
                 </h1>

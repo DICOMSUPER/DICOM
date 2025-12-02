@@ -94,6 +94,22 @@ export class EmployeeRoomAssignmentsController {
       );
     }
   }
+  @MessagePattern('UserService.EmployeeRoomAssignments.FindByRoomInCurrentSession')
+  async findByRoomInCurrentSession(
+    @Payload() roomId: string
+  ): Promise<EmployeeRoomAssignment[]> {
+    try {
+      return await this.employeeRoomAssignmentsService.findByRoomInCurrentSession(
+        roomId
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find employee room assignments in current session by room',
+        'USER_SERVICE'
+      );
+    }
+  }
 
   // find many
   @MessagePattern('UserService.EmployeeRoomAssignments.FindMany')
@@ -107,7 +123,7 @@ export class EmployeeRoomAssignmentsController {
       const { paginationDto } = data;
       return await this.employeeRoomAssignmentsService.findMany({
         page: paginationDto.page || 1,
-        limit: paginationDto.limit || 5,
+        limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
         searchField: paginationDto.searchField || 'modalityName',
         sortField: paginationDto.sortField || 'createdAt',
@@ -252,6 +268,22 @@ export class EmployeeRoomAssignmentsController {
         error,
         'Failed to get employee room assignment stats',
         'UserService'
+      );
+    }
+  }
+
+  @MessagePattern('UserService.EmployeeRoomAssignments.GetStats')
+  async getStats() {
+    this.logger.log(
+      'Using pattern: UserService.EmployeeRoomAssignments.GetStats'
+    );
+    try {
+      return await this.employeeRoomAssignmentsService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get employee room assignment stats',
+        'USER_SERVICE'
       );
     }
   }

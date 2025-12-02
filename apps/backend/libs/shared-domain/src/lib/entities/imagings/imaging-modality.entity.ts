@@ -1,6 +1,6 @@
 import { BaseEntity } from '@backend/database';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { ModalityMachine } from './modality-machine.entity';
+import type { ModalityMachine } from './modality-machine.entity';
 
 @Entity('imaging_modalities')
 export class ImagingModality extends BaseEntity {
@@ -19,6 +19,6 @@ export class ImagingModality extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @OneToMany(() => ModalityMachine, (machine) => machine.modality)
+  @OneToMany(() => require('./modality-machine.entity').ModalityMachine, (machine: ModalityMachine) => machine.modality)
   modalityMachines?: ModalityMachine[];
 }

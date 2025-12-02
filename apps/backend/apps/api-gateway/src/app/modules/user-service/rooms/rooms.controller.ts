@@ -72,6 +72,8 @@ export class RoomsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'Get all rooms' })
+  @ApiQuery({ name: 'sortField', required: false, type: String, description: 'Field to sort by' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'], description: 'Sort order' })
   @ApiResponse({ status: 200, description: 'Lấy danh sách phòng thành công' })
   async getAllRooms(
     @Query('page') page?: number,
@@ -79,7 +81,11 @@ export class RoomsController {
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('type') type?: string,
-    @Query('departmentId') departmentId?: string
+    @Query('departmentId') departmentId?: string,
+    @Query('includeInactive') includeInactive?: boolean,
+    @Query('includeDeleted') includeDeleted?: boolean,
+    @Query('sortField') sortField?: string,
+    @Query('order') order?: 'asc' | 'desc',
   ) {
     try {
       const pageNum = page ? Number(page) : 1;
@@ -95,6 +101,10 @@ export class RoomsController {
           status,
           type,
           departmentId,
+          includeInactive: includeInactive === true,
+          includeDeleted: includeDeleted === true,
+          sortField,
+          order,
         })
       );
 
@@ -257,6 +267,53 @@ export class RoomsController {
     }
   }
 
+  @Public()
+  @Get('department/:departmentId')
+  @ApiOperation({ summary: 'Get rooms by Department ID' })
+  @ApiParam({ name: 'departmentId', description: 'Department ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phòng theo khoa thành công',
+  })
+  async getRoomsByDepartmentId(@Param('departmentId') departmentId: string) {
+    try {
+      this.logger.log(`Fetching rooms for department ID: ${departmentId}`);
+      const result = await firstValueFrom(
+        this.roomClient.send('room.get-by-department-id', {
+          departmentId,
+        })
+      );
+
+      return {
+        data: result.data,
+        message: 'Lấy danh sách phòng theo khoa thành công',
+      };
+    } catch (error) {
+      this.logger.error(
+        ` Failed to fetch rooms for department ID: ${departmentId}`,
+        error
+      );
+      throw handleError(error);
+    }
+  }
+
+  @Get('stats')
+  @Role(Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get room statistics' })
+  @ApiResponse({ status: 200, description: 'Lấy thống kê phòng thành công' })
+  async getStats() {
+    try {
+      this.logger.log('Fetching room statistics');
+      const result = await firstValueFrom(
+        this.roomClient.send('room.get-stats', {})
+      );
+      return result;
+    } catch (error) {
+      this.logger.error('❌ Failed to fetch room stats', error);
+      throw handleError(error);
+    }
+  }
+
   @Role(Roles.SYSTEM_ADMIN, Roles.RECEPTION_STAFF, Roles.PHYSICIAN)
   @Get(':id')
   @ApiOperation({ summary: 'Get room by ID' })
@@ -319,36 +376,6 @@ export class RoomsController {
       };
     } catch (error) {
       this.logger.error(`❌ Failed to delete room ID: ${id}`, error);
-      throw handleError(error);
-    }
-  }
-
-  @Public()
-  @Get('department/:departmentId')
-  @ApiOperation({ summary: 'Get rooms by Department ID' })
-  @ApiParam({ name: 'departmentId', description: 'Department ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lấy danh sách phòng theo khoa thành công',
-  })
-  async getRoomsByDepartmentId(@Param('departmentId') departmentId: string) {
-    try {
-      this.logger.log(`Fetching rooms for department ID: ${departmentId}`);
-      const result = await firstValueFrom(
-        this.roomClient.send('room.get-by-department-id', {
-          departmentId,
-        })
-      );
-
-      return {
-        data: result.data,
-        message: 'Lấy danh sách phòng theo khoa thành công',
-      };
-    } catch (error) {
-      this.logger.error(
-        ` Failed to fetch rooms for department ID: ${departmentId}`,
-        error
-      );
       throw handleError(error);
     }
   }

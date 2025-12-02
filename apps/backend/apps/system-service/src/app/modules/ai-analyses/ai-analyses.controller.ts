@@ -50,8 +50,5 @@ export class AiAnalysesController {
     return await this.aiAnalysesService.update(payload.id, payload.data);
   }
 
-  @MessagePattern('ai_analysis.remove')
-  async remove(@Payload() payload: { id: string }) {
-    return await this.aiAnalysesService.remove(payload.id);
-  }
+
 }

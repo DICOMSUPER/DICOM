@@ -23,6 +23,35 @@ export class AnalyticsController {
 
   constructor(private readonly analyticsService: AnalyticsService) {}
 
+  @Get('reception-stats')
+  @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get reception staff analytics and statistics' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
+  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reception analytics data retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getReceptionAnalytics(
+    @Query('period') period?: 'week' | 'month' | 'year',
+    @Query('value') value?: string,
+  ) {
+    try {
+      this.logger.log('Fetching reception analytics data');
+      const analytics = await this.analyticsService.getReceptionAnalytics(period, value);
+      this.logger.log('Reception analytics data retrieved successfully');
+
+      return analytics;
+    } catch (error) {
+      this.logger.error('Failed to fetch reception analytics data', error);
+      throw handleError(error);
+    }
+  }
+
   @Get('stats')
   @Role(Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get admin analytics and statistics' })
@@ -48,6 +77,35 @@ export class AnalyticsController {
       return analytics;
     } catch (error) {
       this.logger.error('Failed to fetch analytics data', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('physician-stats')
+  @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get physician analytics and statistics' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
+  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Physician analytics data retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getPhysicianAnalytics(
+    @Query('period') period?: 'week' | 'month' | 'year',
+    @Query('value') value?: string,
+  ) {
+    try {
+      this.logger.log('Fetching physician analytics data');
+      const analytics = await this.analyticsService.getPhysicianAnalytics(period, value);
+      this.logger.log('Physician analytics data retrieved successfully');
+
+      return analytics;
+    } catch (error) {
+      this.logger.error('Failed to fetch physician analytics data', error);
       throw handleError(error);
     }
   }
