@@ -219,6 +219,8 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     if (data.role && data.role === Roles.RADIOLOGIST) {
       qb.andWhere('study.studyStatus <> :status', {
         status: DicomStudyStatus.SCANNED,
+      }).andWhere('study.studyStatus <> :rejectedStatus', {
+        rejectedStatus: DicomStudyStatus.REJECTED,
       });
     }
 

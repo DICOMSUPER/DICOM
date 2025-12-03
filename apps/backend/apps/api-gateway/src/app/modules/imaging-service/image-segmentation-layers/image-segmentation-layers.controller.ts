@@ -23,7 +23,20 @@ import {
 } from '@backend/shared-domain';
 import { firstValueFrom, NotFoundError } from 'rxjs';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { RedisService } from '@backend/redis';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../../constant/cache';
+import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
+import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';
+import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
+import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
+import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 
+@ApiTags('Image Segmentation Layers')
 @Controller('image-segmentation-layers')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImageSegmentationLayersController {
@@ -31,14 +44,22 @@ export class ImageSegmentationLayersController {
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
-    private readonly userService: ClientProxy
+    private readonly userService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
   @Post()
+  @ApiOperation({ summary: 'Create a new image segmentation layer' })
+  @ApiResponse({
+    status: 201,
+    description: 'The image segmentation layer has been created.',
+  })
+  @ApiBody({ type: CreateImageSegmentationLayerDto })
   async create(
     @Body() createImageSegmentationLayerDto: CreateImageSegmentationLayerDto,
     @Req() req: IAuthenticatedRequest
   ) {
-    return await firstValueFrom(
+    const segmentation = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.Create',
         {
@@ -49,23 +70,78 @@ export class ImageSegmentationLayersController {
         }
       )
     );
+
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.id}/${segmentation.id}`;
+    await this.redisService.set(pattern, segmentation, CACHE_TTL_SECONDS);
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.paginated}`
+    );
+
+    return segmentation;
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an existing image segmentation layer' })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'The image segmentation layer has been updated.',
+  })
+  @ApiBody({ type: UpdateImageSegmentationLayerDto })
   async update(
     @Param('id') id: string,
     @Body() updateImageSegmentationLayerDto: UpdateImageSegmentationLayerDto
   ) {
-    return await firstValueFrom(
+    const segmentation = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.Update',
         { id, updateImageSegmentationLayerDto }
       )
     );
+
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.id}/${id}`;
+    await this.redisService.set(pattern, segmentation, CACHE_TTL_SECONDS);
+
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.paginated}`
+    );
+
+    return segmentation;
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete an image segmentation layer' })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'The image segmentation layer has been deleted.',
+  })
   async delete(@Param('id') id: string) {
+    await this.redisService.delete(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.id}/${id}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.paginated}`
+    );
+
     return await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.Delete',
@@ -75,16 +151,45 @@ export class ImageSegmentationLayersController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all image segmentation layers' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of image segmentation layers',
+  })
+  @ApiQuery({ name: 'instanceId', required: false, type: String })
   async findAll(@Query('instanceId') instanceId?: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${
+      CacheKeyPattern.all
+    }?instanceId=${instanceId || ''}`;
+    const cachedSegmentations = await this.redisService.get(pattern);
+
+    if (cachedSegmentations) {
+      return cachedSegmentations;
+    }
+
+    const segmentations = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.FindAll',
         { instanceId }
       )
     );
+
+    await this.redisService.set(pattern, segmentations, CACHE_TTL_SECONDS);
+    return segmentations;
   }
 
   @Get('paginated')
+  @ApiOperation({ summary: 'Get paginated image segmentation layers' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of image segmentation layers',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async findAllPaginated(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -93,6 +198,19 @@ export class ImageSegmentationLayersController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${
+      CacheKeyPattern.paginated
+    }?page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+
+    const cachedPaginated = await this.redisService.get(pattern);
+    if (cachedPaginated) {
+      return cachedPaginated;
+    }
+
     const paginationDto = {
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
@@ -101,26 +219,60 @@ export class ImageSegmentationLayersController {
       sortField,
       order,
     };
-    return await firstValueFrom(
+    const segmentations = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.FindMany',
         { paginationDto }
       )
     );
+
+    await this.redisService.set(pattern, segmentations, CACHE_TTL_SECONDS);
+    return segmentations;
   }
 
   @Get('series/:seriesId')
+  @ApiOperation({ summary: 'Get image segmentation layers by series ID' })
+  @ApiParam({ name: 'seriesId', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'List of image segmentation layers for the series',
+  })
   async findBySeriesId(@Param('seriesId') seriesId: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.bySeriesId}/${seriesId}`;
+    const cachedSegmentations = await this.redisService.get(pattern);
+    if (cachedSegmentations) {
+      return cachedSegmentations;
+    }
+
+    const segmentations = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.FindBySeriesId',
         { seriesId }
       )
     );
+
+    await this.redisService.set(pattern, segmentations, CACHE_TTL_SECONDS);
+    return segmentations;
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get an image segmentation layer by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The image segmentation layer',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Image Segmentation Layer not found',
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
   async findOne(@Param('id') id: string) {
+    const pattern = `${CacheEntity.imageSegmentationLayers}.${CacheKeyPattern.id}/${id}`;
+    const cachedSegmentation = await this.redisService.get(pattern);
+    if (cachedSegmentation) {
+      return cachedSegmentation;
+    }
+
     const segmentation = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImageSegmentationLayers.FindOne',
@@ -131,6 +283,8 @@ export class ImageSegmentationLayersController {
     if (!segmentation) {
       throw new NotFoundException('Image Segmentation Layer not found');
     }
+
+    await this.redisService.set(pattern, segmentation, CACHE_TTL_SECONDS);
 
     return segmentation;
   }

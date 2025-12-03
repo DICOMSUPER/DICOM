@@ -212,7 +212,6 @@ export function ModalDiagnosisReportDetail({
     }
   }, [selectedReportTemplate, selectedReportTemplateId, isEditDescriptionOpen]);
 
-
   const handleEditDescriptionOpen = useCallback(() => {
     setIsEditDescriptionOpen(true);
     setFiltersReportTemplate({
@@ -346,7 +345,11 @@ export function ModalDiagnosisReportDetail({
           </Badge>
         );
       default:
-        return <Badge variant="outline">{capitalizeFirst(status || "Unknown")}</Badge>;
+        return (
+          <Badge variant="outline">
+            {capitalizeFirst(status || "Unknown")}
+          </Badge>
+        );
     }
   };
 
@@ -785,7 +788,7 @@ export function ModalDiagnosisReportDetail({
                                       variant="outline"
                                       className="text-xs font-mono"
                                     >
-                                      Series #{series.seriesNumber}
+                                      Series #{series?.seriesNumber}
                                     </Badge>
                                     <div className="text-sm font-medium text-slate-900">
                                       {series.seriesDescription}
@@ -841,7 +844,7 @@ export function ModalDiagnosisReportDetail({
                 <Button
                   disabled={
                     dicomStudyData?.data.studyStatus ===
-                    DicomStudyStatus.APPROVED 
+                    DicomStudyStatus.APPROVED
                     // || dicomStudyData?.data.studyStatus ===
                     // DicomStudyStatus.RESULT_PRINTED
                   }
@@ -992,7 +995,7 @@ export function ModalDiagnosisReportDetail({
               )}
 
               {/* Display existing description when not in edit mode */}
-              { report.data.description && (
+              {report.data.description && (
                 <div className="bg-white border border-slate-200/60 rounded-xl p-6">
                   <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
                     <FileText className="w-4 h-4 text-teal-600" />

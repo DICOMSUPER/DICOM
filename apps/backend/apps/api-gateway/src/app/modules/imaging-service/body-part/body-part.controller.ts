@@ -13,28 +13,69 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { CreateBodyPartDto, UpdateBodyPartDto } from '@backend/shared-domain';
 import { firstValueFrom } from 'rxjs';
-
+import { RedisService } from '@backend/redis';
 import {
   RequestLoggingInterceptor,
   TransformInterceptor,
 } from '@backend/shared-interceptor';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../../constant/cache';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 
+@ApiTags('Body Parts')
 @Controller('body-part')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class BodyPartController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
-    private readonly imagingService: ClientProxy
-  ) { }
+    private readonly imagingService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
+  ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all body parts' })
+  @ApiResponse({ status: 200, description: 'List of body parts' })
   async getBodyParts() {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.bodyParts}.${CacheKeyPattern.all}`;
+    const cachedParts = await this.redisService.get(pattern);
+    if (cachedParts) {
+      return cachedParts;
+    }
+
+    const parts = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindAll', {})
     );
+    await this.redisService.set(pattern, parts, CACHE_TTL_SECONDS);
+
+    return parts;
   }
 
   @Get('paginated')
+  @ApiOperation({ summary: 'Get paginated body parts' })
+  @ApiResponse({ status: 200, description: 'Paginated list of body parts' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({ name: 'sortFields', required: false, type: [String] })
+  @ApiQuery({ name: 'sortOrders', required: false, type: [String] })
+  @ApiQuery({ name: 'sortFieldsString', required: false, type: String })
+  @ApiQuery({ name: 'sortOrdersString', required: false, type: String })
+  @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean })
   async findMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -49,18 +90,30 @@ export class BodyPartController {
     @Query('includeInactive') includeInactive?: boolean,
     @Query('includeDeleted') includeDeleted?: boolean
   ) {
+    const pattern = `${CacheEntity.bodyParts}.${CacheKeyPattern.paginated}?page=${page}&limit=${limit}&search=${search}&searchField=${searchField}&sortField=${sortField}&order=${order}&sortFields=${sortFields}&sortOrders=${sortOrders}&sortFieldsString=${sortFieldsString}&sortOrdersString=${sortOrdersString}&includeInactive=${includeInactive}&includeDeleted=${includeDeleted}`;
+    const cachedPaginated = await this.redisService.get(pattern);
+
+    if (cachedPaginated) {
+      return cachedPaginated;
+    }
     // Handle array format (from query string, arrays come as comma-separated or repeated params)
-    const sortFieldsArray = Array.isArray(sortFields) 
-      ? sortFields 
-      : typeof sortFields === 'string' 
-        ? sortFields.split(',').map(f => f.trim()).filter(f => f)
-        : undefined;
-    
+    const sortFieldsArray = Array.isArray(sortFields)
+      ? sortFields
+      : typeof sortFields === 'string'
+      ? sortFields
+          .split(',')
+          .map((f) => f.trim())
+          .filter((f) => f)
+      : undefined;
+
     const sortOrdersArray = Array.isArray(sortOrders)
       ? sortOrders
       : typeof sortOrders === 'string'
-        ? sortOrders.split(',').map(o => o.trim()).filter(o => o)
-        : undefined;
+      ? sortOrders
+          .split(',')
+          .map((o) => o.trim())
+          .filter((o) => o)
+      : undefined;
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -78,51 +131,107 @@ export class BodyPartController {
       includeInactive: includeInactive === true,
       includeDeleted: includeDeleted === true,
     };
-    return await firstValueFrom(
+    const parts = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindMany', {
         paginationDto,
       })
     );
+
+    await this.redisService.set(pattern, parts, CACHE_TTL_SECONDS);
+
+    return parts;
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a body part by ID' })
+  @ApiResponse({ status: 200, description: 'Body part details' })
+  @ApiParam({ name: 'id', required: true, type: String })
   async getBodyPartById(@Param('id') id: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.bodyParts}.${CacheKeyPattern.id}/${id}`;
+    const cachedPart = await this.redisService.get(pattern);
+    if (cachedPart) {
+      return cachedPart;
+    }
+
+    const part = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindOne', {
         id,
       })
     );
+    await this.redisService.set(pattern, part, CACHE_TTL_SECONDS);
+    return part;
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new body part' })
+  @ApiResponse({ status: 201, description: 'The body part has been created.' })
+  @ApiBody({ type: CreateBodyPartDto })
   async createBodyPart(@Body() createBodyPartDto: CreateBodyPartDto) {
-    return await firstValueFrom(
+    const part = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.BodyPart.Create',
         createBodyPartDto
       )
     );
+
+    await this.redisService.set(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.id}/${part.id}`,
+      part,
+      CACHE_TTL_SECONDS
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.delete(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.all}`
+    );
+    return part;
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a body part by ID' })
+  @ApiResponse({ status: 200, description: 'The body part has been updated.' })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiBody({ type: UpdateBodyPartDto })
   async updateBodyPart(
     @Param('id') id: string,
     @Body() updateBodyPartDto: UpdateBodyPartDto
   ) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.bodyParts}.${CacheKeyPattern.id}/${id}`;
+    const parts = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.Update', {
         id,
         updateBodyPartDto,
       })
     );
+    await this.redisService.set(pattern, parts, CACHE_TTL_SECONDS);
+    await this.redisService.delete(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.paginated}`
+    );
+    return parts;
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a body part by ID' })
+  @ApiResponse({ status: 200, description: 'The body part has been deleted.' })
+  @ApiParam({ name: 'id', required: true, type: String })
   async deleteBodyPart(@Param('id') id: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.bodyParts}.${CacheKeyPattern.id}/${id}`;
+    const parts = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.Delete', {
         id,
       })
     );
+    await this.redisService.delete(pattern);
+    await this.redisService.delete(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.bodyParts}.${CacheKeyPattern.paginated}`
+    );
+    return parts;
   }
 }

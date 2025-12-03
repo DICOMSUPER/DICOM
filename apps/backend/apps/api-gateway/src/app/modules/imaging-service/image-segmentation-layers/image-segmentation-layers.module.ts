@@ -5,12 +5,14 @@ import {
   UserServiceClientModule,
 } from '@backend/shared-client';
 import { SharedInterceptorModule } from '@backend/shared-interceptor';
+import { BackendRedisModule } from '@backend/redis';
 
 @Module({
   imports: [
     ImagingServiceClientModule,
     UserServiceClientModule,
     SharedInterceptorModule,
+    BackendRedisModule,
   ],
   controllers: [ImageSegmentationLayersController],
 })

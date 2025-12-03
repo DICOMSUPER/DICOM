@@ -138,6 +138,7 @@ export default function SetupSignatureModal({
                   <SignatureDisplay
                     firstName={user?.firstName}
                     lastName={user?.lastName}
+                    role="Kỹ thuật viên"
                   />
                 </>
               ) : (

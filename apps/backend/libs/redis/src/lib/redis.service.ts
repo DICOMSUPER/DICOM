@@ -13,10 +13,14 @@ export class RedisService {
     if (!value) return undefined;
 
     try {
-      return JSON.parse(value) as T; 
+      return JSON.parse(value) as T;
     } catch (error) {
-      this.logger.warn(`Failed to parse cache value for key ${key}: ${(error as Error).message}`);
-      return value as T; 
+      this.logger.warn(
+        `Failed to parse cache value for key ${key}: ${
+          (error as Error).message
+        }`
+      );
+      return value as T;
     }
   }
 
@@ -28,5 +32,27 @@ export class RedisService {
   async delete(key: string): Promise<void> {
     this.logger.debug(`Deleting from Redis: ${key}`);
     await this.redis.delete(key);
+  }
+
+  async deleteKeyStartingWith(prefix: string): Promise<void> {
+    this.logger.debug(`Deleting keys from Redis starting with: ${prefix}`);
+
+    // iterator may be undefined or require an argument according to the Keyv types,
+    // so guard and call it explicitly with an argument via a safe any-cast.
+    const iteratorFn = (this.redis as any).iterator;
+    if (typeof iteratorFn !== 'function') {
+      this.logger.warn(
+        'Redis instance does not expose an iterator function; skipping deleteKeyStartingWith.'
+      );
+      return;
+    }
+
+    const iterator = iteratorFn.call(this.redis, undefined);
+    for await (const key of iterator) {
+      if (typeof key === 'string' && key.startsWith(prefix)) {
+        this.logger.debug(`Deleting key: ${key}`);
+        await this.redis.delete(key);
+      }
+    }
   }
 }
