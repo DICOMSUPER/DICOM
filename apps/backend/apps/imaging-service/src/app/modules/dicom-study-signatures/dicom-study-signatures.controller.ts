@@ -79,18 +79,18 @@ export class DicomStudySignaturesController {
   // get all annotations by study ID and signature type
   
 
-  // @MessagePattern('ImagingService.DicomStudySignature.GetDetails')
-  // async getSignatureDetails(
-  //   @Payload() data: { studyId: string; signatureType: SignatureType }
-  // ) {
-  //   this.logger.log(
-  //     `Getting signature details: studyId=${data.studyId}, type=${data.signatureType}`
-  //   );
+  @MessagePattern('ImagingService.DicomStudySignature.GetDetails')
+  async getSignatureDetails(
+    @Payload() data: { studyId: string; signatureType: SignatureType }
+  ) {
+    this.logger.log(
+      `Getting signature details: studyId=${data.studyId}, type=${data.signatureType}`
+    );
 
-  //   return this.signatureService.getSignatureDetails(
-  //     data.studyId,
-  //     data.signatureType
-  //   );
-  // }
+    return this.signatureService.getSignatureDetails(
+      data.studyId,
+      data.signatureType
+    );
+  }
 
 }

@@ -6,10 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
 
 import { DicomStudy, DicomStudySignature } from '@backend/shared-domain';
-import {
-  DicomStudyStatus,
-  SignatureType
-} from '@backend/shared-enums';
+import { DicomStudyStatus, SignatureType } from '@backend/shared-enums';
 import {
   DigitalSignatureAlreadyExistsException,
   DigitalSignatureSetupRequiredException,
@@ -35,13 +32,13 @@ export class DicomStudySignaturesService {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
     @Inject()
-    private readonly imageAnnotationsService: ImageAnnotationsService,
-    // @Inject()
-    // private readonly imagingOrdersService: ImagingOrdersService
+    private readonly imageAnnotationsService: ImageAnnotationsService
+  ) // @Inject()
+  // private readonly imagingOrdersService: ImagingOrdersService
 
-    // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    // private readonly patientServiceClient: ClientProxy
-  ) {}
+  // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+  // private readonly patientServiceClient: ClientProxy
+  {}
 
   private async ensureUserHasDigitalSignature(userId: string): Promise<void> {
     try {
@@ -306,7 +303,7 @@ export class DicomStudySignaturesService {
       // }
 
       return {
-        isValid: isValid ,
+        isValid: isValid,
         signedAt: signature.signedAt,
         userId: signature.userId,
         certificateSerial: signature.certificateSerial,
@@ -331,5 +328,30 @@ export class DicomStudySignaturesService {
       signedAt: sig.signedAt,
       certificateSerial: sig.certificateSerial,
     }));
+  }
+  async getSignatureDetails(
+    studyId: string,
+    signatureType: SignatureType
+  ): Promise<DicomStudySignature | null> {
+    try {
+      const signature = await this.signatureRepo.findOne({
+        where: { studyId, signatureType },
+      });
+
+      if (!signature) {
+        this.logger.log(
+          `No signature found for study ${studyId} with type ${signatureType}`
+        );
+        return null;
+      }
+
+      return signature;
+    } catch (error: any) {
+      this.logger.error(
+        `Error getting signature details for study ${studyId}`,
+        error.stack
+      );
+      throw error;
+    }
   }
 }

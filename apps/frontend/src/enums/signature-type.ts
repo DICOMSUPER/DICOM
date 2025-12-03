@@ -1,4 +1,5 @@
 export enum SignatureType {
   TECHNICIAN_VERIFY = 'TECHNICIAN_VERIFY',
   PHYSICIAN_APPROVE = 'PHYSICIAN_APPROVE',
+  
 }
