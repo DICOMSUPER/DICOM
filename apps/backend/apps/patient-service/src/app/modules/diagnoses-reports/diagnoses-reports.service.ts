@@ -5,14 +5,19 @@ import {
 import { RedisService } from '@backend/redis';
 import {
   CreateDiagnosesReportDto,
+  CreateNotificationDto,
   DiagnosesReport,
   DiagnosisReportRepository,
   FilterDiagnosesReportDto,
   PatientEncounter,
   PatientEncounterRepository,
-  UpdateDiagnosesReportDto
+  UpdateDiagnosesReportDto,
 } from '@backend/shared-domain';
-import { DiagnosisStatus } from '@backend/shared-enums';
+import {
+  DiagnosisStatus,
+  NotificationType,
+  RelatedEntityType,
+} from '@backend/shared-enums';
 import {
   createCacheKey,
   ThrowMicroserviceException,
@@ -21,6 +26,8 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PATIENT_SERVICE } from '../../../constant/microservice.constant';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class DiagnosesReportService {
@@ -32,7 +39,9 @@ export class DiagnosesReportService {
     @InjectRepository(DiagnosesReport)
     private readonly reportRepository: Repository<DiagnosesReport>,
     @Inject(RedisService)
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    @Inject(process.env.SYSTEM_SERVICE_NAME || 'SYSTEM_SERVICE')
+    private readonly systemService: ClientProxy
   ) {}
 
   private checkDiagnosesReport = async (
@@ -68,9 +77,9 @@ export class DiagnosesReportService {
   create = async (
     createDiagnosesReportDto: CreateDiagnosesReportDto
   ): Promise<DiagnosesReport> => {
-    const encounter = await this.checkEncounter(
-      createDiagnosesReportDto.encounterId
-    );
+    // const encounter = await this.checkEncounter(
+    //   createDiagnosesReportDto.encounterId
+    // );
 
     const date = createDiagnosesReportDto.diagnosisDate
       ? new Date(createDiagnosesReportDto.diagnosisDate)
@@ -81,9 +90,9 @@ export class DiagnosesReportService {
     const data = {
       ...createDiagnosesReportDto,
       diagnosisDate: date,
-      diagnosisName:
-        createDiagnosesReportDto.diagnosisName ??
-        `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,
+      diagnosisName: createDiagnosesReportDto.diagnosisName,
+      // ??
+      // `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,
     };
     return await this.diagnosisReportRepository.create(data);
   };
@@ -93,7 +102,10 @@ export class DiagnosesReportService {
   };
 
   findOne = async (id: string): Promise<DiagnosesReport | null> => {
-    const report = await this.diagnosisReportRepository.findById(id,["encounter", "encounter.patient"]);
+    const report = await this.diagnosisReportRepository.findById(id, [
+      'encounter',
+      'encounter.patient',
+    ]);
     if (!report) {
       throw ThrowMicroserviceException(
         HttpStatus.NOT_FOUND,
@@ -196,7 +208,6 @@ export class DiagnosesReportService {
       order,
     } = filter;
 
-
     const keyName = createCacheKey.system(
       'diagnoses_reports',
       undefined,
@@ -218,8 +229,7 @@ export class DiagnosesReportService {
       .createQueryBuilder('diagnosisReport')
       .where('diagnosisReport.isDeleted = :isDeleted', { isDeleted: false })
       .leftJoinAndSelect('diagnosisReport.encounter', 'encounter')
-      .leftJoinAndSelect('encounter.patient', 'patient')
-
+      .leftJoinAndSelect('encounter.patient', 'patient');
 
     if (patientName) {
       queryBuilder.andWhere(
@@ -274,8 +284,16 @@ export class DiagnosesReportService {
     }
 
     if (sortBy && order) {
-      const sortField = sortBy === 'diagnosisDate' ? 'diagnosisDate' : sortBy === 'id' ? 'id' : 'createdAt';
-      queryBuilder.orderBy(`diagnosisReport.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+      const sortField =
+        sortBy === 'diagnosisDate'
+          ? 'diagnosisDate'
+          : sortBy === 'id'
+          ? 'id'
+          : 'createdAt';
+      queryBuilder.orderBy(
+        `diagnosisReport.${sortField}`,
+        order.toUpperCase() as 'ASC' | 'DESC'
+      );
     } else {
       queryBuilder.orderBy('diagnosisReport.createdAt', 'DESC');
     }
@@ -301,9 +319,10 @@ export class DiagnosesReportService {
     return response;
   }
 
-  getStats = async (
-    userInfo?: { userId: string; role: string }
-  ): Promise<{
+  getStats = async (userInfo?: {
+    userId: string;
+    role: string;
+  }): Promise<{
     total: number;
     active: number;
     resolved: number;
@@ -311,5 +330,78 @@ export class DiagnosesReportService {
     today: number;
   }> => {
     return await this.diagnosisReportRepository.getStats(userInfo);
+  };
+
+  rejectDiagnosisReport = async (
+    id: string,
+    rejectedBy: string,
+    rejectionReason: string
+  ): Promise<DiagnosesReport> => {
+    const report = await this.checkDiagnosesReport(id);
+
+    if (report.diagnosisStatus !== DiagnosisStatus.PENDING_APPROVAL) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Only reports with pending approval status can be rejected',
+        PATIENT_SERVICE
+      );
+    }
+
+    const updatedReport = await this.diagnosisReportRepository.update(id, {
+      diagnosisStatus: DiagnosisStatus.REJECTED,
+      rejectedBy,
+      rejectedAt: new Date(),
+      rejectionReason,
+    });
+    const notificationPayload: CreateNotificationDto = {
+      recipientId: report.diagnosedBy,
+      senderId: rejectedBy as string,
+      notificationType: NotificationType.ASSIGNMENT,
+      title: 'Reject diagnosis',
+      relatedEntityType: RelatedEntityType.REPORT,
+      relatedEntityId: report.id,
+      message: `Your diagnosis report "${report.diagnosisName}" has been rejected. With reason: ${rejectionReason}`,
+    };
+    await firstValueFrom(
+      this.systemService.send('notification.create', notificationPayload)
+    );
+    return updatedReport!;
+  };
+
+  approveDiagnosisReport = async (
+    id: string,
+    approvedBy: string
+  ): Promise<DiagnosesReport> => {
+    const report = await this.checkDiagnosesReport(id);
+
+    if (report.diagnosisStatus !== DiagnosisStatus.PENDING_APPROVAL) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Only reports with pending approval status can be approved',
+        PATIENT_SERVICE
+      );
+    }
+
+    const updatedReport = await this.diagnosisReportRepository.update(id, {
+      diagnosisStatus: DiagnosisStatus.APPROVED,
+      approvedBy,
+      approvedAt: new Date(),
+    });
+
+    const notificationPayload: CreateNotificationDto = {
+      recipientId: report.diagnosedBy,
+      senderId: approvedBy as string,
+      notificationType: NotificationType.ASSIGNMENT,
+      title: 'Diagnosis report approved',
+      relatedEntityType: RelatedEntityType.REPORT,
+      relatedEntityId: report.id,
+      message: `Your diagnosis report "${report.diagnosisName}" has been approved.`,
+    };
+    await firstValueFrom(
+      this.systemService.send('notification.create', notificationPayload)
+    );
+
+
+    return updatedReport!;
   };
 }

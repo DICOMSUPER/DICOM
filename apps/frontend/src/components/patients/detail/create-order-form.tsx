@@ -103,18 +103,18 @@ export default function CreateImagingOrder({
   const [createImagingOrderForm, { isLoading: isCreating }] =
     useCreateImagingOrderFormMutation();
 
-  const addProcedure = () => {
-    const newProcedure: ImagingProcedure = {
-      id: Date.now().toString(),
-      modality: "",
-      bodyPart: "",
-      clinicalIndication: "",
-      procedureServiceId: "",
-      specialInstructions: "",
-      procedureServiceName: "",
-    };
-    setProcedures([...procedures, newProcedure]);
-  };
+  // const addProcedure = () => {
+  //   const newProcedure: ImagingProcedure = {
+  //     id: Date.now().toString(),
+  //     modality: "",
+  //     bodyPart: "",
+  //     clinicalIndication: "",
+  //     procedureServiceId: "",
+  //     specialInstructions: "",
+  //     procedureServiceName: "",
+  //   };
+  //   setProcedures([...procedures, newProcedure]);
+  // };
 
   const removeProcedure = (id: string) => {
     if (procedures.length > 1) {
@@ -530,14 +530,14 @@ const handleSave = async () => {
                        selectedProcedureIds={procedures.map(p => p.procedureServiceId).filter(Boolean)} 
                     />
                   ))}
-                  <Button
+                  {/* <Button
                     variant="outline"
                     onClick={addProcedure}
                     className="w-full border-dashed border-2 border-teal-300 text-teal-700 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-400"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Procedure
-                  </Button>
+                  </Button> */}
                 </div>
               </CardContent>
             </Card>

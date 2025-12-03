@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
 import { TemplateType } from "@/enums/report-template.enum";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
+import { SignatureType } from "@/enums/signature-type";
 import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
 import {
   FilterReportTemplate,
@@ -25,12 +25,17 @@ import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import {
   useGetDiagnosisByIdQuery,
   useUpdateDiagnosisMutation,
+  useRejectDiagnosisMutation,
+  useApproveDiagnosisMutation,
 } from "@/store/diagnosisApi";
 import {
   useGetOneDicomStudyQuery,
   useUpdateDicomStudyMutation,
 } from "@/store/dicomStudyApi";
-import { usePhysicianApproveStudyMutation } from "@/store/dicomStudySignatureApi";
+import { 
+  usePhysicianApproveStudyMutation,
+  useGetSignatureDetailsQuery,
+} from "@/store/dicomStudySignatureApi";
 import {
   useHasSignatureQuery,
   useSetupSignatureMutation,
@@ -58,7 +63,9 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ModalApproveStudy } from "../diagnosis-report/modal-approve-study";
 import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
+import { ModalRejectReport } from "./modal-reject-report";
 import { EmptyReportState } from "./empty-report";
+import { BodyPart } from "@/interfaces/imaging/body-part.interface";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -77,7 +84,7 @@ export function DiagnosisReportDetail({
       templateType: TemplateType.STANDARD,
       bodyPartId: "",
     });
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     data: report,
     isLoading,
@@ -88,6 +95,7 @@ export function DiagnosisReportDetail({
 
   const [modalSetupOpen, setModalSetupOpen] = useState(false);
   const [modalApproveOpen, setModalApproveOpen] = useState(false);
+  const [modalRejectOpen, setModalRejectOpen] = useState(false);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [selectedReportTemplateId, setSelectedReportTemplateId] =
     useState<string>("");
@@ -155,6 +163,24 @@ export function DiagnosisReportDetail({
 
   const [physicianApproveStudy, { isLoading: isApprovingStudyLoading }] =
     usePhysicianApproveStudyMutation();
+
+  const [rejectDiagnosis, { isLoading: isRejectingDiagnosis }] =
+    useRejectDiagnosisMutation();
+
+  const [approveDiagnosis, { isLoading: isApprovingDiagnosis }] =
+    useApproveDiagnosisMutation();
+
+  // Check if study has physician signature
+  const { data: physicianSignatureData, isLoading: isCheckingSignature } =
+    useGetSignatureDetailsQuery(
+      {
+        studyId: report?.data?.studyId || "",
+        signatureType: SignatureType.PHYSICIAN_APPROVE,
+      },
+      {
+        skip: !report?.data?.studyId,
+      }
+    );
 
   useEffect(() => {
     if (
@@ -272,25 +298,25 @@ export function DiagnosisReportDetail({
     };
 
     switch (status) {
-      case DiagnosisStatus.ACTIVE:
+      case DiagnosisStatus.PENDING_APPROVAL:
         return (
           <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-200 transition-colors">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
-            Active
+            Pending Approval
           </Badge>
         );
-      case DiagnosisStatus.RESOLVED:
+      case DiagnosisStatus.APPROVED:
         return (
           <Badge className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200 transition-colors">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
-            Resolved
+            Approved
           </Badge>
         );
-      case DiagnosisStatus.RULED_OUT:
+      case DiagnosisStatus.REJECTED:
         return (
           <Badge className="bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 transition-colors">
             <div className="w-2 h-2 bg-slate-500 rounded-full mr-2" />
-            Ruled Out
+            Rejected
           </Badge>
         );
       default:
@@ -315,8 +341,40 @@ export function DiagnosisReportDetail({
     }
   };
 
+  const handleRejectReport = async (rejectionReason: string) => {
+    try {
+      await rejectDiagnosis({
+        id: reportId,
+        rejectionReason,
+      }).unwrap();
+      toast.success("Report rejected successfully");
+      setModalRejectOpen(false);
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to reject report");
+    }
+  };
+
+  const handleApproveReport = async () => {
+    try {
+      await approveDiagnosis({
+        id: reportId,
+      }).unwrap();
+      toast.success("Report approved successfully");
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to approve report");
+    }
+  };
+
   const handleEnterApprove = async (studyId: string) => {
     try {
+      // Check if study already has physician signature
+      if (physicianSignatureData?.data) {
+        toast.info("This study has already been signed and approved.");
+        return;
+      }
+
       if (hasSignatureData?.data.hasSignature === false) {
         toast.error(
           "You need to set up your digital signature before approving."
@@ -324,6 +382,12 @@ export function DiagnosisReportDetail({
         setModalSetupOpen(true);
         return;
       }
+      
+      if (report?.data.diagnosisStatus !== DiagnosisStatus.APPROVED) {
+        toast.error("Only approved reports can be entered for approval.");
+        return;
+      }
+
       setSelectedStudyId(studyId);
       setModalApproveOpen(true);
     } catch (error: any) {}
@@ -333,14 +397,14 @@ export function DiagnosisReportDetail({
     router.push(`/viewer?study=${report?.data.studyId}`);
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 500);
-    }
-  };
+  // const handleRefresh = async () => {
+  //   setIsRefreshing(true);
+  //   try {
+  //     await refetch();
+  //   } finally {
+  //     setTimeout(() => setIsRefreshing(false), 500);
+  //   }
+  // };
 
   const handleDownloadReport = async () => {
     try {
@@ -371,7 +435,7 @@ export function DiagnosisReportDetail({
     return (
       <EmptyReportState
         onBack={handleBack}
-        onRefresh={handleRefresh}
+        // onRefresh={handleRefresh}
         isLoading={false}
       />
     );
@@ -379,7 +443,7 @@ export function DiagnosisReportDetail({
 
   return (
     <div className="min-h-screen">
-      <div className="max-full ">
+      <div className="max-full">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between">
@@ -607,15 +671,8 @@ export function DiagnosisReportDetail({
                         Modality Type
                       </div>
                       <Badge variant="outline" className="text-xs">
-                        {
-                          dicomStudyData.data.modalityMachine.modality
-                            ?.modalityCode
-                        }{" "}
-                        -{" "}
-                        {
-                          dicomStudyData.data.modalityMachine.modality
-                            ?.modalityName
-                        }
+                        {dicomStudyData?.data?.imagingOrder?.procedure?.modality
+                          ?.modalityName || "N/A"}
                       </Badge>
                     </div>
                   </div>
@@ -977,7 +1034,7 @@ export function DiagnosisReportDetail({
             )}
 
             {report.data.notes && (
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-6">
+              <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-6">
                 <div className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
                   <AlertCircle className="w-4 h-4 text-amber-600" />
                   Additional Notes
@@ -990,20 +1047,51 @@ export function DiagnosisReportDetail({
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50 bg-white rounded-xl p-6">
+              {report.data.diagnosisStatus ===
+                DiagnosisStatus.PENDING_APPROVAL && (
+                <div>
+                  <Button
+                    onClick={handleApproveReport}
+                    disabled={isUpdating || isApprovingDiagnosis}
+                    className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  >
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <span>
+                      {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
+                    </span>
+                  </Button>
+                  <Button
+                    onClick={() => setModalRejectOpen(true)}
+                    disabled={isUpdating || isRejectingDiagnosis}
+                    className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  >
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <span>Reject Report</span>
+                  </Button>
+                </div>
+              )}
+
+              {/*  {dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED ||
+                dicomStudyData?.data.studyStatus ===
+                  DicomStudyStatus.RESULT_PRINTED} */}
               <Button
                 onClick={() => handleEnterApprove(report.data.studyId)}
                 disabled={
                   isUpdating ||
                   isHasSignatureLoading ||
-                  dicomStudyData?.data.studyStatus ===
-                    DicomStudyStatus.APPROVED ||
-                  dicomStudyData?.data.studyStatus ===
-                    DicomStudyStatus.RESULT_PRINTED
+                  isCheckingSignature ||
+                  !!physicianSignatureData?.data  // Disable if signature exists
+                  // dicomStudyData?.data.studyStatus ===
+                  //   DicomStudyStatus.APPROVED ||
+                  // dicomStudyData?.data.studyStatus ===
+                  //   DicomStudyStatus.RESULT_PRINTED
                 }
-                className="bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                className="bg-linear-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg transition-all hover:shadow-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Image className="w-4 h-4 mr-2" />
-                {DicomStudyStatus.APPROVED === dicomStudyData?.data.studyStatus
+                {physicianSignatureData?.data
+                  ? "Study Already Signed"
+                  : DicomStudyStatus.APPROVED === dicomStudyData?.data.studyStatus
                   ? "Study Approved"
                   : "Sign to Approve Study"}
               </Button>
@@ -1050,6 +1138,12 @@ export function DiagnosisReportDetail({
         onConfirm={handleApproveStudy}
         studyId={selectedStudyId}
         isLoading={isApprovingStudyLoading}
+      />
+      <ModalRejectReport
+        open={modalRejectOpen}
+        onClose={() => setModalRejectOpen(false)}
+        onConfirm={handleRejectReport}
+        isLoading={isRejectingDiagnosis}
       />
     </div>
   );

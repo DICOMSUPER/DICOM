@@ -1,23 +1,22 @@
-import { Controller, Logger } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { DiagnosesReportService } from './diagnoses-reports.service';
-import {
-  CreateDiagnosesReportDto,
-  ImagingOrderForm,
-  UpdateDiagnosesReportDto,
-} from '@backend/shared-domain';
-import { DiagnosesReport } from '@backend/shared-domain';
 import {
   PaginatedResponseDto,
   RepositoryPaginationDto,
 } from '@backend/database';
-import { handleErrorFromMicroservices } from '@backend/shared-utils';
-import {
-  PATIENT_SERVICE,
-  MESSAGE_PATTERNS,
-} from '../../../constant/microservice.constant';
-import { DiagnosisStatus, Roles } from '@backend/shared-enums';
 import { Role } from '@backend/shared-decorators';
+import {
+  CreateDiagnosesReportDto,
+  DiagnosesReport,
+  UpdateDiagnosesReportDto
+} from '@backend/shared-domain';
+import { DiagnosisStatus, Roles } from '@backend/shared-enums';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  MESSAGE_PATTERNS,
+  PATIENT_SERVICE,
+} from '../../../constant/microservice.constant';
+import { DiagnosesReportService } from './diagnoses-reports.service';
 
 const moduleName = 'DiagnosesReport';
 @Controller('diagnoses-reports')
@@ -238,6 +237,62 @@ export class DiagnosesReportController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to get diagnosis report stats',
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Reject`)
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  async rejectDiagnosisReport(
+    @Payload()
+    data: {
+      id: string;
+      rejectedBy: string;
+      rejectionReason: string;
+    }
+  ): Promise<DiagnosesReport> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Reject`
+    );
+    try {
+      const { id, rejectedBy, rejectionReason } = data;
+      return await this.diagnosesReportService.rejectDiagnosisReport(
+        id,
+        rejectedBy,
+        rejectionReason
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to reject diagnosis report with id: ${data.id}`,
+        PATIENT_SERVICE
+      );
+    }
+  }
+
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Approve`)
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  async approveDiagnosisReport(
+    @Payload()
+    data: {
+      id: string;
+      approvedBy: string;
+    }
+  ): Promise<DiagnosesReport> {
+    this.logger.log(
+      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Approve`
+    );
+    try {
+      const { id, approvedBy } = data;
+      return await this.diagnosesReportService.approveDiagnosisReport(
+        id,
+        approvedBy
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        `Failed to approve diagnosis report with id: ${data.id}`,
         PATIENT_SERVICE
       );
     }
