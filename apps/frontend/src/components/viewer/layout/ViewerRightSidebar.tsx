@@ -12,6 +12,7 @@ import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { useViewer } from '@/contexts/ViewerContext';
 import { useLazyGetDicomSeriesByReferenceQuery } from '@/store/dicomSeriesApi';
 import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
+import { useLazyGetAnnotationsBySeriesIdQuery } from '@/store/annotationApi';
 import SeriesCard from '../sidebar/SeriesCard';
 import SeriesFilter from '../sidebar/SeriesFilter';
 import AnnotationAccordion from '../sidebar/AnnotationAccordion';
