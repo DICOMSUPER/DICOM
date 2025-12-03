@@ -130,11 +130,11 @@ export class DicomStudiesService {
       );
     }
 
-      if (
-        [OrderStatus.CANCELLED, OrderStatus.COMPLETED].includes(
-          imagingOrder?.orderStatus
-        )
-      ) {
+    if (
+      [OrderStatus.CANCELLED, OrderStatus.COMPLETED].includes(
+        imagingOrder?.orderStatus
+      )
+    ) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
         'Failed to create dicom study: can not create studies for completed or canceled order',
@@ -155,8 +155,16 @@ export class DicomStudiesService {
     });
   };
 
-  findAll = async (): Promise<DicomStudy[]> => {
-    return await this.dicomStudiesRepository.findAll({ where: {} }, relation);
+  findAll = async (data: { orderId?: string }): Promise<DicomStudy[]> => {
+    const whereClause: any = { isDeleted: false };
+    if (data?.orderId) {
+      await this.checkImagingOrder(data.orderId);
+      whereClause.orderId = data.orderId;
+    }
+    return await this.dicomStudiesRepository.findAll(
+      { where: whereClause },
+      relation
+    );
   };
 
   findOne = async (id: string): Promise<DicomStudy | null> => {
@@ -352,9 +360,7 @@ export class DicomStudiesService {
     return response;
   }
 
-  private async fetchPatientIdsByName(
-    patientName: string
-  ): Promise<string[]> {
+  private async fetchPatientIdsByName(patientName: string): Promise<string[]> {
     try {
       const patients = await firstValueFrom(
         this.patientService
@@ -376,9 +382,7 @@ export class DicomStudiesService {
   }
 
   private async attachPatientData(studies: DicomStudy[]): Promise<void> {
-    const patientIds = [
-      ...new Set(studies.map((study) => study.patientId)),
-    ];
+    const patientIds = [...new Set(studies.map((study) => study.patientId))];
 
     try {
       const patients = await firstValueFrom(

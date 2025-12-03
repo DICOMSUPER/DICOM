@@ -24,18 +24,41 @@ import {
   User,
 } from '@backend/shared-domain';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { RedisService } from '@backend/redis';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../../constant/cache';
+import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';
+import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
+import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
+import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
+import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
 @Controller('image-annotations')
+@ApiTags('Image Annotations')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImageAnnotationsController {
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
     private readonly imagingService: ClientProxy,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
-    private readonly userService: ClientProxy
+    private readonly userService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all image annotations' })
+  @ApiResponse({ status: 200, description: 'List of image annotations' })
   async getAll() {
+    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`;
+    const cachedAnnotations = await this.redisService.get(pattern);
+
+    if (cachedAnnotations) {
+      return cachedAnnotations;
+    }
+
     const annotations =
       (await firstValueFrom(
         this.imagingService.send('ImagingService.ImageAnnotations.FindAll', {})
@@ -71,10 +94,22 @@ export class ImageAnnotationsController {
       return result;
     });
 
+    await this.redisService.set(pattern, combined, CACHE_TTL_SECONDS);
     return combined;
   }
 
   @Get('paginated')
+  @ApiOperation({ summary: 'Get paginated image annotations' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of image annotations',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async getMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -83,6 +118,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imageAnnotations}.${
+      CacheKeyPattern.paginated
+    }?page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedAnnotations = await this.redisService.get(pattern);
+
+    if (cachedAnnotations) {
+      return cachedAnnotations;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -91,6 +139,7 @@ export class ImageAnnotationsController {
       sortField,
       order,
     };
+
     const annotationsData = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindMany', {
         paginationDto,
@@ -128,10 +177,28 @@ export class ImageAnnotationsController {
       return result;
     });
 
+    await this.redisService.set(
+      pattern,
+      { ...annotationsData, data: combined },
+      CACHE_TTL_SECONDS
+    );
+
     return { ...annotationsData, data: combined };
   }
 
   @Get('instance/:id')
+  @ApiOperation({ summary: 'Get image annotations by instance ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of image annotations for the given instance ID',
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async getByInstanceId(
     @Param('id') id: string,
     @Query('page') page?: string,
@@ -141,6 +208,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imageAnnotations}.${
+      CacheKeyPattern.byInstanceId
+    }/${id}?page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedAnnotations = await this.redisService.get(pattern);
+
+    if (cachedAnnotations) {
+      return cachedAnnotations;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -188,10 +268,28 @@ export class ImageAnnotationsController {
       return result;
     });
 
+    await this.redisService.set(
+      pattern,
+      { ...annotationsData, data: combined },
+      CACHE_TTL_SECONDS
+    );
+
     return { ...annotationsData, data: combined };
   }
 
   @Get('series/:id')
+  @ApiOperation({ summary: 'Get image annotations by series ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of image annotations for the given series ID',
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async getBySeriesId(
     @Param('id') id: string,
     @Query('page') page?: string,
@@ -201,6 +299,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imageAnnotations}.${
+      CacheKeyPattern.bySeriesId
+    }/${id}?page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedAnnotations = await this.redisService.get(pattern);
+
+    if (cachedAnnotations) {
+      return cachedAnnotations;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -248,10 +359,29 @@ export class ImageAnnotationsController {
       return result;
     });
 
+    await this.redisService.set(
+      pattern,
+      { ...annotationsData, data: combined },
+      CACHE_TTL_SECONDS
+    );
+
     return { ...annotationsData, data: combined };
   }
 
   @Get('reference/:id')
+  @ApiOperation({ summary: 'Get image annotations by reference ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of image annotations for the given reference ID',
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiQuery({ name: 'type', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async getByReferenceId(
     @Param('id') id: string,
     @Query('type') type: string,
@@ -262,6 +392,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imageAnnotations}.${
+      CacheKeyPattern.byReferenceId
+    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedAnnotations = await this.redisService.get(pattern);
+
+    if (cachedAnnotations) {
+      return cachedAnnotations;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -309,11 +452,25 @@ export class ImageAnnotationsController {
       return result;
     });
 
+    await this.redisService.set(
+      pattern,
+      { ...annotationsData, data: combined },
+      CACHE_TTL_SECONDS
+    );
     return { ...annotationsData, data: combined };
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get image annotation by ID' })
+  @ApiResponse({ status: 200, description: 'Image annotation details' })
+  @ApiParam({ name: 'id', required: true, type: String })
   async getById(@Param('id') id: string) {
+    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
+    const cachedAnnotation = await this.redisService.get(pattern);
+    if (cachedAnnotation) {
+      return cachedAnnotation;
+    }
+
     const annotation = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindOne', {
         id,
@@ -350,6 +507,8 @@ export class ImageAnnotationsController {
       result.reviewer = users.find((u: User) => u.id === annotation.reviewerId);
     }
 
+    await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+
     return result;
   }
 
@@ -358,7 +517,7 @@ export class ImageAnnotationsController {
     @Body() createImageAnnotationDto: any,
     @Req() req: IAuthenticatedRequest
   ) {
-    return await firstValueFrom(
+    const annotation = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.Create', {
         createImageAnnotationDto: {
           ...createImageAnnotationDto,
@@ -366,22 +525,82 @@ export class ImageAnnotationsController {
         },
       })
     );
+
+    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${annotation.id}`;
+    await this.redisService.set(pattern, annotation, CACHE_TTL_SECONDS);
+    await this.redisService.delete(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
+    );
+
+    return annotation;
   }
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateImageAnnotationDto: any) {
-    return await firstValueFrom(
+    const result = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.Update', {
         id,
         updateImageAnnotationDto,
       })
     );
+    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
+
+    await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+    await this.redisService.delete(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
+    );
+
+    return result;
   }
 
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    return await firstValueFrom(
+    const result = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.Delete', { id })
     );
+
+    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
+    await this.redisService.delete(pattern);
+    await this.redisService.delete(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
+    );
+
+    return result;
   }
 }

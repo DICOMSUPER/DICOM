@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
@@ -25,6 +25,8 @@ import {
 } from '@backend/shared-exception';
 import { ImageAnnotationsService } from '../image-annotations/image-annotations.service';
 import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class DicomStudySignaturesService {
@@ -78,6 +80,24 @@ export class DicomStudySignaturesService {
         study.studyStatus,
         DicomStudyStatus.SCANNED,
         studyId
+      );
+    }
+
+    const order = study.imagingOrder;
+
+    const studiesInOrder = await this.studyRepo.find({
+      where: { orderId: order?.id },
+    });
+
+    if (
+      studiesInOrder.find(
+        (s) => s.studyStatus === DicomStudyStatus.TECHNICIAN_VERIFIED
+      )
+    ) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        `Foreach order, only one study can be forwarded by technician.  Please wait for response from radiologist for the forwarded study.`,
+        IMAGING_SERVICE
       );
     }
 

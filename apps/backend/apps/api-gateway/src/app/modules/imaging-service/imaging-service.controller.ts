@@ -20,6 +20,12 @@ import {
   TransformInterceptor,
   RequestLoggingInterceptor,
 } from '@backend/shared-interceptor';
+import { RedisService } from '@backend/redis';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../constant/cache';
 @Controller('imaging-service')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingServiceController {
@@ -29,7 +35,9 @@ export class ImagingServiceController {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userService: ClientProxy,
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    private readonly patientService: ClientProxy
+    private readonly patientService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
 
   @Post('upload')
@@ -95,7 +103,7 @@ export class ImagingServiceController {
         throw new NotFoundException('Patient not found');
       }
 
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.imagingService.send('ImagingService.UploadFile', {
           file: fileForTransmission,
           orderId: data.orderId,
@@ -104,6 +112,38 @@ export class ImagingServiceController {
           modalityMachineId: data.modalityMachineId,
         })
       );
+
+      // Invalidate related caches for studies, series, and instances
+      await this.redisService.delete(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
+      );
+
+      await this.redisService.delete(
+        `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomSeries}.${CacheKeyPattern.byReferenceId}`
+      );
+
+      await this.redisService.delete(
+        `${CacheEntity.dicomInstances}.${CacheKeyPattern.all}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomInstances}.${CacheKeyPattern.paginated}`
+      );
+      await this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomInstances}.${CacheKeyPattern.byReferenceId}`
+      );
+      return result;
     } catch (error) {
       console.error('Upload DICOM error:', error);
       throw new InternalServerErrorException((error as Error).message);

@@ -22,6 +22,11 @@ import {
 } from '@backend/shared-interceptor';
 import { SignStudyDto, VerifyStudySignatureDto } from '@backend/shared-domain';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
+import { CacheEntity, CacheKeyPattern } from '../../../../constant/cache';
+import { RedisService } from '@backend/redis';
+import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
+import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';
+import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
 
 @Controller('dicom-study-signatures')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -30,7 +35,9 @@ export class DicomStudySignaturesController {
 
   constructor(
     @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
-    private readonly imagingService: ClientProxy
+    private readonly imagingService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
 
   @Role(Roles.IMAGING_TECHNICIAN)
@@ -55,11 +62,16 @@ export class DicomStudySignaturesController {
       )
     );
 
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${dto.studyId}`
+    );
     return result;
   }
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN)
   @Post('physician-approve')
+  @ApiOperation({ summary: 'Physician approves a DICOM study' })
+  @ApiResponse({ status: 200, description: 'Study approved successfully' })
   @HttpCode(HttpStatus.OK)
   async physicianApprove(
     @Req() req: IAuthenticatedRequest,
@@ -78,6 +90,10 @@ export class DicomStudySignaturesController {
           pin: dto.pin,
         }
       )
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${dto.studyId}`
     );
 
     return result;
@@ -101,19 +117,36 @@ export class DicomStudySignaturesController {
   }
 
   @Get(':studyId')
+  @ApiOperation({ summary: 'Get all signatures for a DICOM study' })
+  @ApiResponse({ status: 200, description: 'List of signatures for the study' })
+  @ApiParam({ name: 'studyId', required: true, type: String })
   async getStudySignatures(@Param('studyId') studyId: string) {
     this.logger.log(`Getting signatures for study ${studyId}`);
 
+    const pattern = `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${studyId}`;
+    const cachedSignatures = await this.redisService.get(pattern);
+
+    if (cachedSignatures) {
+      return cachedSignatures;
+    }
     const result = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudySignature.GetAll', {
         studyId,
       })
     );
 
+    await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+
     return result;
   }
 
   @Get(':studyId/:signatureType')
+  @ApiOperation({
+    summary: 'Get details of a specific signature for a DICOM study',
+  })
+  @ApiResponse({ status: 200, description: 'Signature details' })
+  @ApiParam({ name: 'studyId', required: true, type: String })
+  @ApiParam({ name: 'signatureType', required: true, type: String })
   async getSignatureDetails(
     @Param('studyId') studyId: string,
     @Param('signatureType') signatureType: SignatureType
@@ -121,6 +154,13 @@ export class DicomStudySignaturesController {
     this.logger.log(
       `Getting signature details for study ${studyId}, type ${signatureType}`
     );
+
+    const pattern = `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${studyId}/${signatureType}`;
+
+    const cachedDetails = await this.redisService.get(pattern);
+    if (cachedDetails) {
+      return cachedDetails;
+    }
 
     const result = await firstValueFrom(
       this.imagingService.send(
@@ -131,6 +171,7 @@ export class DicomStudySignaturesController {
         }
       )
     );
+    await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
 
     return result;
   }
