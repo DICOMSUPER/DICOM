@@ -13,9 +13,7 @@ import {
   EncounterStatus,
   EncounterType,
 } from "@/enums/patient-workflow.enum";
-import {
-  Stethoscope,
-} from "lucide-react";
+import { Stethoscope } from "lucide-react";
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
@@ -24,8 +22,8 @@ import { EncounterFilter } from "@/components/reception/encounter-filter";
 import { FilterEncounterWithPaginationParams } from "@/interfaces/patient/patient-visit.interface";
 import { Pagination } from "@/components/common/PaginationV1";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 
 interface ApiError {
   data?: {
@@ -73,9 +71,9 @@ export default function EncountersPage() {
     undefined
   );
   const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
-    field: 'encounterDate', 
-    direction: 'desc' 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: "encounterDate",
+    direction: "desc",
   });
 
   // Build query params from applied filters
@@ -121,8 +119,11 @@ export default function EncountersPage() {
     refetchOnMountOrArgChange: true,
   });
 
-  const { data: encounterStatsData, isLoading: isLoadingEncounterStats, refetch: refetchStats } =
-    useGetPatientEncounterStatsQuery();
+  const {
+    data: encounterStatsData,
+    isLoading: isLoadingEncounterStats,
+    refetch: refetchStats,
+  } = useGetPatientEncounterStatsQuery();
 
   // Error handling
   useEffect(() => {
@@ -246,7 +247,10 @@ export default function EncountersPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton onRefresh={handleRefresh} loading={isLoading || isFetching || isLoadingEncounterStats} />
+          <RefreshButton
+            onRefresh={handleRefresh}
+            loading={isLoading || isFetching || isLoadingEncounterStats}
+          />
         </div>
       </div>
 

@@ -106,7 +106,7 @@ const serviceRoomApi = createApi({
     }),
 
     // Get single service room by ID
-    getServiceRoomById: builder.query<ApiResponse<ServiceRoom>, string>({
+    getServiceRoomById: builder.query<ApiResponse<{data:ServiceRoom}>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "GET",
@@ -133,7 +133,7 @@ const serviceRoomApi = createApi({
     }),
 
     // Delete service room
-    deleteServiceRoom: builder.mutation<{ message: string }, string>({
+    deleteServiceRoom: builder.mutation<void, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",

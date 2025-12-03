@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { OrderFiltersSection, ImagingOrderFilters } from "./order/order-filters";
+import {
+  OrderFiltersSection,
+  ImagingOrderFilters,
+} from "./order/order-filters";
 import { OrderTable } from "./order/order-table";
 import { useSearchParams } from "next/navigation";
 import {
@@ -215,10 +218,7 @@ export default function ImageTechnicianPageWrapper() {
   }, []);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([
-      refetchOrder(),
-      statsRef.current?.refetch(),
-    ]);
+    await Promise.all([refetchOrder(), statsRef.current?.refetch()]);
   }, [refetchOrder]);
 
   if (!isClient || !userId) {
@@ -237,9 +237,7 @@ export default function ImageTechnicianPageWrapper() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Imaging Orders
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground">Imaging Orders</h1>
           <p className="text-foreground">Search and manage imaging orders</p>
         </div>
         <RefreshButton onRefresh={handleRefresh} loading={isFetchingOrders} />
@@ -262,7 +260,7 @@ export default function ImageTechnicianPageWrapper() {
       />
 
       <OrderTable
-        orders={orderData?.data || []}
+        orders={orderData || orderData?.data || []}
         onViewDetails={handleViewDetails}
         onCallIn={handleCallIn}
         onMarkCompleted={handleMarkCompleted}

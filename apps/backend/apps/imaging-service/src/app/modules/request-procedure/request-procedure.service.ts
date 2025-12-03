@@ -31,6 +31,9 @@ export class RequestProcedureService {
     createRequestProcedureDto: CreateRequestProcedureDto
   ): Promise<RequestProcedure> => {
     return await this.entityManager.transaction(async (em) => {
+
+      console.log("create request procedure service",createRequestProcedureDto);
+      
       // check for existing procedure with the same name
       const existingProcedure = await this.requestProcedureRepository.findOne({
         where: { name: createRequestProcedureDto.name },
@@ -45,7 +48,6 @@ export class RequestProcedureService {
       }
       return await this.requestProcedureRepository.create({
         ...createRequestProcedureDto,
-        // isActive: true,
       });
     });
   };
@@ -113,29 +115,35 @@ export class RequestProcedureService {
     });
   };
 
-  remove = async (id: string): Promise<boolean> => {
-    return await this.entityManager.transaction(async (em) => {
-      const procedure = await this.requestProcedureRepository.findOne({
-        where: { id },
+  remove = async (id: string) => {
+    try {
+      return await this.entityManager.transaction(async (em) => {
+        const procedure = await this.requestProcedureRepository.findOne({
+          where: { id },
+        });
+
+        if (!procedure) {
+          throw new RequestProcedureNotFoundException(id);
+        }
+
+        const imagingOrderRepo = em.getRepository(ImagingOrder);
+        const existsInOrder = await imagingOrderRepo.find({
+          where: { procedure: { id }, isDeleted: false },
+        });
+        if (existsInOrder.length > 0) {
+          throw new RequestProcedureDeletionFailedException(
+            'Cannot delete procedure that is referenced in existing imaging orders',
+            id
+          );
+        }
+
+        return await this.requestProcedureRepository.softDelete(id, 'isDeleted');
       });
-
-      if (!procedure) {
-        throw new RequestProcedureNotFoundException(id);
-      }
-
-      const imagingOrderRepo = em.getRepository(ImagingOrder);
-      const existsInOrder = await imagingOrderRepo.find({
-        where: { procedure: { id } },
-      });
-      if (existsInOrder) {
-        throw new RequestProcedureDeletionFailedException(
-          id,
-          'Procedure is referenced in existing imaging orders'
-        );
-      }
-
-      return await this.requestProcedureRepository.softDelete(id, 'isDeleted');
-    });
+    } catch (error: any) {
+      if (error instanceof RequestProcedureNotFoundException) throw error;
+      if (error instanceof RequestProcedureDeletionFailedException) throw error;
+      throw new RequestProcedureDeletionFailedException(error.message, id);
+    }
   };
 
   findMany = async (

@@ -10,7 +10,7 @@ import {
   DiagnosesReport,
 } from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
-import { UserServiceClientModule } from '@backend/shared-client';
+import { SystemServiceClientModule, UserServiceClientModule } from '@backend/shared-client';
 import { PatientEncounterCronService } from './patient-encounter.cron';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -19,6 +19,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TypeOrmModule.forFeature([PatientEncounter, Patient, DiagnosesReport]),
     UserServiceClientModule,
     ScheduleModule.forRoot(),
+     SystemServiceClientModule,
   ],
   controllers: [PatientEncounterController],
   providers: [

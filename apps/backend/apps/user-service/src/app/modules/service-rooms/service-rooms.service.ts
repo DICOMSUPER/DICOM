@@ -230,9 +230,16 @@ export class ServiceRoomsService {
   }
 
   async delete(id: string) {
-    const serviceRoom = await this.findOne(id);
-    await this.serviceRoomRepository.remove(serviceRoom);
-    return { success: true, message: 'ServiceRoom deleted successfully' };
+    try {
+      const serviceRoom = await this.findOne(id);
+      await this.serviceRoomRepository.remove(serviceRoom);
+      return { success: true, message: 'ServiceRoom deleted successfully' };
+    } catch (error: any) {
+      if (error instanceof NotFoundException) throw error;
+      throw new BadRequestException(
+        `Failed to delete service room: ${error.message}`
+      );
+    }
   }
 
   async getStats(): Promise<{

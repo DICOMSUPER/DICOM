@@ -2,18 +2,18 @@ import { ArrowLeft, FileText, RefreshCw } from "lucide-react";
 
 interface EmptyReportStateProps {
   onBack: () => void;
-  onRefresh: () => void;
+  // onRefresh: () => void;
   isLoading: boolean;
 }
 
 export const EmptyReportState = ({
   onBack,
-  onRefresh,
+  // onRefresh,
   isLoading,
 }: EmptyReportStateProps) => {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto py-6 px-4">
+      <div className="">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
           <div className="flex items-center gap-4">
@@ -75,7 +75,7 @@ export const EmptyReportState = ({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button
+              {/* <button
                 onClick={onRefresh}
                 disabled={isLoading}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg font-medium transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -84,7 +84,7 @@ export const EmptyReportState = ({
                   className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
                 />
                 {isLoading ? "Refreshing..." : "Refresh"}
-              </button>
+              </button> */}
               <button
                 onClick={onBack}
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 rounded-lg font-medium border border-slate-200 transition-all hover:shadow-sm"

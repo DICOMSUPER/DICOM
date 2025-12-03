@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateRoomDto, RoomStatus } from '@backend/shared-domain';
@@ -18,6 +18,8 @@ import { HttpStatus } from '@nestjs/common';
 import { RedisService } from '@backend/redis';
 import { Roles, RoomType } from '@backend/shared-enums';
 import { PaginatedResponseDto } from '@backend/database';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs/internal/firstValueFrom';
 
 @Injectable()
 export class RoomsService {
@@ -27,7 +29,9 @@ export class RoomsService {
     private readonly roomRepository: Repository<Room>,
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    @Inject(process.env.IMAGE_SERVICE_NAME || 'IMAGING_SERVICE')
+    private readonly imagingService: ClientProxy
   ) {}
 
   async create(createRoomDto: CreateRoomDto): Promise<Room> {
@@ -43,7 +47,7 @@ export class RoomsService {
       }
 
       const existingRoom = await this.roomRepository.findOne({
-        where: { 
+        where: {
           roomCode: createRoomDto.roomCode,
           isDeleted: false,
         },
@@ -125,7 +129,11 @@ export class RoomsService {
         search || 'none'
       }:active=${isActive ?? 'all'}:status=${status ?? 'all'}:type=${
         type ?? 'all'
-      }:dept=${departmentId ?? 'all'}:includeInactive=${query.includeInactive ?? false}:includeDeleted=${query.includeDeleted ?? false}:sortField=${query.sortField ?? 'createdAt'}:order=${query.order ?? 'desc'}`;
+      }:dept=${departmentId ?? 'all'}:includeInactive=${
+        query.includeInactive ?? false
+      }:includeDeleted=${query.includeDeleted ?? false}:sortField=${
+        query.sortField ?? 'createdAt'
+      }:order=${query.order ?? 'desc'}`;
 
       const cachedData = await this.redisService.get<any>(cacheKey);
       if (cachedData) {
@@ -140,14 +148,17 @@ export class RoomsService {
         .leftJoinAndSelect('room.department', 'department');
 
       if (query.sortField && query.order) {
-        qb.orderBy(`room.${query.sortField}`, query.order.toUpperCase() as 'ASC' | 'DESC');
+        qb.orderBy(
+          `room.${query.sortField}`,
+          query.order.toUpperCase() as 'ASC' | 'DESC'
+        );
       } else {
         qb.orderBy('room.createdAt', 'DESC');
       }
 
       qb.skip(skip).take(limit);
 
-      if (!query.includeDeleted) {
+      if (query.includeDeleted !== true) {
         qb.where('room.isDeleted = :isDeleted', { isDeleted: false });
       }
 
@@ -239,12 +250,16 @@ export class RoomsService {
       }
 
       if (query?.departmentId) {
-        qb.andWhere('room.departmentId = :departmentId', { departmentId: query.departmentId });
+        qb.andWhere('room.departmentId = :departmentId', {
+          departmentId: query.departmentId,
+        });
       }
 
       return await qb.getMany();
     } catch (error: any) {
-      this.logger.error(`Find all rooms without pagination error: ${error.message}`);
+      this.logger.error(
+        `Find all rooms without pagination error: ${error.message}`
+      );
       throw new DatabaseException('Lỗi khi lấy danh sách phòng');
     }
   }
@@ -260,7 +275,7 @@ export class RoomsService {
       // Check trùng mã phòng nếu cập nhật roomCode
       if (updateRoomDto.roomCode && updateRoomDto.roomCode !== room.roomCode) {
         const existingRoom = await this.roomRepository.findOne({
-          where: { 
+          where: {
             roomCode: updateRoomDto.roomCode,
             isDeleted: false,
           },
@@ -273,12 +288,18 @@ export class RoomsService {
       }
 
       // Handle department update - only update if provided and not empty
-      if (updateRoomDto.department !== undefined && updateRoomDto.department !== null && updateRoomDto.department !== '') {
+      if (
+        updateRoomDto.department !== undefined &&
+        updateRoomDto.department !== null &&
+        updateRoomDto.department !== ''
+      ) {
         const department = await this.departmentRepository.findOne({
           where: { id: updateRoomDto.department },
         });
         if (!department) {
-          throw new NotFoundException(`Department with ID ${updateRoomDto.department} not found`);
+          throw new NotFoundException(
+            `Department with ID ${updateRoomDto.department} not found`
+          );
         }
         room.department = department;
       }
@@ -293,7 +314,8 @@ export class RoomsService {
       this.logger.log(`✅ Room updated successfully: ${updatedRoom.id}`);
       return updatedRoom;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Update room error: ${errorMessage}`);
       if (
         error instanceof RoomNotFoundException ||
@@ -311,14 +333,48 @@ export class RoomsService {
       this.logger.log(`Deleting room ID: ${id}`);
 
       const room = await this.findOne(id);
+
+      // Check if room has associated service rooms
+      const serviceRoomRepo =
+        this.roomRepository.manager.getRepository('ServiceRoom');
+      const associatedServiceRooms = await serviceRoomRepo.count({
+        where: { roomId: id },
+      });
+
+      if (associatedServiceRooms > 0) {
+        throw new RoomDeletionFailedException(
+          'Cannot delete room with associated service assignments',
+          id
+        );
+      }
+      // check if room has associated modalities machine
+      const modalityMachineRepo = await firstValueFrom(
+        this.imagingService.send(
+          'ImagingService.ModalityMachines.FindByRoomId',
+          {
+            roomId: id,
+          }
+        )
+      );
+      console.log("modalityMachineRepo",modalityMachineRepo);
+      
+      
+      if (modalityMachineRepo.length > 0) {
+        throw new RoomDeletionFailedException(
+          'Cannot delete room with associated modality machines',
+          id
+        );
+      }
+
       await this.roomRepository.remove(room);
 
       this.logger.log(`✅ Room deleted successfully: ${id}`);
       return true;
-    } catch (error: unknown) {
+    } catch (error: any) {
       this.logger.error(`Remove room error: ${(error as Error).message}`);
       if (error instanceof RoomNotFoundException) throw error;
-      throw new RoomDeletionFailedException('Không thể xóa phòng');
+      if (error instanceof RoomDeletionFailedException) throw error;
+      throw new RoomDeletionFailedException(error.message, id);
     }
   }
 
@@ -694,13 +750,30 @@ export class RoomsService {
     maintenanceRooms: number;
   }> {
     try {
-      const [totalRooms, activeRooms, inactiveRooms, availableRooms, occupiedRooms, maintenanceRooms] = await Promise.all([
+      const [
+        totalRooms,
+        activeRooms,
+        inactiveRooms,
+        availableRooms,
+        occupiedRooms,
+        maintenanceRooms,
+      ] = await Promise.all([
         this.roomRepository.count({ where: { isDeleted: false } }),
-        this.roomRepository.count({ where: { isActive: true, isDeleted: false } }),
-        this.roomRepository.count({ where: { isActive: false, isDeleted: false } }),
-        this.roomRepository.count({ where: { status: RoomStatus.AVAILABLE, isDeleted: false } }),
-        this.roomRepository.count({ where: { status: RoomStatus.OCCUPIED, isDeleted: false } }),
-        this.roomRepository.count({ where: { status: RoomStatus.MAINTENANCE, isDeleted: false } }),
+        this.roomRepository.count({
+          where: { isActive: true, isDeleted: false },
+        }),
+        this.roomRepository.count({
+          where: { isActive: false, isDeleted: false },
+        }),
+        this.roomRepository.count({
+          where: { status: RoomStatus.AVAILABLE, isDeleted: false },
+        }),
+        this.roomRepository.count({
+          where: { status: RoomStatus.OCCUPIED, isDeleted: false },
+        }),
+        this.roomRepository.count({
+          where: { status: RoomStatus.MAINTENANCE, isDeleted: false },
+        }),
       ]);
 
       return {

@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { log } from "console";
 
 // Props interface
 interface RequestProcedureFormModalProps {
@@ -107,7 +108,7 @@ export function RequestProcedureFormModal({
         };
         await updateRequestProcedure({
           id: procedure.id,
-          body: payload,
+          data: payload,
         }).unwrap();
         toast.success("Procedure updated successfully");
       } else {
@@ -118,6 +119,7 @@ export function RequestProcedureFormModal({
           description: formData.description,
           isActive: formData.isActive,
         };
+        console.log("create request procedure payload", payload);
         await createRequestProcedure(payload).unwrap();
         toast.success("Procedure created successfully");
       }

@@ -14,6 +14,7 @@ export enum Urgency {
 export enum DicomStudyStatus {
   SCANNED = 'scanned',
   TECHNICIAN_VERIFIED = 'technician_verified',
+  REJECTED = 'rejected',
   READING = 'reading',
   PENDING_APPROVAL = 'pending_approval',
   APPROVED = 'approved',
@@ -54,7 +55,7 @@ export enum AnnotationType {
   LABEL = 'Label',
   PROBE = 'Probe',
   DRAG_PROBE = 'DragProbe',
-  PLANAR_FREEHAND_ROI = "PlanarFreehandROI"
+  PLANAR_FREEHAND_ROI = 'PlanarFreehandROI',
 }
 
 export enum AnnotationStatus {
@@ -71,9 +72,9 @@ export enum DiagnosisType {
   FINAL = 'final',
 }
 
-export enum DiagnosisStatus {
-  ACTIVE = 'active',
-  RESOLVED = 'resolved',
-  INACTIVE = 'inactive',
-  RULED_OUT = 'ruled_out',
+export enum DiagnosisStatus {                
+  PENDING_APPROVAL = 'pending_approval', 
+  APPROVED = 'approved',                
+  REJECTED = 'rejected',                 
+  DRAFT = 'draft',                           
 }

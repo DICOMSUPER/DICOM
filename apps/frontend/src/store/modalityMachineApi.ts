@@ -186,10 +186,7 @@ export const modalityMachineApi = createApi({
       ],
     }),
 
-    deleteModalityMachine: builder.mutation<
-      ApiResponse<boolean>,
-      { id: string }
-    >({
+    deleteModalityMachine: builder.mutation<void, { id: string }>({
       query: ({ id }) => ({ url: `/${id}`, method: "DELETE" }),
       invalidatesTags: (_result, _error, { id }) => [
         { type: "ModalityMachine", id },

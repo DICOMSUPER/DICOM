@@ -52,7 +52,8 @@ export class NotificationsController {
     Roles.PHYSICIAN,
     Roles.RECEPTION_STAFF,
     Roles.RADIOLOGIST,
-    Roles.IMAGING_TECHNICIAN
+    Roles.IMAGING_TECHNICIAN,
+    Roles.SYSTEM_ADMIN
   )
   async findMany(
     @Query() filter: FilterNotificationDto,

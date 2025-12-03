@@ -163,6 +163,37 @@ export const diagnosisApi = createApi({
       invalidatesTags: ["Diagnosis"],
     }),
 
+    // Reject diagnosis
+    rejectDiagnosis: builder.mutation<
+      ApiResponse<DiagnosisReport>,
+      { id: string; rejectionReason: string }
+    >({
+      query: ({ id, rejectionReason }) => ({
+        url: `/${id}/reject`,
+        method: "POST",
+        data: { rejectionReason },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Diagnosis", id },
+        "Diagnosis",
+      ],
+    }),
+
+    // Approve diagnosis
+    approveDiagnosis: builder.mutation<
+      ApiResponse<DiagnosisReport>,
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `/${id}/approve`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Diagnosis", id },
+        "Diagnosis",
+      ],
+    }),
+
     getDiagnosisReportWithFilter: builder.query<
       PaginatedResponse<DiagnosisReport>,
       { filters?: FilterDiagnosesReport }
@@ -194,6 +225,8 @@ export const {
   useCreateDiagnosisMutation,
   useUpdateDiagnosisMutation,
   useDeleteDiagnosisMutation,
+  useRejectDiagnosisMutation,
+  useApproveDiagnosisMutation,
   useGetDiagnoseByStudyIdQuery,
   useGetDiagnosisReportWithFilterQuery,
 } = diagnosisApi;

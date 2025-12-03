@@ -28,33 +28,25 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
     const [modalityId, setModalityId] = useState<string | null>(null);
     const [bodyPartId, setBodyPartId] = useState<string | null>(null);
     const [templates, setTemplates] = useState<any[]>([]);
+    const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
 
-    // Hook mutation
+    // mutation
     const [fetchTemplates, { data, isLoading }] = useGetTemplatesByModalityBodyPartMutation();
 
-    // GET list modalities
     const { data: modalitiesData } = useGetAllImagingModalityQuery();
     const modalities = modalitiesData?.data ?? [];
 
-    // GET list body parts
     const { data: bodyPartsData } = useGetBodyPartsPaginatedQuery();
     const bodyParts = bodyPartsData?.data ?? [];
 
-    // Auto fetch templates khi modality + bodyPart thay đổi
     useEffect(() => {
-        if (modalityId && bodyPartId) {
-            fetchTemplates({ modalityId, bodyPartId });
-        }
+        if (modalityId && bodyPartId) fetchTemplates({ modalityId, bodyPartId });
     }, [modalityId, bodyPartId, fetchTemplates]);
 
-    // Update templates state khi có data
     useEffect(() => {
-        if (data?.data) {
-            setTemplates(data.data);
-        } else {
-            setTemplates([]);
-        }
+        setTemplates(data?.data ?? []);
     }, [data]);
+
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
@@ -97,7 +89,7 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
                     </Select>
                 </div>
 
-                {/* Template list */}
+                {/* Template List */}
                 {isLoading ? (
                     <p className="text-center py-4 text-gray-500">Đang tải template...</p>
                 ) : (
@@ -109,19 +101,51 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
                                 </p>
                             )}
 
-                            {templates.map((temp: any) => (
-                                <Button
-                                    key={temp.id}
-                                    variant="outline"
-                                    className="w-full justify-start text-left"
-                                    onClick={() => {
-                                        onSelect(temp);
-                                        onClose();
-                                    }}
-                                >
-                                    {temp.templateName}
-                                </Button>
-                            ))}
+                            {templates.map((temp: any) => {
+                                const isOpen = selectedPreviewId === temp.id;
+
+                                return (
+                                    <div
+                                        key={temp.id}
+                                        className="border rounded-lg p-2 transition-all"
+                                    >
+                                        {/* Nút mở preview */}
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-between text-left"
+                                            onClick={() =>
+                                                setSelectedPreviewId(isOpen ? null : temp.id)
+                                            }
+                                        >
+                                            {temp.templateName}
+                                            <span>{isOpen ? "▲" : "▼"}</span>
+                                        </Button>
+
+                                        {/* Preview mô tả */}
+                                        {isOpen && (
+                                            <div className="mt-3 space-y-3 p-3 border-t bg-gray-50 rounded-md animate-in fade-in">
+                                                {/* description hỗ trợ dạng html / hình ảnh / form */}
+                                                <div
+                                                    className="prose max-w-none whitespace-pre-line"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: (temp.descriptionTemplate || "").replace(/\n/g, "<br/>"),
+                                                    }}
+                                                />
+
+                                                <Button
+                                                    className="w-full"
+                                                    onClick={() => {
+                                                        onSelect(temp);
+                                                        onClose();
+                                                    }}
+                                                >
+                                                    Dùng template này
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </ScrollArea>
                 )}

@@ -11,11 +11,13 @@ import {
   PatientEncounterRepository,
 } from '@backend/shared-domain';
 import { BackendRedisModule } from '@backend/redis';
+import { SystemServiceClientModule } from '@backend/shared-client';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DiagnosesReport, PatientEncounter, Patient]),
-    BackendRedisModule
+    BackendRedisModule,
+    SystemServiceClientModule,
   ],
   controllers: [DiagnosesReportController],
   providers: [

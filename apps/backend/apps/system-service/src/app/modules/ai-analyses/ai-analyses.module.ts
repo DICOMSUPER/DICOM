@@ -1,17 +1,15 @@
-import { Module } from '@nestjs/common';
-import { AiAnalysesService } from './ai-analyses.service';
-import { AiAnalysesController } from './ai-analyses.controller';
-import { TypeOrmModule } from '@nestjs/typeorm/dist';
-import { AiAnalysis, AiModel } from '@backend/shared-domain';
 import { PaginationService } from '@backend/database';
-import { CloudinaryModule } from '../cloudinary/cloudinary.module';
-import { AiModelModule } from '../ai-model/ai-model.module';
+import { AiAnalysis } from '@backend/shared-domain';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm/dist';
+
+import { AiAnalysesController } from './ai-analyses.controller';
+import { AiAnalysesService } from './ai-analyses.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AiAnalysis, AiModel]),
-    CloudinaryModule,
-    AiModelModule
+    TypeOrmModule.forFeature([AiAnalysis]),
+    // CloudinaryModule,
   ],
   controllers: [AiAnalysesController],
   providers: [AiAnalysesService, PaginationService],

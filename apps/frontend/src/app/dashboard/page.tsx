@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { useLogout } from "@/hooks/use-logout";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 export default function Dashboard() {
   const [notificationCount] = useState(3);
@@ -38,16 +39,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* App Header */}
-      <AppHeader
-        notificationCount={notificationCount}
-        onNotificationClick={handleNotificationClick}
-        onLogout={handleLogout}
-        isLoggingOut={isLoggingOut}
-      />
+    <NotificationProvider>
+      <div className="min-h-screen bg-background">
+        {/* App Header */}
+        <AppHeader
+          notificationCount={notificationCount}
+          onNotificationClick={handleNotificationClick}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
+        />
 
-      {/* Content */}
+        {/* Content */}
         {/* System Overview Stats */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="border-border">
@@ -332,6 +334,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </section>
-    </div>
+      </div>
+    </NotificationProvider>
   );
 }

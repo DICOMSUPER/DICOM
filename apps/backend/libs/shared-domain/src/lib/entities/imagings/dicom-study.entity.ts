@@ -14,6 +14,7 @@ import { DicomSeries } from './dicom-series.entity';
 import { ImagingOrder } from './imaging-order.entity';
 import { ModalityMachine } from './modality-machine.entity';
 import type { DicomStudySignature } from './dicom-study-signatures.entity';
+import { Patient } from '../patients';
 
 @Entity('dicom_studies')
 @Index('idx_patient_id', ['patientId'])
@@ -98,4 +99,6 @@ export class DicomStudy extends BaseEntity {
 
   @OneToMany(() => require('./dicom-study-signatures.entity').DicomStudySignature, (signature: DicomStudySignature) => signature.study)
   studySignatures?: DicomStudySignature[];
+
+  patient?: Patient
 }

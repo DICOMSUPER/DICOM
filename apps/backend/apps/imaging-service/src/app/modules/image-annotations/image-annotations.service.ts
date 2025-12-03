@@ -17,7 +17,9 @@ import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
 import { EntityManager } from 'typeorm';
-import { InjectEntityManager } from '@nestjs/typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { DicomStudiesRepository } from '../dicom-studies/dicom-studies.repository';
+import { AnnotationStatus } from '@backend/shared-enums';
 
 const relation = ['instance'];
 @Injectable()
@@ -27,7 +29,9 @@ export class ImageAnnotationsService {
     private readonly imageAnnotationRepository: ImageAnnotationsRepository,
     @Inject()
     private readonly dicomInstanceRepository: DicomInstancesRepository,
-    @InjectEntityManager() private readonly entityManager: EntityManager
+    @InjectEntityManager() private readonly entityManager: EntityManager,
+    @Inject()
+    private readonly dicomStudiesRepository: DicomStudiesRepository
   ) {}
 
   private checkImageAnnotation = async (
@@ -145,5 +149,56 @@ export class ImageAnnotationsService {
       ...paginationDto,
       relation,
     });
+  };
+
+  isReviewedInStudy = async (
+    studyId: string
+  ): Promise<{
+    message: string;
+    isReviewed: boolean;
+  }> => {
+    const study = await this.dicomStudiesRepository.findOne({
+      where: { id: studyId },
+      relations: [
+        'series',
+        'series.instances',
+        'series.instances.imageAnnotations',
+      ],
+    });
+
+    if (!study) {
+      throw ThrowMicroserviceException(
+        HttpStatus.NOT_FOUND,
+        'Dicom study not found',
+        IMAGING_SERVICE
+      );
+    }
+
+    const allAnnotations = study.series.flatMap((series) =>
+      series.instances.flatMap((instance) => instance.imageAnnotations)
+    );
+
+    if (allAnnotations.length === 0) {
+      return {
+        message: 'No annotations found in the study',
+        isReviewed: false,
+      };
+    }
+
+    const isReviewed = allAnnotations.every(
+      (annotation) => annotation.annotationStatus === AnnotationStatus.REVIEWED
+    );
+
+    if (!isReviewed) {
+      return {
+        message: 'Not all annotations have been reviewed',
+        isReviewed: false,
+      };
+    }
+
+    return {
+      message: 'All annotations have been reviewed',
+      isReviewed: true,
+    };
   };
 }

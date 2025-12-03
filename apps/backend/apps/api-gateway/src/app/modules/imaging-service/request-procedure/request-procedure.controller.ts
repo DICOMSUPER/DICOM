@@ -1,5 +1,11 @@
-import { CreateRequestProcedureDto, UpdateRequestProcedureDto } from '@backend/shared-domain';
-import { RequestLoggingInterceptor, TransformInterceptor } from '@backend/shared-interceptor';
+import {
+  CreateRequestProcedureDto,
+  UpdateRequestProcedureDto,
+} from '@backend/shared-domain';
+import {
+  RequestLoggingInterceptor,
+  TransformInterceptor,
+} from '@backend/shared-interceptor';
 import {
   Body,
   Controller,
@@ -13,6 +19,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Public } from '@backend/shared-decorators';
 import { firstValueFrom } from 'rxjs';
 
 @Controller('request-procedure')
@@ -25,11 +32,14 @@ export class RequestProcedureController {
 
   @Get()
   async getRequestProcedures(
-    @Query("bodyPartId") bodyPartId?: string,
-    @Query("modalityId") modalityId?: string
+    @Query('bodyPartId') bodyPartId?: string,
+    @Query('modalityId') modalityId?: string
   ) {
     return await firstValueFrom(
-      this.imagingService.send('ImagingService.RequestProcedure.FindAll', { bodyPartId, modalityId })
+      this.imagingService.send('ImagingService.RequestProcedure.FindAll', {
+        bodyPartId,
+        modalityId,
+      })
     );
   }
 
@@ -67,7 +77,10 @@ export class RequestProcedureController {
   }
 
   @Post()
-  async createRequestProcedure(@Body() createRequestProcedureDto: CreateRequestProcedureDto) {
+  @Public()
+  async createRequestProcedure(
+    @Body() createRequestProcedureDto: CreateRequestProcedureDto
+  ) {
     return await firstValueFrom(
       this.imagingService.send(
         'ImagingService.RequestProcedure.Create',

@@ -1,6 +1,5 @@
 import { Role } from '@backend/shared-decorators';
 import {
-  CreateDiagnosesReportDto,
   FilterDiagnosesReportDto,
   UpdateDiagnosesReportDto,
 } from '@backend/shared-domain';
@@ -39,11 +38,9 @@ export class DiagnosisReportsController {
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   @Post()
-  async createDiagnoseReport(
-    @Body() createDiagnosesReportDto: any
-  ) {
-    console.log("diagnosis report", createDiagnosesReportDto);
-    
+  async createDiagnoseReport(@Body() createDiagnosesReportDto: any) {
+    console.log('diagnosis report', createDiagnosesReportDto);
+
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Create', {
@@ -59,7 +56,7 @@ export class DiagnosisReportsController {
   @Patch(':id')
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   async updateDiagnoseReport(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() updateDiagnosesReportDto: UpdateDiagnosesReportDto
   ) {
     try {
@@ -129,7 +126,7 @@ export class DiagnosisReportsController {
     }
   }
 
-  @Get("with-filter")
+  @Get('with-filter')
   @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   async getAllDiagnoses(
     @Query() filter: FilterDiagnosesReportDto,
@@ -143,7 +140,7 @@ export class DiagnosisReportsController {
     );
   }
 
-    @Get('studyId/:studyId')
+  @Get('studyId/:studyId')
   @Role(
     Roles.RADIOLOGIST,
     Roles.PHYSICIAN,
@@ -188,7 +185,7 @@ export class DiagnosisReportsController {
     Roles.SYSTEM_ADMIN,
     Roles.IMAGING_TECHNICIAN
   )
-  async getDiagnosesReport(@Param("id") id: string) {
+  async getDiagnosesReport(@Param('id') id: string) {
     try {
       return await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindOne', {
@@ -221,4 +218,43 @@ export class DiagnosisReportsController {
     }
   }
 
+  @Post(':id/reject')
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  async rejectDiagnosisReport(
+    @Param('id') id: string,
+    @Body() body: { rejectionReason: string },
+    @Req() req: IAuthenticatedRequest
+  ) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.DiagnosesReport.Reject', {
+          id,
+          rejectedBy: req.userInfo.userId,
+          rejectionReason: body.rejectionReason,
+        })
+      );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  @Post(':id/approve')
+  @Role(Roles.PHYSICIAN, Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  async approveDiagnosisReport(
+    @Param('id') id: string,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    try {
+      return await firstValueFrom(
+        this.patientService.send('PatientService.DiagnosesReport.Approve', {
+          id,
+          approvedBy: req.userInfo.userId,
+        })
+      );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 }

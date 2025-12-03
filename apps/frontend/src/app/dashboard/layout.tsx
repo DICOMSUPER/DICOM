@@ -1,9 +1,9 @@
 "use client";
 
-
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { useState } from "react";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,11 +27,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Workspace Layout */}
-      <WorkspaceLayout sidebar={<SidebarNav />}>
-        {children}
-      </WorkspaceLayout>
-    </div>
+    <NotificationProvider>
+      {" "}
+      <div className="min-h-screen bg-background">
+        {/* Workspace Layout */}
+        <WorkspaceLayout sidebar={<SidebarNav />}>{children}</WorkspaceLayout>
+      </div>
+    </NotificationProvider>
   );
 }

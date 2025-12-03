@@ -5,17 +5,19 @@ import { Room } from '@backend/shared-domain';
 import {  User, Department, Qualification } from '@backend/shared-domain';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BackendRedisModule } from '@backend/redis';
+import { ImagingServiceClientModule } from '@backend/shared-client';
 
 @Module({
    imports: [
       TypeOrmModule.forFeature([
         Room,
-
         User,
         Department,
         Qualification,
       ]),
       BackendRedisModule,
+      ImagingServiceClientModule
+      
     ],
   controllers: [RoomsController],
   providers: [RoomsService],

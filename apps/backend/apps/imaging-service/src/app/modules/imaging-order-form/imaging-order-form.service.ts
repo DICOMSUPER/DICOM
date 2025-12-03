@@ -96,7 +96,7 @@ export class ImagingOrderFormService {
               title: 'New Imaging Order',
               relatedEntityType: RelatedEntityType.ORDER,
               relatedEntityId: order.id,
-              message: `A new imaging order (${order.id}) has been created.`,
+              message: `Physician has assigned a new imaging order (Order Number: ${order.orderNumber}). Please review and process it.`,
             };
             await firstValueFrom(
               this.systemService.send(
@@ -169,8 +169,16 @@ export class ImagingOrderFormService {
     }
 
     if (sortBy && order) {
-      const sortField = sortBy === 'id' ? 'id' : sortBy === 'createdAt' ? 'createdAt' : 'createdAt';
-      queryBuilder.orderBy(`orderForm.${sortField}`, order.toUpperCase() as 'ASC' | 'DESC');
+      const sortField =
+        sortBy === 'id'
+          ? 'id'
+          : sortBy === 'createdAt'
+          ? 'createdAt'
+          : 'createdAt';
+      queryBuilder.orderBy(
+        `orderForm.${sortField}`,
+        order.toUpperCase() as 'ASC' | 'DESC'
+      );
     } else {
       queryBuilder.orderBy('orderForm.createdAt', 'DESC');
     }

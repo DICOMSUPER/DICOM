@@ -1,6 +1,7 @@
 "use client";
-
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
+import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Filter, FolderOpen, Database, Loader2, Grid3X3, List, FileText, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,16 +19,19 @@ import SegmentationAccordion from '../sidebar/SegmentationAccordion';
 import { extractApiData } from '@/utils/api';
 import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
 import { 
-  useCreateImageSegmentationLayersMutation, 
+  useCreateImageSegmentationLayerMutation, 
   useDeleteImageSegmentationLayerMutation,
-  useLazyGetImageSegmentationLayersByInstanceIdQuery 
+  useLazyGetImageSegmentationLayersBySeriesIdQuery 
 } from '@/store/imageSegmentationLayerApi';
 import { toast } from 'sonner';
+import { ImageAnnotation } from '@/interfaces/image-annotation/image-annotation.interface';
+import { SegmentationSnapshot } from '@/interfaces/image-segmentation/image-segmentation-snapshot.interface';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
   series?: DicomSeries[];
   studyId?: string;
+  patientId?: string;
   onSeriesLoaded?: (series: DicomSeries[]) => void;
 }
 
@@ -35,6 +39,7 @@ const ViewerRightSidebar = ({
   onSeriesSelect,
   series = [],
   studyId,
+  patientId,
   onSeriesLoaded,
 }: ViewerRightSidebarProps) => {
   const { 
@@ -47,22 +52,36 @@ const ViewerRightSidebar = ({
   } = useViewer();
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
-  const [filterModality, setFilterModality] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filterModality, setFilterModality] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
-  const [seriesInstances, setSeriesInstances] = useState<Record<string, DicomInstance[]>>({});
-  const [loadingInstances, setLoadingInstances] = useState<Set<string>>(new Set());
+  const [seriesInstances, setSeriesInstances] = useState<
+    Record<string, DicomInstance[]>
+  >({});
+  const [loadingInstances, setLoadingInstances] = useState<Set<string>>(
+    new Set()
+  );
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'annotations'>('grid');
   const [annotationsTab, setAnnotationsTab] = useState<'annotations' | 'segmentations'>('annotations');
   const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
-  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>(
+    {}
+  );
   const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
-  const [createImageSegmentationLayers] = useCreateImageSegmentationLayersMutation();
+  const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
+  const [annotations, setAnnotations] = useState<ImageAnnotation[]>([]);
+  const [segmentations, setSegmentations] = useState<SegmentationSnapshot[]>([]);
+  const [createImageSegmentationLayers] = useCreateImageSegmentationLayerMutation();
   const [deleteImageSegmentationLayer] = useDeleteImageSegmentationLayerMutation();
+  const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery(
+    { patientId: patientId ?? "" },
+    { skip: !patientId }
+  );
 
+  // Sync selected series with active viewport's loaded series
   useEffect(() => {
     const activeViewportSeries = getViewportSeries(state.activeViewport);
     if (activeViewportSeries) {
@@ -71,11 +90,51 @@ const ViewerRightSidebar = ({
       }
       return;
     }
-
     if (selectedSeries) {
       setSelectedSeries(null);
     }
   }, [state.activeViewport, getViewportSeries, selectedSeries]);
+
+  // Load annotations & segmentations when in annotations view
+  useEffect(() => {
+    if (viewMode !== "annotations" || !selectedSeries) {
+      setAnnotations([]);
+      setSegmentations([]);
+      return;
+    }
+
+    const loadAnnotationsAndSegmentations = async () => {
+      try {
+        const response = await fetchAnnotationsBySeries(selectedSeries).unwrap();
+        const fetchedAnnotations = extractApiData<ImageAnnotation>(response);
+        setAnnotations(fetchedAnnotations || []);
+      } catch (error) {
+        console.error("Failed to load annotations:", error);
+        setAnnotations([]);
+      }
+
+      // Load segmentations from viewer context
+      const activeSeries = getViewportSeries(state.activeViewport);
+      if (activeSeries?.id === selectedSeries) {
+        const segmentationLayers = getSegmentationLayers();
+        const snapshots: SegmentationSnapshot[] = segmentationLayers
+          .flatMap(layer => layer.snapshots || [])
+          .filter((snapshot): snapshot is SegmentationSnapshot => snapshot !== undefined);
+        setSegmentations(snapshots);
+      } else {
+        setSegmentations([]);
+      }
+    };
+
+    void loadAnnotationsAndSegmentations();
+  }, [
+    viewMode,
+    selectedSeries,
+    state.activeViewport,
+    fetchAnnotationsBySeries,
+    getViewportSeries,
+    getSegmentationLayers,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,7 +196,7 @@ const ViewerRightSidebar = ({
       try {
         const seriesResponse = await fetchSeriesByReference({
           id: studyId,
-          type: 'study',
+          type: "study",
           params: { page: 1, limit: 50 },
         }).unwrap();
 
@@ -148,7 +207,7 @@ const ViewerRightSidebar = ({
         preloadThumbnails(fetchedSeries);
         setLoadedStudyId(studyId);
       } catch (error) {
-        console.error('❌ Failed to load series:', error);
+        console.error("❌ Failed to load series:", error);
         setSeriesList([]);
         onSeriesLoaded?.([]);
       } finally {
@@ -185,14 +244,13 @@ const ViewerRightSidebar = ({
       try {
         const response = await fetchInstancesByReference({
           id: seriesItem.id,
-          type: 'series',
+          type: "series",
           params: { page: 1, limit: 1 },
         }).unwrap();
 
         const instances = extractApiData<DicomInstance>(response);
-        const firstWithFile = instances.find(
-          (inst: DicomInstance) =>
-            resolveDicomImageUrl(inst.filePath, inst.fileName)
+        const firstWithFile = instances.find((inst: DicomInstance) =>
+          resolveDicomImageUrl(inst.filePath, inst.fileName)
         );
 
         if (firstWithFile) {
@@ -209,7 +267,11 @@ const ViewerRightSidebar = ({
           }));
         }
       } catch (error) {
-        console.warn('Failed to preload thumbnail for series', seriesItem.id, error);
+        console.warn(
+          "Failed to preload thumbnail for series",
+          seriesItem.id,
+          error
+        );
       }
     }
 
@@ -270,8 +332,8 @@ const ViewerRightSidebar = ({
 
   const toggleSeriesExpansion = async (seriesId: string) => {
     const isExpanding = !expandedSeries.has(seriesId);
-    
-    setExpandedSeries(prev => {
+
+    setExpandedSeries((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(seriesId)) {
         newSet.delete(seriesId);
@@ -282,22 +344,22 @@ const ViewerRightSidebar = ({
     });
 
     if (isExpanding && !seriesInstances[seriesId]) {
-      setLoadingInstances(prev => new Set(prev).add(seriesId));
+      setLoadingInstances((prev) => new Set(prev).add(seriesId));
       try {
         const response = await fetchInstancesByReference({
           id: seriesId,
-          type: 'series',
+          type: "series",
           params: { page: 1, limit: 1000 },
         }).unwrap();
         const instances = response.data?.data || [];
-        setSeriesInstances(prev => ({
+        setSeriesInstances((prev) => ({
           ...prev,
-          [seriesId]: instances
+          [seriesId]: instances,
         }));
       } catch (error) {
-        console.error('Failed to load instances:', error);
+        console.error("Failed to load instances:", error);
       } finally {
-        setLoadingInstances(prev => {
+        setLoadingInstances((prev) => {
           const newSet = new Set(prev);
           newSet.delete(seriesId);
           return newSet;
@@ -305,7 +367,6 @@ const ViewerRightSidebar = ({
       }
     }
   };
-
 
   const filteredSeries = useMemo(() => {
     return (seriesList || []).filter((s) => {
@@ -331,12 +392,14 @@ const ViewerRightSidebar = ({
       !thumbnailPath &&
       (s.numberOfInstances ?? 0) > 0;
 
+    const seriesViewMode: 'grid' | 'list' = viewMode === 'annotations' ? 'grid' : viewMode;
+    
     return (
       <SeriesCard
         key={s.id}
         series={s}
         isSelected={selectedSeries === s.id}
-        viewMode={viewMode}
+        viewMode={seriesViewMode}
         onSeriesClick={handleSeriesClick}
         thumbnailPath={thumbnailPath}
         loadingThumbnail={isLoadingThumbnail}
@@ -370,69 +433,69 @@ const ViewerRightSidebar = ({
                </Badge>
              </div>
           </div>
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                      className={`h-6 w-6 p-0 transition-all ${
-                        viewMode === 'grid'
-                          ? 'text-teal-300 bg-teal-900/40'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <Grid3X3 className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-slate-700 border-slate-600">
-                    <p>Grid view</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                      className={`h-6 w-6 p-0 transition-all ${
-                        viewMode === 'list'
-                          ? 'text-teal-300 bg-teal-900/40'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <List className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-slate-700 border-slate-600">
-                    <p>List view</p>
-                  </TooltipContent>
-                </Tooltip>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode("grid")}
+                    className={`h-6 w-6 p-0 transition-all ${
+                      viewMode === "grid"
+                        ? "text-teal-300 bg-teal-900/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Grid3X3 className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-700 border-slate-600">
+                  <p>Grid view</p>
+                </TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewMode('annotations')}
-                      className={`h-6 w-6 p-0 transition-all ${
-                        viewMode === 'annotations'
-                          ? 'text-teal-300 bg-teal-900/40'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-slate-700 border-slate-600">
-                    <p>Annotations & Segmentations</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className={`h-6 w-6 p-0 transition-all ${
+                      viewMode === "list"
+                        ? "text-teal-300 bg-teal-900/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-700 border-slate-600">
+                  <p>List view</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewMode("annotations")}
+                    className={`h-6 w-6 p-0 transition-all ${
+                      viewMode === "annotations"
+                        ? "text-teal-300 bg-teal-900/40"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-slate-700 border-slate-600">
+                  <p>Annotations & Segmentations</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
               {viewMode !== 'annotations' && (
                 <Tooltip>

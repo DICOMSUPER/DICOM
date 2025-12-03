@@ -3,11 +3,21 @@ import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
 import { BodyPart } from "@/interfaces/imaging/body-part.interface";
 import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
 import { mapApiResponse } from "@/utils/adpater";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
+import {
+  PaginatedResponse,
+  QueryParams,
+} from "@/interfaces/pagination/pagination.interface";
 
 export interface CreateBodyPartDto {
   name: string;
   description?: string;
+}
+
+interface DeleteBodyPartResponse {
+  success: boolean;
+  data: boolean;
+  statusCode: number;
+  message: string;
 }
 
 export interface UpdateBodyPartDto {
@@ -47,7 +57,10 @@ export const bodyPartApi = createApi({
     }),
 
     // Get all body parts with filters (paginated)
-    getBodyParts: builder.query<PaginatedResponse<BodyPart>, BodyPartQueryParams | void>({
+    getBodyParts: builder.query<
+      PaginatedResponse<BodyPart>,
+      BodyPartQueryParams | void
+    >({
       query: (filters) => ({
         url: "/paginated",
         method: "GET",

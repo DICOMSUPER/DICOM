@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Activity } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { useGetBodyPartsQuery, useDeleteBodyPartMutation } from '@/store/bodyPartApi';
-import { BodyPartTable } from '@/components/admin/body-part/BodyPartTable';
-import { BodyPartStatsCards } from '@/components/admin/body-part/body-part-stats-cards';
-import { BodyPartFilters } from '@/components/admin/body-part/body-part-filters';
-import { BodyPartViewModal } from '@/components/admin/body-part/body-part-view-modal';
-import { BodyPartFormModal } from '@/components/admin/body-part/body-part-form-modal';
-import { BodyPartDeleteModal } from '@/components/admin/body-part/body-part-delete-modal';
-import { RefreshButton } from '@/components/ui/refresh-button';
-import { ErrorAlert } from '@/components/ui/error-alert';
-import { Pagination } from '@/components/common/PaginationV1';
-import { BodyPart } from '@/interfaces/imaging/body-part.interface';
-import { QueryParams } from '@/interfaces/pagination/pagination.interface';
-import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Plus, Activity } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  useGetBodyPartsQuery,
+  useDeleteBodyPartMutation,
+} from "@/store/bodyPartApi";
+import { BodyPartTable } from "@/components/admin/body-part/BodyPartTable";
+import { BodyPartStatsCards } from "@/components/admin/body-part/body-part-stats-cards";
+import { BodyPartFilters } from "@/components/admin/body-part/body-part-filters";
+import { BodyPartViewModal } from "@/components/admin/body-part/body-part-view-modal";
+import { BodyPartFormModal } from "@/components/admin/body-part/body-part-form-modal";
+import { BodyPartDeleteModal } from "@/components/admin/body-part/body-part-delete-modal";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { Pagination } from "@/components/common/PaginationV1";
+import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { QueryParams } from "@/interfaces/pagination/pagination.interface";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 
 interface ApiError {
   data?: {
@@ -29,10 +32,12 @@ interface ApiError {
 export default function Page() {
   const [page, setPage] = useState(1);
   const limit = 10;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart | null>(null);
+  const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart | null>(
+    null
+  );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -70,17 +75,16 @@ export default function Page() {
     refetchOnMountOrArgChange: true,
   });
 
-  const [deleteBodyPart, { isLoading: isDeletingBodyPart }] = useDeleteBodyPartMutation();
+  const [deleteBodyPart, { isLoading: isDeletingBodyPart }] =
+    useDeleteBodyPartMutation();
 
   useEffect(() => {
     if (bodyPartsError) {
       const error = bodyPartsError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
           ? (error.data as { message: string }).message
-          : 'Failed to load body part data. Please try again.';
+          : "Failed to load body part data. Please try again.";
       setError(errorMessage);
     } else {
       setError(null);
@@ -107,7 +111,7 @@ export default function Page() {
     try {
       await refetchBodyParts();
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -119,8 +123,8 @@ export default function Page() {
   }, [searchTerm]);
 
   const handleResetFilters = useCallback(() => {
-    setSearchTerm('');
-    setAppliedSearchTerm('');
+    setSearchTerm("");
+    setAppliedSearchTerm("");
     setPage(1);
   }, []);
 
@@ -156,10 +160,15 @@ export default function Page() {
       setIsDeleteModalOpen(false);
       setSelectedBodyPart(null);
       await refetchBodyParts();
-    } catch (err) {
-      const error = err as ApiError;
+    } catch (error) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
       toast.error(
-        error?.data?.message || `Failed to delete body part ${selectedBodyPart.name}`
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to delete assignment"
       );
     }
   };
@@ -169,7 +178,7 @@ export default function Page() {
   };
 
   const handleSort = useCallback((newSortConfig: SortConfig) => {
-    console.log('🔄 Sort changed:', newSortConfig);
+    console.log("🔄 Sort changed:", newSortConfig);
     setSortConfig(newSortConfig);
     setPage(1); // Reset to first page when sorting changes
   }, []);
@@ -178,14 +187,13 @@ export default function Page() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Body Part Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Body Part Management
+          </h1>
           <p className="text-foreground">Search and manage body part records</p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton
-            onRefresh={handleRefresh}
-            loading={isRefreshing}
-          />
+          <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
           <Button
             onClick={handleCreateBodyPart}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -197,7 +205,11 @@ export default function Page() {
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load body parts" message={error} className="mb-4" />
+        <ErrorAlert
+          title="Failed to load body parts"
+          message={error}
+          className="mb-4"
+        />
       )}
 
       <BodyPartStatsCards
@@ -268,4 +280,3 @@ export default function Page() {
     </div>
   );
 }
-

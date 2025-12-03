@@ -241,7 +241,10 @@ export default function LoginPage() {
         <div className="relative z-10 text-center text-white animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="mb-8">
             <div className="mb-6 transform hover:scale-110 transition-transform duration-300">
-              <Monitor size={80} className="mx-auto mb-4 opacity-95 drop-shadow-2xl" />
+              <Monitor
+                size={80}
+                className="mx-auto mb-4 opacity-95 drop-shadow-2xl"
+              />
             </div>
             <h2 className="text-4xl font-bold mb-4 drop-shadow-lg">
               DICOM Imaging System

@@ -109,6 +109,20 @@ export class BodyPartService {
         );
       }
 
+      // Check if body part is referenced in request procedures
+      const requestProcedureRepo = em.getRepository('RequestProcedure');
+      const referencedInProcedures = await requestProcedureRepo.count({
+        where: { bodyPartId: id, isDeleted: false },
+      });
+
+      if (referencedInProcedures > 0) {
+        throw ThrowMicroserviceException(
+          HttpStatus.CONFLICT,
+          'Cannot delete body part that is referenced in existing request procedures',
+          IMAGING_SERVICE
+        );
+      }
+
       return await this.bodyPartRepository.softDelete(id, 'isDeleted');
     });
   };

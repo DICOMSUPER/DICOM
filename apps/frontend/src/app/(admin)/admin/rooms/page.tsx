@@ -1,27 +1,31 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Building2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { getRoomStatusBadge } from '@/utils/status-badge';
-import { useGetRoomsQuery, useGetRoomStatsQuery, useDeleteRoomMutation } from '@/store/roomsApi';
-import { useGetDepartmentsQuery } from '@/store/departmentApi';
-import { RoomTable } from '@/components/admin/room/RoomTable';
-import { RoomStatsCards } from '@/components/admin/room/room-stats-cards';
-import { RoomFilters } from '@/components/admin/room/room-filters';
-import { RoomViewModal } from '@/components/admin/room/room-view-modal';
-import { RoomFormModal } from '@/components/admin/room/room-form-modal';
-import { RoomDeleteModal } from '@/components/admin/room/room-delete-modal';
-import { RoomServiceAssignmentModal } from '@/components/admin/room/room-service-assignment-modal';
-import { RefreshButton } from '@/components/ui/refresh-button';
-import { ErrorAlert } from '@/components/ui/error-alert';
-import { Pagination } from '@/components/common/PaginationV1';
-import { Room } from '@/interfaces/user/room.interface';
-import { Department } from '@/interfaces/user/department.interface';
-import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Plus, Building2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { getRoomStatusBadge } from "@/utils/status-badge";
+import {
+  useGetRoomsQuery,
+  useGetRoomStatsQuery,
+  useDeleteRoomMutation,
+} from "@/store/roomsApi";
+import { useGetDepartmentsQuery } from "@/store/departmentApi";
+import { RoomTable } from "@/components/admin/room/RoomTable";
+import { RoomStatsCards } from "@/components/admin/room/room-stats-cards";
+import { RoomFilters } from "@/components/admin/room/room-filters";
+import { RoomViewModal } from "@/components/admin/room/room-view-modal";
+import { RoomFormModal } from "@/components/admin/room/room-form-modal";
+import { RoomDeleteModal } from "@/components/admin/room/room-delete-modal";
+import { RoomServiceAssignmentModal } from "@/components/admin/room/room-service-assignment-modal";
+import { RefreshButton } from "@/components/ui/refresh-button";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { Pagination } from "@/components/common/PaginationV1";
+import { Room } from "@/interfaces/user/room.interface";
+import { Department } from "@/interfaces/user/department.interface";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 
 interface ApiError {
   data?: {
@@ -32,14 +36,14 @@ interface ApiError {
 export default function Page() {
   const [page, setPage] = useState(1);
   const limit = 10;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
-  const [appliedStatusFilter, setAppliedStatusFilter] = useState('all');
-  const [appliedTypeFilter, setAppliedTypeFilter] = useState('all');
-  const [appliedDepartmentFilter, setAppliedDepartmentFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState("all");
+  const [appliedTypeFilter, setAppliedTypeFilter] = useState("all");
+  const [appliedDepartmentFilter, setAppliedDepartmentFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -54,22 +58,22 @@ export default function Page() {
       page,
       limit,
       includeInactive: true,
-      includeDeleted: true,
+      includeDeleted: false,
     };
 
     if (appliedSearchTerm.trim()) {
       params.search = appliedSearchTerm.trim();
     }
 
-    if (appliedStatusFilter !== 'all') {
+    if (appliedStatusFilter !== "all") {
       params.status = appliedStatusFilter;
     }
 
-    if (appliedTypeFilter !== 'all') {
+    if (appliedTypeFilter !== "all") {
       params.type = appliedTypeFilter;
     }
 
-    if (appliedDepartmentFilter !== 'all') {
+    if (appliedDepartmentFilter !== "all") {
       params.departmentId = appliedDepartmentFilter;
     }
 
@@ -77,7 +81,15 @@ export default function Page() {
     Object.assign(params, sortParams);
 
     return params;
-  }, [page, limit, appliedSearchTerm, appliedStatusFilter, appliedTypeFilter, appliedDepartmentFilter, sortConfig]);
+  }, [
+    page,
+    limit,
+    appliedSearchTerm,
+    appliedStatusFilter,
+    appliedTypeFilter,
+    appliedDepartmentFilter,
+    sortConfig,
+  ]);
 
   const {
     data: roomsRes,
@@ -105,12 +117,10 @@ export default function Page() {
   useEffect(() => {
     if (roomsError) {
       const error = roomsError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data && typeof error.data === "object" && "message" in error.data
           ? (error.data as { message: string }).message
-          : 'Failed to load room data. Please try again.';
+          : "Failed to load room data. Please try again.";
       setError(errorMessage);
     } else {
       setError(null);
@@ -119,14 +129,16 @@ export default function Page() {
 
   const rooms: Room[] = roomsRes?.data ?? [];
   const departments: Department[] = departmentsData?.data ?? [];
-  const paginationMeta = roomsRes ? {
-    total: roomsRes.total,
-    page: roomsRes.page,
-    limit: roomsRes.limit,
-    totalPages: roomsRes.totalPages,
-    hasNextPage: roomsRes.hasNextPage,
-    hasPreviousPage: roomsRes.hasPreviousPage,
-  } : null;
+  const paginationMeta = roomsRes
+    ? {
+        total: roomsRes.total,
+        page: roomsRes.page,
+        limit: roomsRes.limit,
+        totalPages: roomsRes.totalPages,
+        hasNextPage: roomsRes.hasNextPage,
+        hasPreviousPage: roomsRes.hasPreviousPage,
+      }
+    : null;
 
   const stats = useMemo(() => {
     return {
@@ -137,7 +149,6 @@ export default function Page() {
     };
   }, [roomStatsData]);
 
-
   const getStatusRoomBadge = (status: string) => {
     return getRoomStatusBadge(status);
   };
@@ -145,9 +156,13 @@ export default function Page() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchRooms(), refetchRoomStats(), refetchDepartments()]);
+      await Promise.all([
+        refetchRooms(),
+        refetchRoomStats(),
+        refetchDepartments(),
+      ]);
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -162,14 +177,14 @@ export default function Page() {
   }, [searchTerm, statusFilter, typeFilter, departmentFilter]);
 
   const handleResetFilters = useCallback(() => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setTypeFilter('all');
-    setDepartmentFilter('all');
-    setAppliedSearchTerm('');
-    setAppliedStatusFilter('all');
-    setAppliedTypeFilter('all');
-    setAppliedDepartmentFilter('all');
+    setSearchTerm("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setDepartmentFilter("all");
+    setAppliedSearchTerm("");
+    setAppliedStatusFilter("all");
+    setAppliedTypeFilter("all");
+    setAppliedDepartmentFilter("all");
     setPage(1);
   }, []);
 
@@ -212,7 +227,9 @@ export default function Page() {
       await refetchRooms();
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error?.data?.message || `Failed to delete room ${selectedRoom.roomCode}`);
+      toast.error(
+        error?.data?.message || `Failed to delete room ${selectedRoom.roomCode}`
+      );
     }
   };
 
@@ -233,14 +250,13 @@ export default function Page() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Room Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Room Management
+          </h1>
           <p className="text-foreground">Search and manage room records</p>
         </div>
         <div className="flex items-center gap-4">
-          <RefreshButton
-            onRefresh={handleRefresh}
-            loading={isRefreshing}
-          />
+          <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
           <Button
             onClick={handleCreateRoom}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -252,7 +268,11 @@ export default function Page() {
       </div>
 
       {error && (
-        <ErrorAlert title="Failed to load rooms" message={error} className="mb-4" />
+        <ErrorAlert
+          title="Failed to load rooms"
+          message={error}
+          className="mb-4"
+        />
       )}
 
       <RoomStatsCards
@@ -344,6 +364,7 @@ export default function Page() {
           setSelectedRoom(null);
         }}
         onSuccess={handleAssignmentSuccess}
+        
       />
     </div>
   );

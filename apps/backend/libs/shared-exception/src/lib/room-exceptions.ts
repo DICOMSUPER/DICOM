@@ -50,12 +50,12 @@ export class RoomUpdateFailedException extends RpcException {
 }
 
 export class RoomDeletionFailedException extends RpcException {
-  constructor(roomId?: string, details?: any) {
+  constructor(message?: string, roomId?: string) {
     super({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to delete room${roomId ? ` '${roomId}'` : ''}`,
+      message: message || `Failed to delete room${roomId ? ` '${roomId}'` : ''}`,
       errorCode: 'ROOM_DELETION_FAILED',
-      details: { roomId, ...details },
+      details: { roomId },
     });
   }
 }

@@ -49,7 +49,7 @@ export default function ImagingModalityPage() {
     sortBy: "createdAt",
     order: "desc",
     includeInactive: true,
-    includeDeleted: true,
+    includeDeleted: false,
   });
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -147,30 +147,23 @@ export default function ImagingModalityPage() {
 
   const confirmDelete = async () => {
     if (!modalityToDelete) return;
-
     try {
-      const result = await deleteModality(modalityToDelete.id);
-      const response = result.data as any;
-      if (response?.success === true || response?.statusCode === 200) {
-        toast.success("Imaging modality deleted successfully");
-        setModalityToDelete(null);
-        await refetch();
-      } else {
-        toast.error(
-          response?.message || "Failed to delete imaging modality"
-        );
-      }
-    } catch (err: any) {
-      if (err?.data?.success === true || err?.data?.statusCode === 200) {
-        toast.success("Imaging modality deleted successfully");
-        setModalityToDelete(null);
-        await refetch();
-      } else {
-        const error = err as ApiError;
-        toast.error(
-          error?.data?.message || "Failed to delete imaging modality"
-        );
-      }
+      await deleteModality(modalityToDelete.id).unwrap();
+      toast.success(
+        `Imaging modality ${modalityToDelete.modalityName} deleted successfully`
+      );
+      setModalityToDelete(null);
+      await refetch();
+    } catch (error) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      toast.error(
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to delete imaging modality"
+      );
     }
   };
 

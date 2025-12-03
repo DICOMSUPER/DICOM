@@ -1,13 +1,23 @@
-import { useImageViewer } from '@/contexts/ImageViewerProvider';
-import React, { useState, useEffect, useRef } from 'react';
-import { defaultActionIcons, defaultViewPresets } from './constants';
-import { actionIcon, viewPreset } from './types';
-import StudyBrowser, { ViewPreset } from '@/components/ui-next/StudyBrowser/StudyBrowser';
-import { useViewportGrid } from '@/contexts/ViewportGridProvider';
-import { PanelStudyBrowserHeader } from './PanelStudiesHeader';
-import { Separator } from '@/components/ui-next/Separator';
+import { useImageViewer } from "@/contexts/ImageViewerProvider";
+import React, { useState, useEffect, useRef } from "react";
+import { defaultActionIcons, defaultViewPresets } from "./constants";
+import { actionIcon, viewPreset } from "./types";
+import StudyBrowser, {
+  ViewPreset,
+} from "@/components/ui-next/StudyBrowser/StudyBrowser";
+import { useViewportGrid } from "@/contexts/ViewportGridProvider";
+import { PanelStudyBrowserHeader } from "./PanelStudiesHeader";
+import { Separator } from "@/components/ui-next/Separator";
 
-const thumbnailNoImageModalities = ['SR', 'SEG', 'RTSTRUCT', 'RTPLAN', 'RTDOSE', 'DOC', 'PMAP'];
+const thumbnailNoImageModalities = [
+  "SR",
+  "SEG",
+  "RTSTRUCT",
+  "RTPLAN",
+  "RTDOSE",
+  "DOC",
+  "PMAP",
+];
 
 export type PanelStudyBrowserTrackingProps = {
   customMapDisplaySets?: (
@@ -17,15 +27,25 @@ export type PanelStudyBrowserTrackingProps = {
     viewports: Map<string, any>
   ) => any[];
   onClickUntrack?: (displaySetInstanceUID: string) => void;
-  onDoubleClickThumbnailHandlerCallBack?: (displaySetInstanceUID: string) => void;
+  onDoubleClickThumbnailHandlerCallBack?: (
+    displaySetInstanceUID: string
+  ) => void;
   dataSource?: any;
   displaySetService?: any;
   getStudiesForPatientByMRN?: (studies: any[]) => Promise<any[]>;
   navigate?: (path: string, target: string) => void;
   formatDate?: (date: string) => string;
   getImageSrc?: (imageId: string) => Promise<string>;
-  createStudyBrowserTabs?: (studyUIDs: string[], studyList: any[], displaySets: any[]) => any[];
-  requestDisplaySetCreationForStudy?: (service: any, studyUID: string, madeInClient: boolean) => void;
+  createStudyBrowserTabs?: (
+    studyUIDs: string[],
+    studyList: any[],
+    displaySets: any[]
+  ) => any[];
+  requestDisplaySetCreationForStudy?: (
+    service: any,
+    studyUID: string,
+    madeInClient: boolean
+  ) => void;
   sortStudyInstances?: (displaySets: any[]) => void;
 };
 
@@ -43,27 +63,34 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
   requestDisplaySetCreationForStudy,
   sortStudyInstances,
 }) => {
-  const studyMode = 'all';
+  const studyMode = "all";
 
   const internalImageViewer = useImageViewer();
   const StudyInstanceUIDs = internalImageViewer?.StudyInstanceUIDs || [];
   const fetchedStudiesRef = useRef(new Set<string>());
 
-  const [{ activeViewportId, viewports, isHangingProtocolLayout }] = useViewportGrid();
+  const [{ activeViewportId, viewports, isHangingProtocolLayout }] =
+    useViewportGrid();
 
   const [activeTabName, setActiveTabName] = useState<string>(studyMode);
-  const [expandedStudyInstanceUIDs, setExpandedStudyInstanceUIDs] = useState<string[]>([
-    ...StudyInstanceUIDs,
-  ]);
+  const [expandedStudyInstanceUIDs, setExpandedStudyInstanceUIDs] = useState<
+    string[]
+  >([...StudyInstanceUIDs]);
   const [hasLoadedViewports, setHasLoadedViewports] = useState<boolean>(false);
   const [studyDisplayList, setStudyDisplayList] = useState<any[]>([]);
   const [displaySets, setDisplaySets] = useState<any[]>([]);
-  const [displaySetsLoadingState, setDisplaySetsLoadingState] = useState<{ [key: string]: number }>({});
-  const [thumbnailImageSrcMap, setThumbnailImageSrcMap] = useState<{ [key: string]: string }>({});
+  const [displaySetsLoadingState, setDisplaySetsLoadingState] = useState<{
+    [key: string]: number;
+  }>({});
+  const [thumbnailImageSrcMap, setThumbnailImageSrcMap] = useState<{
+    [key: string]: string;
+  }>({});
   const [jumpToDisplaySet, setJumpToDisplaySet] = useState<string | null>(null);
 
-  const [viewPresets, setViewPresets] = useState<viewPreset[]>(defaultViewPresets);
-  const [actionIcons, setActionIcons] = useState<actionIcon[]>(defaultActionIcons);
+  const [viewPresets, setViewPresets] =
+    useState<viewPreset[]>(defaultViewPresets);
+  const [actionIcons, setActionIcons] =
+    useState<actionIcon[]>(defaultActionIcons);
 
   const updateActionIconValue = (actionIcon: actionIcon) => {
     actionIcon.value = !actionIcon.value;
@@ -75,7 +102,7 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
     if (!viewPreset) {
       return;
     }
-    const newViewPresets = viewPresets.map(preset => {
+    const newViewPresets = viewPresets.map((preset) => {
       preset.selected = preset.id === viewPreset.id;
       return preset;
     });
@@ -103,45 +130,57 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
         });
 
         if (!qidoForStudyUID?.length) {
-          navigate!('/notfoundstudy', '_self');
-          throw new Error('Invalid study URL');
+          navigate!("/notfoundstudy", "_self");
+          throw new Error("Invalid study URL");
         }
 
         let qidoStudiesForPatient = qidoForStudyUID;
 
         try {
-          qidoStudiesForPatient = await getStudiesForPatientByMRN!(qidoForStudyUID);
+          qidoStudiesForPatient = await getStudiesForPatientByMRN!(
+            qidoForStudyUID
+          );
         } catch (error) {
           console.warn(error);
         }
 
         const mappedStudies = _mapDataSourceStudies(qidoStudiesForPatient);
-        const actuallyMappedStudies = mappedStudies.map(qidoStudy => {
+        const actuallyMappedStudies = mappedStudies.map((qidoStudy) => {
           return {
             studyInstanceUid: qidoStudy.StudyInstanceUID,
-            date: formatDate!(qidoStudy.StudyDate) || '',
+            date: formatDate!(qidoStudy.StudyDate) || "",
             description: qidoStudy.StudyDescription,
             modalities: qidoStudy.ModalitiesInStudy,
             numInstances: Number(qidoStudy.NumInstances),
           };
         });
 
-        setStudyDisplayList(prevArray => {
+        setStudyDisplayList((prevArray) => {
           const ret = [...prevArray];
           for (const study of actuallyMappedStudies) {
-            if (!prevArray.find(it => it.studyInstanceUid === study.studyInstanceUid)) {
+            if (
+              !prevArray.find(
+                (it) => it.studyInstanceUid === study.studyInstanceUid
+              )
+            ) {
               ret.push(study);
             }
           }
           return ret;
         });
       } catch (error) {
-        console.error('Error fetching studies:', error);
+        console.error("Error fetching studies:", error);
       }
     }
 
-    StudyInstanceUIDs.forEach(sid => fetchStudiesForPatient(sid));
-  }, [StudyInstanceUIDs, dataSource, getStudiesForPatientByMRN, navigate, formatDate]);
+    StudyInstanceUIDs.forEach((sid) => fetchStudiesForPatient(sid));
+  }, [
+    StudyInstanceUIDs,
+    dataSource,
+    getStudiesForPatientByMRN,
+    navigate,
+    formatDate,
+  ]);
 
   // ~~ Initial Thumbnails
   useEffect(() => {
@@ -151,7 +190,8 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
 
     if (!hasLoadedViewports) {
       if (activeViewportId) {
-        const delayMs = 250 + displaySetService.getActiveDisplaySets().length * 10;
+        const delayMs =
+          250 + displaySetService.getActiveDisplaySets().length * 10;
         window.setTimeout(() => setHasLoadedViewports(true), delayMs);
       }
       return;
@@ -159,7 +199,9 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
 
     let currentDisplaySets = displaySetService.activeDisplaySets;
     currentDisplaySets = currentDisplaySets.filter(
-      (ds: any) => !thumbnailNoImageModalities.includes(ds.Modality) || ds.thumbnailSrc === null
+      (ds: any) =>
+        !thumbnailNoImageModalities.includes(ds.Modality) ||
+        ds.thumbnailSrc === null
     );
 
     if (!currentDisplaySets.length) {
@@ -168,7 +210,9 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
 
     currentDisplaySets.forEach(async (dSet: any) => {
       const newImageSrcEntry: { [key: string]: string } = {};
-      const displaySet = displaySetService.getDisplaySetByUID(dSet.displaySetInstanceUID);
+      const displaySet = displaySetService.getDisplaySetByUID(
+        dSet.displaySetInstanceUID
+      );
       const imageIds = dataSource.getImageIdsForDisplaySet(dSet);
       const imageId = getImageIdForThumbnail(displaySet, imageIds);
 
@@ -186,11 +230,17 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
       }
       newImageSrcEntry[dSet.displaySetInstanceUID] = thumbnailSrc;
 
-      setThumbnailImageSrcMap(prevState => {
+      setThumbnailImageSrcMap((prevState) => {
         return { ...prevState, ...newImageSrcEntry };
       });
     });
-  }, [displaySetService, dataSource, getImageSrc, activeViewportId, hasLoadedViewports]);
+  }, [
+    displaySetService,
+    dataSource,
+    getImageSrc,
+    activeViewportId,
+    hasLoadedViewports,
+  ]);
 
   // ~~ displaySets
   useEffect(() => {
@@ -241,7 +291,9 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
         displaySetsAdded.forEach(async (dSet: any) => {
           const displaySetInstanceUID = dSet.displaySetInstanceUID;
           const newImageSrcEntry: { [key: string]: string } = {};
-          const displaySet = displaySetService.getDisplaySetByUID(displaySetInstanceUID);
+          const displaySet = displaySetService.getDisplaySetByUID(
+            displaySetInstanceUID
+          );
           if (displaySet?.unsupported) {
             return;
           }
@@ -266,7 +318,7 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
           }
           newImageSrcEntry[displaySetInstanceUID] = thumbnailSrc;
 
-          setThumbnailImageSrcMap(prevState => {
+          setThumbnailImageSrcMap((prevState) => {
             return { ...prevState, ...newImageSrcEntry };
           });
         });
@@ -301,23 +353,24 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
       }
     );
 
-    const SubscriptionDisplaySetMetaDataInvalidated = displaySetService.subscribe(
-      displaySetService.EVENTS.DISPLAY_SET_SERIES_METADATA_INVALIDATED,
-      () => {
-        const mappedDisplaySets = mapDisplaySetsWithState(
-          displaySetService.getActiveDisplaySets(),
-          displaySetsLoadingState,
-          thumbnailImageSrcMap,
-          viewports
-        );
+    const SubscriptionDisplaySetMetaDataInvalidated =
+      displaySetService.subscribe(
+        displaySetService.EVENTS.DISPLAY_SET_SERIES_METADATA_INVALIDATED,
+        () => {
+          const mappedDisplaySets = mapDisplaySetsWithState(
+            displaySetService.getActiveDisplaySets(),
+            displaySetsLoadingState,
+            thumbnailImageSrcMap,
+            viewports
+          );
 
-        if (!customMapDisplaySets && sortStudyInstances) {
-          sortStudyInstances(mappedDisplaySets);
+          if (!customMapDisplaySets && sortStudyInstances) {
+            sortStudyInstances(mappedDisplaySets);
+          }
+
+          setDisplaySets(mappedDisplaySets);
         }
-
-        setDisplaySets(mappedDisplaySets);
-      }
-    );
+      );
 
     return () => {
       SubscriptionDisplaySetsChanged.unsubscribe();
@@ -337,26 +390,41 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
     : [];
 
   function _handleStudyClick(StudyInstanceUID: string) {
-    const shouldCollapseStudy = expandedStudyInstanceUIDs.includes(StudyInstanceUID);
+    const shouldCollapseStudy =
+      expandedStudyInstanceUIDs.includes(StudyInstanceUID);
     const updatedExpandedStudyInstanceUIDs = shouldCollapseStudy
-      ? [...expandedStudyInstanceUIDs.filter(stdyUid => stdyUid !== StudyInstanceUID)]
+      ? [
+          ...expandedStudyInstanceUIDs.filter(
+            (stdyUid) => stdyUid !== StudyInstanceUID
+          ),
+        ]
       : [...expandedStudyInstanceUIDs, StudyInstanceUID];
 
     setExpandedStudyInstanceUIDs(updatedExpandedStudyInstanceUIDs);
 
-    if (!shouldCollapseStudy && displaySetService && requestDisplaySetCreationForStudy) {
+    if (
+      !shouldCollapseStudy &&
+      displaySetService &&
+      requestDisplaySetCreationForStudy
+    ) {
       const madeInClient = true;
-      requestDisplaySetCreationForStudy(displaySetService, StudyInstanceUID, madeInClient);
+      requestDisplaySetCreationForStudy(
+        displaySetService,
+        StudyInstanceUID,
+        madeInClient
+      );
     }
   }
 
   useEffect(() => {
     if (jumpToDisplaySet) {
       const displaySetInstanceUID = jumpToDisplaySet;
-      const element = document.getElementById(`thumbnail-${displaySetInstanceUID}`);
+      const element = document.getElementById(
+        `thumbnail-${displaySetInstanceUID}`
+      );
 
-      if (element && typeof element.scrollIntoView === 'function') {
-        element.scrollIntoView({ behavior: 'smooth' });
+      if (element && typeof element.scrollIntoView === "function") {
+        element.scrollIntoView({ behavior: "smooth" });
         setJumpToDisplaySet(null);
       }
     }
@@ -368,7 +436,10 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
     }
 
     const displaySetInstanceUID = jumpToDisplaySet;
-    const thumbnailLocation = _findTabAndStudyOfDisplaySet(displaySetInstanceUID, tabs);
+    const thumbnailLocation = _findTabAndStudyOfDisplaySet(
+      displaySetInstanceUID,
+      tabs
+    );
     if (!thumbnailLocation) {
       return;
     }
@@ -376,12 +447,17 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
     setActiveTabName(tabName);
     const studyExpanded = expandedStudyInstanceUIDs.includes(StudyInstanceUID);
     if (!studyExpanded) {
-      const updatedExpandedStudyInstanceUIDs = [...expandedStudyInstanceUIDs, StudyInstanceUID];
+      const updatedExpandedStudyInstanceUIDs = [
+        ...expandedStudyInstanceUIDs,
+        StudyInstanceUID,
+      ];
       setExpandedStudyInstanceUIDs(updatedExpandedStudyInstanceUIDs);
     }
   }, [expandedStudyInstanceUIDs, jumpToDisplaySet, tabs]);
 
-  const activeDisplaySetInstanceUIDs = activeViewportId ? viewports.get(activeViewportId)?.displaySetInstanceUIDs : undefined;
+  const activeDisplaySetInstanceUIDs = activeViewportId
+    ? viewports.get(activeViewportId)?.displaySetInstanceUIDs
+    : undefined;
 
   return (
     <>
@@ -408,7 +484,7 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
         onClickThumbnail={() => {}}
         onDoubleClickThumbnail={() => {}}
         activeDisplaySetInstanceUIDs={activeDisplaySetInstanceUIDs}
-        showSettings={actionIcons.find(icon => icon.id === 'settings')?.value}
+        showSettings={actionIcons.find((icon) => icon.id === "settings")?.value}
         viewPresets={viewPresets}
       />
     </>
@@ -418,7 +494,7 @@ const PanelStudyBrowser: React.FC<PanelStudyBrowserTrackingProps> = ({
 export default PanelStudyBrowser;
 
 function _mapDataSourceStudies(studies: any[]) {
-  return studies.map(study => {
+  return studies.map((study) => {
     return {
       AccessionNumber: study.accession,
       StudyDate: study.date,
@@ -442,20 +518,22 @@ function _mapDisplaySets(
   const thumbnailDisplaySets: any[] = [];
   const thumbnailNoImageDisplaySets: any[] = [];
   displaySets
-    .filter(ds => !ds.excludeFromThumbnailBrowser)
-    .forEach(ds => {
+    .filter((ds) => !ds.excludeFromThumbnailBrowser)
+    .forEach((ds) => {
       const { thumbnailSrc, displaySetInstanceUID } = ds;
       const componentType = _getComponentType(ds);
 
       const array =
-        componentType === 'thumbnail' ? thumbnailDisplaySets : thumbnailNoImageDisplaySets;
+        componentType === "thumbnail"
+          ? thumbnailDisplaySets
+          : thumbnailNoImageDisplaySets;
 
       const loadingProgress = displaySetLoadingState?.[displaySetInstanceUID];
 
       array.push({
         displaySetInstanceUID,
-        description: ds.SeriesDescription || '',
-        seriesNumber: ds.SeriesNumber,
+        description: ds.SeriesDescription || "",
+        seriesNumber: ds?.SeriesNumber,
         modality: ds.Modality,
         seriesDate: ds.SeriesDate,
         numInstances: ds.numImageFrames,
@@ -466,7 +544,7 @@ function _mapDisplaySets(
         componentType,
         imageSrc: thumbnailSrc || thumbnailImageSrcMap[displaySetInstanceUID],
         dragData: {
-          type: 'displayset',
+          type: "displayset",
           displaySetInstanceUID,
         },
         isHydratedForDerivedDisplaySet: ds.isHydrated,
@@ -482,26 +560,33 @@ function _getComponentType(ds: any): string {
     ds?.unsupported ||
     ds.thumbnailSrc === null
   ) {
-    return 'thumbnailNoImage';
+    return "thumbnailNoImage";
   }
 
-  return 'thumbnail';
+  return "thumbnail";
 }
 
-function getImageIdForThumbnail(displaySet: any, imageIds: string[]): string | undefined {
+function getImageIdForThumbnail(
+  displaySet: any,
+  imageIds: string[]
+): string | undefined {
   let imageId;
   if (displaySet?.isDynamicVolume) {
     const timePoints = displaySet.dynamicVolumeInfo.timePoints;
     const middleIndex = Math.floor(timePoints.length / 2);
     const middleTimePointImageIds = timePoints[middleIndex];
-    imageId = middleTimePointImageIds[Math.floor(middleTimePointImageIds.length / 2)];
+    imageId =
+      middleTimePointImageIds[Math.floor(middleTimePointImageIds.length / 2)];
   } else {
     imageId = imageIds[Math.floor(imageIds.length / 2)];
   }
   return imageId;
 }
 
-function _findTabAndStudyOfDisplaySet(displaySetInstanceUID: string, tabs: any[]) {
+function _findTabAndStudyOfDisplaySet(
+  displaySetInstanceUID: string,
+  tabs: any[]
+) {
   for (let t = 0; t < tabs.length; t++) {
     const { studies } = tabs[t];
 

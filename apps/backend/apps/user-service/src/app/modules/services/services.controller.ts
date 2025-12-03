@@ -88,11 +88,15 @@ export class ServicesController {
   }
 
   @MessagePattern(`UserService.Services.Delete`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }) {
     this.logger.log(`Using pattern: UserService.Services.Delete`);
     try {
       const { id } = data;
-      return await this.servicesService.remove(id);
+      await this.servicesService.remove(id)
+      return {
+        message: 'Service deleted successfully',
+        success: true,
+      }
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

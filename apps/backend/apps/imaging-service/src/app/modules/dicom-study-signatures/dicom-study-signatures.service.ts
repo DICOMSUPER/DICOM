@@ -1,29 +1,24 @@
-import {
-  Injectable,
-  Logger,
-  Inject,
-  ConsoleLogger,
-  BadRequestException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+import { Repository } from 'typeorm';
 
+import { DicomStudy, DicomStudySignature } from '@backend/shared-domain';
 import { DicomStudyStatus, SignatureType } from '@backend/shared-enums';
 import {
-  ResourceNotFoundException,
-  BusinessLogicException,
-  AuthenticationException,
   DigitalSignatureAlreadyExistsException,
-  InvalidStudyStatusException,
   DigitalSignatureSetupRequiredException,
+  InvalidSignaturePinException,
+  InvalidStudyStatusException,
+  ResourceNotFoundException,
   SignatureCreationFailedException,
-  StudySignatureNotFoundException,
   SignatureVerificationFailedException,
+  StudySignatureNotFoundException,
+  ValidationException,
 } from '@backend/shared-exception';
-import { DicomStudy, DicomStudySignature } from '@backend/shared-domain';
+import { ImageAnnotationsService } from '../image-annotations/image-annotations.service';
 
 @Injectable()
 export class DicomStudySignaturesService {
@@ -35,8 +30,15 @@ export class DicomStudySignaturesService {
     @InjectRepository(DicomStudySignature)
     private readonly signatureRepo: Repository<DicomStudySignature>,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
-    private readonly userServiceClient: ClientProxy
-  ) {}
+    private readonly userServiceClient: ClientProxy,
+    @Inject()
+    private readonly imageAnnotationsService: ImageAnnotationsService
+  ) // @Inject()
+  // private readonly imagingOrdersService: ImagingOrdersService
+
+  // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+  // private readonly patientServiceClient: ClientProxy
+  {}
 
   private async ensureUserHasDigitalSignature(userId: string): Promise<void> {
     try {
@@ -59,7 +61,7 @@ export class DicomStudySignaturesService {
     // Get study
     const study = await this.studyRepo.findOne({
       where: { id: studyId },
-      relations: ['studySignatures'],
+      relations: ['studySignatures', 'imagingOrder'],
     });
 
     console.log('technician study', study);
@@ -99,6 +101,7 @@ export class DicomStudySignaturesService {
       studyStatus: DicomStudyStatus.TECHNICIAN_VERIFIED,
       performingTechnicianId: userId,
     });
+
     this.logger.log(
       `Technician ${userId} verified study ${studyId} successfully`
     );
@@ -115,6 +118,7 @@ export class DicomStudySignaturesService {
 
   async physicianApproveStudy(userId: string, studyId: string, pin: string) {
     await this.ensureUserHasDigitalSignature(userId);
+
     const study = await this.studyRepo.findOne({
       where: { id: studyId },
       relations: ['studySignatures'],
@@ -124,14 +128,16 @@ export class DicomStudySignaturesService {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    // if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
-    //   throw new InvalidStudyStatusException(
-    //     study.studyStatus,
-    //     DicomStudyStatus.SCANNED,
-    //     studyId
-    //   );
-    // }
+    // Check if study has been verified by technician
+    if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
+      throw new InvalidStudyStatusException(
+        study.studyStatus,
+        DicomStudyStatus.TECHNICIAN_VERIFIED,
+        studyId
+      );
+    }
 
+    // Check if physician has already approved
     const existingSignature = study.studySignatures?.find(
       (s) => s.signatureType === SignatureType.PHYSICIAN_APPROVE
     );
@@ -140,7 +146,14 @@ export class DicomStudySignaturesService {
       throw new DigitalSignatureAlreadyExistsException(userId);
     }
 
-    // 4. Sign the study
+    // Check if all annotations are reviewed
+    const hasReviewedAnnotations =
+      await this.imageAnnotationsService.isReviewedInStudy(studyId);
+    if (!hasReviewedAnnotations.isReviewed) {
+      throw new ValidationException('Not all annotations are reviewed');
+    }
+
+    // Sign the study
     const signature = await this.signStudy(
       userId,
       studyId,
@@ -153,6 +166,7 @@ export class DicomStudySignaturesService {
       studyStatus: DicomStudyStatus.APPROVED,
       verifyingRadiologistId: userId,
     });
+
     this.logger.log(
       `Radiologist ${userId} approved study ${studyId} successfully`
     );
@@ -161,7 +175,6 @@ export class DicomStudySignaturesService {
       message: 'Study approved successfully',
       study: {
         id: study.id,
-        // status: study.studyStatus,
         approvedAt: signature.signedAt,
       },
     };
@@ -242,7 +255,7 @@ export class DicomStudySignaturesService {
       this.logger.error('Failed to sign study', error.stack);
 
       if (error.message?.includes('Invalid PIN')) {
-        throw new AuthenticationException('Invalid PIN');
+        throw new InvalidSignaturePinException(userId);
       }
 
       if (error.message?.includes('not found')) {
@@ -290,7 +303,7 @@ export class DicomStudySignaturesService {
       // }
 
       return {
-        // isValid: isValid && !certificateStatus?.isRevoked,
+        isValid: isValid,
         signedAt: signature.signedAt,
         userId: signature.userId,
         certificateSerial: signature.certificateSerial,
@@ -315,5 +328,30 @@ export class DicomStudySignaturesService {
       signedAt: sig.signedAt,
       certificateSerial: sig.certificateSerial,
     }));
+  }
+  async getSignatureDetails(
+    studyId: string,
+    signatureType: SignatureType
+  ): Promise<DicomStudySignature | null> {
+    try {
+      const signature = await this.signatureRepo.findOne({
+        where: { studyId, signatureType },
+      });
+
+      if (!signature) {
+        this.logger.log(
+          `No signature found for study ${studyId} with type ${signatureType}`
+        );
+        return null;
+      }
+
+      return signature;
+    } catch (error: any) {
+      this.logger.error(
+        `Error getting signature details for study ${studyId}`,
+        error.stack
+      );
+      throw error;
+    }
   }
 }

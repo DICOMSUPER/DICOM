@@ -50,12 +50,12 @@ export class RequestProcedureUpdateFailedException extends RpcException {
 }
 
 export class RequestProcedureDeletionFailedException extends RpcException {
-  constructor(requestProcedureId?: string, details?: any) {
+  constructor(message?: string, requestProcedureId?: string) {
     super({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to delete request procedure${requestProcedureId ? ` '${requestProcedureId}'` : ''}`,
+      message: message || `Failed to delete request procedure${requestProcedureId ? ` '${requestProcedureId}'` : ''}`,
       errorCode: 'REQUEST_PROCEDURE_DELETION_FAILED',
-      details: { requestProcedureId, ...details },
+      details: { requestProcedureId },
     });
   }
 }

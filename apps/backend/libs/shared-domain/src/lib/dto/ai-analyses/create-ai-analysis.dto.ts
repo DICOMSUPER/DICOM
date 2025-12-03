@@ -25,7 +25,7 @@ export class CreateAiAnalysisDto {
 
   @IsEnum(AnalysisStatus)
   @IsNotEmpty()
-  status!: AnalysisStatus;
+  analysisStatus!: AnalysisStatus;
 
   @IsOptional()
   analysisResults?: any;
@@ -42,4 +42,15 @@ export class CreateAiAnalysisDto {
   @IsString()
   errorMessage?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  aiModelId!: string;
+
+  @IsOptional()
+  @IsString()
+  modelName?: string;
+
+  @IsOptional()
+  @IsString()
+  versionName?: string;
 }

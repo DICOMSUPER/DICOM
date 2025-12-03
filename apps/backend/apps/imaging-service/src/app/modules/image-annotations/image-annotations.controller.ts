@@ -195,4 +195,24 @@ export class ImageAnnotationsController {
       );
     }
   }
+
+  // check whether annotation reviewd in a study
+  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.IsReviewedInStudy`)
+  async isReviewedInStudy(studyId: string): Promise<{
+    message: string;
+    isReviewed: boolean;
+  }> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.IsReviewedInStudy`
+    );
+    try {
+      return await this.imageAnnotationsService.isReviewedInStudy(studyId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to check reviewed in study for image annotation',
+        IMAGING_SERVICE
+      );
+    }
+  }
 }

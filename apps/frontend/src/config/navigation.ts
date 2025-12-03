@@ -22,7 +22,8 @@ import {
   FolderTree,
   Link2,
   Layers,
-  GitPullRequest
+  GitPullRequest,
+  File,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -99,7 +100,7 @@ export const roleNavigation: RoleNavigation = {
       icon: Cog,
       description: "Manage clinic services and offerings",
     },
-         {
+    {
       href: "/admin/procedure",
       label: "Procedure Management",
       icon: GitPullRequest,
@@ -187,7 +188,7 @@ export const roleNavigation: RoleNavigation = {
       icon: Settings,
       description: "View your patient studies",
     },
-        {
+    {
       href: "/physician/schedule",
       label: "Schedule",
       icon: Clock,
@@ -205,8 +206,8 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/imaging-technician/order",
-      label: "DICOM Viewer",
-      icon: Camera,
+      label: "Order Details",
+      icon: File,
       description: "View and manage DICOM studies",
     },
     {

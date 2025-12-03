@@ -61,7 +61,7 @@ export class ModalityMachinesController {
       serialNumber?: string;
       model?: string;
     }
-  ): Promise<ModalityMachine[]> {
+  ): Promise<PaginatedResponseDto<ModalityMachine>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
@@ -148,13 +148,18 @@ export class ModalityMachinesController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<any> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
     try {
       const { id } = data;
-      return await this.modalityMachinesService.remove(id);
+      const result = await this.modalityMachinesService.remove(id);
+      return {
+        success: true,
+        data: result,
+        message: 'Modality machine deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
@@ -168,7 +173,14 @@ export class ModalityMachinesController {
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
   )
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto & { includeDeleted?: boolean; modalityId?: string; status?: string } }
+    @Payload()
+    data: {
+      paginationDto: RepositoryPaginationDto & {
+        includeDeleted?: boolean;
+        modalityId?: string;
+        status?: string;
+      };
+    }
   ): Promise<PaginatedResponseDto<ModalityMachine>> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_MANY}`
@@ -197,9 +209,7 @@ export class ModalityMachinesController {
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.GetStats`)
   async getStats(@Payload() data: { roomId?: string }) {
-    this.logger.log(
-      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
-    );
+    this.logger.log(`Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`);
     try {
       return await this.modalityMachinesService.getStats(data?.roomId);
     } catch (error) {

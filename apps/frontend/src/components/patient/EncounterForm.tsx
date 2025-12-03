@@ -1,51 +1,47 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LoadingButton } from '@/components/ui/loading-button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  Stethoscope, 
-  User, 
-  FileText,
-  Save,
-  X
-} from 'lucide-react';
-import { 
-  PatientEncounter, 
-  CreatePatientEncounterDto, 
+} from "@/components/ui/select";
+import { Stethoscope, User, FileText, Save, X } from "lucide-react";
+import {
+  PatientEncounter,
+  CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
-  VitalSignsCollection 
-} from '@/interfaces/patient/patient-workflow.interface';
-import { EncounterType } from '@/enums/patient-workflow.enum';
-import { Roles } from '@/enums/user.enum';
-import { VitalSignsForm } from './VitalSignsForm';
-import type { RootState } from '@/store';
-import { useGetUserByIdQuery } from '@/store/userApi';
+  VitalSignsCollection,
+} from "@/interfaces/patient/patient-workflow.interface";
+import { EncounterType } from "@/enums/patient-workflow.enum";
+import { Roles } from "@/enums/user.enum";
+import { VitalSignsForm } from "./VitalSignsForm";
+import type { RootState } from "@/store";
+import { useGetUserByIdQuery } from "@/store/userApi";
 
 // Format encounter type for display
 const formatEncounterType = (type: string): string => {
   return type
     .split(/[-_]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .map((word) => word?.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 };
 
 interface EncounterFormProps {
   encounter?: PatientEncounter;
   patientId?: string;
-  onSubmit: (data: CreatePatientEncounterDto | UpdatePatientEncounterDto) => void;
+  onSubmit: (
+    data: CreatePatientEncounterDto | UpdatePatientEncounterDto
+  ) => void;
   onCancel: () => void;
   loading?: boolean;
   errors?: Record<string, string>;
@@ -57,62 +53,67 @@ export function EncounterForm({
   onSubmit,
   onCancel,
   loading = false,
-  errors = {}
+  errors = {},
 }: EncounterFormProps) {
   const user = useSelector((state: RootState) => state.auth.user);
   const isReceptionStaff = user?.role === Roles.RECEPTION_STAFF;
-  
+
   const [formData, setFormData] = useState<CreatePatientEncounterDto>({
-    patientId: patientId || '',
+    patientId: patientId || "",
     encounterDate: new Date().toISOString().slice(0, 16),
     encounterType: EncounterType.OUTPATIENT,
-    chiefComplaint: '',
-    symptoms: '',
+    chiefComplaint: "",
+    symptoms: "",
     vitalSigns: {},
-    assignedPhysicianId: '',
-    notes: ''
+    assignedPhysicianId: "",
+    notes: "",
   });
 
   const [showVitalSigns, setShowVitalSigns] = useState(false);
 
   // Fetch physician details if assignedPhysicianId is available
   // Use formData.assignedPhysicianId if available (for editing), otherwise use encounter's assignedPhysicianId
-  const physicianId = formData.assignedPhysicianId || encounter?.assignedPhysicianId;
-  const { data: physicianData, isLoading: isPhysicianLoading } = useGetUserByIdQuery(
-    physicianId as string,
-    {
+  const physicianId =
+    formData.assignedPhysicianId || encounter?.assignedPhysicianId;
+  const { data: physicianData, isLoading: isPhysicianLoading } =
+    useGetUserByIdQuery(physicianId as string, {
       skip: !physicianId,
-    }
-  );
+    });
   const physician = physicianData?.data;
 
   useEffect(() => {
     if (encounter) {
       setFormData({
         patientId: encounter.patientId,
-        encounterDate: new Date(encounter.encounterDate).toISOString().slice(0, 16),
+        encounterDate: new Date(encounter.encounterDate)
+          .toISOString()
+          .slice(0, 16),
         encounterType: encounter.encounterType,
-        chiefComplaint: encounter.chiefComplaint || '',
-        symptoms: encounter.symptoms || '',
+        chiefComplaint: encounter.chiefComplaint || "",
+        symptoms: encounter.symptoms || "",
         vitalSigns: encounter.vitalSigns || {},
-        assignedPhysicianId: encounter.assignedPhysicianId || '',
-        notes: encounter.notes || ''
+        assignedPhysicianId: encounter.assignedPhysicianId || "",
+        notes: encounter.notes || "",
       });
     }
   }, [encounter]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleVitalSignsChange = (vitalSigns: VitalSignsCollection) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      vitalSigns
+      vitalSigns,
     }));
   };
 
@@ -123,11 +124,11 @@ export function EncounterForm({
 
   return (
     <div className="space-y-6">
-      <Card className='border-border'>
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5" />
-            {encounter ? 'Edit Encounter' : 'Create Encounter'}
+            {encounter ? "Edit Encounter" : "Create Encounter"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -141,7 +142,7 @@ export function EncounterForm({
                   type="datetime-local"
                   value={formData.encounterDate}
                   onChange={handleInputChange}
-                  className={errors.encounterDate ? 'border-red-500' : ''}
+                  className={errors.encounterDate ? "border-red-500" : ""}
                   required
                 />
                 {errors.encounterDate && (
@@ -150,14 +151,19 @@ export function EncounterForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="encounterType">
-                  Encounter Type
-                </Label>
+                <Label htmlFor="encounterType">Encounter Type</Label>
                 <Select
                   value={formData.encounterType}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, encounterType: value as EncounterType }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      encounterType: value as EncounterType,
+                    }))
+                  }
                 >
-                  <SelectTrigger className={errors.encounterType ? 'border-red-500' : ''}>
+                  <SelectTrigger
+                    className={errors.encounterType ? "border-red-500" : ""}
+                  >
                     <SelectValue placeholder="Select encounter type" />
                   </SelectTrigger>
                   <SelectContent className="border-border">
@@ -182,7 +188,7 @@ export function EncounterForm({
                 value={formData.chiefComplaint}
                 onChange={handleInputChange}
                 placeholder="Primary reason for visit"
-                className={errors.chiefComplaint ? 'border-red-500' : ''}
+                className={errors.chiefComplaint ? "border-red-500" : ""}
               />
               {errors.chiefComplaint && (
                 <p className="text-sm text-red-500">{errors.chiefComplaint}</p>
@@ -198,7 +204,7 @@ export function EncounterForm({
                 onChange={handleInputChange}
                 placeholder="Detailed description of symptoms"
                 rows={3}
-                className={errors.symptoms ? 'border-red-500' : ''}
+                className={errors.symptoms ? "border-red-500" : ""}
               />
               {errors.symptoms && (
                 <p className="text-sm text-red-500">{errors.symptoms}</p>
@@ -209,7 +215,9 @@ export function EncounterForm({
               <Label htmlFor="assignedPhysicianId">Assigned Physician</Label>
               {isPhysicianLoading ? (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
-                  <p className="text-sm text-foreground">Loading physician details...</p>
+                  <p className="text-sm text-foreground">
+                    Loading physician details...
+                  </p>
                 </div>
               ) : physician ? (
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -254,7 +262,7 @@ export function EncounterForm({
                 onChange={handleInputChange}
                 placeholder="Additional notes"
                 rows={3}
-                className={errors.notes ? 'border-red-500' : ''}
+                className={errors.notes ? "border-red-500" : ""}
               />
               {errors.notes && (
                 <p className="text-sm text-red-500">{errors.notes}</p>
@@ -266,14 +274,14 @@ export function EncounterForm({
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-            <LoadingButton 
-              type="submit" 
-              loading={loading}
-              loadingText={encounter ? 'Updating...' : 'Creating...'}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {encounter ? 'Update Encounter' : 'Create Encounter'}
-            </LoadingButton>
+              <LoadingButton
+                type="submit"
+                loading={loading}
+                loadingText={encounter ? "Updating..." : "Creating..."}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {encounter ? "Update Encounter" : "Create Encounter"}
+              </LoadingButton>
             </div>
           </form>
         </CardContent>
@@ -281,7 +289,7 @@ export function EncounterForm({
 
       {/* Vital Signs Section - Hidden for Reception Staff */}
       {!isReceptionStaff && (
-        <Card className='border-border'>
+        <Card className="border-border">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -294,12 +302,12 @@ export function EncounterForm({
                 size="sm"
                 onClick={() => setShowVitalSigns(!showVitalSigns)}
               >
-                {showVitalSigns ? 'Hide' : 'Show'} Vital Signs
+                {showVitalSigns ? "Hide" : "Show"} Vital Signs
               </Button>
             </CardTitle>
           </CardHeader>
           {showVitalSigns && (
-            <CardContent className='p-0 border-none'>
+            <CardContent className="p-0 border-none">
               <VitalSignsForm
                 vitalSigns={formData.vitalSigns}
                 onSubmit={handleVitalSignsChange}

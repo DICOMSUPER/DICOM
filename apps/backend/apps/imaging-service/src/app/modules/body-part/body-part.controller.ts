@@ -101,17 +101,23 @@ export class BodyPartController {
   }
 
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`)
-  async remove(@Payload() data: { id: string }): Promise<boolean> {
+  async remove(@Payload() data: { id: string }): Promise<any> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.DELETE}`
     );
+    this.logger.log(`Deleting body part with ID: ${data.id}`);
     try {
       const { id } = data;
-      return await this.bodyPartService.remove(id);
+      const result = await this.bodyPartService.remove(id);
+      this.logger.log(`✅ Body part deleted successfully, result: ${result}`);
+      return {
+        success: true,
+        message: 'Body part deleted successfully',
+      };
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,
-        `Failed to delete for modality with this id: ${data.id}`,
+        `Failed to delete body part with id: ${data.id}`,
         IMAGING_SERVICE
       );
     }

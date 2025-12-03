@@ -15,42 +15,50 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 
 export default function ReceptionDashboard() {
   const router = useRouter();
-  const [period, setPeriod] = useState<'week' | 'month' | 'year' | undefined>();
-  const [value, setValue] = useState<string>('');
-  const [appliedPeriod, setAppliedPeriod] = useState<'week' | 'month' | 'year' | undefined>();
-  const [appliedValue, setAppliedValue] = useState<string>('');
+  const [period, setPeriod] = useState<"week" | "month" | "year" | undefined>();
+  const [value, setValue] = useState<string>("");
+  const [appliedPeriod, setAppliedPeriod] = useState<
+    "week" | "month" | "year" | undefined
+  >();
+  const [appliedValue, setAppliedValue] = useState<string>("");
 
   const getWeekNumber = (date: Date): string => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const d = new Date(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+    );
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    const weekNo = Math.ceil(
+      ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+    );
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
   };
 
-  const getDefaultValue = (periodType: 'week' | 'month' | 'year'): string => {
+  const getDefaultValue = (periodType: "week" | "month" | "year"): string => {
     const now = new Date();
-    if (periodType === 'week') {
+    if (periodType === "week") {
       return getWeekNumber(now);
     }
-    if (periodType === 'month') {
+    if (periodType === "month") {
       const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, "0");
       return `${year}-${month}`;
     }
-    if (periodType === 'year') {
+    if (periodType === "year") {
       return now.getFullYear().toString();
     }
-    return '';
+    return "";
   };
 
-  const handlePeriodChange = (newPeriod: 'week' | 'month' | 'year' | undefined) => {
+  const handlePeriodChange = (
+    newPeriod: "week" | "month" | "year" | undefined
+  ) => {
     setPeriod(newPeriod);
     if (newPeriod) {
       setValue(getDefaultValue(newPeriod));
     } else {
-      setValue('');
+      setValue("");
     }
   };
 
@@ -59,10 +67,16 @@ export default function ReceptionDashboard() {
     setAppliedValue(value);
   };
 
-  const { data: patientStatsData, isLoading: patientStatsLoading, refetch: refetchPatientStats } =
-    useGetPatientStatsQuery();
-  const { data: encounterStats, isLoading: encounterStatsLoading, refetch: refetchEncounterStats } =
-    useGetPatientEncounterStatsQuery(undefined);
+  const {
+    data: patientStatsData,
+    isLoading: patientStatsLoading,
+    refetch: refetchPatientStats,
+  } = useGetPatientStatsQuery();
+  const {
+    data: encounterStats,
+    isLoading: encounterStatsLoading,
+    refetch: refetchEncounterStats,
+  } = useGetPatientEncounterStatsQuery(undefined);
   const { data: recentEncounters, isLoading: encountersLoading } =
     useGetPatientEncountersQuery({
       limit: 10,
@@ -70,14 +84,19 @@ export default function ReceptionDashboard() {
       sortOrder: "desc",
     });
 
-  const { data: analyticsData, isLoading: analyticsLoading, refetch: refetchAnalytics } =
-    useGetReceptionAnalyticsQuery(
-      appliedPeriod && appliedValue ? { period: appliedPeriod, value: appliedValue } : undefined
-    );
+  const {
+    data: analyticsData,
+    isLoading: analyticsLoading,
+    refetch: refetchAnalytics,
+  } = useGetReceptionAnalyticsQuery(
+    appliedPeriod && appliedValue
+      ? { period: appliedPeriod, value: appliedValue }
+      : undefined
+  );
 
   const patientStats = patientStatsData?.data;
   const encounterStatsData = encounterStats?.data;
-  
+
   const stats = {
     activePatient: patientStats?.activePatients || 0,
     dailyCheckins: encounterStatsData?.todayEncounter || 0,
@@ -86,7 +105,7 @@ export default function ReceptionDashboard() {
     todayEncounters: encounterStatsData?.todayEncounter || 0,
     todayStatEncounters: encounterStatsData?.todayStatEncounter || 0,
   };
-  
+
   const isLoading = patientStatsLoading || encounterStatsLoading;
   const chartData = analyticsData?.data;
 
@@ -123,14 +142,16 @@ export default function ReceptionDashboard() {
         </div>
         <RefreshButton
           onRefresh={handleRefresh}
-          loading={analyticsLoading || patientStatsLoading || encounterStatsLoading}
+          loading={
+            analyticsLoading || patientStatsLoading || encounterStatsLoading
+          }
         />
       </div>
 
       <DashboardStats stats={stats} isLoading={isLoading} />
 
-      <ReceptionCharts 
-        data={chartData} 
+      <ReceptionCharts
+        data={chartData}
         isLoading={analyticsLoading}
         period={period}
         value={value}
@@ -149,4 +170,3 @@ export default function ReceptionDashboard() {
     </div>
   );
 }
-

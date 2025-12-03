@@ -45,7 +45,7 @@ export default function ServicePage() {
     search: "",
     searchField: "serviceName",
     includeInactive: true,
-    includeDeleted: true,
+    includeDeleted: false,
   });
 
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { DepartmentsService } from './departments.service';
 import { DepartmentsController } from './departments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Department } from '@backend/shared-domain';
+import { Department, Room } from '@backend/shared-domain';
 import { User, Qualification } from '@backend/shared-domain';
 
 @Module({
@@ -11,6 +11,7 @@ import { User, Qualification } from '@backend/shared-domain';
         Department,
         User,
         Qualification,
+        Room
       ]),
     ],
   controllers: [DepartmentsController],

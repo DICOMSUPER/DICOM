@@ -15,9 +15,21 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
@@ -26,19 +38,19 @@ import { PhysicianAnalyticsData } from "@/store/analyticsApi";
 interface PhysicianChartsProps {
   data?: PhysicianAnalyticsData;
   isLoading?: boolean;
-  period?: 'week' | 'month' | 'year';
+  period?: "week" | "month" | "year";
   value?: string;
-  appliedPeriod?: 'week' | 'month' | 'year';
+  appliedPeriod?: "week" | "month" | "year";
   appliedValue?: string;
-  onPeriodChange?: (period: 'week' | 'month' | 'year' | undefined) => void;
+  onPeriodChange?: (period: "week" | "month" | "year" | undefined) => void;
   onValueChange?: (value: string) => void;
   onApplyFilter?: () => void;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
-export function PhysicianCharts({ 
-  data, 
+export function PhysicianCharts({
+  data,
   isLoading = false,
   period,
   value,
@@ -70,10 +82,13 @@ export function PhysicianCharts({
 
   const formatXAxisLabel = (dateStr: string) => {
     const date = new Date(dateStr);
-    if (appliedPeriod === 'year') {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (appliedPeriod === "year") {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
     }
-    if (appliedPeriod === 'month') {
+    if (appliedPeriod === "month") {
       return `${date.getMonth() + 1}/${date.getDate()}`;
     }
     return `${date.getMonth() + 1}/${date.getDate()}`;
@@ -88,7 +103,7 @@ export function PhysicianCharts({
               <CardTitle>Time Period Filter</CardTitle>
               <CardDescription>Filter charts by period</CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={onApplyFilter}
               disabled={isLoading || (period && !value)}
             >
@@ -101,8 +116,14 @@ export function PhysicianCharts({
             <div className="space-y-2">
               <Label htmlFor="period">Period Type</Label>
               <Select
-                value={period || 'default'}
-                onValueChange={(val) => onPeriodChange?.(val === 'default' ? undefined : val as 'week' | 'month' | 'year')}
+                value={period || "default"}
+                onValueChange={(val) =>
+                  onPeriodChange?.(
+                    val === "default"
+                      ? undefined
+                      : (val as "week" | "month" | "year")
+                  )
+                }
               >
                 <SelectTrigger id="period">
                   <SelectValue placeholder="Select period" />
@@ -140,18 +161,15 @@ export function PhysicianCharts({
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={encountersOverTime}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={formatXAxisLabel}
-                />
+                <XAxis dataKey="date" tickFormatter={formatXAxisLabel} />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Area 
-                  type="monotone" 
-                  dataKey="encounters" 
-                  stroke="#8884d8" 
-                  fill="#8884d8" 
+                <Area
+                  type="monotone"
+                  dataKey="encounters"
+                  stroke="#8884d8"
+                  fill="#8884d8"
                   fillOpacity={0.6}
                 />
               </AreaChart>
@@ -162,43 +180,48 @@ export function PhysicianCharts({
         <Card className="border-border">
           <CardHeader>
             <CardTitle>Reports & Imaging Orders</CardTitle>
-            <CardDescription>Diagnosis reports and imaging orders trend</CardDescription>
+            <CardDescription>
+              Diagnosis reports and imaging orders trend
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={[...reportsOverTime, ...imagingOrdersOverTime].reduce((acc, item) => {
-                const existing = acc.find((a: any) => a.date === item.date);
-                if (existing) {
-                  existing.reports = item.reports || existing.reports || 0;
-                  existing.imagingOrders = item.imagingOrders || existing.imagingOrders || 0;
-                } else {
-                  acc.push({
-                    date: item.date,
-                    reports: item.reports || 0,
-                    imagingOrders: item.imagingOrders || 0,
-                  });
-                }
-                return acc;
-              }, [] as any[])}>
+              <LineChart
+                data={[...reportsOverTime, ...imagingOrdersOverTime].reduce(
+                  (acc, item) => {
+                    const existing = acc.find((a: any) => a.date === item.date);
+                    if (existing) {
+                      existing.reports = item.reports || existing.reports || 0;
+                      existing.imagingOrders =
+                        item.imagingOrders || existing.imagingOrders || 0;
+                    } else {
+                      acc.push({
+                        date: item.date,
+                        reports: item.reports || 0,
+                        imagingOrders: item.imagingOrders || 0,
+                      });
+                    }
+                    return acc;
+                  },
+                  [] as any[]
+                )}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={formatXAxisLabel}
-                />
+                <XAxis dataKey="date" tickFormatter={formatXAxisLabel} />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="reports" 
-                  stroke="#00C49F" 
+                <Line
+                  type="monotone"
+                  dataKey="reports"
+                  stroke="#00C49F"
                   strokeWidth={2}
                   name="Reports"
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="imagingOrders" 
-                  stroke="#FF8042" 
+                <Line
+                  type="monotone"
+                  dataKey="imagingOrders"
+                  stroke="#FF8042"
                   strokeWidth={2}
                   name="Imaging Orders"
                 />
@@ -213,7 +236,9 @@ export function PhysicianCharts({
           <Card className="border-border">
             <CardHeader>
               <CardTitle>Encounters by Status</CardTitle>
-              <CardDescription>Distribution of encounter statuses</CardDescription>
+              <CardDescription>
+                Distribution of encounter statuses
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
@@ -227,26 +252,40 @@ export function PhysicianCharts({
                       // Recharts Pie label receives an object with the data entry and percent
                       const status = entry.status || entry.name || "";
                       const percent = entry.percent;
-                      if (!status || percent === undefined || percent === null) return "";
-                      const statusStr = typeof status === 'string' ? status : String(status);
-                      const capitalizedName = statusStr.charAt(0).toUpperCase() + statusStr.slice(1).toLowerCase().replace(/_/g, " ");
-                      return `${capitalizedName}: ${(percent * 100).toFixed(0)}%`;
+                      if (!status || percent === undefined || percent === null)
+                        return "";
+                      const statusStr =
+                        typeof status === "string" ? status : String(status);
+                      const capitalizedName =
+                        statusStr?.charAt(0).toUpperCase() +
+                        statusStr.slice(1).toLowerCase().replace(/_/g, " ");
+                      return `${capitalizedName}: ${(percent * 100).toFixed(
+                        0
+                      )}%`;
                     }}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
                     {data.encountersByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: any, name: string) => {
-                      const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase().replace(/_/g, " ");
+                      const capitalizedName =
+                        name?.charAt(0).toUpperCase() +
+                        name.slice(1).toLowerCase().replace(/_/g, " ");
                       return [value, capitalizedName];
                     }}
                     labelFormatter={(label: string) => {
-                      return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase().replace(/_/g, " ");
+                      return (
+                        label?.charAt(0).toUpperCase() +
+                        label.slice(1).toLowerCase().replace(/_/g, " ")
+                      );
                     }}
                   />
                 </PieChart>
@@ -273,26 +312,40 @@ export function PhysicianCharts({
                       // Recharts Pie label receives an object with the data entry and percent
                       const status = entry.status || entry.name || "";
                       const percent = entry.percent;
-                      if (!status || percent === undefined || percent === null) return "";
-                      const statusStr = typeof status === 'string' ? status : String(status);
-                      const capitalizedName = statusStr.charAt(0).toUpperCase() + statusStr.slice(1).toLowerCase().replace(/_/g, " ");
-                      return `${capitalizedName}: ${(percent * 100).toFixed(0)}%`;
+                      if (!status || percent === undefined || percent === null)
+                        return "";
+                      const statusStr =
+                        typeof status === "string" ? status : String(status);
+                      const capitalizedName =
+                        statusStr?.charAt(0).toUpperCase() +
+                        statusStr.slice(1).toLowerCase().replace(/_/g, " ");
+                      return `${capitalizedName}: ${(percent * 100).toFixed(
+                        0
+                      )}%`;
                     }}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
                     {data.reportsByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: any, name: string) => {
-                      const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase().replace(/_/g, " ");
+                      const capitalizedName =
+                        name?.charAt(0).toUpperCase() +
+                        name.slice(1).toLowerCase().replace(/_/g, " ");
                       return [value, capitalizedName];
                     }}
                     labelFormatter={(label: string) => {
-                      return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase().replace(/_/g, " ");
+                      return (
+                        label?.charAt(0).toUpperCase() +
+                        label.slice(1).toLowerCase().replace(/_/g, " ")
+                      );
                     }}
                   />
                 </PieChart>
@@ -301,53 +354,73 @@ export function PhysicianCharts({
           </Card>
         )}
 
-        {data.imagingOrdersByStatus && data.imagingOrdersByStatus.length > 0 && (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Imaging Orders by Status</CardTitle>
-              <CardDescription>Distribution of imaging order statuses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={data.imagingOrdersByStatus}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry: any) => {
-                      // Recharts Pie label receives an object with the data entry and percent
-                      const status = entry.status || entry.name || "";
-                      const percent = entry.percent;
-                      if (!status || percent === undefined || percent === null) return "";
-                      const statusStr = typeof status === 'string' ? status : String(status);
-                      const capitalizedName = statusStr.charAt(0).toUpperCase() + statusStr.slice(1).toLowerCase().replace(/_/g, " ");
-                      return `${capitalizedName}: ${(percent * 100).toFixed(0)}%`;
-                    }}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {data.imagingOrdersByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: any, name: string) => {
-                      const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase().replace(/_/g, " ");
-                      return [value, capitalizedName];
-                    }}
-                    labelFormatter={(label: string) => {
-                      return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase().replace(/_/g, " ");
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+        {data.imagingOrdersByStatus &&
+          data.imagingOrdersByStatus.length > 0 && (
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle>Imaging Orders by Status</CardTitle>
+                <CardDescription>
+                  Distribution of imaging order statuses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={data.imagingOrdersByStatus}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry: any) => {
+                        // Recharts Pie label receives an object with the data entry and percent
+                        const status = entry.status || entry.name || "";
+                        const percent = entry.percent;
+                        if (
+                          !status ||
+                          percent === undefined ||
+                          percent === null
+                        )
+                          return "";
+                        const statusStr =
+                          typeof status === "string" ? status : String(status);
+                        const capitalizedName =
+                          statusStr?.charAt(0).toUpperCase() +
+                          statusStr.slice(1).toLowerCase().replace(/_/g, " ");
+                        return `${capitalizedName}: ${(percent * 100).toFixed(
+                          0
+                        )}%`;
+                      }}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {data.imagingOrdersByStatus.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any, name: string) => {
+                        const capitalizedName =
+                          name?.charAt(0).toUpperCase() +
+                          name.slice(1).toLowerCase().replace(/_/g, " ");
+                        return [value, capitalizedName];
+                      }}
+                      labelFormatter={(label: string) => {
+                        return (
+                          label.charAt(0).toUpperCase() +
+                          label.slice(1).toLowerCase().replace(/_/g, " ")
+                        );
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
       </div>
     </div>
   );
 }
-
