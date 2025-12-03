@@ -22,7 +22,11 @@ import {
 } from '@backend/shared-interceptor';
 import { SignStudyDto, VerifyStudySignatureDto } from '@backend/shared-domain';
 import type { IAuthenticatedRequest } from '@backend/shared-interfaces';
-import { CacheEntity, CacheKeyPattern } from '../../../../constant/cache';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../../constant/cache';
 import { RedisService } from '@backend/redis';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';

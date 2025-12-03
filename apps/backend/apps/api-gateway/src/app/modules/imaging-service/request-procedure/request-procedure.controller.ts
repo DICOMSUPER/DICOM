@@ -140,6 +140,11 @@ export class RequestProcedureController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new request procedure' })
+  @ApiResponse({
+    status: 201,
+  })
+  @ApiTags('Request Procedures')
   @Public()
   async createRequestProcedure(
     @Body() createRequestProcedureDto: CreateRequestProcedureDto
@@ -170,6 +175,12 @@ export class RequestProcedureController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a request procedure by ID' })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiTags('Request Procedures')
   async updateRequestProcedure(
     @Param('id') id: string,
     @Body() updateRequestProcedureDto: UpdateRequestProcedureDto
@@ -195,6 +206,12 @@ export class RequestProcedureController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a request procedure by ID' })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiTags('Request Procedures')
   async deleteRequestProcedure(@Param('id') id: string) {
     const procedure = await firstValueFrom(
       this.imagingService.send('ImagingService.RequestProcedure.Delete', {
