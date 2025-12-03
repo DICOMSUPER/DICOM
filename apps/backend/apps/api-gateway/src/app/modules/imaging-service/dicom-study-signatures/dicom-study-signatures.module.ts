@@ -10,6 +10,7 @@ import { DicomStudySignaturesController } from './dicom-study-signatures.control
   imports: [
     ImagingServiceClientModule,
     SharedInterceptorModule,
+    
   ],
   controllers: [DicomStudySignaturesController],
     

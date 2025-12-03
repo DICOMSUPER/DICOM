@@ -81,18 +81,16 @@ export class DiagnosesReport extends BaseEntity {
   @Column({ type: 'uuid', nullable: true })
   signatureId?: string;
 
-  // Reject workflow fields
   @Column({ name: 'rejected_by', type: 'uuid', nullable: true })
   rejectedBy?: string;
+  @Column({ name: 'approved_by', type: 'uuid', nullable: true })
+  approvedBy?: string;
 
   @Column({ name: 'rejected_at', type: 'timestamp', nullable: true })
   rejectedAt?: Date;
 
   @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason?: string;
-
-  @Column({ name: 'approved_by', type: 'uuid', nullable: true })
-  approvedBy?: string;
 
   @Column({ name: 'approved_at', type: 'timestamp', nullable: true })
   approvedAt?: Date;

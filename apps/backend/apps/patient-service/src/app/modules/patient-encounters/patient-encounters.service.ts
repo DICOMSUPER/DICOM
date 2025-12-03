@@ -108,26 +108,27 @@ export class PatientEncounterService {
     //     message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
     //   };
     //   await firstValueFrom(
-    //     this.systemService.send('notification.create', notificationPayload)
+    //     this.systemService.send('notification.cre`ate', notificationPayload)
     //   );
     // }
-
-    await Promise.all(
-      employeesInRoom.map((employeeId) => {
-        const notificationPayload: CreateNotificationDto = {
-          recipientId: employeeId,
-          senderId: createPatientEncounterDto.createdBy as string,
-          notificationType: NotificationType.ASSIGNMENT,
-          title: 'New Encounter',
-          relatedEntityType: RelatedEntityType.ENCOUNTER,
-          relatedEntityId: result.id,
-          message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
-        };
-        return firstValueFrom(
-          this.systemService.send('notification.create', notificationPayload)
-        );
-      })
-    );
+    if (employeesInRoom.length > 0) {
+      await Promise.all(
+        employeesInRoom.map((employeeId) => {
+          const notificationPayload: CreateNotificationDto = {
+            recipientId: employeeId,
+            senderId: createPatientEncounterDto.createdBy as string,
+            notificationType: NotificationType.ASSIGNMENT,
+            title: 'New Encounter',
+            relatedEntityType: RelatedEntityType.ENCOUNTER,
+            relatedEntityId: result.id,
+            message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+          };
+          return firstValueFrom(
+            this.systemService.send('notification.create', notificationPayload)
+          );
+        })
+      );
+    }
 
     return result;
   };

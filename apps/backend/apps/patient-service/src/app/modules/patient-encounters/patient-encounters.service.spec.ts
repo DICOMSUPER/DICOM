@@ -23,6 +23,7 @@ describe('PatientEncounterService', () => {
   let userService: jest.Mocked<ClientProxy>;
   let entityManager: jest.Mocked<EntityManager>;
 
+  
   const mockEncounter: Partial<PatientEncounter> = {
     id: 'encounter-1',
     patientId: 'patient-1',
@@ -151,7 +152,7 @@ describe('PatientEncounterService', () => {
       encounterRepository.getLatestEncounterInDate.mockResolvedValue(null);
       encounterRepository.create.mockResolvedValue(mockEncounter as PatientEncounter);
 
-      const result = await service.create(mockCreateEncounterDto as any);
+      const result = await service.create(mockCreateEncounterDto as any,[]);
 
       expect(encounterRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({

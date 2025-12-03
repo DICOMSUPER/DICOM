@@ -8,9 +8,7 @@ import { Repository } from 'typeorm';
 import { DicomStudy, DicomStudySignature } from '@backend/shared-domain';
 import {
   DicomStudyStatus,
-  ImagingOrderStatus,
-  OrderStatus,
-  SignatureType,
+  SignatureType
 } from '@backend/shared-enums';
 import {
   DigitalSignatureAlreadyExistsException,
@@ -24,7 +22,6 @@ import {
   ValidationException,
 } from '@backend/shared-exception';
 import { ImageAnnotationsService } from '../image-annotations/image-annotations.service';
-import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
 
 @Injectable()
 export class DicomStudySignaturesService {
@@ -39,8 +36,11 @@ export class DicomStudySignaturesService {
     private readonly userServiceClient: ClientProxy,
     @Inject()
     private readonly imageAnnotationsService: ImageAnnotationsService,
-    @Inject()
-    private readonly imagingOrdersService: ImagingOrdersService
+    // @Inject()
+    // private readonly imagingOrdersService: ImagingOrdersService
+
+    // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+    // private readonly patientServiceClient: ClientProxy
   ) {}
 
   private async ensureUserHasDigitalSignature(userId: string): Promise<void> {
@@ -306,7 +306,7 @@ export class DicomStudySignaturesService {
       // }
 
       return {
-        // isValid: isValid && !certificateStatus?.isRevoked,
+        isValid: isValid ,
         signedAt: signature.signedAt,
         userId: signature.userId,
         certificateSerial: signature.certificateSerial,
