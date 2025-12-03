@@ -72,9 +72,9 @@ export enum DiagnosisType {
   FINAL = 'final',
 }
 
-export enum DiagnosisStatus {
-  ACTIVE = 'active',
-  RESOLVED = 'resolved',
-  INACTIVE = 'inactive',
-  RULED_OUT = 'ruled_out',
+export enum DiagnosisStatus {                
+  PENDING_APPROVAL = 'pending_approval', 
+  APPROVED = 'approved',                
+  REJECTED = 'rejected',                 
+  DRAFT = 'draft',                           
 }

@@ -24,10 +24,10 @@ export enum DiagnosisType {
 }
 
 export enum DiagnosisStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-  RESOLVED = "resolved",
-  RULED_OUT = "ruled_out",
+  PENDING_APPROVAL = "pending_approval",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+  DRAFT = "draft",
 }
 
 export enum Severity {

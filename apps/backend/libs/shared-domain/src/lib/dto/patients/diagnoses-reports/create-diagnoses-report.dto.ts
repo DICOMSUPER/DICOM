@@ -32,7 +32,7 @@ export class CreateDiagnosesReportDto {
 
   @IsOptional()
   @IsEnum(DiagnosisStatus)
-  diagnosisStatus?: DiagnosisStatus = DiagnosisStatus.ACTIVE;
+  diagnosisStatus?: DiagnosisStatus = DiagnosisStatus.DRAFT;
 
   @IsEnum(Severity)
   @IsOptional()
