@@ -1,23 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Filter, FolderOpen, Database, Loader2, Grid3X3, List, FileText } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Filter, FolderOpen, Database, Loader2, Grid3X3, List, FileText, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DicomInstance } from '@/interfaces/image-dicom/dicom-instances.interface';
 import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { useViewer } from '@/contexts/ViewerContext';
 import { useLazyGetDicomSeriesByReferenceQuery } from '@/store/dicomSeriesApi';
 import { useLazyGetInstancesByReferenceQuery } from '@/store/dicomInstanceApi';
-import { useLazyGetAnnotationsBySeriesIdQuery } from '@/store/annotationApi';
 import SeriesCard from '../sidebar/SeriesCard';
 import SeriesFilter from '../sidebar/SeriesFilter';
-import AnnotationsSegmentationsList from '../sidebar/AnnotationsSegmentationsList';
+import AnnotationAccordion from '../sidebar/AnnotationAccordion';
+import SegmentationAccordion from '../sidebar/SegmentationAccordion';
 import { extractApiData } from '@/utils/api';
 import { resolveDicomImageUrl } from '@/utils/dicom/resolveDicomImageUrl';
-import { ImageAnnotation } from '@/interfaces/image-dicom/image-annotation.interface';
-import { SegmentationSnapshot } from '@/contexts/viewer-context/segmentation-helper';
+import { 
+  useCreateImageSegmentationLayersMutation, 
+  useDeleteImageSegmentationLayerMutation,
+  useLazyGetImageSegmentationLayersByInstanceIdQuery 
+} from '@/store/imageSegmentationLayerApi';
+import { toast } from 'sonner';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
@@ -32,7 +37,14 @@ const ViewerRightSidebar = ({
   studyId,
   onSeriesLoaded,
 }: ViewerRightSidebarProps) => {
-  const { state, getViewportSeries } = useViewer();
+  const { 
+    state, 
+    getViewportSeries,
+    getSegmentationLayers,
+    deleteSegmentationLayer,
+    updateSegmentationLayerMetadata,
+    refetchSegmentationLayers,
+  } = useViewer();
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [filterModality, setFilterModality] = useState<string>('All');
@@ -42,73 +54,30 @@ const ViewerRightSidebar = ({
   const [loadingInstances, setLoadingInstances] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'annotations'>('grid');
+  const [annotationsTab, setAnnotationsTab] = useState<'annotations' | 'segmentations'>('annotations');
   const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
-  const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
-  const [annotations, setAnnotations] = useState<ImageAnnotation[]>([]);
-  const [segmentations, setSegmentations] = useState<SegmentationSnapshot[]>([]);
+  const [createImageSegmentationLayers] = useCreateImageSegmentationLayersMutation();
+  const [deleteImageSegmentationLayer] = useDeleteImageSegmentationLayerMutation();
 
-  // Sync selected series with active viewport's loaded series
   useEffect(() => {
     const activeViewportSeries = getViewportSeries(state.activeViewport);
     if (activeViewportSeries) {
       if (activeViewportSeries.id !== selectedSeries) {
         setSelectedSeries(activeViewportSeries.id);
-        console.log(
-          "🔄 Synced sidebar selection with active viewport:",
-          activeViewportSeries.seriesDescription
-        );
       }
       return;
     }
 
     if (selectedSeries) {
       setSelectedSeries(null);
-      console.log("🔄 Active viewport has no series; cleared sidebar selection");
     }
   }, [state.activeViewport, getViewportSeries, selectedSeries]);
 
-  // Load annotations and segmentations when view mode is 'annotations' and series is selected
   useEffect(() => {
-    if (viewMode !== 'annotations' || !selectedSeries) {
-      setAnnotations([]);
-      setSegmentations([]);
-      return;
-    }
-
-    const loadAnnotationsAndSegmentations = async () => {
-      // Load annotations
-      try {
-        const response = await fetchAnnotationsBySeries(selectedSeries).unwrap();
-        const fetchedAnnotations = extractApiData<ImageAnnotation>(response);
-        setAnnotations(fetchedAnnotations || []);
-      } catch (error) {
-        console.error('Failed to load annotations:', error);
-        setAnnotations([]);
-      }
-
-      // Load segmentations from viewer context
-      const activeSeries = getViewportSeries(state.activeViewport);
-      if (activeSeries?.id === selectedSeries) {
-        // Get segmentations from state
-        const segmentationLayers = Array.from(state.segmentationLayers.values()).flat();
-        const currentSnapshots = segmentationLayers.map(layer => 
-          layer[layer.length - 1]
-        ).filter((snapshot): snapshot is SegmentationSnapshot => snapshot !== undefined);
-        setSegmentations(currentSnapshots);
-      } else {
-        setSegmentations([]);
-      }
-    };
-
-    void loadAnnotationsAndSegmentations();
-  }, [viewMode, selectedSeries, state.activeViewport, state.segmentationLayers, fetchAnnotationsBySeries, getViewportSeries]);
-  
-
-useEffect(() => {
     let cancelled = false;
 
     if (!Array.isArray(series) || series.length === 0) {
@@ -142,24 +111,18 @@ useEffect(() => {
   const handleSeriesClick = (seriesItem: DicomSeries) => {
     setSelectedSeries(seriesItem.id);
     onSeriesSelect?.(seriesItem);
-    console.log('📌 Series selected:', seriesItem.seriesDescription, 'ID:', seriesItem.id);
   };
-  // Helper function to get modality for a series
   const getSeriesModality = (series: DicomSeries) => {
-    // Default modality for now - could be enhanced to fetch from study data
     return 'CT';
   };
 
-  // Load series when studyId changes (with caching)
-useEffect(() => {
+  useEffect(() => {
     const loadSeries = async () => {
       if (!studyId) {
         return;
       }
 
-      // Skip fetch if series already provided via prop and study hasn't changed
       if (series && series.length > 0 && studyId === loadedStudyId) {
-        console.log('📦 Using cached series for study:', studyId);
         return;
       }
 
@@ -169,7 +132,6 @@ useEffect(() => {
         setThumbnailPaths({});
       }
 
-      console.log('🔄 Loading series for studyId:', studyId);
       setLoading(true);
 
       try {
@@ -178,8 +140,6 @@ useEffect(() => {
           type: 'study',
           params: { page: 1, limit: 50 },
         }).unwrap();
-
-        console.log('✅ Loaded series for study:', studyId, seriesResponse);
 
         const fetchedSeries = extractApiData<DicomSeries>(seriesResponse);
 
@@ -199,7 +159,6 @@ useEffect(() => {
     loadSeries();
   }, [studyId, series, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
 
-  // Preload thumbnail paths for series
   const preloadThumbnails = async (seriesArray: DicomSeries[]) => {
     const updatedThumbnails: Record<string, string> = {};
 
@@ -260,7 +219,55 @@ useEffect(() => {
   };
 
 
-  // Toggle series expansion - keep multiple expanded
+  // Segmentation layer handlers
+  const handleSaveLayer = useCallback(async (layerId: string) => {
+    try {
+      const layers = getSegmentationLayers();
+      const layer = layers.find((l) => l.id === layerId);
+
+      if (!layer) {
+        toast.error("Layer not found");
+        return;
+      }
+
+      // Compress snapshots before saving
+      const compressedSnapshots = layer.snapshots?.map((snapshot) => ({
+        ...snapshot,
+        data: snapshot.data // Already compressed in context
+      }));
+
+      await createImageSegmentationLayers({
+        layerName: layer.name,
+        instanceId: layer.instanceId as string,
+        notes: layer.notes,
+        frame: 1,
+        snapshots: compressedSnapshots,
+      }).unwrap();
+
+      toast.success("Segmentation layer saved to database");
+      await refetchSegmentationLayers();
+    } catch (error) {
+      toast.error("Error saving segmentation layer to database");
+    }
+  }, [getSegmentationLayers, createImageSegmentationLayers, refetchSegmentationLayers]);
+
+  const handleDeleteLayer = useCallback(async (layerId: string) => {
+    try {
+      const layers = getSegmentationLayers();
+      const layer = layers.find((l) => l.id === layerId);
+      
+      if (layer?.origin === "database") {
+        await deleteImageSegmentationLayer(layerId);
+        await refetchSegmentationLayers();
+      }
+      
+      deleteSegmentationLayer(layerId);
+      toast.success("Segmentation layer deleted");
+    } catch (error) {
+      toast.error("Error deleting segmentation layer");
+    }
+  }, [getSegmentationLayers, deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);
+
   const toggleSeriesExpansion = async (seriesId: string) => {
     const isExpanding = !expandedSeries.has(seriesId);
     
@@ -274,7 +281,6 @@ useEffect(() => {
       return newSet;
     });
 
-    // Load instances if expanding and not already loaded
     if (isExpanding && !seriesInstances[seriesId]) {
       setLoadingInstances(prev => new Set(prev).add(seriesId));
       try {
@@ -301,20 +307,20 @@ useEffect(() => {
   };
 
 
-  // Filter series based on search and modality
-  const filteredSeries = (seriesList || []).filter((s) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      (s.seriesDescription || '')
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-    const matchesModality =
-      filterModality === 'All' || getSeriesModality(s) === filterModality;
-    return matchesSearch && matchesModality;
-  });
+  const filteredSeries = useMemo(() => {
+    return (seriesList || []).filter((s) => {
+      const matchesSearch =
+        searchQuery === '' ||
+        (s.seriesDescription || '')
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+      const matchesModality =
+        filterModality === 'All' || getSeriesModality(s) === filterModality;
+      return matchesSearch && matchesModality;
+    });
+  }, [seriesList, searchQuery, filterModality]);
 
-  // Render series card using SeriesCard component
-  const renderSeriesCard = (s: DicomSeries) => {
+  const renderSeriesCard = useCallback((s: DicomSeries) => {
     const resolvedFallback = resolveDicomImageUrl(
       seriesInstances[s.id]?.[0]?.filePath,
       seriesInstances[s.id]?.[0]?.fileName
@@ -336,7 +342,7 @@ useEffect(() => {
         loadingThumbnail={isLoadingThumbnail}
       />
     );
-  };
+  }, [seriesInstances, thumbnailPaths, loading, loadingInstances, viewMode, selectedSeries, handleSeriesClick]);
 
 
   return (
@@ -346,7 +352,11 @@ useEffect(() => {
         <div className="h-14 flex items-center justify-between px-4 border-b-2 border-teal-800/40 bg-linear-to-r from-slate-800 to-slate-900">
           <div className="flex items-center gap-3">
             <div className="p-1.5 bg-teal-600/20 rounded-lg border border-teal-500/30">
-              <Database className="h-4 w-4 text-teal-400" />
+              {viewMode === 'annotations' ? (
+                <FileText className="h-4 w-4 text-teal-400" />
+              ) : (
+                <Database className="h-4 w-4 text-teal-400" />
+              )}
             </div>
              <div>
                <h2 className="text-teal-300 font-bold text-sm tracking-wide">
@@ -356,9 +366,7 @@ useEffect(() => {
                    variant="secondary"
                    className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
                  >
-                   {viewMode === 'annotations' 
-                     ? `${annotations.length} Annotations, ${segmentations.length} Segmentations`
-                     : `${seriesList.length} Total`}
+                   {viewMode === 'annotations' ? 'Management' : `${seriesList.length} Total`}
                </Badge>
              </div>
           </div>
@@ -426,30 +434,32 @@ useEffect(() => {
                 </Tooltip>
               </div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowFilter(!showFilter)}
-                    className={`h-8 w-8 p-0 transition-all rounded-lg ${
-                      showFilter 
-                        ? 'text-teal-300 bg-teal-900/40 border border-teal-700/50' 
-                        : 'text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent'
-                    }`}
-                  >
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                 <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
-                   Filter Series
-                 </TooltipContent>
-              </Tooltip>
+              {viewMode !== 'annotations' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowFilter(!showFilter)}
+                      className={`h-8 w-8 p-0 transition-all rounded-lg ${
+                        showFilter 
+                          ? 'text-teal-300 bg-teal-900/40 border border-teal-700/50' 
+                          : 'text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent'
+                      }`}
+                    >
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                   <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
+                     Filter Series
+                   </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
 
         {/* Filter Section */}
-        {showFilter && (
+        {showFilter && viewMode !== 'annotations' && (
           <SeriesFilter
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -462,16 +472,46 @@ useEffect(() => {
          {/* Content */}
          <div className="flex-1 overflow-y-auto">
            {viewMode === 'annotations' ? (
-             <AnnotationsSegmentationsList
-               annotations={annotations}
-               segmentations={segmentations}
-             />
+             <Tabs value={annotationsTab} onValueChange={(val) => setAnnotationsTab(val as 'annotations' | 'segmentations')} className="h-full flex flex-col">
+               <TabsList className="w-full justify-start border-b border-slate-800 bg-slate-900/50 rounded-none h-12 px-2">
+                 <TabsTrigger 
+                   value="annotations" 
+                   className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
+                 >
+                   <FileText className="h-4 w-4" />
+                   <span>Annotations</span>
+                 </TabsTrigger>
+                 <TabsTrigger 
+                   value="segmentations"
+                   className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
+                 >
+                   <Layers className="h-4 w-4" />
+                   <span>Segmentations</span>
+                 </TabsTrigger>
+               </TabsList>
+               
+               <TabsContent value="annotations" className="flex-1 overflow-y-auto p-3 mt-0">
+                 <AnnotationAccordion 
+                   selectedSeriesId={selectedSeries} 
+                   seriesList={seriesList}
+                 />
+               </TabsContent>
+               
+               <TabsContent value="segmentations" className="flex-1 overflow-y-auto p-3 mt-0">
+                 <SegmentationAccordion
+                   selectedSeriesId={selectedSeries}
+                   onSaveLayer={handleSaveLayer}
+                   onDeleteLayer={handleDeleteLayer}
+                   onUpdateLayerMetadata={updateSegmentationLayerMetadata}
+                 />
+               </TabsContent>
+             </Tabs>
            ) : (
-             <div className="p-2 space-y-1">
+             <div className="p-2 space-y-1 flex flex-col h-full">
                {loading ? (
-                 <div className="flex items-center justify-center py-8">
-                   <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
-                   <span className="ml-2 text-white">Loading series...</span>
+                 <div className="flex flex-col items-center justify-center py-8 flex-1">
+                   <Loader2 className="h-8 w-8 animate-spin text-teal-400 mb-2" />
+                   <span className="text-white">Loading series...</span>
                  </div>
                ) : filteredSeries.length > 0 ? (
                  <div className={viewMode === 'grid' ? 'space-y-1' : 'space-y-1'}>
@@ -480,7 +520,7 @@ useEffect(() => {
                    )}
                  </div>
                ) : (
-                 <div className="text-center text-slate-500 py-8">
+                 <div className="flex flex-col items-center justify-center text-center text-slate-500 flex-1">
                    <FolderOpen className="h-12 w-12 mx-auto mb-3 text-slate-600" />
                    <div className="text-sm">No series available</div>
                    <div className="text-xs mt-1">Load series to view them here</div>

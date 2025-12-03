@@ -12,14 +12,96 @@ import {
   drawAIPredictions,
   clearAIAnnotations as clearAIAnnotationsUtil,
 } from "@/utils/aiDiagnosis";
-import { getEnabledElement, Types } from "@cornerstonejs/core";
-import { Loader2 } from "lucide-react";
+import { Types } from "@cornerstonejs/core";
+import { batchedRender } from "@/utils/renderBatcher";
+import { Loader2, ImageOff } from "lucide-react";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
-import { annotation } from "@cornerstonejs/tools";
-import { AnnotationType } from "@/enums/image-dicom.enum";
-import type { Annotation } from "@cornerstonejs/tools/types";
+import { useViewerEvent, useViewerEvents, ViewerEvents } from "@/contexts/ViewerEventContext";
+
+// Frame scrollbar component with draggable thumb
+function FrameScrollbarComponent({
+  currentFrame,
+  totalFrames,
+  onFrameChange,
+}: {
+  currentFrame: number;
+  totalFrames: number;
+  onFrameChange: (frame: number) => void;
+}) {
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startFrameRef = useRef(0);
+
+  const thumbHeight = Math.max(20, (100 / totalFrames) * 100);
+  const thumbPosition = (currentFrame / (totalFrames - 1)) * 100;
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!scrollbarRef.current || !thumbRef.current) return;
+      
+      const rect = scrollbarRef.current.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      const clickPercent = (clickY / rect.height) * 100;
+
+      const thumbRect = thumbRef.current.getBoundingClientRect();
+      const thumbTop = thumbRect.top - rect.top;
+      const thumbBottom = thumbTop + thumbRect.height;
+
+      if (clickY >= thumbTop && clickY <= thumbBottom) {
+        isDraggingRef.current = true;
+        startYRef.current = e.clientY;
+        startFrameRef.current = currentFrame;
+
+        const handleMouseMove = (e: MouseEvent) => {
+          if (!isDraggingRef.current || !scrollbarRef.current) return;
+
+          const rect = scrollbarRef.current.getBoundingClientRect();
+          const deltaY = e.clientY - startYRef.current;
+          const deltaPercent = (deltaY / rect.height) * 100;
+          const deltaFrames = Math.round((deltaPercent / 100) * (totalFrames - 1));
+
+          const newFrame = startFrameRef.current + deltaFrames;
+          onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
+        };
+
+        const handleMouseUp = () => {
+          isDraggingRef.current = false;
+          document.removeEventListener("mousemove", handleMouseMove);
+          document.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      } else {
+        const newFrame = Math.round((clickPercent / 100) * (totalFrames - 1));
+        onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
+      }
+    },
+    [currentFrame, totalFrames, onFrameChange]
+  );
+
+  return (
+    <div
+      ref={scrollbarRef}
+      className="absolute right-0 top-0 bottom-0 w-4 z-50 cursor-pointer"
+      onMouseDown={handleMouseDown}
+    >
+      <div className="absolute inset-0 bg-gray-800/30 hover:bg-gray-800/50 transition-colors" />
+      <div
+        ref={thumbRef}
+        className="absolute right-0 w-3 bg-gray-400/80 hover:bg-gray-300 rounded-sm transition-all cursor-grab active:cursor-grabbing"
+        style={{
+          top: `${Math.max(0, Math.min(100 - thumbHeight, thumbPosition - (thumbHeight / 2)))}%`,
+          height: `${thumbHeight}%`,
+        }}
+      />
+    </div>
+  );
+}
 
 interface ViewPortMainProps {
   selectedSeries?: any;
@@ -48,6 +130,7 @@ const ViewPortMain = ({
     getStackViewport,
     nextFrame,
     prevFrame,
+    goToFrame,
     refreshViewport,
   } = useViewer();
 
@@ -58,7 +141,6 @@ const ViewPortMain = ({
   const loadSeriesRef = useRef(loadSeriesIntoViewport);
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
-  console.log("selected Study id", studyId);
 
   useEffect(() => {
     disposeViewportRef.current = disposeViewport;
@@ -73,8 +155,25 @@ const ViewPortMain = ({
     [getViewportState, viewportIndex]
   );
   const viewport = getStackViewport(viewportIndex);
-  const resolvedViewportId = getViewportId(viewportIndex);
-  const resolvedRenderingEngineId = getRenderingEngineId(viewportIndex);
+  const resolvedViewportId = useMemo(
+    () => getViewportId(viewportIndex),
+    [getViewportId, viewportIndex]
+  );
+  const resolvedRenderingEngineId = useMemo(
+    () => getRenderingEngineId(viewportIndex),
+    [getRenderingEngineId, viewportIndex]
+  );
+
+  // Cache values in refs to avoid repeated calls in event handlers
+  const viewportIdRef = useRef(resolvedViewportId);
+  const viewportRef = useRef(viewport);
+  const toolManagerRefValue = useRef(toolManagerRef.current);
+  
+  useEffect(() => {
+    viewportIdRef.current = resolvedViewportId;
+    viewportRef.current = viewport;
+    toolManagerRefValue.current = toolManagerRef.current;
+  }, [resolvedViewportId, viewport]);
 
   const {
     isLoading,
@@ -94,20 +193,269 @@ const ViewPortMain = ({
   const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
 
   const totalFramesRef = useRef(totalFrames);
+  const diagnosisImageByAIRef = useRef<ReturnType<typeof useDiagnosisImageByAIMutation>[0] | undefined>(undefined);
 
   // AI Diagnosis mutation
   const [diagnosisImageByAI] = useDiagnosisImageByAIMutation();
 
   useEffect(() => {
     totalFramesRef.current = totalFrames;
-  }, [totalFrames]);
+    diagnosisImageByAIRef.current = diagnosisImageByAI;
+  }, [totalFrames, diagnosisImageByAI]);
+
+  const { publish } = useViewerEvents();
 
   const dispatchClearAnnotations = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("clearAnnotations"));
-  }, []);
+    publish(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, { activeViewportId: viewportIdRef.current });
+  }, [publish]);
 
   const dispatchResetView = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("resetView"));
+    publish(ViewerEvents.RESET_VIEW);
+  }, [publish]);
+
+  const wheelScrollHandlerRef = useRef<{
+    rafId: number | null;
+    lastTime: number;
+    pendingDirection: number | null;
+  }>({ rafId: null, lastTime: 0, pendingDirection: null });
+
+  const wheelScrollHandler = useCallback((event: WheelEvent) => {
+    event.preventDefault();
+    
+    if (totalFramesRef.current <= 1) return;
+
+    const now = performance.now();
+    const timeSinceLastCall = now - wheelScrollHandlerRef.current.lastTime;
+    const throttleDelay = 50;
+
+    const direction = event.deltaY > 0 ? 1 : event.deltaY < 0 ? -1 : 0;
+    if (direction === 0) return;
+
+    wheelScrollHandlerRef.current.pendingDirection = direction;
+
+    if (wheelScrollHandlerRef.current.rafId !== null) {
+      return;
+    }
+
+    if (timeSinceLastCall < throttleDelay) {
+      wheelScrollHandlerRef.current.rafId = requestAnimationFrame(() => {
+        const direction = wheelScrollHandlerRef.current.pendingDirection;
+        wheelScrollHandlerRef.current.rafId = null;
+        wheelScrollHandlerRef.current.lastTime = performance.now();
+        wheelScrollHandlerRef.current.pendingDirection = null;
+
+        if (direction === 1) {
+          nextFrame(viewportIndex);
+        } else if (direction === -1) {
+          prevFrame(viewportIndex);
+        }
+      });
+    } else {
+      wheelScrollHandlerRef.current.lastTime = now;
+      wheelScrollHandlerRef.current.pendingDirection = null;
+      
+      if (direction === 1) {
+        nextFrame(viewportIndex);
+      } else if (direction === -1) {
+        prevFrame(viewportIndex);
+      }
+    }
+  }, [nextFrame, prevFrame, viewportIndex]);
+
+  // Viewport transform handlers
+  const handleRotateViewport = useCallback((data: { viewportId?: string; degrees: number }) => {
+    if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.rotateViewport?.(data.degrees);
+  }, []);
+
+  const handleFlipViewport = useCallback((data: { viewportId?: string; direction: 'horizontal' | 'vertical' }) => {
+    if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.flipViewport?.(data.direction);
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    toolManagerRefValue.current?.getToolHandlers?.()?.resetView?.();
+  }, []);
+
+  const handleInvertColorMap = useCallback(() => {
+    toolManagerRefValue.current?.getToolHandlers?.()?.invertColorMap?.();
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    void refreshViewport(viewportIndex);
+  }, [refreshViewport, viewportIndex]);
+
+  // Annotation handlers
+  const handleClearAnnotations = useCallback(() => {
+    // Clear ALL annotations on this viewport (no filtering by viewportId)
+    toolManagerRefValue.current?.getToolHandlers?.()?.clearAnnotations?.();
+  }, []);
+
+  const handleClearViewportAnnotations = useCallback((data?: { activeViewportId?: string }) => {
+    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.clearViewportAnnotations?.();
+  }, []);
+
+  const handleUndoAnnotation = useCallback((data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
+    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.undoAnnotation?.(data?.entry);
+  }, []);
+
+  const handleRedoAnnotation = useCallback((data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
+    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.redoAnnotation?.(data?.entry);
+  }, []);
+
+  const handleUndoSegmentation = useCallback((data?: { activeViewportId?: string; entry?: SegmentationHistoryEntry }) => {
+    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.undoSegmentation?.(data?.entry);
+  }, []);
+
+  const handleRedoSegmentation = useCallback((data?: { activeViewportId?: string; entry?: SegmentationHistoryEntry }) => {
+    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
+    toolManagerRefValue.current?.getToolHandlers?.()?.redoSegmentation?.(data?.entry);
+  }, []);
+
+  // AI Diagnosis handlers
+  const handleAIDiagnosis = useCallback(async (event: Event) => {
+    const customEvent = event as CustomEvent;
+    const { viewportId: eventViewportId, modelId, modelName, versionName } = customEvent.detail || {};
+    const currentViewportId = viewportIdRef.current;
+    if (eventViewportId !== currentViewportId || !currentViewportId) return;
+    
+    const currentElement = elementRef.current;
+    const currentViewport = viewportRef.current;
+    if (!currentElement || !currentViewport) return;
+
+    setIsDiagnosing(true);
+    try {
+      const base64Image = getCanvasAsBase64(currentElement);
+      if (!base64Image) throw new Error("Failed to convert canvas to base64");
+
+      const response = await diagnosisImageByAIRef.current?.({
+        base64Image,
+        aiModelId: modelId,
+        modelName,
+        versionName,
+        selectedStudyId: studyId !== null ? studyId : undefined,
+      }).unwrap();
+
+      if (!response?.data) return;
+      const { predictions, image } = response.data;
+      if (!predictions || !Array.isArray(predictions) || predictions.length === 0) return;
+
+      setPredictions(predictions);
+      const stackViewport = currentViewport as Types.IStackViewport;
+      const canvas = stackViewport.canvas;
+      const currentImageId = stackViewport.getCurrentImageId?.() || "";
+      setAiImageMetadata({ width: image.width, height: image.height });
+      setAnalyzedImageId(currentImageId);
+
+      drawAIPredictions(
+        predictions,
+        currentViewportId,
+        currentImageId,
+        resolvedRenderingEngineId as string,
+        image.width,
+        image.height,
+        canvas.width,
+        canvas.height
+      );
+      batchedRender(currentViewport);
+    } catch (error) {
+      console.error("AI diagnosis failed:", error);
+    } finally {
+      setIsDiagnosing(false);
+    }
+  }, [resolvedRenderingEngineId, studyId]);
+
+  const handleClearAIAnnotations = useCallback((data: { viewportId?: string }) => {
+    const currentViewportId = viewportIdRef.current;
+    if (data.viewportId !== currentViewportId || !currentViewportId) return;
+
+    clearAIAnnotationsUtil(currentViewportId);
+    setPredictions([]);
+    setAiImageMetadata(null);
+    setAnalyzedImageId("");
+
+    const currentViewport = viewportRef.current;
+    batchedRender(currentViewport);
+  }, []);
+
+  // Annotation visibility handler
+  const handleToggleAnnotations = useCallback((data: { showAnnotations?: boolean }) => {
+    const currentElement = elementRef.current;
+    const currentViewport = viewportRef.current;
+    if (!currentElement || !currentViewport) return;
+
+    try {
+      const svgElements = currentElement.querySelectorAll("svg");
+      svgElements.forEach((svg) => {
+        const hasAnnotationElements =
+          svg.querySelector("g[data-tool-name]") ||
+          svg.querySelector("g[data-annotation-uid]") ||
+          svg.classList.contains("annotation-svg");
+
+        if (hasAnnotationElements) {
+          if (data.showAnnotations === false) {
+            svg.style.display = "none";
+            svg.classList.add("annotations-hidden");
+          } else {
+            svg.style.display = "";
+            svg.classList.remove("annotations-hidden");
+          }
+        }
+      });
+
+      const annotationCanvas = currentElement.querySelector("canvas.annotation-canvas");
+      if (annotationCanvas) {
+        (annotationCanvas as HTMLElement).style.display = data.showAnnotations === false ? "none" : "";
+      }
+
+      if (typeof currentViewport.render === "function") {
+        batchedRender(currentViewport);
+      }
+    } catch (error) {
+      console.error("Error toggling annotation visibility:", error);
+    }
+  }, []);
+
+  // Annotation selection handlers
+  const handleSelectAnnotation = useCallback((data: {
+    annotationId: string;
+    annotationUID?: string;
+    annotationType?: string;
+    instanceId?: string;
+  }) => {
+    if (data.annotationId) {
+      toolManagerRefValue.current?.getToolHandlers?.()?.selectAnnotation?.(data);
+    }
+  }, []);
+
+  const handleDeselectAnnotation = useCallback(() => {
+    toolManagerRefValue.current?.getToolHandlers?.()?.deselectAnnotation?.();
+  }, []);
+
+  const handleUpdateAnnotationColor = useCallback((data: {
+    annotationId: string;
+    annotationUID?: string;
+    colorCode: string;
+    instanceId?: string;
+  }) => {
+    if (data.annotationId && data.colorCode) {
+      toolManagerRefValue.current?.getToolHandlers?.()?.updateAnnotationColor?.(data);
+    }
+  }, []);
+
+  const handleLockAnnotation = useCallback((data: {
+    annotationId: string;
+    annotationUID?: string;
+    locked: boolean;
+    instanceId?: string;
+  }) => {
+    if (data.annotationId) {
+      toolManagerRefValue.current?.getToolHandlers?.()?.lockAnnotation?.(data);
+    }
   }, []);
 
   const handleKeyDown = useCallback(
@@ -152,10 +500,6 @@ const ViewPortMain = ({
     (node: HTMLDivElement | null) => {
       if (node) {
         elementRef.current = node;
-        console.log("Đây chính là elementRef.current:", node);
-        console.log("className:", node.className); // → "w-full h-full bg-black ..."
-        console.log("data-viewport-id:", node.dataset.viewportId); // → "0"
-        console.log("data-viewport-uid:", node.dataset.viewportUid); // → "viewport-1"
         registerViewportElement(viewportIndex, node);
         setElementReady(true);
       } else {
@@ -201,6 +545,7 @@ const ViewPortMain = ({
     elementReady,
   ]);
 
+  // DOM event listeners (keyboard and wheel)
   useEffect(() => {
     const element = containerRef.current;
     if (!element || !viewportReady) {
@@ -208,504 +553,41 @@ const ViewPortMain = ({
     }
 
     element.setAttribute("tabindex", "0");
-
-    const wheelScrollHandler = (event: WheelEvent) => {
-      event.preventDefault();
-      if (totalFramesRef.current <= 1) return;
-
-      if (event.deltaY > 0) {
-        nextFrame(viewportIndex);
-      } else if (event.deltaY < 0) {
-        prevFrame(viewportIndex);
-      }
-    };
-
-    const handleRotateViewportLocal = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { viewportId: eventViewportId, degrees } = customEvent.detail || {};
-      const actualViewportId = getViewportId(viewportIndex);
-
-      if (eventViewportId !== actualViewportId) return;
-
-      toolManagerRef.current?.getToolHandlers?.()?.rotateViewport?.(degrees);
-    };
-
-    const handleFlipViewportLocal = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { viewportId: eventViewportId, direction } =
-        customEvent.detail || {};
-      const actualViewportId = getViewportId(viewportIndex);
-
-      if (eventViewportId !== actualViewportId) return;
-
-      toolManagerRef.current?.getToolHandlers?.()?.flipViewport?.(direction);
-    };
-
-    const handleResetView = () => {
-      toolManagerRef.current?.getToolHandlers?.()?.resetView?.();
-    };
-
-    const handleClearAnnotations = (event?: Event) => {
-      if (event) {
-        const customEvent = event as CustomEvent;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        if (activeViewportId && activeViewportId !== actualViewportId) return;
-      }
-      toolManagerRef.current?.getToolHandlers?.()?.clearAnnotations?.();
-    };
-
-    const handleClearViewportAnnotations = (event?: Event) => {
-      if (event) {
-        const customEvent = event as CustomEvent;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        // Only execute if this is the active viewport or if no viewport ID is specified
-        if (activeViewportId && activeViewportId !== actualViewportId) {
-          console.log(
-            `Skipping clear viewport annotations - viewportId mismatch: ${actualViewportId} !== ${activeViewportId}`
-          );
-          return;
-        }
-      }
-      const actualViewportId = getViewportId(viewportIndex);
-      console.log(
-        `Executing clear viewport annotations for viewport ${actualViewportId}`
-      );
-      toolManagerRef.current?.getToolHandlers?.()?.clearViewportAnnotations?.();
-    };
-
-    const handleUndoAnnotation = (event?: Event) => {
-      let historyEntry: AnnotationHistoryEntry | undefined;
-      if (event) {
-        const customEvent = event as CustomEvent<{
-          activeViewportId?: string;
-          entry?: AnnotationHistoryEntry;
-        }>;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        if (activeViewportId && activeViewportId !== actualViewportId) return;
-        historyEntry = customEvent.detail?.entry;
-      }
-      toolManagerRef.current
-        ?.getToolHandlers?.()
-        ?.undoAnnotation?.(historyEntry);
-    };
-
-    const handleRedoAnnotation = (event?: Event) => {
-      let historyEntry: AnnotationHistoryEntry | undefined;
-      if (event) {
-        const customEvent = event as CustomEvent<{
-          activeViewportId?: string;
-          entry?: AnnotationHistoryEntry;
-        }>;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        if (activeViewportId && activeViewportId !== actualViewportId) return;
-        historyEntry = customEvent.detail?.entry;
-      }
-      toolManagerRef.current
-        ?.getToolHandlers?.()
-        ?.redoAnnotation?.(historyEntry);
-    };
-
-    const handleUndoSegmentation = (event?: Event) => {
-      let historyEntry: SegmentationHistoryEntry | undefined;
-      if (event) {
-        const customEvent = event as CustomEvent<{
-          activeViewportId?: string;
-          entry?: SegmentationHistoryEntry;
-        }>;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        if (activeViewportId && activeViewportId !== actualViewportId) return;
-        historyEntry = customEvent.detail?.entry;
-      }
-      toolManagerRef.current
-        ?.getToolHandlers?.()
-        ?.undoSegmentation?.(historyEntry);
-    };
-
-    const handleRedoSegmentation = (event?: Event) => {
-      let historyEntry: SegmentationHistoryEntry | undefined;
-      if (event) {
-        const customEvent = event as CustomEvent<{
-          activeViewportId?: string;
-          entry?: SegmentationHistoryEntry;
-        }>;
-        const { activeViewportId } = customEvent.detail || {};
-        const actualViewportId = getViewportId(viewportIndex);
-        if (activeViewportId && activeViewportId !== actualViewportId) return;
-        historyEntry = customEvent.detail?.entry;
-      }
-      toolManagerRef.current
-        ?.getToolHandlers?.()
-        ?.redoSegmentation?.(historyEntry);
-    };
-
-    const handleInvertColorMap = () => {
-      toolManagerRef.current?.getToolHandlers?.()?.invertColorMap?.();
-    };
-
-    const handleRefresh = () => {
-      void refreshViewport(viewportIndex);
-    };
-
-    // AI Diagnosis handler
-
-    const handleAIDiagnosis = async (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const {
-        viewportId: eventViewportId,
-        modelId,
-        modelName,
-        versionName,
-      } = customEvent.detail || {};
-      if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
-        return;
-      }
-      if (!elementRef.current || !viewport) {
-        console.error("Viewport not ready for AI diagnosis");
-        return;
-      }
-
-      console.log("🧠 Starting AI diagnosis for viewport:", resolvedViewportId);
-      setIsDiagnosing(true);
-
-      try {
-        // Get canvas and convert to base64
-        const base64Image = getCanvasAsBase64(elementRef.current);
-
-        if (!base64Image) {
-          throw new Error("Failed to convert canvas to base64");
-        }
-
-        console.log("Canvas converted to base64, calling API...");
-        const response = await diagnosisImageByAI({
-          base64Image,
-          aiModelId: modelId,
-          modelName,
-          versionName,
-          selectedStudyId: studyId !== null ? studyId : undefined,
-        }).unwrap();
-
-        console.log("Full AI diagnosis response:", response);
-
-        if (!response?.data) {
-          console.warn("No data in response");
-          return;
-        }
-
-        const { predictions, image } = response.data;
-
-        console.log("Predictions:", predictions);
-        console.log("Image metadata:", image);
-        if (
-          !predictions ||
-          !Array.isArray(predictions) ||
-          predictions.length === 0
-        ) {
-          console.log("ℹNo predictions found in AI response");
-          return;
-        }
-        console.log(`Found ${predictions.length} predictions`);
-        setPredictions(predictions);
-
-        const stackViewport = viewport as Types.IStackViewport;
-        const canvas = stackViewport.canvas;
-        const currentImageId = stackViewport.getCurrentImageId?.() || "";
-        setAiImageMetadata({ width: image.width, height: image.height });
-        setAnalyzedImageId(currentImageId);
-
-        console.log("🔍 Viewport metadata:", {
-          canvasSize: { width: canvas.width, height: canvas.height },
-          currentImageId,
-          imageSize: image,
-        });
-        drawAIPredictions(
-          predictions,
-          resolvedViewportId,
-          currentImageId,
-          resolvedRenderingEngineId as string,
-          image.width,
-          image.height,
-          canvas.width,
-          canvas.height
-        );
-
-        viewport.render();
-
-        console.log("AI annotations drawn successfully");
-      } catch (error) {
-        console.error("AI diagnosis failed:", error);
-      } finally {
-        setIsDiagnosing(false);
-      }
-    };
-    // Clear AI annotations handler
-    const handleClearAIAnnotations = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { viewportId: eventViewportId } = customEvent.detail || {};
-
-      if (eventViewportId !== resolvedViewportId || !resolvedViewportId) {
-        return;
-      }
-
-      console.log("Clearing AI annotations for viewport:", resolvedViewportId);
-      clearAIAnnotationsUtil(resolvedViewportId);
-      setPredictions([]);
-      setAiImageMetadata(null);
-      setAnalyzedImageId("");
-
-      if (viewport) {
-        viewport.render();
-      }
-    };
-
-    // Toggle annotation visibility handler
-    const handleToggleAnnotations = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { showAnnotations } = customEvent.detail || {};
-
-      if (!elementRef.current || !viewport) {
-        return;
-      }
-
-      console.log("👁️ Toggling annotation visibility:", showAnnotations);
-
-      try {
-        // Find all SVG elements containing annotations (Cornerstone.js renders annotations as SVG)
-        const svgElements = elementRef.current.querySelectorAll("svg");
-
-        // Toggle visibility using CSS
-        svgElements.forEach((svg) => {
-          // Check if this SVG contains annotation elements (not the main viewport canvas)
-          const hasAnnotationElements =
-            svg.querySelector("g[data-tool-name]") ||
-            svg.querySelector("g[data-annotation-uid]") ||
-            svg.classList.contains("annotation-svg");
-
-          if (hasAnnotationElements) {
-            if (showAnnotations === false) {
-              svg.style.display = "none";
-              svg.classList.add("annotations-hidden");
-            } else {
-              svg.style.display = "";
-              svg.classList.remove("annotations-hidden");
-            }
-          }
-        });
-
-        // Also try to find annotation canvas elements
-        const annotationCanvas = elementRef.current.querySelector(
-          "canvas.annotation-canvas"
-        );
-        if (annotationCanvas) {
-          if (showAnnotations === false) {
-            (annotationCanvas as HTMLElement).style.display = "none";
-          } else {
-            (annotationCanvas as HTMLElement).style.display = "";
-          }
-        }
-
-        // Force re-render of the viewport
-        if (viewport && typeof viewport.render === "function") {
-          viewport.render();
-        }
-
-        console.log(
-          `✅ Annotation visibility set to: ${
-            showAnnotations !== false ? "visible" : "hidden"
-          }`
-        );
-      } catch (error) {
-        console.error("❌ Error toggling annotation visibility:", error);
-      }
-    };
-
     element.addEventListener("keydown", handleKeyDown);
     element.addEventListener("wheel", wheelScrollHandler, { passive: false });
-    window.addEventListener(
-      "rotateViewport",
-      handleRotateViewportLocal as EventListener
-    );
-    window.addEventListener(
-      "flipViewport",
-      handleFlipViewportLocal as EventListener
-    );
-    window.addEventListener("resetView", handleResetView);
-    window.addEventListener("invertColorMap", handleInvertColorMap);
-    window.addEventListener(
-      "clearAnnotations",
-      handleClearAnnotations as EventListener
-    );
-    window.addEventListener(
-      "clearViewportAnnotations",
-      handleClearViewportAnnotations as EventListener
-    );
-    window.addEventListener(
-      "undoAnnotation",
-      handleUndoAnnotation as EventListener
-    );
-    window.addEventListener(
-      "redoAnnotation",
-      handleRedoAnnotation as EventListener
-    );
-    window.addEventListener(
-      "undoSegmentation",
-      handleUndoSegmentation as EventListener
-    );
-    window.addEventListener(
-      "redoSegmentation",
-      handleRedoSegmentation as EventListener
-    );
-    window.addEventListener("refreshViewport", handleRefresh);
-    window.addEventListener(
-      "diagnoseViewport",
-      handleAIDiagnosis as EventListener
-    );
-    window.addEventListener(
-      "clearAIAnnotations",
-      handleClearAIAnnotations as EventListener
-    );
-    window.addEventListener(
-      "toggleAnnotations",
-      handleToggleAnnotations as EventListener
-    );
 
     return () => {
+      // Cleanup wheel handler RAF
+      if (wheelScrollHandlerRef.current.rafId !== null) {
+        cancelAnimationFrame(wheelScrollHandlerRef.current.rafId);
+        wheelScrollHandlerRef.current.rafId = null;
+      }
+      
       element.removeEventListener("keydown", handleKeyDown);
       element.removeEventListener("wheel", wheelScrollHandler);
-      window.removeEventListener(
-        "rotateViewport",
-        handleRotateViewportLocal as EventListener
-      );
-      window.removeEventListener(
-        "flipViewport",
-        handleFlipViewportLocal as EventListener
-      );
-      window.removeEventListener("resetView", handleResetView);
-      window.removeEventListener("invertColorMap", handleInvertColorMap);
-      window.removeEventListener(
-        "clearAnnotations",
-        handleClearAnnotations as EventListener
-      );
-      window.removeEventListener(
-        "clearViewportAnnotations",
-        handleClearViewportAnnotations as EventListener
-      );
-      window.removeEventListener(
-        "undoAnnotation",
-        handleUndoAnnotation as EventListener
-      );
-      window.removeEventListener(
-        "redoAnnotation",
-        handleRedoAnnotation as EventListener
-      );
-      window.removeEventListener(
-        "undoSegmentation",
-        handleUndoSegmentation as EventListener
-      );
-      window.removeEventListener(
-        "redoSegmentation",
-        handleRedoSegmentation as EventListener
-      );
-      window.removeEventListener("refreshViewport", handleRefresh);
-      window.removeEventListener(
-        "diagnoseViewport",
-        handleAIDiagnosis as EventListener
-      );
-      window.removeEventListener(
-        "clearAIAnnotations",
-        handleClearAIAnnotations as EventListener
-      );
-      window.removeEventListener(
-        "toggleAnnotations",
-        handleToggleAnnotations as EventListener
-      );
     };
-  }, [
-    viewportIndex,
-    viewportId,
-    viewportReady,
-    handleKeyDown,
-    getViewportId,
-    nextFrame,
-    prevFrame,
-    refreshViewport,
-    resolvedViewportId,
-    viewport,
-    diagnosisImageByAI,
-  ]);
+  }, [viewportReady, handleKeyDown, wheelScrollHandler]);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !viewport) {
-      return;
-    }
+  // Subscribe to viewer events using pub/sub service
+  useViewerEvent(ViewerEvents.ROTATE_VIEWPORT, handleRotateViewport, [handleRotateViewport]);
+  useViewerEvent(ViewerEvents.FLIP_VIEWPORT, handleFlipViewport, [handleFlipViewport]);
+  useViewerEvent(ViewerEvents.RESET_VIEW, handleResetView, [handleResetView]);
+  useViewerEvent(ViewerEvents.INVERT_COLORMAP, handleInvertColorMap, [handleInvertColorMap]);
+  useViewerEvent(ViewerEvents.CLEAR_ANNOTATIONS, handleClearAnnotations, [handleClearAnnotations]);
+  useViewerEvent(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, handleClearViewportAnnotations, [handleClearViewportAnnotations]);
+  useViewerEvent(ViewerEvents.UNDO_ANNOTATION, handleUndoAnnotation, [handleUndoAnnotation]);
+  useViewerEvent(ViewerEvents.REDO_ANNOTATION, handleRedoAnnotation, [handleRedoAnnotation]);
+  useViewerEvent(ViewerEvents.UNDO_SEGMENTATION, handleUndoSegmentation, [handleUndoSegmentation]);
+  useViewerEvent(ViewerEvents.REDO_SEGMENTATION, handleRedoSegmentation, [handleRedoSegmentation]);
+  useViewerEvent(ViewerEvents.REFRESH_VIEWPORT, handleRefresh, [handleRefresh]);
+  useViewerEvent(ViewerEvents.DIAGNOSE_VIEWPORT, handleAIDiagnosis, [handleAIDiagnosis]);
+  useViewerEvent(ViewerEvents.CLEAR_AI_ANNOTATIONS, handleClearAIAnnotations, [handleClearAIAnnotations]);
+  useViewerEvent(ViewerEvents.TOGGLE_ANNOTATIONS, handleToggleAnnotations, [handleToggleAnnotations]);
+  useViewerEvent(ViewerEvents.SELECT_ANNOTATION, handleSelectAnnotation, [handleSelectAnnotation]);
+  useViewerEvent(ViewerEvents.DESELECT_ANNOTATION, handleDeselectAnnotation, [handleDeselectAnnotation]);
+  useViewerEvent(ViewerEvents.UPDATE_ANNOTATION_COLOR, handleUpdateAnnotationColor, [handleUpdateAnnotationColor]);
+  useViewerEvent(ViewerEvents.LOCK_ANNOTATION, handleLockAnnotation, [handleLockAnnotation]);
 
-    let resizeFrame: number | null = null;
-    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
-    let lastWidth = 0;
-    let lastHeight = 0;
-
-    const handleResize = () => {
-      try {
-        viewport.resize?.();
-        viewport.render?.();
-      } catch (error) {
-        // ignore resize errors
-      }
-    };
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) {
-        return;
-      }
-
-      const { width, height } = entry.contentRect;
-      const widthDelta = Math.abs(width - lastWidth);
-      const heightDelta = Math.abs(height - lastHeight);
-
-      if (widthDelta < 1 && heightDelta < 1) {
-        return;
-      }
-
-      lastWidth = width;
-      lastHeight = height;
-
-      if (resizeFrame !== null) {
-        cancelAnimationFrame(resizeFrame);
-      }
-      if (resizeTimeout !== null) {
-        clearTimeout(resizeTimeout);
-      }
-
-      const sizeDelta = widthDelta + heightDelta;
-
-      if (sizeDelta > 50) {
-        resizeFrame = requestAnimationFrame(handleResize);
-      } else {
-        resizeTimeout = setTimeout(() => {
-          resizeFrame = requestAnimationFrame(handleResize);
-        }, 150);
-      }
-    });
-
-    observer.observe(container);
-    handleResize();
-
-    return () => {
-      if (resizeFrame !== null) {
-        cancelAnimationFrame(resizeFrame);
-      }
-      if (resizeTimeout !== null) {
-        clearTimeout(resizeTimeout);
-      }
-      observer.disconnect();
-    };
-  }, [viewport]);
 
   const showNavigationOverlay = useMemo(
     () => totalFrames > 1 && !isLoading,
@@ -745,17 +627,6 @@ const ViewPortMain = ({
               data-viewport-id={viewportId}
               key={`viewport-element-${viewportId}`}
             />
-            {(() => {
-              console.log("🎯 Overlay props:", {
-                predictions: predictions.length,
-                aiImageMetadata,
-                analyzedImageId,
-                resolvedViewportId,
-                resolvedRenderingEngineId,
-                condition: predictions && predictions.length > 0,
-              });
-              return null;
-            })()}
             {predictions && predictions.length > 0 && !isDiagnosing && (
               <AILabelOverlay
                 viewportId={resolvedViewportId as string}
@@ -805,50 +676,17 @@ const ViewPortMain = ({
               </div>
             )}
 
-            {showNavigationOverlay && (
+            {showNavigationOverlay && totalFrames > 1 && (
               <>
-                <button
-                  onClick={() => prevFrame(viewportIndex)}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 z-50"
-                  aria-label="Previous frame"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={() => nextFrame(viewportIndex)}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 z-50"
-                  aria-label="Next frame"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
+                {/* Vertical scrollbar on the right edge */}
+                <FrameScrollbarComponent
+                  currentFrame={currentFrame}
+                  totalFrames={totalFrames}
+                  onFrameChange={(frame: number) => goToFrame(viewportIndex, frame)}
+                />
 
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-medium z-50">
-                  {Math.max(0, currentFrame) + 1} / {Math.max(totalFrames, 0)}
+                  {currentFrame + 1} / {totalFrames}
                 </div>
               </>
             )}
@@ -857,6 +695,7 @@ const ViewPortMain = ({
         ) : (
           <div className="w-full h-full bg-black flex items-center justify-center">
             <div className="text-center text-slate-400">
+              <ImageOff className="h-16 w-16 mx-auto mb-4 text-slate-500" />
               <div className="text-lg mb-2">No Series Selected</div>
               <div className="text-sm">
                 Please select a series from the sidebar

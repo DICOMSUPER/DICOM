@@ -29,9 +29,15 @@ export function WorkspaceLayout({
   sideBarClass,
 }: WorkspaceLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isMounted, setIsMounted] = React.useState(false);
   const breadcrumbItems = useBreadcrumb();
   const user = useSelector((state: RootState) => state.auth.user);
   const { logout: triggerLogout, isLoggingOut } = useLogout();
+
+  // Ensure component is mounted before rendering user-specific content
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleLogout = () => {
     triggerLogout();
@@ -101,14 +107,14 @@ export function WorkspaceLayout({
             <div className="p-3">
               <div className="flex items-center gap-3 mb-2 px-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                  {isMounted ? (user?.email?.charAt(0).toUpperCase() || "U") : "U"}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">
-                    {user?.email?.split("@")[0] || "User"}
+                    {isMounted ? (user?.email?.split("@")[0] || "User") : "User"}
                   </p>
                   <p className="text-xs text-foreground truncate">
-                    {user?.role?.replace(/_/g, " ") || "Role"}
+                    {isMounted ? (user?.role?.replace(/_/g, " ") || "Role") : "Role"}
                   </p>
                 </div>
               </div>

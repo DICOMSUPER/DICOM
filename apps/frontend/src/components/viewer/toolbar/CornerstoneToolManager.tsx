@@ -21,16 +21,12 @@ import {
   PlanarRotateTool,
   MagnifyTool,
   HeightTool,
-  ETDRSGridTool,
   SplineROITool,
-  ReferenceLinesTool,
   // Additional tools
   TrackballRotateTool,
   MIPJumpToClickTool,
   SegmentBidirectionalTool,
   ScaleOverlayTool,
-  OrientationMarkerTool,
-  OverlayGridTool,
   KeyImageTool,
   LabelTool,
   DragProbeTool,
@@ -38,6 +34,7 @@ import {
   EraserTool,
   annotation,
   segmentation,
+  Enums as SegmentationEnums,
   // Segmentation tools
   BrushTool,
   CircleScissorsTool,
@@ -49,6 +46,7 @@ import {
   eventTarget,
   getRenderingEngine,
   type Types,
+  Enums as CoreEnums,
 } from "@cornerstonejs/core";
 import { AnnotationType } from "@/enums/image-dicom.enum";
 import {
@@ -62,6 +60,9 @@ import {
   type SegmentationSnapshot,
 } from "@/contexts/viewer-context/segmentation-helper";
 import type { Annotation } from "@cornerstonejs/tools/types";
+import { batchedRender, immediateRender } from "@/utils/renderBatcher";
+import { extractMeasurementFromAnnotation, formatMeasurement } from "@/utils/dicom/extractCornerstoneMeasurement";
+import viewportStateManager from "@/utils/viewportStateManager";
 
 // Tool type definitions
 type NavigationTool =
@@ -88,11 +89,7 @@ type MeasurementTool =
   | "ScaleOverlay";
 type AdvancedTool =
   | "PlanarRotate"
-  | "Magnify"
-  | "ETDRSGrid"
-  | "ReferenceLines"
-  | "OrientationMarker"
-  | "OverlayGrid";
+  | "Magnify";
 type AnnotationTool =
   | "KeyImage"
   | "Label"
@@ -240,16 +237,6 @@ const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     toolClass: MagnifyTool,
     category: "advanced",
   },
-  ETDRSGrid: {
-    toolName: ETDRSGridTool.toolName,
-    toolClass: ETDRSGridTool,
-    category: "advanced",
-  },
-  ReferenceLines: {
-    toolName: ReferenceLinesTool.toolName,
-    toolClass: ReferenceLinesTool,
-    category: "advanced",
-  },
 
   // Custom tools (no Cornerstone.js tool class)
   Rotate: { toolName: "Rotate", toolClass: null, category: "custom" },
@@ -299,18 +286,6 @@ const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     toolName: ScaleOverlayTool.toolName,
     toolClass: ScaleOverlayTool,
     category: "measurement",
-  },
-
-  // Additional Advanced tools
-  OrientationMarker: {
-    toolName: OrientationMarkerTool.toolName,
-    toolClass: OrientationMarkerTool,
-    category: "advanced",
-  },
-  OverlayGrid: {
-    toolName: OverlayGridTool.toolName,
-    toolClass: OverlayGridTool,
-    category: "advanced",
   },
 
   // Annotation tools
@@ -390,8 +365,6 @@ const TOOL_BINDINGS: Record<string, ToolBindings> = {
   [MIPJumpToClickTool.toolName]: { keyboard: "j" }, // MIP jump
   [SegmentBidirectionalTool.toolName]: { keyboard: "d" }, // Segment bidirectional
   [ScaleOverlayTool.toolName]: { keyboard: "v" }, // Scale overlay
-  [OrientationMarkerTool.toolName]: { keyboard: "u" }, // Orientation marker
-  [OverlayGridTool.toolName]: { keyboard: "h" }, // Overlay grid
   [KeyImageTool.toolName]: { keyboard: "q" }, // Key image
   [LabelTool.toolName]: { keyboard: "n" }, // Label
   [DragProbeTool.toolName]: { keyboard: "f" }, // Drag probe
@@ -646,7 +619,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
           ...camera,
           rotation: (rotation + degrees) % 360,
         });
-        viewport.render();
+        batchedRender(viewport);
         console.log(`Rotated viewport ${viewportId} by ${degrees} degrees`);
       } catch (error) {
         console.error("Error rotating viewport:", error);
@@ -672,7 +645,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
             flipVertical: !flipVertical,
           });
         }
-        viewport.render();
+        batchedRender(viewport);
         console.log(`Flipped viewport ${viewportId} ${direction}`);
       } catch (error) {
         console.error("Error flipping viewport:", error);
@@ -689,7 +662,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
         setTimeout(() => {
           try {
-            viewport.render();
+            batchedRender(viewport);
             console.log(`Reset view for viewport ${viewportId}`);
           } catch (renderError) {
             console.error("Error rendering after reset:", renderError);
@@ -713,7 +686,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
             ...currentProperties,
             invert: !currentProperties.invert,
           });
-          viewport.render();
+          batchedRender(viewport);
           console.log(`Inverted color map for viewport ${viewportId}`);
         } else {
           console.warn("setProperties not available for color map inversion");
@@ -723,21 +696,15 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       }
     };
 
-    // Clear annotations handler - removes only non-database annotations from annotation.state
+    // Clear annotations handler - removes ONLY non-database annotations from annotation.state
     const handleClearAnnotations = () => {
-      if (!viewport || !viewportReady) return;
-
       try {
-        const element = viewport.element as HTMLDivElement | null;
-        if (!element) return;
-
-        // Get all annotations and filter out database annotations
-        const allAnnotations =
-          annotation.state.getAllAnnotations() as Annotation[];
+        // Get all annotations and only remove those without source: 'db'
+        const allAnnotations = annotation.state.getAllAnnotations() as Annotation[];
         let removedCount = 0;
 
         allAnnotations.forEach((annotationItem) => {
-          // Only remove annotations that don't have source: 'db' (or no source field)
+          // Only remove annotations that don't have source: 'db' in their metadata
           if (
             annotationItem?.annotationUID &&
             !isDatabaseAnnotation(annotationItem)
@@ -747,13 +714,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
           }
         });
 
-        // Render viewport after removing annotations
-        if (removedCount > 0) {
-          viewport.render?.();
-          console.log(
-            `Cleared ${removedCount} non-database annotations from viewport ${viewportId}`
-          );
-        }
+        console.log(`Cleared ${removedCount} non-database annotations (kept database annotations)`);
+        
+        // Don't manually render - Cornerstone's annotation state change events will trigger re-render automatically
       } catch (error) {
         console.error("Error clearing annotations:", error);
       }
@@ -763,7 +726,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       console.log(
         `handleClearViewportAnnotations called for viewport ${viewportId}`
       );
-      if (!viewport || !viewportReady) {
+      if (!viewport || !viewportReady || !viewportId) {
         console.warn(
           `Cannot clear viewport annotations - viewport not ready: ${viewportId}`
         );
@@ -809,9 +772,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
           }
         });
 
-        // Render viewport after removing annotations
+        // Render viewport after removing annotations using batched render
         if (removedCount > 0) {
-          viewport.render?.();
+          batchedRender(viewport);
           console.log(
             `Cleared ${removedCount} non-database annotations from viewport ${viewportId}`
           );
@@ -870,9 +833,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         }
 
         setTimeout(() => {
-          if (viewport && typeof viewport.render === "function") {
-            viewport.render();
-          }
+          batchedRender(viewport);
         }, 100);
 
         console.log(
@@ -958,9 +919,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         );
 
         setTimeout(() => {
-          if (viewport && typeof viewport.render === "function") {
-            viewport.render();
-          }
+          batchedRender(viewport);
         }, 100);
       } catch (error) {
         console.error("Error undoing annotation:", error);
@@ -1008,9 +967,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         const payload = cloneAnnotationPayload(historyEntry.snapshot);
         addAnnotationApi(payload, element);
         setTimeout(() => {
-          if (viewport && typeof viewport.render === "function") {
-            viewport.render();
-          }
+          batchedRender(viewport);
         }, 100);
         console.log(
           `Successfully redone annotation for viewport ${viewportId}`
@@ -1109,6 +1066,46 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       applySegmentationSnapshot(snapshot, "redo");
     };
 
+      // Handle viewport changes to ensure annotations/segmentations scale properly
+    useEffect(() => {
+      if (!viewport || !viewportReady || !viewportId) {
+        return;
+      }
+
+      const handleViewportChange = (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          element?: HTMLDivElement;
+          viewportId?: string;
+          segmentationId?: string;
+        }>;
+        
+        // Only handle events for this viewport
+        const eventViewportId = customEvent.detail?.viewportId;
+        if (eventViewportId && eventViewportId !== viewportId) {
+          return;
+        }
+        
+        // Trigger render to keep annotations/segmentations synchronized
+        batchedRender(viewport);
+      };
+
+      // Listen to all viewport transformation events
+      const events = [
+        CoreEnums.Events.CAMERA_MODIFIED,          // Zoom, pan, rotate
+        SegmentationEnums.Events.SEGMENTATION_DATA_MODIFIED, // Segmentation changes
+      ];
+
+      events.forEach(eventName => {
+        eventTarget.addEventListener(eventName, handleViewportChange as EventListener);
+      });
+
+      return () => {
+        events.forEach(eventName => {
+          eventTarget.removeEventListener(eventName, handleViewportChange as EventListener);
+        });
+      };
+    }, [viewport, viewportReady, viewportId]);
+
     useEffect(() => {
       if (!viewport || !viewportReady) {
         return;
@@ -1149,6 +1146,24 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
             : undefined;
         const databaseAnnotation = annotationSource === "db";
 
+        // Extract measurement from Cornerstone's calculated stats (already in mm/cm)
+        if (annotationPayload && (event.type === ToolEnums.Events.ANNOTATION_COMPLETED || event.type === ToolEnums.Events.ANNOTATION_MODIFIED)) {
+          try {
+            const measurement = extractMeasurementFromAnnotation(annotationPayload);
+            if (measurement) {
+              // Format measurement (convert mm to cm for larger values)
+              const formatted = formatMeasurement(measurement.value, measurement.unit);
+              
+              // Store measurement in annotation metadata for display
+              const metadata = (annotationPayload.metadata || {}) as Record<string, any>;
+              metadata.measurementValue = formatted.value;
+              metadata.measurementUnit = formatted.unit;
+            }
+          } catch (error) {
+            console.warn("Failed to extract annotation measurement:", error);
+          }
+        }
+
         if (
           event.type === ToolEnums.Events.ANNOTATION_COMPLETED &&
           annotationPayload &&
@@ -1187,7 +1202,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
         if (typeof viewport.render === "function") {
           try {
-            viewport.render();
+            batchedRender(viewport);
           } catch (renderError) {
             console.error(
               "Error rendering viewport after annotation event:",
@@ -1271,6 +1286,11 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       toolNames.forEach((toolName) => {
         if (toolGroup && !toolGroup.hasTool(toolName)) {
           try {
+            // Skip ScaleOverlayTool for now - it causes errors when viewport doesn't have image data
+            if (toolName === ScaleOverlayTool.toolName) {
+              console.debug('Skipping ScaleOverlayTool - prevents errors on viewports without image data');
+              return;
+            }
             toolGroup.addTool(toolName);
           } catch (error) {
             console.warn(`Failed to add tool ${toolName}:`, error);
@@ -1318,11 +1338,25 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         }
       }
 
-      // Try to add viewport to tool group
+      // Try to add viewport to tool group only if viewport has valid image data
       if (toolGroup && typeof toolGroup.addViewport === "function") {
         try {
+          // CRITICAL: Don't add viewport to tool group until it has image data
+          // This prevents ScaleOverlayTool errors when trying to render on empty viewports
+          if (!viewport) {
+            console.warn(`Viewport not available for ${viewportId}, deferring tool group attachment`);
+            return;
+          }
+          
+          const imageData = (viewport as any).getImageData?.();
+          if (!imageData || !imageData.imageData) {
+            console.warn(`Viewport ${viewportId} has no image data, deferring tool group attachment`);
+            return;
+          }
+          
           toolGroup.addViewport(viewportId, renderingEngineId);
           initialized = true;
+          console.log(`Added viewport ${viewportId} to tool group with valid image data`);
         } catch (error) {
           console.warn("Failed to add viewport to tool group:", error);
         }
@@ -1449,6 +1483,277 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     // Expose tool group for external access
     const getToolGroup = () => toolGroupRef.current;
 
+    // Helper function to find annotation by ID/UID
+    const findAnnotation = (
+      annotationId: string,
+      annotationUID?: string,
+      instanceId?: string
+    ): Annotation | null => {
+      // First try to find in current viewport
+      if (viewport && viewportReady) {
+        const element = viewport.element as HTMLDivElement | null;
+        if (element) {
+          for (const toolName of annotationToolNames) {
+            const annotations = annotation.state.getAnnotations(
+              toolName,
+              element
+            ) as Annotation[] | undefined;
+
+            if (annotations) {
+              const ann = annotations.find(
+                (a) =>
+                  a.annotationUID === annotationUID ||
+                  ((a.metadata as any)?.annotationId === annotationId &&
+                    (!instanceId || (a.metadata as any)?.instanceId === instanceId))
+              );
+              if (ann) {
+                return ann;
+              }
+            }
+          }
+        }
+      }
+
+      // If not found in current viewport, search globally across all annotations
+      try {
+        const allAnnotations = annotation.state.getAllAnnotations();
+        console.log(`[findAnnotation] Searching globally among ${allAnnotations.length} annotations`);
+        
+        // First try by annotationUID (most reliable for local annotations)
+        if (annotationUID) {
+          const annByUID = allAnnotations.find(a => a.annotationUID === annotationUID);
+          if (annByUID) {
+            console.log(`[findAnnotation] Found by UID: ${annotationUID}`);
+            return annByUID;
+          }
+        }
+        
+        // Then try by annotationId in metadata
+        const annById = allAnnotations.find(
+          (a) =>
+            ((a.metadata as any)?.annotationId === annotationId ||
+             (a.metadata as any)?.dbAnnotationId === annotationId) &&
+            (!instanceId || (a.metadata as any)?.instanceId === instanceId)
+        );
+        if (annById) {
+          console.log(`[findAnnotation] Found by ID in metadata: ${annotationId}`);
+          return annById;
+        }
+        
+        // Last resort: check if annotationId itself is a UID
+        const annByIDAsUID = allAnnotations.find(a => a.annotationUID === annotationId);
+        if (annByIDAsUID) {
+          console.log(`[findAnnotation] Found by treating annotationId as UID: ${annotationId}`);
+          return annByIDAsUID;
+        }
+        
+        console.log(`[findAnnotation] Not found. Available UIDs:`, allAnnotations.slice(0, 5).map(a => a.annotationUID));
+      } catch (error) {
+        console.warn('Error searching globally for annotation:', error);
+      }
+
+      return null;
+    };
+
+    // Handler to select/highlight an annotation
+    const handleSelectAnnotation = (params: {
+      annotationId: string;
+      annotationUID?: string;
+      instanceId?: string;
+    }) => {
+      const { annotationId, annotationUID, instanceId } = params;
+
+      console.log('[handleSelectAnnotation] Searching for:', { annotationId, annotationUID, instanceId });
+
+      try {
+        // First, deselect all currently selected annotations
+        try {
+          annotation.selection.deselectAnnotation(); // Deselect all
+          
+          // Clear highlighted/selected on all annotations globally
+          const allAnnotations = annotation.state.getAllAnnotations();
+          allAnnotations.forEach((ann) => {
+            if (ann.highlighted || ann.isSelected) {
+              ann.highlighted = false;
+              ann.isSelected = false;
+            }
+          });
+          console.log('[handleSelectAnnotation] Cleared all previous selections');
+        } catch (error) {
+          console.warn("Failed to deselect previous annotations:", error);
+        }
+
+        // Now select the new annotation
+        const foundAnnotation = findAnnotation(annotationId, annotationUID, instanceId);
+
+        if (foundAnnotation && foundAnnotation.annotationUID) {
+          // Set annotation as selected/highlighted
+          try {
+            // Use the selection API to mark as selected
+            annotation.selection.setAnnotationSelected(foundAnnotation.annotationUID, true);
+            
+            // Set properties directly on the annotation object
+            foundAnnotation.highlighted = true;
+            foundAnnotation.isSelected = true;
+            
+            // Trigger render to show the highlight on all viewports
+            if (viewport) {
+              batchedRender(viewport);
+            }
+            
+            // Also render other viewports that might display this annotation
+            try {
+              if (renderingEngineId) {
+                const engine = getRenderingEngine(renderingEngineId);
+                if (engine) {
+                  const viewports = engine.getViewports();
+                  Object.values(viewports).forEach((vp) => {
+                    if (vp && vp !== viewport) {
+                      batchedRender(vp);
+                    }
+                  });
+                }
+              }
+            } catch (e) {
+              // Ignore errors rendering other viewports
+            }
+            
+            console.log(`✅ Annotation ${annotationId} highlighted in viewer`);
+          } catch (error) {
+            console.warn("Failed to set annotation as active:", error);
+          }
+        } else {
+          console.warn(`Annotation ${annotationId} not found in viewer`);
+        }
+      } catch (error) {
+        console.error("Error selecting annotation:", error);
+      }
+    };
+
+    // Handler to deselect annotation
+    const handleDeselectAnnotation = () => {
+      if (!viewport || !viewportReady) return;
+      
+      const element = viewport.element as HTMLDivElement | null;
+      if (!element) return;
+      
+      try {
+        // Clear selection using API - deselectAnnotation() without args clears all
+        annotation.selection.deselectAnnotation();
+        
+        // Also clear highlighted/selected on all annotations in this viewport
+        for (const toolName of annotationToolNames) {
+          const annotations = annotation.state.getAnnotations(
+            toolName,
+            element
+          ) as Annotation[] | undefined;
+          
+          if (annotations) {
+            annotations.forEach((ann) => {
+              ann.highlighted = false;
+              ann.isSelected = false;
+            });
+          }
+        }
+        
+        batchedRender(viewport);
+        console.log("✅ Annotation deselected");
+      } catch (error) {
+        console.warn("Error deselecting annotation:", error);
+      }
+    };
+
+    // Handler to update annotation color
+    const handleUpdateAnnotationColor = (params: {
+      annotationId: string;
+      annotationUID?: string;
+      colorCode: string;
+      instanceId?: string;
+    }) => {
+      const { annotationId, annotationUID, colorCode, instanceId } = params;
+
+      console.log('[handleUpdateAnnotationColor] Updating color:', { annotationId, annotationUID, colorCode });
+
+      // Retry mechanism: annotation might not be immediately available
+      const updateColor = (retries = 3) => {
+        try {
+          const foundAnnotation = findAnnotation(annotationId, annotationUID, instanceId);
+
+          if (foundAnnotation && foundAnnotation.annotationUID) {
+            // Update annotation color using Cornerstone's style API
+            annotation.config.style.setAnnotationStyles(foundAnnotation.annotationUID, {
+              color: colorCode,
+            });
+
+            // Trigger render to show the updated color
+            if (viewport) {
+              batchedRender(viewport);
+            } else if (renderingEngineId) {
+              // If no viewport but we have renderingEngineId, try to render all viewports in that engine
+              try {
+                const engine = getRenderingEngine(renderingEngineId);
+                if (engine) {
+                  const viewports = engine.getViewports();
+                  for (const vp of Object.values(viewports)) {
+                    if (vp) {
+                      batchedRender(vp);
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn('Error rendering viewports for color update:', e);
+              }
+            }
+            console.log(`✅ Annotation ${annotationId} color updated to ${colorCode}`);
+          } else if (retries > 0) {
+            // Retry if annotation not found yet
+            console.log(`[handleUpdateAnnotationColor] Annotation not found, retrying... (${retries} left)`);
+            setTimeout(() => updateColor(retries - 1), 100);
+          } else {
+            console.warn(`Annotation ${annotationId} not found in viewer for color update after retries`);
+          }
+        } catch (error) {
+          if (retries > 0) {
+            setTimeout(() => updateColor(retries - 1), 100);
+          } else {
+            console.error("Error updating annotation color:", error);
+          }
+        }
+      };
+      
+      updateColor();
+    };
+
+    // Handler to lock/unlock annotation
+    const handleLockAnnotation = (params: {
+      annotationId: string;
+      annotationUID?: string;
+      locked: boolean;
+      instanceId?: string;
+    }) => {
+      const { annotationId, annotationUID, locked, instanceId } = params;
+
+      try {
+        const foundAnnotation = findAnnotation(annotationId, annotationUID, instanceId);
+
+        if (foundAnnotation && foundAnnotation.annotationUID) {
+          // Use Cornerstone's locking API
+          annotation.locking.setAnnotationLocked(foundAnnotation.annotationUID, locked);
+          
+          // Also set isLocked property directly
+          foundAnnotation.isLocked = locked;
+
+          // Trigger render
+          batchedRender(viewport);
+          console.log(`✅ Annotation ${annotationId} ${locked ? 'locked' : 'unlocked'}`);
+        } else {
+          console.warn(`Annotation ${annotationId} not found in viewer for lock operation`);
+        }
+      } catch (error) {
+        console.error("Error locking/unlocking annotation:", error);
+      }
+    };
+
     // Expose tool handlers for external access
     const getToolHandlers = () => ({
       rotateViewport: handleRotateViewport,
@@ -1462,6 +1767,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       redoAnnotation: handleRedoAnnotation,
       undoSegmentation: handleUndoSegmentation,
       redoSegmentation: handleRedoSegmentation,
+      selectAnnotation: handleSelectAnnotation,
+      deselectAnnotation: handleDeselectAnnotation,
+      updateAnnotationColor: handleUpdateAnnotationColor,
+      lockAnnotation: handleLockAnnotation,
     });
 
     // Expose methods via ref

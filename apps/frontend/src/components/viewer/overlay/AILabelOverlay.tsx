@@ -22,6 +22,7 @@ export const AILabelOverlay = ({
   const [overlayItems, setOverlayItems] = useState<any[]>([]);
   const [isVisible, setIsVisible] = useState(true);
   const animationFrameRef = useRef<number | null>(null);
+  const cameraModifiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updatePositions = useCallback(() => {
     console.log("🔄 updatePositions called");
@@ -152,14 +153,32 @@ export const AILabelOverlay = ({
       }
     };
 
-    // Xử lý camera modified (zoom/pan)
+    // Xử lý camera modified (zoom/pan) - debounced to prevent excessive RAF calls
     const onCameraModified = () => {
       if (!isVisible) return;
 
+      // Cancel any pending RAF
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
-      animationFrameRef.current = requestAnimationFrame(updatePositions);
+
+      // Cancel any pending timeout
+      if (cameraModifiedTimeoutRef.current) {
+        clearTimeout(cameraModifiedTimeoutRef.current);
+        cameraModifiedTimeoutRef.current = null;
+      }
+
+      // Debounce camera modifications to prevent excessive RAF calls
+      cameraModifiedTimeoutRef.current = setTimeout(() => {
+        if (isVisible && !animationFrameRef.current) {
+          animationFrameRef.current = requestAnimationFrame(() => {
+            updatePositions();
+            animationFrameRef.current = null;
+          });
+        }
+        cameraModifiedTimeoutRef.current = null;
+      }, 16); // ~60fps
     };
 
     // Gọi ngay lần đầu để khởi tạo
@@ -176,6 +195,11 @@ export const AILabelOverlay = ({
       element.removeEventListener(Enums.Events.CAMERA_MODIFIED, onCameraModified);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (cameraModifiedTimeoutRef.current) {
+        clearTimeout(cameraModifiedTimeoutRef.current);
+        cameraModifiedTimeoutRef.current = null;
       }
     };
   }, [viewportId, renderingEngineId, targetImageId, updatePositions, isVisible]);

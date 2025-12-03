@@ -39,6 +39,9 @@ import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import type { Annotation } from "@cornerstonejs/tools/types";
 import { AnnotationType } from "@/enums/image-dicom.enum";
+import { viewerEventService, ViewerEvents } from "@/services/ViewerEventService";
+import viewportStateManager from "@/utils/viewportStateManager";
+import { ViewportStatus } from "@/types/viewport-state";
 import {
   createSegmentationHistoryHelpers,
   ensureViewportLabelmapSegmentation,
@@ -59,6 +62,7 @@ import {
 import { v4 as uuidv4 } from "uuid"; // Rename v4 to uuidv4 for clarity
 import { ImageSegmentationLayer } from "@/interfaces/image-dicom/image-segmentation-layer.interface";
 import { toast } from "sonner";
+import { batchedRender } from "@/utils/renderBatcher";
 
 export type ToolType =
   | "WindowLevel"
@@ -78,8 +82,6 @@ export type ToolType =
   | "SplineROI"
   | "Magnify"
   | "PlanarRotate"
-  | "ETDRSGrid"
-  | "ReferenceLines"
   | "Reset"
   | "Invert"
   | "Rotate"
@@ -90,8 +92,6 @@ export type ToolType =
   | "MIPJumpToClick"
   | "SegmentBidirectional"
   | "ScaleOverlay"
-  | "OrientationMarker"
-  | "OverlayGrid"
   | "KeyImage"
   | "Label"
   | "DragProbe"
@@ -939,6 +939,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const cornerstoneInitializedRef = useRef(false);
   const cornerstoneInitPromiseRef = useRef<Promise<void> | null>(null);
   const mountedRef = useRef(true);
+  // Ref to track rendering engine IDs for cleanup (avoids stale closures)
+  const renderingEngineIdsRef = useRef<Map<number, string>>(new Map());
 
   useEffect(() => {
     return () => {
@@ -1408,6 +1410,52 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         try {
           addAnnotationApi(payload, viewportElement);
           tracker.add(record.id);
+          
+          // Apply settings (color and lock state) after annotation is added
+          if (payload.annotationUID) {
+            const annotationUID = payload.annotationUID; // Store for closure
+            
+            // Retry mechanism: annotation might not be immediately available
+            const applySettings = (retries = 3) => {
+              requestAnimationFrame(() => {
+                try {
+                  // Verify annotation exists before applying settings
+                  const allAnnotations = annotation.state.getAllAnnotations();
+                  const exists = allAnnotations.some(a => a.annotationUID === annotationUID);
+                  
+                  if (exists) {
+                    // Apply color if available
+                    if (record.colorCode) {
+                      annotation.config.style.setAnnotationStyles(annotationUID, {
+                        color: record.colorCode,
+                      });
+                      console.log(`✅ Applied color ${record.colorCode} to annotation ${record.id}`);
+                    }
+                    
+                    // Ensure database annotations are locked by default
+                    try {
+                      annotation.locking.setAnnotationLocked(annotationUID, true);
+                      console.log(`✅ Locked database annotation ${record.id}`);
+                    } catch (lockError) {
+                      console.warn(`Failed to lock annotation ${record.id}:`, lockError);
+                    }
+                  } else if (retries > 0) {
+                    // Retry if annotation not found yet
+                    setTimeout(() => applySettings(retries - 1), 50);
+                  } else {
+                    console.warn(`Failed to apply settings to annotation ${record.id}: annotation not found after retries`);
+                  }
+                } catch (error) {
+                  if (retries > 0) {
+                    setTimeout(() => applySettings(retries - 1), 50);
+                  } else {
+                    console.warn(`Failed to apply settings to annotation ${record.id}:`, error);
+                  }
+                }
+              });
+            };
+            applySettings();
+          }
         } catch (addError) {
           console.error("Failed to render annotation", record.id, addError);
         }
@@ -1692,16 +1740,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         // Ensure segmentation is rendered on the current frame
         // This helps when switching between frames in a multi-frame series
-        requestAnimationFrame(() => {
-          try {
-            stackViewport.render();
-          } catch (error) {
-            console.warn(
-              "[Segmentation] Failed to re-render after frame change:",
-              error
-            );
+        // Use batched render directly - no need for additional RAF wrapper
+        try {
+          const currentViewport = getStackViewport(viewport);
+          if (currentViewport === stackViewport) {
+            batchedRender(stackViewport);
           }
-        });
+        } catch (error) {
+          console.warn(
+            "[Segmentation] Failed to re-render after frame change:",
+            error
+          );
+        }
       };
 
       const handleSegmentationModified = async (evt: Event) => {
@@ -1924,6 +1974,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const setRenderingEngineId = useCallback(
     (viewport: number, renderingEngineId: string) => {
+      if (renderingEngineId) {
+        renderingEngineIdsRef.current.set(viewport, renderingEngineId);
+      } else {
+        renderingEngineIdsRef.current.delete(viewport);
+      }
       dispatch({
         type: "SET_RENDERING_ENGINE_ID",
         viewport,
@@ -2007,6 +2062,14 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const viewportId = getViewportId(viewport);
 
       if (viewportId) {
+        // Transition viewport to disposing state
+        try {
+          viewportStateManager.transition(viewportId, ViewportStatus.DISPOSING);
+        } catch (error) {
+          // State manager not ready, continue without state tracking
+          console.debug('Could not transition viewport to disposing');
+        }
+        
         clearViewportLabelmapSegmentation(viewportId);
       }
 
@@ -2015,19 +2078,40 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           const engine = getRenderingEngine(engineId);
           if (engine && viewportId) {
             try {
-              engine.disableElement(viewportId);
+              // Check if the viewport actually exists before disabling
+              const viewport = engine.getViewport(viewportId);
+              if (viewport) {
+                engine.disableElement(viewportId);
+              }
             } catch (_error) {
-              // ignore disable errors
+              // Silently ignore disable errors - viewport may already be disabled or in invalid state
+              console.debug(`Skipping disableElement for ${viewportId}:`, _error);
             }
-            const remainingViewports = engine.getViewports?.() ?? {};
-            if (
-              !remainingViewports ||
-              Object.keys(remainingViewports).length === 0
-            ) {
-              engine.destroy();
+            // Check if any other viewports are using this engine
+            // Use ref to avoid stale closure issues
+            let engineInUse = false;
+            for (const [otherViewport, otherEngineId] of renderingEngineIdsRef.current.entries()) {
+              if (otherViewport !== viewport && otherEngineId === engineId) {
+                engineInUse = true;
+                break;
+              }
+            }
+            
+            // Only destroy if no other viewports are using this engine
+            if (!engineInUse) {
+              try {
+                engine.destroy();
+              } catch (destroyError) {
+                console.warn("Error destroying rendering engine:", destroyError);
+              }
             }
           } else if (engine && !viewportId) {
-            engine.destroy();
+            // No viewport ID means we should destroy the engine
+            try {
+              engine.destroy();
+            } catch (destroyError) {
+              console.warn("Error destroying rendering engine:", destroyError);
+            }
           }
         } catch (_error) {
           // ignore cleanup errors
@@ -2039,6 +2123,16 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       clearAnnotationHistoryForViewport(viewport);
       clearDbAnnotationsForViewport(viewport);
       resetSegmentationHistoryForViewport(viewport);
+      
+      // Final disposal of viewport state
+      if (viewportId) {
+        try {
+          viewportStateManager.dispose(viewportId);
+        } catch (error) {
+          // State manager not ready, continue without state tracking
+          console.debug('Could not dispose viewport state');
+        }
+      }
     },
     [
       getRenderingEngineId,
@@ -2082,7 +2176,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           typeof stackViewport.render === "function"
         ) {
           stackViewport.setImageIdIndex(newIndex);
-          stackViewport.render();
+          batchedRender(stackViewport);
           prefetchImages(imageIds, newIndex);
           setViewportRuntimeState(viewport, (prev) => ({
             ...prev,
@@ -2250,6 +2344,23 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         setViewportRuntimeState(viewport, updater);
       };
 
+      // Initialize or get viewport ID for state management
+      const viewportId = getViewportId(viewport) || `viewport-${viewport}`;
+      
+      // Initialize viewport state if needed (gracefully handle if state manager isn't ready)
+      try {
+        const currentState = viewportStateManager.getState(viewportId);
+        if (!currentState || currentState.status === ViewportStatus.DISPOSED) {
+          viewportStateManager.initialize(viewportId);
+        }
+        
+        // Transition to LOADING state
+        viewportStateManager.startLoading(viewportId);
+      } catch (error) {
+        // State manager initialization failed, continue without it
+        console.debug('Viewport state manager not ready, continuing without state tracking');
+      }
+
       safeUpdateRuntime((prev) => ({
         ...prev,
         seriesId,
@@ -2299,8 +2410,17 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         if (!renderingEngineId || !renderingEngine) {
           renderingEngineId = `renderingEngine_${currentViewportId}`;
-          setRenderingEngineId(viewport, renderingEngineId);
-          renderingEngine = new RenderingEngine(renderingEngineId);
+          
+          // Check if engine with this ID already exists (prevent duplicates)
+          const existingEngine = getRenderingEngine(renderingEngineId);
+          if (existingEngine) {
+            // Engine already exists, use it instead of creating new one
+            renderingEngine = existingEngine;
+          } else {
+            // Create new engine only if it doesn't exist
+            setRenderingEngineId(viewport, renderingEngineId);
+            renderingEngine = new RenderingEngine(renderingEngineId);
+          }
         } else if (forceRebuild) {
           segmentation.removeAllSegmentationRepresentations();
           segmentation.removeAllSegmentations();
@@ -2396,6 +2516,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                 currentFrame: currentIndex,
                 totalFrames: imageIds.length,
               }));
+              
+              // Transition viewport to READY state with image data
+              try {
+                const imageData = existingViewport.getImageData?.();
+                if (imageData) {
+                  viewportStateManager.setImageData(viewportId, imageData);
+                }
+              } catch (error) {
+                // State manager not ready, continue without state tracking
+                console.debug('Could not update viewport state');
+              }
+              
               return;
             }
 
@@ -2411,7 +2543,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
             existingViewport.resize?.();
             existingViewport.resetCamera();
-            existingViewport.render();
+            batchedRender(existingViewport);
 
             // Diagnostics: verify per-viewport imageId->instanceId mapping
             if (imageIdToInstance) {
@@ -2521,7 +2653,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         readyViewport.resize?.();
         readyViewport.resetCamera();
-        readyViewport.render();
+        batchedRender(readyViewport);
 
         // Diagnostics: verify per-viewport imageId->instanceId mapping
         if (imageIdToInstance) {
@@ -2567,9 +2699,29 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           currentFrame: 0,
           totalFrames: imageIds.length,
         }));
+        
+        // Transition viewport to READY state with image data
+        try {
+          const imageData = readyViewport.getImageData?.();
+          if (imageData) {
+            viewportStateManager.setImageData(viewportId, imageData);
+          }
+        } catch (stateError) {
+          // State manager not ready, continue without state tracking
+          console.debug('Could not update viewport state');
+        }
       } catch (error) {
         if (!bailIfStale() && (error as Error)?.name !== "AbortError") {
           console.error("Failed to load series into viewport", error);
+          
+          // Transition viewport to ERROR state
+          try {
+            viewportStateManager.setError(viewportId, error as Error);
+          } catch (stateError) {
+            // State manager not ready, continue without state tracking
+            console.debug('Could not update viewport error state');
+          }
+          
           safeUpdateRuntime((prev) => ({
             ...prev,
             isLoading: false,
@@ -2711,12 +2863,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         // If current selected layer was deleted, select first available
         if (selectedLayer && !mergedLayers.has(selectedLayer)) {
           selectedLayer =
-            mergedLayers.size > 0 ? mergedLayers.keys().next().value : null;
+            mergedLayers.size > 0 ? (mergedLayers.keys().next().value ?? null) : null;
         }
 
         // If no layer selected but layers exist, select first
         if (!selectedLayer && mergedLayers.size > 0) {
-          selectedLayer = mergedLayers.keys().next().value;
+          selectedLayer = mergedLayers.keys().next().value ?? null;
         }
 
         dispatch({
@@ -2782,8 +2934,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     console.log("Reset view for viewport:", state.activeViewport);
     updateViewportTransform(state.activeViewport, defaultTransform);
 
-    // Dispatch event to Cornerstone.js for actual viewport reset
-    window.dispatchEvent(new CustomEvent("resetView"));
+    // Publish event via pub/sub service
+    viewerEventService.publish(ViewerEvents.RESET_VIEW);
   };
 
   const rotateViewport = (degrees: number) => {
@@ -2795,16 +2947,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       "degrees"
     );
 
-    // Dispatch event to Cornerstone.js for actual viewport rotation
-    // Use actual viewport ID from context state or fallback to Cornerstone.js standard ID
+    // Publish event via pub/sub service
     const viewportId =
       state.viewportIds.get(state.activeViewport) ||
       state.activeViewport.toString();
-    window.dispatchEvent(
-      new CustomEvent("rotateViewport", {
-        detail: { degrees, viewportId },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.ROTATE_VIEWPORT, { degrees, viewportId });
 
     // Note: Don't update context state here - let Cornerstone.js handle the actual rotation
     // The context state is just for UI tracking, not the actual viewport state
@@ -2813,16 +2960,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const flipViewport = (direction: "horizontal" | "vertical") => {
     console.log("Flip viewport:", state.activeViewport, direction);
 
-    // Dispatch event to Cornerstone.js for actual viewport flip
-    // Use actual viewport ID from context state or fallback to Cornerstone.js standard ID
+    // Publish event via pub/sub service
     const viewportId =
       state.viewportIds.get(state.activeViewport) ||
       state.activeViewport.toString();
-    window.dispatchEvent(
-      new CustomEvent("flipViewport", {
-        detail: { direction, viewportId },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.FLIP_VIEWPORT, { direction, viewportId });
 
     // Note: Don't update context state here - let Cornerstone.js handle the actual flip
     // The context state is just for UI tracking, not the actual viewport state
@@ -2830,8 +2972,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const invertViewport = () => {
     console.log("Invert viewport:", state.activeViewport);
-    // Dispatch event to trigger color map inversion
-    window.dispatchEvent(new CustomEvent("invertColorMap"));
+    // Publish event via pub/sub service
+    viewerEventService.publish(ViewerEvents.INVERT_COLORMAP);
   };
 
   const clearAnnotations = () => {
@@ -2842,8 +2984,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     state.viewportSeries.forEach((_, viewportIndex) => {
       clearAnnotationHistoryForViewport(viewportIndex);
     });
-    // Dispatch event without viewport ID filter so all viewports respond
-    window.dispatchEvent(new CustomEvent("clearAnnotations"));
+    // Publish event via pub/sub service
+    viewerEventService.publish(ViewerEvents.CLEAR_ANNOTATIONS);
   };
 
   const clearViewportAnnotations = () => {
@@ -2854,11 +2996,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     const activeViewportId =
       state.viewportIds.get(state.activeViewport) ||
       state.activeViewport.toString();
-    window.dispatchEvent(
-      new CustomEvent("clearViewportAnnotations", {
-        detail: { activeViewportId },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, {
+      activeViewportId,
+    });
   };
 
   const undoAnnotation = () => {
@@ -2867,14 +3007,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     const activeViewportId =
       state.viewportIds.get(viewportIndex) || viewportIndex.toString();
     const historyEntry = consumeUndoEntry(viewportIndex);
-    window.dispatchEvent(
-      new CustomEvent("undoAnnotation", {
-        detail: {
-          activeViewportId,
-          entry: historyEntry ? cloneHistoryEntry(historyEntry) : undefined,
-        },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.UNDO_ANNOTATION, {
+      activeViewportId,
+      entry: historyEntry ? cloneHistoryEntry(historyEntry) : undefined,
+    });
   };
 
   const redoAnnotation = () => {
@@ -2886,14 +3022,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     if (!historyEntry) {
       return;
     }
-    window.dispatchEvent(
-      new CustomEvent("redoAnnotation", {
-        detail: {
-          activeViewportId,
-          entry: cloneHistoryEntry(historyEntry),
-        },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.REDO_ANNOTATION, {
+      activeViewportId,
+      entry: cloneHistoryEntry(historyEntry),
+    });
   };
 
   const undoSegmentation = () => {
@@ -2912,15 +3044,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     removeLatestLayerSnapshot(layerId);
     notifySegmentationHistoryChange();
 
-    window.dispatchEvent(
-      new CustomEvent("undoSegmentation", {
-        detail: {
-          activeViewportId,
-          layerId,
-          entry: historyEntry,
-        },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.UNDO_SEGMENTATION, {
+      activeViewportId,
+      layerId,
+      entry: historyEntry,
+    });
   };
 
   const redoSegmentation = () => {
@@ -2943,15 +3071,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     }
     notifySegmentationHistoryChange();
 
-    window.dispatchEvent(
-      new CustomEvent("redoSegmentation", {
-        detail: {
-          activeViewportId,
-          layerId,
-          entry: historyEntry,
-        },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.REDO_SEGMENTATION, {
+      activeViewportId,
+      layerId,
+      entry: historyEntry,
+    });
   };
 
   // AI Diagnosis - dispatch event to ViewPortMain
@@ -2978,17 +3102,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         versionName: options?.versionName,
       });
 
-      window.dispatchEvent(
-        new CustomEvent("diagnoseViewport", {
-          detail: {
-            viewportId,
-            viewportIndex: viewport,
-            modelId: options?.modelId,
-            modelName: options?.modelName,
-            versionName: options?.versionName,
-          },
-        })
-      );
+      viewerEventService.publish(ViewerEvents.DIAGNOSE_VIEWPORT, {
+        viewportId,
+        viewportIndex: viewport,
+        modelId: options?.modelId,
+        modelName: options?.modelName,
+        versionName: options?.versionName,
+      });
     },
     [getViewportId]
   );
@@ -3004,11 +3124,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
       console.log("🗑️ Clearing AI annotations for viewport:", viewport);
 
-      window.dispatchEvent(
-        new CustomEvent("clearAIAnnotations", {
-          detail: { viewportId },
-        })
-      );
+      viewerEventService.publish(ViewerEvents.CLEAR_AI_ANNOTATIONS, { viewportId });
     },
     [getViewportId]
   );
@@ -3016,19 +3132,13 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const toggleAnnotations = useCallback(() => {
     const newShowAnnotations = !state.showAnnotations;
     
-    // Update ref immediately for synchronous access
     showAnnotationsRef.current = newShowAnnotations;
-    
-    // Dispatch state update
     dispatch({ type: "TOGGLE_ANNOTATIONS" });
 
-    // Load or unload annotations for all viewports
-    // Use refs to get current values to avoid stale closures
     const currentViewportSeries = state.viewportSeries;
     const currentViewportIds = state.viewportIds;
     
     if (newShowAnnotations) {
-      // Load annotations for all viewports that have series loaded
       currentViewportSeries.forEach((series, viewport) => {
         const viewportElement = viewportElementsRef.current.get(viewport);
         const viewportId = currentViewportIds.get(viewport);
@@ -3039,12 +3149,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             viewportId,
             viewportElement,
             forceReload: false,
-            checkShowAnnotations: false, // Bypass check since we know we're enabling
+            checkShowAnnotations: false,
           });
         }
       });
     } else {
-      // Unload annotations from all viewports
       currentViewportSeries.forEach((series, viewport) => {
         const viewportElement = viewportElementsRef.current.get(viewport);
         if (viewportElement) {
@@ -3053,12 +3162,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    // Dispatch event to all viewports to toggle annotation visibility
-    window.dispatchEvent(
-      new CustomEvent("toggleAnnotations", {
-        detail: { showAnnotations: newShowAnnotations },
-      })
-    );
+    viewerEventService.publish(ViewerEvents.TOGGLE_ANNOTATIONS, {
+      showAnnotations: newShowAnnotations,
+    });
 
     console.log("👁️ Toggled annotation visibility:", newShowAnnotations);
   }, [state.showAnnotations, state.viewportSeries, state.viewportIds, loadDatabaseAnnotationsForViewport, unloadAnnotationsFromViewport]);
@@ -3360,62 +3466,120 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       return getAllLayerSnapshots(selectedLayerId);
     }, [state.selectedSegmentationLayer, getAllLayerSnapshots]);
 
-  const value: ViewerContextType = {
-    state,
-    setActiveTool,
-    setLayout,
-    setActiveViewport,
-    resetView,
-    rotateViewport,
-    flipViewport,
-    invertViewport,
-    clearAnnotations,
-    clearViewportAnnotations,
-    toggleAnnotations,
-    undoAnnotation,
-    redoAnnotation,
-    undoSegmentation,
-    redoSegmentation,
-    recordAnnotationHistoryEntry,
-    updateAnnotationHistoryEntry,
-    removeAnnotationHistoryEntry,
-    setViewportSeries,
-    getViewportSeries,
-    getViewportTransform,
-    setViewportId,
-    getViewportId,
-    setRenderingEngineId,
-    getRenderingEngineId,
-    registerViewportElement,
-    disposeViewport,
-    loadSeriesIntoViewport,
-    getViewportState: getViewportRuntimeState,
-    getStackViewport,
-    goToFrame,
-    nextFrame,
-    prevFrame,
-    refreshViewport,
-    diagnosisViewport,
-    clearAIAnnotations,
-    toggleSegmentationControlPanel,
-    isSegmentationControlPanelOpen,
-    addSegmentationLayer,
-    deleteSegmentationLayer,
-    selectSegmentationLayer,
-    updateSegmentationLayerMetadata,
-    toggleSegmentationLayerVisibility,
-    getSegmentationLayers,
-    getCurrentSegmentationLayerIndex,
-    getSelectedLayerCount,
-    isSegmentationVisible,
-    toggleSegmentationView,
-    getSegmentationHistoryState,
-    getCurrentSegmentationSnapshot,
-    getCurrentLayerSnapshot,
-    getAllLayerSnapshots,
-    getAllCurrentLayerSnapshots,
-    refetchSegmentationLayers,
-  };
+  const value: ViewerContextType = useMemo(
+    () => ({
+      state,
+      setActiveTool,
+      setLayout,
+      setActiveViewport,
+      resetView,
+      rotateViewport,
+      flipViewport,
+      invertViewport,
+      clearAnnotations,
+      clearViewportAnnotations,
+      toggleAnnotations,
+      undoAnnotation,
+      redoAnnotation,
+      undoSegmentation,
+      redoSegmentation,
+      recordAnnotationHistoryEntry,
+      updateAnnotationHistoryEntry,
+      removeAnnotationHistoryEntry,
+      setViewportSeries,
+      getViewportSeries,
+      getViewportTransform,
+      setViewportId,
+      getViewportId,
+      setRenderingEngineId,
+      getRenderingEngineId,
+      registerViewportElement,
+      disposeViewport,
+      loadSeriesIntoViewport,
+      getViewportState: getViewportRuntimeState,
+      getStackViewport,
+      goToFrame,
+      nextFrame,
+      prevFrame,
+      refreshViewport,
+      diagnosisViewport,
+      clearAIAnnotations,
+      toggleSegmentationControlPanel,
+      isSegmentationControlPanelOpen,
+      addSegmentationLayer,
+      deleteSegmentationLayer,
+      selectSegmentationLayer,
+      updateSegmentationLayerMetadata,
+      toggleSegmentationLayerVisibility,
+      getSegmentationLayers,
+      getCurrentSegmentationLayerIndex,
+      getSelectedLayerCount,
+      isSegmentationVisible,
+      toggleSegmentationView,
+      getSegmentationHistoryState,
+      getCurrentSegmentationSnapshot,
+      getCurrentLayerSnapshot,
+      getAllLayerSnapshots,
+      getAllCurrentLayerSnapshots,
+      refetchSegmentationLayers,
+    }),
+    [
+      state,
+      setActiveTool,
+      setLayout,
+      setActiveViewport,
+      resetView,
+      rotateViewport,
+      flipViewport,
+      invertViewport,
+      clearAnnotations,
+      clearViewportAnnotations,
+      toggleAnnotations,
+      undoAnnotation,
+      redoAnnotation,
+      undoSegmentation,
+      redoSegmentation,
+      recordAnnotationHistoryEntry,
+      updateAnnotationHistoryEntry,
+      removeAnnotationHistoryEntry,
+      setViewportSeries,
+      getViewportSeries,
+      getViewportTransform,
+      setViewportId,
+      getViewportId,
+      setRenderingEngineId,
+      getRenderingEngineId,
+      registerViewportElement,
+      disposeViewport,
+      loadSeriesIntoViewport,
+      getViewportRuntimeState,
+      getStackViewport,
+      goToFrame,
+      nextFrame,
+      prevFrame,
+      refreshViewport,
+      diagnosisViewport,
+      clearAIAnnotations,
+      toggleSegmentationControlPanel,
+      isSegmentationControlPanelOpen,
+      addSegmentationLayer,
+      deleteSegmentationLayer,
+      selectSegmentationLayer,
+      updateSegmentationLayerMetadata,
+      toggleSegmentationLayerVisibility,
+      getSegmentationLayers,
+      getCurrentSegmentationLayerIndex,
+      getSelectedLayerCount,
+      isSegmentationVisible,
+      toggleSegmentationView,
+      getSegmentationHistoryState,
+      getCurrentSegmentationSnapshot,
+      getCurrentLayerSnapshot,
+      getAllLayerSnapshots,
+      getAllCurrentLayerSnapshots,
+      refetchSegmentationLayers,
+    ]
+  );
 
   return (
     <ViewerContext.Provider value={value}>{children}</ViewerContext.Provider>

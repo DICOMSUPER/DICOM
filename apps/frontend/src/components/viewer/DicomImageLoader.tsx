@@ -6,6 +6,96 @@ import { init as csToolsInit } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { metaData } from "@cornerstonejs/core";
 import { loadImage } from "@cornerstonejs/core/loaders/imageLoader";
+import { batchedRender } from "@/utils/renderBatcher";
+
+// Frame scrollbar component with draggable thumb
+function FrameScrollbarComponent({
+  currentFrame,
+  totalFrames,
+  onFrameChange,
+}: {
+  currentFrame: number;
+  totalFrames: number;
+  onFrameChange: (frame: number) => void;
+}) {
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startFrameRef = useRef(0);
+
+  const thumbHeight = Math.max(20, (100 / totalFrames) * 100); // Minimum 20px, scales with total frames
+  const thumbPosition = (currentFrame / (totalFrames - 1)) * 100;
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!scrollbarRef.current || !thumbRef.current) return;
+      
+      const rect = scrollbarRef.current.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
+      const clickPercent = (clickY / rect.height) * 100;
+
+      // Check if clicking on thumb
+      const thumbRect = thumbRef.current.getBoundingClientRect();
+      const thumbTop = thumbRect.top - rect.top;
+      const thumbBottom = thumbTop + thumbRect.height;
+
+      if (clickY >= thumbTop && clickY <= thumbBottom) {
+        // Start dragging thumb
+        isDraggingRef.current = true;
+        startYRef.current = e.clientY;
+        startFrameRef.current = currentFrame;
+
+        const handleMouseMove = (e: MouseEvent) => {
+          if (!isDraggingRef.current || !scrollbarRef.current) return;
+
+          const rect = scrollbarRef.current.getBoundingClientRect();
+          const deltaY = e.clientY - startYRef.current;
+          const deltaPercent = (deltaY / rect.height) * 100;
+          const deltaFrames = Math.round((deltaPercent / 100) * (totalFrames - 1));
+
+          const newFrame = startFrameRef.current + deltaFrames;
+          onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
+        };
+
+        const handleMouseUp = () => {
+          isDraggingRef.current = false;
+          document.removeEventListener("mousemove", handleMouseMove);
+          document.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      } else {
+        // Jump to clicked position
+        const newFrame = Math.round((clickPercent / 100) * (totalFrames - 1));
+        onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
+      }
+    },
+    [currentFrame, totalFrames, onFrameChange]
+  );
+
+  return (
+    <div
+      ref={scrollbarRef}
+      className="absolute right-0 top-0 bottom-0 w-4 z-50 cursor-pointer"
+      onMouseDown={handleMouseDown}
+    >
+      {/* Track */}
+      <div className="absolute inset-0 bg-gray-800/30 hover:bg-gray-800/50 transition-colors" />
+      
+      {/* Thumb */}
+      <div
+        ref={thumbRef}
+        className="absolute right-0 w-3 bg-gray-400/80 hover:bg-gray-300 rounded-sm transition-all cursor-grab active:cursor-grabbing"
+        style={{
+          top: `${Math.max(0, Math.min(100 - thumbHeight, thumbPosition - (thumbHeight / 2)))}%`,
+          height: `${thumbHeight}%`,
+        }}
+      />
+    </div>
+  );
+}
 
 export default function DicomImageLoader({
   imageId,
@@ -54,7 +144,7 @@ export default function DicomImageLoader({
       if (newFrame < 0) newFrame = 0;
 
       viewport.setImageIdIndex(newFrame);
-      viewport.render();
+      batchedRender(viewport);
       setCurrentFrame(newFrame);
     },
     [viewport, totalFrames]
@@ -74,22 +164,61 @@ export default function DicomImageLoader({
     goToFrame(newFrame);
   }, [viewport, currentFrame, totalFrames, goToFrame]);
 
-  // Handle mouse wheel scrolling
+  // Handle mouse wheel scrolling - optimized with throttling to prevent main thread blocking
+  const wheelHandlerRef = useRef<{
+    rafId: number | null;
+    lastTime: number;
+    pendingDirection: number | null;
+  }>({ rafId: null, lastTime: 0, pendingDirection: null });
+
   const handleWheel = useCallback(
     (event: WheelEvent) => {
       if (!hasFrameNavigation || totalFrames <= 1) return;
 
+      // Prevent default immediately (lightweight operation)
       event.preventDefault();
 
-      // Determine scroll direction
-      const delta = event.deltaY;
+      const now = performance.now();
+      const timeSinceLastCall = now - wheelHandlerRef.current.lastTime;
+      const throttleDelay = 50; // Throttle to max 20 calls per second
 
-      if (delta > 0) {
-        // Scrolling down/away - next frame
-        nextFrame();
-      } else if (delta < 0) {
-        // Scrolling up/toward - previous frame
-        prevFrame();
+      // Determine direction
+      const direction = event.deltaY > 0 ? 1 : event.deltaY < 0 ? -1 : 0;
+      if (direction === 0) return;
+
+      // Update pending direction
+      wheelHandlerRef.current.pendingDirection = direction;
+
+      // If we have a pending RAF, don't create a new one
+      if (wheelHandlerRef.current.rafId !== null) {
+        return;
+      }
+
+      // Throttle: only process if enough time has passed
+      if (timeSinceLastCall < throttleDelay) {
+        // Schedule for later
+        wheelHandlerRef.current.rafId = requestAnimationFrame(() => {
+          const direction = wheelHandlerRef.current.pendingDirection;
+          wheelHandlerRef.current.rafId = null;
+          wheelHandlerRef.current.lastTime = performance.now();
+          wheelHandlerRef.current.pendingDirection = null;
+
+          if (direction === 1) {
+            nextFrame();
+          } else if (direction === -1) {
+            prevFrame();
+          }
+        });
+      } else {
+        // Process immediately
+        wheelHandlerRef.current.lastTime = now;
+        wheelHandlerRef.current.pendingDirection = null;
+        
+        if (direction === 1) {
+          nextFrame();
+        } else if (direction === -1) {
+          prevFrame();
+        }
       }
     },
     [hasFrameNavigation, totalFrames, nextFrame, prevFrame]
@@ -197,6 +326,12 @@ export default function DicomImageLoader({
     element.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      // Cleanup wheel handler RAF
+      if (wheelHandlerRef.current.rafId !== null) {
+        cancelAnimationFrame(wheelHandlerRef.current.rafId);
+        wheelHandlerRef.current.rafId = null;
+      }
+      
       element.removeEventListener("wheel", handleWheel);
       element.removeEventListener("keydown", handleKeyDown);
     };
@@ -234,50 +369,15 @@ export default function DicomImageLoader({
               }}
             />
 
-            {/* Overlay navigation buttons */}
+            {/* Overlay navigation scrollbar */}
             {hasFrameNavigation && totalFrames > 1 && showOverlayButtons && (
               <>
-                {/* Left arrow button */}
-                <button
-                  onClick={prevFrame}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Previous frame"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Right arrow button */}
-                <button
-                  onClick={nextFrame}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-3 rounded-full transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Next frame"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
+                {/* Vertical scrollbar on the right edge */}
+                <FrameScrollbarComponent
+                  currentFrame={currentFrame}
+                  totalFrames={totalFrames}
+                  onFrameChange={goToFrame}
+                />
 
                 {/* Frame indicator overlay */}
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-medium">

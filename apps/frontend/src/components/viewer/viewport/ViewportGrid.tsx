@@ -78,8 +78,6 @@ export default function ViewportGrid({
         return "grid grid-rows-2";
       case "2x2":
         return "grid grid-cols-2 grid-rows-2";
-      case "3x3":
-        return "grid grid-cols-3 grid-rows-3";
       default:
         return "grid grid-cols-1";
     }
@@ -96,8 +94,6 @@ export default function ViewportGrid({
         return 2;
       case "2x2":
         return 4;
-      case "3x3":
-        return 9;
       default:
         return 1;
     }

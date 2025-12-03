@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ImageOff } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
+import { ViewerEventProvider } from "@/contexts/ViewerEventContext";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
 import { extractApiData } from "@/utils/api";
@@ -199,6 +200,7 @@ function ViewerPageContent() {
           {!loading && series.length === 0 && (
             <div className="flex-1 flex items-center justify-center bg-slate-900">
               <div className="text-center">
+                <ImageOff className="h-16 w-16 mx-auto mb-4 text-slate-500" />
                 <div className="text-slate-400 text-lg mb-2">
                   Không có dữ liệu để hiển thị
                 </div>
@@ -255,10 +257,12 @@ function ViewerPageContent() {
 
 export default function ViewerPageClient() {
   return (
-    <ViewerProvider>
-      <Suspense fallback={<ViewerLoading />}>
-        <ViewerPageContent />
-      </Suspense>
-    </ViewerProvider>
+    <ViewerEventProvider>
+      <ViewerProvider>
+        <Suspense fallback={<ViewerLoading />}>
+          <ViewerPageContent />
+        </Suspense>
+      </ViewerProvider>
+    </ViewerEventProvider>
   );
 }
