@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  Bell,
   BookOpen,
   Building2,
   Camera,
@@ -152,6 +153,12 @@ export const roleNavigation: RoleNavigation = {
       icon: Clock,
       description: "View your work schedule",
     },
+    {
+      href: "/reception/notifications",
+      label: "Notifications",
+      icon: Bell,
+      description: "View notification history",
+    },
   ],
 
   // Physician - Patient care and medical records
@@ -194,6 +201,12 @@ export const roleNavigation: RoleNavigation = {
       icon: Clock,
       description: "View your clinical schedule",
     },
+    {
+      href: "/physician/notifications",
+      label: "Notifications",
+      icon: Bell,
+      description: "View notification history",
+    },
   ],
 
   // Imaging Technician - DICOM and imaging
@@ -228,6 +241,12 @@ export const roleNavigation: RoleNavigation = {
       icon: Settings,
       description: "Imaging settings",
     },
+    {
+      href: "/imaging-technician/notifications",
+      label: "Notifications",
+      icon: Bell,
+      description: "View notification history",
+    },
   ],
 
   // Radiologist - Medical imaging interpretation
@@ -249,6 +268,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Schedule",
       icon: Clock,
       description: "View your clinical schedule",
+    },
+    {
+      href: "/radiologist/notifications",
+      label: "Notifications",
+      icon: Bell,
+      description: "View notification history",
     },
   ],
 };

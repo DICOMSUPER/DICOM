@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Bell, Check, CheckCheck, Clock, Calendar, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 import { cn } from "@/lib/utils";
 
@@ -21,11 +24,31 @@ import { Badge } from "../ui/badge";
 import { NotificationType } from "@/enums/notification.enum";
 import { ScrollArea } from "../ui/scroll-area";
 import { NotificationItem } from "./NotificationItem";
+import { getNavigationRoleFromUserRole } from "@/utils/role-formatter";
 
 const NotificationBell: React.FC = () => {
+  const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
   const { notifications, unreadCount, markAsRead, markAllAsRead, isConnected } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+
+  const notificationsPath = useMemo(() => {
+    if (!user?.role) return "/";
+    const navRole = getNavigationRoleFromUserRole(user.role);
+    
+    if (!navRole) return "/";
+    
+    // Map navigation roles to paths
+    const rolePathMap: Record<string, string> = {
+      "Physician": "/physician/notifications",
+      "Reception Staff": "/reception/notifications",
+      "Imaging Technician": "/imaging-technician/notifications",
+      "Radiologist": "/radiologist/notifications",
+    };
+    
+    return rolePathMap[navRole] || "/";
+  }, [user?.role]);
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
@@ -65,81 +88,79 @@ const NotificationBell: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="relative p-2 rounded-lg hover:bg-gray-100"
+          className="relative h-10 w-10 rounded-xl hover:bg-slate-100 transition-all border-2 border-slate-200 hover:border-slate-300"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-5 w-5 text-slate-600" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-            >
+            <div className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] px-1 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[10px] font-semibold shadow-md animate-in zoom-in-50">
               {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
+            </div>
           )}
-          <div
-            className={cn(
-              "absolute -bottom-1 -right-1 h-2 w-2 rounded-full",
-              isConnected ? "bg-green-500" : "bg-red-500"
-            )}
-          />
+          {isConnected && (
+            <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" />
+          )}
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-96 p-0">
-        <div className="p-4 border-b">
+      <DropdownMenuContent align="end" className="w-[420px] p-0 shadow-lg border-0">
+        <div className="px-6 py-4 bg-gradient-to-br from-slate-50 to-white">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Notifications</h3>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Notifications</h3>
+              {unreadCount > 0 && (
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {unreadCount} new notification{unreadCount !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={markAllAsRead}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 px-3"
               >
-                <CheckCheck className="h-4 w-4 mr-1" />
+                <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
                 Mark all read
               </Button>
             )}
           </div>
-
-          {unreadCount > 0 && (
-            <p className="text-sm text-gray-500 mt-1">
-              You have {unreadCount} unread notification
-              {unreadCount !== 1 ? "s" : ""}
-            </p>
-          )}
         </div>
 
-        <ScrollArea className="h-96">
+        <ScrollArea className="h-[460px]">
           {notifications.length === 0 ? (
-            <div className="p-4 text-center">
-              <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">No notifications yet</p>
+            <div className="p-12 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                <Bell className="h-7 w-7 text-slate-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-600">No notifications yet</p>
+              <p className="text-xs text-slate-400 mt-1">We'll notify you when something arrives</p>
             </div>
           ) : (
-            notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onMarkAsRead={markAsRead}
-              />
-            ))
+            <div className="divide-y divide-slate-100">
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={markAsRead}
+                />
+              ))}
+            </div>
           )}
         </ScrollArea>
 
         {notifications.length > 0 && (
-          <div className="p-3 border-t">
+          <div className="px-4 py-3 bg-slate-50/50">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-center text-blue-600 hover:text-blue-800"
+              className="w-full text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-white h-9"
               onClick={() => {
-                // Navigate to notifications page
-                console.log("View all notifications");
+                router.push(notificationsPath);
                 setIsOpen(false);
               }}
             >
-              View all notifications
+              View all notifications →
             </Button>
           </div>
         )}
