@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,10 +37,21 @@ export function AppHeader({
   isLoggingOut: externalIsLoggingOut,
   onMenuClick
 }: AppHeaderProps) {
+  const [mounted, setMounted] = useState(false);
   const user = useSelector((state: RootState) => state.auth.user);
   const { logout: defaultLogout, isLoggingOut: internalIsLoggingOut } = useLogout();
   const logoutHandler = onLogout ?? defaultLogout;
   const isLoggingOut = externalIsLoggingOut ?? internalIsLoggingOut;
+
+  // Prevent hydration mismatch by only showing user data after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use consistent fallback during SSR and initial render
+  const displayName = mounted && user?.email?.split("@")[0] 
+    ? user.email.split("@")[0] 
+    : "User";
 
   return (
     <header className="h-16 border-b border-border bg-card">
@@ -88,7 +100,7 @@ export function AppHeader({
                   className="border-border"
                 >
                   <User className="w-4 h-4 mr-2" />
-                  {user?.email?.split("@")[0] || "User"}
+                  {displayName}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 border-border p-2">
@@ -96,17 +108,17 @@ export function AppHeader({
                   <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors ease-in-out duration-200">
                     {/* Avatar */}
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg">
-                      {user?.email?.charAt(0).toUpperCase() || "U"}
+                      {mounted && user?.email ? user.email.charAt(0).toUpperCase() : "U"}
                     </div>
                     {/* User Info */}
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-semibold leading-none">
-                        {user?.email?.split("@")[0] || "User"}
+                        {displayName}
                       </p>
                       <p className="text-xs leading-none text-foreground">
-                        {user?.email || "No email"}
+                        {mounted && user?.email ? user.email : "No email"}
                       </p>
-                      {user?.role && (
+                      {mounted && user?.role && (
                         <p className="text-xs leading-none text-foreground capitalize">
                           {user.role.replace(/_/g, " ")}
                         </p>

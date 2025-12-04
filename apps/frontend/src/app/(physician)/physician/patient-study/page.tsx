@@ -54,7 +54,7 @@ export default function DicomStudyPage() {
       refetchOnReconnect: false,
     });
 
-  const { data: statsData, isLoading: isStatsLoading, isFetching: isStatsFetching, isError: isStatsError, refetch: refetchStats } =
+  const { data: statsData, isLoading: isStatsLoading, isFetching: isStatsFetching, isError: isStatsError, refetch: refetchStats } = 
     useGetStatsInDateRangeQuery({}, {
       refetchOnMountOrArgChange: false,
     });
@@ -119,7 +119,7 @@ export default function DicomStudyPage() {
         <RefreshButton onRefresh={handleRefresh} loading={isFetching || isStatsLoading} />
       </div>
 
-      <StudyStatsCards stats={statsData?.data} isLoading={isStatsLoading || isStatsFetching} />
+      <StudyStatsCards stats={statsData} isLoading={isStatsLoading || isStatsFetching} />
 
       <DicomStudyFiltersSection
         filters={filters}
