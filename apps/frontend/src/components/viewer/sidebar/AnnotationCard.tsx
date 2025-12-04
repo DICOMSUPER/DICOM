@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import { AnnotationStatus } from "@/enums/image-dicom.enum";
+import { Roles } from "@/enums/user.enum";
 import {
   Calendar,
   Tag,
@@ -13,8 +14,18 @@ import {
   Layers,
   Image,
   Trash2,
+  CheckCircle2,
+  FileCheck,
+  Save,
 } from "lucide-react";
 import { AnnotationColorPicker } from "./AnnotationColorPicker";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface AnnotationCardProps {
   annotation: ImageAnnotation;
@@ -23,6 +34,7 @@ interface AnnotationCardProps {
   isLocked: boolean;
   colorPickerOpen: boolean;
   tempColor: string;
+  userRole: string;
   onAnnotationClick: (id: string) => void;
   onColorPickerOpen: (id: string, color: string) => void;
   onColorChange: (id: string) => void;
@@ -30,6 +42,8 @@ interface AnnotationCardProps {
   onDeleteClick: (annotation: ImageAnnotation) => void;
   onColorPickerClose: () => void;
   onTempColorChange: (color: string) => void;
+  onStatusChange: (annotation: ImageAnnotation, newStatus: AnnotationStatus) => void;
+  onSaveLocal?: (annotation: ImageAnnotation) => void;
   formatAnnotationType: (type: string) => string;
   formatDate: (value?: string) => string;
 }
@@ -101,6 +115,7 @@ export function AnnotationCard({
   isLocked,
   colorPickerOpen,
   tempColor,
+  userRole,
   onAnnotationClick,
   onColorPickerOpen,
   onColorChange,
@@ -108,20 +123,27 @@ export function AnnotationCard({
   onDeleteClick,
   onColorPickerClose,
   onTempColorChange,
+  onStatusChange,
+  onSaveLocal,
   formatAnnotationType,
   formatDate,
 }: AnnotationCardProps) {
   const statusColors = getStatusColorClasses(annotation.annotationStatus, isHighlight);
   const measurement = getMeasurementDisplay(annotation);
-
-  // Debug highlight state
-  if (isHighlight) {
-    console.log('[AnnotationCard] Rendering highlighted card:', annotation.id, {
-      isLocal: (annotation as any).isLocal,
-      color: color,
-      annotationType: annotation.annotationType
-    });
-  }
+  
+  // Check if user is physician
+  const isPhysician = userRole === Roles.PHYSICIAN || userRole === Roles.RADIOLOGIST;
+  const isLocal = (annotation as any).isLocal;
+  const currentStatus = annotation.annotationStatus;
+  
+  // Determine what status changes are available
+  const canMarkAsFinal = isLocal || currentStatus === AnnotationStatus.DRAFT;
+  const canMarkAsReviewed = isPhysician && currentStatus === AnnotationStatus.FINAL;
+  const canChangeToDraft = false;
+  
+  // Read-only logic: REVIEWED and FINAL are read-only for edit/delete
+  const isReadOnly = currentStatus === AnnotationStatus.REVIEWED;
+  const isEditDeleteDisabled = isReadOnly || currentStatus === AnnotationStatus.FINAL;
 
   return (
     <div
@@ -218,56 +240,165 @@ export function AnnotationCard({
             </span>
           </div>
           
-          {/* Palette and Lock icons side by side */}
-          <div className="flex items-center gap-1.5">
-            <AnnotationColorPicker
-              annotationId={annotation.id}
-              currentColor={color}
-              isOpen={colorPickerOpen}
-              tempColor={tempColor}
-              onOpen={onColorPickerOpen}
-              onClose={onColorPickerClose}
-              onColorChange={onColorChange}
-              onTempColorChange={onTempColorChange}
-            />
+          {/* Action buttons - 2x2 grid */}
+          <div className="grid grid-cols-2 gap-1">
+            {/* Save Button for Local Annotations */}
+            {isLocal && onSaveLocal && (
+              <div
+                role="button"
+                tabIndex={0}
+                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-teal-700/50 bg-teal-600/20 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveLocal(annotation);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    onSaveLocal(annotation);
+                  }
+                }}
+                title="Save to database"
+              >
+                <Save className="h-3 w-3 text-teal-400" />
+              </div>
+            )}
+            
+            {/* Status Change Dropdown for Saved Annotations */}
+            {!isLocal && (canMarkAsFinal || canMarkAsReviewed || canChangeToDraft) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                      }
+                    }}
+                  >
+                    <FileCheck className="h-3 w-3 text-blue-400" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-slate-800 border-slate-700" align="end">
+                  {canMarkAsFinal && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(annotation, AnnotationStatus.FINAL);
+                      }}
+                      className="text-white hover:bg-slate-700 cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-2 text-blue-400" />
+                      Mark as Final
+                    </DropdownMenuItem>
+                  )}
+                  {canMarkAsReviewed && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(annotation, AnnotationStatus.REVIEWED);
+                      }}
+                      className="text-white hover:bg-slate-700 cursor-pointer"
+                    >
+                      <Lock className="h-3.5 w-3.5 mr-2 text-green-400" />
+                      Mark as Reviewed (Physician)
+                    </DropdownMenuItem>
+                  )}
+                  {canChangeToDraft && (
+                    <>
+                      <DropdownMenuSeparator className="bg-slate-700" />
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(annotation, AnnotationStatus.DRAFT);
+                        }}
+                        className="text-white hover:bg-slate-700 cursor-pointer"
+                      >
+                        <FileCheck className="h-3.5 w-3.5 mr-2 text-amber-400" />
+                        Change to Draft
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
+            {!isEditDeleteDisabled && (
+              <AnnotationColorPicker
+                annotationId={annotation.id}
+                currentColor={color}
+                isOpen={colorPickerOpen}
+                tempColor={tempColor}
+                onOpen={onColorPickerOpen}
+                onClose={onColorPickerClose}
+                onColorChange={onColorChange}
+                onTempColorChange={onTempColorChange}
+              />
+            )}
 
-            {/* Hide lock icon for reviewed/final annotations (read-only) */}
-            {annotation.annotationStatus !== AnnotationStatus.REVIEWED && 
-             annotation.annotationStatus !== AnnotationStatus.FINAL && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-slate-700"
+            {!isEditDeleteDisabled && !isLocal && currentStatus === AnnotationStatus.DRAFT && (
+              <div
+                role="button"
+                tabIndex={0}
+                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onLockToggle(annotation.id, !isLocked);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onLockToggle(annotation.id, !isLocked);
+                  }
+                }}
+                title={isLocked ? "Unlock annotation" : "Lock annotation"}
               >
                 <Lock
-                  className={`h-2.5 w-2.5 ${
+                  className={`h-3 w-3 ${
                     isLocked
-                      ? "text-red-500 stroke-red-500"
+                      ? "text-red-500"
                       : "text-slate-400"
                   }`}
-                  strokeWidth={isLocked ? 2.5 : 2}
                 />
-              </Button>
+              </div>
             )}
 
-            {/* Hide delete icon for reviewed/final annotations (read-only) */}
-            {annotation.annotationStatus !== AnnotationStatus.REVIEWED && 
-             annotation.annotationStatus !== AnnotationStatus.FINAL && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-slate-700 hover:text-red-500"
+            {!isEditDeleteDisabled && (
+              <div
+                role="button"
+                tabIndex={0}
+                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-red-900/50 transition-colors group"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDeleteClick(annotation);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onDeleteClick(annotation);
+                  }
+                }}
+                title="Delete annotation"
               >
-                <Trash2 className="h-2.5 w-2.5 text-slate-400" />
-              </Button>
+                <Trash2 className="h-3 w-3 text-slate-400 group-hover:text-red-400 transition-colors" />
+              </div>
+            )}
+            
+            {isReadOnly && (
+              <div className="h-4 w-4 flex items-center justify-center" title="Read-only (Reviewed)">
+                <Lock className="h-2.5 w-2.5 text-green-500" />
+              </div>
+            )}
+            
+            {currentStatus === AnnotationStatus.FINAL && !isReadOnly && (
+              <div className="h-4 w-4 flex items-center justify-center" title="Final (Protected)">
+                <Lock className="h-2.5 w-2.5 text-blue-500" />
+              </div>
             )}
           </div>
         </div>

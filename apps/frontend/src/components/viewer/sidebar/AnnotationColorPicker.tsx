@@ -64,13 +64,13 @@ export function AnnotationColorPicker({
         <Button
           variant="ghost"
           size="sm"
-          className="h-4 w-4 p-0 hover:bg-slate-700"
+          className="h-5 w-5 p-0 hover:bg-slate-700"
           onClick={(e) => {
             e.stopPropagation();
             onOpen(annotationId, currentColor);
           }}
         >
-          <Palette className="h-2.5 w-2.5 text-slate-400" />
+          <Palette className="h-3 w-3 text-slate-400" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

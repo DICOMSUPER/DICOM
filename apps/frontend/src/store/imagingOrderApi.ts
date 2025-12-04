@@ -127,18 +127,30 @@ export const imagingOrderApi = createApi({
 
     //find  by id patient
     getImagingOrdersByPatientId: builder.query<
-      PaginatedResponse<ImagingOrder>,
-      { patientId: string; page?: number; limit?: number }
+      ImagingOrder[],
+      { patientId: string }
     >({
-      query: ({ patientId, page, limit }) => ({
+      query: ({ patientId }) => ({
         url: `/patient/${patientId}`,
         method: "GET",
-        params: { page, limit },
       }),
+      transformResponse: (response: any) => {
+        // Handle nested pagination structure: { data: [...], total: 1 }
+        if (response && typeof response === 'object' && 'data' in response) {
+          if (Array.isArray(response.data)) {
+            return response.data;
+          }
+        }
+        // Handle direct array
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
       providesTags: (result) =>
-        result
+        result && Array.isArray(result)
           ? [
-              ...result.data.map((r) => ({
+              ...result.map((r) => ({
                 type: "ImagingOrder" as const,
                 id: r.id,
               })),

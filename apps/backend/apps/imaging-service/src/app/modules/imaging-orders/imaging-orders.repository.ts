@@ -462,20 +462,13 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     const [data, total] = await query.getManyAndCount();
 
-    if (!data || data.length === 0) {
-      throw ThrowMicroserviceException(
-        HttpStatus.NOT_FOUND,
-        'No imaging orders found for this patient',
-        IMAGING_SERVICE
-      );
-    }
-
+    // Return empty array instead of throwing error when no orders found
     const totalPages = Math.ceil(total / safeLimit);
     const hasNextPage = safePage < totalPages;
     const hasPreviousPage = safePage > 1;
 
     return new PaginatedResponseDto<ImagingOrder>(
-      data,
+      data || [],
       total,
       safePage,
       safeLimit,

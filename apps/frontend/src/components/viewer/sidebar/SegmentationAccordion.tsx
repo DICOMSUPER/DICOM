@@ -21,7 +21,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { useViewer } from "@/contexts/ViewerContext";
-import type { SegmentationLayer } from "@/contexts/ViewerContext";
+import type { SegmentationLayerData } from "@/contexts/ViewerContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface SegmentationAccordionProps {
   selectedSeriesId?: string | null;
@@ -48,8 +49,8 @@ export default function SegmentationAccordion({
   onDeleteLayer,
   onUpdateLayerMetadata,
 }: SegmentationAccordionProps) {
-  const [layerToDelete, setLayerToDelete] = useState<SegmentationLayer | null>(null);
-  const [editingLayer, setEditingLayer] = useState<SegmentationLayer | null>(null);
+  const [layerToDelete, setLayerToDelete] = useState<SegmentationLayerData | null>(null);
+  const [editingLayer, setEditingLayer] = useState<SegmentationLayerData | null>(null);
   const [layerName, setLayerName] = useState("");
   const [layerNotes, setLayerNotes] = useState("");
 
@@ -59,6 +60,7 @@ export default function SegmentationAccordion({
     toggleSegmentationLayerVisibility,
     isSegmentationVisible,
     toggleSegmentationView,
+    addSegmentationLayer,
   } = useViewer();
 
   const layers = useMemo(() => {
@@ -66,18 +68,18 @@ export default function SegmentationAccordion({
   }, [state.segmentationLayers]);
 
   const selectedLayerId = useMemo(() => {
-    return state.selectedSegmentationLayerId;
-  }, [state.selectedSegmentationLayerId]);
+    return state.selectedSegmentationLayer;
+  }, [state.selectedSegmentationLayer]);
 
-  const handleEditLayer = useCallback((layer: SegmentationLayer) => {
+  const handleEditLayer = useCallback((layer: SegmentationLayerData) => {
     setEditingLayer(layer);
-    setLayerName(layer.name || "");
-    setLayerNotes(layer.notes || "");
+    setLayerName(layer.metadata.name || "");
+    setLayerNotes(layer.metadata.notes || "");
   }, []);
 
   const handleSaveEdit = useCallback(() => {
     if (editingLayer) {
-      onUpdateLayerMetadata(editingLayer.id, {
+      onUpdateLayerMetadata(editingLayer.metadata.id, {
         name: layerName,
         notes: layerNotes,
       });
@@ -87,13 +89,13 @@ export default function SegmentationAccordion({
     }
   }, [editingLayer, layerName, layerNotes, onUpdateLayerMetadata]);
 
-  const handleDeleteClick = useCallback((layer: SegmentationLayer) => {
+  const handleDeleteClick = useCallback((layer: SegmentationLayerData) => {
     setLayerToDelete(layer);
   }, []);
 
   const handleDeleteConfirm = useCallback(() => {
     if (layerToDelete) {
-      onDeleteLayer(layerToDelete.id);
+      onDeleteLayer(layerToDelete.metadata.id);
       setLayerToDelete(null);
     }
   }, [layerToDelete, onDeleteLayer]);
@@ -111,21 +113,53 @@ export default function SegmentationAccordion({
                 Segmentation Layers
               </span>
               <div className="ml-auto flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 hover:bg-slate-700"
+                {/* Create New Layer Button */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="h-5 w-5 p-0 flex items-center justify-center cursor-pointer rounded hover:bg-teal-700 bg-teal-600/20 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addSegmentationLayer();
+                    toast.success("New segmentation layer created");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      addSegmentationLayer();
+                      toast.success("New segmentation layer created");
+                    }
+                  }}
+                  title="Create New Layer"
+                >
+                  <Plus className="h-3 w-3 text-teal-300" />
+                </div>
+                
+                {/* Toggle Visibility */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  className="h-5 w-5 p-0 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleSegmentationView();
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleSegmentationView();
+                    }
+                  }}
+                  title="Toggle All Layers Visibility"
                 >
                   {isGloballyVisible ? (
                     <Eye className="h-3 w-3 text-blue-400" />
                   ) : (
                     <EyeOff className="h-3 w-3 text-slate-400" />
                   )}
-                </Button>
+                </div>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   {layers.length}
                 </Badge>
@@ -134,20 +168,38 @@ export default function SegmentationAccordion({
           </AccordionTrigger>
           <AccordionContent className="pb-2">
             {layers.length === 0 ? (
-              <div className="text-center text-slate-500 py-4 text-xs">
-                No segmentation layers
+              <div className="flex flex-col items-center justify-center text-center py-8 px-4">
+                <Layers className="h-12 w-12 mb-3 text-slate-600" />
+                <div className="text-slate-400 text-sm mb-2">
+                  No Segmentation Layers
+                </div>
+                <div className="text-slate-500 text-xs mb-4">
+                  Create a layer to start segmenting
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    addSegmentationLayer();
+                    toast.success("New segmentation layer created");
+                  }}
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Create First Layer
+                </Button>
               </div>
             ) : (
               <div className="space-y-1.5">
                 {layers.map((layer) => {
-                  const isSelected = selectedLayerId === layer.id;
-                  const isVisible = state.segmentationLayerVisibility.get(layer.id) ?? true;
-                  const isFromDatabase = layer.origin === "database";
+                  const layerId = layer.metadata.id;
+                  const isSelected = selectedLayerId === layerId;
+                  const isVisible = state.segmentationLayerVisibility.get(layerId) ?? true;
+                  const isFromDatabase = layer.metadata.origin === "database";
 
                   return (
                     <div
-                      key={layer.id}
-                      onClick={() => selectSegmentationLayer(layer.id)}
+                      key={layerId}
+                      onClick={() => selectSegmentationLayer(layerId)}
                       className={`rounded-lg border-l-4 p-3 space-y-2 transition-all cursor-pointer relative ${
                         isSelected
                           ? "bg-blue-900/40 border-blue-400 shadow-lg ring-2 ring-blue-500/50"
@@ -166,16 +218,16 @@ export default function SegmentationAccordion({
                               style={{ backgroundColor: "#3b82f6" }}
                             />
                             <span className="text-xs font-medium text-white truncate">
-                              {layer.name || `Layer ${layer.id.slice(0, 8)}`}
+                              {layer.metadata.name || `Layer ${layerId.slice(0, 8)}`}
                             </span>
                             {isFromDatabase && (
                               <Database className="h-3 w-3 text-emerald-400" />
                             )}
                           </div>
 
-                          {layer.notes && (
+                          {layer.metadata.notes && (
                             <p className="text-xs text-slate-300 line-clamp-1 ml-6">
-                              {layer.notes}
+                              {layer.metadata.notes}
                             </p>
                           )}
 
@@ -217,7 +269,7 @@ export default function SegmentationAccordion({
                               className="h-4 w-4 p-0 hover:bg-slate-700"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleSegmentationLayerVisibility(layer.id);
+                                toggleSegmentationLayerVisibility(layerId);
                               }}
                             >
                               {isVisible ? (
@@ -234,7 +286,7 @@ export default function SegmentationAccordion({
                                 className="h-4 w-4 p-0 hover:bg-slate-700 text-teal-400 hover:text-teal-300"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onSaveLayer(layer.id);
+                                  onSaveLayer(layerId);
                                 }}
                               >
                                 <Save className="h-2.5 w-2.5" />
@@ -272,14 +324,14 @@ export default function SegmentationAccordion({
             <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this segmentation layer? This action cannot be undone.
               {layerToDelete && (
-                <div className="mt-2 p-2 bg-slate-800 rounded text-xs">
+                  <div className="mt-2 p-2 bg-slate-800 rounded text-xs">
                   <div className="flex items-center gap-1.5">
                     <Layers className="h-3 w-3 text-blue-400" />
                     <span className="text-white font-medium">
-                      {layerToDelete.name || `Layer ${layerToDelete.id.slice(0, 8)}`}
+                      {layerToDelete.metadata.name || `Layer ${layerToDelete.metadata.id.slice(0, 8)}`}
                     </span>
                   </div>
-                  {layerToDelete.origin === "database" ? (
+                  {layerToDelete.metadata.origin === "database" ? (
                     <div className="text-emerald-400 text-[10px] mt-1">Database layer</div>
                   ) : (
                     <div className="text-amber-400 text-[10px] mt-1">Local layer (not saved to database)</div>

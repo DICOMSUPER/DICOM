@@ -513,9 +513,7 @@ const ViewPortMain = ({
   );
 
   useEffect(() => {
-    if (!elementReady) {
-      return;
-    }
+    if (!elementReady) return;
 
     if (!selectedSeries) {
       disposeViewportRef.current(viewportIndex);
@@ -523,11 +521,7 @@ const ViewPortMain = ({
     }
 
     if (viewportState.seriesId === selectedSeries.id) {
-      if (viewportState.isLoading) {
-        return;
-      }
-
-      if (viewportState.viewportReady) {
+      if (viewportState.isLoading || viewportState.viewportReady) {
         return;
       }
     }

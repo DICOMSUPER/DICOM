@@ -51,15 +51,12 @@ import {
   segmentationIdForViewport,
   restoreSegmentationSnapshot,
   clearSegmentationData,
-  // saveSegmentationSnapshotToStorage,
-  // loadSegmentationSnapshotFromStorage,
   type SegmentationHistoryEntry,
   SegmentationSnapshot,
   type SegmentationHistoryStacks,
   decompressSnapshots,
 } from "./viewer-context/segmentation-helper";
-// Replace your current import for uuid with this:
-import { v4 as uuidv4 } from "uuid"; // Rename v4 to uuidv4 for clarity
+import { v4 as uuidv4 } from "uuid";
 import { ImageSegmentationLayer } from "@/interfaces/image-dicom/image-segmentation-layer.interface";
 import { toast } from "sonner";
 import { batchedRender } from "@/utils/renderBatcher";
@@ -223,6 +220,7 @@ export interface ViewerContextType {
   nextFrame: (viewport: number) => void;
   prevFrame: (viewport: number) => void;
   refreshViewport: (viewport: number) => Promise<void>;
+  reloadAnnotationsForSeries: (seriesId: string) => Promise<void>;
   // AI Diagnosis methods
   diagnosisViewport: (
     viewport: number,
@@ -869,6 +867,14 @@ class LRUCache<K, V> {
     }
     this.cache.set(key, value);
   }
+
+  delete(key: K): boolean {
+    return this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
 }
 
 const SERIES_CACHE_MAX_ENTRIES = 50;
@@ -1022,20 +1028,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
     let cancelled = false;
     const applySnapshot = async () => {
-      // Diagnostics: verify per-viewport imageId->instanceId mapping
-      if (imageIdToInstanceMap) {
-        const keys = Object.keys(imageIdToInstanceMap);
-        console.log(
-          `[Segmentation] Sync: viewport=${viewportIndex} mapSize=${keys.length} sample=`,
-          keys
-            .slice(0, 3)
-            .map((k) => ({ imageId: k, instanceId: imageIdToInstanceMap[k] }))
-        );
-      } else {
-        console.log(
-          `[Segmentation] Sync: viewport=${viewportIndex} has no imageIdToInstanceMap`
-        );
-      }
 
       await ensureViewportLabelmapSegmentation({
         viewportId: currentViewportId,
@@ -1108,10 +1100,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         const instanceId = imageIdToInstanceMap?.[currentImageId];
 
         if (instanceId) {
-          console.log(
-            "[Segmentation] Auto-populating layer instanceId:",
-            instanceId
-          );
           dispatch({
             type: "UPDATE_SEGMENTATION_LAYER_METADATA",
             layerId,
@@ -1429,13 +1417,11 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                       annotation.config.style.setAnnotationStyles(annotationUID, {
                         color: record.colorCode,
                       });
-                      console.log(`✅ Applied color ${record.colorCode} to annotation ${record.id}`);
                     }
                     
                     // Ensure database annotations are locked by default
                     try {
                       annotation.locking.setAnnotationLocked(annotationUID, true);
-                      console.log(`✅ Locked database annotation ${record.id}`);
                     } catch (lockError) {
                       console.warn(`Failed to lock annotation ${record.id}:`, lockError);
                     }
@@ -1813,10 +1799,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           )?.instanceId;
 
           if (firstInstanceId) {
-            console.log(
-              "[Segmentation] Auto-updating layer instanceId from snapshot:",
-              firstInstanceId
-            );
             dispatch({
               type: "UPDATE_SEGMENTATION_LAYER_METADATA",
               layerId: activeLayerId,
@@ -1838,15 +1820,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         // await saveSegmentationSnapshotToStorage(snapshot);
 
-        console.log("[Segmentation] snapshot captured", {
-          viewportIndex: viewport,
-          viewportElementId: stackViewport.id,
-          segmentationId,
-          layerId: activeLayerId,
-          slices: snapshot.imageData.length,
-          capturedAt: snapshot.capturedAt,
-          snapshot: snapshot,
-        });
       };
 
       const element = viewportElementsRef.current.get(viewport);
@@ -1875,7 +1848,28 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   const setActiveTool = useCallback(
     (tool: ToolType) => {
-      // Block segmentation tools if no layer is selected
+      const activeViewportId = state.viewportIds.get(state.activeViewport);
+      
+      if (activeViewportId) {
+        const viewportState = viewportStateManager.getState(activeViewportId);
+        
+        if (viewportState) {
+          if (viewportState.status === ViewportStatus.INITIALIZING) {
+            toast.info("Viewport is initializing, please wait...");
+            return;
+          }
+          
+          if (viewportState.status === ViewportStatus.LOADING) {
+            toast.info("Viewport is loading images, please wait...");
+            return;
+          }
+          
+          if (viewportState.status !== ViewportStatus.READY) {
+            console.warn(`Viewport ${activeViewportId} not ready (status: ${viewportState.status})`);
+          }
+        }
+      }
+
       const segmentationTools: ToolType[] = [
         "Brush",
         "CircleScissors",
@@ -1884,7 +1878,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         "Eraser",
       ];
 
-      // Guard 0: Prevent activating segmentation tools when no layers exist at all
       if (
         segmentationTools.includes(tool) &&
         state.segmentationLayers.size === 0
@@ -1892,13 +1885,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         toast.warning(
           "Cannot activate segmentation tool: No layers available. Please create a layer first."
         );
-        console.warn(
-          `[Tool] Cannot activate ${tool}: No segmentation layers exist`
-        );
         return;
       }
 
-      // Guard 1: Prevent activating segmentation tools when no layer is selected
       if (
         segmentationTools.includes(tool) &&
         !state.selectedSegmentationLayer
@@ -1906,13 +1895,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         toast.warning(
           "Cannot activate segmentation tool: No layer selected. Please select a layer first."
         );
-        console.warn(
-          `[Tool] Cannot activate ${tool}: No segmentation layer selected`
-        );
         return;
       }
 
-      // Guard 2: Prevent editing database layers
       if (segmentationTools.includes(tool) && state.selectedSegmentationLayer) {
         const selectedLayer = state.segmentationLayers.get(
           state.selectedSegmentationLayer
@@ -1921,28 +1906,22 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           toast.warning(
             "Cannot edit this layer: It's saved in the database. Please create a new local layer to draw."
           );
-          console.warn(
-            `[Tool] Cannot activate ${tool}: Selected layer is from database`
-          );
           return;
         }
       }
 
       dispatch({ type: "SET_ACTIVE_TOOL", tool });
-      console.log("Tool activated:", tool);
     },
-    [dispatch, state.selectedSegmentationLayer, state.segmentationLayers]
+    [dispatch, state.selectedSegmentationLayer, state.segmentationLayers, state.activeViewport, state.viewportIds]
   );
 
   const setLayout = (layout: GridLayout) => {
     dispatch({ type: "SET_LAYOUT", layout, recordHistory: true });
-    console.log("Layout changed:", layout);
   };
 
   const setActiveViewport = useCallback(
     (viewport: number) => {
       dispatch({ type: "SET_ACTIVE_VIEWPORT", viewport });
-      console.log("Active viewport changed:", viewport);
     },
     [dispatch]
   );
@@ -2242,11 +2221,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const setViewportSeries = useCallback(
     (viewport: number, series: DicomSeries) => {
       dispatch({ type: "SET_VIEWPORT_SERIES", viewport, series });
-      console.log(
-        "Series assigned to viewport:",
-        viewport,
-        series.seriesDescription
-      );
     },
     [dispatch]
   );
@@ -2305,33 +2279,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const { signal } = controller;
 
       const bailIfStale = () => signal.aborted || !mountedRef.current;
-
-      // const restoreSegmentationFromLocalStorage = async (
-      //   viewportKey: string
-      // ) => {
-      //   const segmentationId = segmentationIdForViewport(viewportKey);
-      //   const storedSnapshot = await loadSegmentationSnapshotFromStorage(
-      //     segmentationId
-      //   );
-      //   if (!storedSnapshot) {
-      //     return false;
-      //   }
-      //   const restored = restoreSegmentationSnapshot(storedSnapshot);
-      //   if (restored) {
-      //     console.log("[Segmentation] Restored snapshot from localStorage", {
-      //       viewportKey,
-      //       segmentationId,
-      //       capturedAt: storedSnapshot?.capturedAt || new Date(),
-      //       slices: storedSnapshot?.imageData?.length,
-      //     });
-      //   } else {
-      //     console.warn(
-      //       "[Segmentation] Failed to restore stored snapshot",
-      //       segmentationId
-      //     );
-      //   }
-      //   return restored;
-      // };
 
       const safeUpdateRuntime = (
         updater:
@@ -2916,6 +2863,60 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     [getViewportSeries, getViewportRuntimeState, loadSeriesIntoViewport]
   );
 
+  const reloadAnnotationsForSeries = useCallback(
+    async (seriesId: string) => {
+      if (!seriesId) return;
+      
+      annotationsCacheRef.current.set(seriesId, []);
+      
+      state.viewportIds.forEach((viewportId, viewportIndex) => {
+        const viewportSeries = state.viewportSeries.get(viewportIndex);
+        if (viewportSeries?.id === seriesId) {
+          const element = viewportElementsRef.current.get(viewportIndex);
+          if (element && viewportId) {
+            const allAnnotations = annotation.state.getAllAnnotations();
+            
+            allAnnotations.forEach((ann) => {
+              const metadata = ann.metadata as any;
+              if (metadata?.source === "db" && metadata?.seriesId === seriesId) {
+                try {
+                  if (ann.annotationUID) {
+                    annotation.state.removeAnnotation(ann.annotationUID);
+                  }
+                } catch (error) {
+                  console.error('Error removing db annotation:', error);
+                }
+              }
+            });
+            
+            dbAnnotationsRenderedRef.current.delete(viewportIndex);
+            
+            loadDatabaseAnnotationsForViewport({
+              viewport: viewportIndex,
+              seriesId,
+              viewportId,
+              viewportElement: element,
+              forceReload: true,
+              checkShowAnnotations: false,
+            });
+            
+            const renderingEngineId = state.renderingEngineIds.get(viewportIndex);
+            if (renderingEngineId) {
+              try {
+                const engine = getRenderingEngine(renderingEngineId);
+                const viewport = engine?.getViewport(viewportId);
+                viewport?.render();
+              } catch (error) {
+                console.error('Error re-rendering viewport:', error);
+              }
+            }
+          }
+        }
+      });
+    },
+    [state.viewportIds, state.viewportSeries, state.renderingEngineIds, loadDatabaseAnnotationsForViewport]
+  );
+
   const updateViewportTransform = useCallback(
     (viewport: number, transform: Partial<ViewportTransform>) => {
       const current = getViewportTransform(viewport);
@@ -2931,7 +2932,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const resetView = () => {
-    console.log("Reset view for viewport:", state.activeViewport);
     updateViewportTransform(state.activeViewport, defaultTransform);
 
     // Publish event via pub/sub service
@@ -2958,7 +2958,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const flipViewport = (direction: "horizontal" | "vertical") => {
-    console.log("Flip viewport:", state.activeViewport, direction);
 
     // Publish event via pub/sub service
     const viewportId =
@@ -2971,8 +2970,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const invertViewport = () => {
-    console.log("Invert viewport:", state.activeViewport);
-    // Publish event via pub/sub service
     viewerEventService.publish(ViewerEvents.INVERT_COLORMAP);
   };
 
@@ -3002,7 +2999,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const undoAnnotation = () => {
-    console.log("Undo annotation requested from context");
     const viewportIndex = state.activeViewport;
     const activeViewportId =
       state.viewportIds.get(viewportIndex) || viewportIndex.toString();
@@ -3014,7 +3010,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const redoAnnotation = () => {
-    console.log("Redo annotation requested from context");
     const viewportIndex = state.activeViewport;
     const activeViewportId =
       state.viewportIds.get(viewportIndex) || viewportIndex.toString();
@@ -3094,13 +3089,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      console.log("🧠 Triggering AI diagnosis:", {
-        viewport,
-        viewportId,
-        modelId: options?.modelId,
-        modelName: options?.modelName,
-        versionName: options?.versionName,
-      });
 
       viewerEventService.publish(ViewerEvents.DIAGNOSE_VIEWPORT, {
         viewportId,
@@ -3121,8 +3109,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         console.error("❌ Cannot clear AI annotations: viewport ID not found");
         return;
       }
-
-      console.log("🗑️ Clearing AI annotations for viewport:", viewport);
 
       viewerEventService.publish(ViewerEvents.CLEAR_AI_ANNOTATIONS, { viewportId });
     },
@@ -3166,7 +3152,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       showAnnotations: newShowAnnotations,
     });
 
-    console.log("👁️ Toggled annotation visibility:", newShowAnnotations);
   }, [state.showAnnotations, state.viewportSeries, state.viewportIds, loadDatabaseAnnotationsForViewport, unloadAnnotationsFromViewport]);
 
   const toggleSegmentationControlPanel = () => {
@@ -3201,11 +3186,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const imageIds = stackViewport.getImageIds?.() ?? [];
       const currentImageId = imageIds[currentIndex];
 
-      console.log("[addSegmentationLayer] Viewport info:", {
-        currentIndex,
-        totalImages: imageIds.length,
-        currentImageId,
-      });
 
       if (currentImageId) {
         const imageIdToInstanceMap =
@@ -3228,12 +3208,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       instanceId,
     });
 
-    console.log(
-      "Added new segmentation layer:",
-      newLayerId,
-      "with instanceId:",
-      instanceId
-    );
   }, [state.activeViewport]);
 
   const deleteSegmentationLayer = useCallback(
@@ -3248,7 +3222,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       });
       clearLayerHistoryAcrossViewports(layerId);
 
-      console.log("Deleted segmentation layer:", layerId);
     },
     [state.segmentationLayers.size, clearLayerHistoryAcrossViewports]
   );
@@ -3262,7 +3235,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         layerId,
       });
 
-      console.log("Selected segmentation layer:", layerId);
     },
     [state.selectedSegmentationLayer]
   );
@@ -3280,7 +3252,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         updates,
       });
 
-      console.log("Updated segmentation layer metadata:", layerId, updates);
     },
     [state.segmentationLayers]
   );
@@ -3293,7 +3264,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const currentVisible =
         state.segmentationLayerVisibility.get(layerId) ?? true;
       setLayerVisibility(layerId, !currentVisible);
-      console.log("Toggled visibility for layer:", layerId, !currentVisible);
     },
     [setLayerVisibility, state.segmentationLayerVisibility]
   );
@@ -3385,11 +3355,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const segmentationId = segmentationIdForViewport(currentViewportId);
-      console.log("[Debug] Generated segmentationId:", segmentationId);
 
       // Check if segmentation exists
       const segState = segmentation.state.getSegmentation(segmentationId);
-      console.log("[Debug] Segmentation state exists:", !!segState);
 
       if (!segState) {
         console.warn(
@@ -3406,11 +3374,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         imageIdToInstanceMap
       );
 
-      console.log("[Debug] Captured snapshot:", {
-        hasSnapshot: !!snapshot,
-        imageDataLength: snapshot?.imageData?.length || 0,
-        segmentationId: snapshot?.segmentationId,
-      });
 
       return snapshot;
     },
@@ -3430,12 +3393,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const layerSnapshots = layerData?.snapshots ?? [];
       const latestSnapshot = layerSnapshots[layerSnapshots.length - 1] ?? null;
 
-      console.log("[Debug] getCurrentLayerSnapshot:", {
-        layerId,
-        snapshotsCount: layerSnapshots.length,
-        hasLatestSnapshot: !!latestSnapshot,
-        latestSnapshotImageDataLength: latestSnapshot?.imageData?.length || 0,
-      });
 
       return latestSnapshot;
     },
@@ -3502,6 +3459,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       nextFrame,
       prevFrame,
       refreshViewport,
+      reloadAnnotationsForSeries,
       diagnosisViewport,
       clearAIAnnotations,
       toggleSegmentationControlPanel,
@@ -3558,6 +3516,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       nextFrame,
       prevFrame,
       refreshViewport,
+      reloadAnnotationsForSeries,
       diagnosisViewport,
       clearAIAnnotations,
       toggleSegmentationControlPanel,

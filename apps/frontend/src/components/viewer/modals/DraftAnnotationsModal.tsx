@@ -37,6 +37,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { useCreateAnnotationMutation } from "@/store/annotationApi";
+import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
+import { extractApiData } from "@/utils/api";
 import { toast } from "sonner";
 import { Roles } from "@/enums/user.enum";
 import { deduplicateAnnotations, getAnnotationUniqueKey } from "@/utils/annotationDeduplication";
@@ -145,6 +147,7 @@ export function DraftAnnotationsModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createAnnotation, { isLoading: isCreatingAnnotation }] =
     useCreateAnnotationMutation();
+  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
 
   const [seriesDraftGroups, setSeriesDraftGroups] = useState<
     SeriesDraftGroup[]
@@ -220,8 +223,37 @@ export function DraftAnnotationsModal({
     [state.renderingEngineIds, state.viewportSeries]
   );
 
-  const collectDraftAnnotations = useCallback(() => {
+  const collectDraftAnnotations = useCallback(async () => {
     const groupsMap = new Map<string, SeriesDraftGroup>();
+    const seriesInstancesCache = new Map<string, DicomInstance[]>();
+
+    // First, fetch instances for all unique series
+    const uniqueSeriesIds = new Set<string>();
+    state.viewportIds.forEach((viewportId, viewportIndex) => {
+      const viewportSeries = state.viewportSeries.get(viewportIndex);
+      if (viewportSeries?.id) {
+        uniqueSeriesIds.add(viewportSeries.id);
+      }
+    });
+
+    // Fetch instances for all series
+    await Promise.all(
+      Array.from(uniqueSeriesIds).map(async (seriesId) => {
+        try {
+          const response = await fetchInstancesByReference({
+            id: seriesId,
+            type: "series",
+            params: { page: 1, limit: 9999 },
+          }).unwrap();
+          const instances = extractApiData<DicomInstance>(response);
+          seriesInstancesCache.set(seriesId, instances);
+          console.log(`Fetched ${instances.length} instances for series ${seriesId}`);
+        } catch (error) {
+          console.error(`Failed to fetch instances for series ${seriesId}:`, error);
+          seriesInstancesCache.set(seriesId, []);
+        }
+      })
+    );
 
     state.viewportIds.forEach((viewportId, viewportIndex) => {
       const viewportSeries = state.viewportSeries.get(viewportIndex);
@@ -233,8 +265,15 @@ export function DraftAnnotationsModal({
 
       let group = groupsMap.get(seriesId);
       if (!group) {
+        // Create series with populated instances
+        const instances = seriesInstancesCache.get(seriesId) || [];
+        const seriesWithInstances: DicomSeries = {
+          ...viewportSeries,
+          instances,
+        };
+        
         group = {
-          series: viewportSeries,
+          series: seriesWithInstances,
           entries: [],
           matchedViewport: false,
         };
@@ -275,26 +314,31 @@ export function DraftAnnotationsModal({
           }
 
           const sliceIndex = annotationItem.metadata?.sliceIndex ?? 0;
-          let matchedInstance: DicomInstance | undefined;
-
-          if (
-            typeof sliceIndex === "number" &&
-            Array.isArray(viewportSeries.instances) &&
-            viewportSeries.instances[sliceIndex]
-          ) {
-            matchedInstance = viewportSeries.instances[sliceIndex];
-          }
-
           const referencedImageId = annotationItem.metadata?.referencedImageId
             ? String(annotationItem.metadata.referencedImageId)
             : undefined;
+          
+          let matchedInstance: DicomInstance | undefined;
 
+          // Get instances from the fetched cache
+          const instances = group.series.instances || [];
+
+          // Try to match by sliceIndex first
+          if (
+            typeof sliceIndex === "number" &&
+            Array.isArray(instances) &&
+            instances[sliceIndex]
+          ) {
+            matchedInstance = instances[sliceIndex];
+          }
+
+          // Try to match by referencedImageId
           if (
             !matchedInstance &&
             referencedImageId &&
-            Array.isArray(viewportSeries.instances)
+            Array.isArray(instances)
           ) {
-            matchedInstance = viewportSeries.instances.find((candidate) => {
+            matchedInstance = instances.find((candidate) => {
               const candidateUid = candidate.sopInstanceUid;
               const candidateId = candidate.id;
               const candidateFile = candidate.fileName;
@@ -304,6 +348,20 @@ export function DraftAnnotationsModal({
                 (!!candidateFile && referencedImageId.includes(candidateFile))
               );
             });
+          }
+          
+          // Fallback: If no match found but we have instances, use the first one
+          // This handles cases where annotations were created on multi-frame series
+          // but instance array doesn't have all frames loaded
+          if (
+            !matchedInstance &&
+            Array.isArray(instances) &&
+            instances.length > 0
+          ) {
+            matchedInstance = instances[0];
+            console.warn(
+              `No exact instance match for annotation at sliceIndex ${sliceIndex}. Using first instance from series ${seriesId}.`
+            );
           }
 
           // Extract color from annotation - check multiple possible locations
@@ -370,16 +428,16 @@ export function DraftAnnotationsModal({
     const groups = Array.from(groupsMap.values());
     const entries = groups.flatMap((group) => group.entries);
     return { groups, entries };
-  }, [state.viewportIds, state.viewportSeries, resolveViewportElement]);
+  }, [state.viewportIds, state.viewportSeries, resolveViewportElement, fetchInstancesByReference]);
 
-  const refreshAnnotations = useCallback(() => {
+  const refreshAnnotations = useCallback(async () => {
     if (!open) {
       return;
     }
 
     setAnnotationsLoading(true);
 
-    const { groups, entries } = collectDraftAnnotations();
+    const { groups, entries } = await collectDraftAnnotations();
     const newSeriesList = groups.map((group) => group.series);
     const effectiveSeriesList =
       newSeriesList.length > 0
@@ -725,6 +783,9 @@ export function DraftAnnotationsModal({
             annotationType: entry.annotationType,
             viewportId: entry.metadata.viewportId,
             viewportIndex: entry.metadata.viewportIndex,
+            sliceIndex: entry.metadata.sliceIndex,
+            referencedImageId: entry.metadata.referencedImageId,
+            seriesId: entry.metadata.seriesId,
           }
         );
         return;
@@ -1328,10 +1389,10 @@ export function DraftAnnotationsModal({
         <DialogFooter className="sticky bottom-0 left-0 right-0 border-t border-slate-800/70 bg-slate-950 px-6 py-4">
           <div className="flex w-full flex-row gap-4 justify-end items-center">
             {isFinalSelection && (
-              <div className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-300" />
+              <div className="flex items-center gap-2 rounded-md border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm text-blue-400">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-blue-300" />
                 <span>
-                  Final annotations become read-only after submission.
+                  Final annotations can still be edited but are ready for physician review.
                 </span>
               </div>
             )}
