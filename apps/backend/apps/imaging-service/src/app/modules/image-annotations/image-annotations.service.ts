@@ -173,15 +173,16 @@ export class ImageAnnotationsService {
         IMAGING_SERVICE
       );
     }
-
     const allAnnotations = study.series.flatMap((series) =>
       series.instances.flatMap((instance) => instance.imageAnnotations)
     );
 
+    console.log('All annotation', allAnnotations);
+
     if (allAnnotations.length === 0) {
       return {
         message: 'No annotations found in the study',
-        isReviewed: false,
+        isReviewed: true,
       };
     }
 

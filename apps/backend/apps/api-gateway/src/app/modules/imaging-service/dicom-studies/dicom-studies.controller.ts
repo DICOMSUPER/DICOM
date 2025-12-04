@@ -520,36 +520,45 @@ export class DicomStudiesController {
   @ApiParam({ name: 'id', required: true, type: String })
   @ApiBody({ type: UpdateDicomStudyDto })
   async updateDicomStudy(
-    @Param('id') id: string,
-    @Body() updateDicomStudyDto: UpdateDicomStudyDto
-  ) {
-    const study = await firstValueFrom(
-      this.imagingService.send('ImagingService.DicomStudies.Update', {
-        id,
-        updateDicomStudyDto,
-      })
-    );
+  @Param('id') id: string,
+  @Body() updateDicomStudyDto: UpdateDicomStudyDto
+) {
+  const study = await firstValueFrom(
+    this.imagingService.send('ImagingService.DicomStudies.Update', {
+      id,
+      updateDicomStudyDto,
+    })
+  );
 
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
-    await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
+ 
+  const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
+  await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
 
-    await this.redisService.delete(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-    );
-    return study;
+  
+  try {
+    await Promise.allSettled([
+      this.redisService.delete(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
+      ),
+      this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
+      ),
+      this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
+      ),
+      this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
+      ),
+      this.redisService.deleteKeyStartingWith(
+        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
+      ),
+    ]);
+  } catch (error:any) {
+    console.log('Failed to invalidate some cache keys:', error.message);
   }
+
+  return study;
+}
 
   @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')

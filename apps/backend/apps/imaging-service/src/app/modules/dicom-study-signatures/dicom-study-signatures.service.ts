@@ -35,10 +35,8 @@ export class DicomStudySignaturesService {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
     @Inject()
-    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject()
-  ) // private readonly imagingOrdersService: ImagingOrdersService
-
-  // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
+    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject() // private readonly imagingOrdersService: ImagingOrdersService
+  ) // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
   // private readonly patientServiceClient: ClientProxy
   {}
 
@@ -170,7 +168,7 @@ export class DicomStudySignaturesService {
     const hasReviewedAnnotations =
       await this.imageAnnotationsService.isReviewedInStudy(studyId);
     if (!hasReviewedAnnotations.isReviewed) {
-      throw new ValidationException('Not all annotations are reviewed');
+      throw new ValidationException(hasReviewedAnnotations.message);
     }
 
     // Sign the study
@@ -259,6 +257,7 @@ export class DicomStudySignaturesService {
         publicKey: signResult.publicKey,
         certificateSerial: digitalSignature.signature.certificateSerial,
         algorithm: digitalSignature.signature.algorithm || 'RSA-SHA256',
+        signedAt: new Date(),
       });
 
       this.logger.log('Creating study signature:', {
