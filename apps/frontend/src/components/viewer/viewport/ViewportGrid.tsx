@@ -48,20 +48,10 @@ export default function ViewportGrid({
 
     if (selectedChanged) {
       setViewportSeries(activeViewport, selectedSeries);
-      console.log(
-        "🔗 Assigned series to active viewport:",
-        activeViewport,
-        selectedSeries.seriesDescription
-      );
     }
 
     prevSelectedSeriesIdRef.current = selectedId;
-  }, [
-    selectedSeries,
-    state.activeViewport,
-    getViewportSeries,
-    setViewportSeries,
-  ]);
+  }, [selectedSeries, state.activeViewport, setViewportSeries]);
 
   // Local state to track viewport IDs to avoid setState during render
   const [localViewportIds, setLocalViewportIds] = useState<
@@ -78,8 +68,6 @@ export default function ViewportGrid({
         return "grid grid-rows-2";
       case "2x2":
         return "grid grid-cols-2 grid-rows-2";
-      case "3x3":
-        return "grid grid-cols-3 grid-rows-3";
       default:
         return "grid grid-cols-1";
     }
@@ -96,8 +84,6 @@ export default function ViewportGrid({
         return 2;
       case "2x2":
         return 4;
-      case "3x3":
-        return 9;
       default:
         return 1;
     }
@@ -228,7 +214,11 @@ export default function ViewportGrid({
 
           <ViewPortMain
             key={`viewport-main-${viewport.index}`}
-            selectedSeries={viewport.series}
+            selectedSeries={
+              viewport.isActive && selectedSeries 
+                ? selectedSeries 
+                : viewport.series
+            }
             selectedStudy={selectedStudy}
             selectedTool={selectedTool}
             onToolChange={onToolChange}

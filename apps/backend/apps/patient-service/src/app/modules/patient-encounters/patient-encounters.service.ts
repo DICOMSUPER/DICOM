@@ -108,7 +108,7 @@ export class PatientEncounterService {
     //     message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
     //   };
     //   await firstValueFrom(
-    //     this.systemService.send('notification.cre`ate', notificationPayload)
+    //     this.systemService.send('notification.create', notificationPayload)
     //   );
     // }
     if (employeesInRoom.length > 0) {

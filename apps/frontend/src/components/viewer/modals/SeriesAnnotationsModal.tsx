@@ -297,6 +297,15 @@ export function SeriesAnnotationsModal({
     async (annotationId: string) => {
       setFinalizingAnnotationId(annotationId);
       try {
+        const annotation = seriesGroups
+          .flatMap(group => group.entries)
+          .find(entry => entry.annotation.id === annotationId)?.annotation;
+        
+        if (annotation?.annotationStatus === AnnotationStatus.REVIEWED) {
+          toast.error("Reviewed annotations cannot be changed.");
+          return;
+        }
+
         await updateAnnotation({
           id: annotationId,
           data: { annotationStatus: AnnotationStatus.FINAL },
@@ -332,7 +341,7 @@ export function SeriesAnnotationsModal({
         setFinalizingAnnotationId(null);
       }
     },
-    [updateAnnotation, setSeriesGroups, setFinalizationConfirmations]
+    [updateAnnotation, setSeriesGroups, setFinalizationConfirmations, seriesGroups]
   );
 
   const handleReviewAnnotation = useCallback(
@@ -340,6 +349,15 @@ export function SeriesAnnotationsModal({
       // Only physicians can review annotations
       if (!user || user.role !== Roles.PHYSICIAN) {
         toast.error("Only physicians can review annotations.");
+        return;
+      }
+
+      const annotation = seriesGroups
+        .flatMap(group => group.entries)
+        .find(entry => entry.annotation.id === annotationId)?.annotation;
+      
+      if (annotation?.annotationStatus === AnnotationStatus.REVIEWED) {
+        toast.error("This annotation is already reviewed.");
         return;
       }
 

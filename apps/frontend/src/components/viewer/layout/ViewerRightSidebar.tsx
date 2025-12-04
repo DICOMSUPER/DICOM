@@ -1,39 +1,27 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import {
-  Filter,
-  FolderOpen,
-  Database,
-  Loader2,
-  Grid3X3,
-  List,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { useViewer } from "@/contexts/ViewerContext";
-import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
-import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
-import SeriesCard from "../sidebar/SeriesCard";
-import SeriesFilter from "../sidebar/SeriesFilter";
-import { extractApiData } from "@/utils/api";
-import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { FolderOpen, Loader2, Grid3X3, List, FileText, Layers, FolderTree, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
+import { useViewer } from '@/contexts/ViewerContext';
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
-import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
+import { useCreateImageSegmentationLayerMutation, useDeleteImageSegmentationLayerMutation } from '@/store/imageSegmentationLayerApi';
+import { FolderItem } from './FolderItems';
+import AnnotationAccordion from '../sidebar/AnnotationAccordion';
+import SegmentationAccordion from '../sidebar/SegmentationAccordion';
+import { extractApiData } from '@/utils/api';
+import { toast } from 'sonner';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
   series?: DicomSeries[];
   studyId?: string;
   patientId?: string;
-  onSeriesLoaded?: (series: DicomSeries[]) => void;
+  selectedSeriesFromParent?: DicomSeries | null;
+  urlSeriesId?: string;
 }
 
 const ViewerRightSidebar = ({
@@ -41,359 +29,248 @@ const ViewerRightSidebar = ({
   series = [],
   studyId,
   patientId,
-  onSeriesLoaded,
+  selectedSeriesFromParent,
+  urlSeriesId,
 }: ViewerRightSidebarProps) => {
-  const { state, getViewportSeries } = useViewer();
+  const { 
+    state, 
+    getViewportSeries,
+    getSegmentationLayers,
+    deleteSegmentationLayer,
+    updateSegmentationLayerMetadata,
+    refetchSegmentationLayers,
+  } = useViewer();
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
-  const [showFilter, setShowFilter] = useState(false);
-  const [filterModality, setFilterModality] = useState<string>("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
-  const [seriesInstances, setSeriesInstances] = useState<
-    Record<string, DicomInstance[]>
-  >({});
-  const [loadingInstances, setLoadingInstances] = useState<Set<string>>(
-    new Set()
-  );
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [loadedStudyId, setLoadedStudyId] = useState<string | null>(null);
-  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>(
-    {}
-  );
-  const [seriesList, setSeriesList] = useState<DicomSeries[]>(series);
-  const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
-  const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
-
-  const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery(
+  const [viewMode, setViewMode] = useState<'annotations' | 'folders'>('folders');
+  const [folderListMode, setFolderListMode] = useState<'grid' | 'list'>('grid');
+  const [annotationsTab, setAnnotationsTab] = useState<'annotations' | 'segmentations'>('annotations');
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  
+  const [createImageSegmentationLayers] = useCreateImageSegmentationLayerMutation();
+  const [deleteImageSegmentationLayer] = useDeleteImageSegmentationLayerMutation();
+  const { 
+    data: imagingOrdersData, 
+    isLoading: isLoadingOrders,
+    refetch: refetchImagingOrders 
+  } = useGetImagingOrdersByPatientIdQuery(
     { patientId: patientId ?? "" },
     { skip: !patientId }
   );
 
-  // const { data: dicomData, isLoading, error } = useGetDicomStudiesByOrderIdQuery(
-  //     );
-
-  console.log(" check 1", imagingOrdersData);
-  // Sync selected series with active viewport's loaded series
+  const resolvedOrders = useMemo(() => {
+    if (!imagingOrdersData) return [];
+    const extracted = extractApiData(imagingOrdersData);
+    return Array.isArray(extracted) ? extracted : [];
+  }, [imagingOrdersData]);
+  useEffect(() => {
+    if (!studyId || resolvedOrders.length === 0) return;
+    const firstOrder = resolvedOrders[0] as any;
+    if (firstOrder?.id) {
+      setExpandedFolders((prev) => {
+        if (prev.has(firstOrder.id)) return prev;
+        return new Set(prev).add(firstOrder.id);
+      });
+    }
+  }, [studyId, resolvedOrders]);
+  
+  // Sync selectedSeries with parent
+  useEffect(() => {
+    if (selectedSeriesFromParent) {
+      setSelectedSeries(selectedSeriesFromParent.id);
+    }
+  }, [selectedSeriesFromParent]);
+  
   useEffect(() => {
     const activeViewportSeries = getViewportSeries(state.activeViewport);
     if (activeViewportSeries) {
       if (activeViewportSeries.id !== selectedSeries) {
         setSelectedSeries(activeViewportSeries.id);
-        console.log(
-          "🔄 Synced sidebar selection with active viewport:",
-          activeViewportSeries.seriesDescription
-        );
       }
       return;
     }
     if (selectedSeries) {
       setSelectedSeries(null);
-      console.log(
-        "🔄 Active viewport has no series; cleared sidebar selection"
-      );
     }
   }, [state.activeViewport, getViewportSeries, selectedSeries]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!Array.isArray(series) || series.length === 0) {
-      setSeriesList([]);
-      if (!loading) {
-        setThumbnailPaths({});
-      }
-      return;
-    }
-
-    setSeriesList(series);
-
-    const preload = async () => {
-      setLoading(true);
-      try {
-        await preloadThumbnails(series);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void preload();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [series]);
-
-  const handleSeriesClick = (seriesItem: DicomSeries) => {
+  const handleSeriesClick = useCallback((seriesItem: DicomSeries) => {
     setSelectedSeries(seriesItem.id);
     onSeriesSelect?.(seriesItem);
-    console.log(
-      "📌 Series selected:",
-      seriesItem.seriesDescription,
-      "ID:",
-      seriesItem.id
-    );
-  };
-  // Helper function to get modality for a series
-  const getSeriesModality = (series: DicomSeries) => {
-    // Default modality for now - could be enhanced to fetch from study data
-    return "CT";
-  };
+  }, [onSeriesSelect]);
 
-  // Load series when studyId changes (with caching)
-  useEffect(() => {
-    const loadSeries = async () => {
-      if (!studyId) {
-        return;
-      }
-
-      // Skip fetch if series already provided via prop and study hasn't changed
-      if (series && series.length > 0 && studyId === loadedStudyId) {
-        console.log("📦 Using cached series for study:", studyId);
-        return;
-      }
-
-      if (studyId !== loadedStudyId) {
-        setSeriesList([]);
-        setSeriesInstances({});
-        setThumbnailPaths({});
-      }
-
-      console.log("🔄 Loading series for studyId:", studyId);
-      setLoading(true);
-
-      try {
-        const seriesResponse = await fetchSeriesByReference({
-          id: studyId,
-          type: "study",
-          params: { page: 1, limit: 50 },
-        }).unwrap();
-
-        console.log("✅ Loaded series for study:", studyId, seriesResponse);
-
-        const fetchedSeries = extractApiData<DicomSeries>(seriesResponse);
-
-        setSeriesList(fetchedSeries);
-        onSeriesLoaded?.(fetchedSeries);
-        preloadThumbnails(fetchedSeries);
-        setLoadedStudyId(studyId);
-      } catch (error) {
-        console.error("❌ Failed to load series:", error);
-        setSeriesList([]);
-        onSeriesLoaded?.([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSeries();
-  }, [studyId, series, onSeriesLoaded, loadedStudyId, fetchSeriesByReference]);
-
-  // Preload thumbnail paths for series
-  const preloadThumbnails = async (seriesArray: DicomSeries[]) => {
-    const updatedThumbnails: Record<string, string> = {};
-
-    for (const seriesItem of seriesArray) {
-      if (!seriesItem || !seriesItem.id) continue;
-
-      const cachedInstances = seriesInstances[seriesItem.id];
-      const cachedInstanceWithPath = cachedInstances?.find(
-        (inst: DicomInstance) =>
-          resolveDicomImageUrl(inst.filePath, inst.fileName)
-      );
-
-      if (cachedInstanceWithPath) {
-        const resolved = resolveDicomImageUrl(
-          cachedInstanceWithPath.filePath,
-          cachedInstanceWithPath.fileName
-        );
-        if (resolved) {
-          updatedThumbnails[seriesItem.id] = resolved;
-        }
-        continue;
-      }
-
-      try {
-        const response = await fetchInstancesByReference({
-          id: seriesItem.id,
-          type: "series",
-          params: { page: 1, limit: 1 },
-        }).unwrap();
-
-        const instances = extractApiData<DicomInstance>(response);
-        const firstWithFile = instances.find((inst: DicomInstance) =>
-          resolveDicomImageUrl(inst.filePath, inst.fileName)
-        );
-
-        if (firstWithFile) {
-          const resolved = resolveDicomImageUrl(
-            firstWithFile.filePath,
-            firstWithFile.fileName
-          );
-          if (resolved) {
-            updatedThumbnails[seriesItem.id] = resolved;
-          }
-          setSeriesInstances((prev) => ({
-            ...prev,
-            [seriesItem.id]: instances,
-          }));
-        }
-      } catch (error) {
-        console.warn(
-          "Failed to preload thumbnail for series",
-          seriesItem.id,
-          error
-        );
-      }
-    }
-
-    if (Object.keys(updatedThumbnails).length) {
-      setThumbnailPaths((prev) => ({ ...prev, ...updatedThumbnails }));
-    }
-  };
-
-  // Toggle series expansion - keep multiple expanded
-  const toggleSeriesExpansion = async (seriesId: string) => {
-    const isExpanding = !expandedSeries.has(seriesId);
-
-    setExpandedSeries((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(seriesId)) {
-        newSet.delete(seriesId);
+  const handleRefresh = useCallback(async () => {
+    try {
+      if (viewMode === 'folders') {
+        setExpandedFolders(new Set());
+        await refetchImagingOrders();
+        toast.success('Imaging orders refreshed');
       } else {
-        newSet.add(seriesId);
+        await refetchSegmentationLayers();
+        toast.success('Segmentation layers refreshed');
       }
-      return newSet;
-    });
-
-    // Load instances if expanding and not already loaded
-    if (isExpanding && !seriesInstances[seriesId]) {
-      setLoadingInstances((prev) => new Set(prev).add(seriesId));
-      try {
-        const response = await fetchInstancesByReference({
-          id: seriesId,
-          type: "series",
-          params: { page: 1, limit: 1000 },
-        }).unwrap();
-        const instances = response.data?.data || [];
-        setSeriesInstances((prev) => ({
-          ...prev,
-          [seriesId]: instances,
-        }));
-      } catch (error) {
-        console.error("Failed to load instances:", error);
-      } finally {
-        setLoadingInstances((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(seriesId);
-          return newSet;
-        });
-      }
+    } catch (error) {
+      toast.error('Failed to refresh');
     }
-  };
+  }, [viewMode, refetchImagingOrders, refetchSegmentationLayers]);
+  const handleSaveLayer = useCallback(async (layerId: string) => {
+    try {
+      const layers = getSegmentationLayers();
+      const layer = layers.find((l) => l.id === layerId);
 
-  // Filter series based on search and modality
-  const filteredSeries = (seriesList || []).filter((s) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      (s.seriesDescription || "")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-    const matchesModality =
-      filterModality === "All" || getSeriesModality(s) === filterModality;
-    return matchesSearch && matchesModality;
-  });
+      if (!layer) {
+        toast.error("Layer not found");
+        return;
+      }
 
-  // Render series card using SeriesCard component
-  const renderSeriesCard = (s: DicomSeries) => {
-    const resolvedFallback = resolveDicomImageUrl(
-      seriesInstances[s.id]?.[0]?.filePath,
-      seriesInstances[s.id]?.[0]?.fileName
-    );
-    const thumbnailPath = thumbnailPaths[s.id] ?? resolvedFallback ?? undefined;
-    const isLoadingThumbnail =
-      (loading || loadingInstances.has(s.id)) &&
-      !thumbnailPath &&
-      (s.numberOfInstances ?? 0) > 0;
+      await createImageSegmentationLayers({
+        layerName: layer.name,
+        instanceId: layer.instanceId as string,
+        notes: layer.notes,
+        frame: 1,
+        snapshots: layer.snapshots || [],
+      }).unwrap();
 
-    return (
-      <SeriesCard
-        key={s.id}
-        series={s}
-        isSelected={selectedSeries === s.id}
-        viewMode={viewMode}
-        onSeriesClick={handleSeriesClick}
-        thumbnailPath={thumbnailPath}
-        loadingThumbnail={isLoadingThumbnail}
-      />
-    );
-  };
+      toast.success("Segmentation layer saved to database");
+      await refetchSegmentationLayers();
+    } catch (error) {
+      toast.error("Error saving segmentation layer to database");
+    }
+  }, [getSegmentationLayers, createImageSegmentationLayers, refetchSegmentationLayers]);
+
+  const handleDeleteLayer = useCallback(async (layerId: string) => {
+    try {
+      const layers = getSegmentationLayers();
+      const layer = layers.find((l) => l.id === layerId);
+      
+      if (layer?.origin === "database") {
+        await deleteImageSegmentationLayer(layerId);
+        await refetchSegmentationLayers();
+      }
+      
+      deleteSegmentationLayer(layerId);
+      toast.success("Segmentation layer deleted");
+    } catch (error) {
+      toast.error("Error deleting segmentation layer");
+    }
+  }, [getSegmentationLayers, deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);
+
+
 
   return (
     <TooltipProvider>
       <div className="bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 border-l-2 border-teal-900/30 flex flex-col h-full shadow-2xl">
-        {/* Medical-themed Header */}
         <div className="h-14 flex items-center justify-between px-4 border-b-2 border-teal-800/40 bg-linear-to-r from-slate-800 to-slate-900">
           <div className="flex items-center gap-3">
             <div className="p-1.5 bg-teal-600/20 rounded-lg border border-teal-500/30">
-              <Database className="h-4 w-4 text-teal-400" />
+              {viewMode === 'annotations' ? (
+                <FileText className="h-4 w-4 text-teal-400" />
+              ) : (
+                <FolderTree className="h-4 w-4 text-teal-400" />
+              )}
             </div>
-            <div>
-              <h2 className="text-teal-300 font-bold text-sm tracking-wide">
-                IMAGE SERIES
-              </h2>
-              <Badge
-                variant="secondary"
-                className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
-              >
-                {seriesList.length} Total
-              </Badge>
-            </div>
+             <div>
+               <h2 className="text-teal-300 font-bold text-sm tracking-wide">
+                 {viewMode === 'annotations' 
+                   ? 'ANNOTATIONS & SEGMENTATIONS' 
+                   : 'IMAGING ORDERS'}
+               </h2>
+                 <Badge
+                   variant="secondary"
+                   className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
+                 >
+                   {viewMode === 'annotations' 
+                     ? 'Management' 
+                     : `${resolvedOrders.length} Orders`}
+               </Badge>
+             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className={`h-6 w-6 p-0 transition-all ${
-                      viewMode === "grid"
-                        ? "text-teal-300 bg-teal-900/40"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    <Grid3X3 className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="bg-slate-700 border-slate-600">
-                  <p>Grid view</p>
-                </TooltipContent>
-              </Tooltip>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode("folders")}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === "folders"
+                          ? "text-teal-300 bg-teal-900/40"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      <FolderTree className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>Folder view (Orders → Studies → Series)</p>
+                  </TooltipContent>
+                </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className={`h-6 w-6 p-0 transition-all ${
-                      viewMode === "list"
-                        ? "text-teal-300 bg-teal-900/40"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="bg-slate-700 border-slate-600">
-                  <p>List view</p>
-                </TooltipContent>
-              </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewMode("annotations")}
+                      className={`h-6 w-6 p-0 transition-all ${
+                        viewMode === "annotations"
+                          ? "text-teal-300 bg-teal-900/40"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-700 border-slate-600">
+                    <p>Annotations & Segmentations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              {viewMode === 'folders' && (
+                <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFolderListMode("grid")}
+                        className={`h-6 w-6 p-0 transition-all ${
+                          folderListMode === "grid"
+                            ? "text-teal-300 bg-teal-900/40"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <Grid3X3 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-slate-700 border-slate-600">
+                      <p>Card view</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFolderListMode("list")}
+                        className={`h-6 w-6 p-0 transition-all ${
+                          folderListMode === "list"
+                            ? "text-teal-300 bg-teal-900/40"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <List className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-slate-700 border-slate-600">
+                      <p>List view</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
 
             <Tooltip>
@@ -401,327 +278,139 @@ const ViewerRightSidebar = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowFilter(!showFilter)}
-                  className={`h-8 w-8 p-0 transition-all rounded-lg ${
-                    showFilter
-                      ? "text-teal-300 bg-teal-900/40 border border-teal-700/50"
-                      : "text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent"
+                  onClick={handleRefresh}
+                  disabled={isLoadingOrders}
+                  className={`h-8 w-8 p-0 transition-all rounded-lg text-teal-400 hover:text-teal-300 hover:bg-slate-800 border border-transparent ${
+                    isLoadingOrders ? 'opacity-50' : ''
                   }`}
                 >
-                  <Filter className="h-4 w-4" />
+                  <RefreshCw className={`h-4 w-4 ${isLoadingOrders ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent
-                side="bottom"
-                className="bg-slate-800 border-slate-600 text-white"
-              >
-                Filter Series
+              <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
+                {viewMode === 'folders' 
+                  ? 'Refresh imaging orders'
+                  : 'Refresh segmentation layers'}
               </TooltipContent>
             </Tooltip>
+
           </div>
         </div>
 
-        {/* Filter Section */}
-        {showFilter && (
-          <SeriesFilter
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            filterModality={filterModality}
-            onModalityChange={setFilterModality}
-            onClose={() => setShowFilter(false)}
-          />
-        )}
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-2 space-y-1">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
-                <span className="ml-2 text-white">Loading series...</span>
-              </div>
-            ) : filteredSeries.length > 0 ? (
-              <div className={viewMode === "grid" ? "space-y-1" : "space-y-1"}>
-                {filteredSeries.map((s) => renderSeriesCard(s))}
-              </div>
-            ) : (
-              <div className="text-center text-slate-500 py-8">
-                <FolderOpen className="h-12 w-12 mx-auto mb-3 text-slate-600" />
-                <div className="text-sm">No series available</div>
-                <div className="text-xs mt-1">
-                  Load series to view them here
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+         {/* Content */}
+         <div className="flex-1 overflow-y-auto">
+           {viewMode === 'folders' ? (
+             <div className="p-2 space-y-2 h-full flex flex-col">
+               {isLoadingOrders ? (
+                 <div className="flex-1 flex flex-col items-center justify-center">
+                   <Loader2 className="h-8 w-8 animate-spin text-teal-400 mb-2" />
+                   <span className="text-slate-400 text-sm">Loading imaging orders...</span>
+                 </div>
+               ) : resolvedOrders.length > 0 ? (
+                 resolvedOrders.map((order: any) => {
+                   // Create descriptive folder name
+                   const procedureName = order.procedure?.name || order.procedureName || "Unknown Procedure";
+                   const orderNum = order.orderNumber || "N/A";
+                   
+                   return (
+                   <FolderItem
+                     key={order.id}
+                     orderId={order.id}
+                     folderName={`${orderNum}`}
+                     procedureName={procedureName}
+                     orderStatus={order.orderStatus}
+                     isExpanded={expandedFolders.has(order.id)}
+                     onToggle={() => {
+                       setExpandedFolders((prev) => {
+                         const newSet = new Set(prev);
+                         if (newSet.has(order.id)) {
+                           newSet.delete(order.id);
+                         } else {
+                           newSet.add(order.id);
+                         }
+                         return newSet;
+                       });
+                     }}
+                     selectedSeries={selectedSeries}
+                     viewMode={folderListMode}
+                     onSeriesClick={handleSeriesClick}
+                     urlStudyId={studyId || undefined}
+                     urlSeriesId={urlSeriesId}
+                   />
+                   );
+                 })
+               ) : (
+                 <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+                   <FolderOpen className="h-16 w-16 mb-4 text-slate-600" />
+                   <div className="text-slate-400 text-base font-medium mb-2">
+                     No Imaging Orders Available
+                   </div>
+                   <div className="text-slate-500 text-sm mb-1">
+                     There are no imaging orders for this patient
+                   </div>
+                   {patientId ? (
+                     <div className="text-slate-600 text-xs mt-2 font-mono">
+                       Patient ID: {patientId}
+                     </div>
+                   ) : (
+                     <div className="text-amber-500 text-xs mt-2 flex items-center gap-1">
+                       <span>⚠️</span>
+                       <span>Patient ID not provided in URL</span>
+                     </div>
+                   )}
+                 </div>
+               )}
+             </div>
+          ) : (
+            <Tabs 
+              value={annotationsTab} 
+              onValueChange={(val) => setAnnotationsTab(val as 'annotations' | 'segmentations')} 
+              className="h-full flex flex-col"
+            >
+              <TabsList className="w-full justify-start border-b border-slate-800 bg-slate-900/50 rounded-none h-12 px-2 shrink-0">
+                <TabsTrigger 
+                  value="annotations" 
+                  className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Annotations</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="segmentations"
+                  className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
+                >
+                  <Layers className="h-4 w-4" />
+                  <span>Segmentations</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent 
+                value="annotations" 
+                className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
+              >
+                <AnnotationAccordion 
+                  selectedSeriesId={selectedSeries} 
+                  seriesList={series}
+                />
+              </TabsContent>
+              
+              <TabsContent 
+                value="segmentations" 
+                className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
+              >
+                <SegmentationAccordion
+                  selectedSeriesId={selectedSeries}
+                  onSaveLayer={handleSaveLayer}
+                  onDeleteLayer={handleDeleteLayer}
+                  onUpdateLayerMetadata={updateSegmentationLayerMetadata}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+         </div>
       </div>
     </TooltipProvider>
   );
 };
 
 export default ViewerRightSidebar;
-// "use client";
-
-// import React, { useState, useEffect } from "react";
-// import {
-//   Filter,
-//   FolderOpen,
-//   Database,
-//   Grid3X3,
-//   List,
-//   FileText,
-//   Loader2,
-// } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   Tooltip,
-//   TooltipContent,
-//   TooltipProvider,
-//   TooltipTrigger,
-// } from "@/components/ui/tooltip";
-// import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-// import { useViewer } from "@/contexts/ViewerContext";
-// import SeriesFilter from "../sidebar/SeriesFilter";
-// import AnnotationsSegmentationsList from "../sidebar/AnnotationsSegmentationsList";
-// import SeriesCard from "../sidebar/SeriesCard";
-// import { useLazyGetAnnotationsBySeriesIdQuery } from "@/store/annotationApi";
-// import { extractApiData } from "@/utils/api";
-// import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-// import { SegmentationSnapshot } from "@/contexts/viewer-context/segmentation-helper";
-
-// interface ViewerRightSidebarProps {
-//   onSeriesSelect?: (series: DicomSeries) => void;
-//   patientId?: string;
-// }
-
-// const ViewerRightSidebar = ({
-//   onSeriesSelect,
-//   patientId,
-// }: ViewerRightSidebarProps) => {
-//   const { state, getViewportSeries } = useViewer();
-
-//   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
-//   const [showFilter, setShowFilter] = useState(false);
-//   const [filterModality, setFilterModality] = useState<string>("All");
-//   const [searchQuery, setSearchQuery] = useState("");
-//   const [viewMode, setViewMode] = useState<"grid" | "list" | "annotations">(
-//     "grid"
-//   );
-//   const [annotations, setAnnotations] = useState<ImageAnnotation[]>([]);
-//   const [segmentations, setSegmentations] = useState<SegmentationSnapshot[]>(
-//     []
-//   );
-//   const [fetchAnnotationsBySeries] = useLazyGetAnnotationsBySeriesIdQuery();
-
-//   // Sync selected series with active viewport
-//   useEffect(() => {
-//     const activeViewportSeries = getViewportSeries(state.activeViewport);
-//     if (activeViewportSeries && activeViewportSeries.id !== selectedSeries) {
-//       setSelectedSeries(activeViewportSeries.id);
-//     }
-//   }, [state.activeViewport, getViewportSeries, selectedSeries]);
-
-//   // Load annotations & segmentations when in annotations view
-//   useEffect(() => {
-//     if (viewMode !== "annotations" || !selectedSeries) {
-//       setAnnotations([]);
-//       setSegmentations([]);
-//       return;
-//     }
-
-//     const loadAnnotationsAndSegmentations = async () => {
-//       try {
-//         const response = await fetchAnnotationsBySeries(
-//           selectedSeries
-//         ).unwrap();
-//         const fetchedAnnotations = extractApiData<ImageAnnotation>(response);
-//         setAnnotations(fetchedAnnotations || []);
-//       } catch (error) {
-//         console.error("Failed to load annotations:", error);
-//         setAnnotations([]);
-//       }
-
-//       // Load segmentations from viewer context
-//       const activeSeries = getViewportSeries(state.activeViewport);
-//       if (activeSeries?.id === selectedSeries) {
-//         const segmentationLayers = Array.from(
-//           state.segmentationLayers.values()
-//         ).flat();
-//         const currentSnapshots = segmentationLayers
-//           .map((layer) => layer[layer.length - 1])
-//           .filter(
-//             (snapshot): snapshot is SegmentationSnapshot =>
-//               snapshot !== undefined
-//           );
-//         setSegmentations(currentSnapshots);
-//       } else {
-//         setSegmentations([]);
-//       }
-//     };
-
-//     void loadAnnotationsAndSegmentations();
-//   }, [
-//     viewMode,
-//     selectedSeries,
-//     state.activeViewport,
-//     state.segmentationLayers,
-//     fetchAnnotationsBySeries,
-//     getViewportSeries,
-//   ]);
-
-//   const handleSeriesClick = (series: DicomSeries) => {
-//     setSelectedSeries(series.id);
-//     onSeriesSelect?.(series);
-//   };
-
-//   return (
-//     <TooltipProvider>
-//       <div className="bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 border-l-2 border-teal-900/30 flex flex-col h-full shadow-2xl">
-//         {/* Header */}
-//         <div className="h-14 flex items-center justify-between px-4 border-b-2 border-teal-800/40 bg-linear-to-r from-slate-800 to-slate-900">
-//           <div className="flex items-center gap-3">
-//             <div className="p-1.5 bg-teal-600/20 rounded-lg border border-teal-500/30">
-//               <Database className="h-4 w-4 text-teal-400" />
-//             </div>
-//             <div>
-//               <h2 className="text-teal-300 font-bold text-sm tracking-wide">
-//                 {viewMode === "annotations"
-//                   ? "ANNOTATIONS & SEGMENTATIONS"
-//                   : "IMAGE SERIES"}
-//               </h2>
-//               <Badge
-//                 variant="secondary"
-//                 className="bg-teal-900/40 text-teal-200 text-[10px] mt-0.5 px-1.5 py-0 font-semibold border border-teal-700/30"
-//               >
-//                 {viewMode === "annotations"
-//                   ? `${annotations.length} Annotations, ${segmentations.length} Segmentations`
-//                   : "Series"}
-//               </Badge>
-//             </div>
-//           </div>
-
-//           {/* View Mode + Filter */}
-//           <div className="flex items-center gap-2">
-//             <div className="flex items-center bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
-//               <Tooltip>
-//                 <TooltipTrigger asChild>
-//                   <Button
-//                     variant="ghost"
-//                     size="sm"
-//                     onClick={() => setViewMode("grid")}
-//                     className={`h-6 w-6 p-0 transition-all ${
-//                       viewMode === "grid"
-//                         ? "text-teal-300 bg-teal-900/40"
-//                         : "text-slate-400 hover:text-white"
-//                     }`}
-//                   >
-//                     <Grid3X3 className="h-3.5 w-3.5" />
-//                   </Button>
-//                 </TooltipTrigger>
-//                 <TooltipContent className="bg-slate-700 border-slate-600">
-//                   Grid view
-//                 </TooltipContent>
-//               </Tooltip>
-
-//               <Tooltip>
-//                 <TooltipTrigger asChild>
-//                   <Button
-//                     variant="ghost"
-//                     size="sm"
-//                     onClick={() => setViewMode("list")}
-//                     className={`h-6 w-6 p-0 transition-all ${
-//                       viewMode === "list"
-//                         ? "text-teal-300 bg-teal-900/40"
-//                         : "text-slate-400 hover:text-white"
-//                     }`}
-//                   >
-//                     <List className="h-3.5 w-3.5" />
-//                   </Button>
-//                 </TooltipTrigger>
-//                 <TooltipContent className="bg-slate-700 border-slate-600">
-//                   List view
-//                 </TooltipContent>
-//               </Tooltip>
-
-//               <Tooltip>
-//                 <TooltipTrigger asChild>
-//                   <Button
-//                     variant="ghost"
-//                     size="sm"
-//                     onClick={() => setViewMode("annotations")}
-//                     className={`h-6 w-6 p-0 transition-all ${
-//                       viewMode === "annotations"
-//                         ? "text-teal-300 bg-teal-900/40"
-//                         : "text-slate-400 hover:text-white"
-//                     }`}
-//                   >
-//                     <FileText className="h-3.5 w-3.5" />
-//                   </Button>
-//                 </TooltipTrigger>
-//                 <TooltipContent className="bg-slate-700 border-slate-600">
-//                   Annotations & Segmentations
-//                 </TooltipContent>
-//               </Tooltip>
-//             </div>
-
-//             <Tooltip>
-//               <TooltipTrigger asChild>
-//                 <Button
-//                   variant="ghost"
-//                   size="sm"
-//                   onClick={() => setShowFilter(!showFilter)}
-//                   className={`h-8 w-8 p-0 transition-all rounded-lg ${
-//                     showFilter
-//                       ? "text-teal-300 bg-teal-900/40 border border-teal-700/50"
-//                       : "text-white hover:text-teal-300 hover:bg-slate-800 border border-transparent"
-//                   }`}
-//                 >
-//                   <Filter className="h-4 w-4" />
-//                 </Button>
-//               </TooltipTrigger>
-//               <TooltipContent
-//                 side="bottom"
-//                 className="bg-slate-800 border-slate-600 text-white"
-//               >
-//                 Filter Series
-//               </TooltipContent>
-//             </Tooltip>
-//           </div>
-//         </div>
-
-//         {/* Filter Section */}
-//         {showFilter && (
-//           <SeriesFilter
-//             searchQuery={searchQuery}
-//             onSearchChange={setSearchQuery}
-//             filterModality={filterModality}
-//             onModalityChange={setFilterModality}
-//             onClose={() => setShowFilter(false)}
-//           />
-//         )}
-
-//         {/* Content */}
-//         <div className="flex-1 overflow-y-auto">
-//           {viewMode === "annotations" ? (
-//             <AnnotationsSegmentationsList
-//               annotations={annotations}
-//               segmentations={segmentations}
-//             />
-//           ) : (
-//             <div className="p-2 space-y-1">
-//               {/* Replace with actual series rendering logic */}
-//               <SeriesCard
-//                 seriesId={selectedSeries}
-//                 onClick={handleSeriesClick}
-//               />
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </TooltipProvider>
-//   );
-// };
-
-// export default ViewerRightSidebar;

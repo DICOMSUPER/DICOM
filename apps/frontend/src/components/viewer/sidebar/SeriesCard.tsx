@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { GripVertical, Activity, ImageIcon, Loader2 } from "lucide-react";
+import { Activity, ImageIcon, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -38,19 +38,24 @@ export default function SeriesCard({
 }: SeriesCardProps) {
   const modality = "CT"; // Could be dynamic from series data
   const finalThumbnailPath = thumbnailPath;
+  const hasInstances = (series?.numberOfInstances ?? 0) > 0;
+  const isDisabled = !hasInstances;
 
   // List view component
   if (viewMode === "list") {
     return (
       <div
-        className={`flex items-center gap-3 p-3 rounded cursor-move transition-all duration-200 ${
-          isSelected
-            ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50"
-            : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md"
+        className={`flex items-center gap-3 p-3 rounded transition-all duration-200 ${
+          isDisabled
+            ? "opacity-50 cursor-not-allowed bg-slate-900"
+            : isSelected
+            ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
+            : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
         } border-l-4 ${
           isSelected ? "border-slate-400" : "border-slate-600"
-        } group hover:border-slate-400`}
-        onClick={() => onSeriesClick(series)}
+        } group ${!isDisabled && 'hover:border-slate-400'}`}
+        onClick={() => !isDisabled && onSeriesClick(series)}
+        title={isDisabled ? "No instances available" : undefined}
       >
         {/* Thumbnail */}
         <div className="shrink-0 w-12 aspect-square rounded overflow-hidden">
@@ -87,11 +92,6 @@ export default function SeriesCard({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <GripVertical
-              className={`h-3 w-3 ${
-                isSelected ? "text-slate-200" : "text-slate-500"
-              } group-hover:text-slate-300 transition-colors`}
-            />
             <Badge
               variant="secondary"
               className={`${
@@ -108,14 +108,24 @@ export default function SeriesCard({
             <Badge
               variant="outline"
               className={`${
-                isSelected
+                isDisabled
+                  ? "text-red-400 border-red-500"
+                  : isSelected
                   ? "text-green-200 border-green-300"
                   : "text-emerald-400 border-emerald-500"
               } text-xs flex items-center gap-1`}
             >
               <Activity className="h-3 w-3" />
-              {series?.numberOfInstances}
+              {series?.numberOfInstances || 0}
             </Badge>
+            {isDisabled && (
+              <Badge
+                variant="secondary"
+                className="bg-red-900/50 text-red-300 border border-red-700/50 text-xs"
+              >
+                No Images
+              </Badge>
+            )}
           </div>
 
           <div
@@ -144,23 +154,21 @@ export default function SeriesCard({
   // Grid view component
   return (
     <div
-      className={`rounded cursor-move transition-all duration-200 ${
-        isSelected
-          ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50"
-          : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md"
+      className={`rounded transition-all duration-200 ${
+        isDisabled
+          ? "opacity-50 cursor-not-allowed bg-slate-900"
+          : isSelected
+          ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
+          : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
       } p-4 mb-2 border-l-4 ${
         isSelected ? "border-slate-400" : "border-slate-600"
-      } group hover:border-slate-400`}
-      onClick={() => onSeriesClick(series)}
+      } group ${!isDisabled && 'hover:border-slate-400'}`}
+      onClick={() => !isDisabled && onSeriesClick(series)}
+      title={isDisabled ? "No instances available" : undefined}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <GripVertical
-            className={`h-4 w-4 ${
-              isSelected ? "text-slate-200" : "text-slate-500"
-            } group-hover:text-slate-300 transition-colors`}
-          />
           <Badge
             variant="secondary"
             className={`${
@@ -177,14 +185,24 @@ export default function SeriesCard({
           <Badge
             variant="outline"
             className={`${
-              isSelected
+              isDisabled
+                ? "text-red-400 border-red-500"
+                : isSelected
                 ? "text-green-200 border-green-300"
                 : "text-emerald-400 border-emerald-500"
             } text-xs flex items-center gap-1`}
           >
             <Activity className="h-3 w-3" />
-            {series?.numberOfInstances}
+            {series?.numberOfInstances || 0}
           </Badge>
+          {isDisabled && (
+            <Badge
+              variant="secondary"
+              className="bg-red-900/50 text-red-300 border border-red-700/50 text-xs"
+            >
+              No Images
+            </Badge>
+          )}
         </div>
       </div>
 
