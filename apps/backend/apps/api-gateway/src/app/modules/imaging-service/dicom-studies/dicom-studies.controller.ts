@@ -88,6 +88,12 @@ export class DicomStudiesController {
   @ApiQuery({ name: 'searchField', required: false })
   @ApiQuery({ name: 'sortField', required: false })
   @ApiQuery({ name: 'order', required: false })
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   async getManyDicomStudies(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -460,6 +466,12 @@ export class DicomStudiesController {
   }
 
   @Get(':id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get DICOM study by ID' })
   @ApiResponse({ status: 200, description: 'DICOM study details' })
   @ApiParam({ name: 'id', required: true, type: String })
@@ -533,21 +545,28 @@ export class DicomStudiesController {
     const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
     await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
 
-    await this.redisService.delete(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-    );
+    try {
+      await Promise.allSettled([
+        this.redisService.delete(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
+        ),
+      ]);
+    } catch (error: any) {
+      console.log('Failed to invalidate some cache keys:', error.message);
+    }
+
     return study;
   }
 
@@ -578,7 +597,12 @@ export class DicomStudiesController {
     return result;
   }
 
-  @Role(Roles.RADIOLOGIST)
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN,
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN
+  )
   @Get('order/:orderId')
   async getDicomStudiesByOrderId(@Param('orderId') orderId: string) {
     const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}/${orderId}`;

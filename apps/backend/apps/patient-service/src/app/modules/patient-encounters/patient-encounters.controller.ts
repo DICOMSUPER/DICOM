@@ -35,7 +35,11 @@ export class PatientEncounterController {
 
   @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`)
   async create(
-    @Payload() data: {createPatientEncounterDto: CreatePatientEncounterDto,employeesInRoom: string[]}
+    @Payload()
+    data: {
+      createPatientEncounterDto: CreatePatientEncounterDto;
+      employeesInRoom: string[];
+    }
   ): Promise<PatientEncounter> {
     this.logger.log(
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
@@ -146,9 +150,7 @@ export class PatientEncounterController {
   }
 
   //transfer update
-  @MessagePattern(
-    `${PATIENT_SERVICE}.${moduleName}.Transfer`
-  )
+  @MessagePattern(`${PATIENT_SERVICE}.${moduleName}.Transfer`)
   async transfer(
     @Payload()
     data: {
@@ -157,12 +159,14 @@ export class PatientEncounterController {
       transferredBy: string;
     }
   ): Promise<PatientEncounter | null> {
-    this.logger.log(
-      `Using pattern: ${PATIENT_SERVICE}.${moduleName}.Transfer`
-    );
+    this.logger.log(`Using pattern: ${PATIENT_SERVICE}.${moduleName}.Transfer`);
     try {
       const { id, updatePatientEncounterDto, transferredBy } = data;
-      return await this.patientEncounterService.transfer(id, updatePatientEncounterDto, transferredBy);
+      return await this.patientEncounterService.transfer(
+        id,
+        updatePatientEncounterDto,
+        transferredBy
+      );
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

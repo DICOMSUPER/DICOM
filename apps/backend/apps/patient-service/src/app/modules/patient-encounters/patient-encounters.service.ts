@@ -112,22 +112,30 @@ export class PatientEncounterService {
     //   );
     // }
     if (employeesInRoom.length > 0) {
-      await Promise.all(
-        employeesInRoom.map((employeeId) => {
-          const notificationPayload: CreateNotificationDto = {
-            recipientId: employeeId,
-            senderId: createPatientEncounterDto.createdBy as string,
-            notificationType: NotificationType.ASSIGNMENT,
-            title: 'New Encounter',
-            relatedEntityType: RelatedEntityType.ENCOUNTER,
-            relatedEntityId: result.id,
-            message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
-          };
-          return firstValueFrom(
-            this.systemService.send('notification.create', notificationPayload)
-          );
-        })
-      );
+      try {
+        await Promise.allSettled(
+          employeesInRoom.map((employeeId) => {
+            const notificationPayload: CreateNotificationDto = {
+              recipientId: employeeId,
+              senderId: createPatientEncounterDto.createdBy as string,
+              notificationType: NotificationType.ASSIGNMENT,
+              title: 'New Encounter',
+              relatedEntityType: RelatedEntityType.ENCOUNTER,
+              relatedEntityId: result.id,
+              message: `You have a new ${result.encounterType} encounter (Order Number: ${result.orderNumber}). Please review and process it.`,
+            };
+            return firstValueFrom(
+              this.systemService.send(
+                'notification.create',
+                notificationPayload
+              )
+            );
+          })
+        );
+      } catch (error) {
+        const logger = new Logger('PatientEncounterService');
+        logger.warn('Failed to send some encounter notifications', error);
+      }
     }
 
     return result;
@@ -459,15 +467,26 @@ export class PatientEncounterService {
     const roomToAllServiceRoomIds = new Map<string, string[]>();
 
     for (const roomId of uniqueRoomIds) {
-      // Fetch ALL service rooms for this room
-      const allServiceRooms = await firstValueFrom(
-        this.userService.send('UserService.ServiceRooms.FindByRoom', { roomId })
-      );
+      try {
+        // Fetch ALL service rooms for this room
+        const allServiceRooms = await firstValueFrom(
+          this.userService.send('UserService.ServiceRooms.FindByRoom', {
+            roomId,
+          })
+        );
 
-      if (allServiceRooms && allServiceRooms.length > 0) {
-        const allServiceRoomIds = allServiceRooms.map((sr: any) => sr.id);
-        roomToAllServiceRoomIds.set(roomId, allServiceRoomIds);
-      } else {
+        if (allServiceRooms && allServiceRooms.length > 0) {
+          const allServiceRoomIds = allServiceRooms.map((sr: any) => sr.id);
+          roomToAllServiceRoomIds.set(roomId, allServiceRoomIds);
+        } else {
+          roomToAllServiceRoomIds.set(roomId, []);
+        }
+      } catch (error) {
+        const logger = new Logger('PatientEncounterService');
+        logger.error(
+          `Failed to fetch service rooms for roomId ${roomId}`,
+          error
+        );
         roomToAllServiceRoomIds.set(roomId, []);
       }
     }

@@ -33,6 +33,8 @@ import {
   UpdateDicomSeriesDto,
 } from '@backend/shared-domain';
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
+import { Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 
 @ApiTags('DICOM Series')
 @Controller('dicom-series')
@@ -46,6 +48,12 @@ export class DicomSeriesController {
   ) {}
 
   @Get()
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get all DICOM series' })
   @ApiResponse({ status: 200, description: 'List of DICOM series' })
   async getAllDicomSeries() {
@@ -64,6 +72,12 @@ export class DicomSeriesController {
   }
 
   @Get('reference/:id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get DICOM series by reference ID' })
   @ApiResponse({
     status: 200,
@@ -119,6 +133,12 @@ export class DicomSeriesController {
   }
 
   @Get('paginated')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get paginated DICOM series' })
   @ApiResponse({ status: 200, description: 'Paginated list of DICOM series' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -160,6 +180,12 @@ export class DicomSeriesController {
   }
 
   @Get(':id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get a DICOM series by ID' })
   @ApiResponse({ status: 200, description: 'DICOM series details' })
   @ApiParam({ name: 'id', required: true, type: String })
