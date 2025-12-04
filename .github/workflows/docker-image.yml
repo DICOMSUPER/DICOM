@@ -61,6 +61,10 @@ jobs:
           cd apps/backend
           docker build -t dicom/api-gateway:latest -f apps/api-gateway/Dockerfile .
 
+      - name: Build Docker image for ws-gateway
+        run: |
+          cd apps/backend
+          docker build -t dicom/ws-gateway:latest -f apps/ws-gateway/Dockerfile .
       # # 6️⃣ Login Docker Hub
       # - name: Docker Hub Login
       #   uses: docker/login-action@v2
