@@ -24,12 +24,25 @@ import {
 import { ImagingOrderStatus } from '@backend/shared-enums';
 import { handleError } from '@backend/shared-utils';
 import { firstValueFrom } from 'rxjs';
+import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { RedisService } from '@backend/redis';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+  CacheKeyPattern,
+} from '../../../../constant/cache';
+import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';
+import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
+import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
+import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
+import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 
 type FilteredOrder = Partial<ImagingOrder> & {
   patient: Patient;
   orderingPhysician: User;
 };
 
+@ApiTags('Imaging Orders')
 @Controller('imaging-orders')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingOrdersController {
@@ -39,27 +52,82 @@ export class ImagingOrdersController {
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy,
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
-    private readonly userService: ClientProxy
+    private readonly userService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new imaging order' })
+  @ApiResponse({
+    status: 201,
+    description: 'The imaging order has been created.',
+  })
+  @ApiBody({ description: 'Imaging order creation payload', type: Object })
   async createImagingOrder(@Body() createImagingOrderDto: any) {
-    return await firstValueFrom(
+    const order = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.Create',
         createImagingOrderDto
       )
     );
-  }
 
-  @Get()
-  async getAllImagingOrders() {
-    return await firstValueFrom(
-      this.imagingService.send('ImagingService.ImagingOrders.FindAll', {})
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.delete(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byPatientId}`
+    );
+
+    await this.redisService.set(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${order.id}`,
+      order,
+      CACHE_TTL_SECONDS
     );
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get all imaging orders' })
+  @ApiResponse({ status: 200, description: 'List of all imaging orders' })
+  async getAllImagingOrders() {
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`;
+    const cachedOrders = await this.redisService.get(pattern);
+    if (cachedOrders) {
+      return cachedOrders;
+    }
+
+    const orders = await firstValueFrom(
+      this.imagingService.send('ImagingService.ImagingOrders.FindAll', {})
+    );
+
+    await this.redisService.set(pattern, orders, CACHE_TTL_SECONDS);
+    return orders;
+  }
+
   @Get('paginated')
+  @ApiOperation({ summary: 'Get paginated imaging orders' })
+  @ApiResponse({ status: 200, description: 'Paginated imaging orders' })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
   async findMany(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -68,6 +136,18 @@ export class ImagingOrdersController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imagingOrders}.${
+      CacheKeyPattern.paginated
+    }?page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedOrders = await this.redisService.get(pattern);
+    if (cachedOrders) {
+      return cachedOrders;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -77,14 +157,27 @@ export class ImagingOrdersController {
       order,
     };
 
-    return await firstValueFrom(
+    const orders = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindMany', {
         paginationDto,
       })
     );
+
+    await this.redisService.set(pattern, orders, CACHE_TTL_SECONDS);
+    return orders;
   }
 
   @Get('reference/:id')
+  @ApiOperation({ summary: 'Get imaging orders by reference ID' })
+  @ApiResponse({ status: 200, description: 'Imaging orders by reference ID' })
+  @ApiQuery({ name: 'type', required: true, type: String })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'searchField', required: false, type: String })
+  @ApiQuery({ name: 'sortField', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
+  @ApiParam({ name: 'id', required: true, type: String })
   async findImagingOrderByReferenceId(
     @Param('id') id: string,
     @Query('type') type: string,
@@ -95,6 +188,18 @@ export class ImagingOrdersController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imagingOrders}.${
+      CacheKeyPattern.byReferenceId
+    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
+      search || ''
+    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
+      order || ''
+    }`;
+    const cachedOrders = await this.redisService.get(pattern);
+    if (cachedOrders) {
+      return cachedOrders;
+    }
+
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -104,16 +209,25 @@ export class ImagingOrdersController {
       order,
     };
 
-    return await firstValueFrom(
+    const orders = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.FindByReferenceId',
         { id, type, paginationDto }
       )
     );
+
+    await this.redisService.set(pattern, orders, CACHE_TTL_SECONDS);
+    return orders;
   }
 
   @Get(':id/room/stats')
   async getImagingOrderRoomStats(@Param('id') id: string) {
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}/${id}`;
+    const cachedStats = await this.redisService.get(pattern);
+    if (cachedStats) {
+      return cachedStats;
+    }
+
     const room = await firstValueFrom(
       this.userService.send('room.get-by-id', { id })
     );
@@ -122,10 +236,35 @@ export class ImagingOrdersController {
         id,
       })
     );
+
+    await this.redisService.set(
+      pattern,
+      { ...room, queueStats: { ...stats[id] } },
+      CACHE_TTL_SECONDS
+    );
     return { ...room, queueStats: { ...stats[id] } };
   }
 
   @Get(':id/room/filter')
+  @ApiOperation({ summary: 'Get imaging orders filtered by room ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Filtered imaging orders by room ID',
+  })
+  @ApiQuery({ name: 'modalityId', required: false, type: String })
+  @ApiQuery({ name: 'orderStatus', required: false, type: String })
+  @ApiQuery({ name: 'procedureId', required: false, type: String })
+  @ApiQuery({ name: 'bodyPart', required: false, type: String })
+  @ApiQuery({ name: 'mrn', required: false, type: String })
+  @ApiQuery({ name: 'patientFirstName', required: false, type: String })
+  @ApiQuery({ name: 'patientLastName', required: false, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'order', required: false, type: String })
+  @ApiQuery({ name: 'id', required: true, type: String })
   async getImagingOrderFilterByRoomId(
     @Param('id') id: string,
     @Query('modalityId') modalityId?: string,
@@ -142,6 +281,22 @@ export class ImagingOrdersController {
     @Query('sortBy') sortBy?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
+    const pattern = `${CacheEntity.imagingOrders}.${
+      CacheKeyPattern.filterByRoomId
+    }/${id}?modalityId=${modalityId || ''}&orderStatus=${
+      orderStatus || ''
+    }&procedureId=${procedureId || ''}&bodyPart=${bodyPart || ''}&mrn=${
+      mrn || ''
+    }&patientFirstName=${patientFirstName || ''}&patientLastName=${
+      patientLastName || ''
+    }&startDate=${startDate || ''}&endDate=${endDate || ''}&page=${
+      page || ''
+    }&limit=${limit || ''}&sortBy=${sortBy || ''}&order=${order || ''}`;
+    const cachedOrders = await this.redisService.get(pattern);
+    if (cachedOrders) {
+      return cachedOrders;
+    }
+
     let startDateValue = startDate;
     let endDateValue = endDate;
 
@@ -165,39 +320,45 @@ export class ImagingOrdersController {
     );
 
     const orders = ordersResponse.data || [];
-    const patientIds = orders.map((o: ImagingOrder) => {
-      return o.imagingOrderForm?.patientId;
-    }).filter(Boolean);
+    const patientIds = orders
+      .map((o: ImagingOrder) => {
+        return o.imagingOrderForm?.patientId;
+      })
+      .filter(Boolean);
 
     let patients: Patient[] = [];
     if (patientIds.length > 0) {
-      patients = await firstValueFrom(
-        this.patientService.send('PatientService.Patient.Filter', {
-          patientIds,
-          patientFirstName,
-          patientLastName,
-          patientCode: mrn,
-        })
-      ) || [];
+      patients =
+        (await firstValueFrom(
+          this.patientService.send('PatientService.Patient.Filter', {
+            patientIds,
+            patientFirstName,
+            patientLastName,
+            patientCode: mrn,
+          })
+        )) || [];
     }
 
-    const physicianIds = orders.map((o: ImagingOrder) => {
-      return o?.imagingOrderForm?.orderingPhysicianId;
-    }).filter(Boolean);
+    const physicianIds = orders
+      .map((o: ImagingOrder) => {
+        return o?.imagingOrderForm?.orderingPhysicianId;
+      })
+      .filter(Boolean);
 
     let physicians: User[] = [];
     if (physicianIds.length > 0) {
-      physicians = await firstValueFrom(
-        this.userService.send('UserService.Users.GetUsersByIds', {
-          userIds: physicianIds,
-        })
-      ) || [];
+      physicians =
+        (await firstValueFrom(
+          this.userService.send('UserService.Users.GetUsersByIds', {
+            userIds: physicianIds,
+          })
+        )) || [];
     }
 
     const hasPatientFilter = Boolean(
       patientFirstName || patientLastName || mrn
     );
-    
+
     if (hasPatientFilter && patients.length === 0) {
       return {
         ...ordersResponse,
@@ -224,6 +385,16 @@ export class ImagingOrdersController {
         )
       : combined;
 
+    await this.redisService.set(
+      pattern,
+      {
+        ...ordersResponse,
+        data: filteredOrders,
+        total: hasPatientFilter ? filteredOrders.length : ordersResponse.total,
+      },
+      CACHE_TTL_SECONDS
+    );
+
     return {
       ...ordersResponse,
       data: filteredOrders,
@@ -233,23 +404,46 @@ export class ImagingOrdersController {
 
   //get the room all time order stats
   @Get(':id/room-stats')
+  @ApiOperation({ summary: 'Get room imaging order statistics' })
+  @ApiResponse({ status: 200, description: 'Room imaging order statistics' })
+  @ApiParam({ name: 'id', required: true, type: String })
   async getRoomImagingOrderStats(@Param('id') id: string) {
     // console.log('GetQueueStats');
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}/${id}`;
+    const cachedStats = await this.redisService.get(pattern);
+    if (cachedStats) {
+      return cachedStats;
+    }
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.GetQueueStats', {
         id,
       })
     );
+    await this.redisService.set(pattern, stats, CACHE_TTL_SECONDS);
     return stats;
   }
 
   //get the room's in date order stats
   @Get(':id/room-stats-in-date')
+  @ApiOperation({ summary: 'Get room imaging order statistics in date range' })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
   async getRoomImagingOrderStatsInDate(
     @Param('id') id: string,
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date
   ) {
+    const pattern = `${CacheEntity.imagingOrders}.${
+      CacheKeyPattern.roomStatsInDateRange
+    }/${id}?startDate=${startDate || ''}&endDate=${endDate || ''}`;
+    const cachedStats = await this.redisService.get(pattern);
+    if (cachedStats) {
+      return cachedStats;
+    }
     const stats = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.GetQueueStatsInDate',
@@ -261,42 +455,135 @@ export class ImagingOrdersController {
       )
     );
 
+    await this.redisService.set(pattern, stats, CACHE_TTL_SECONDS);
     return stats;
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get imaging order by ID' })
+  @ApiResponse({ status: 200, description: 'Imaging order details by ID' })
+  @ApiParam({ name: 'id', required: true, type: String })
   async getImagingOrder(@Param('id') id: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`;
+    const cachedOrder = await this.redisService.get(pattern);
+    if (cachedOrder) {
+      return cachedOrder;
+    }
+    const order = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindOne', { id })
     );
+    await this.redisService.set(pattern, order, CACHE_TTL_SECONDS);
+    return order;
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an imaging order' })
+  @ApiResponse({
+    status: 200,
+    description: 'The imaging order has been updated.',
+  })
+  @ApiBody({
+    description: 'Imaging order update payload',
+    type: UpdateImagingOrderDto,
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
   async updateImagingOrder(
     @Param('id') id: string,
     @Body() updateImagingOrderDto: UpdateImagingOrderDto
   ) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`;
+
+    const updatedOrder = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Update', {
         id,
         updateImagingOrderDto,
       })
     );
+
+    await this.redisService.set(pattern, updatedOrder, CACHE_TTL_SECONDS);
+
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.delete(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
+    );
+
+    return updatedOrder;
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete an imaging order' })
+  @ApiResponse({
+    status: 200,
+    description: 'The imaging order has been deleted.',
+  })
+  @ApiParam({ name: 'id', required: true, type: String })
   async deleteImagingOrder(@Param('id') id: string) {
-    return await firstValueFrom(
+    const order = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Delete', { id })
     );
+
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
+    );
+    await this.redisService.delete(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
+    );
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
+    );
+
+    await this.redisService.delete(
+      `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
+    );
+    return order;
   }
 
   @Get('patient/:patientId')
+  @ApiOperation({ summary: 'Get imaging orders by patient ID' })
+  @ApiResponse({ status: 200, description: 'Imaging orders by patient ID' })
+  @ApiParam({ name: 'patientId', required: true, type: String })
   async getImagingOrdersByPatientId(@Param('patientId') patientId: string) {
-    return await firstValueFrom(
+    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.byPatientId}/${patientId}`;
+    const cachedOrders = await this.redisService.get(pattern);
+    if (cachedOrders) {
+      return cachedOrders;
+    }
+    const orders = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindByPatientId', {
         patientId,
       })
     );
+    await this.redisService.set(pattern, orders, CACHE_TTL_SECONDS);
+    return orders;
   }
 }

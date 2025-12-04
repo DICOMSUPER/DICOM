@@ -540,13 +540,10 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       .where('encounter.service_room_id IN (:...serviceRoomIds)', {
         serviceRoomIds,
       })
-      .andWhere(
-        'encounter.encounter_date BETWEEN :startOfDate AND :endOfDate',
-        {
-          startOfDate: startOfDate.toISOString(),
-          endOfDate: endOfDate.toISOString(),
-        }
-      );
+      .andWhere('encounter.created_at BETWEEN :startOfDate AND :endOfDate', {
+        startOfDate: startOfDate.toISOString(),
+        endOfDate: endOfDate.toISOString(),
+      });
 
     return qb.getMany();
   }

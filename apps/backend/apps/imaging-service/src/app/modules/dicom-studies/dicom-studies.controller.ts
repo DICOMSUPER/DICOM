@@ -46,12 +46,12 @@ export class DicomStudiesController {
   @MessagePattern(
     `${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
   )
-  async findAll(): Promise<DicomStudy[]> {
+  async findAll(@Payload() data: { orderId?: string }): Promise<DicomStudy[]> {
     this.logger.log(
       `Using pattern: ${IMAGING_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.FIND_ALL}`
     );
     try {
-      return await this.dicomStudiesService.findAll();
+      return await this.dicomStudiesService.findAll(data);
     } catch (error) {
       throw handleErrorFromMicroservices(
         error,

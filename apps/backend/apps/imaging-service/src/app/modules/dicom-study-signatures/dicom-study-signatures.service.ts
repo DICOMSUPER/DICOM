@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'crypto';
@@ -19,6 +19,9 @@ import {
   ValidationException,
 } from '@backend/shared-exception';
 import { ImageAnnotationsService } from '../image-annotations/image-annotations.service';
+import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
+import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
 @Injectable()
 export class DicomStudySignaturesService {
@@ -32,9 +35,8 @@ export class DicomStudySignaturesService {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
     @Inject()
-    private readonly imageAnnotationsService: ImageAnnotationsService
-  ) // @Inject()
-  // private readonly imagingOrdersService: ImagingOrdersService
+    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject()
+  ) // private readonly imagingOrdersService: ImagingOrdersService
 
   // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
   // private readonly patientServiceClient: ClientProxy
@@ -75,6 +77,24 @@ export class DicomStudySignaturesService {
         study.studyStatus,
         DicomStudyStatus.SCANNED,
         studyId
+      );
+    }
+
+    const order = study.imagingOrder;
+
+    const studiesInOrder = await this.studyRepo.find({
+      where: { orderId: order?.id },
+    });
+
+    if (
+      studiesInOrder.find(
+        (s) => s.studyStatus === DicomStudyStatus.TECHNICIAN_VERIFIED
+      )
+    ) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        `Foreach order, only one study can be forwarded by technician.  Please wait for response from radiologist for the forwarded study.`,
+        IMAGING_SERVICE
       );
     }
 

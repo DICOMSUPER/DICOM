@@ -1,7 +1,13 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
 import { Department } from "@/interfaces/user/department.interface";
@@ -38,22 +44,35 @@ export function RoomFilters({
   isSearching = false,
   className = "",
 }: RoomFiltersProps) {
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || departmentFilter !== 'all';
+  const hasActiveFilters =
+    searchTerm ||
+    statusFilter !== "all" ||
+    typeFilter !== "all" ||
+    departmentFilter !== "all";
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onSearch) {
+    if (e.key === "Enter" && onSearch) {
       onSearch();
     }
   };
 
-  const roomTypeOptions = Object.values(RoomType).map(type => ({
+  const roomTypeOptions = Object.values(RoomType).map((type) => ({
     value: type,
-    label: type === 'XRAY' ? 'X-RAY' : type === 'ULTRASOUND' ? 'Ultrasound' : type === 'RESPIRATORY' ? 'Respiratory' : type === 'GENERAL' ? 'General' : type,
+    label:
+      type === "XRAY"
+        ? "X-RAY"
+        : type === "ULTRASOUND"
+        ? "Ultrasound"
+        : type === "RESPIRATORY"
+        ? "Respiratory"
+        : type === "GENERAL"
+        ? "General"
+        : type,
   }));
 
-  const roomStatusOptions = Object.values(RoomStatus).map(status => ({
+  const roomStatusOptions = Object.values(RoomStatus).map((status) => ({
     value: status,
-    label: status.charAt(0) + status.slice(1).toLowerCase(),
+    label: status?.charAt(0) + status.slice(1).toLowerCase(),
   }));
 
   return (
@@ -71,8 +90,8 @@ export function RoomFilters({
             />
           </div>
           {onSearch && (
-            <Button 
-              onClick={onSearch} 
+            <Button
+              onClick={onSearch}
               disabled={isSearching}
               className="h-9 px-4"
             >
@@ -122,7 +141,11 @@ export function RoomFilters({
             </SelectContent>
           </Select>
           {onReset && (
-            <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
+            <Button
+              variant="outline"
+              onClick={onReset}
+              className="whitespace-nowrap h-9 px-4"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
@@ -132,4 +155,3 @@ export function RoomFilters({
     </div>
   );
 }
-

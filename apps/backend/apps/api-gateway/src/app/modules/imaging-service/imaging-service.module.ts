@@ -18,6 +18,7 @@ import { ModalityMachinesModule } from './modality-machines/modality-machines.mo
 import { RequestProcedureModule } from './request-procedure/request-procedure.module';
 import { ImagingOrderFormModule } from './imaging-order-form/imaging-order-form.module';
 import { ImageSegmentationLayersModule } from './image-segmentation-layers/image-segmentation-layers.module';
+import { BackendRedisModule } from '@backend/redis';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ImageSegmentationLayersModule } from './image-segmentation-layers/image
     RequestProcedureModule,
     ImagingOrderFormModule,
     ImageSegmentationLayersModule,
+    BackendRedisModule,
   ],
   exports: [
     ImagingModalitiesModule,
@@ -44,6 +46,7 @@ import { ImageSegmentationLayersModule } from './image-segmentation-layers/image
     BodyPartModule,
     RequestProcedureModule,
     ImagingOrderFormModule,
+    BackendRedisModule,
   ],
   controllers: [ImagingServiceController],
 })

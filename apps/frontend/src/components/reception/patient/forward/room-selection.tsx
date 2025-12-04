@@ -65,17 +65,11 @@ export default function RoomSelection({
               const currentInProgress = room.roomStats?.currentInProgress ?? 0;
 
               // Fixed calculation: if current is 0 and max is 0, show 100%
-              // Otherwise calculate availability percentage
-              const availabilityPercent =
+              const busyPercent =
                 maxQueue === 0
-                  ? 100
-                  : currentInProgress === 0
                   ? 0
                   : Math.max(
-                      Math.min(
-                        ((maxQueue - currentInProgress) / maxQueue) * 100,
-                        100
-                      ),
+                      Math.min((currentInProgress / maxQueue) * 100, 100),
                       0
                     );
 
@@ -128,27 +122,27 @@ export default function RoomSelection({
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
                         className={`h-full transition-all duration-300 ${getAvailabilityColor(
-                          availabilityPercent
+                          busyPercent
                         )}`}
-                        style={{ width: `${availabilityPercent}%` }}
+                        style={{ width: `${busyPercent}%` }}
                       />
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-foreground font-medium">
-                        {availabilityPercent.toFixed(0)}% completed
+                        {busyPercent.toFixed(0)}% completed
                       </span>
                       <span
                         className={`font-medium ${
-                          availabilityPercent >= 70
+                          busyPercent >= 70
                             ? "text-green-600"
-                            : availabilityPercent >= 40
+                            : busyPercent >= 40
                             ? "text-yellow-600"
-                            : availabilityPercent >= 20
+                            : busyPercent >= 20
                             ? "text-orange-600"
                             : "text-red-600"
                         }`}
                       >
-                        {getAvailabilityText(availabilityPercent)}
+                        {getAvailabilityText(busyPercent)}
                       </span>
                     </div>
                   </div>

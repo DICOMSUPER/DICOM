@@ -63,12 +63,13 @@ export default function StudyLevel({
     }
   };
 
-  const isForwarded = currentStatus === DicomStudyStatus.TECHNICIAN_VERIFIED;
+  const isForwarded = currentStatus !== DicomStudyStatus.SCANNED;
 
   const getStatusBadge = () => {
     const statusLabels: Record<DicomStudyStatus, string> = {
       [DicomStudyStatus.SCANNED]: "Scanned",
       [DicomStudyStatus.TECHNICIAN_VERIFIED]: "Technician Verified",
+      [DicomStudyStatus.REJECTED]: "Rejected",
       [DicomStudyStatus.READING]: "Reading",
       [DicomStudyStatus.PENDING_APPROVAL]: "Pending Approval",
       [DicomStudyStatus.APPROVED]: "Approved",
@@ -78,6 +79,7 @@ export default function StudyLevel({
     const statusColors: Record<DicomStudyStatus, string> = {
       [DicomStudyStatus.SCANNED]: "bg-gray-100 text-gray-700",
       [DicomStudyStatus.TECHNICIAN_VERIFIED]: "bg-blue-100 text-blue-700",
+      [DicomStudyStatus.REJECTED]: "bg-red-100 text-red-700",
       [DicomStudyStatus.READING]: "bg-yellow-100 text-yellow-700",
       [DicomStudyStatus.PENDING_APPROVAL]: "bg-orange-100 text-orange-700",
       [DicomStudyStatus.APPROVED]: "bg-green-100 text-green-700",

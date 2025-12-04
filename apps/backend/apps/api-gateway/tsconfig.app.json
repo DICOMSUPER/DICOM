@@ -9,7 +9,10 @@
     "emitDecoratorMetadata": true,
     "target": "es2021"
   },
-  "include": ["src/**/*.ts", "src/app/modules/imaging-service/modality-machine/modality-machine.module.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/app/modules/imaging-service/modality-machine/modality-machine.module.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",
@@ -22,25 +25,28 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared-interfaces/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/shared-client/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/database/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared-interceptor/tsconfig.lib.json"
+      "path": "../../libs/shared-interfaces/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/redis/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-domain/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-interceptor/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-utils/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-guards/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared-client/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared-decorators/tsconfig.lib.json"
