@@ -1,7 +1,7 @@
 "use client";
 
 import { Notification } from "@/interfaces/system/notification.interface";
-import { AppDispatch } from "@/store"; 
+import { AppDispatch } from "@/store";
 import {
   notificationApi,
   useGetNotificationsByUserQuery,
@@ -48,14 +48,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
 
   const dispatch = useDispatch<AppDispatch>();
-  const {
-    data: notificationsResponse,
-    refetch,
-  } = useGetNotificationsByUserQuery({}); 
+  const { data: notificationsResponse, refetch } =
+    useGetNotificationsByUserQuery({});
 
   const [markAsReadMutation] = useMarkAsReadMutation();
   const [markAllAsReadMutation] = useMarkAllAsReadMutation();
-
 
   const notifications = notificationsResponse?.data || [];
 
@@ -68,8 +65,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
   // 5. Effect: Socket Connection
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3006"; 
-    
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5006";
+
     const newSocket = io(socketUrl, {
       transports: ["websocket"],
       withCredentials: true,
@@ -100,16 +98,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       dispatch(
         notificationApi.util.updateQueryData(
           "getNotificationsByUser",
-          {}, 
+          {},
           (draft) => {
-             // draft là ApiResponse<Notification[]>
-             if (draft.success && Array.isArray(draft.data)) {
-                draft.data.unshift(notification);
-             }
+            // draft là ApiResponse<Notification[]>
+            if (draft.success && Array.isArray(draft.data)) {
+              draft.data.unshift(notification);
+            }
           }
         )
       );
-    
+
       setUnreadCount((prev) => prev + 1);
     });
 
@@ -120,16 +118,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     };
   }, [dispatch]);
 
-
-
   const markAsRead = async (notificationId: string) => {
     try {
-     
       const response = await markAsReadMutation(notificationId).unwrap();
-      
+
       if (response.success) {
-         
-         setUnreadCount((prev) => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -141,7 +135,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       const response = await markAllAsReadMutation().unwrap();
       if (response.success) {
         setUnreadCount(0);
-       
       }
     } catch (error) {
       console.error("Error marking all as read:", error);
@@ -151,7 +144,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   return (
     <NotificationContext.Provider
       value={{
-        notifications, 
+        notifications,
         unreadCount,
         isConnected,
         markAsRead,

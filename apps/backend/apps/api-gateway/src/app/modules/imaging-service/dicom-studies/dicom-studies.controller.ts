@@ -88,6 +88,12 @@ export class DicomStudiesController {
   @ApiQuery({ name: 'searchField', required: false })
   @ApiQuery({ name: 'sortField', required: false })
   @ApiQuery({ name: 'order', required: false })
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   async getManyDicomStudies(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -460,6 +466,12 @@ export class DicomStudiesController {
   }
 
   @Get(':id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get DICOM study by ID' })
   @ApiResponse({ status: 200, description: 'DICOM study details' })
   @ApiParam({ name: 'id', required: true, type: String })
@@ -520,45 +532,43 @@ export class DicomStudiesController {
   @ApiParam({ name: 'id', required: true, type: String })
   @ApiBody({ type: UpdateDicomStudyDto })
   async updateDicomStudy(
-  @Param('id') id: string,
-  @Body() updateDicomStudyDto: UpdateDicomStudyDto
-) {
-  const study = await firstValueFrom(
-    this.imagingService.send('ImagingService.DicomStudies.Update', {
-      id,
-      updateDicomStudyDto,
-    })
-  );
+    @Param('id') id: string,
+    @Body() updateDicomStudyDto: UpdateDicomStudyDto
+  ) {
+    const study = await firstValueFrom(
+      this.imagingService.send('ImagingService.DicomStudies.Update', {
+        id,
+        updateDicomStudyDto,
+      })
+    );
 
- 
-  const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
-  await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
+    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
+    await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
 
-  
-  try {
-    await Promise.allSettled([
-      this.redisService.delete(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-      ),
-      this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-      ),
-      this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-      ),
-      this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-      ),
-      this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-      ),
-    ]);
-  } catch (error:any) {
-    console.log('Failed to invalidate some cache keys:', error.message);
+    try {
+      await Promise.allSettled([
+        this.redisService.delete(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
+        ),
+        this.redisService.deleteKeyStartingWith(
+          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
+        ),
+      ]);
+    } catch (error: any) {
+      console.log('Failed to invalidate some cache keys:', error.message);
+    }
+
+    return study;
   }
-
-  return study;
-}
 
   @Role(Roles.SYSTEM_ADMIN)
   @Delete(':id')
@@ -587,7 +597,12 @@ export class DicomStudiesController {
     return result;
   }
 
-  @Role(Roles.RADIOLOGIST)
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.PHYSICIAN,
+    Roles.SYSTEM_ADMIN,
+    Roles.IMAGING_TECHNICIAN
+  )
   @Get('order/:orderId')
   async getDicomStudiesByOrderId(@Param('orderId') orderId: string) {
     const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}/${orderId}`;
