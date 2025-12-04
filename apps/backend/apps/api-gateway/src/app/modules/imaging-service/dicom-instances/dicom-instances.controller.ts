@@ -30,6 +30,8 @@ import { CreateDicomInstanceDto } from '@backend/shared-domain';
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
 import { UpdateDicomInstanceDto } from '@backend/shared-domain';
 import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { Role } from '@backend/shared-decorators';
+import { Roles } from '@backend/shared-enums';
 
 @ApiTags('DICOM Instances')
 @Controller('dicom-instances')
@@ -43,6 +45,12 @@ export class DicomInstancesController {
   ) {}
 
   @Get()
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get all DICOM instances' })
   @ApiResponse({ status: 200, description: 'List of DICOM instances' })
   async findAll() {
@@ -60,6 +68,12 @@ export class DicomInstancesController {
   }
 
   @Get('reference/:id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get DICOM instances by reference ID' })
   @ApiResponse({
     status: 200,
@@ -120,6 +134,12 @@ export class DicomInstancesController {
   }
 
   @Get('paginated')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get paginated DICOM instances' })
   @ApiResponse({
     status: 200,
@@ -169,6 +189,12 @@ export class DicomInstancesController {
   }
 
   @Get(':id')
+  @Role(
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN,
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN
+  )
   @ApiOperation({ summary: 'Get a DICOM instance by ID' })
   @ApiResponse({ status: 200, description: 'DICOM instance details' })
   @ApiParam({ name: 'id', required: true, type: String })
