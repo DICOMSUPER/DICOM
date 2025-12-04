@@ -114,7 +114,7 @@ interface ViewPortMainProps {
 const ViewPortMain = ({
   selectedSeries,
   selectedStudy,
-  selectedTool = "windowLevel",
+  selectedTool = "",
   onToolChange,
   viewportId,
 }: ViewPortMainProps) => {

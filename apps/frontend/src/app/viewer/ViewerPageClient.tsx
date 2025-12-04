@@ -45,7 +45,7 @@ function ViewerPageContent() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
+  const [selectedTool, setSelectedTool] = useState<string>("");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
 
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
