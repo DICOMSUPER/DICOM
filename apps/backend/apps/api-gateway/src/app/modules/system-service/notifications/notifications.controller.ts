@@ -75,9 +75,14 @@ export class NotificationsController {
   }
   @Patch('/read-all')
   async markAllAsRead(@Req() req: IAuthenticatedRequest) {
-    return this.systemService.send('notification.markAllAsRead', {
-      userId: req.userInfo.userId,
-    });
+    try {
+      return this.systemService.send('notification.markAllAsRead', {
+        userId: req.userInfo.userId,
+      });
+    } catch (error) {
+      console.log('Error reading all', error);
+      throw error;
+    }
   }
 
   @Put(':id')
