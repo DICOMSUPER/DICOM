@@ -1338,33 +1338,74 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         }
       }
 
-      // Try to add viewport to tool group only if viewport has valid image data
-      if (toolGroup && typeof toolGroup.addViewport === "function") {
+      let viewportAdded = false;
+
+      const tryAddViewport = () => {
+        if (viewportAdded || !toolGroup || typeof toolGroup.addViewport !== "function") {
+          return false;
+        }
+
         try {
-          // CRITICAL: Don't add viewport to tool group until it has image data
-          // This prevents ScaleOverlayTool errors when trying to render on empty viewports
           if (!viewport) {
-            console.warn(`Viewport not available for ${viewportId}, deferring tool group attachment`);
-            return;
+            return false;
           }
           
           const imageData = (viewport as any).getImageData?.();
           if (!imageData || !imageData.imageData) {
-            console.warn(`Viewport ${viewportId} has no image data, deferring tool group attachment`);
-            return;
+            return false;
           }
           
           toolGroup.addViewport(viewportId, renderingEngineId);
+          viewportAdded = true;
           initialized = true;
           console.log(`Added viewport ${viewportId} to tool group with valid image data`);
+          return true;
         } catch (error) {
           console.warn("Failed to add viewport to tool group:", error);
+          return false;
         }
+      };
+
+      if (!tryAddViewport()) {
+        const imageRenderedHandler = (evt: any) => {
+          const { viewportId: renderedViewportId } = evt.detail;
+          if (renderedViewportId === viewportId) {
+            if (tryAddViewport()) {
+              eventTarget.removeEventListener(
+                CoreEnums.Events.IMAGE_RENDERED,
+                imageRenderedHandler
+              );
+            }
+          }
+        };
+
+        eventTarget.addEventListener(
+          CoreEnums.Events.IMAGE_RENDERED,
+          imageRenderedHandler
+        );
+
+        return () => {
+          eventTarget.removeEventListener(
+            CoreEnums.Events.IMAGE_RENDERED,
+            imageRenderedHandler
+          );
+          const toolGroupInstance = toolGroupRef.current;
+          if (toolGroupInstance && viewportAdded) {
+            try {
+              toolGroupInstance.removeViewports(renderingEngineId, viewportId);
+            } catch (error) {
+              // Ignore cleanup errors
+            }
+          }
+          if (initialized) {
+            toolGroupRef.current = null;
+          }
+        };
       }
 
       return () => {
         const toolGroupInstance = toolGroupRef.current;
-        if (toolGroupInstance) {
+        if (toolGroupInstance && viewportAdded) {
           try {
             toolGroupInstance.removeViewports(renderingEngineId, viewportId);
           } catch (error) {
@@ -1375,7 +1416,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
           toolGroupRef.current = null;
         }
       };
-    }, [toolGroupId, renderingEngineId, viewportId, viewportReady]);
+    }, [toolGroupId, renderingEngineId, viewportId, viewportReady, viewport]);
 
     useEffect(() => {
       if (!toolGroupRef.current || !selectedTool || !viewportReady) {
