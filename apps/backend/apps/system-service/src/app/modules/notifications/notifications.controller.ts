@@ -133,8 +133,8 @@ export class NotificationsController {
     }
   }
 
-  // @MessagePattern('notification.markAllAsRead')
-  // async markAllAsRead(@Payload() data: { userId: string }): Promise<void> {
-  //   return this.notificationsService.markAllAsRead(data.userId);
-  // }
+  @MessagePattern('notification.markAllAsRead')
+  async markAllAsRead(@Payload() data: { userId: string }): Promise<boolean> {
+    return this.notificationsService.markAllAsRead(data.userId);
+  }
 }

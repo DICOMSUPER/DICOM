@@ -264,21 +264,25 @@ export class NotificationsService {
     return await this.update(id, { isRead: true });
   }
 
-  // async markAllAsRead(userId: string): Promise<boolean> {
-  //   console.log(`📖 Marking all notifications as read for user: ${userId}`);
+  async markAllAsRead(userId: string): Promise<boolean> {
+    console.log(`📖 Marking all notifications as read for user: ${userId}`);
 
-  //   if (!userId) {
-  //     throw new BadRequestException('User ID is required to mark notifications as read');
-  //     return false
-  //   }
-  //   await this.notificationRepository.update(
-  //     { recipientId: userId, isRead: false },
-  //     { isRead: true }
-  //   );
+    if (!userId) {
+      throw new BadRequestException(
+        'User ID is required to mark notifications as read'
+      );
+      return false;
+    }
 
-  //   console.log('All notifications marked as read');
-  //   return true
-  // }
+    await this.notificationRepository.update(
+      { recipientId: userId, isRead: false },
+      { isRead: true }
+    );
+
+    console.log('All notifications marked as read');
+    return true;
+  }
+
   async getUnreadCount(userId: string): Promise<number> {
     console.log(`Counting unread notifications for user: ${userId}`);
     const count = await this.notificationRepository.count({
