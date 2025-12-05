@@ -1,0 +1,20 @@
+app = "patient-service-anhminh"
+
+primary_region = "sin"
+
+[build]
+  image = "anhminh123/patient-service:latest"
+
+[env]
+  PORT = "5004"
+
+[[services]]
+  internal_port = 5004
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"

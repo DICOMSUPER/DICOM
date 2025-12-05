@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api-gateway:
-    image: dicom/api-gateway:${TAG:-local}
+    image: anhminh123/api-gateway:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/api-gateway/Dockerfile
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   user-service:
-    image: dicom/user-service:${TAG:-local}
+    image: anhminh123/user-service:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/user-service/Dockerfile
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   imaging-service:
-    image: dicom/imaging-service:${TAG:-local}
+    image: anhminh123/imaging-service:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/imaging-service/Dockerfile
@@ -46,7 +46,7 @@ services:
     restart: unless-stopped
 
   patient-service:
-    image: dicom/patient-service:${TAG:-local}
+    image: anhminh123/patient-service:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/patient-service/Dockerfile
@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   system-service:
-    image: dicom/system-service:${TAG:-local}
+    image: anhminh123/system-service:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/system-service/Dockerfile
@@ -72,7 +72,7 @@ services:
     restart: unless-stopped
 
   ws-service:
-    image: dicom/ws-gateway:${TAG:-local}
+    image: anhminh123/ws-gateway:${TAG:-latest}
     build:
       context: .
       dockerfile: apps/ws-gateway/Dockerfile
@@ -84,7 +84,7 @@ services:
     networks:
       - dicom-network
     restart: unless-stopped
-    
+
 networks:
   dicom-network:
     driver: bridge
