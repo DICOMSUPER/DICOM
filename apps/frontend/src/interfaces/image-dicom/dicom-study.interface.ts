@@ -55,6 +55,7 @@ export interface DicomStudy extends BaseEntity {
   studyStatus?: DicomStudyStatus;
   numberOfSeries?: number;
   storagePath?: string;
+  reason?: string;
 
   // Nested objects included for filter API
   patient?: Patient; // Included for filter API
@@ -63,6 +64,15 @@ export interface DicomStudy extends BaseEntity {
   series?: DicomSeries[]; // Included for filter API
   report?: DiagnosisReport; // Included for filter API
   room?: Room; // Included for filter API
+}
+export interface UpdateDicomStudyPayload {
+  studyId: string;
+  studyDescription?: string;
+  referringPhysicianId?: string;
+  performingTechnicianId?: string;
+  verifyingRadiologistId?: string;
+  studyStatus?: DicomStudyStatus;
+  reason?: string;
 }
 
 export default interface DicomStudyReferenceQuery

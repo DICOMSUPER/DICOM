@@ -13,7 +13,8 @@ export interface ExamItem {
   label: string;
   modality: string;
   date: string;
-  status: "in-progress" | "completed" | string; // Thêm status
+  status: "in-progress" | "completed" | string; 
+  studyId: string | null;
 }
 
 export interface SidebarTabProps {
@@ -33,7 +34,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-
+  console.log("check", examHistory)
   // --- Lọc exam theo status ---
   const inProgressExams = useMemo(
     () => examHistory.filter((exam) => exam.status === OrderStatus.IN_PROGRESS),

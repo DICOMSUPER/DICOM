@@ -2,6 +2,7 @@ import DicomStudyReferenceQuery, {
   DicomStudy,
   DicomStudyFilterQuery,
   DicomStudyFilters,
+  UpdateDicomStudyPayload,
 } from "@/interfaces/image-dicom/dicom-study.interface";
 import {
   PaginatedQuery,
@@ -131,7 +132,7 @@ export const dicomStudyApi = createApi({
 
     updateDicomStudy: builder.mutation<
       ApiResponse<DicomStudy>,
-      { id: string; data: Partial<DicomStudy> }
+      { id: string; data: Partial<UpdateDicomStudyPayload> }
     >({
       query: ({ id, data }) => ({
         url: `/${id}`,
