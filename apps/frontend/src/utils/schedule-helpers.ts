@@ -93,8 +93,8 @@ export const formatScheduleTime = (schedule: { actual_start_time?: string; actua
     return 'No time set';
   }
   
-  const start = formatTime(schedule.actual_start_time);
-  const end = formatTime(schedule.actual_end_time);
+  const start = formatTime(schedule.actual_start_time, true);
+  const end = formatTime(schedule.actual_end_time, true);
   return `${start} - ${end}`;
 };
 
