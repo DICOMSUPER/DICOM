@@ -31,6 +31,7 @@ export class DicomSeries extends BaseEntity {
   @Column({ name: 'series_description', type: 'text', nullable: true })
   seriesDescription?: string;
 
+
   //   @Column({ length: 10, nullable: true })
   //   modality?: string;
 

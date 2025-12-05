@@ -10,7 +10,7 @@ COPY entities ./entities
 
 RUN npm ci
 RUN npx nx sync
-RUN npx nx build ws-gateway
+RUN npx nx build ws-gateway  --configuration=production
 
 # Stage 2 – runtime image
 FROM node:20-alpine

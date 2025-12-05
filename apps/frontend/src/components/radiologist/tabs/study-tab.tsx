@@ -6,109 +6,67 @@ import MedicalRecordMain from "@/components/radiologist/patientDetailTab/MainDet
 import { usePatientService } from "@/hooks/usePatientService";
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
 import { useGetDiagnoseByStudyIdQuery } from "@/store/diagnosisApi";
-import { DicomStudyFilterQuery } from "@/interfaces/image-dicom/dicom-study.interface";
-import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
-
 
 interface MedicalRecordPageProps {
   patientId: string;
   studyUID?: string;
-
 }
 
-
-export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecordPageProps) {
-
-
+export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps) {
 
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
 
   const { getPatientById } = usePatientService();
-  
-  
+  const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
 
-
-  const {
-    data: patientData,
-    isLoading,
-    isError,
-    error,
-  } = getPatientById(patientId);
-  const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({
-    patientId,
-  });
-
+  const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({ patientId });
+  console.log("check 3 : ",imagingOrdersData)
 
   const examHistory = useMemo(() => {
     const list = imagingOrdersData?.data || [];
 
-    return list.map((order: any) => {
-      const modalityName =
-        order.procedure?.modality?.modalityCode || "Không rõ";
-      const formattedDate = new Date(order.createdAt).toLocaleDateString(
-        "vi-VN"
-      );
-      return {
-        id: order.id,
-        label: `${modalityName} - ${formattedDate}`,
-        modality: modalityName,
-        date: formattedDate,
-        encounterId: order.imagingOrderForm.encounterId,
-        status: order.orderStatus,
-      };
-    });
+    return list.map((order: any) => ({
+      id: order.id,
+      label: `${order.procedure?.modality?.modalityCode || "Không rõ"} - ${new Date(order.createdAt).toLocaleDateString("vi-VN")}`,
+      modality: order.procedure?.modality?.modalityCode || "Không rõ",
+      date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
+      encounterId: order.imagingOrderForm.encounterId,
+      status: order.orderStatus,
+      studyId: order.studyId,   // ⬅️ Quan trọng: thêm studyId để Sidebar biết lấy
+    }));
   }, [imagingOrdersData]);
-  const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(
-    null
-  );
 
-  console.log("check 1 : ", examHistory)
-  console.log("selectedStudyId: ", selectedStudyId)
   const handleSelectExam = useCallback(
-    (studyId: string | null, encounterId?: string | null) => {
+    (studyId: string | null, encounterId: string | null) => {
       setSelectedStudyId(studyId);
+      setSelectedEncounterId(encounterId);
       setSelectedExam(studyId ? "existing" : "new");
-
-      if (encounterId) {
-        setSelectedEncounterId(encounterId);
-      } else {
-        // Nếu không có studyId thì lấy encounter đầu tiên
-        const firstEncounter = examHistory[0]?.encounterId || null;
-        setSelectedEncounterId(firstEncounter);
-      }
     },
-    [examHistory]
+    []
   );
+
   const { data: diagnosisData, isLoading: isDiagnosisLoading } =
     useGetDiagnoseByStudyIdQuery(selectedStudyId ?? "", {
       skip: !selectedStudyId,
     });
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Đang tải hồ sơ bệnh nhân...
-      </div>
-    );
-  if (isError)
-    return (
-      <div className="text-red-600">
-        Lỗi tải dữ liệu: {(error as any)?.message}
-      </div>
-    );
+    console.log("check 2 : ",diagnosisData)
+
+  if (isLoading) return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
+  if (isError) return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
 
   return (
     <div className="flex h-screen bg-gray-50">
 
       {patientData?.data && (
         <SidebarTab
-          setSelectedExam={handleSelectExam}
           examHistory={examHistory}
           patient={patientData.data}
+          setSelectedExam={handleSelectExam}
         />
       )}
-
 
       <MedicalRecordMain
         selectedExam={selectedExam}
@@ -121,4 +79,3 @@ export default function MedicalRecordPage({ patientId, studyUID }: MedicalRecord
     </div>
   );
 }
-

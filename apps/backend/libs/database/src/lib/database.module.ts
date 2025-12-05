@@ -174,7 +174,9 @@ export class DatabaseModule {
                 `${prefixUpper}_DB_SYNC`,
                 true
               );
-              const sslRejectUnauthorized = false; // matches ssl: { rejectUnauthorized: false }
+              const sslRejectUnauthorized = {
+                rejectUnauthorized: false
+              }; // matches ssl: { rejectUnauthorized: false }
 
               const start = Date.now();
               if (!dataSource.isInitialized) {
