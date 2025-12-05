@@ -128,15 +128,25 @@ export function runDicomStudiesE2ETests(port = 5003, host = 'localhost') {
 
       // Get modality machines by modalityId; fallback to any if none
       const findAllMachinesPattern = `${IMAGING_SERVICE}.ModalityMachines.${MESSAGE_PATTERNS.FIND_ALL}`;
-      let machines = await firstValueFrom(
-        client.send<any[]>(findAllMachinesPattern, {
+      let machinesResponse = await firstValueFrom(
+        client.send<any>(findAllMachinesPattern, {
           modalityId: chosenModality.id,
         })
       );
+
+      let machines = machinesResponse?.data || machinesResponse;
+      if (!Array.isArray(machines)) {
+        machines = [];
+      }
+
       if (!machines || machines.length === 0) {
-        machines = await firstValueFrom(
-          client.send<any[]>(findAllMachinesPattern, {})
+        machinesResponse = await firstValueFrom(
+          client.send<any>(findAllMachinesPattern, {})
         );
+        machines = machinesResponse?.data || machinesResponse;
+        if (!Array.isArray(machines)) {
+          machines = [];
+        }
       }
       // Seed a machine if none exist
       if (!machines || machines.length === 0) {

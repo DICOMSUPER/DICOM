@@ -4,7 +4,6 @@ import {
     Circle,
     Ellipsis,
     Grid3X3,
-    Link,
     Move,
     Pen,
     RotateCcw,
@@ -40,10 +39,6 @@ export const shapeToolsMenu = [
   { item: 'Magnify', icon: Search },
   { item: 'PlanarRotate', icon: RotateCcw },
   { item: 'TrackballRotate', icon: RotateCcw },
-  { item: 'OrientationMarker', icon: Camera },
-  { item: 'ETDRSGrid', icon: Grid3X3 },
-  { item: 'ReferenceLines', icon: Link },
-  { item: 'OverlayGrid', icon: Grid3X3 },
   { item: 'Reset', icon: RotateCcw },
 ];
 

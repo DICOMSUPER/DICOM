@@ -55,7 +55,7 @@ export class ServiceRoomsController {
     try {
       return await this.serviceRoomsService.update(data.id, data.updatedData);
     } catch (error) {
-      handleErrorFromMicroservices(
+      throw handleErrorFromMicroservices(
         error,
         'Failed to update service room',
         'USER_SERVICE'
@@ -68,9 +68,9 @@ export class ServiceRoomsController {
     try {
       return await this.serviceRoomsService.delete(data.id);
     } catch (error) {
-      handleErrorFromMicroservices(
+      throw handleErrorFromMicroservices(
         error,
-        'Failed to get rooms',
+        'Failed to delete service room',
         'USER_SERVICE'
       );
     }

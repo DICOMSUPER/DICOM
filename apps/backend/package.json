@@ -27,6 +27,7 @@
     "build-docker:local:patient-service": "docker build -t dicom/patient-service:local -f apps/patient-service/Dockerfile .",
     "build-docker:local:imaging-service": "docker build -t dicom/imaging-service:local -f apps/imaging-service/Dockerfile .",
     "build-docker:local:system-service": "docker build -t dicom/system-service:local -f apps/system-service/Dockerfile .",
+    "build-docker:local:ws-gateway": "docker build -t dicom/ws-gateway:local -f apps/ws-gateway/Dockerfile .",
     "build-docker:local:all": "npm run build-docker:local:api-gateway && npm run build-docker:local:user-service && npm run build-docker:local:patient-service && npm run build-docker:local:imaging-service && npm run build-docker:local:system-service",
     "build-docker:latest:api-gateway": "docker build -t dicom/api-gateway:latest -f apps/api-gateway/Dockerfile .",
     "build-docker:latest:user-service": "docker build -t dicom/user-service:latest -f apps/user-service/Dockerfile .",

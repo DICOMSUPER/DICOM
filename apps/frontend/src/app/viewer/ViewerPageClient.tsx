@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ChevronDown, ImageOff } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
+import { ViewerEventProvider } from "@/contexts/ViewerEventContext";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
 import { extractApiData } from "@/utils/api";
@@ -27,6 +28,7 @@ function ViewerLoading() {
 }
 
 function ViewerPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
   const patientId = searchParams.get("patient");
@@ -43,7 +45,7 @@ function ViewerPageContent() {
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<string>("WindowLevel");
+  const [selectedTool, setSelectedTool] = useState<string>("");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
 
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
@@ -54,14 +56,12 @@ function ViewerPageContent() {
 
   useEffect(() => {
     setActiveViewport(0);
-    console.log("Page loaded - set viewport 0 as active");
   }, [setActiveViewport]);
 
   const handleLayoutChange = (layout: string) => {
     setSeriesLayout(layout);
     if (layout === "1x1") {
       setActiveViewport(0);
-      console.log("Switched to 1x1 layout - set viewport 0 as active");
     }
   };
 
@@ -81,11 +81,32 @@ function ViewerPageContent() {
     [seriesId, setActiveViewport, setViewportSeries]
   );
 
-  const handleSeriesSelect = (series: DicomSeries) => {
-    console.log("Selected series:", series, "for viewport:", state.activeViewport);
+  const updateURLParams = useCallback((params: Record<string, string>) => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        current.set(key, value);
+      } else {
+        current.delete(key);
+      }
+    });
+
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+    router.push(`/viewer${query}`, { scroll: false });
+  }, [searchParams, router]);
+
+  const handleSeriesSelect = useCallback((series: DicomSeries) => {
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
-  };
+    
+    updateURLParams({
+      patient: patientId || '',
+      study: studyId || '',
+      series: series.id,
+    });
+  }, [patientId, studyId, updateURLParams, setViewportSeries, state.activeViewport]);
 
   const handleViewAllAnnotations = useCallback(() => {
     setActiveAnnotationsModal("all");
@@ -169,38 +190,13 @@ function ViewerPageContent() {
         </ResizablePanel>
 
         <div className="flex-1 flex flex-col overflow-y-auto">
-          {loading && (
-            <div className="flex-1 flex items-center justify-center bg-slate-900">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <div className="text-slate-400 text-lg mb-2">Đang tải series...</div>
-                <div className="text-slate-500 text-sm">Loading series data</div>
-              </div>
-            </div>
-          )}
-
-          {!loading && series.length === 0 && (
-            <div className="flex-1 flex items-center justify-center bg-slate-900">
-              <div className="text-center">
-                <div className="text-slate-400 text-lg mb-2">Không có dữ liệu để hiển thị</div>
-                <div className="text-slate-500 text-sm">
-                  {studyId
-                    ? "No series found for this study"
-                    : "Please provide a study ID to load series"}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!loading && series.length > 0 && (
-            <ViewportGrid
-              seriesLayout={seriesLayout}
-              selectedSeries={selectedSeries}
-              selectedStudy={null}
-              selectedTool={selectedTool}
-              onToolChange={setSelectedTool}
-            />
-          )}
+          <ViewportGrid
+            seriesLayout={seriesLayout}
+            selectedSeries={selectedSeries}
+            selectedStudy={null}
+            selectedTool={selectedTool}
+            onToolChange={setSelectedTool}
+          />
         </div>
 
         <ResizablePanel
@@ -216,7 +212,8 @@ function ViewerPageContent() {
             series={series}
             studyId={studyId || undefined}
             patientId={patientId || undefined}
-            onSeriesLoaded={handleSeriesLoaded}
+            selectedSeriesFromParent={selectedSeries}
+            urlSeriesId={seriesId || undefined}
           />
         </ResizablePanel>
       </div>
@@ -238,10 +235,12 @@ function ViewerPageContent() {
 
 export default function ViewerPageClient() {
   return (
-    <ViewerProvider>
-      <Suspense fallback={<ViewerLoading />}>
-        <ViewerPageContent />
-      </Suspense>
-    </ViewerProvider>
+    <ViewerEventProvider>
+      <ViewerProvider>
+        <Suspense fallback={<ViewerLoading />}>
+          <ViewerPageContent />
+        </Suspense>
+      </ViewerProvider>
+    </ViewerEventProvider>
   );
 }

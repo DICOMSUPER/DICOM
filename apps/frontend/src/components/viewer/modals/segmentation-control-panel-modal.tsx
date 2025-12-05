@@ -17,6 +17,7 @@ import {
   Delete,
   Trash,
   Layers,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -362,6 +363,10 @@ export default function SegmentationControlPanel({
               }`}
             >
               <div className="flex items-center gap-2 flex-1">
+                {/* Active status indicator - green dot for active layer */}
+                {index === currentLayerIndex && (
+                  <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                )}
                 <button
                   className="p-1 hover:bg-slate-600/50 rounded transition"
                   onClick={(e) => {
@@ -373,6 +378,12 @@ export default function SegmentationControlPanel({
                   {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                 </button>
                 <span className="text-xs font-medium">{layer.name}</span>
+                {/* Lock icon for database layers */}
+                {layer.origin === "database" && (
+                  <span title="Database layer (read-only)">
+                    <Lock size={12} className="text-slate-400 shrink-0" />
+                  </span>
+                )}
               </div>
             </div>
           ))}

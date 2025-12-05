@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getNavigationForRole } from "@/config/navigation";
 import { getNavigationRoleFromUserRole } from "@/utils/role-formatter";
@@ -12,8 +12,20 @@ import { RootState } from "@/store";
 export function SidebarNav() {
   const pathname = usePathname();
   const user = useSelector((state: RootState) => state.auth.user);
-  const userRole = getNavigationRoleFromUserRole(user?.role);
-  const allNavItems = getNavigationForRole(userRole);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const userRole = useMemo(() => {
+    if (!user?.role) return undefined;
+    return getNavigationRoleFromUserRole(user.role);
+  }, [user?.role]);
+
+  const allNavItems = useMemo(() => {
+    return getNavigationForRole(userRole);
+  }, [userRole]);
 
   const navItemsToUse = allNavItems;
 
@@ -23,6 +35,9 @@ export function SidebarNav() {
   );
 
   const navItems = useMemo(() => {
+    if (!navItemsToUse || navItemsToUse.length === 0) {
+      return [];
+    }
     return navItemsToUse.map((item) => {
       const isExactMatch = pathname === item.href;
       const isPrefixMatch = item.href !== "/" && pathname.startsWith(item.href + "/");
@@ -42,8 +57,32 @@ export function SidebarNav() {
     });
   }, [navItemsToUse, sortedNavItems, pathname]);
 
+  if (!mounted || !user) {
+    return (
+      <nav className="p-4">
+        <div className="space-y-2">
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+        </div>
+      </nav>
+    );
+  }
+
+  if (navItems.length === 0) {
+    return (
+      <nav className="p-4">
+        <div className="space-y-2">
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <nav className="p-4">
+    <nav className="p-4" key={`nav-${userRole || 'none'}-${user?.id || 'no-user'}`}>
       <div className="space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -2,28 +2,10 @@
 
 import { StatsCards } from '@/components/ui/stats-cards';
 import { FileText, CheckCircle, Clock, UserCheck, Printer, Scan } from 'lucide-react';
-
-interface DicomStudyStats {
-  today: {
-    totalDicomStudies: number;
-    totalScannedStudies: number;
-    totalPendingApprovalStudies: number;
-    totalApprovedStudies: number;
-    totalTechnicianVerifiedStudies: number;
-    totalResultPrintedStudies: number;
-  };
-  total: {
-    totalDicomStudies: number;
-    totalScannedStudies: number;
-    totalPendingApprovalStudies: number;
-    totalApprovedStudies: number;
-    totalTechnicianVerifiedStudies: number;
-    totalResultPrintedStudies: number;
-  };
-}
+import { DicomStudyStatsInDateRange } from '@/interfaces/patient/patient-workflow.interface';
 
 interface StudyStatsCardsProps {
-  stats: DicomStudyStats | undefined;
+  stats: DicomStudyStatsInDateRange | undefined;
   isLoading?: boolean;
 }
 

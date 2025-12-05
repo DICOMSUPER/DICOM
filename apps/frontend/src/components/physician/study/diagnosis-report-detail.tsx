@@ -32,7 +32,7 @@ import {
   useGetOneDicomStudyQuery,
   useUpdateDicomStudyMutation,
 } from "@/store/dicomStudyApi";
-import { 
+import {
   usePhysicianApproveStudyMutation,
   useGetSignatureDetailsQuery,
 } from "@/store/dicomStudySignatureApi";
@@ -51,12 +51,14 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
+  CircleX,
   ClipboardList,
   Download,
   FileText,
   Image,
   Notebook,
   Printer,
+  Star,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -336,6 +338,8 @@ export function DiagnosisReportDetail({
       }).unwrap();
       toast.success("Study approved successfully");
       setModalApproveOpen(false);
+      // Refetch to update signature data
+      await refetch();
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to approve study");
     }
@@ -382,7 +386,7 @@ export function DiagnosisReportDetail({
         setModalSetupOpen(true);
         return;
       }
-      
+
       if (report?.data.diagnosisStatus !== DiagnosisStatus.APPROVED) {
         toast.error("Only approved reports can be entered for approval.");
         return;
@@ -870,6 +874,97 @@ export function DiagnosisReportDetail({
 
             <Separator className="my-6 bg-slate-200/50" />
 
+            {/* Physician Signature Information */}
+            {physicianSignatureData?.data && (
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-100 rounded-lg">
+                    <svg
+                      className="w-5 h-5 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-emerald-900">
+                      Digital Signature Verified
+                    </h3>
+                    <p className="text-sm text-emerald-700">
+                      This study has been digitally signed and approved
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                    <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                      Signed At
+                    </div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {new Date(
+                        physicianSignatureData.data.signedAt
+                      ).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                       
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                    <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                      Signature Type
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                      Physician Approval
+                    </Badge>
+                  </div>
+
+                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                    <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                      Certificate Serial
+                    </div>
+                    <div className="text-xs font-mono text-slate-700 truncate">
+                      {physicianSignatureData.data.certificateSerial}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 bg-white/60 backdrop-blur rounded-lg p-3 border border-emerald-100">
+                  <div className="flex items-center gap-2 text-sm text-emerald-800">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    <span className="font-medium">
+                      This signature ensures the authenticity and integrity of
+                      the study approval
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Edit Description Button */}
             {!isEditDescriptionOpen ? (
               <Button
@@ -1003,7 +1098,11 @@ export function DiagnosisReportDetail({
                     </div>
                     <Button
                       onClick={handleSaveDescription}
-                      disabled={!editedReportDescription.trim() || isUpdating}
+                      disabled={
+                        !editedReportDescription.trim() ||
+                        isUpdating ||
+                        !!physicianSignatureData?.data
+                      }
                       className="bg-linear-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Download className="w-4 h-4 mr-2" />
@@ -1049,13 +1148,13 @@ export function DiagnosisReportDetail({
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50 bg-white rounded-xl p-6">
               {report.data.diagnosisStatus ===
                 DiagnosisStatus.PENDING_APPROVAL && (
-                <div>
+                <div className="flex gap-3">
                   <Button
                     onClick={handleApproveReport}
                     disabled={isUpdating || isApprovingDiagnosis}
                     className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
-                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <Star className="w-4 h-4 mr-2" />
                     <span>
                       {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
                     </span>
@@ -1065,7 +1164,7 @@ export function DiagnosisReportDetail({
                     disabled={isUpdating || isRejectingDiagnosis}
                     className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
-                    <AlertCircle className="w-4 h-4 mr-2" />
+                    <CircleX className="w-4 h-4 mr-2" />
                     <span>Reject Report</span>
                   </Button>
                 </div>
@@ -1080,7 +1179,7 @@ export function DiagnosisReportDetail({
                   isUpdating ||
                   isHasSignatureLoading ||
                   isCheckingSignature ||
-                  !!physicianSignatureData?.data  // Disable if signature exists
+                  !!physicianSignatureData?.data // Disable if signature exists
                   // dicomStudyData?.data.studyStatus ===
                   //   DicomStudyStatus.APPROVED ||
                   // dicomStudyData?.data.studyStatus ===
@@ -1091,7 +1190,8 @@ export function DiagnosisReportDetail({
                 <Image className="w-4 h-4 mr-2" />
                 {physicianSignatureData?.data
                   ? "Study Already Signed"
-                  : DicomStudyStatus.APPROVED === dicomStudyData?.data.studyStatus
+                  : DicomStudyStatus.APPROVED ===
+                    dicomStudyData?.data.studyStatus
                   ? "Study Approved"
                   : "Sign to Approve Study"}
               </Button>

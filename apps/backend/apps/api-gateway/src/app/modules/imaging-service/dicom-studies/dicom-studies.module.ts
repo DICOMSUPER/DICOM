@@ -6,12 +6,14 @@ import {
   PatientServiceClientModule,
   ImagingServiceClientModule,
 } from '@backend/shared-client';
+import { BackendRedisModule } from '@backend/redis';
 @Module({
   imports: [
     ImagingServiceClientModule,
     UserServiceClientModule,
     PatientServiceClientModule,
     SharedInterceptorModule,
+    BackendRedisModule,
   ],
   controllers: [DicomStudiesController],
 })

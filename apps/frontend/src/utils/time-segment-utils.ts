@@ -23,9 +23,7 @@ const minutesToLabel = (minutes: number) => {
   const clamped = Math.max(0, Math.min(minutes, MINUTES_IN_DAY));
   const hour24 = Math.floor(clamped / 60);
   const minute = clamped % 60;
-  const period = hour24 >= 12 ? "PM" : "AM";
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  return `${hour12}:${minute.toString().padStart(2, "0")} ${period}`;
+  return `${hour24.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 };
 
 const getScheduleInterval = (schedule: RoomSchedule) => {

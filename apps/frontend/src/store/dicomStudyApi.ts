@@ -192,7 +192,7 @@ export const dicomStudyApi = createApi({
 
 
     getStatsInDateRange: builder.query<
-      ApiResponse<DicomStudyStatsInDateRange>,
+      DicomStudyStatsInDateRange,
       { dateFrom?: string; dateTo?: string; roomId?: string }
     >({
       query: ({ dateFrom, dateTo, roomId }) => ({
@@ -205,8 +205,10 @@ export const dicomStudyApi = createApi({
         },
       }),
       transformResponse: (response: any) => {
-        if (response?.data) {
-          return response;
+        // Backend returns the stats directly in the format: { today: {...}, total: {...} }
+        // If wrapped in ApiResponse, extract data; otherwise return as-is
+        if (response?.data?.today && response?.data?.total) {
+          return response.data;
         }
         return response;
       },

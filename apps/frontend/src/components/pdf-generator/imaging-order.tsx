@@ -56,7 +56,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
 
   y += 10;
   doc.setFontSize(13);
-  doc.text("Procedures:", 10, y);
+  doc.text("Procedures:", 12, y);
 
   const tableData = imagingProcedurePDF.procedures.map((proc, index) => [
     index + 1,

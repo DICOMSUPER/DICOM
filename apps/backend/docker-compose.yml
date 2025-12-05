@@ -71,6 +71,20 @@ services:
       - dicom-network
     restart: unless-stopped
 
+  ws-service:
+    image: dicom/ws-gateway:${TAG:-local}
+    build:
+      context: .
+      dockerfile: apps/ws-gateway/Dockerfile
+    ports:
+      - "3006:3006"
+      - "5006:5006"
+    env_file:
+      - apps/ws-gateway/.env
+    networks:
+      - dicom-network
+    restart: unless-stopped
+    
 networks:
   dicom-network:
     driver: bridge

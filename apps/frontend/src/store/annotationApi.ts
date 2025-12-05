@@ -112,7 +112,7 @@ export const annotationApi = createApi({
       ],
     }),
 
-    deleteAnnotation: builder.mutation<ApiResponse<void>, string>({
+    deleteAnnotation: builder.mutation<ApiResponse<boolean | void>, string>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",

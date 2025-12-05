@@ -112,3 +112,6 @@ dist
 # Temporary folders
 tmp/
 temp/
+
+# Turbo
+.turbo/

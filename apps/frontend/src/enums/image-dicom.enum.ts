@@ -14,6 +14,7 @@ export enum Urgency {
 export enum DicomStudyStatus {
   SCANNED = "scanned",
   TECHNICIAN_VERIFIED = "technician_verified",
+  REJECTED = "rejected",
   READING = "reading",
   PENDING_APPROVAL = "pending_approval",
   APPROVED = "approved",
@@ -36,26 +37,26 @@ export enum Severity {
 
 export enum AnnotationType {
   // Measurement tools
-  LENGTH = 'Length',
-  HEIGHT = 'Height',
-  ANGLE = 'Angle',
-  COBB_ANGLE = 'CobbAngle',
-  BIDIRECTIONAL = 'Bidirectional',
-  SEGMENT_BIDIRECTIONAL = 'SegmentBidirectional',
-  
+  LENGTH = "Length",
+  HEIGHT = "Height",
+  ANGLE = "Angle",
+  COBB_ANGLE = "CobbAngle",
+  BIDIRECTIONAL = "Bidirectional",
+  SEGMENT_BIDIRECTIONAL = "SegmentBidirectional",
+
   // ROI (Region of Interest) tools
-  CIRCLE_ROI = 'CircleROI',
-  ELLIPTICAL_ROI = 'EllipticalROI',
-  RECTANGLE_ROI = 'RectangleROI',
-  SPLINE_ROI = 'SplineROI',
-  
+  CIRCLE_ROI = "CircleROI",
+  ELLIPTICAL_ROI = "EllipticalROI",
+  RECTANGLE_ROI = "RectangleROI",
+  SPLINE_ROI = "SplineROI",
+
   // Annotation tools
-  ARROW_ANNOTATE = 'ArrowAnnotate',
-  LABEL = 'Label',
-  PROBE = 'Probe',
-  DRAG_PROBE = 'DragProbe',
+  ARROW_ANNOTATE = "ArrowAnnotate",
+  LABEL = "Label",
+  PROBE = "Probe",
+  DRAG_PROBE = "DragProbe",
   // Freehand tools
-  PLANAR_FREEHAND_ROI = 'PlanarFreehandROI',
+  PLANAR_FREEHAND_ROI = "PlanarFreehandROI",
 }
 
 export enum AnnotationStatus {

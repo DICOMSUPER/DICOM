@@ -28,7 +28,7 @@ import { BackendRedisModule } from '@backend/redis';
     }),
     TypeOrmModule,
     SeedingModule,
-    BackendRedisModule
+    BackendRedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

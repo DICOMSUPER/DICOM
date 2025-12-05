@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-// import { vi } from "date-fns/locale"; // Nếu muốn hiển thị tiếng Việt
 import {
   Calendar,
   CreditCard,
@@ -11,16 +11,17 @@ import {
   AlertCircle,
   CheckCircle2,
   Bell,
+  Eye,
 } from "lucide-react";
-import { cn } from "@/lib/utils"; // Hàm merge class (clsx + twMerge)
+import { cn } from "@/lib/utils";
 import { Notification } from "@/interfaces/system/notification.interface";
 import { RelatedEntityType } from "@/enums/notification.enum";
-// Import enum RelatedEntityType nếu có, hoặc dùng string literal
-// import { RelatedEntityType } from "@/enums/..."
+import { Button } from "@/components/ui/button";
+import { NotificationDetailModal } from "./NotificationDetailModal";
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkAsRead?: (id: string) => void; // Hàm gọi API mark as read (tuỳ chọn)
+  onMarkAsRead?: (id: string) => void;
 }
 
 export const NotificationItem = ({
@@ -28,6 +29,7 @@ export const NotificationItem = ({
   onMarkAsRead,
 }: NotificationItemProps) => {
   const router = useRouter();
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // 1. Logic xác định Icon dựa trên Type
   const getIcon = (type: string) => {
@@ -55,11 +57,18 @@ export const NotificationItem = ({
     }
   };
 
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDetailModal(true);
+  };
+
   const handleNavigation = () => {
     if (!notification.isRead && onMarkAsRead) {
       onMarkAsRead(notification.id);
     }
     if (!notification.relatedEntityId || !notification.relatedEntityType) {
+      // If no related entity, just open the detail modal
+      setShowDetailModal(true);
       return;
     }
     switch (notification.relatedEntityType) {
@@ -87,37 +96,42 @@ export const NotificationItem = ({
     <div
       onClick={handleNavigation}
       className={cn(
-        "group relative flex w-full cursor-pointer items-start gap-4 border-b p-4 transition-all hover:bg-slate-50",
-        // Logic style cho Read/Unread
-        !notification.isRead ? "bg-blue-50/40 hover:bg-blue-50/60" : "bg-white"
+        "group relative flex w-full cursor-pointer items-start gap-4 px-6 py-4 transition-all",
+        // Subtle hover effect without borders
+        "hover:bg-slate-50/80",
+        // Unread styling - subtle background
+        !notification.isRead ? "bg-blue-50/30" : "bg-white"
       )}
     >
+      {/* Unread indicator - elegant left accent */}
       {!notification.isRead && (
-        <span className="absolute left-0 top-4 h-2 w-2 rounded-full bg-blue-600 shadow-sm content-[''] ml-1.5" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-600" />
       )}
 
+      {/* Icon container - cleaner without border ring */}
       <div
         className={cn(
-          "mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200 transition-colors group-hover:bg-white",
-          !notification.isRead &&
-            "bg-blue-100 ring-blue-200 group-hover:bg-blue-50"
+          "mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all",
+          !notification.isRead
+            ? "bg-blue-100 group-hover:bg-blue-200 group-hover:scale-105"
+            : "bg-slate-100 group-hover:bg-slate-200 group-hover:scale-105"
         )}
       >
         {getIcon(notification.notificationType)}
       </div>
 
       {/* Content */}
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center justify-between gap-2">
+      <div className="flex-1 space-y-1.5 min-w-0">
+        <div className="flex items-start justify-between gap-3">
           <p
             className={cn(
-              "text-sm font-medium leading-none text-gray-900",
-              !notification.isRead && "font-bold text-black"
+              "text-sm leading-snug text-slate-900 line-clamp-1",
+              !notification.isRead && "font-semibold text-slate-950"
             )}
           >
             {notification.title}
           </p>
-          <span>
+          <span className="text-xs text-slate-400 whitespace-nowrap flex-shrink-0">
             {notification.createdAt
               ? formatDistanceToNow(
                   new Date(
@@ -125,27 +139,41 @@ export const NotificationItem = ({
                       7 * 60 * 60 * 1000
                   ),
                   { addSuffix: true }
-                )
-              : "Unknown time"}
+                ).replace('about ', '')
+              : "Unknown"}
           </span>
         </div>
 
         <p
           className={cn(
-            "line-clamp-2 text-sm text-gray-500",
-            !notification.isRead ? "text-gray-700" : "text-gray-500"
+            "line-clamp-2 text-sm leading-relaxed",
+            !notification.isRead ? "text-slate-600" : "text-slate-500"
           )}
         >
           {notification.message}
         </p>
 
-        {/* Badge loại thông báo (Optional - chỉ hiện nếu cần thiết) */}
-        {/* <div className="mt-2 flex items-center gap-2">
-           <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-             {notification.notificationType.replace(/_/g, " ")}
-           </span>
-        </div> */}
+        {/* Action Button - Always visible */}
+        <div className="pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleViewDetails}
+            className="h-7 px-3 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            View Details
+          </Button>
+        </div>
       </div>
+
+      {/* Detail Modal */}
+      <NotificationDetailModal
+        notification={notification}
+        open={showDetailModal}
+        onOpenChange={setShowDetailModal}
+        onMarkAsRead={onMarkAsRead}
+      />
     </div>
   );
 };

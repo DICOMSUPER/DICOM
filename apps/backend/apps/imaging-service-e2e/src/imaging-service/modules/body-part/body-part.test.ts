@@ -139,9 +139,9 @@ export function runBodyPartE2ETests(port = 5003, host = 'localhost') {
 
       for (const target of targets) {
         const result = await firstValueFrom(
-          client.send<boolean>(deletePattern, { id: target.id })
+          client.send(deletePattern, { id: target.id })
         );
-        expect(result).toBe(true);
+        expect(result.success).toBe(true);
       }
 
       // Verify deletion

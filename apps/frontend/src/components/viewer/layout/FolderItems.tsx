@@ -1,53 +1,87 @@
 import React from "react";
 import { FolderOpen, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 import { StudyItem } from "./StudyItem";
 
 interface FolderItemProps {
   orderId: string;
   folderName: string;
+  procedureName?: string;
+  orderStatus?: string;
   isExpanded: boolean;
   onToggle: () => void;
   selectedSeries: string | null;
   viewMode: "grid" | "list";
-  searchQuery: string;
   onSeriesClick: (series: DicomSeries) => void;
+  urlStudyId?: string;
+  urlSeriesId?: string;
 }
 
 export const FolderItem = ({
   orderId,
   folderName,
+  procedureName,
+  orderStatus,
   isExpanded,
   onToggle,
   selectedSeries,
   viewMode,
-  searchQuery,
   onSeriesClick,
+  urlStudyId,
+  urlSeriesId,
 }: FolderItemProps) => {
   const { data, isLoading, isError } = useGetDicomStudiesByOrderIdQuery(
     orderId,
-    { skip: !isExpanded }
+    { 
+      skip: !isExpanded,
+      refetchOnMountOrArgChange: false,
+    }
   );
 
   const studies = data?.data || [];
 
-  console.log(studies);
+  // Get status badge color
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500/20 text-green-300 border-green-500/30';
+      case 'in_progress': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'pending': return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      case 'cancelled': return 'bg-red-500/20 text-red-300 border-red-500/30';
+      default: return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+    }
+  };
   return (
     <div>
       {/* Folder Header */}
       <div
-        className="flex justify-between items-center cursor-pointer px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+        className="flex justify-between items-center cursor-pointer px-3 py-2.5 bg-slate-800 hover:bg-slate-700 rounded transition-colors"
         onClick={onToggle}
       >
-        <div className="flex items-center gap-2">
-          <FolderOpen className="h-4 w-4 text-teal-400" />
-          <span className="text-white font-medium">
-            {folderName || "Folder"}
-          </span>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <FolderOpen className="h-4 w-4 text-teal-400 shrink-0" />
+          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-semibold text-sm">
+                #{folderName}
+              </span>
+              {orderStatus && (
+                <Badge className={`text-[10px] px-1.5 py-0 border ${getStatusColor(orderStatus)}`}>
+                  {orderStatus.replace(/_/g, ' ').toUpperCase()}
+                </Badge>
+              )}
+            </div>
+            {procedureName && (
+              <span className="text-xs text-slate-400 truncate">
+                {procedureName}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isLoading && (
             <Loader2 className="h-4 w-4 animate-spin text-teal-400" />
           )}
@@ -59,7 +93,7 @@ export const FolderItem = ({
 
       {/* Studies */}
       {isExpanded && (
-        <div className="pl-4 pt-2 space-y-1">
+        <div className="pt-1.5 space-y-1">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
@@ -82,8 +116,9 @@ export const FolderItem = ({
                 study={study}
                 selectedSeries={selectedSeries}
                 viewMode={viewMode}
-                searchQuery={searchQuery}
                 onSeriesClick={onSeriesClick}
+                urlStudyId={urlStudyId}
+                urlSeriesId={urlSeriesId}
               />
             ))
           )}

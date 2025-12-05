@@ -58,28 +58,28 @@ export function DiagnosisReportTable({
 
   const getStatusBadge = (status: DiagnosisStatus) => {
     switch (status) {
-      case DiagnosisStatus.ACTIVE:
+      case DiagnosisStatus.APPROVED:
         return (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-sm font-medium text-green-700">Active</span>
           </div>
         );
-      case DiagnosisStatus.RESOLVED:
+      case DiagnosisStatus.PENDING_APPROVAL:
         return (
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span className="text-sm font-medium text-emerald-700">
-              Resolved
+              Pending Approval
             </span>
           </div>
         );
-      case DiagnosisStatus.RULED_OUT:
+      case DiagnosisStatus.REJECTED:
         return (
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-600" />
             <span className="text-sm font-medium text-amber-700">
-              Ruled Out
+              Rejected
             </span>
           </div>
         );
