@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail } from "lucide-react";
 
-import { useCreateDiagnosisMutation, useUpdateDiagnosisMutation } from "@/store/diagnosisApi"; // ⭐ NEW
+import { useCreateDiagnosisMutation, useUpdateDiagnosisMutation } from "@/store/diagnosisApi";
 import { CreateDiagnosisReportDto, DiagnosisStatus, DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
 
 import PinDialog from "./PinDialog";
@@ -20,12 +20,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import RejectDicomDialog from "./RejectDicomDialog";
 
-// Export PDF
 import html2pdf from "html2pdf.js";
 import PrintDiagnosis from "./PrintDiagnosis";
 import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
 
-// ⭐ NEW - Dialog xem Reason Reject
 import {
   Dialog,
   DialogContent,
@@ -55,7 +53,7 @@ const MedicalRecordMain = ({
   selectedExam,
   selectedStudyId,
   diagnosisData,
-  isDiagnosisLoading,
+  isDiagnosisLoading, 
   encounterId,
   patientId,
 }: any) => {
@@ -75,10 +73,7 @@ const MedicalRecordMain = ({
 
   const [updateStudyDicom] = useUpdateDicomStudyMutation();
 
-  // ⭐ NEW - Dialog Reject Reason
   const [isReasonOpen, setIsReasonOpen] = useState(false);
-
-  // ⭐ NEW - Edit Mode
   const [isEditMode, setIsEditMode] = useState(false);
 
   const handleRejectDicom = async (reason: string) => {
@@ -97,6 +92,8 @@ const MedicalRecordMain = ({
       toast.error("Reject thất bại!");
     }
   };
+  
+
   const handleUpdateDiagnosis = async () => {
     const payload = {
       description,
@@ -106,7 +103,7 @@ const MedicalRecordMain = ({
     try {
       await updateDiagnosis({
         id: diagnosisData?.data?.[0].id,
-        updateDiagnosis: payload,  // ✅ ĐÚNG
+        updateDiagnosis: payload,
       });
 
       toast.success("Đã cập nhật chẩn đoán!");
@@ -116,6 +113,7 @@ const MedicalRecordMain = ({
       toast.error("Cập nhật thất bại");
     }
   };
+
   const handleExportPdf = () => {
     if (!printRef.current) return;
     const options = {
@@ -157,6 +155,7 @@ const MedicalRecordMain = ({
       return signatureId;
     } catch (err) {
       console.error(err);
+      toast.error("PIN sai hoặc ký thất bại!");
       throw new Error("PIN sai hoặc ký thất bại!");
     }
   };
@@ -166,8 +165,11 @@ const MedicalRecordMain = ({
   };
 
   const handleCreateDiagnosis = async () => {
-    if (!selectedStudyId || !encounterId) return alert("Thiếu study hoặc encounter ID!");
-    if (!signerId) return alert("Cần xác nhận PIN người ký!");
+    if (!selectedStudyId || !encounterId)
+      return toast.warning("Thiếu study hoặc encounter ID!");
+
+    if (!signerId)
+      return toast.warning("Cần xác nhận PIN người ký!");
 
     const payload: CreateDiagnosisReportDto = {
       encounterId,
@@ -185,15 +187,12 @@ const MedicalRecordMain = ({
 
     try {
       await createDiagnosis(payload);
-      alert("Đã lưu chẩn đoán thành công!");
+      toast.success("Đã lưu chẩn đoán thành công!");
     } catch (err) {
       console.error(err);
-      alert("Lưu thất bại, vui lòng thử lại.");
+      toast.error("Lưu thất bại, vui lòng thử lại.");
     }
   };
-
-  // ⭐ NEW - Update Diagnosis
-
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -202,7 +201,6 @@ const MedicalRecordMain = ({
       case "video":
         return <VideoTab />;
       case "files":
-
       case "receive":
         return <ReceiveTab />;
       case "portal":
@@ -212,11 +210,9 @@ const MedicalRecordMain = ({
     }
   };
 
-
   if (!selectedStudyId) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
-
         <Card className="p-12 text-center shadow-lg rounded-2xl max-w-lg bg-white">
           <div className="flex flex-col items-center gap-4">
             <div className="text-6xl animate-bounce">🩺</div>
@@ -246,13 +242,8 @@ const MedicalRecordMain = ({
 
   return (
     <main className="flex-1 flex flex-col">
-      {/* Tabs */}
       <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) => setActiveTab(val as TabValue)}
-          className="w-full"
-        >
+        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabValue)} className="w-full">
           <TabsList className="bg-transparent border-b border-gray-200">
             {[
               { value: "info", label: "Nhận ca", icon: <Lock className="w-4 h-4 mr-2" /> },
@@ -267,13 +258,8 @@ const MedicalRecordMain = ({
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="
-          rounded-none border-b-2 border-transparent
-          data-[state=active]:border-blue-600
-          px-4 py-2
-        "
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 px-4 py-2"
                 onClick={() => {
-                  // điều kiện cho từng tab
                   if (tab.value === "view") {
                     router.push(`/viewer?study=${selectedStudyId}&patient=${patientId}`);
                   }
@@ -294,7 +280,6 @@ const MedicalRecordMain = ({
         {activeTab === "info" ? (
           <Card className="p-6 mx-auto">
             {!hasDiagnosis ? (
-              /*************** FORM CHẨN ĐOÁN MỚI ***************/
               <div>
                 <Button size="sm" variant="outline" onClick={() => setIsTemplateOpen(true)}>
                   Chọn Template
@@ -315,14 +300,10 @@ const MedicalRecordMain = ({
                     >
                       📋
                     </Button>
-                    {signerId && (
-                      <span className="ml-2 text-green-600 text-xs">✔ Đã ký</span>
-                    )}
+                    {signerId && <span className="ml-2 text-green-600 text-xs">✔ Đã ký</span>}
 
                     <div className="border rounded h-24 bg-gray-50 flex items-center justify-center mt-3">
-                      {signerUser
-                        ? `${signerUser.firstName} ${signerUser.lastName}`
-                        : "Chưa ký"}
+                      {signerUser ? `${signerUser.firstName} ${signerUser.lastName}` : "Chưa ký"}
                     </div>
                   </div>
 
@@ -338,28 +319,25 @@ const MedicalRecordMain = ({
                   Tạo chẩn đoán
                 </Button>
 
-                <Button
-                  variant="destructive"
-                  className="mt-6 ml-3"
-                  onClick={() => setIsRejectOpen(true)}
-                >
+                <Button variant="destructive" className="mt-6 ml-3" onClick={() => setIsRejectOpen(true)}>
                   Reject DICOM
                 </Button>
               </div>
             ) : (
-              /*************** ĐÃ CÓ CHẨN ĐOÁN ***************/
               <div className="space-y-6">
-                {/* ⭐ NEW - Nếu trạng thái rejected thì show 2 nút */}
                 {diagnosis.diagnosisStatus === "rejected" && (
                   <div className="flex gap-4 mb-4">
                     <Button variant="destructive" onClick={() => setIsReasonOpen(true)}>
                       View Reason
                     </Button>
 
-                    <Button variant="outline" onClick={() => {
-                      setDescription(diagnosis.description);
-                      setIsEditMode(true);
-                    }}>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setDescription(diagnosis.description);
+                        setIsEditMode(true);
+                      }}
+                    >
                       Edit Diagnosis
                     </Button>
                   </div>
@@ -387,7 +365,6 @@ const MedicalRecordMain = ({
                     </div>
                   </>
                 ) : (
-                  /*************** ⭐ NEW - Edit Mode ***************/
                   <div>
                     <h2 className="font-semibold mb-4">Edit Diagnosis</h2>
 
@@ -402,7 +379,6 @@ const MedicalRecordMain = ({
                   </div>
                 )}
 
-                {/* Hidden Print */}
                 <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
                   <PrintDiagnosis
                     ref={printRef}
@@ -427,7 +403,6 @@ const MedicalRecordMain = ({
           <Card className="p-6 mx-auto">{renderTabContent()}</Card>
         )}
 
-        {/* Template Dialog */}
         <SelectTemplateDialog
           open={isTemplateOpen}
           onClose={() => setIsTemplateOpen(false)}
@@ -436,30 +411,17 @@ const MedicalRecordMain = ({
           onSelect={handleSelectTemplate}
         />
 
-        {/* PIN Dialog */}
-        <PinDialog
-          open={isPinDialogOpen}
-          onClose={() => setIsPinDialogOpen(false)}
-          onSign={handleConfirmPin}
-        />
+        <PinDialog open={isPinDialogOpen} onClose={() => setIsPinDialogOpen(false)} onSign={handleConfirmPin} />
 
-        {/* Reject DICOM Dialog */}
-        <RejectDicomDialog
-          open={isRejectOpen}
-          onClose={() => setIsRejectOpen(false)}
-          onConfirm={handleRejectDicom}
-        />
+        <RejectDicomDialog open={isRejectOpen} onClose={() => setIsRejectOpen(false)} onConfirm={handleRejectDicom} />
 
-        {/* ⭐ NEW - View Reason Dialog */}
         <Dialog open={isReasonOpen} onOpenChange={setIsReasonOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Lý do bị từ chối</DialogTitle>
             </DialogHeader>
 
-            <p className="text-sm text-gray-700">
-              {diagnosis?.rejectionReason || "Không có lý do"}
-            </p>
+            <p className="text-sm text-gray-700">{diagnosis?.rejectionReason || "Không có lý do"}</p>
 
             <DialogFooter>
               <Button onClick={() => setIsReasonOpen(false)}>Đóng</Button>

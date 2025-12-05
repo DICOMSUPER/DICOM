@@ -22,6 +22,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
   const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
 
   const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({ patientId });
+  console.log("check 3 : ",imagingOrdersData)
 
   const examHistory = useMemo(() => {
     const list = imagingOrdersData?.data || [];
@@ -50,6 +51,8 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
     useGetDiagnoseByStudyIdQuery(selectedStudyId ?? "", {
       skip: !selectedStudyId,
     });
+
+    console.log("check 2 : ",diagnosisData)
 
   if (isLoading) return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
   if (isError) return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
