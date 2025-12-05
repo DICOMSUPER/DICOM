@@ -21,31 +21,51 @@ process.on('uncaughtException', (error) => {
 });
 
 async function bootstrap() {
-  const transport = Number(process.env.TRANSPORT) || Transport.TCP;
-  const host = process.env.HOST || 'localhost';
-  const port = Number(process.env.PORT) || 5004;
-  
-  const app = await NestFactory.createMicroservice(AppModule, {
-    transport: transport,
-    options: {
-      host: host,
-      port: port,
-    },
-  });
-
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    })
-  );
-
-  await app.listen();
+  const startTime = Date.now();
   const logger = new Logger('PatientService');
-  logger.log(`🚀 Patient Service running on: ${host}:${port}`);
-  logger.log(`📡 Transport: ${transport === Transport.TCP ? 'TCP' : 'Redis'}`);
+  const transport = Number(process.env.TRANSPORT) || Transport.TCP;
+  const host = process.env.HOST || '0.0.0.0';
+  const port = Number(process.env.PORT) || 5004;
+
+  try {
+    logger.log('🚀 Starting Patient Service...');
+
+    const createStart = Date.now();
+    const app = await NestFactory.createMicroservice(AppModule, {
+      transport: transport,
+      options: {
+        host: host,
+        port: port,
+      },
+    });
+    logger.log(`⏱️  Microservice Create: ${Date.now() - createStart}ms`);
+
+    // Global validation pipe
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      })
+    );
+
+    const listenStart = Date.now();
+    await app.listen();
+    logger.log(`⏱️  Microservice Listen: ${Date.now() - listenStart}ms`);
+    logger.log(`🎯 Patient Service is running on: ${host}:${port}`);
+
+    const totalTime = Date.now() - startTime;
+    logger.log(`🎉 Cold Start completed! Total time: ${totalTime}ms`);
+  } catch (error: any) {
+    logger.error('❌ Failed to start Patient Service:', error);
+    if (error?.message) {
+      logger.error('Error message:', error.message);
+    }
+    if (error?.stack) {
+      logger.error('Stack trace:', error.stack);
+    }
+    process.exit(1);
+  }
 }
 
 bootstrap();

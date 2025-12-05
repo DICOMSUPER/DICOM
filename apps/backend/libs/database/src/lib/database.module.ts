@@ -2,7 +2,7 @@ import { DynamicModule, Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PaginationModule } from './pagination/pagination.module';
-import { DataSource } from 'typeorm';
+import { DataSource, Logger as TypeOrmLogger } from 'typeorm';
 
 interface DatabaseModuleOptions {
   prefix: string;
@@ -23,54 +23,111 @@ export class DatabaseModule {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) => ({
-            type: 'postgres',
-            host: configService.get(`${prefixUpper}_DB_HOST`, 'localhost'),
-            port: configService.get<number>(`${prefixUpper}_DB_PORT`, 5432),
-            username: configService.get(
+          useFactory: (configService: ConfigService) => {
+            const logger = new Logger(`TypeOrmModule [${prefixUpper}]`);
+            
+            const host = configService.get(`${prefixUpper}_DB_HOST`, 'localhost');
+            const port = configService.get<number>(`${prefixUpper}_DB_PORT`, 5432);
+            const username = configService.get(
               `${prefixUpper}_DB_USERNAME`,
               'postgres'
-            ),
-            password: configService.get(
+            );
+            const password = configService.get(
               `${prefixUpper}_DB_PASSWORD`,
               'postgres'
-            ),
-            database: configService.get(
+            );
+            const database = configService.get(
               `${prefixUpper}_DB_NAME`,
               defaultDbName || `${prefix.toLowerCase()}_service`
-            ),
-            // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-            synchronize: configService.get<boolean>(
-              `${prefixUpper}_DB_SYNC`,
-              true
-            ),
-            logging: configService.get<boolean>(
-              `${prefixUpper}_DB_LOGGING`,
-              false
-            ),
-            autoLoadEntities: true,
-            ssl: { rejectUnauthorized: false },
-          
-            // Connection pool configuration to prevent exhaustion
-            extra: {
-              max: configService.get<number>(
-                `${prefixUpper}_DB_MAX_CONNECTIONS`,
-                10
-              ), // Maximum number of connections in the pool
-              min: configService.get<number>(
-                `${prefixUpper}_DB_MIN_CONNECTIONS`,
-                5
-              ), // Minimum number of connections in the pool
-              idleTimeoutMillis: configService.get<number>(
-                `${prefixUpper}_DB_IDLE_TIMEOUT`,
-                30000
-              ), // Close idle connections after 30 seconds
-              connectionTimeoutMillis: configService.get<number>(
-                `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
-                2000
-              ), // Wait 2 seconds for a connection from the pool
-            },
-          }),
+            );
+            const connectionTimeout = configService.get<number>(
+              `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
+              2000
+            );
+
+            // Log connection attempt with details
+            logger.log(
+              `Attempting to connect to database: host=${host} port=${port} database=${database} username=${username} timeout=${connectionTimeout}ms`
+            );
+
+            const config = {
+              type: 'postgres' as const,
+              host,
+              port,
+              username,
+              password,
+              database,
+              // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+              synchronize: configService.get<boolean>(
+                `${prefixUpper}_DB_SYNC`,
+                true
+              ),
+              logging: configService.get<boolean>(
+                `${prefixUpper}_DB_LOGGING`,
+                false
+              ),
+              autoLoadEntities: true,
+              ssl: { rejectUnauthorized: false },
+            
+              // Connection pool configuration to prevent exhaustion
+              extra: {
+                max: configService.get<number>(
+                  `${prefixUpper}_DB_MAX_CONNECTIONS`,
+                  10
+                ), // Maximum number of connections in the pool
+                min: configService.get<number>(
+                  `${prefixUpper}_DB_MIN_CONNECTIONS`,
+                  5
+                ), // Minimum number of connections in the pool
+                idleTimeoutMillis: configService.get<number>(
+                  `${prefixUpper}_DB_IDLE_TIMEOUT`,
+                  30000
+                ), // Close idle connections after 30 seconds
+                connectionTimeoutMillis: connectionTimeout, // Wait for connection from the pool
+              },
+            };
+
+            // Create a custom logger that includes connection details in error messages
+            const connectionInfo = `[${prefixUpper}] host=${host} port=${port} database=${database} username=${username}`;
+            
+            class ConnectionAwareLogger implements TypeOrmLogger {
+              logQuery(query: string, parameters?: any[]) {
+                // Optional: log queries if needed
+              }
+              
+              logQueryError(error: string, query: string, parameters?: any[]) {
+                logger.error(`${connectionInfo} - Query Error: ${error}`);
+              }
+              
+              logQuerySlow(time: number, query: string, parameters?: any[]) {
+                logger.warn(`${connectionInfo} - Slow Query (${time}ms): ${query}`);
+              }
+              
+              logSchemaBuild(message: string) {
+                logger.log(`${connectionInfo} - ${message}`);
+              }
+              
+              logMigration(message: string) {
+                logger.log(`${connectionInfo} - ${message}`);
+              }
+              
+              log(level: 'log' | 'info' | 'warn', message: any) {
+                if (level === 'warn') {
+                  logger.warn(`${connectionInfo} - ${message}`);
+                } else {
+                  logger.log(`${connectionInfo} - ${message}`);
+                }
+              }
+            }
+
+            return {
+              ...config,
+              // Use custom logger if logging is enabled
+              logger: configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false) 
+                ? new ConnectionAwareLogger()
+                : undefined,
+            };
+          },
         }),
       ],
       providers: [
@@ -89,23 +146,26 @@ export class DatabaseModule {
             if (!shouldLog) {
               return true;
             }
+            
+            // Get connection details before try block so they're available in catch
+            const host = configService.get<string>(
+              `${prefixUpper}_DB_HOST`,
+              'localhost'
+            );
+            const port = configService.get<number>(
+              `${prefixUpper}_DB_PORT`,
+              5432
+            );
+            const database = configService.get<string>(
+              `${prefixUpper}_DB_NAME`,
+              defaultDbName || `${prefix.toLowerCase()}_service`
+            );
+            const username = configService.get<string>(
+              `${prefixUpper}_DB_USERNAME`,
+              'postgres'
+            );
+            
             try {
-              const host = configService.get<string>(
-                `${prefixUpper}_DB_HOST`,
-                'localhost'
-              );
-              const port = configService.get<number>(
-                `${prefixUpper}_DB_PORT`,
-                5432
-              );
-              const database = configService.get<string>(
-                `${prefixUpper}_DB_NAME`,
-                defaultDbName || `${prefix.toLowerCase()}_service`
-              );
-              const username = configService.get<string>(
-                `${prefixUpper}_DB_USERNAME`,
-                'postgres'
-              );
               const loggingEnabled = configService.get<boolean>(
                 `${prefixUpper}_DB_LOGGING`,
                 false
@@ -132,7 +192,25 @@ export class DatabaseModule {
               ].join('\n');
               logger.log(message);
             } catch (err) {
-              logger.error('Database connection failed', err as Error);
+              const error = err as Error;
+              const connectionDetails = [
+                `host=${host}`,
+                `port=${port}`,
+                `database=${database}`,
+                `username=${username}`,
+              ].join(' ');
+              
+              logger.error(
+                `Database connection failed for: ${connectionDetails}`,
+                error.stack || error.message || error
+              );
+              
+              // Re-throw with enhanced message
+              const enhancedError = new Error(
+                `Failed to connect to database (${connectionDetails}): ${error.message}`
+              );
+              enhancedError.stack = error.stack;
+              throw enhancedError;
             }
             return true;
           },

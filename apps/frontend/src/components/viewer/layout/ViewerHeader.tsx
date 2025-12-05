@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshButton } from "@/components/ui/refresh-button";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -16,15 +15,11 @@ import { Roles } from "@/enums/user.enum";
 interface ViewerHeaderProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  loading?: boolean;
-  onRefresh?: () => void;
 }
 
 export default function ViewerHeader({
   isCollapsed = false,
   onToggleCollapse,
-  loading = false,
-  onRefresh,
 }: ViewerHeaderProps) {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -75,18 +70,6 @@ export default function ViewerHeader({
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-3">
-
-          {onRefresh && (
-            <RefreshButton
-              onRefresh={onRefresh}
-              loading={loading}
-              showText={true}
-              variant="ghost"
-              size="sm"
-              className="bg-teal-900/30 hover:bg-teal-800/50 text-teal-300 h-10 border border-teal-700/30 hover:border-teal-600/50 transition-all"
-            />
-          )}
-
           {/* Home Button */}
           <Tooltip>
             <TooltipTrigger asChild>
