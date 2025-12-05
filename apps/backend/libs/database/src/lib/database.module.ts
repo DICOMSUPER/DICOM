@@ -67,8 +67,8 @@ export class DatabaseModule {
               ), // Close idle connections after 30 seconds
               connectionTimeoutMillis: configService.get<number>(
                 `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
-                2000
-              ), // Wait 2 seconds for a connection from the pool
+                30000
+              ), // Wait 30 seconds for a connection from the pool
             },
           }),
         }),
@@ -114,7 +114,9 @@ export class DatabaseModule {
                 `${prefixUpper}_DB_SYNC`,
                 true
               );
-              const sslRejectUnauthorized = false; // matches ssl: { rejectUnauthorized: false }
+              const sslRejectUnauthorized = {
+                rejectUnauthorized: false
+              }; // matches ssl: { rejectUnauthorized: false }
 
               const start = Date.now();
               if (!dataSource.isInitialized) {

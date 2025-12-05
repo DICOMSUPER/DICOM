@@ -1,0 +1,23 @@
+app = 'patient-service'  # Đổi tên này nếu trên Fly đã có người dùng
+primary_region = 'sin'
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  TRANSPORT = "0" # 0 là TCP
+  HOST = "0.0.0.0"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb' # Service này có thể cần ít RAM hơn ws-gateway
+  cpu_kind = 'shared'
+  cpus = 1
