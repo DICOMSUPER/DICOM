@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { RoomStatus } from '@backend/shared-domain';
-import { EncounterStatus } from '@backend/shared-enums';
+import { EncounterStatus, OrderStatus, DiagnosisStatus } from '@backend/shared-enums';
 
 @Injectable()
 export class AnalyticsService {
@@ -52,12 +52,13 @@ export class AnalyticsService {
         ).catch(() => ({ data: null })),
       ]);
 
-      const userStats = userStatsResult || {};
-      const departmentStats = departmentStatsResult || {};
-      const roomStats = roomStatsResult || {};
-      const serviceStats = serviceStatsResult || {};
-      const patientStats = patientStatsResult || {};
-      const encounterStats = encounterStatsResult || {};
+      // Extract data from responses (handle both wrapped and unwrapped responses)
+      const userStats = userStatsResult?.data || userStatsResult || {};
+      const departmentStats = departmentStatsResult?.data || departmentStatsResult || {};
+      const roomStats = roomStatsResult?.data || roomStatsResult || {};
+      const serviceStats = serviceStatsResult?.data || serviceStatsResult || {};
+      const patientStats = patientStatsResult?.data || patientStatsResult || {};
+      const encounterStats = encounterStatsResult?.data || encounterStatsResult || {};
 
       const totalUsers = userStats.activeUsers || 0;
       const totalDepartments = departmentStats.activeDepartments || 0;
@@ -412,11 +413,10 @@ export class AnalyticsService {
       });
       
       rooms.forEach((room: any) => {
-        const status = room.status || 'Unknown';
-        if (statusMap.has(status)) {
+        const status = room.status;
+        // Only count if status is a valid RoomStatus enum value
+        if (status && Object.values(RoomStatus).includes(status)) {
           statusMap.set(status, (statusMap.get(status) || 0) + 1);
-        } else {
-          statusMap.set(status, 1);
         }
       });
       
@@ -446,10 +446,9 @@ export class AnalyticsService {
       });
       
       encounters.forEach((encounter: any) => {
-        const status = encounter.status || encounter.encounterStatus || 'Unknown';
-        if (statusMap.has(status)) {
-          statusMap.set(status, (statusMap.get(status) || 0) + 1);
-        } else {
+        const status = encounter.status || encounter.encounterStatus;
+        // Only count if status is a valid EncounterStatus enum value
+        if (status && Object.values(EncounterStatus).includes(status)) {
           statusMap.set(status, (statusMap.get(status) || 0) + 1);
         }
       });
@@ -475,8 +474,9 @@ export class AnalyticsService {
         ).catch(() => ({ data: null })),
       ]);
 
-      const patientStats = patientStatsResult || {};
-      const encounterStats = encounterStatsResult || {};
+      // Extract data from responses (handle both wrapped and unwrapped responses)
+      const patientStats = patientStatsResult?.data || patientStatsResult || {};
+      const encounterStats = encounterStatsResult?.data || encounterStatsResult || {};
 
       const stats = {
         totalPatients: patientStats?.totalPatients || 0,
@@ -588,33 +588,82 @@ export class AnalyticsService {
       ] = await Promise.all([
         firstValueFrom(
           this.patientService.send('PatientService.Patient.GetStats', {})
-        ).catch(() => ({ data: null })),
+        ).catch(() => null),
         firstValueFrom(
           this.patientService.send('PatientService.Encounter.GetStats', {})
-        ).catch(() => ({ data: null })),
+        ).catch(() => null),
         firstValueFrom(
           this.patientService.send('PatientService.DiagnosisReport.GetStats', {})
-        ).catch(() => ({ data: null })),
+        ).catch(() => null),
         firstValueFrom(
           this.imagingService.send('ImagingService.ImagingOrder.GetStats', {})
-        ).catch(() => ({ data: null })),
+        ).catch(() => null),
       ]);
 
-      const patientStats = patientStatsResult || {};
-      const encounterStats = encounterStatsResult || {};
-      const diagnosisStats = diagnosisReportsResult || {};
-      const imagingStats = imagingOrdersResult || {};
+      // Extract data from responses (handle both wrapped and unwrapped responses)
+      const patientStats = patientStatsResult?.data || patientStatsResult || {};
+      const encounterStats = encounterStatsResult?.data || encounterStatsResult || {};
+      const diagnosisStats = diagnosisReportsResult?.data || diagnosisReportsResult || {};
+      const imagingStats = imagingOrdersResult?.data || imagingOrdersResult || {};
+
+      // Calculate pending encounters from actual encounter data
+      let pendingEncountersCount = 0;
+      try {
+        const allEncounters = await firstValueFrom(
+          this.patientService.send('PatientService.Encounter.FindAll', {})
+        ).catch(() => []);
+        
+        const encountersData = Array.isArray(allEncounters?.data) ? allEncounters.data : (Array.isArray(allEncounters) ? allEncounters : []);
+        const pendingEncounters = encountersData.filter((e: any) => {
+          if (e.isActive === false || e.isDeleted === true) return false;
+          const status = e.status || e.encounterStatus;
+          return status === EncounterStatus.WAITING || status === EncounterStatus.ARRIVED;
+        });
+        pendingEncountersCount = pendingEncounters.length;
+      } catch (error) {
+        this.logger.warn('Could not calculate pending encounters, using fallback', error);
+      }
+
+      // Calculate imaging order stats from FindAll data (GetStats might not exist)
+      let totalImagingOrders = 0;
+      let pendingImagingOrders = 0;
+      let completedImagingOrders = 0;
+      try {
+        const allImagingOrders = await firstValueFrom(
+          this.imagingService.send('ImagingService.ImagingOrder.FindAll', {})
+        ).catch(() => []);
+        
+        const ordersData = Array.isArray(allImagingOrders?.data) ? allImagingOrders.data : (Array.isArray(allImagingOrders) ? allImagingOrders : []);
+        const activeOrders = ordersData.filter((o: any) => o.isActive !== false && o.isDeleted !== true);
+        totalImagingOrders = activeOrders.length;
+        
+        pendingImagingOrders = activeOrders.filter((o: any) => {
+          const status = o.orderStatus || o.status;
+          return status === OrderStatus.PENDING || status === OrderStatus.IN_PROGRESS;
+        }).length;
+        
+        completedImagingOrders = activeOrders.filter((o: any) => {
+          const status = o.orderStatus || o.status;
+          return status === OrderStatus.COMPLETED;
+        }).length;
+      } catch (error) {
+        this.logger.warn('Could not calculate imaging order stats, using fallback', error);
+        // Fallback to stats from GetStats if available
+        totalImagingOrders = imagingStats?.total || imagingStats?.totalOrders || 0;
+        pendingImagingOrders = imagingStats?.pending || imagingStats?.pendingOrders || 0;
+        completedImagingOrders = imagingStats?.completed || imagingStats?.completedOrders || 0;
+      }
 
       const stats = {
         totalPatients: patientStats?.totalPatients || 0,
         activePatients: patientStats?.activePatients || 0,
-        todayEncounters: encounterStats?.todayEncounter || 0,
-        pendingEncounters: encounterStats?.pendingEncounters || 0,
-        completedReports: diagnosisStats?.completedReports || 0,
-        pendingReports: diagnosisStats?.pendingReports || 0,
-        totalImagingOrders: imagingStats?.totalOrders || 0,
-        pendingImagingOrders: imagingStats?.pendingOrders || 0,
-        completedImagingOrders: imagingStats?.completedOrders || 0,
+        todayEncounters: encounterStats?.todayEncounter || encounterStats?.todayEncounters || 0,
+        pendingEncounters: pendingEncountersCount,
+        completedReports: diagnosisStats?.resolved || diagnosisStats?.completedReports || 0,
+        pendingReports: diagnosisStats?.active || diagnosisStats?.pendingReports || 0,
+        totalImagingOrders: totalImagingOrders,
+        pendingImagingOrders: pendingImagingOrders,
+        completedImagingOrders: completedImagingOrders,
       };
 
       const { startDate, endDate } = this.calculateDateRange(period, value);
@@ -774,8 +823,11 @@ export class AnalyticsService {
       const statusMap = new Map<string, number>();
       
       reports.forEach((report: any) => {
-        const status = report.diagnosisStatus || report.status || 'Unknown';
-        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        const status = report.diagnosisStatus || report.status;
+        // Only count if status is a valid DiagnosisStatus enum value
+        if (status && Object.values(DiagnosisStatus).includes(status)) {
+          statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        }
       });
       
       return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
@@ -799,8 +851,11 @@ export class AnalyticsService {
       const statusMap = new Map<string, number>();
       
       orders.forEach((order: any) => {
-        const status = order.orderStatus || order.status || 'Unknown';
-        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        const status = order.orderStatus || order.status;
+        // Only count if status is a valid OrderStatus enum value
+        if (status && Object.values(OrderStatus).includes(status)) {
+          statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        }
       });
       
       return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));

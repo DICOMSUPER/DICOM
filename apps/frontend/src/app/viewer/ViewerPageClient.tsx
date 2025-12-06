@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChevronDown, ImageOff } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
@@ -47,16 +47,41 @@ function ViewerPageContent() {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [selectedTool, setSelectedTool] = useState<string>("");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
+  const [viewportReady, setViewportReady] = useState(false);
+  const [hasSetInitialTool, setHasSetInitialTool] = useState(false);
 
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
   const [series, setSeries] = useState<DicomSeries[]>([]);
-  const [loading, setLoading] = useState(false);
   const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
   const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<"all" | "draft" | null>(null);
+  const [currentOrderStatus, setCurrentOrderStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveViewport(0);
   }, [setActiveViewport]);
+
+  // Listen for viewport ready state from ViewerContext
+  useEffect(() => {
+    const activeViewportState = state.viewportRuntimeStates.get(state.activeViewport);
+    const isReady = activeViewportState?.viewportReady || false;
+    
+    setViewportReady(isReady);
+
+    // Auto-select WindowLevel tool when viewport becomes ready with an image
+    if (isReady && !hasSetInitialTool) {
+      setSelectedTool("WindowLevel");
+      setHasSetInitialTool(true);
+      console.log("✅ Viewport ready - WindowLevel tool automatically selected");
+    }
+  }, [state.viewportRuntimeStates, state.activeViewport, hasSetInitialTool]);
+
+  // Reset initial tool flag when series changes
+  useEffect(() => {
+    if (selectedSeries) {
+      setHasSetInitialTool(false);
+      setViewportReady(false);
+    }
+  }, [selectedSeries]);
 
   const handleLayoutChange = (layout: string) => {
     setSeriesLayout(layout);
@@ -108,6 +133,15 @@ function ViewerPageContent() {
     });
   }, [patientId, studyId, updateURLParams, setViewportSeries, state.activeViewport]);
 
+  const handleOrderStatusChange = useCallback((status: string | null) => {
+    setCurrentOrderStatus(status);
+  }, []);
+
+  // Check if order is in a final state (completed or cancelled)
+  const isOrderFinalized = useMemo(() => {
+    return currentOrderStatus === 'completed' || currentOrderStatus === 'cancelled';
+  }, [currentOrderStatus]);
+
   const handleViewAllAnnotations = useCallback(() => {
     setActiveAnnotationsModal("all");
   }, []);
@@ -123,27 +157,6 @@ function ViewerPageContent() {
     []
   );
 
-  const handleRefresh = async () => {
-    if (!studyId) return;
-    setLoading(true);
-    try {
-      const seriesResponse = await fetchSeriesByReference({
-        id: studyId,
-        type: "study",
-        params: { page: 1, limit: 50 },
-      }).unwrap();
-      const refreshedSeries = extractApiData<DicomSeries>(seriesResponse);
-      setSeries(refreshedSeries);
-      handleSeriesLoaded(refreshedSeries);
-      setSelectedTool("WindowLevel");
-
-      window.dispatchEvent(new CustomEvent("refreshViewport", { detail: { studyId } }));
-    } catch (error) {
-      console.error("Error refreshing series:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col">
@@ -152,8 +165,6 @@ function ViewerPageContent() {
         <ViewerHeader
           isCollapsed={headerCollapsed}
           onToggleCollapse={() => setHeaderCollapsed(!headerCollapsed)}
-          loading={loading}
-          onRefresh={handleRefresh}
         />
         {headerCollapsed && (
           <div className="bg-slate-900 border-b border-slate-800 flex items-center justify-center transition-all duration-300">
@@ -186,6 +197,8 @@ function ViewerPageContent() {
             onViewAllAnnotations={handleViewAllAnnotations}
             onViewDraftAnnotations={handleViewDraftAnnotations}
             activeAnnotationView={activeAnnotationsModal}
+            viewportReady={viewportReady}
+            isOrderFinalized={isOrderFinalized}
           />
         </ResizablePanel>
 
@@ -214,6 +227,7 @@ function ViewerPageContent() {
             patientId={patientId || undefined}
             selectedSeriesFromParent={selectedSeries}
             urlSeriesId={seriesId || undefined}
+            onOrderStatusChange={handleOrderStatusChange}
           />
         </ResizablePanel>
       </div>

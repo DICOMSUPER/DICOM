@@ -62,6 +62,8 @@ export default function AnnotationAccordion({
   const [annotationToChangeStatus, setAnnotationToChangeStatus] = useState<ImageAnnotation | null>(null);
   const [targetStatus, setTargetStatus] = useState<AnnotationStatus>(AnnotationStatus.FINAL);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadedSeriesRef = useRef<Set<string>>(new Set());
+  const [forceRefresh, setForceRefresh] = useState(0);
   
   const { publish } = useViewerEvents();
   const { state, reloadAnnotationsForSeries } = useViewer();
@@ -189,12 +191,19 @@ export default function AnnotationAccordion({
     return localAnnotations;
   }, [selectedSeriesId, state.viewportIds, state.viewportSeries, state.renderingEngineIds]);
 
-  const loadAnnotations = useCallback(async () => {
+  const loadAnnotations = useCallback(async (force = false) => {
     if (!selectedSeriesId) {
       setAnnotations([]);
       return;
     }
 
+    // Skip if already loaded (unless forced)
+    if (!force && loadedSeriesRef.current.has(selectedSeriesId)) {
+      console.log(`[AnnotationAccordion] Skipping fetch for series ${selectedSeriesId} - already cached`);
+      return;
+    }
+
+    console.log(`[AnnotationAccordion] Fetching annotations for series ${selectedSeriesId}`);
     setLoading(true);
     try {
       const response = await fetchAnnotationsBySeries(selectedSeriesId).unwrap();
@@ -229,6 +238,9 @@ export default function AnnotationAccordion({
       
       setAnnotationColors(colorMap);
       setAnnotationLockedMap(lockMap);
+      
+      // Mark this series as loaded
+      loadedSeriesRef.current.add(selectedSeriesId);
     } catch (error) {
       console.error("Failed to load annotations:", error);
       const localAnnotations = collectLocalAnnotations();
@@ -249,7 +261,7 @@ export default function AnnotationAccordion({
   }, [selectedSeriesId, fetchAnnotationsBySeries, collectLocalAnnotations, publish]);
 
   useEffect(() => {
-    loadAnnotations();
+    loadAnnotations(forceRefresh > 0);
     
     const handleAnnotationEvent = () => {
       if (refreshTimeoutRef.current) {
@@ -257,7 +269,7 @@ export default function AnnotationAccordion({
       }
       
       refreshTimeoutRef.current = setTimeout(() => {
-        loadAnnotations();
+        loadAnnotations(true); // Force refresh on annotation events
       }, 500);
     };
     
@@ -280,7 +292,7 @@ export default function AnnotationAccordion({
         eventTarget.removeEventListener(eventName, handleAnnotationEvent as EventListener);
       });
     };
-  }, [loadAnnotations]);
+  }, [loadAnnotations, forceRefresh]);
 
   const displayColors = useMemo(() => {
     const colorMap = new Map<string, string>();
@@ -655,13 +667,25 @@ export default function AnnotationAccordion({
                   className={`h-5 w-5 p-0 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!loading) loadAnnotations();
+                    if (!loading) {
+                      // Clear cache and force refresh
+                      if (selectedSeriesId) {
+                        loadedSeriesRef.current.delete(selectedSeriesId);
+                      }
+                      loadAnnotations(true);
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.stopPropagation();
                       e.preventDefault();
-                      if (!loading) loadAnnotations();
+                      if (!loading) {
+                        // Clear cache and force refresh
+                        if (selectedSeriesId) {
+                          loadedSeriesRef.current.delete(selectedSeriesId);
+                        }
+                        loadAnnotations(true);
+                      }
                     }
                   }}
                   title="Refresh annotations"

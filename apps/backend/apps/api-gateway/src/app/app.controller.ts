@@ -17,7 +17,11 @@ export class AppController {
     @Inject('PATIENT_SERVICE')
     private readonly patientServiceClient: ClientProxy,
     @Inject('IMAGING_SERVICE')
-    private readonly imagingServiceClient: ClientProxy
+    private readonly imagingServiceClient: ClientProxy,
+    @Inject('SYSTEM_SERVICE')
+    private readonly systemServiceClient: ClientProxy,
+    @Inject('WEBSOCKET_SERVICE')
+    private readonly websocketServiceClient: ClientProxy
   ) {}
 
   @Get()
@@ -48,7 +52,7 @@ export class AppController {
       services: {
         userService: await this.checkServiceHealth(
           this.userServiceClient,
-          'user.check-health'
+          'UserService.HealthCheck'
         ),
         patientService: await this.checkServiceHealth(
           this.patientServiceClient,
@@ -57,6 +61,14 @@ export class AppController {
         imagingService: await this.checkServiceHealth(
           this.imagingServiceClient,
           'ImagingService.HealthCheck'
+        ),
+        systemService: await this.checkServiceHealth(
+          this.systemServiceClient,
+          'SystemService.HealthCheck'
+        ),
+        websocketGateway: await this.checkServiceHealth(
+          this.websocketServiceClient,
+          'WebSocketGateway.HealthCheck'
         ),
       },
     };
@@ -80,7 +92,7 @@ export class AppController {
       service: 'UserService',
       ...(await this.checkServiceHealth(
         this.userServiceClient,
-        'user.check-health'
+        'UserService.HealthCheck'
       )),
       timestamp: new Date().toISOString(),
     };
@@ -111,6 +123,36 @@ export class AppController {
       ...(await this.checkServiceHealth(
         this.imagingServiceClient,
         'ImagingService.HealthCheck'
+      )),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('health/system-service')
+  @Public()
+  @ApiOperation({ summary: 'Check System Service health' })
+  @ApiResponse({ status: 200, description: 'System Service health status' })
+  async checkSystemServiceHealth() {
+    return {
+      service: 'SystemService',
+      ...(await this.checkServiceHealth(
+        this.systemServiceClient,
+        'SystemService.HealthCheck'
+      )),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('health/websocket-gateway')
+  @Public()
+  @ApiOperation({ summary: 'Check WebSocket Gateway health' })
+  @ApiResponse({ status: 200, description: 'WebSocket Gateway health status' })
+  async checkWebSocketGatewayHealth() {
+    return {
+      service: 'WebSocketGateway',
+      ...(await this.checkServiceHealth(
+        this.websocketServiceClient,
+        'WebSocketGateway.HealthCheck'
       )),
       timestamp: new Date().toISOString(),
     };

@@ -1,4 +1,5 @@
 import { format, parse, isValid, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { Calendar, CheckCircle, RefreshCw, Check, X, HelpCircle, LucideIcon } from 'lucide-react';
 
 // Time utilities
 export const formatTime = (time: string, format24Hour: boolean = false): string => {
@@ -93,8 +94,8 @@ export const formatScheduleTime = (schedule: { actual_start_time?: string; actua
     return 'No time set';
   }
   
-  const start = formatTime(schedule.actual_start_time);
-  const end = formatTime(schedule.actual_end_time);
+  const start = formatTime(schedule.actual_start_time, true);
+  const end = formatTime(schedule.actual_end_time, true);
   return `${start} - ${end}`;
 };
 
@@ -142,16 +143,16 @@ export const getScheduleStatusColor = (status: string): string => {
   return statusColors[status] || 'bg-gray-100 text-gray-800';
 };
 
-export const getScheduleStatusIcon = (status: string): string => {
-  const statusIcons: Record<string, string> = {
-    scheduled: '📅',
-    confirmed: '✅',
-    in_progress: '🔄',
-    completed: '✔️',
-    cancelled: '❌',
+export const getScheduleStatusIcon = (status: string): LucideIcon => {
+  const statusIcons: Record<string, LucideIcon> = {
+    scheduled: Calendar,
+    confirmed: CheckCircle,
+    in_progress: RefreshCw,
+    completed: Check,
+    cancelled: X,
   };
   
-  return statusIcons[status] || '❓';
+  return statusIcons[status] || HelpCircle;
 };
 
 // Conflict detection utilities

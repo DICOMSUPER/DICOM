@@ -30,6 +30,9 @@ export class CreateDicomStudyDto {
   referringPhysician?: string;
 
   @IsString()
+  reason?: string;
+
+  @IsString()
   performingTechnicianId?: string;
 
   @IsString()

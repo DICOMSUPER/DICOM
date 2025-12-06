@@ -22,7 +22,7 @@ export class UsersController {
 
   constructor(private readonly usersService: UsersService) {}
 
-  @MessagePattern('user.check-health')
+  @MessagePattern('UserService.HealthCheck')
   async checkHealth() {
     return {
       service: 'UserService',

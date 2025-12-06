@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FolderOpen, Loader2, Grid3X3, List, FileText, Layers, FolderTree, RefreshCw } from 'lucide-react';
+import { FolderOpen, Loader2, Grid3X3, List, FileText, Layers, FolderTree, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,6 +14,7 @@ import AnnotationAccordion from '../sidebar/AnnotationAccordion';
 import SegmentationAccordion from '../sidebar/SegmentationAccordion';
 import { extractApiData } from '@/utils/api';
 import { toast } from 'sonner';
+import { Pagination } from '@/components/common/PaginationV1';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
@@ -22,6 +23,7 @@ interface ViewerRightSidebarProps {
   patientId?: string;
   selectedSeriesFromParent?: DicomSeries | null;
   urlSeriesId?: string;
+  onOrderStatusChange?: (status: string | null) => void;
 }
 
 const ViewerRightSidebar = ({
@@ -31,6 +33,7 @@ const ViewerRightSidebar = ({
   patientId,
   selectedSeriesFromParent,
   urlSeriesId,
+  onOrderStatusChange,
 }: ViewerRightSidebarProps) => {
   const { 
     state, 
@@ -45,6 +48,8 @@ const ViewerRightSidebar = ({
   const [folderListMode, setFolderListMode] = useState<'grid' | 'list'>('grid');
   const [annotationsTab, setAnnotationsTab] = useState<'annotations' | 'segmentations'>('annotations');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasLoadedAnnotations, setHasLoadedAnnotations] = useState(false);
   
   const [createImageSegmentationLayers] = useCreateImageSegmentationLayerMutation();
   const [deleteImageSegmentationLayer] = useDeleteImageSegmentationLayerMutation();
@@ -62,6 +67,16 @@ const ViewerRightSidebar = ({
     const extracted = extractApiData(imagingOrdersData);
     return Array.isArray(extracted) ? extracted : [];
   }, [imagingOrdersData]);
+
+  // Update order status when orders change
+  useEffect(() => {
+    if (resolvedOrders.length > 0 && onOrderStatusChange) {
+      // Get the first order's status (assuming single order context in viewer)
+      const firstOrder = resolvedOrders[0] as any;
+      const status = firstOrder?.orderStatus || null;
+      onOrderStatusChange(status);
+    }
+  }, [resolvedOrders, onOrderStatusChange]);
   useEffect(() => {
     if (!studyId || resolvedOrders.length === 0) return;
     const firstOrder = resolvedOrders[0] as any;
@@ -99,9 +114,22 @@ const ViewerRightSidebar = ({
   }, [onSeriesSelect]);
 
   const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       if (viewMode === 'folders') {
         setExpandedFolders(new Set());
+        
+        // Clear current viewport to prevent stale data
+        const activeViewport = state.activeViewport;
+        const currentSeries = state.viewportSeries.get(activeViewport);
+        
+        // Dispatch event to clear viewport
+        if (currentSeries) {
+          window.dispatchEvent(new CustomEvent('clearViewport', { 
+            detail: { viewport: activeViewport } 
+          }));
+        }
+        
         await refetchImagingOrders();
         toast.success('Imaging orders refreshed');
       } else {
@@ -110,8 +138,10 @@ const ViewerRightSidebar = ({
       }
     } catch (error) {
       toast.error('Failed to refresh');
+    } finally {
+      setIsRefreshing(false);
     }
-  }, [viewMode, refetchImagingOrders, refetchSegmentationLayers]);
+  }, [viewMode, refetchImagingOrders, refetchSegmentationLayers, state.activeViewport, state.viewportSeries]);
   const handleSaveLayer = useCallback(async (layerId: string) => {
     try {
       const layers = getSegmentationLayers();
@@ -279,12 +309,12 @@ const ViewerRightSidebar = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleRefresh}
-                  disabled={isLoadingOrders}
+                  disabled={isRefreshing || isLoadingOrders}
                   className={`h-8 w-8 p-0 transition-all rounded-lg text-teal-400 hover:text-teal-300 hover:bg-slate-800 border border-transparent ${
-                    isLoadingOrders ? 'opacity-50' : ''
+                    (isRefreshing || isLoadingOrders) ? 'opacity-50' : ''
                   }`}
                 >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingOrders ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${(isRefreshing || isLoadingOrders) ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-slate-800 border-slate-600 text-white">
@@ -301,66 +331,66 @@ const ViewerRightSidebar = ({
          <div className="flex-1 overflow-y-auto">
            {viewMode === 'folders' ? (
              <div className="p-2 space-y-2 h-full flex flex-col">
-               {isLoadingOrders ? (
-                 <div className="flex-1 flex flex-col items-center justify-center">
-                   <Loader2 className="h-8 w-8 animate-spin text-teal-400 mb-2" />
-                   <span className="text-slate-400 text-sm">Loading imaging orders...</span>
-                 </div>
-               ) : resolvedOrders.length > 0 ? (
-                 resolvedOrders.map((order: any) => {
-                   // Create descriptive folder name
-                   const procedureName = order.procedure?.name || order.procedureName || "Unknown Procedure";
-                   const orderNum = order.orderNumber || "N/A";
-                   
-                   return (
-                   <FolderItem
-                     key={order.id}
-                     orderId={order.id}
-                     folderName={`${orderNum}`}
-                     procedureName={procedureName}
-                     orderStatus={order.orderStatus}
-                     isExpanded={expandedFolders.has(order.id)}
-                     onToggle={() => {
-                       setExpandedFolders((prev) => {
-                         const newSet = new Set(prev);
-                         if (newSet.has(order.id)) {
-                           newSet.delete(order.id);
-                         } else {
-                           newSet.add(order.id);
-                         }
-                         return newSet;
-                       });
-                     }}
-                     selectedSeries={selectedSeries}
-                     viewMode={folderListMode}
-                     onSeriesClick={handleSeriesClick}
-                     urlStudyId={studyId || undefined}
-                     urlSeriesId={urlSeriesId}
-                   />
-                   );
-                 })
-               ) : (
-                 <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-                   <FolderOpen className="h-16 w-16 mb-4 text-slate-600" />
-                   <div className="text-slate-400 text-base font-medium mb-2">
-                     No Imaging Orders Available
+                 {(isLoadingOrders || isRefreshing) ? (
+                   <div className="flex-1 flex flex-col items-center justify-center">
+                     <Loader2 className="h-8 w-8 animate-spin text-teal-400 mb-2" />
+                     <span className="text-slate-400 text-sm">Loading imaging orders...</span>
                    </div>
-                   <div className="text-slate-500 text-sm mb-1">
-                     There are no imaging orders for this patient
+                 ) : resolvedOrders.length > 0 ? (
+                   resolvedOrders.map((order: any) => {
+                     // Create descriptive folder name
+                     const procedureName = order.procedure?.name || order.procedureName || "Unknown Procedure";
+                     const orderNum = order.orderNumber || "N/A";
+                     
+                     return (
+                     <FolderItem
+                       key={order.id}
+                       orderId={order.id}
+                       folderName={`${orderNum}`}
+                       procedureName={procedureName}
+                       orderStatus={order.orderStatus}
+                       isExpanded={expandedFolders.has(order.id)}
+                       onToggle={() => {
+                         setExpandedFolders((prev) => {
+                           const newSet = new Set(prev);
+                           if (newSet.has(order.id)) {
+                             newSet.delete(order.id);
+                           } else {
+                             newSet.add(order.id);
+                           }
+                           return newSet;
+                         });
+                       }}
+                       selectedSeries={selectedSeries}
+                       viewMode={folderListMode}
+                       onSeriesClick={handleSeriesClick}
+                       urlStudyId={studyId || undefined}
+                       urlSeriesId={urlSeriesId}
+                     />
+                     );
+                   })
+                 ) : (
+                   <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+                     <FolderOpen className="h-16 w-16 mb-4 text-slate-600" />
+                     <div className="text-slate-400 text-base font-medium mb-2">
+                       No Imaging Orders Available
+                     </div>
+                     <div className="text-slate-500 text-sm mb-1">
+                       There are no imaging orders for this patient
+                     </div>
+                     {patientId ? (
+                       <div className="text-slate-600 text-xs mt-2 font-mono">
+                         Patient ID: {patientId}
+                       </div>
+                     ) : (
+                      <div className="text-amber-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        <span>Patient ID not provided in URL</span>
+                      </div>
+                     )}
                    </div>
-                   {patientId ? (
-                     <div className="text-slate-600 text-xs mt-2 font-mono">
-                       Patient ID: {patientId}
-                     </div>
-                   ) : (
-                     <div className="text-amber-500 text-xs mt-2 flex items-center gap-1">
-                       <span>⚠️</span>
-                       <span>Patient ID not provided in URL</span>
-                     </div>
-                   )}
-                 </div>
-               )}
-             </div>
+                 )}
+               </div>
           ) : (
             <Tabs 
               value={annotationsTab} 
@@ -387,6 +417,8 @@ const ViewerRightSidebar = ({
               <TabsContent 
                 value="annotations" 
                 className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
+                forceMount
+                hidden={annotationsTab !== 'annotations'}
               >
                 <AnnotationAccordion 
                   selectedSeriesId={selectedSeries} 
@@ -397,6 +429,8 @@ const ViewerRightSidebar = ({
               <TabsContent 
                 value="segmentations" 
                 className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
+                forceMount
+                hidden={annotationsTab !== 'segmentations'}
               >
                 <SegmentationAccordion
                   selectedSeriesId={selectedSeries}

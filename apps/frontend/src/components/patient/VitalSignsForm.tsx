@@ -14,7 +14,9 @@ import {
   Thermometer, 
   Wind, 
   Save,
-  X
+  X,
+  AlertTriangle,
+  Check
 } from 'lucide-react';
 import { VitalSignsCollection, VitalSignCode, VitalSignUnit } from '@/interfaces/patient/patient-workflow.interface';
 import { Roles } from '@/enums/user.enum';
@@ -195,8 +197,12 @@ export function VitalSignsForm({
                     />
                     <span className="text-sm text-foreground">{config.unit}</span>
                     {currentValue && (
-                      <span className={`text-sm font-medium ${getStatusColor(status)}`}>
-                        {status === 'abnormal' ? '⚠️' : '✓'}
+                      <span className={`text-sm font-medium ${getStatusColor(status)} flex items-center`}>
+                        {status === 'abnormal' ? (
+                          <AlertTriangle className="h-4 w-4" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
                       </span>
                         )}
                       </div>
