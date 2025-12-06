@@ -10,6 +10,7 @@ import {
   Patient,
 } from "../patient/patient-workflow.interface";
 import { ModalityMachine } from "./modality-machine.interface";
+import { ImagingModality } from "./imaging_modality.interface";
 import { PaginatedQuery } from "../pagination/pagination.interface";
 
 export interface DicomStudyFilterQuery {
@@ -64,6 +65,8 @@ export interface DicomStudy extends BaseEntity {
   series?: DicomSeries[]; // Included for filter API
   report?: DiagnosisReport; // Included for filter API
   room?: Room; // Included for filter API
+  
+  modality?: string | ImagingModality; // Can be string (modalityCode) or full ImagingModality object when joined
 }
 export interface UpdateDicomStudyPayload {
   studyId: string;

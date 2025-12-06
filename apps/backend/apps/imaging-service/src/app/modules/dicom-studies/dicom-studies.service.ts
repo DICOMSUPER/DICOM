@@ -271,6 +271,7 @@ export class DicomStudiesService {
       .leftJoinAndSelect('dicomStudy.imagingOrder', 'imagingOrder')
       .leftJoinAndSelect('imagingOrder.imagingOrderForm', 'imagingOrderForm')
       .leftJoinAndSelect('dicomStudy.modalityMachine', 'modalityMachine')
+      .leftJoinAndSelect('modalityMachine.modality', 'modality')
       .where('dicomStudy.isDeleted = :isDeleted', { isDeleted: false });
 
     if (patientName) {

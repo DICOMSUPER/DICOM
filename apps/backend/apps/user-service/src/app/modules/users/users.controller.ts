@@ -273,8 +273,25 @@ export class UsersController {
   async verifyToken(@Payload() data: { token: string }) {
     try {
       const decoded = await this.usersService.verifyToken(data.token);
+      // Handle both 'sub' and 'userId' fields in JWT token
+      const userId = decoded.sub || decoded.userId || decoded.id;
+      
+      if (!userId) {
+        this.logger.error(
+          `Token verification failed: No userId found in token. Decoded payload: ${JSON.stringify(decoded)}`
+        );
+        throw new InvalidTokenException();
+      }
+      
+      if (!decoded.role) {
+        this.logger.error(
+          `Token verification failed: No role found in token. Decoded payload: ${JSON.stringify(decoded)}`
+        );
+        throw new InvalidTokenException();
+      }
+      
       return {
-        userId: decoded.sub,
+        userId: userId,
         role: decoded.role,
       };
     } catch (error) {

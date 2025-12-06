@@ -43,7 +43,8 @@ import {
 } from "@/interfaces/schedule/schedule.interface";
 import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
 import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   useGetEmployeeRoomAssignmentStatsOverTimeQuery,
   useGetEmployeeRoomAssignmentStatsQuery,
@@ -64,21 +65,8 @@ const timeSlots = [
 ];
 
 export default function PhysicianSchedulePage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
   const [viewedMonth, setViewedMonth] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const userString = Cookies.get("user");
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error("Error parsing user cookie:", error);
-        setUserId(null);
-      }
-    }
-  }, []);
 
   // Update viewedMonth when selectedDate changes to a different month
 
@@ -97,11 +85,10 @@ export default function PhysicianSchedulePage() {
 
   const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsOverTimeQuery(
     {
-      id: userId || "",
+      id: userId!,
       startDate,
       endDate,
     },
-    { skip: !userId }
   );
 
   const [selectedDate, setSelectedDate] = useState(new Date());

@@ -24,10 +24,7 @@ export const resolveDicomImageUrl = (
     return resolvedPath;
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_DICOM_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") ||
-    "";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || "";
 
   if (!baseUrl) {
     return resolvedPath;

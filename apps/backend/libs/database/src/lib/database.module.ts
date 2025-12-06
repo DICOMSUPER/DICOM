@@ -42,10 +42,10 @@ export class DatabaseModule {
             );
             const connectionTimeout = configService.get<number>(
               `${prefixUpper}_DB_CONNECTION_TIMEOUT`,
-              2000
+              20000 
             );
 
-            // Log connection attempt with details
+            
             logger.log(
               `Attempting to connect to database: host=${host} port=${port} database=${database} username=${username} timeout=${connectionTimeout}ms`
             );
@@ -57,7 +57,7 @@ export class DatabaseModule {
               username,
               password,
               database,
-              // entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+              
               synchronize: configService.get<boolean>(
                 `${prefixUpper}_DB_SYNC`,
                 true
@@ -67,32 +67,35 @@ export class DatabaseModule {
                 false
               ),
               autoLoadEntities: true,
-              ssl: { rejectUnauthorized: false },
-            
-              // Connection pool configuration to prevent exhaustion
+              ssl: configService.get<boolean>(`${prefixUpper}_DB_SSL`, true) 
+                ? { rejectUnauthorized: false } 
+                : false,
+              
               extra: {
                 max: configService.get<number>(
                   `${prefixUpper}_DB_MAX_CONNECTIONS`,
-                  10
-                ), // Maximum number of connections in the pool
+                  20 
+                ), 
                 min: configService.get<number>(
                   `${prefixUpper}_DB_MIN_CONNECTIONS`,
-                  5
-                ), // Minimum number of connections in the pool
+                  3 
+                ), 
                 idleTimeoutMillis: configService.get<number>(
                   `${prefixUpper}_DB_IDLE_TIMEOUT`,
                   30000
-                ), // Close idle connections after 30 seconds
-                connectionTimeoutMillis: connectionTimeout, // Wait for connection from the pool
+                ), 
+                connectionTimeoutMillis: connectionTimeout, 
               },
             };
 
-            // Create a custom logger that includes connection details in error messages
-            const connectionInfo = `[${prefixUpper}] host=${host} port=${port} database=${database} username=${username}`;
+            
+            
+            const maskedUsername = username ? `${username.substring(0, 2)}***` : 'unknown';
+            const connectionInfo = `[${prefixUpper}] host=${host} port=${port} database=${database} username=${maskedUsername}`;
             
             class ConnectionAwareLogger implements TypeOrmLogger {
               logQuery(query: string, parameters?: any[]) {
-                // Optional: log queries if needed
+                
               }
               
               logQueryError(error: string, query: string, parameters?: any[]) {
@@ -120,13 +123,15 @@ export class DatabaseModule {
               }
             }
 
-            return {
+            const finalConfig = {
               ...config,
-              // Use custom logger if logging is enabled
+              
               logger: configService.get<boolean>(`${prefixUpper}_DB_LOGGING`, false) 
                 ? new ConnectionAwareLogger()
                 : undefined,
             };
+
+            return finalConfig;
           },
         }),
       ],
@@ -147,7 +152,7 @@ export class DatabaseModule {
               return true;
             }
             
-            // Get connection details before try block so they're available in catch
+            
             const host = configService.get<string>(
               `${prefixUpper}_DB_HOST`,
               'localhost'
@@ -165,55 +170,123 @@ export class DatabaseModule {
               'postgres'
             );
             
-            try {
-              const loggingEnabled = configService.get<boolean>(
-                `${prefixUpper}_DB_LOGGING`,
-                false
-              );
-              const syncEnabled = configService.get<boolean>(
-                `${prefixUpper}_DB_SYNC`,
-                true
-              );
-              const sslRejectUnauthorized = {
-                rejectUnauthorized: false
-              }; // matches ssl: { rejectUnauthorized: false }
+            
+            const maxRetries = configService.get<number>(
+              `${prefixUpper}_DB_RETRY_ATTEMPTS`,
+              5
+            ); 
+            const retryDelay = configService.get<number>(
+              `${prefixUpper}_DB_RETRY_DELAY`,
+              2000
+            ); 
 
-              const start = Date.now();
-              if (!dataSource.isInitialized) {
-                await dataSource.initialize();
+            let retryCount = 0;
+            let lastError: Error | null = null;
+
+            while (retryCount <= maxRetries) {
+              try {
+                const loggingEnabled = configService.get<boolean>(
+                  `${prefixUpper}_DB_LOGGING`,
+                  false
+                );
+                const syncEnabled = configService.get<boolean>(
+                  `${prefixUpper}_DB_SYNC`,
+                  true
+                );
+                const sslRejectUnauthorized = {
+                  rejectUnauthorized: false
+                }; 
+
+                const start = Date.now();
+                
+                
+                if (!dataSource.isInitialized) {
+                  
+                  const maxWaitTime = 30000; 
+                  const checkInterval = 100; 
+                  const startWait = Date.now();
+                  
+                  while (!dataSource.isInitialized) {
+                    if (Date.now() - startWait > maxWaitTime) {
+                      
+                      try {
+                        await dataSource.initialize();
+                      } catch (initError) {
+                        throw new Error(
+                          `Database initialization failed: ${(initError as Error).message}`
+                        );
+                      }
+                      break;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, checkInterval));
+                  }
+                }
+                
+                const ms = Date.now() - start;
+                
+                const maskedUser = username ? `${username.substring(0, 2)}***` : 'unknown';
+                const message = [
+                  'Connected:',
+                  `  host=${host} port=${port} db=${database}`,
+                  `  user=${maskedUser}`,
+                  `  ssl=require(rejectUnauthorized=${sslRejectUnauthorized})`,
+                  `  logging=${loggingEnabled} sync=${syncEnabled}`,
+                  `  time=${ms}ms`,
+                  retryCount > 0 ? `  attempts=${retryCount + 1}` : '',
+                ].filter(Boolean).join('\n');
+                logger.log(message);
+                break; 
+              } catch (err) {
+                lastError = err as Error;
+                retryCount++;
+                
+                const isConnectionError = 
+                  lastError?.message?.includes('connection timeout') ||
+                  lastError?.message?.includes('Connection terminated') ||
+                  lastError?.message?.includes('ECONNREFUSED') ||
+                  lastError?.message?.includes('ETIMEDOUT') ||
+                  (lastError as any)?.code === 'ECONNREFUSED' ||
+                  (lastError as any)?.code === 'ETIMEDOUT';
+
+                if (isConnectionError && retryCount <= maxRetries) {
+                  const delay = Math.min(retryDelay * retryCount, 10000); 
+                  logger.warn(
+                    `⚠️ Database connection error (attempt ${retryCount}/${maxRetries + 1}). Retrying in ${delay}ms...`,
+                    lastError?.message || lastError
+                  );
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  continue;
+                }
+
+                
+                
+                const maskedUsername = username ? `${username.substring(0, 2)}***` : 'unknown';
+                const connectionDetails = [
+                  `host=${host}`,
+                  `port=${port}`,
+                  `database=${database}`,
+                  `username=${maskedUsername}`,
+                ].join(' ');
+                
+                logger.error(
+                  `Database connection failed for: ${connectionDetails} (attempt ${retryCount}/${maxRetries + 1})`,
+                  lastError?.stack || lastError?.message || lastError
+                );
+                
+                if (retryCount > maxRetries) {
+                  
+                  const enhancedError = new Error(
+                    `Failed to connect to database after ${maxRetries + 1} attempts (${connectionDetails}): ${lastError?.message}`
+                  );
+                  enhancedError.stack = lastError?.stack;
+                  throw enhancedError;
+                }
+                
+                
+                throw lastError;
               }
-              const ms = Date.now() - start;
-              const maskedUser = username ? `${username}` : 'unknown';
-              const message = [
-                'Connected:',
-                `  host=${host} port=${port} db=${database}`,
-                `  user=${maskedUser}`,
-                `  ssl=require(rejectUnauthorized=${sslRejectUnauthorized})`,
-                `  logging=${loggingEnabled} sync=${syncEnabled}`,
-                `  time=${ms}ms`,
-              ].join('\n');
-              logger.log(message);
-            } catch (err) {
-              const error = err as Error;
-              const connectionDetails = [
-                `host=${host}`,
-                `port=${port}`,
-                `database=${database}`,
-                `username=${username}`,
-              ].join(' ');
-              
-              logger.error(
-                `Database connection failed for: ${connectionDetails}`,
-                error.stack || error.message || error
-              );
-              
-              // Re-throw with enhanced message
-              const enhancedError = new Error(
-                `Failed to connect to database (${connectionDetails}): ${error.message}`
-              );
-              enhancedError.stack = error.stack;
-              throw enhancedError;
             }
+            
             return true;
           },
         },

@@ -36,10 +36,10 @@ export default function ViewerHeader({
         router.push('/admin');
         break;
       case Roles.IMAGING_TECHNICIAN:
-        router.push('/imaging-technician');
+        router.push('/imaging-technician/dashboard');
         break;
       case Roles.RADIOLOGIST:
-        router.push('/radiologist');
+        router.push('/radiologist/dashboard');
         break;
       case Roles.RECEPTION_STAFF:
         router.push('/reception/dashboard');

@@ -19,7 +19,7 @@ export interface FilterNotificationDto extends QueryParams {
   type?: NotificationType;
   priority?: NotificationPriority;
   isRead?: boolean;
-  startDate?: string; // ISO date string
-  endDate?: string;   // ISO date string
+  startDate?: string; 
+  endDate?: string;   
 }
 

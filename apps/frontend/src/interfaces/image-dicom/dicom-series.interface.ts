@@ -1,6 +1,7 @@
 import { BaseEntity } from "../base.interface";
 import { PaginatedQuery } from "../pagination/pagination.interface";
 import { DicomInstance } from "./dicom-instances.interface";
+import { ImagingModality } from "./imaging_modality.interface";
 
 export interface DicomSeries extends BaseEntity {
   id: string;
@@ -14,6 +15,7 @@ export interface DicomSeries extends BaseEntity {
   protocolName: string;
   numberOfInstances: number;
   instances: DicomInstance[];
+  modality?: string | ImagingModality;
 }
 
 export default interface DicomSeriesReferenceQuery

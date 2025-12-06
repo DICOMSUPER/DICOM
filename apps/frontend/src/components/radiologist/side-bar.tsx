@@ -49,7 +49,7 @@ export default function Sidebar() {
   };
 
   const handleBack = () => {
-    router.push("/radiologist");
+    router.push("/radiologist/dashboard");
   };
 
   return (

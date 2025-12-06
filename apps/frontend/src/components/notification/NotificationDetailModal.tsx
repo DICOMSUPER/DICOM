@@ -2,16 +2,12 @@
 
 import { formatDistanceToNow, format } from "date-fns";
 import {
-  Calendar,
-  CreditCard,
-  Mail,
-  AlertCircle,
-  CheckCircle2,
-  Bell,
   ExternalLink,
   Clock,
   Tag,
   FileText,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,6 +24,11 @@ import { cn } from "@/lib/utils";
 import { Notification } from "@/interfaces/system/notification.interface";
 import { RelatedEntityType } from "@/enums/notification.enum";
 import { useRouter } from "next/navigation";
+import {
+  getNotificationIcon,
+  getNotificationTypeBadge,
+  getNotificationPriorityBadge,
+} from "@/utils/notification-utils";
 
 interface NotificationDetailModalProps {
   notification: Notification | null;
@@ -46,24 +47,6 @@ export function NotificationDetailModal({
 
   if (!notification) return null;
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "APPOINTMENT":
-      case "APPOINTMENT_REMINDER":
-        return <Calendar className="h-6 w-6 text-blue-500" />;
-      case "PAYMENT":
-      case "INVOICE":
-        return <CreditCard className="h-6 w-6 text-green-500" />;
-      case "MESSAGE":
-        return <Mail className="h-6 w-6 text-yellow-500" />;
-      case "SYSTEM_ALERT":
-        return <AlertCircle className="h-6 w-6 text-red-500" />;
-      case "SUCCESS":
-        return <CheckCircle2 className="h-6 w-6 text-emerald-500" />;
-      default:
-        return <Bell className="h-6 w-6 text-gray-500" />;
-    }
-  };
 
   const getRelatedEntityLabel = (type?: string) => {
     switch (type) {
@@ -98,7 +81,7 @@ export function NotificationDetailModal({
         break;
       case RelatedEntityType.ORDER:
         router.push(
-          `/imaging-technician/order/${notification.relatedEntityId}`
+          `/imaging-technician/order-details/${notification.relatedEntityId}`
         );
         break;
       case RelatedEntityType.REPORT:
@@ -131,7 +114,7 @@ export function NotificationDetailModal({
                   : "bg-slate-100 ring-1 ring-slate-200"
               )}
             >
-              {getIcon(notification.notificationType)}
+              {getNotificationIcon(notification.notificationType, "h-6 w-6")}
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-start justify-between gap-3">
@@ -180,10 +163,19 @@ export function NotificationDetailModal({
                 <Tag className="h-4 w-4" />
                 Type
               </div>
-              <Badge variant="outline" className="font-normal capitalize">
-                {notification.notificationType.replace(/_/g, " ")}
-              </Badge>
+              {getNotificationTypeBadge(notification.notificationType)}
             </div>
+
+            {/* Priority */}
+            {notification.priority && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <AlertCircle className="h-4 w-4" />
+                  Priority
+                </div>
+                {getNotificationPriorityBadge(notification.priority)}
+              </div>
+            )}
 
             {/* Created At */}
             <div className="space-y-2">
