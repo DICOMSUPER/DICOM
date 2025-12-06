@@ -51,9 +51,10 @@ export enum CacheKeyPattern {
   stats = 'stats',
   byPatientId = 'by-patient-id',
   roomStats = 'room-stats',
+  roomStats2 = 'room-stats2',
   filterByRoomId = 'filter-by-room-id',
   roomStatsInDateRange = 'room-stats-in-date-range',
   byRoomId = 'by-room-id',
 }
 
-export const CACHE_TTL_SECONDS = 300;
+export const CACHE_TTL_SECONDS = 300 * 1000; // 5 minutes in milliseconds

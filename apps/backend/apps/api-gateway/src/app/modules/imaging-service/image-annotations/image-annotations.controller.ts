@@ -35,6 +35,7 @@ import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.deco
 import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 @Controller('image-annotations')
 @ApiTags('Image Annotations')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -48,11 +49,37 @@ export class ImageAnnotationsController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheImageAnnotation(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.imageAnnotations, id)
+      );
+    }
+
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.imageAnnotations)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.imageAnnotations)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.imageAnnotations, '')
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byInstanceId(CacheEntity.imageAnnotations, '')
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.bySeriesId(CacheEntity.imageAnnotations, '')
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all image annotations' })
   @ApiResponse({ status: 200, description: 'List of image annotations' })
   async getAll() {
-    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.imageAnnotations);
     const cachedAnnotations = await this.redisService.get(pattern);
 
     if (cachedAnnotations) {
@@ -118,13 +145,15 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imageAnnotations}.${
-      CacheKeyPattern.paginated
-    }?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.imageAnnotations, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
+
     const cachedAnnotations = await this.redisService.get(pattern);
 
     if (cachedAnnotations) {
@@ -208,13 +237,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imageAnnotations}.${
-      CacheKeyPattern.byInstanceId
-    }/${id}?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.byInstanceId(
+      CacheEntity.imageAnnotations,
+      id,
+      {
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      }
+    );
+
     const cachedAnnotations = await this.redisService.get(pattern);
 
     if (cachedAnnotations) {
@@ -299,13 +334,19 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imageAnnotations}.${
-      CacheKeyPattern.bySeriesId
-    }/${id}?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.bySeriesId(
+      CacheEntity.imageAnnotations,
+      id,
+      {
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      }
+    );
+
     const cachedAnnotations = await this.redisService.get(pattern);
 
     if (cachedAnnotations) {
@@ -392,13 +433,20 @@ export class ImageAnnotationsController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imageAnnotations}.${
-      CacheKeyPattern.byReferenceId
-    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.byReferenceId(
+      CacheEntity.imageAnnotations,
+      id,
+      {
+        type,
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      }
+    );
+
     const cachedAnnotations = await this.redisService.get(pattern);
 
     if (cachedAnnotations) {
@@ -465,7 +513,8 @@ export class ImageAnnotationsController {
   @ApiResponse({ status: 200, description: 'Image annotation details' })
   @ApiParam({ name: 'id', required: true, type: String })
   async getById(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imageAnnotations, id);
+
     const cachedAnnotation = await this.redisService.get(pattern);
     if (cachedAnnotation) {
       return cachedAnnotation;
@@ -526,23 +575,14 @@ export class ImageAnnotationsController {
       })
     );
 
-    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${annotation.id}`;
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.imageAnnotations,
+      annotation.id
+    );
+
+    await this.uncacheImageAnnotation(annotation.id);
+
     await this.redisService.set(pattern, annotation, CACHE_TTL_SECONDS);
-    await this.redisService.delete(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
-    );
 
     return annotation;
   }
@@ -555,24 +595,11 @@ export class ImageAnnotationsController {
         updateImageAnnotationDto,
       })
     );
-    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imageAnnotations, id);
+
+    await this.uncacheImageAnnotation(id);
 
     await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
-    await this.redisService.delete(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
-    );
 
     return result;
   }
@@ -583,23 +610,7 @@ export class ImageAnnotationsController {
       this.imagingService.send('ImagingService.ImageAnnotations.Delete', { id })
     );
 
-    const pattern = `${CacheEntity.imageAnnotations}.${CacheKeyPattern.id}/${id}`;
-    await this.redisService.delete(pattern);
-    await this.redisService.delete(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.bySeriesId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imageAnnotations}.${CacheKeyPattern.byInstanceId}`
-    );
+    await this.uncacheImageAnnotation(id);
 
     return result;
   }

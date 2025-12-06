@@ -36,6 +36,7 @@ import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.deco
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
 import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 
 type FilteredOrder = Partial<ImagingOrder> & {
   patient: Patient;
@@ -57,6 +58,44 @@ export class ImagingOrdersController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheImagingOrders(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.imagingOrders, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.findAll(CacheEntity.imagingOrders)
+    );
+
+    await this.redisService.delete(
+      cacheKeyBuilder.paginated(CacheEntity.imagingOrders)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.imagingOrders)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filterByRoomId(CacheEntity.imagingOrders)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.roomStats(CacheEntity.imagingOrders)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.roomStats2(CacheEntity.imagingOrders)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.roomStatsInDateRange(CacheEntity.imagingOrders)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byPatientId(CacheEntity.imagingOrders)
+    );
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new imaging order' })
   @ApiResponse({
@@ -72,40 +111,21 @@ export class ImagingOrdersController {
       )
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byPatientId}`
-    );
-
+    await this.uncacheImagingOrders(order.id);
     await this.redisService.set(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${order.id}`,
+      cacheKeyBuilder.id(CacheEntity.imagingOrders, order.id),
       order,
       CACHE_TTL_SECONDS
     );
+
+    return order;
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all imaging orders' })
   @ApiResponse({ status: 200, description: 'List of all imaging orders' })
   async getAllImagingOrders() {
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.imagingOrders);
     const cachedOrders = await this.redisService.get(pattern);
     if (cachedOrders) {
       return cachedOrders;
@@ -136,13 +156,15 @@ export class ImagingOrdersController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imagingOrders}.${
-      CacheKeyPattern.paginated
-    }?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.imagingOrders, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
+
     const cachedOrders = await this.redisService.get(pattern);
     if (cachedOrders) {
       return cachedOrders;
@@ -188,13 +210,20 @@ export class ImagingOrdersController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imagingOrders}.${
-      CacheKeyPattern.byReferenceId
-    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.byReferenceId(
+      CacheEntity.imagingOrders,
+      id,
+      {
+        type,
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      }
+    );
+
     const cachedOrders = await this.redisService.get(pattern);
     if (cachedOrders) {
       return cachedOrders;
@@ -222,7 +251,7 @@ export class ImagingOrdersController {
 
   @Get(':id/room/stats')
   async getImagingOrderRoomStats(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}/${id}`;
+    const pattern = cacheKeyBuilder.roomStats(CacheEntity.imagingOrders, id);
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -281,17 +310,26 @@ export class ImagingOrdersController {
     @Query('sortBy') sortBy?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imagingOrders}.${
-      CacheKeyPattern.filterByRoomId
-    }/${id}?modalityId=${modalityId || ''}&orderStatus=${
-      orderStatus || ''
-    }&procedureId=${procedureId || ''}&bodyPart=${bodyPart || ''}&mrn=${
-      mrn || ''
-    }&patientFirstName=${patientFirstName || ''}&patientLastName=${
-      patientLastName || ''
-    }&startDate=${startDate || ''}&endDate=${endDate || ''}&page=${
-      page || ''
-    }&limit=${limit || ''}&sortBy=${sortBy || ''}&order=${order || ''}`;
+    const pattern = cacheKeyBuilder.filterByRoomId(
+      CacheEntity.imagingOrders,
+      id,
+      {
+        modalityId,
+        orderStatus,
+        procedureId,
+        bodyPart,
+        mrn,
+        patientFirstName,
+        patientLastName,
+        startDate,
+        endDate,
+        page,
+        limit,
+        sortBy,
+        order,
+      }
+    );
+
     const cachedOrders = await this.redisService.get(pattern);
     if (cachedOrders) {
       return cachedOrders;
@@ -409,7 +447,7 @@ export class ImagingOrdersController {
   @ApiParam({ name: 'id', required: true, type: String })
   async getRoomImagingOrderStats(@Param('id') id: string) {
     // console.log('GetQueueStats');
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}/${id}`;
+    const pattern = cacheKeyBuilder.roomStats2(CacheEntity.imagingOrders, id);
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -437,9 +475,15 @@ export class ImagingOrdersController {
     @Query('startDate') startDate?: Date,
     @Query('endDate') endDate?: Date
   ) {
-    const pattern = `${CacheEntity.imagingOrders}.${
-      CacheKeyPattern.roomStatsInDateRange
-    }/${id}?startDate=${startDate || ''}&endDate=${endDate || ''}`;
+    const pattern = cacheKeyBuilder.roomStatsInDateRange(
+      CacheEntity.imagingOrders,
+      {
+        id,
+        startDate,
+        endDate,
+      }
+    );
+
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -464,7 +508,7 @@ export class ImagingOrdersController {
   @ApiResponse({ status: 200, description: 'Imaging order details by ID' })
   @ApiParam({ name: 'id', required: true, type: String })
   async getImagingOrder(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrders, id);
     const cachedOrder = await this.redisService.get(pattern);
     if (cachedOrder) {
       return cachedOrder;
@@ -491,7 +535,7 @@ export class ImagingOrdersController {
     @Param('id') id: string,
     @Body() updateImagingOrderDto: UpdateImagingOrderDto
   ) {
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrders, id);
 
     const updatedOrder = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Update', {
@@ -500,29 +544,9 @@ export class ImagingOrdersController {
       })
     );
 
-    await this.redisService.set(pattern, updatedOrder, CACHE_TTL_SECONDS);
+    await this.uncacheImagingOrders(id);
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
-    );
+    await this.redisService.set(pattern, updatedOrder, CACHE_TTL_SECONDS);
 
     return updatedOrder;
   }
@@ -538,33 +562,8 @@ export class ImagingOrdersController {
     const order = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.Delete', { id })
     );
+    await this.uncacheImagingOrders(id);
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.filterByRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStats}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.roomStatsInDateRange}`
-    );
-
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrders}.${CacheKeyPattern.id}/${id}`
-    );
-
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
-    );
     return order;
   }
 
@@ -573,7 +572,10 @@ export class ImagingOrdersController {
   @ApiResponse({ status: 200, description: 'Imaging orders by patient ID' })
   @ApiParam({ name: 'patientId', required: true, type: String })
   async getImagingOrdersByPatientId(@Param('patientId') patientId: string) {
-    const pattern = `${CacheEntity.imagingOrders}.${CacheKeyPattern.byPatientId}/${patientId}`;
+    const pattern = cacheKeyBuilder.byPatientId(
+      CacheEntity.imagingOrders,
+      patientId
+    );
     const cachedOrders = await this.redisService.get(pattern);
     if (cachedOrders) {
       return cachedOrders;

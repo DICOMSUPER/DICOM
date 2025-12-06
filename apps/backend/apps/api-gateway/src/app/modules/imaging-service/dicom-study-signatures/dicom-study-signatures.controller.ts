@@ -31,7 +31,10 @@ import { RedisService } from '@backend/redis';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiResponse } from '@nestjs/swagger/dist/decorators/api-response.decorator';
 import { ApiOperation } from '@nestjs/swagger/dist/decorators/api-operation.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
+import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
 
+@ApiTags('DICOM Study Signatures')
 @Controller('dicom-study-signatures')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class DicomStudySignaturesController {
@@ -43,6 +46,14 @@ export class DicomStudySignaturesController {
     @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
+
+  private async uncacheDicomStudySignature(studyId?: string) {
+    if (studyId) {
+      await this.redisService.deleteKeyStartingWith(
+        cacheKeyBuilder.byStudyId(CacheEntity.dicomStudySignatures, studyId)
+      );
+    }
+  }
 
   @Role(Roles.IMAGING_TECHNICIAN)
   @Post('technician-verify')
@@ -66,9 +77,8 @@ export class DicomStudySignaturesController {
       )
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${dto.studyId}`
-    );
+    await this.uncacheDicomStudySignature(dto.studyId);
+
     return result;
   }
 
@@ -96,9 +106,7 @@ export class DicomStudySignaturesController {
       )
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${dto.studyId}`
-    );
+    await this.uncacheDicomStudySignature(dto.studyId);
 
     return result;
   }
@@ -127,12 +135,17 @@ export class DicomStudySignaturesController {
   async getStudySignatures(@Param('studyId') studyId: string) {
     this.logger.log(`Getting signatures for study ${studyId}`);
 
-    const pattern = `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${studyId}`;
+    const pattern = cacheKeyBuilder.byStudyId(
+      CacheEntity.dicomStudySignatures,
+      studyId
+    );
+
     const cachedSignatures = await this.redisService.get(pattern);
 
     if (cachedSignatures) {
       return cachedSignatures;
     }
+
     const result = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudySignature.GetAll', {
         studyId,
@@ -159,7 +172,11 @@ export class DicomStudySignaturesController {
       `Getting signature details for study ${studyId}, type ${signatureType}`
     );
 
-    const pattern = `${CacheEntity.dicomStudySignatures}.${CacheKeyPattern.byStudyId}/${studyId}/${signatureType}`;
+    const pattern = cacheKeyBuilder.byStudyId(
+      CacheEntity.dicomStudySignatures,
+      studyId,
+      signatureType
+    );
 
     const cachedDetails = await this.redisService.get(pattern);
     if (cachedDetails) {
