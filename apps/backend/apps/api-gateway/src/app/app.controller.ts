@@ -17,13 +17,16 @@ export class AppController {
     @Inject('PATIENT_SERVICE')
     private readonly patientServiceClient: ClientProxy,
     @Inject('IMAGING_SERVICE')
-    private readonly imagingServiceClient: ClientProxy,
+    private readonly imagingServiceClient: ClientProxy
   ) {}
 
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get API Gateway information' })
-  @ApiResponse({ status: 200, description: 'API Gateway info retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'API Gateway info retrieved successfully',
+  })
   getData() {
     return this.appService.getData();
   }
@@ -31,7 +34,10 @@ export class AppController {
   @Get('health')
   @Public()
   @ApiOperation({ summary: 'Check health status of all microservices' })
-  @ApiResponse({ status: 200, description: 'Health status retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Health status retrieved successfully',
+  })
   async checkAllServicesHealth() {
     const results = {
       apiGateway: {
@@ -40,9 +46,18 @@ export class AppController {
         timestamp: new Date().toISOString(),
       },
       services: {
-        userService: await this.checkServiceHealth(this.userServiceClient, 'user.check-health'),
-        patientService: await this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck'),
-        imagingService: await this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck'),
+        userService: await this.checkServiceHealth(
+          this.userServiceClient,
+          'user.check-health'
+        ),
+        patientService: await this.checkServiceHealth(
+          this.patientServiceClient,
+          'PatientService.HealthCheck'
+        ),
+        imagingService: await this.checkServiceHealth(
+          this.imagingServiceClient,
+          'ImagingService.HealthCheck'
+        ),
       },
     };
 
@@ -63,7 +78,10 @@ export class AppController {
   async checkUserServiceHealth() {
     return {
       service: 'UserService',
-      ...(await this.checkServiceHealth(this.userServiceClient, 'user.check-health')),
+      ...(await this.checkServiceHealth(
+        this.userServiceClient,
+        'user.check-health'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -75,7 +93,10 @@ export class AppController {
   async checkPatientServiceHealth() {
     return {
       service: 'PatientService',
-      ...(await this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.patientServiceClient,
+        'PatientService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -87,7 +108,10 @@ export class AppController {
   async checkImagingServiceHealth() {
     return {
       service: 'ImagingService',
-      ...(await this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.imagingServiceClient,
+        'ImagingService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -95,7 +119,10 @@ export class AppController {
   @Get('test/role-reception')
   @Role(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Test endpoint for Reception Staff role' })
-  @ApiResponse({ status: 200, description: 'Access granted for Reception Staff' })
+  @ApiResponse({
+    status: 200,
+    description: 'Access granted for Reception Staff',
+  })
   async testReceptionRole() {
     return {
       success: true,
