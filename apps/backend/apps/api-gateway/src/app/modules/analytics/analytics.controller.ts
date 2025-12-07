@@ -25,11 +25,7 @@ import { RedisService } from '@backend/redis';
 export class AnalyticsController {
   private readonly logger = new Logger('AnalyticsController');
 
-  constructor(
-    private readonly analyticsService: AnalyticsService,
-    @Inject(RedisService)
-    private readonly redisService: RedisService
-  ) {}
+  constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('reception-stats')
   @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)

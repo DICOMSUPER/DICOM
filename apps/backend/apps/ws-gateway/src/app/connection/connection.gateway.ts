@@ -42,18 +42,28 @@ export class ConnectionGateway
     try {
       this.logger.log(`Client connected: ${client.id}`);
 
-      let token =
-        client.handshake.auth.token || client.handshake.headers.authorization;
-      this.logger.debug(
-        `Token from handshake: ${token ? 'Token provided' : 'No token'}`
-      );
+      // 1) Preferred: Socket.io auth payload (frontend should send auth: { token })
+      let token = client.handshake.auth.token;
+      if (token) {
+        this.logger.debug('Token from handshake.auth.token');
+      }
 
+      // 2) Fallback: Authorization header (Bearer ...)
+      if (!token && client.handshake.headers.authorization) {
+        token = client.handshake.headers.authorization;
+        this.logger.debug('Token from handshake.headers.authorization');
+      }
+
+      // 3) Final fallback: accessToken cookie
       if (!token && client.handshake.headers.cookie) {
         const cookie = client.handshake.headers.cookie;
         token = cookie
           .split('; ')
           .find((c) => c.startsWith('accessToken='))
           ?.split('=')[1];
+        if (token) {
+          this.logger.debug('Token from handshake.headers.cookie (accessToken)');
+        }
       }
 
       if (!token) {
