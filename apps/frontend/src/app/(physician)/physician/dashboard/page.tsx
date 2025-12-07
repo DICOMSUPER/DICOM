@@ -17,6 +17,7 @@ export default function PhysicianDashboard() {
   const [value, setValue] = useState<string>('');
   const [appliedPeriod, setAppliedPeriod] = useState<'week' | 'month' | 'year' | undefined>();
   const [appliedValue, setAppliedValue] = useState<string>('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getWeekNumber = (date: Date): string => {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -62,7 +63,7 @@ export default function PhysicianDashboard() {
       appliedPeriod && appliedValue ? { period: appliedPeriod, value: appliedValue } : undefined
     );
 
-  const { data: recentEncounters, isLoading: encountersLoading } =
+  const { data: recentEncounters, isLoading: encountersLoading, refetch: refetchEncounters } =
     useGetPatientEncountersQuery({
       limit: 10,
       sortBy: "createdAt",
@@ -101,9 +102,15 @@ export default function PhysicianDashboard() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchAnalytics(),
-    ]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchAnalytics(),
+        refetchEncounters(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -119,7 +126,7 @@ export default function PhysicianDashboard() {
         </div>
         <RefreshButton
           onRefresh={handleRefresh}
-          loading={analyticsLoading}
+          loading={isRefreshing || analyticsLoading || encountersLoading}
         />
       </div>
 
@@ -142,6 +149,7 @@ export default function PhysicianDashboard() {
         onViewEncounters={handleGoToEncounters}
         onViewReports={handleGoToReports}
         onViewImagingOrders={handleGoToImagingOrders}
+        isLoading={encountersLoading}
       />
     </div>
   );

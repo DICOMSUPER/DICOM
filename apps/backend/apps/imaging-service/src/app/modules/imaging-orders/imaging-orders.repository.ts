@@ -251,12 +251,12 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     if (data.startDate) {
       startDate = new Date(data.startDate);
-      startDate.setHours(0, 0, 0, 0);
+      startDate.setUTCHours(0, 0, 0, 0);
     }
 
     if (data.endDate) {
       endDate = new Date(data.endDate);
-      endDate.setHours(23, 59, 59, 999);
+      endDate.setUTCHours(23, 59, 59, 999);
     }
 
     const page = data.page || 1;
@@ -336,15 +336,22 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
   async getRoomStatsInDateRange(data: {
     id: string;
-    startDate?: Date;
-    endDate?: Date;
+    startDate?: Date | string;
+    endDate?: Date | string;
   }) {
     const date = new Date();
-    const startOfDay = new Date(data.startDate || date);
-    startOfDay.setHours(0, 0, 0, 0);
+    // Ensure proper date parsing - handle both Date objects and ISO strings
+    const startDate = data.startDate 
+      ? (typeof data.startDate === 'string' ? new Date(data.startDate) : data.startDate)
+      : date;
+    const startOfDay = new Date(startDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(data.endDate || date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const endDate = data.endDate 
+      ? (typeof data.endDate === 'string' ? new Date(data.endDate) : data.endDate)
+      : date;
+    const endOfDay = new Date(endDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
 
     const repository = this.getRepository();
 

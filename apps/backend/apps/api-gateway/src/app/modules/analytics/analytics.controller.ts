@@ -109,5 +109,63 @@ export class AnalyticsController {
       throw handleError(error);
     }
   }
+
+  @Get('imaging-technician-stats')
+  @Role(Roles.IMAGING_TECHNICIAN, Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get imaging technician analytics and statistics' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
+  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Imaging technician analytics data retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getImagingTechnicianAnalytics(
+    @Query('period') period?: 'week' | 'month' | 'year',
+    @Query('value') value?: string,
+  ) {
+    try {
+      this.logger.log('Fetching imaging technician analytics data');
+      const analytics = await this.analyticsService.getImagingTechnicianAnalytics(period, value);
+      this.logger.log('Imaging technician analytics data retrieved successfully');
+
+      return analytics;
+    } catch (error) {
+      this.logger.error('Failed to fetch imaging technician analytics data', error);
+      throw handleError(error);
+    }
+  }
+
+  @Get('radiologist-stats')
+  @Role(Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
+  @ApiOperation({ summary: 'Get radiologist analytics and statistics' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
+  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Radiologist analytics data retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getRadiologistAnalytics(
+    @Query('period') period?: 'week' | 'month' | 'year',
+    @Query('value') value?: string,
+  ) {
+    try {
+      this.logger.log('Fetching radiologist analytics data');
+      const analytics = await this.analyticsService.getRadiologistAnalytics(period, value);
+      this.logger.log('Radiologist analytics data retrieved successfully');
+
+      return analytics;
+    } catch (error) {
+      this.logger.error('Failed to fetch radiologist analytics data', error);
+      throw handleError(error);
+    }
+  }
 }
 

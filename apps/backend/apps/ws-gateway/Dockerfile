@@ -9,6 +9,7 @@ COPY libs ./libs
 COPY entities ./entities
 
 RUN npm ci
+RUN npx nx sync
 RUN npx nx build ws-gateway  --configuration=production
 
 # Stage 2 – runtime image
@@ -22,8 +23,6 @@ RUN npm ci --omit=dev
 # copy compiled service from Nx dist folder
 COPY --from=builder /workspace/apps/ws-gateway/dist ./
 
-# Expose both ports: WebSocket port (3006) and HTTP port (5006 if needed)
-EXPOSE 3006
-EXPOSE 5006
+EXPOSE 3006 5006
 
 CMD ["node", "main.js"]

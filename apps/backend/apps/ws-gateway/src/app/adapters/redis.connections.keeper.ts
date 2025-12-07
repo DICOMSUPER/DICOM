@@ -1,8 +1,10 @@
 import { Redis } from 'ioredis';
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
 @Injectable()
 export class RedisConnectionsKeeper implements OnModuleDestroy {
+  private readonly logger = new Logger('RedisConnectionsKeeper');
   private clients: Redis[] = [];
 
   constructor(@Inject(ConfigService) private readonly config: ConfigService) {}
@@ -24,7 +26,7 @@ export class RedisConnectionsKeeper implements OnModuleDestroy {
       }
     });
     client.on('error', (err) => {
-      console.log(`redis client error ${`${err.message}`}`);
+      this.logger.error(`Redis client error: ${err.message}`);
     });
     this.clients.push(client);
 

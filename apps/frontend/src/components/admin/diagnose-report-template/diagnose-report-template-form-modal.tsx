@@ -27,13 +27,13 @@ import { Loader2 } from "lucide-react";
 import {
   useCreateReportTemplateMutation,
   useUpdateReportTemplateMutation,
-} from "@/store/diagnosisReportTeamplateApi";
+} from "@/store/diagnosisReportTemplateApi";
 import { useGetImagingModalityPaginatedQuery } from "@/store/imagingModalityApi";
 import { useGetBodyPartsPaginatedQuery } from "@/store/bodyPartApi";
 import {
   ReportTemplate,
   CreateReportTemplateDto,
-} from "@/interfaces/patient/diagnosis-report-teamplate.interface";
+} from "@/interfaces/patient/diagnosis-report-template.interface";
 
 interface ReportTemplateFormModalProps {
   isOpen: boolean;

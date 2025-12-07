@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { Brain, Loader2, Trash2, ChevronDown } from 'lucide-react';
+import { Brain, Loader2, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useViewer } from '@/contexts/ViewerContext';
 
 // Types
@@ -187,8 +187,9 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
           </p>
         )}
         {selectedProjectId && versions.length === 0 && !isLoadingVersions && (
-          <p className="text-xs text-amber-500">
-            ⚠️ No trained versions found. Please train a model first.
+          <p className="text-xs text-amber-500 flex items-center gap-1.5">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            <span>No trained versions found. Please train a model first.</span>
           </p>
         )}
       </div>

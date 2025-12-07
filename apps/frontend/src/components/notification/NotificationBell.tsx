@@ -103,7 +103,7 @@ const NotificationBell: React.FC = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-[420px] p-0 shadow-lg border-0">
-        <div className="px-6 py-4 bg-gradient-to-br from-slate-50 to-white">
+        <div className="px-6 py-4 bg-gradient-to-br from-slate-50 to-white border-b border-slate-200">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">Notifications</h3>
@@ -127,16 +127,16 @@ const NotificationBell: React.FC = () => {
           </div>
         </div>
 
-        <ScrollArea className="h-[460px]">
-          {notifications.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-                <Bell className="h-7 w-7 text-slate-400" />
-              </div>
-              <p className="text-sm font-medium text-slate-600">No notifications yet</p>
-              <p className="text-xs text-slate-400 mt-1">We'll notify you when something arrives</p>
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-6 min-h-[300px] text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+              <Bell className="h-7 w-7 text-slate-400" />
             </div>
-          ) : (
+            <p className="text-sm font-medium text-slate-600">No notifications yet</p>
+            <p className="text-xs text-slate-400 mt-1">We&apos;ll notify you when something arrives</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[460px]">
             <div className="divide-y divide-slate-100">
               {notifications.map((notification) => (
                 <NotificationItem
@@ -146,11 +146,11 @@ const NotificationBell: React.FC = () => {
                 />
               ))}
             </div>
-          )}
-        </ScrollArea>
+          </ScrollArea>
+        )}
 
         {notifications.length > 0 && (
-          <div className="px-4 py-3 bg-slate-50/50">
+          <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-200">
             <Button
               variant="ghost"
               size="sm"

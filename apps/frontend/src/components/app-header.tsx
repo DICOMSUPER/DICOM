@@ -107,7 +107,7 @@ export function AppHeader({
                 <DropdownMenuLabel className="p-0">
                   <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors ease-in-out duration-200">
                     {/* Avatar */}
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg">
+                    <div className="flex h-12 w-12 min-w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg shrink-0">
                       {mounted && user?.email ? user.email.charAt(0).toUpperCase() : "U"}
                     </div>
                     {/* User Info */}

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   useGetEmployeeRoomAssignmentInWorkDateQuery,
   useGetEmployeeRoomAssignmentStatsQuery,
@@ -17,22 +18,9 @@ const formatDateLocal = (date: Date): string => {
 };
 
 export default function ScheduleWrapper() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewedMonth, setViewedMonth] = useState<Date>(new Date());
-
-  useEffect(() => {
-    const userString = Cookies.get("user");
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error("Error parsing user cookie:", error);
-        setUserId(null);
-      }
-    }
-  }, []);
 
   // Update viewedMonth when selectedDate changes to a different month
   useEffect(() => {
@@ -63,11 +51,10 @@ export default function ScheduleWrapper() {
 
   const { data: scheduleData } = useGetEmployeeRoomAssignmentStatsQuery(
     {
-      id: userId || "",
+      id: userId!,
       startDate,
       endDate,
     },
-    { skip: !userId }
   );
 
   const {

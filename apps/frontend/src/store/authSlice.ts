@@ -3,10 +3,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 import { Roles } from "../enums/user.enum";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   role: Roles;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface AuthState {
@@ -57,7 +59,7 @@ const authSlice = createSlice({
         Cookies.remove("user");
       }
     },
-    loadTokenFromStorage: (state) => {
+    loadCredentials: (state) => {
       if (typeof window !== "undefined") {
         // Load from cookies (not localStorage since we're using cookies)
         const token = Cookies.get("accessToken");
@@ -70,11 +72,32 @@ const authSlice = createSlice({
         if (userString) {
           try {
             const userData = JSON.parse(userString);
-            state.user = userData;
+            // Validate user data structure before storing
+            if (
+              userData &&
+              typeof userData === "object" &&
+              typeof userData.id === "string" &&
+              typeof userData.email === "string" &&
+              userData.role
+            ) {
+              state.user = {
+                id: userData.id,
+                email: userData.email,
+                role: userData.role,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+              };
+            } else {
+              console.error("Invalid user data structure in cookies");
+              // Clear invalid cookie
+              Cookies.remove("user");
+              state.user = null;
+            }
           } catch (error) {
             console.error("Failed to parse user data from cookies:", error);
             // Clear invalid cookie
             Cookies.remove("user");
+            state.user = null;
           }
         }
       }
@@ -82,6 +105,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, loadTokenFromStorage } =
+export const { setCredentials, logout, loadCredentials } =
   authSlice.actions;
 export default authSlice.reducer;

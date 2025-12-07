@@ -1,18 +1,17 @@
 "use client";
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useMemo } from "react";
+import { useSelector } from "react-redux";
 import FilterBar from "../filter-bar";
 import DataTable from "../data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
 import { DicomStudyFilterQuery } from "@/interfaces/image-dicom/dicom-study.interface";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
-import Cookies from "js-cookie";
-import UserNotFoundInCookies from "@/components/common/user-not-found-in-cookies";
 import UserDontHaveRoomAssignment from "@/components/common/user-dont-have-room-assignment";
+import { RootState } from "@/store";
 
 export default function BaseTab() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
 
   const searchParams = useSearchParams();
 
@@ -37,9 +36,7 @@ export default function BaseTab() {
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
-  } = useGetCurrentEmployeeRoomAssignmentQuery(userId || "", {
-    skip: !userId,
-  });
+  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!);
 
   // Extract roomId from the response: data.roomSchedule.room_id
   const currentRoomId =
@@ -58,23 +55,17 @@ export default function BaseTab() {
     { skip: !currentRoomId }
   );
 
-  // Parse user from cookies - must be done before hooks
-  useEffect(() => {
-    setIsClient(true);
-    const userString = Cookies.get("user");
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error("Error parsing user cookie:", error);
-        setUserId(null);
-      }
-    }
-  }, []);
-
-  if (!userId) {
-    return <UserNotFoundInCookies />;
+  if (isLoadingCurrentEmployeeSchedule) {
+    return (
+      <div className="flex-1 flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="space-y-4 w-full max-w-4xl p-4">
+            <div className="h-12 bg-slate-200 rounded animate-pulse" />
+            <div className="h-64 bg-slate-200 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!currentRoomId) {
@@ -84,8 +75,9 @@ export default function BaseTab() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-600">Loading...</div>
+        <div className="flex-1 flex flex-col h-full">
+          <div className="h-12 bg-slate-200 rounded animate-pulse mb-4" />
+          <div className="flex-1 bg-slate-100 rounded animate-pulse" />
         </div>
       }
     >

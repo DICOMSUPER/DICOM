@@ -4,10 +4,11 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function UserNotFoundInCookies() {
-  const handleRefresh = () => {
-    window.location.reload();
-  };
   const router = useRouter();
+  
+  const handleRefresh = () => {
+    router.refresh();
+  };
 
   return (
     <div className="flex items-center justify-center h-full bg-gray-50">

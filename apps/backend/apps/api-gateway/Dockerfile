@@ -9,6 +9,7 @@ COPY libs ./libs
 COPY entities ./entities
 
 RUN npm ci
+RUN npx nx sync
 RUN npx nx build api-gateway
 
 # Stage 2 – runtime image

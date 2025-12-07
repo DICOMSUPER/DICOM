@@ -7,7 +7,7 @@ import {
     ReportTemplate,
     CreateReportTemplateDto,
     UpdateReportTemplateDto,
-} from "@/interfaces/patient/diagnosis-report-teamplate.interface";
+} from "@/interfaces/patient/diagnosis-report-template.interface";
 
 export const reportTemplateApi = createApi({
     reducerPath: "reportTemplateApi",

@@ -92,7 +92,7 @@ export default function DataTable({
   };
 
   const OnViewDetail = async (id: string) => {
-    router.push(`/imaging-technician/order/${id}`);
+    router.push(`/imaging-technician/order-details/${id}`);
   };
 
   const onMarkCompleted = async (id: string) => {

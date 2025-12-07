@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import { useSetupSignatureMutation } from "@/store/digitalSignatureApi";
-import Cookies from "js-cookie";
-import { useGetUserByIdQuery } from "@/store/userApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import SignatureAnimation from "signature-animation";
 import { toast } from "sonner";
 import SignatureDisplay from "@/components/common/signature-display";
@@ -23,17 +23,9 @@ export default function SetupSignatureModal({
   const [setupSignature, { isLoading: isSettingUpSignatureLoading }] =
     useSetupSignatureMutation();
 
-  const cookieUser = JSON.parse(Cookies.get("user") || "");
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  const userId = cookieUser?.id;
-
-  const { data: userData, isLoading: isLoadingUserData } = useGetUserByIdQuery(
-    userId,
-    { skip: !userId }
-  );
-  const user = userData?.data;
-
-  if (!cookieUser) {
+  if (!user?.id) {
     return <>Invalid, user not found</>;
   }
 
@@ -70,8 +62,13 @@ export default function SetupSignatureModal({
       return;
     }
 
+    if (!user?.id) {
+      toast.error("User not found");
+      return;
+    }
+
     try {
-      await setupSignature({ userId, pin }).unwrap();
+      await setupSignature({ userId: user.id, pin }).unwrap();
       toast.success("Signature set up successfully");
       setPin("");
       setPinError("");
@@ -131,13 +128,11 @@ export default function SetupSignatureModal({
               Your Signature
             </label>
             <div className="border-2 border-gray-300 rounded-md bg-gray-50 h-40 flex flex-col items-center justify-center">
-              {isLoadingUserData ? (
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600"></div>
-              ) : user ? (
+              {user ? (
                 <>
                   <SignatureDisplay
-                    firstName={user?.firstName}
-                    lastName={user?.lastName}
+                    firstName={user?.firstName || ""}
+                    lastName={user?.lastName || ""}
                     role="Kỹ thuật viên"
                   />
                 </>

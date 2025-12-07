@@ -170,6 +170,7 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       .leftJoinAndSelect('study.imagingOrder', 'order')
       .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
       .leftJoinAndSelect('study.modalityMachine', 'modality_machine')
+      .leftJoinAndSelect('modality_machine.modality', 'modality_machine_modality')
       .innerJoinAndSelect('study.series', 'series')
       .innerJoinAndSelect('series.instances', 'instance')
       .innerJoinAndSelect('order.procedure', 'procedure')

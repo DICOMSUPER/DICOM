@@ -14,6 +14,8 @@ import { AppModule } from './app/app.module';
 import { AllExceptionsFilter } from './utils/exception-filter.utils';
 import { urlencoded, json } from 'express';
 
+process.setMaxListeners(20);
+
 process.on('unhandledRejection', (reason, promise) => {
   const logger = new Logger('UnhandledRejection');
   logger.error('Unhandled Promise Rejection:', reason);
@@ -30,19 +32,22 @@ process.on('uncaughtException', (error) => {
 async function bootstrap() {
   const startTime = Date.now();
   const logger = new Logger('ApiGateway');
-  logger.log('🚀 Starting API Gateway...');
+  
+  try {
+    logger.log('🚀 Starting API Gateway...');
 
-  // Tạo Nest App
-  const nestStart = Date.now();
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log'],
-    bufferLogs: true,
-  });
-  logger.log(`⏱️  NestJS Create: ${Date.now() - nestStart}ms`);
+    // Create Nest App
+    const nestStart = Date.now();
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log'],
+      bufferLogs: true,
+    });
+    logger.log(`⏱️  NestJS Create: ${Date.now() - nestStart}ms`);
 
-  const expressApp = app.getHttpAdapter().getInstance();
-  const configService = app.get(ConfigService);
+    const expressApp = app.getHttpAdapter().getInstance();
+    const configService = app.get(ConfigService);
 
+<<<<<<< HEAD
   // ✅ CORS
   app.use(
     cors({
@@ -62,37 +67,66 @@ async function bootstrap() {
   app.use(json({ limit: '200mb' }));
   app.use(urlencoded({ extended: true, limit: '200mb' }));
   expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
+=======
+    // CORS
+    app.use(
+      cors({
+        origin: [
+          'http://localhost:3000',
+          'http://localhost:5173',
+          'https://fedicom.vercel.app/login',
+        ],
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+      })
+    );
+    app.use(cookieParser());
+    
+    // Express setup
+    app.use(json({ limit: '200mb' }));
+    app.use(urlencoded({ extended: true, limit: '200mb' }));
+    expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
+>>>>>>> 840129a71fdf03f5cab185818c485c670abd00ab
 
-  // ✅ Validation & Exception Filter
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: false,
-      forbidNonWhitelisted: false,
-    })
-  );
-  app.useGlobalFilters(new AllExceptionsFilter());
+    // Validation & Exception Filter
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: false,
+        forbidNonWhitelisted: false,
+      })
+    );
+    app.useGlobalFilters(new AllExceptionsFilter());
 
-  // ✅ Prefix cho toàn bộ route
-  app.setGlobalPrefix('api');
+    // Global prefix for all routes
+    app.setGlobalPrefix('api');
 
-  // ✅ Register RoleGuard TRƯỚC khi init
+    // Initialize app
+    const initStart = Date.now();
+    await app.init();
+    logger.log(`⏱️  App Init (Bootstrap): ${Date.now() - initStart}ms`);
 
-  // ✅ Khởi tạo app
-  const initStart = Date.now();
-  await app.init();
-  logger.log(`⏱️  App Init (Bootstrap): ${Date.now() - initStart}ms`);
+    // Start server
+    const listenStart = Date.now();
+    const port = configService.get('PORT') || 5000;
+    await app.listen(port);
+    logger.log(`⏱️  HTTP Listen: ${Date.now() - listenStart}ms`);
+    logger.log(`🎯 API Gateway is running at: http://localhost:${port}/api`);
 
-  // ✅ Start server
-  const listenStart = Date.now();
-  const port = configService.get('PORT') || 5000;
-  await app.listen(port);
-  logger.log(`⏱️  HTTP Listen: ${Date.now() - listenStart}ms`);
-  logger.log(`🎯 API Gateway is running at: http://localhost:${port}/api`);
-
-  // ✅ Tổng thời gian
-  const totalTime = Date.now() - startTime;
-  logger.log(`🎉 Cold Start completed! Total time: ${totalTime}ms`);
+    // Total startup time
+    const totalTime = Date.now() - startTime;
+    logger.log(`🎉 Cold Start completed! Total time: ${totalTime}ms`);
+  } catch (error: any) {
+    logger.error('❌ Failed to start API Gateway:', error);
+    if (error?.message) {
+      logger.error('Error message:', error.message);
+    }
+    if (error?.stack) {
+      logger.error('Stack trace:', error.stack);
+    }
+    process.exit(1);
+  }
 }
 
 bootstrap();

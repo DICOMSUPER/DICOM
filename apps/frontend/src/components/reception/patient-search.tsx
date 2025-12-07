@@ -329,7 +329,7 @@ export function PatientSearch({
                       onClick={() => onPatientSelect?.(patient)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 min-w-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
                           <User className="w-4 h-4 text-primary" />
                         </div>
                         <div>

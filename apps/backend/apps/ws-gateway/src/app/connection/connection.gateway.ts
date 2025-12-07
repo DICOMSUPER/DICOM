@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -7,6 +7,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom, timeout, catchError } from 'rxjs';
 
 @Injectable()
 @WebSocketGateway({
@@ -24,17 +26,22 @@ export class ConnectionGateway
 
   private logger: Logger = new Logger('ConnectionGateway');
   private userSockets: Map<string, string> = new Map();
+  // Cache for user status checks (TTL: 5 minutes) to reduce DB load
+  private userStatusCache: Map<string, { isActive: boolean; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy
+  ) {}
 
   async handleConnection(client: Socket, ...args: any[]) {
     try {
       this.logger.log(`Client connected: ${client.id}`);
-      console.log(`Client connected: ${client.id}`);
 
       let token =
         client.handshake.auth.token || client.handshake.headers.authorization;
-      console.log(`Token from handshake: ${token}`);
+      this.logger.debug(`Token from handshake: ${token ? 'Token provided' : 'No token'}`);
 
       if (!token && client.handshake.headers.cookie) {
         const cookie = client.handshake.headers.cookie;
@@ -57,15 +64,21 @@ export class ConnectionGateway
           : token;
 
         const user = await this.validateToken(cleanToken);
-        console.log(`User data from token: user websocket`, user.sub);
+        this.logger.debug(`User data from token: userId=${user?.sub}`);
 
         if (!user?.sub) {
           throw new Error('Invalid user data in token');
         }
+
+        // Verify user is active in database (lightweight check with caching)
+        const isUserActive = await this.verifyUserActive(user.sub);
+        if (!isUserActive) {
+          throw new Error('User account is inactive or deleted');
+        }
+
         this.userSockets.set(user.sub, client.id);
         client.join(`user_${user.sub}`);
         this.logger.log(`User ${user.sub} connected with socket ${client.id}`);
-        console.log(`User ${user.sub} connected with socket ${client.id}`);
       } catch (error: any) {
         this.logger.error(`Connection error: ${error.message}`);
         client.emit('error', { message: `Unauthorized: ${error.message}` });
@@ -88,24 +101,100 @@ export class ConnectionGateway
 
   sendNotificationToUser(userId: string, notification: any) {
     this.server.to(`user_${userId}`).emit('new_notification', notification);
-    this.logger.log(`Sent notification to user ${userId}:`, notification);
-    console.log(`Sent notification to user socket ${userId}:`, notification);
+    this.logger.log(`Sent notification to user ${userId}`, { notification });
   }
 
   private async validateToken(token: string): Promise<any> {
     try {
-      console.log(`Validating token: ${token}`);
+      this.logger.debug('Validating token');
       const secret = process.env.JWT_SECRET;
-      console.log('JWT secret:', secret);
+      if (!secret) {
+        this.logger.error('JWT_SECRET is not configured');
+        return null;
+      }
       const payload = this.jwtService.verify(token, {
         secret: secret,
       });
-      console.log(`JWT payload:`, payload);
+      this.logger.debug(`Token validated successfully for userId=${payload?.sub || payload?.userId}`);
 
       return payload;
     } catch (error: any) {
       this.logger.error('Invalid token:', error.message);
       return null;
+    }
+  }
+
+  /**
+   * Verify user is active in database (with smart caching for resilience)
+   * This prevents deleted/deactivated users from connecting even with valid tokens
+   * 
+   * Security-first approach:
+   * - Fresh cache (< 5 min): Use immediately (no DB call)
+   * - Stale cache (< 10 min): Use during brief outages (resilience)
+   * - No cache/service down: Block connection (security)
+   */
+  private async verifyUserActive(userId: string): Promise<boolean> {
+    try {
+      // Check cache first
+      const cached = this.userStatusCache.get(userId);
+      const now = Date.now();
+      
+      // Use cached value if fresh (within TTL)
+      if (cached && now - cached.timestamp < this.CACHE_TTL) {
+        return cached.isActive;
+      }
+
+      // If cache is stale but exists, we have recent data - use it for resilience
+      // This provides resilience during brief outages while maintaining security
+      const staleCacheThreshold = this.CACHE_TTL * 2; // 10 minutes
+      if (cached && now - cached.timestamp < staleCacheThreshold) {
+        this.logger.warn(
+          `Using stale cache for user ${userId} (age: ${Math.round((now - cached.timestamp) / 1000)}s). User service may be unavailable.`
+        );
+        return cached.isActive;
+      }
+
+      // No cache or very stale - must verify with user service
+      // FAIL CLOSED: If we can't verify and have no cache, block connection
+      const user = await firstValueFrom(
+        this.userService.send('UserService.Users.findOne', { id: userId }).pipe(
+          timeout(3000), // 3 second timeout for user service call
+          catchError((error) => {
+            this.logger.error(`Failed to verify user ${userId} status: ${error.message}`);
+            // FAIL CLOSED: If we can't verify and have no cache, block connection
+            // Security is more important than availability for medical systems
+            throw new Error(`Cannot verify user status: User service unavailable`);
+          })
+        )
+      );
+
+      if (!user?.data) {
+        this.logger.warn(`User ${userId} not found in database`);
+        return false;
+      }
+
+      const isActive = user.data.isActive !== false && !user.data.isDeleted;
+      
+      // Cache the result
+      this.userStatusCache.set(userId, {
+        isActive,
+        timestamp: now,
+      });
+
+      // Clean old cache entries periodically (simple cleanup)
+      if (this.userStatusCache.size > 1000) {
+        for (const [key, value] of this.userStatusCache.entries()) {
+          if (now - value.timestamp > staleCacheThreshold) {
+            this.userStatusCache.delete(key);
+          }
+        }
+      }
+
+      return isActive;
+    } catch (error: any) {
+      this.logger.error(`Error verifying user ${userId}:`, error.message);
+      // FAIL CLOSED: Block connection if we can't verify user status
+      throw new Error(`User verification failed: ${error.message}`);
     }
   }
 }

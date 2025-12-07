@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor } from "lucide-react";
+import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -658,8 +658,9 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                 Select Date
               </label>
               {formDate && !isDateValid && (
-                <p className="text-xs text-red-600 mb-2">
-                  ⚠️ Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.
+                <p className="text-xs text-red-600 mb-2 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  <span>Schedule must be created at least 1 day in advance. Cannot schedule for today or in the past.</span>
                 </p>
               )}
               <Popover>
@@ -871,13 +872,15 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                         );
                       })()}
                       {wouldExceedCapacity && (
-                        <p className="text-xs text-red-600 font-medium mt-1">
-                          ⚠️ Cannot assign: would exceed capacity
+                        <p className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1.5">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          <span>Cannot assign: would exceed capacity</span>
                         </p>
                       )}
                       {isAtCapacity && !wouldExceedCapacity && (
-                        <p className="text-xs text-amber-600 font-medium mt-1">
-                          ⚠️ Room is at full capacity
+                        <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1.5">
+                          <AlertTriangle className="h-3 w-3 shrink-0" />
+                          <span>Room is at full capacity</span>
                         </p>
                       )}
                     </div>

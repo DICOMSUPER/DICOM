@@ -13,7 +13,8 @@ import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { useGetAllModalityMachineQuery } from "@/store/modalityMachineApi";
 import { useGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import { useUploadDicomFileMutation } from "@/store/imagingApi";
@@ -46,14 +47,12 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Parse user from cookies - must be done before hooks
-  const userString = typeof window !== "undefined" ? Cookies.get("user") : null;
-  const user = userString ? JSON.parse(userString) : null;
-  const userId = user?.id;
+  // Get userId from Redux auth state - middleware already handles authentication
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
 
   //get roomId
   const { data: currentEmployeeSchedule } =
-    useGetCurrentEmployeeRoomAssignmentQuery(userId || "", { skip: !userId });
+    useGetCurrentEmployeeRoomAssignmentQuery(userId!);
 
   //get order
   const { data: orderData, isLoading: isLoadingOrder } =

@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Logger } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
@@ -35,12 +35,25 @@ export class AppController {
     return this.appService.getData();
   }
 
+  @Get('health')
+  httpHealthCheck() {
+    const logger = new Logger(IMAGING_SERVICE);
+    logger.log('Health check requested via HTTP');
+    return {
+      status: 'ok',
+      message: 'ImagingService is running',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @MessagePattern(`${IMAGING_SERVICE}.HealthCheck`)
   async healthCheck(): Promise<{
     status: string;
     message: string;
     timestamp: string;
   }> {
+    const logger = new Logger(IMAGING_SERVICE);
+    logger.log(`Health check requested via MessagePattern: ${IMAGING_SERVICE}.HealthCheck`);
     return {
       status: 'ok',
       message: 'ImagingService is running',

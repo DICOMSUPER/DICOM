@@ -9,7 +9,8 @@ COPY libs ./libs
 COPY entities ./entities
 
 RUN npm ci
-RUN npx nx build patient-service 
+RUN npx nx sync
+RUN npx nx build patient-service
 
 # Stage 2 – runtime image
 FROM node:20-alpine

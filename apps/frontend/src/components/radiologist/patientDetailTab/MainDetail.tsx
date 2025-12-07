@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail } from "lucide-react";
+import { Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail, Clipboard, CheckCircle } from "lucide-react";
 
 import { useCreateDiagnosisMutation, useUpdateDiagnosisMutation } from "@/store/diagnosisApi";
 import { CreateDiagnosisReportDto, DiagnosisStatus, DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
@@ -291,18 +291,19 @@ const MedicalRecordMain = ({
 
                 <div className="grid grid-cols-2 gap-8">
                   <div>
-                    <span className="font-medium text-sm">Người ký:</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 w-7 p-0 ml-2"
-                      onClick={handleOpenPinDialog}
-                    >
-                      📋
-                    </Button>
-                    {signerId && <span className="ml-2 text-green-600 text-xs">✔ Đã ký</span>}
-
-                    <div className="border rounded h-24 bg-gray-50 flex items-center justify-center mt-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="font-medium text-sm">Người ký (Alt + 1):</span>
+                      <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={handleOpenPinDialog}>
+                        <Clipboard className="h-4 w-4" />
+                      </Button>
+                      {signerId && (
+                        <span className="ml-2 text-green-600 text-xs flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          <span>Đã ký</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="border border-gray-300 rounded h-24 bg-gray-50 flex items-center justify-center text-sm text-gray-700">
                       {signerUser ? `${signerUser.firstName} ${signerUser.lastName}` : "Chưa ký"}
                     </div>
                   </div>

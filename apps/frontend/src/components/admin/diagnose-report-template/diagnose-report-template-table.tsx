@@ -29,7 +29,7 @@ import {
   Lock,
   Loader2,
 } from "lucide-react";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-teamplate.interface";
+import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
 import { format } from "date-fns";
 
 interface ReportTemplateTableProps {

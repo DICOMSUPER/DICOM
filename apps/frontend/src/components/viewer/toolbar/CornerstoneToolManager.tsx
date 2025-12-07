@@ -1,45 +1,16 @@
 "use client";
-import { useEffect, useRef, forwardRef, useImperativeHandle, useMemo, useCallback } from "react";
+import { useEffect, useRef, forwardRef, useImperativeHandle, useMemo, useCallback, memo } from "react";
 import {
   addTool,
   ToolGroupManager,
   Enums as ToolEnums,
-  LengthTool,
-  CircleROITool,
-  EllipticalROITool,
-  BidirectionalTool,
-  AngleTool,
-  ProbeTool,
-  RectangleROITool,
   PlanarFreehandROITool,
-  WindowLevelTool,
-  PanTool,
-  ZoomTool,
   StackScrollTool,
-  ArrowAnnotateTool,
-  CobbAngleTool,
   PlanarRotateTool,
-  MagnifyTool,
-  HeightTool,
-  SplineROITool,
-  // Additional tools
-  TrackballRotateTool,
-  MIPJumpToClickTool,
-  SegmentBidirectionalTool,
   ScaleOverlayTool,
-  KeyImageTool,
-  LabelTool,
-  DragProbeTool,
-  PaintFillTool,
-  EraserTool,
   annotation,
   segmentation,
   Enums as SegmentationEnums,
-  // Segmentation tools
-  BrushTool,
-  CircleScissorsTool,
-  RectangleScissorsTool,
-  SphereScissorsTool,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
 import {
@@ -60,342 +31,27 @@ import {
   type SegmentationSnapshot,
 } from "@/contexts/viewer-context/segmentation-helper";
 import type { Annotation } from "@cornerstonejs/tools/types";
-import { batchedRender, immediateRender } from "@/utils/renderBatcher";
+import { batchedRender } from "@/utils/renderBatcher";
 import { extractMeasurementFromAnnotation, formatMeasurement } from "@/utils/dicom/extractCornerstoneMeasurement";
-import viewportStateManager from "@/utils/viewportStateManager";
+// Import tool constants from separate file for better tree-shaking
+import {
+  TOOL_MAPPINGS,
+  TOOL_BINDINGS,
+  getToolMapping,
+  getToolName,
+  getToolClass,
+  isCustomTool,
+  getToolByKeyboardShortcut,
+  getKeyboardShortcut,
+  getAllKeyboardShortcuts,
+  getNonCustomMappings,
+  getAllToolNames,
+  type ToolType,
+  type ToolMapping,
+  type ToolBindings,
+} from "./tool-constants";
 
-// Tool type definitions
-type NavigationTool =
-  | "WindowLevel"
-  | "Pan"
-  | "Zoom"
-  | "StackScroll"
-  | "Probe"
-  | "TrackballRotate"
-  | "MIPJumpToClick";
-type MeasurementTool =
-  | "Length"
-  | "Height"
-  | "CircleROI"
-  | "EllipticalROI"
-  | "RectangleROI"
-  | "PlanarFreehandROI"
-  | "Bidirectional"
-  | "Angle"
-  | "ArrowAnnotate"
-  | "CobbAngle"
-  | "SplineROI"
-  | "SegmentBidirectional"
-  | "ScaleOverlay";
-type AdvancedTool =
-  | "PlanarRotate"
-  | "Magnify";
-type AnnotationTool =
-  | "KeyImage"
-  | "Label"
-  | "DragProbe"
-  | "PaintFill"
-  | "Eraser";
-type SegmentationTool =
-  | "Brush"
-  | "CircleScissors"
-  | "RectangleScissors"
-  | "SphereScissors";
-type CustomTool =
-  | "Rotate"
-  | "Flip"
-  | "Invert"
-  | "ClearAnnotations"
-  | "ClearViewportAnnotations"
-  | "ClearSegmentation"
-  | "UndoAnnotation"
-  | "Reset";
-type ToolType =
-  | NavigationTool
-  | MeasurementTool
-  | AdvancedTool
-  | AnnotationTool
-  | SegmentationTool
-  | CustomTool;
-
-// Tool mapping interfaces
-interface ToolMapping {
-  toolName: string;
-  toolClass: any;
-  category:
-    | "navigation"
-    | "measurement"
-    | "advanced"
-    | "annotation"
-    | "segmentation"
-    | "custom";
-}
-
-interface ToolBindings {
-  primary?: MouseBindings;
-  secondary?: MouseBindings;
-  auxiliary?: MouseBindings;
-  wheel?: MouseBindings;
-  wheelWithCtrl?: MouseBindings; // For tools that need Ctrl + Wheel
-  keyboard?: string; // Keyboard shortcut (e.g., 'w', 'p', 'z', 'r')
-}
-
-// Tool mappings for reusability
-const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
-  // Navigation tools
-  WindowLevel: {
-    toolName: WindowLevelTool.toolName,
-    toolClass: WindowLevelTool,
-    category: "navigation",
-  },
-  Pan: {
-    toolName: PanTool.toolName,
-    toolClass: PanTool,
-    category: "navigation",
-  },
-  Zoom: {
-    toolName: ZoomTool.toolName,
-    toolClass: ZoomTool,
-    category: "navigation",
-  },
-  StackScroll: {
-    toolName: StackScrollTool.toolName,
-    toolClass: StackScrollTool,
-    category: "navigation",
-  },
-  Probe: {
-    toolName: ProbeTool.toolName,
-    toolClass: ProbeTool,
-    category: "navigation",
-  },
-
-  // Measurement tools
-  Length: {
-    toolName: LengthTool.toolName,
-    toolClass: LengthTool,
-    category: "measurement",
-  },
-  Height: {
-    toolName: HeightTool.toolName,
-    toolClass: HeightTool,
-    category: "measurement",
-  },
-  CircleROI: {
-    toolName: CircleROITool.toolName,
-    toolClass: CircleROITool,
-    category: "measurement",
-  },
-  EllipticalROI: {
-    toolName: EllipticalROITool.toolName,
-    toolClass: EllipticalROITool,
-    category: "measurement",
-  },
-  RectangleROI: {
-    toolName: RectangleROITool.toolName,
-    toolClass: RectangleROITool,
-    category: "measurement",
-  },
-  PlanarFreehandROI: {
-    toolName: PlanarFreehandROITool.toolName,
-    toolClass: PlanarFreehandROITool,
-    category: "measurement",
-  },
-  Bidirectional: {
-    toolName: BidirectionalTool.toolName,
-    toolClass: BidirectionalTool,
-    category: "measurement",
-  },
-  Angle: {
-    toolName: AngleTool.toolName,
-    toolClass: AngleTool,
-    category: "measurement",
-  },
-  ArrowAnnotate: {
-    toolName: ArrowAnnotateTool.toolName,
-    toolClass: ArrowAnnotateTool,
-    category: "measurement",
-  },
-  CobbAngle: {
-    toolName: CobbAngleTool.toolName,
-    toolClass: CobbAngleTool,
-    category: "measurement",
-  },
-  SplineROI: {
-    toolName: SplineROITool.toolName,
-    toolClass: SplineROITool,
-    category: "measurement",
-  },
-
-  // Advanced tools
-  PlanarRotate: {
-    toolName: PlanarRotateTool.toolName,
-    toolClass: PlanarRotateTool,
-    category: "advanced",
-  },
-  Magnify: {
-    toolName: MagnifyTool.toolName,
-    toolClass: MagnifyTool,
-    category: "advanced",
-  },
-
-  // Custom tools (no Cornerstone.js tool class)
-  Rotate: { toolName: "Rotate", toolClass: null, category: "custom" },
-  Flip: { toolName: "Flip", toolClass: null, category: "custom" },
-  Invert: { toolName: "Invert", toolClass: null, category: "custom" },
-  ClearAnnotations: {
-    toolName: "ClearAnnotations",
-    toolClass: null,
-    category: "custom",
-  },
-  ClearViewportAnnotations: {
-    toolName: "ClearViewportAnnotations",
-    toolClass: null,
-    category: "custom",
-  },
-  ClearSegmentation: {
-    toolName: "ClearSegmentation",
-    toolClass: null,
-    category: "custom",
-  },
-  UndoAnnotation: {
-    toolName: "UndoAnnotation",
-    toolClass: null,
-    category: "custom",
-  },
-  Reset: { toolName: "Reset", toolClass: null, category: "custom" },
-
-  // Additional Navigation tools
-  TrackballRotate: {
-    toolName: TrackballRotateTool.toolName,
-    toolClass: TrackballRotateTool,
-    category: "navigation",
-  },
-  MIPJumpToClick: {
-    toolName: MIPJumpToClickTool.toolName,
-    toolClass: MIPJumpToClickTool,
-    category: "navigation",
-  },
-
-  // Additional Measurement tools
-  SegmentBidirectional: {
-    toolName: SegmentBidirectionalTool.toolName,
-    toolClass: SegmentBidirectionalTool,
-    category: "measurement",
-  },
-  ScaleOverlay: {
-    toolName: ScaleOverlayTool.toolName,
-    toolClass: ScaleOverlayTool,
-    category: "measurement",
-  },
-
-  // Annotation tools
-  KeyImage: {
-    toolName: KeyImageTool.toolName,
-    toolClass: KeyImageTool,
-    category: "annotation",
-  },
-  Label: {
-    toolName: LabelTool.toolName,
-    toolClass: LabelTool,
-    category: "annotation",
-  },
-  DragProbe: {
-    toolName: DragProbeTool.toolName,
-    toolClass: DragProbeTool,
-    category: "annotation",
-  },
-  PaintFill: {
-    toolName: PaintFillTool.toolName,
-    toolClass: PaintFillTool,
-    category: "annotation",
-  },
-  Eraser: {
-    toolName: EraserTool.toolName,
-    toolClass: EraserTool,
-    category: "annotation",
-  },
-
-  // Segmentation tools
-  Brush: {
-    toolName: BrushTool.toolName,
-    toolClass: BrushTool,
-    category: "segmentation",
-  },
-  CircleScissors: {
-    toolName: CircleScissorsTool.toolName,
-    toolClass: CircleScissorsTool,
-    category: "segmentation",
-  },
-  RectangleScissors: {
-    toolName: RectangleScissorsTool.toolName,
-    toolClass: RectangleScissorsTool,
-    category: "segmentation",
-  },
-  SphereScissors: {
-    toolName: SphereScissorsTool.toolName,
-    toolClass: SphereScissorsTool,
-    category: "segmentation",
-  },
-};
-
-// Tool bindings configuration
-const TOOL_BINDINGS: Record<string, ToolBindings> = {
-  [WindowLevelTool.toolName]: { primary: MouseBindings.Primary, keyboard: "w" },
-  [PanTool.toolName]: { auxiliary: MouseBindings.Auxiliary, keyboard: "p" },
-  [ZoomTool.toolName]: { secondary: MouseBindings.Secondary, keyboard: "z" },
-  [StackScrollTool.toolName]: { wheel: MouseBindings.Wheel },
-  [ProbeTool.toolName]: { keyboard: "i" }, // Info/Probe tool
-  [LengthTool.toolName]: { keyboard: "l" }, // Length measurement
-  [RectangleROITool.toolName]: { keyboard: "r" }, // Rectangle ROI
-  [CircleROITool.toolName]: { keyboard: "c" }, // Circle ROI
-  [EllipticalROITool.toolName]: { keyboard: "e" }, // Elliptical ROI
-  [AngleTool.toolName]: { keyboard: "a" }, // Angle measurement
-  [BidirectionalTool.toolName]: { keyboard: "b" }, // Bidirectional measurement
-  [ArrowAnnotateTool.toolName]: { keyboard: "t" }, // Text annotation
-
-  [CobbAngleTool.toolName]: { keyboard: "k" }, // Cobb angle
-  [MagnifyTool.toolName]: { keyboard: "m" }, // Magnify tool
-  [PlanarRotateTool.toolName]: {
-    wheelWithCtrl: MouseBindings.Wheel,
-    keyboard: "o",
-  }, // Rotate
-
-  // Additional tools keyboard shortcuts
-  [TrackballRotateTool.toolName]: { keyboard: "r" }, // Trackball rotate
-  [MIPJumpToClickTool.toolName]: { keyboard: "j" }, // MIP jump
-  [SegmentBidirectionalTool.toolName]: { keyboard: "d" }, // Segment bidirectional
-  [ScaleOverlayTool.toolName]: { keyboard: "v" }, // Scale overlay
-  [KeyImageTool.toolName]: { keyboard: "q" }, // Key image
-  [LabelTool.toolName]: { keyboard: "n" }, // Label
-  [DragProbeTool.toolName]: { keyboard: "f" }, // Drag probe
-  [PaintFillTool.toolName]: { keyboard: "y" }, // Paint fill
-  [EraserTool.toolName]: { keyboard: "shift+z" }, // Eraser
-
-  // Segmentation tools keyboard shortcuts
-  [BrushTool.toolName]: { keyboard: "s" }, // Brush (Segmentation)
-  [CircleScissorsTool.toolName]: { keyboard: "g" }, // Circle scissors
-  [RectangleScissorsTool.toolName]: { keyboard: "x" }, // Rectangle scissors
-  [SphereScissorsTool.toolName]: { keyboard: "shift+s" }, // Sphere scissors
-};
-
-// Helper functions
-const getToolMapping = (toolType: ToolType): ToolMapping | null => {
-  return TOOL_MAPPINGS[toolType] || null;
-};
-
-const getToolName = (toolType: ToolType): string | null => {
-  const mapping = getToolMapping(toolType);
-  return mapping?.toolName || null;
-};
-
-const getToolClass = (toolType: ToolType): any | null => {
-  const mapping = getToolMapping(toolType);
-  return mapping?.toolClass || null;
-};
-
-const isCustomTool = (toolType: ToolType): boolean => {
-  return getToolMapping(toolType)?.category === "custom";
-};
+// Tool mappings and constants imported from separate file for better code splitting
 
 const annotationToolNames = Object.values(AnnotationType);
 
@@ -478,30 +134,7 @@ const removeDraftAnnotationsFromElement = (element: HTMLDivElement | null) => {
   });
 };
 
-// Keyboard shortcut helpers
-const getToolByKeyboardShortcut = (key: string): string | null => {
-  for (const [toolName, bindings] of Object.entries(TOOL_BINDINGS)) {
-    if (bindings.keyboard === key.toLowerCase()) {
-      return toolName;
-    }
-  }
-  return null;
-};
-
-const getKeyboardShortcut = (toolName: string): string | null => {
-  const bindings = TOOL_BINDINGS[toolName];
-  return bindings?.keyboard || null;
-};
-
-const getAllKeyboardShortcuts = (): Record<string, string> => {
-  const shortcuts: Record<string, string> = {};
-  Object.entries(TOOL_BINDINGS).forEach(([toolName, bindings]) => {
-    if (bindings.keyboard) {
-      shortcuts[toolName] = bindings.keyboard;
-    }
-  });
-  return shortcuts;
-};
+// Keyboard shortcut helpers are imported from tool-constants
 
 interface CornerstoneToolManagerProps {
   toolGroupId?: string;
@@ -542,17 +175,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     } = useViewer();
     const safeViewportIndex = useMemo(() => viewportIndex ?? 0, [viewportIndex]);
 
-    const nonCustomMappings = useMemo(
-      () => Object.values(TOOL_MAPPINGS).filter(
-        (mapping) => mapping.category !== "custom" && mapping.toolClass
-      ),
-      []
-    );
-
-    const allToolNames = useMemo(
-      () => nonCustomMappings.map((mapping) => mapping.toolName),
-      [nonCustomMappings]
-    );
+    // Use pre-computed constants instead of recalculating
+    const nonCustomMappings = useMemo(() => getNonCustomMappings(), []);
+    const allToolNames = useMemo(() => getAllToolNames(), []);
 
     useEffect(() => {
       viewportRef.current = viewport;
@@ -625,12 +250,23 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     const handleClearAnnotations = useCallback(() => {
       try {
         const allAnnotations = annotation.state.getAllAnnotations() as Annotation[];
-        let removedCount = 0;
-
+        
+        // Collect all annotation UIDs to remove (prevents skipping due to array mutation)
+        const annotationUIDsToRemove: string[] = [];
         allAnnotations.forEach((annotationItem) => {
           if (annotationItem?.annotationUID && !isDatabaseAnnotation(annotationItem)) {
-            annotation.state.removeAnnotation(annotationItem.annotationUID);
+            annotationUIDsToRemove.push(annotationItem.annotationUID);
+          }
+        });
+
+        // Remove all collected annotations
+        let removedCount = 0;
+        annotationUIDsToRemove.forEach((uid) => {
+          try {
+            annotation.state.removeAnnotation(uid);
             removedCount++;
+          } catch (error) {
+            console.warn(`Failed to remove annotation ${uid}:`, error);
           }
         });
 
@@ -647,18 +283,30 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       if (!element) return;
 
       try {
-        let removedCount = 0;
+        // Collect all annotation UIDs to remove (prevents skipping due to array mutation)
+        const annotationUIDsToRemove: string[] = [];
+        
         annotationToolNames.forEach((toolName) => {
           try {
             const annotations = annotation.state.getAnnotations(toolName, element) as Annotation[] | undefined;
             annotations?.forEach((annotationItem) => {
               if (annotationItem?.annotationUID && !isDatabaseAnnotation(annotationItem)) {
-                annotation.state.removeAnnotation(annotationItem.annotationUID);
-                removedCount++;
+                annotationUIDsToRemove.push(annotationItem.annotationUID);
               }
             });
           } catch (error) {
             console.warn(`Failed to get annotations for tool ${toolName}:`, error);
+          }
+        });
+
+        // Remove all collected annotations
+        let removedCount = 0;
+        annotationUIDsToRemove.forEach((uid) => {
+          try {
+            annotation.state.removeAnnotation(uid);
+            removedCount++;
+          } catch (error) {
+            console.warn(`Failed to remove annotation ${uid}:`, error);
           }
         });
 
@@ -1038,9 +686,9 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       nonCustomMappings.forEach(({ toolName }) => {
         if (toolGroup && !toolGroup.hasTool(toolName)) {
           try {
-            if (toolName === ScaleOverlayTool.toolName) {
-              return;
-            }
+            // if (toolName === ScaleOverlayTool.toolName) {
+            //   return;
+            // }
             toolGroup.addTool(toolName);
           } catch (error) {
             console.warn(`Failed to add tool ${toolName}:`, error);
@@ -1504,20 +1152,18 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 CornerstoneToolManager.displayName = "CornerstoneToolManager";
 export default CornerstoneToolManager;
 
+// Re-export tool constants for backward compatibility
 export {
-  CornerstoneToolManager,
-  // Export tool mappings and helper functions for reusability
   TOOL_MAPPINGS,
   TOOL_BINDINGS,
   getToolMapping,
   getToolName,
   getToolClass,
   isCustomTool,
-  // Export keyboard shortcut functions
   getToolByKeyboardShortcut,
   getKeyboardShortcut,
   getAllKeyboardShortcuts,
   type ToolType,
   type ToolMapping,
   type ToolBindings,
-};
+} from "./tool-constants";

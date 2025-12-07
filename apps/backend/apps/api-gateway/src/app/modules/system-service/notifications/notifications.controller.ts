@@ -59,6 +59,9 @@ export class NotificationsController {
     @Query() filter: FilterNotificationDto,
     @Req() req: IAuthenticatedRequest
   ) {
+    if (!req.userInfo?.userId) {
+      throw new Error('User ID not found in request. Authentication may have failed.');
+    }
     return this.systemService.send('notification.findMany', {
       filter,
       userId: req.userInfo.userId,

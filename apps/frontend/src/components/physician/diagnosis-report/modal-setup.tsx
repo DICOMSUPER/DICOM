@@ -51,7 +51,7 @@ export function ModalSetUpSignature({
 
   const { data: userData, isLoading: isLoadingUserData } = useGetUserByIdQuery(
     userId,
-    { skip: !userId || !open }
+    { skip: !open }
   );
   const user = userData?.data;
 
