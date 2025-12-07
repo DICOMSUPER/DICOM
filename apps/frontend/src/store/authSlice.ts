@@ -44,7 +44,7 @@ const authSlice = createSlice({
         Cookies.set("accessToken", action.payload.token, {
           expires: expiresInDays,
           path: "/",
-          sameSite: "none",   // ✅ Cho phép cross-site
+          sameSite: "none", // ✅ Cho phép cross-site
           secure: true,
         });
         Cookies.set("user", JSON.stringify(action.payload.user), {
@@ -122,6 +122,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, loadCredentials } =
-  authSlice.actions;
+export const { setCredentials, logout, loadCredentials } = authSlice.actions;
 export default authSlice.reducer;
