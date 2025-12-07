@@ -47,9 +47,6 @@ async function bootstrap() {
     const expressApp = app.getHttpAdapter().getInstance();
     const configService = app.get(ConfigService);
 
-
-
-
     // CORS
  
     app.use(
