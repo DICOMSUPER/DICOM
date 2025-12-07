@@ -19,7 +19,11 @@ async function bootstrap() {
   const socketPort = Number(process.env.HTTP_SOCKET_PORT) || 3006;
   app.use(
     cors({
-      origin: ['http://localhost:3000'],
+      origin: ['http://localhost:3000',
+        'https://fedicom.vercel.app',
+
+        'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app'
+      ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })
