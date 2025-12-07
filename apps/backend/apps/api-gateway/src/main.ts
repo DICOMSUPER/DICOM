@@ -47,6 +47,27 @@ async function bootstrap() {
     const expressApp = app.getHttpAdapter().getInstance();
     const configService = app.get(ConfigService);
 
+<<<<<<< HEAD
+  // ✅ CORS
+  app.use(
+    cors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://fedicom.vercel.app',
+        'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app'
+      ],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  );
+  app.use(cookieParser());
+  // ✅ Express setup
+  app.use(json({ limit: '200mb' }));
+  app.use(urlencoded({ extended: true, limit: '200mb' }));
+  expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
+=======
     // CORS
     app.use(
       cors({
@@ -66,6 +87,7 @@ async function bootstrap() {
     app.use(json({ limit: '200mb' }));
     app.use(urlencoded({ extended: true, limit: '200mb' }));
     expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));
+>>>>>>> 840129a71fdf03f5cab185818c485c670abd00ab
 
     // Validation & Exception Filter
     app.useGlobalPipes(

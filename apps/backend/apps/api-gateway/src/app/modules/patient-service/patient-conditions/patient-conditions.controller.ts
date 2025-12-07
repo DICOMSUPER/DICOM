@@ -207,6 +207,14 @@ export class PatientConditionController {
           updatePatientConditionDto,
         })
       );
+
+      await this.uncachePatientConditions(id);
+
+      const pattern = cacheKeyBuilder.id(CacheEntity.patientConditions, id);
+
+      await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+
+      return result;
     } catch (error) {
       this.logger.error('Error updating patient condition:', error);
       throw error;

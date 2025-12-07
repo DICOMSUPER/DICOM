@@ -27,7 +27,10 @@ export class ConnectionGateway
   private logger: Logger = new Logger('ConnectionGateway');
   private userSockets: Map<string, string> = new Map();
   // Cache for user status checks (TTL: 5 minutes) to reduce DB load
-  private userStatusCache: Map<string, { isActive: boolean; timestamp: number }> = new Map();
+  private userStatusCache: Map<
+    string,
+    { isActive: boolean; timestamp: number }
+  > = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
@@ -41,7 +44,9 @@ export class ConnectionGateway
 
       let token =
         client.handshake.auth.token || client.handshake.headers.authorization;
-      this.logger.debug(`Token from handshake: ${token ? 'Token provided' : 'No token'}`);
+      this.logger.debug(
+        `Token from handshake: ${token ? 'Token provided' : 'No token'}`
+      );
 
       if (!token && client.handshake.headers.cookie) {
         const cookie = client.handshake.headers.cookie;
@@ -115,7 +120,11 @@ export class ConnectionGateway
       const payload = this.jwtService.verify(token, {
         secret: secret,
       });
-      this.logger.debug(`Token validated successfully for userId=${payload?.sub || payload?.userId}`);
+      this.logger.debug(
+        `Token validated successfully for userId=${
+          payload?.sub || payload?.userId
+        }`
+      );
 
       return payload;
     } catch (error: any) {
@@ -127,7 +136,7 @@ export class ConnectionGateway
   /**
    * Verify user is active in database (with smart caching for resilience)
    * This prevents deleted/deactivated users from connecting even with valid tokens
-   * 
+   *
    * Security-first approach:
    * - Fresh cache (< 5 min): Use immediately (no DB call)
    * - Stale cache (< 10 min): Use during brief outages (resilience)
@@ -138,7 +147,7 @@ export class ConnectionGateway
       // Check cache first
       const cached = this.userStatusCache.get(userId);
       const now = Date.now();
-      
+
       // Use cached value if fresh (within TTL)
       if (cached && now - cached.timestamp < this.CACHE_TTL) {
         return cached.isActive;
@@ -149,7 +158,9 @@ export class ConnectionGateway
       const staleCacheThreshold = this.CACHE_TTL * 2; // 10 minutes
       if (cached && now - cached.timestamp < staleCacheThreshold) {
         this.logger.warn(
-          `Using stale cache for user ${userId} (age: ${Math.round((now - cached.timestamp) / 1000)}s). User service may be unavailable.`
+          `Using stale cache for user ${userId} (age: ${Math.round(
+            (now - cached.timestamp) / 1000
+          )}s). User service may be unavailable.`
         );
         return cached.isActive;
       }
@@ -160,21 +171,25 @@ export class ConnectionGateway
         this.userService.send('UserService.Users.findOne', { id: userId }).pipe(
           timeout(3000), // 3 second timeout for user service call
           catchError((error) => {
-            this.logger.error(`Failed to verify user ${userId} status: ${error.message}`);
+            this.logger.error(
+              `Failed to verify user ${userId} status: ${error.message}`
+            );
             // FAIL CLOSED: If we can't verify and have no cache, block connection
             // Security is more important than availability for medical systems
-            throw new Error(`Cannot verify user status: User service unavailable`);
+            throw new Error(
+              `Cannot verify user status: User service unavailable`
+            );
           })
         )
       );
 
-      if (!user?.data) {
+      if (!user) {
         this.logger.warn(`User ${userId} not found in database`);
         return false;
       }
 
-      const isActive = user.data.isActive !== false && !user.data.isDeleted;
-      
+      const isActive = user.isActive !== false && !user.isDeleted;
+
       // Cache the result
       this.userStatusCache.set(userId, {
         isActive,

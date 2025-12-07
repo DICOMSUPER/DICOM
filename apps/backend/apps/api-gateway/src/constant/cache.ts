@@ -1,4 +1,7 @@
 export enum CacheEntity {
+  //stats
+  analysisStats = 'analysis-stats',
+
   //imaging service entities
   bodyParts = 'body-parts',
   dicomInstances = 'dicom-instances',
@@ -55,6 +58,8 @@ export enum CacheKeyPattern {
   filterByRoomId = 'filter-by-room-id',
   roomStatsInDateRange = 'room-stats-in-date-range',
   byRoomId = 'by-room-id',
+
+  receptionStats = 'reception-stats',
 }
 
 export const CACHE_TTL_SECONDS = 300 * 1000; // 5 minutes in milliseconds
