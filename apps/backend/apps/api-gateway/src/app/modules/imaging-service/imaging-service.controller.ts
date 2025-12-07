@@ -26,6 +26,7 @@ import {
   CacheEntity,
   CacheKeyPattern,
 } from '../../../constant/cache';
+import { cacheKeyBuilder } from '../../../utils/cache-builder.utils';
 @Controller('imaging-service')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class ImagingServiceController {
@@ -39,6 +40,79 @@ export class ImagingServiceController {
     @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
+
+  private async uncacheDicomInstance(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.dicomInstances, id)
+      );
+    }
+
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.dicomInstances)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.dicomInstances)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.dicomInstances, '')
+    );
+  }
+
+  private async uncacheDicomSeries(id?: string) {
+    // 1. Delete single item cache
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.dicomSeries, id)
+      );
+    }
+
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.dicomSeries)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.dicomSeries)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.dicomSeries, '')
+    );
+  }
+
+  private async uncacheDicomStudies(id?: string) {
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.dicomStudies, '')
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filter(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filterWithPagination(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.statsInDateRange(CacheEntity.dicomStudies)
+    );
+
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.dicomStudies, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byOrderId(CacheEntity.dicomStudies, '')
+    );
+  }
 
   @Post('upload')
   @Role(Roles.IMAGING_TECHNICIAN, Roles.RADIOLOGIST)
@@ -113,36 +187,10 @@ export class ImagingServiceController {
         })
       );
 
-      // Invalidate related caches for studies, series, and instances
-      await this.redisService.delete(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-      );
+      await this.uncacheDicomStudies(result.studyId);
+      await this.uncacheDicomSeries(result.seriesId);
+      await this.uncacheDicomInstance(result.id);
 
-      await this.redisService.delete(
-        `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomSeries}.${CacheKeyPattern.byReferenceId}`
-      );
-
-      await this.redisService.delete(
-        `${CacheEntity.dicomInstances}.${CacheKeyPattern.all}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomInstances}.${CacheKeyPattern.paginated}`
-      );
-      await this.redisService.deleteKeyStartingWith(
-        `${CacheEntity.dicomInstances}.${CacheKeyPattern.byReferenceId}`
-      );
       return result;
     } catch (error) {
       console.error('Upload DICOM error:', error);

@@ -24,7 +24,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { RedisService } from '@backend/redis';
 import { firstValueFrom } from 'rxjs';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
+import { CACHE_TTL_SECONDS, CacheEntity } from '../../../../constant/cache';
 
 @Controller('diagnosis-reports')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -33,8 +36,38 @@ export class DiagnosisReportsController {
 
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    private readonly patientService: ClientProxy
+    private readonly patientService: ClientProxy,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
   ) {}
+
+  private async uncacheDiagnosisReports(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.diagnosticReports, id)
+      );
+    }
+
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.diagnosticReports)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.diagnosticReports)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filter(CacheEntity.diagnosticReports)
+    );
+
+    await this.redisService.delete(
+      cacheKeyBuilder.stats(CacheEntity.diagnosticReports)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byStudyId(CacheEntity.diagnosticReports)
+    );
+  }
 
   @Role(Roles.RADIOLOGIST, Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   @Post()
@@ -42,11 +75,21 @@ export class DiagnosisReportsController {
     console.log('diagnosis report', createDiagnosesReportDto);
 
     try {
-      return await firstValueFrom(
+      const report = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Create', {
           createDiagnosesReportDto,
         })
       );
+
+      const pattern = cacheKeyBuilder.id(
+        CacheEntity.diagnosticReports,
+        report.id
+      );
+
+      await this.uncacheDiagnosisReports();
+      await this.redisService.set(pattern, report, CACHE_TTL_SECONDS);
+
+      return report;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -60,12 +103,21 @@ export class DiagnosisReportsController {
     @Body() updateDiagnosesReportDto: UpdateDiagnosesReportDto
   ) {
     try {
-      return await firstValueFrom(
+      const report = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Update', {
           id,
           updateDiagnosesReportDto,
         })
       );
+
+      const pattern = cacheKeyBuilder.id(
+        CacheEntity.diagnosticReports,
+        report.id
+      );
+      await this.uncacheDiagnosisReports(report.id);
+      await this.redisService.set(pattern, report, CACHE_TTL_SECONDS);
+
+      return report;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -81,9 +133,21 @@ export class DiagnosisReportsController {
   )
   async getAllDiagnosesReport() {
     try {
-      return await firstValueFrom(
+      const pattern = cacheKeyBuilder.findAll(CacheEntity.diagnosticReports);
+
+      const cached = await this.redisService.get(pattern);
+      if (cached) {
+        this.logger.log('Returning cached diagnosis reports');
+        return cached;
+      }
+
+      const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindAll', {})
       );
+
+      await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+      return reports;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -106,6 +170,21 @@ export class DiagnosisReportsController {
     @Query('order') order?: 'asc' | 'desc'
   ) {
     try {
+      const pattern = cacheKeyBuilder.paginated(CacheEntity.diagnosticReports, {
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      });
+
+      const cached = await this.redisService.get(pattern);
+      if (cached) {
+        this.logger.log('Returning cached diagnosis reports');
+        return cached;
+      }
+
       const paginationDto = {
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
@@ -115,11 +194,15 @@ export class DiagnosisReportsController {
         order,
       };
 
-      return await firstValueFrom(
+      const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindMany', {
           paginationDto,
         })
       );
+
+      await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+      return reports;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -132,12 +215,26 @@ export class DiagnosisReportsController {
     @Query() filter: FilterDiagnosesReportDto,
     @Req() req: IAuthenticatedRequest
   ) {
-    return await firstValueFrom(
+    const pattern = cacheKeyBuilder.filter(
+      CacheEntity.diagnosticReports,
+      filter
+    );
+    const cached = await this.redisService.get(pattern);
+    if (cached) {
+      this.logger.log('Returning cached diagnosis reports with filter');
+      return cached;
+    }
+
+    const reports = await firstValueFrom(
       this.patientService.send(
         'PatientService.DiagnosesReport.FindAllWithFilter',
         { filter, userInfo: req.userInfo }
       )
     );
+
+    await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+    return reports;
   }
 
   @Get('studyId/:studyId')
@@ -149,7 +246,17 @@ export class DiagnosisReportsController {
   )
   async getDiagnosisReportByStudyId(@Param('studyId') studyId: string) {
     try {
-      return await firstValueFrom(
+      const pattern = cacheKeyBuilder.byStudyId(
+        CacheEntity.diagnosticReports,
+        studyId
+      );
+      const cached = await this.redisService.get(pattern);
+      if (cached) {
+        this.logger.log('Returning cached diagnosis report by studyId');
+        return cached;
+      }
+
+      const reports = await firstValueFrom(
         this.patientService.send(
           'PatientService.DiagnosesReport.FindByStudyId',
           {
@@ -157,6 +264,10 @@ export class DiagnosisReportsController {
           }
         )
       );
+
+      await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+      return reports;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -167,11 +278,22 @@ export class DiagnosisReportsController {
   @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN, Roles.RADIOLOGIST)
   async getStats(@Req() req: IAuthenticatedRequest) {
     try {
-      return await firstValueFrom(
+      const pattern = cacheKeyBuilder.stats(CacheEntity.diagnosticReports);
+      const cached = await this.redisService.get(pattern);
+      if (cached) {
+        this.logger.log('Returning cached diagnosis report stats');
+        return cached;
+      }
+
+      const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.GetStats', {
           userInfo: req?.userInfo,
         })
       );
+
+      await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+      return reports;
     } catch (error) {
       this.logger.error('Error getting diagnosis report stats:', error);
       throw error;
@@ -187,11 +309,24 @@ export class DiagnosisReportsController {
   )
   async getDiagnosesReport(@Param('id') id: string) {
     try {
-      return await firstValueFrom(
+      const pattern = cacheKeyBuilder.id(CacheEntity.diagnosticReports, id);
+
+      const cached = await this.redisService.get(pattern);
+
+      if (cached) {
+        this.logger.log('Returning cached diagnosis report by ID');
+        return cached;
+      }
+
+      const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindOne', {
           id,
         })
       );
+
+      await this.redisService.set(pattern, reports, CACHE_TTL_SECONDS);
+
+      return reports;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -207,11 +342,15 @@ export class DiagnosisReportsController {
   )
   async deleteDiagnosisReport(@Param('id') id: string) {
     try {
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Delete', {
           id,
         })
       );
+
+      await this.uncacheDiagnosisReports(id);
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -226,13 +365,24 @@ export class DiagnosisReportsController {
     @Req() req: IAuthenticatedRequest
   ) {
     try {
-      return await firstValueFrom(
+      const report = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Reject', {
           id,
           rejectedBy: req.userInfo.userId,
           rejectionReason: body.rejectionReason,
         })
       );
+
+      await this.uncacheDiagnosisReports(id);
+
+      const pattern = cacheKeyBuilder.id(
+        CacheEntity.diagnosticReports,
+        report.id
+      );
+
+      await this.redisService.set(pattern, report, CACHE_TTL_SECONDS);
+
+      return report;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -246,12 +396,23 @@ export class DiagnosisReportsController {
     @Req() req: IAuthenticatedRequest
   ) {
     try {
-      return await firstValueFrom(
+      const report = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.Approve', {
           id,
           approvedBy: req.userInfo.userId,
         })
       );
+
+      await this.uncacheDiagnosisReports(id);
+
+      const pattern = cacheKeyBuilder.id(
+        CacheEntity.diagnosticReports,
+        report.id
+      );
+
+      await this.redisService.set(pattern, report, CACHE_TTL_SECONDS);
+
+      return report;
     } catch (error) {
       this.logger.error(error);
       throw error;

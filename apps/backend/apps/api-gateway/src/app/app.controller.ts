@@ -21,13 +21,16 @@ export class AppController {
     @Inject('SYSTEM_SERVICE')
     private readonly systemServiceClient: ClientProxy,
     @Inject('WEBSOCKET_SERVICE')
-    private readonly websocketServiceClient: ClientProxy,
+    private readonly websocketServiceClient: ClientProxy
   ) {}
 
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get API Gateway information' })
-  @ApiResponse({ status: 200, description: 'API Gateway info retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'API Gateway info retrieved successfully',
+  })
   getData() {
     return this.appService.getData();
   }
@@ -35,17 +38,40 @@ export class AppController {
   @Get('health')
   @Public()
   @ApiOperation({ summary: 'Check health status of all microservices' })
-  @ApiResponse({ status: 200, description: 'Health status retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Health status retrieved successfully',
+  })
   async checkAllServicesHealth() {
     // Run all health checks in parallel to ensure all services are checked
-    const [userService, patientService, imagingService, systemService, websocketGateway] =
-      await Promise.allSettled([
-        this.checkServiceHealth(this.userServiceClient, 'UserService.HealthCheck'),
-        this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck'),
-        this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck'),
-        this.checkServiceHealth(this.systemServiceClient, 'SystemService.HealthCheck'),
-        this.checkServiceHealth(this.websocketServiceClient, 'WebSocketGateway.HealthCheck'),
-      ]);
+    const [
+      userService,
+      patientService,
+      imagingService,
+      systemService,
+      websocketGateway,
+    ] = await Promise.allSettled([
+      this.checkServiceHealth(
+        this.userServiceClient,
+        'UserService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.patientServiceClient,
+        'PatientService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.imagingServiceClient,
+        'ImagingService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.systemServiceClient,
+        'SystemService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.websocketServiceClient,
+        'WebSocketGateway.HealthCheck'
+      ),
+    ]);
 
     const results = {
       apiGateway: {
@@ -57,23 +83,39 @@ export class AppController {
         userService:
           userService.status === 'fulfilled'
             ? userService.value
-            : { status: 'unhealthy', error: userService.reason?.message || 'Health check failed' },
+            : {
+                status: 'unhealthy',
+                error: userService.reason?.message || 'Health check failed',
+              },
         patientService:
           patientService.status === 'fulfilled'
             ? patientService.value
-            : { status: 'unhealthy', error: patientService.reason?.message || 'Health check failed' },
+            : {
+                status: 'unhealthy',
+                error: patientService.reason?.message || 'Health check failed',
+              },
         imagingService:
           imagingService.status === 'fulfilled'
             ? imagingService.value
-            : { status: 'unhealthy', error: imagingService.reason?.message || 'Health check failed' },
+            : {
+                status: 'unhealthy',
+                error: imagingService.reason?.message || 'Health check failed',
+              },
         systemService:
           systemService.status === 'fulfilled'
             ? systemService.value
-            : { status: 'unhealthy', error: systemService.reason?.message || 'Health check failed' },
+            : {
+                status: 'unhealthy',
+                error: systemService.reason?.message || 'Health check failed',
+              },
         websocketGateway:
           websocketGateway.status === 'fulfilled'
             ? websocketGateway.value
-            : { status: 'unhealthy', error: websocketGateway.reason?.message || 'Health check failed' },
+            : {
+                status: 'unhealthy',
+                error:
+                  websocketGateway.reason?.message || 'Health check failed',
+              },
       },
     };
 
@@ -94,7 +136,10 @@ export class AppController {
   async checkUserServiceHealth() {
     return {
       service: 'UserService',
-      ...(await this.checkServiceHealth(this.userServiceClient, 'UserService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.userServiceClient,
+        'UserService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -106,7 +151,10 @@ export class AppController {
   async checkPatientServiceHealth() {
     return {
       service: 'PatientService',
-      ...(await this.checkServiceHealth(this.patientServiceClient, 'PatientService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.patientServiceClient,
+        'PatientService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -118,7 +166,10 @@ export class AppController {
   async checkImagingServiceHealth() {
     return {
       service: 'ImagingService',
-      ...(await this.checkServiceHealth(this.imagingServiceClient, 'ImagingService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.imagingServiceClient,
+        'ImagingService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -130,7 +181,10 @@ export class AppController {
   async checkSystemServiceHealth() {
     return {
       service: 'SystemService',
-      ...(await this.checkServiceHealth(this.systemServiceClient, 'SystemService.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.systemServiceClient,
+        'SystemService.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -142,7 +196,10 @@ export class AppController {
   async checkWebSocketGatewayHealth() {
     return {
       service: 'WebSocketGateway',
-      ...(await this.checkServiceHealth(this.websocketServiceClient, 'WebSocketGateway.HealthCheck')),
+      ...(await this.checkServiceHealth(
+        this.websocketServiceClient,
+        'WebSocketGateway.HealthCheck'
+      )),
       timestamp: new Date().toISOString(),
     };
   }
@@ -150,7 +207,10 @@ export class AppController {
   @Get('test/role-reception')
   @Role(Roles.RECEPTION_STAFF)
   @ApiOperation({ summary: 'Test endpoint for Reception Staff role' })
-  @ApiResponse({ status: 200, description: 'Access granted for Reception Staff' })
+  @ApiResponse({
+    status: 200,
+    description: 'Access granted for Reception Staff',
+  })
   async testReceptionRole() {
     return {
       success: true,
@@ -190,8 +250,8 @@ export class AppController {
         error instanceof Error
           ? error.message
           : typeof error === 'string'
-            ? error
-            : String(error) || 'Service not available';
+          ? error
+          : String(error) || 'Service not available';
       return {
         status: 'unhealthy',
         error: errorMessage,

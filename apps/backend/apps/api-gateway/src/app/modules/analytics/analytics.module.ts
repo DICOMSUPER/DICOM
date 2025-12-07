@@ -7,6 +7,7 @@ import {
   PatientServiceClientModule,
   ImagingServiceClientModule,
 } from '@backend/shared-client';
+import { BackendRedisModule } from '@backend/redis';
 
 @Module({
   imports: [
@@ -14,10 +15,10 @@ import {
     PatientServiceClientModule,
     ImagingServiceClientModule,
     SharedInterceptorModule,
+    BackendRedisModule,
   ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}
-

@@ -117,7 +117,8 @@ export default function DiagnosisInput({
               {suggestions.map((sug, idx) => (
                 <tr
                   key={idx}
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault();
                     setState(`${sug[0]} - ${sug[1]}`);
                     setShowDropdown(false);
                   }}

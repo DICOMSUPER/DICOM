@@ -45,6 +45,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 
 @Controller('dicom-studies')
 @ApiTags('DICOM Studies')
@@ -61,16 +62,54 @@ export class DicomStudiesController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheDicomStudies(id?: string) {
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.dicomStudies, '')
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filter(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.filterWithPagination(CacheEntity.dicomStudies)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.statsInDateRange(CacheEntity.dicomStudies)
+    );
+
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.dicomStudies, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byOrderId(CacheEntity.dicomStudies, '')
+    );
+  }
+
   @Public()
   @Get()
   @ApiOperation({ summary: 'Get all DICOM studies' })
   @ApiResponse({ status: 200, description: 'List of DICOM studies' })
   async getAllDicomStudies() {
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.dicomStudies, {});
+
     const cachedStudies = await this.redisService.get(pattern);
     if (cachedStudies) {
       return cachedStudies;
     }
+
     const studies = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindAll', {})
     );
@@ -111,12 +150,20 @@ export class DicomStudiesController {
       order,
     };
 
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}?page=${page}&limit=${limit}&search=${search}&searchField=${searchField}&sortField=${sortField}&order=${order}`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.dicomStudies, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
 
     const cachedPaginated = await this.redisService.get(pattern);
     if (cachedPaginated) {
       return cachedPaginated;
     }
+
     const studies = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindMany', {
         paginationDto,
@@ -157,13 +204,19 @@ export class DicomStudiesController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.dicomStudies}.${
-      CacheKeyPattern.byReferenceId
-    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.byReferenceId(
+      CacheEntity.dicomStudies,
+      id,
+      {
+        type,
+        page,
+        limit,
+        search,
+        searchField,
+        sortField,
+        order,
+      }
+    );
 
     const cachedStudies = await this.redisService.get(pattern);
     if (cachedStudies) {
@@ -227,19 +280,20 @@ export class DicomStudiesController {
     @Query('roomId') roomId?: string
   ) {
     try {
-      const pattern = `${CacheEntity.dicomStudies}.${
-        CacheKeyPattern.filter
-      }?studyStatus=${studyStatus || ''}&reportStatus=${
-        reportStatus || ''
-      }&modalityId=${modalityId || ''}&modalityMachineId=${
-        modalityMachineId || ''
-      }&mrn=${mrn || ''}&patientFirstName=${
-        patientFirstName || ''
-      }&patientLastName=${patientLastName || ''}&bodyPart=${
-        bodyPart || ''
-      }&startDate=${startDate || ''}&endDate=${endDate || ''}&studyUID=${
-        studyUID || ''
-      }&roomId=${roomId || ''}`;
+      const pattern = cacheKeyBuilder.filter(CacheEntity.dicomStudies, {
+        studyStatus,
+        reportStatus,
+        modalityId,
+        modalityMachineId,
+        mrn,
+        patientFirstName,
+        patientLastName,
+        bodyPart,
+        startDate,
+        endDate,
+        studyUID,
+        roomId,
+      });
       const cachedStudies = await this.redisService.get(pattern);
       if (cachedStudies) {
         return cachedStudies;
@@ -387,17 +441,10 @@ export class DicomStudiesController {
     @Query() filter: FilterDicomStudyFormDto,
     @Req() req: IAuthenticatedRequest
   ) {
-    const pattern = `${CacheEntity.dicomStudies}.${
-      CacheKeyPattern.filterWithPagination
-    }?patientName=${filter.patientName || ''}&status=${
-      filter.status || ''
-    }&dateFrom=${filter.dateFrom || ''}&dateTo=${
-      filter.dateTo || ''
-    }&modalityMachineId=${filter.modalityMachineId || ''}&orderId=${
-      filter.orderId || ''
-    }&sortBy=${filter.sortBy || ''}&order=${filter.order || ''}&page=${
-      filter.page || ''
-    }&limit=${filter.limit || ''}`;
+    const pattern = cacheKeyBuilder.filterWithPagination(
+      CacheEntity.dicomStudies,
+      filter
+    );
 
     const cachedStudies = await this.redisService.get(pattern);
     if (cachedStudies) {
@@ -437,9 +484,12 @@ export class DicomStudiesController {
     @Query('dateTo') dateTo?: string,
     @Query('roomId') roomId?: string
   ) {
-    const pattern = `${CacheEntity.dicomStudies}.${
-      CacheKeyPattern.statsInDateRange
-    }?dateFrom=${dateFrom || ''}&dateTo=${dateTo || ''}&roomId=${roomId || ''}`;
+    const pattern = cacheKeyBuilder.statsInDateRange(CacheEntity.dicomStudies, {
+      dateFrom,
+      dateTo,
+      roomId,
+    });
+
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -476,7 +526,7 @@ export class DicomStudiesController {
   @ApiResponse({ status: 200, description: 'DICOM study details' })
   @ApiParam({ name: 'id', required: true, type: String })
   async getDicomStudyById(@Param('id') id: string) {
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomStudies, id);
     const cachedStudy = await this.redisService.get(pattern);
     if (cachedStudy) {
       return cachedStudy;
@@ -499,24 +549,11 @@ export class DicomStudiesController {
       })
     );
 
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomStudies, study.id);
     await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
 
-    await this.redisService.delete(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-    );
+    await this.uncacheDicomStudies();
+
     return study;
   }
 
@@ -542,30 +579,11 @@ export class DicomStudiesController {
       })
     );
 
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${study.id}`;
-    await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomStudies, study.id);
 
-    try {
-      await Promise.allSettled([
-        this.redisService.delete(
-          `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-        ),
-        this.redisService.deleteKeyStartingWith(
-          `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-        ),
-        this.redisService.deleteKeyStartingWith(
-          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-        ),
-        this.redisService.deleteKeyStartingWith(
-          `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-        ),
-        this.redisService.deleteKeyStartingWith(
-          `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-        ),
-      ]);
-    } catch (error: any) {
-      console.log('Failed to invalidate some cache keys:', error.message);
-    }
+    await this.uncacheDicomStudies(id);
+
+    await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
 
     return study;
   }
@@ -576,24 +594,9 @@ export class DicomStudiesController {
     const result = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.Delete', { id })
     );
-    await this.redisService.delete(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.id}/${id}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byReferenceId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.statsInDateRange}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}`
-    );
+
+    await this.uncacheDicomStudies(id);
+
     return result;
   }
 
@@ -605,7 +608,10 @@ export class DicomStudiesController {
   )
   @Get('order/:orderId')
   async getDicomStudiesByOrderId(@Param('orderId') orderId: string) {
-    const pattern = `${CacheEntity.dicomStudies}.${CacheKeyPattern.byOrderId}/${orderId}`;
+    const pattern = cacheKeyBuilder.byOrderId(
+      CacheEntity.dicomStudies,
+      orderId
+    );
     const cachedStudy = await this.redisService.get(pattern);
     if (cachedStudy) {
       return cachedStudy;
@@ -616,7 +622,9 @@ export class DicomStudiesController {
         orderId,
       })
     );
+
     await this.redisService.set(pattern, study, CACHE_TTL_SECONDS);
+
     return study;
   }
 }

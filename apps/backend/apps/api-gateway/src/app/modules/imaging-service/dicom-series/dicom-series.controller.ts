@@ -35,6 +35,7 @@ import {
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
 import { Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 
 @ApiTags('DICOM Series')
 @Controller('dicom-series')
@@ -47,6 +48,25 @@ export class DicomSeriesController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheDicomSeries(id?: string) {
+    // 1. Delete single item cache
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.dicomSeries, id)
+      );
+    }
+
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.dicomSeries)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.dicomSeries)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byReferenceId(CacheEntity.dicomSeries, '')
+    );
+  }
+
   @Get()
   @Role(
     Roles.PHYSICIAN,
@@ -57,7 +77,7 @@ export class DicomSeriesController {
   @ApiOperation({ summary: 'Get all DICOM series' })
   @ApiResponse({ status: 200, description: 'List of DICOM series' })
   async getAllDicomSeries() {
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.dicomSeries, {});
     const cachedSeries = await this.redisService.get(pattern);
     if (cachedSeries) {
       return cachedSeries;
@@ -101,13 +121,16 @@ export class DicomSeriesController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.dicomSeries}.${
-      CacheKeyPattern.byReferenceId
-    }/${id}?type=${type || ''}&page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.byReferenceId(CacheEntity.dicomSeries, id, {
+      type,
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
+
     const cachedSeries = await this.redisService.get(pattern);
     if (cachedSeries) {
       return cachedSeries;
@@ -128,7 +151,7 @@ export class DicomSeriesController {
         paginationDto,
       })
     );
-    await this.redisService.set(pattern, series, 300);
+    await this.redisService.set(pattern, series, CACHE_TTL_SECONDS);
     return series;
   }
 
@@ -155,7 +178,14 @@ export class DicomSeriesController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}?page=${page}&limit=${limit}&search=${search}&searchField=${searchField}&sortField=${sortField}&order=${order}`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.dicomSeries, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
 
     const cachedPaginated = await this.redisService.get(pattern);
     if (cachedPaginated) {
@@ -175,7 +205,9 @@ export class DicomSeriesController {
         paginationDto,
       })
     );
-    await this.redisService.set(pattern, series, 300);
+
+    await this.redisService.set(pattern, series, CACHE_TTL_SECONDS);
+
     return series;
   }
 
@@ -190,15 +222,19 @@ export class DicomSeriesController {
   @ApiResponse({ status: 200, description: 'DICOM series details' })
   @ApiParam({ name: 'id', required: true, type: String })
   async getDicomSeries(@Param('id') id: string) {
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomSeries, id);
+
     const cachedSeries = await this.redisService.get(pattern);
     if (cachedSeries) {
       return cachedSeries;
     }
+
     const series = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.FindOne', { id })
     );
-    await this.redisService.set(pattern, series, 300);
+
+    await this.redisService.set(pattern, series, CACHE_TTL_SECONDS);
+
     return series;
   }
 
@@ -216,17 +252,12 @@ export class DicomSeriesController {
       })
     );
 
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.id}/${series.id}`;
-    await this.redisService.set(pattern, series, 300);
-    await this.redisService.delete(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.byReferenceId}`
-    );
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomSeries, series.id);
+
+    await this.redisService.set(pattern, series, CACHE_TTL_SECONDS);
+
+    await this.uncacheDicomSeries();
+
     return series;
   }
 
@@ -242,23 +273,18 @@ export class DicomSeriesController {
     @Param('id') id: string,
     @Body() updateDicomSeriesDto: UpdateDicomSeriesDto
   ) {
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.dicomSeries, id);
     const series = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.Update', {
         id,
         updateDicomSeriesDto,
       })
     );
-    await this.redisService.set(pattern, series, 300);
-    await this.redisService.delete(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.byReferenceId}`
-    );
+
+    await this.uncacheDicomSeries(id);
+
+    await this.redisService.set(pattern, series, CACHE_TTL_SECONDS);
+
     return series;
   }
 
@@ -276,17 +302,10 @@ export class DicomSeriesController {
       })
     );
 
-    const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.id}/${id}`;
-    await this.redisService.delete(pattern);
-    await this.redisService.delete(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.dicomSeries}.${CacheKeyPattern.byReferenceId}`
-    );
+    // const pattern = `${CacheEntity.dicomSeries}.${CacheKeyPattern.id}/${id}`;
+
+    await this.uncacheDicomSeries(id);
+
     return result;
   }
 }

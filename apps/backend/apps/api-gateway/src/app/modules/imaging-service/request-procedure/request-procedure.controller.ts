@@ -32,6 +32,7 @@ import {
 } from '../../../../constant/cache';
 import { RedisService } from '@backend/redis';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 @ApiTags('Request Procedures')
 @Controller('request-procedure')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -43,6 +44,21 @@ export class RequestProcedureController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheRequestProcedure(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.requestProcedures, id)
+      );
+    }
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.findAll(CacheEntity.requestProcedures)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.requestProcedures)
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all request procedures' })
   @ApiResponse({ status: 200, description: 'List of all request procedures' })
@@ -52,14 +68,16 @@ export class RequestProcedureController {
     @Query('bodyPartId') bodyPartId?: string,
     @Query('modalityId') modalityId?: string
   ) {
-    const pattern = `${CacheEntity.requestProcedures}.${
-      CacheKeyPattern.all
-    }?bodyPartId=${bodyPartId || ''}&modalityId=${modalityId || ''}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.requestProcedures, {
+      bodyPartId,
+      modalityId,
+    });
 
     const cachedProcedures = await this.redisService.get(pattern);
     if (cachedProcedures) {
       return cachedProcedures;
     }
+
     const procedures = await firstValueFrom(
       this.imagingService.send('ImagingService.RequestProcedure.FindAll', {
         bodyPartId,
@@ -89,13 +107,15 @@ export class RequestProcedureController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.requestProcedures}.${
-      CacheKeyPattern.paginated
-    }?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.requestProcedures, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+    });
+
     const cachedProcedures = await this.redisService.get(pattern);
     if (cachedProcedures) {
       return cachedProcedures;
@@ -125,7 +145,7 @@ export class RequestProcedureController {
   })
   @ApiParam({ name: 'id', required: true, type: String })
   async getRequestProcedureById(@Param('id') id: string) {
-    const pattern = `${CacheEntity.requestProcedures}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.requestProcedures, id);
     const cachedProcedure = await this.redisService.get(pattern);
     if (cachedProcedure) {
       return cachedProcedure;
@@ -161,14 +181,12 @@ export class RequestProcedureController {
       )
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.paginated}`
-    );
+    await this.uncacheRequestProcedure(procedure.id);
 
-    const pattern = `${CacheEntity.requestProcedures}.${CacheKeyPattern.id}/${procedure.id}`;
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.requestProcedures,
+      procedure.id
+    );
     await this.redisService.set(pattern, procedure, CACHE_TTL_SECONDS);
 
     return procedure;
@@ -192,14 +210,13 @@ export class RequestProcedureController {
       })
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.paginated}`
+    await this.uncacheRequestProcedure(id);
+
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.requestProcedures,
+      procedure.id
     );
 
-    const pattern = `${CacheEntity.requestProcedures}.${CacheKeyPattern.id}/${procedure.id}`;
     await this.redisService.set(pattern, procedure, CACHE_TTL_SECONDS);
 
     return procedure;
@@ -219,15 +236,7 @@ export class RequestProcedureController {
       })
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.requestProcedures}.${CacheKeyPattern.paginated}`
-    );
-
-    const pattern = `${CacheEntity.requestProcedures}.${CacheKeyPattern.id}/${id}`;
-    await this.redisService.delete(pattern);
+    await this.uncacheRequestProcedure(id);
 
     return procedure;
   }
