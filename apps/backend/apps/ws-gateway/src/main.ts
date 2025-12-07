@@ -28,21 +28,7 @@ async function bootstrap() {
   const host = process.env.HOST || '0.0.0.0';
   const port = Number(process.env.PORT) || 5006;
   const socketPort = Number(process.env.HTTP_SOCKET_PORT) || 3006;
-<<<<<<< HEAD
-  app.use(
-    cors({
-      origin: ['http://localhost:3000',
-        'https://fedicom.vercel.app',
 
-        'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app'
-      ],
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    })
-  );
-  app.use(cookieParser());
-=======
->>>>>>> 840129a71fdf03f5cab185818c485c670abd00ab
 
   try {
     logger.log('🚀 Starting WebSocket Gateway...');
@@ -54,7 +40,11 @@ async function bootstrap() {
     // CORS
     app.use(
       cors({
-        origin: ['http://localhost:3000'],
+        origin: ['http://localhost:3000',
+          'https://fedicom.vercel.app',
+
+          'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app'
+        ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       })
