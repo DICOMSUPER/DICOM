@@ -1,8 +1,21 @@
 "use client";
 
 import { Suspense } from "react";
-import TabLayout from "@/components/radiologist/tabs/tab-layout";
-import TabProvider from "@/components/radiologist/tabs/tab-context";
+import nextDynamic from "next/dynamic";
+
+// Disable static generation for this page to avoid SSR issues with browser APIs
+export const dynamic = 'force-dynamic';
+
+// Dynamically import components with SSR disabled to avoid 'self is not defined' errors
+const TabProvider = nextDynamic(
+  () => import("@/components/radiologist/tabs/tab-context").then((mod) => mod.default),
+  { ssr: false }
+);
+
+const TabLayout = nextDynamic(
+  () => import("@/components/radiologist/tabs/tab-layout").then((mod) => mod.default),
+  { ssr: false }
+);
 
 function WorkTreeLoading() {
   return (
