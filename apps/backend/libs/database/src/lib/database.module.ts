@@ -128,7 +128,7 @@ export class DatabaseModule {
                 'Connected:',
                 `  host=${host} port=${port} db=${database}`,
                 `  user=${maskedUser}`,
-                `  ssl=require(rejectUnauthorized=${sslRejectUnauthorized})`,
+                `  ssl=require(rejectUnauthorized=${sslRejectUnauthorized.rejectUnauthorized})`,
                 `  logging=${loggingEnabled} sync=${syncEnabled}`,
                 `  time=${ms}ms`,
               ].join('\n');
