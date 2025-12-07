@@ -62,7 +62,6 @@ export default function ImageTechnicianPageWrapper() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
   const statsRef = useRef<CurrentStatusRef>(null);
 
-
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
@@ -137,8 +136,11 @@ export default function ImageTechnicianPageWrapper() {
         id,
         body: { orderStatus: ImagingOrderStatus.IN_PROGRESS },
       }).unwrap();
+
       toast.success("Order status updated successfully");
-      refetchOrder();
+
+      // Refetch both orders and stats to update UI
+      await Promise.all([refetchOrder(), statsRef.current?.refetch()]);
     } catch (error) {
       console.error("Failed to update order status:", error);
       toast.error("Failed to process order");
@@ -151,8 +153,11 @@ export default function ImageTechnicianPageWrapper() {
         id,
         body: { orderStatus: ImagingOrderStatus.COMPLETED },
       }).unwrap();
+
       toast.success("Order marked as completed");
-      refetchOrder();
+
+      // Refetch both orders and stats to update UI
+      await Promise.all([refetchOrder(), statsRef.current?.refetch()]);
     } catch (error) {
       console.error("Failed to update order status:", error);
       toast.error("Failed to mark order as completed");
@@ -165,8 +170,11 @@ export default function ImageTechnicianPageWrapper() {
         id,
         body: { orderStatus: ImagingOrderStatus.CANCELLED },
       }).unwrap();
+
       toast.success("Order marked as cancelled");
-      refetchOrder();
+
+      // Refetch both orders and stats to update UI
+      await Promise.all([refetchOrder(), statsRef.current?.refetch()]);
     } catch (error) {
       console.error("Failed to update order status:", error);
       toast.error("Failed to mark order as cancelled");
@@ -227,7 +235,10 @@ export default function ImageTechnicianPageWrapper() {
   }
 
   // Show error only if we have a response but no room assignment
-  if (!isLoadingCurrentEmployeeSchedule && (!currentEmployeeSchedule?.data?.roomSchedule?.room_id || !currentRoomId)) {
+  if (
+    !isLoadingCurrentEmployeeSchedule &&
+    (!currentEmployeeSchedule?.data?.roomSchedule?.room_id || !currentRoomId)
+  ) {
     return <UserDontHaveRoomAssignment />;
   }
 
@@ -258,7 +269,7 @@ export default function ImageTechnicianPageWrapper() {
       />
 
       <OrderTable
-        orders={(orderData as any)?.data || []}
+        orders={(orderData as any)?.data || orderData || []}
         onViewDetails={handleViewDetails}
         onCallIn={handleCallIn}
         onMarkCompleted={handleMarkCompleted}

@@ -110,10 +110,10 @@ export class NotificationsService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<Notification>
     >(keyName);
-    if (cachedService) {
-      console.log('📦 Notifications retrieved from cache');
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   console.log('📦 Notifications retrieved from cache');
+    //   return cachedService;
+    // }
 
     // Build query options
     const options: any = {

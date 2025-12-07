@@ -75,9 +75,9 @@ export class DicomInstancesController {
   async findAll() {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.dicomInstances, {});
     const cachedInstances = await this.redisService.get(pattern);
-    if (cachedInstances) {
-      return cachedInstances;
-    }
+    // if (cachedInstances) {
+    //   return cachedInstances;
+    // }
     const instances = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomInstances.FindAll', {})
     );
@@ -139,9 +139,9 @@ export class DicomInstancesController {
       }
     );
     const cachedInstances = await this.redisService.get(pattern);
-    if (cachedInstances) {
-      return cachedInstances;
-    }
+    // if (cachedInstances) {
+    //   return cachedInstances;
+    // }
 
     const instances = await firstValueFrom(
       this.imagingService.send(
@@ -193,9 +193,9 @@ export class DicomInstancesController {
       order,
     });
     const cachedPaginated = await this.redisService.get(pattern);
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -227,9 +227,9 @@ export class DicomInstancesController {
   async getOne(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.dicomInstances, id);
     const cachedInstance = await this.redisService.get(pattern);
-    if (cachedInstance) {
-      return cachedInstance;
-    }
+    // if (cachedInstance) {
+    //   return cachedInstance;
+    // }
 
     const instance = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomInstances.FindOne', { id })

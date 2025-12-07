@@ -79,9 +79,9 @@ export class DicomSeriesController {
   async getAllDicomSeries() {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.dicomSeries, {});
     const cachedSeries = await this.redisService.get(pattern);
-    if (cachedSeries) {
-      return cachedSeries;
-    }
+    // if (cachedSeries) {
+    //   return cachedSeries;
+    // }
 
     const series = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.FindAll', {})
@@ -132,9 +132,9 @@ export class DicomSeriesController {
     });
 
     const cachedSeries = await this.redisService.get(pattern);
-    if (cachedSeries) {
-      return cachedSeries;
-    }
+    // if (cachedSeries) {
+    //   return cachedSeries;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -188,9 +188,9 @@ export class DicomSeriesController {
     });
 
     const cachedPaginated = await this.redisService.get(pattern);
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
     const paginationDto = {
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -225,9 +225,9 @@ export class DicomSeriesController {
     const pattern = cacheKeyBuilder.id(CacheEntity.dicomSeries, id);
 
     const cachedSeries = await this.redisService.get(pattern);
-    if (cachedSeries) {
-      return cachedSeries;
-    }
+    // if (cachedSeries) {
+    //   return cachedSeries;
+    // }
 
     const series = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomSeries.FindOne', { id })

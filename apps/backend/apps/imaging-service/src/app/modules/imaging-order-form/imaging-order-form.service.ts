@@ -129,10 +129,10 @@ export class ImagingOrderFormService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<ImagingOrderForm>
     >(keyName);
-    if (cachedService) {
-      console.log('📦 ImagingOrderForms retrieved from cache');
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   console.log('📦 ImagingOrderForms retrieved from cache');
+    //   return cachedService;
+    // }
 
     const skip = (page - 1) * limit;
 
@@ -519,10 +519,10 @@ export class ImagingOrderFormService {
     const cachedData = await this.redisService.get<
       PaginatedResponseDto<ImagingOrderForm>
     >(keyName);
-    if (cachedData) {
-      console.log('📦 ImagingOrderForms by patient retrieved from cache');
-      return cachedData;
-    }
+    // if (cachedData) {
+    //   console.log('📦 ImagingOrderForms by patient retrieved from cache');
+    //   return cachedData;
+    // }
 
     const skip = (page - 1) * limit;
 

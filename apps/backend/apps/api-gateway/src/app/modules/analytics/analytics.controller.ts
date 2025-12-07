@@ -17,7 +17,8 @@ import { Roles } from '@backend/shared-enums';
 import { AnalyticsService } from './analytics.service';
 import { cacheKeyBuilder } from '../../../utils/cache-builder.utils';
 import { CACHE_TTL_SECONDS, CacheEntity } from '../../../../src/constant/cache';
-import { RedisService } from 'libs/redis/src';
+import { RedisService } from '@backend/redis';
+
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)

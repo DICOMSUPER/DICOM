@@ -27,7 +27,7 @@ services:
     ports:
       - "5002:5002"
     env_file:
-      - apps/user-service/.env
+      - apps/user-service/.env.docker
     networks:
       - dicom-network
     restart: unless-stopped
@@ -40,7 +40,7 @@ services:
     ports:
       - "5003:5003"
     env_file:
-      - apps/imaging-service/.env
+      - apps/imaging-service/.env.docker
     networks:
       - dicom-network
     restart: unless-stopped
@@ -53,7 +53,7 @@ services:
     ports:
       - "5004:5004"
     env_file:
-      - apps/patient-service/.env
+      - apps/patient-service/.env.docker
     networks:
       - dicom-network
     restart: unless-stopped
@@ -66,7 +66,7 @@ services:
     ports:
       - "5005:5005"
     env_file:
-      - apps/system-service/.env
+      - apps/system-service/.env.docker
     networks:
       - dicom-network
     restart: unless-stopped
@@ -80,7 +80,7 @@ services:
       - "3006:3006"
       - "5006:5006"
     env_file:
-      - apps/ws-gateway/.env
+      - apps/ws-gateway/.env.docker
     networks:
       - dicom-network
     restart: unless-stopped

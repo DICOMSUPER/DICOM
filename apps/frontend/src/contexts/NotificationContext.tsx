@@ -65,8 +65,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
   // 5. Effect: Socket Connection
   useEffect(() => {
+    console.log(process.env.NEXT_PUBLIC_SOCKET_URL);
+
     const socketUrl =
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5006";
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3006";
 
     const newSocket = io(socketUrl, {
       transports: ["websocket"],
