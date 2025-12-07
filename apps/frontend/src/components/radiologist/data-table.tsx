@@ -7,6 +7,7 @@ import {
   DicomStudy,
   DicomStudyFilterQuery,
 } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
@@ -31,6 +32,31 @@ const formatDate = (date: string): string => {
 // Helper function to format time (e.g., "13:57:31" to "13:57")
 const formatTime = (time: string): string => {
   return time.slice(0, 5); // Keep only hours and minutes
+};
+
+const STUDY_STATUS_LABELS: Record<string, string> = {
+  [DicomStudyStatus.SCANNED]: "Scanned",
+  [DicomStudyStatus.TECHNICIAN_VERIFIED]: "Technician Verified",
+  [DicomStudyStatus.REJECTED]: "Rejected",
+  [DicomStudyStatus.READING]: "Reading",
+  [DicomStudyStatus.PENDING_APPROVAL]: "Pending Approval",
+  [DicomStudyStatus.APPROVED]: "Approved",
+  [DicomStudyStatus.RESULT_PRINTED]: "Result Printed",
+};
+
+const studyStatusBadge = (status?: string) => {
+  if (!status) return { label: "NA", className: "bg-gray-100 text-gray-600" };
+  const label = STUDY_STATUS_LABELS[status] || status;
+  const map: Record<string, string> = {
+    [DicomStudyStatus.SCANNED]: "bg-slate-100 text-slate-700",
+    [DicomStudyStatus.TECHNICIAN_VERIFIED]: "bg-blue-100 text-blue-700",
+    [DicomStudyStatus.READING]: "bg-amber-100 text-amber-700",
+    [DicomStudyStatus.PENDING_APPROVAL]: "bg-amber-100 text-amber-700",
+    [DicomStudyStatus.APPROVED]: "bg-emerald-100 text-emerald-700",
+    [DicomStudyStatus.RESULT_PRINTED]: "bg-emerald-100 text-emerald-700",
+    [DicomStudyStatus.REJECTED]: "bg-red-100 text-red-700",
+  };
+  return { label, className: map[status] || "bg-slate-100 text-slate-700" };
 };
 
 export default function DataTable({
@@ -146,7 +172,16 @@ export default function DataTable({
                     </td>
 
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
-                      {row.studyStatus}
+                      {(() => {
+                        const badge = studyStatusBadge(row.studyStatus);
+                        return (
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                       {row.report?.diagnosisStatus || "NA"}

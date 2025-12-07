@@ -12,18 +12,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Room } from '@/interfaces/user/room.interface';
-import { useCreateServiceRoomMutation } from '@/store/serviceRoomApi';
+import { useCreateServiceRoomMutation, useDeleteServiceRoomMutation } from '@/store/serviceRoomApi';
 import { useGetServicesQuery } from '@/store/serviceApi';
 import { useGetServicesByRoomQuery } from '@/store/serviceRoomApi';
 import { Services } from '@/interfaces/user/service.interface';
@@ -39,14 +33,18 @@ interface RoomServiceAssignmentModalProps {
 
 export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }: RoomServiceAssignmentModalProps) {
   const [createServiceRoom] = useCreateServiceRoomMutation();
+  const [deleteServiceRoom] = useDeleteServiceRoomMutation();
   const { data: servicesData } = useGetServicesQuery();
   const { data: existingAssignmentsData, refetch: refetchAssignments } = useGetServicesByRoomQuery(
     room?.id || '',
     { skip: !room?.id || !isOpen }
   );
   
-  const services: Services[] = servicesData?.data ?? [];
-  const existingAssignments: ServiceRoom[] = existingAssignmentsData?.data ?? [];
+  const services: Services[] = useMemo(() => servicesData?.data ?? [], [servicesData?.data]);
+  const existingAssignments: ServiceRoom[] = useMemo(
+    () => existingAssignmentsData?.data ?? [],
+    [existingAssignmentsData?.data]
+  );
 
   const assignedServiceIds = useMemo(() => {
     return new Set(existingAssignments.map((assignment) => assignment.serviceId));
@@ -56,22 +54,18 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
     return services.filter((service) => !assignedServiceIds.has(service.id));
   }, [services, assignedServiceIds]);
 
-  const [formData, setFormData] = useState({
-    serviceId: '',
-    isActive: true,
-    notes: '',
-  });
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [isActive, setIsActive] = useState(true);
+  const [notes, setNotes] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen && room) {
       refetchAssignments();
-      setFormData({
-        serviceId: '',
-        isActive: true,
-        notes: '',
-      });
+      setSelectedServiceIds([]);
+      setIsActive(true);
+      setNotes('');
     }
   }, [isOpen, room, refetchAssignments]);
 
@@ -80,28 +74,30 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
       toast.error('Room is required');
       return;
     }
-    if (!formData.serviceId) {
-      toast.error('Service is required');
+    if (!selectedServiceIds.length) {
+      toast.error('Select at least one service');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const payload = {
+      const payloads = selectedServiceIds.map((serviceId) => ({
         roomId: room.id,
-        serviceId: formData.serviceId,
-        isActive: formData.isActive,
-        notes: formData.notes || undefined,
-      };
+        serviceId,
+        isActive,
+        notes: notes || undefined,
+      }));
 
-      await createServiceRoom(payload).unwrap();
-      toast.success('Service assigned to room successfully');
-      setFormData({
-        serviceId: '',
-        isActive: true,
-        notes: '',
-      });
-      await       refetchAssignments();
+      await Promise.all(payloads.map((p) => createServiceRoom(p).unwrap()));
+      toast.success(
+        payloads.length > 1
+          ? `Assigned ${payloads.length} services to room`
+          : 'Service assigned to room successfully'
+      );
+      setSelectedServiceIds([]);
+      setIsActive(true);
+      setNotes('');
+      await refetchAssignments();
       onSuccess?.();
       // Keep modal open to allow multiple assignments
     } catch (error) {
@@ -109,6 +105,26 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
       toast.error(apiError?.data?.message || apiError?.message || 'Failed to assign service to room');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleService = (serviceId: string, checked: boolean) => {
+    setSelectedServiceIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(serviceId);
+      else next.delete(serviceId);
+      return Array.from(next);
+    });
+  };
+
+  const handleUnassign = async (assignmentId: string) => {
+    try {
+      await deleteServiceRoom(assignmentId).unwrap();
+      toast.success('Service unassigned from room');
+      await refetchAssignments();
+      onSuccess?.();
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to unassign service');
     }
   };
 
@@ -145,32 +161,42 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
             <section className="rounded-2xl p-6 shadow border-border border space-y-4">
               <div className="flex items-center gap-2 text-lg font-semibold">
                 <Stethoscope className="h-5 w-5" />
-                Select Service
+                Select Services
               </div>
               <div className="space-y-2">
-                <Label htmlFor="serviceId" className="text-foreground">Service *</Label>
-                <Select
-                  value={formData.serviceId}
-                  onValueChange={(value) => setFormData({ ...formData, serviceId: value })}
-                >
-                  <SelectTrigger className="text-foreground">
-                    <SelectValue placeholder="Select service to assign" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableServices.length === 0 ? (
-                      <div className="p-2 text-sm text-foreground">No available services</div>
-                    ) : (
-                      availableServices.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.serviceCode} - {service.serviceName}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {availableServices.length === 0 && (
-                  <p className="text-sm text-foreground">All services are already assigned to this room.</p>
-                )}
+                <Label className="text-foreground">Services *</Label>
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  {availableServices.length === 0 ? (
+                    <p className="text-sm text-foreground">All services are already assigned to this room.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
+                      {availableServices.map((service) => {
+                        const checked = selectedServiceIds.includes(service.id);
+                        return (
+                          <label
+                            key={service.id}
+                            className="flex items-start gap-3 rounded-md border border-border px-3 py-2 hover:bg-muted/50 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(val) => handleToggleService(service.id, !!val)}
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-foreground">
+                                {service.serviceCode} - {service.serviceName}
+                              </span>
+                              {service.description && (
+                                <span className="text-xs text-foreground line-clamp-2">
+                                  {service.description}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
 
@@ -203,6 +229,17 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                             {assignment.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </div>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => handleUnassign(assignment.id)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Unassign
+                          </Button>
+                        </div>
                       </div>
                     ))}
                 </div>
@@ -218,8 +255,8 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                 <Label htmlFor="notes" className="text-foreground">Notes</Label>
                 <Textarea
                   id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   placeholder="Additional notes about this assignment..."
                   rows={3}
                   className="text-foreground"
@@ -235,10 +272,8 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
               <div className="flex items-center space-x-2">
                 <Switch
                   id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, isActive: checked })
-                  }
+                  checked={isActive}
+                  onCheckedChange={(checked) => setIsActive(checked)}
                 />
                 <Label htmlFor="isActive" className="text-foreground cursor-pointer">
                   Active

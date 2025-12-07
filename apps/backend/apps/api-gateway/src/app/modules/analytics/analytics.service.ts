@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { RoomStatus } from '@backend/shared-domain';
-import { EncounterStatus, OrderStatus, DiagnosisStatus } from '@backend/shared-enums';
+import { EncounterStatus, OrderStatus, DiagnosisStatus, DicomStudyStatus } from '@backend/shared-enums';
 
 @Injectable()
 export class AnalyticsService {
@@ -593,7 +593,7 @@ export class AnalyticsService {
           this.patientService.send('PatientService.Encounter.GetStats', {})
         ).catch(() => null),
         firstValueFrom(
-          this.patientService.send('PatientService.DiagnosisReport.GetStats', {})
+          this.patientService.send('PatientService.DiagnosesReport.GetStats', {})
         ).catch(() => null),
       ]);
 
@@ -671,7 +671,7 @@ export class AnalyticsService {
             this.patientService.send('PatientService.Encounter.FindAll', {})
           ).catch(() => []),
           firstValueFrom(
-            this.patientService.send('PatientService.DiagnosisReport.FindAll', {})
+          this.patientService.send('PatientService.DiagnosesReport.FindAll', {})
           ).catch(() => []),
           firstValueFrom(
             this.imagingService.send('ImagingService.ImagingOrders.FindAll', {})
@@ -804,28 +804,56 @@ export class AnalyticsService {
 
   private async getReportsByStatus(): Promise<Array<{ status: string; count: number }>> {
     try {
+      this.logger.log('[Radiologist Analytics] getReportsByStatus - Fetching reports...');
       const result = await firstValueFrom(
-        this.patientService.send('PatientService.DiagnosisReport.FindAll', {})
-      ).catch(() => []);
+        this.patientService.send('PatientService.DiagnosesReport.FindAll', {})
+      ).catch((err) => {
+        this.logger.error('[Radiologist Analytics] getReportsByStatus - Error fetching:', err);
+        return [];
+      });
+      
+      this.logger.log(`[Radiologist Analytics] getReportsByStatus - Raw result type: ${typeof result}, keys: ${result ? Object.keys(result).join(', ') : 'null'}`);
       
       const reportsData = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+      this.logger.log(`[Radiologist Analytics] getReportsByStatus - Reports data count: ${reportsData.length}`);
+      
       const reports = reportsData.filter((r: any) => 
         r.isActive !== false && r.isDeleted !== true
       );
       
+      this.logger.log(`[Radiologist Analytics] getReportsByStatus - Active reports count: ${reports.length}`);
+      
+      if (reports.length > 0) {
+        this.logger.log(`[Radiologist Analytics] getReportsByStatus - Sample report: ${JSON.stringify({
+          id: reports[0].id,
+          diagnosisStatus: reports[0].diagnosisStatus,
+          status: reports[0].status,
+          isActive: reports[0].isActive,
+          isDeleted: reports[0].isDeleted
+        })}`);
+      }
+      
       const statusMap = new Map<string, number>();
+      const validStatuses = Object.values(DiagnosisStatus);
+      this.logger.log(`[Radiologist Analytics] getReportsByStatus - Valid DiagnosisStatus values: ${validStatuses.join(', ')}`);
       
       reports.forEach((report: any) => {
         const status = report.diagnosisStatus || report.status;
+        this.logger.log(`[Radiologist Analytics] getReportsByStatus - Report status: ${status}, is valid: ${status && validStatuses.includes(status)}`);
         // Only count if status is a valid DiagnosisStatus enum value
-        if (status && Object.values(DiagnosisStatus).includes(status)) {
+        if (status && validStatuses.includes(status)) {
           statusMap.set(status, (statusMap.get(status) || 0) + 1);
+        } else if (status) {
+          this.logger.warn(`[Radiologist Analytics] getReportsByStatus - Invalid status found: ${status}`);
         }
       });
       
-      return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
+      const resultArray = Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
+      this.logger.log(`[Radiologist Analytics] getReportsByStatus - Result: ${JSON.stringify(resultArray)}`);
+      
+      return resultArray;
     } catch (error) {
-      this.logger.error('Error fetching reports by status:', error);
+      this.logger.error('[Radiologist Analytics] getReportsByStatus - Error:', error);
       return [];
     }
   }
@@ -1081,22 +1109,55 @@ export class AnalyticsService {
 
   async getRadiologistAnalytics(period?: 'week' | 'month' | 'year', value?: string) {
     try {
+      this.logger.log(`[Radiologist Analytics] Starting with period=${period}, value=${value}`);
+      
       const [dicomStudiesResult, diagnosisReportsResult] = await Promise.all([
         firstValueFrom(
           this.imagingService.send('ImagingService.DicomStudies.FindAll', {})
-        ).catch(() => []),
+        ).catch((err) => {
+          this.logger.error('[Radiologist Analytics] Error fetching studies:', err);
+          return [];
+        }),
         firstValueFrom(
-          this.patientService.send('PatientService.DiagnosisReport.FindAll', {})
-        ).catch(() => []),
+          this.patientService.send('PatientService.DiagnosesReport.FindAll', {})
+        ).catch((err) => {
+          this.logger.error('[Radiologist Analytics] Error fetching reports:', err);
+          return [];
+        }),
       ]);
+
+      this.logger.log(`[Radiologist Analytics] Raw results - studies type: ${typeof dicomStudiesResult}, reports type: ${typeof diagnosisReportsResult}`);
+      this.logger.log(`[Radiologist Analytics] Studies result keys: ${dicomStudiesResult ? Object.keys(dicomStudiesResult).join(', ') : 'null'}`);
+      this.logger.log(`[Radiologist Analytics] Reports result keys: ${diagnosisReportsResult ? Object.keys(diagnosisReportsResult).join(', ') : 'null'}`);
 
       const studiesData = Array.isArray(dicomStudiesResult?.data) ? dicomStudiesResult.data : (Array.isArray(dicomStudiesResult) ? dicomStudiesResult : []);
       const reportsData = Array.isArray(diagnosisReportsResult?.data) ? diagnosisReportsResult.data : (Array.isArray(diagnosisReportsResult) ? diagnosisReportsResult : []);
 
+      this.logger.log(`[Radiologist Analytics] Parsed data - studies count: ${studiesData.length}, reports count: ${reportsData.length}`);
+
       const activeStudies = studiesData.filter((s: any) => s.isActive !== false && s.isDeleted !== true);
       const activeReports = reportsData.filter((r: any) => r.isActive !== false && r.isDeleted !== true);
 
-      this.logger.debug(`Radiologist Analytics - Active counts: studies=${activeStudies.length}, reports=${activeReports.length}`);
+      this.logger.log(`[Radiologist Analytics] Active counts: studies=${activeStudies.length}, reports=${activeReports.length}`);
+      
+      // Log sample study dates
+      if (activeStudies.length > 0) {
+        const sampleStudy = activeStudies[0];
+        this.logger.log(`[Radiologist Analytics] Sample study - studyDate: ${sampleStudy.studyDate}, createdAt: ${sampleStudy.createdAt}, date: ${sampleStudy.date}`);
+        this.logger.log(`[Radiologist Analytics] Sample study dates (first 5): ${activeStudies.slice(0, 5).map((s: any) => ({
+          studyDate: s.studyDate,
+          createdAt: s.createdAt,
+          date: s.date,
+          status: s.studyStatus || s.status
+        })).join(', ')}`);
+      }
+      
+      // Log sample report data
+      if (reportsData.length > 0) {
+        this.logger.log(`[Radiologist Analytics] Sample report (first): ${JSON.stringify(reportsData[0])}`);
+      } else {
+        this.logger.warn(`[Radiologist Analytics] No reports found in raw data`);
+      }
 
       // Use UTC date for consistent comparison
       const now = new Date();
@@ -1126,48 +1187,67 @@ export class AnalyticsService {
         totalStudies: activeStudies.length,
         pendingStudies: activeStudies.filter((s: any) => {
           const status = s.studyStatus || s.status;
-          return status === 'PENDING_APPROVAL' || status === 'SCANNED';
+          return status === DicomStudyStatus.PENDING_APPROVAL || status === DicomStudyStatus.SCANNED;
         }).length,
         inProgressStudies: activeStudies.filter((s: any) => {
           const status = s.studyStatus || s.status;
-          return status === 'APPROVED' || status === 'TECHNICIAN_VERIFIED';
+          return status === DicomStudyStatus.READING || status === DicomStudyStatus.TECHNICIAN_VERIFIED || status === DicomStudyStatus.APPROVED;
         }).length,
         completedStudies: activeStudies.filter((s: any) => {
           const status = s.studyStatus || s.status;
-          return status === 'RESULT_PRINTED';
+          return status === DicomStudyStatus.RESULT_PRINTED;
         }).length,
         todayStudies: todayStudies.length,
         totalReports: activeReports.length,
         pendingReports: activeReports.filter((r: any) => {
           const status = r.diagnosisStatus || r.status;
-          return status === 'PENDING' || status === 'IN_PROGRESS';
+          return status === DiagnosisStatus.PENDING_APPROVAL || status === DiagnosisStatus.DRAFT;
         }).length,
         completedReports: activeReports.filter((r: any) => {
           const status = r.diagnosisStatus || r.status;
-          return status === 'COMPLETED' || status === 'RESOLVED';
+          return status === DiagnosisStatus.APPROVED;
         }).length,
         todayReports: todayReports.length,
       };
 
       const { startDate, endDate } = this.calculateDateRange(period, value);
+      this.logger.log(`[Radiologist Analytics] Date range: ${startDate} to ${endDate}`);
 
       let studiesOverTimeData: any = { data: [] };
       let reportsOverTimeData: any = { data: [] };
 
       try {
+        // Log studies without dates
+        const studiesWithoutDates = activeStudies.filter((s: any) => !(s.studyDate || s.createdAt || s.date));
+        if (studiesWithoutDates.length > 0) {
+          this.logger.warn(`[Radiologist Analytics] Found ${studiesWithoutDates.length} studies without dates`);
+        }
+
         const filteredStudies = activeStudies.filter((s: any) => {
           const studyDate = s.studyDate || s.createdAt || s.date;
-          if (!studyDate) return false;
+          if (!studyDate) {
+            return false;
+          }
           const date = new Date(studyDate).toISOString().split('T')[0];
-          return date >= startDate && date <= endDate;
+          const inRange = date >= startDate && date <= endDate;
+          if (!inRange && activeStudies.length <= 10) {
+            this.logger.log(`[Radiologist Analytics] Study date ${date} is outside range ${startDate} to ${endDate}`);
+          }
+          return inRange;
         });
+
+        this.logger.log(`[Radiologist Analytics] Filtered studies count: ${filteredStudies.length} (from ${activeStudies.length} active)`);
 
         const filteredReports = activeReports.filter((r: any) => {
           const reportDate = r.createdAt || r.diagnosisDate || r.date;
-          if (!reportDate) return false;
+          if (!reportDate) {
+            return false;
+          }
           const date = new Date(reportDate).toISOString().split('T')[0];
           return date >= startDate && date <= endDate;
         });
+
+        this.logger.log(`[Radiologist Analytics] Filtered reports count: ${filteredReports.length} (from ${activeReports.length} active)`);
 
         const studyDateMap = new Map<string, number>();
         const reportDateMap = new Map<string, number>();
@@ -1188,6 +1268,9 @@ export class AnalyticsService {
           }
         });
 
+        this.logger.log(`[Radiologist Analytics] Study date map entries: ${Array.from(studyDateMap.entries()).map(([d, c]) => `${d}:${c}`).join(', ')}`);
+        this.logger.log(`[Radiologist Analytics] Report date map entries: ${Array.from(reportDateMap.entries()).map(([d, c]) => `${d}:${c}`).join(', ')}`);
+
         studiesOverTimeData = {
           data: Array.from(studyDateMap.entries()).map(([date, count]) => ({
             date,
@@ -1203,9 +1286,15 @@ export class AnalyticsService {
             reports: count,
           })),
         };
+
+        this.logger.log(`[Radiologist Analytics] Studies over time data count: ${studiesOverTimeData.data.length}`);
+        this.logger.log(`[Radiologist Analytics] Reports over time data count: ${reportsOverTimeData.data.length}`);
       } catch (error) {
-        this.logger.warn('Could not fetch radiologist data by date range, using fallback', error);
+        this.logger.error('Could not fetch radiologist data by date range, using fallback', error);
       }
+
+      this.logger.log(`[Radiologist Analytics] Before processTimeSeriesData - studies data: ${JSON.stringify(studiesOverTimeData?.data?.slice(0, 3))}`);
+      this.logger.log(`[Radiologist Analytics] Before processTimeSeriesData - reports data: ${JSON.stringify(reportsOverTimeData?.data?.slice(0, 3))}`);
 
       const studiesOverTime = this.processTimeSeriesData(
         studiesOverTimeData?.data || [],
@@ -1221,6 +1310,10 @@ export class AnalyticsService {
         endDate,
         'reports'
       );
+
+      this.logger.log(`[Radiologist Analytics] After processTimeSeriesData - studies count: ${studiesOverTime.length}, reports count: ${reportsOverTime.length}`);
+      this.logger.log(`[Radiologist Analytics] Studies over time (first 3): ${JSON.stringify(studiesOverTime.slice(0, 3))}`);
+      this.logger.log(`[Radiologist Analytics] Reports over time (first 3): ${JSON.stringify(reportsOverTime.slice(0, 3))}`);
 
       const studiesByStatus = await this.getStudiesByStatus(activeStudies);
       const reportsByStatus = await this.getReportsByStatus();

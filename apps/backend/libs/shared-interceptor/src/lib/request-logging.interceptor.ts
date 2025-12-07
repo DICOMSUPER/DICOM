@@ -21,6 +21,9 @@ export class RequestLoggingInterceptor implements NestInterceptor {
     // Generate or extract correlation ID
     const correlationId = this.getCorrelationId(request);
 
+    // Extract userId from userInfo (set by AuthGuard) or user (legacy)
+    const userId = (request as any).userInfo?.userId || (request as any).user?.id;
+
     // Set up logging context
     this.loggingService.setCorrelationId(correlationId);
     this.loggingService.setContext({
@@ -28,11 +31,11 @@ export class RequestLoggingInterceptor implements NestInterceptor {
       url: request.url,
       userAgent: request.headers['user-agent'],
       ip: request.ip || request.connection.remoteAddress,
-      userId: (request as any).user?.id,
+      userId: userId,
     });
 
     // Log incoming request
-    this.loggingService.logRequest(request.method, request.url, (request as any).user?.id, {
+    this.loggingService.logRequest(request.method, request.url, userId, {
       query: request.query,
       body: this.sanitizeBody(request.body),
       headers: this.sanitizeHeaders(request.headers),
@@ -50,7 +53,7 @@ export class RequestLoggingInterceptor implements NestInterceptor {
             request.url,
             response.statusCode,
             responseTime,
-            (request as any).user?.id,
+            (request as any).userInfo?.userId
           );
           this.loggingService.clearContext();
         },
@@ -61,7 +64,7 @@ export class RequestLoggingInterceptor implements NestInterceptor {
             request.url,
             response.statusCode || 500,
             responseTime,
-            (request as any).user?.id,
+            (request as any).userInfo?.userId,
           );
           this.loggingService.clearContext();
         },

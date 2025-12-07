@@ -14,7 +14,7 @@ export function QuickActionsBar() {
           className="bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => router.push('/reception/registration')}
         >
-          <UserPlus className="w-4 h-4 mr-2" />
+          <UserPlus className="w-4 h-4" />
           Register New Patient
         </Button>
       </div>

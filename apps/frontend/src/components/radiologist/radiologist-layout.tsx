@@ -119,7 +119,7 @@ export function RadiologistWorkspaceLayout({
                   </>
                 ) : (
                   <>
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-4 h-4" />
                     Logout
                   </>
                 )}
@@ -181,7 +181,7 @@ export function RadiologistWorkspaceLayout({
                     size="sm"
                     className="border-border relative"
                   >
-                    <Bell className="w-4 h-4 mr-2" />
+                    <Bell className="w-4 h-4" />
                     Alerts
                     <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5">
                       3
@@ -197,7 +197,7 @@ export function RadiologistWorkspaceLayout({
                       size="sm"
                       className="border-border"
                     >
-                      <User className="w-4 h-4 mr-2" />
+                      <User className="w-4 h-4" />
                       {user?.email?.split("@")[0] || "User"}
                     </Button>
                   </DropdownMenuTrigger>

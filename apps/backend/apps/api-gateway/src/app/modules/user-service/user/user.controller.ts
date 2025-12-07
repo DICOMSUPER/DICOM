@@ -108,7 +108,7 @@ export class UserController {
       res.cookie('accessToken', '', {
         httpOnly: true,
         secure,
-        sameSite: 'strict',
+        sameSite: secure ? 'none' : 'lax',
         maxAge: 0,
         path: '/',
       });

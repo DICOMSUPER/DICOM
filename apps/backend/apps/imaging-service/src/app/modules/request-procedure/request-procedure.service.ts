@@ -8,11 +8,11 @@ import {
   UpdateRequestProcedureDto,
 } from '@backend/shared-domain';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { RequestProcedureRepository } from './request-procedure.repository';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager, Not } from 'typeorm';
 import { ImagingOrder } from '@backend/shared-domain';
 import {
   RequestProcedureDeletionFailedException,
@@ -21,6 +21,7 @@ import {
 
 @Injectable()
 export class RequestProcedureService {
+  private readonly logger = new Logger(RequestProcedureService.name);
   constructor(
     @Inject()
     private readonly requestProcedureRepository: RequestProcedureRepository,
@@ -30,10 +31,7 @@ export class RequestProcedureService {
   create = async (
     createRequestProcedureDto: CreateRequestProcedureDto
   ): Promise<RequestProcedure> => {
-    return await this.entityManager.transaction(async (em) => {
-
-      console.log("create request procedure service",createRequestProcedureDto);
-      
+    return await this.entityManager.transaction(async () => {
       // check for existing procedure with the same name
       const existingProcedure = await this.requestProcedureRepository.findOne({
         where: { name: createRequestProcedureDto.name },
@@ -84,7 +82,7 @@ export class RequestProcedureService {
     id: string,
     updateRequestProcedureDto: UpdateRequestProcedureDto
   ): Promise<RequestProcedure | null> => {
-    return await this.entityManager.transaction(async (em) => {
+    return await this.entityManager.transaction(async () => {
       const procedure = await this.requestProcedureRepository.findOne({
         where: { id },
       });
@@ -96,16 +94,25 @@ export class RequestProcedureService {
           IMAGING_SERVICE
         );
       }
-      const existingProcedure = await this.requestProcedureRepository.findOne({
-        where: { name: updateRequestProcedureDto.name },
-      });
+      // Only check for duplicate name if name is provided and changed
+      const incomingName = updateRequestProcedureDto.name?.trim();
+      const currentName = procedure.name?.trim();
 
-      if (existingProcedure) {
-        throw ThrowMicroserviceException(
-          HttpStatus.CONFLICT,
-          'Procedure with the same name already exists',
-          IMAGING_SERVICE
+      if (incomingName && incomingName !== currentName) {
+        this.logger.log(
+          `RequestProcedure update: incoming="${incomingName}", current="${currentName}", id=${id}`
         );
+        const existingProcedure = await this.requestProcedureRepository.findOne({
+          where: { name: incomingName, id: Not(id), isDeleted: false },
+        });
+
+        if (existingProcedure) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            'Procedure with the same name already exists',
+            IMAGING_SERVICE
+          );
+        }
       }
 
       return await this.requestProcedureRepository.update(
@@ -139,10 +146,12 @@ export class RequestProcedureService {
 
         return await this.requestProcedureRepository.softDelete(id, 'isDeleted');
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof RequestProcedureNotFoundException) throw error;
       if (error instanceof RequestProcedureDeletionFailedException) throw error;
-      throw new RequestProcedureDeletionFailedException(error.message, id);
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete request procedure';
+      throw new RequestProcedureDeletionFailedException(message, id);
     }
   };
 

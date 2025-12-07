@@ -174,7 +174,7 @@ export function ModalApproveStudy({
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
+                    <CheckCircle className="w-4 h-4" />
                     Approve Study
                   </>
                 )}

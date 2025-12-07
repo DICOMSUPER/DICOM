@@ -88,7 +88,7 @@ export const bodyPartApi = createApi({
       query: (body) => ({
         url: "",
         method: "POST",
-        body,
+        data: body,
       }),
       invalidatesTags: ["BodyPart"],
     }),

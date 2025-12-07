@@ -198,8 +198,8 @@ export default function Page() {
             onClick={handleCreateBodyPart}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Body Part
+            <Plus className="w-4 h-4" />
+            Add Body Part
           </Button>
         </div>
       </div>

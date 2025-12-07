@@ -12,7 +12,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { BodyPartRepository } from './body-part.repository';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager } from 'typeorm';
+import { EntityManager, Not } from 'typeorm';
 
 @Injectable()
 export class BodyPartService {
@@ -67,7 +67,7 @@ export class BodyPartService {
     id: string,
     updateBodyPartDto: UpdateBodyPartDto
   ): Promise<BodyPart | null> => {
-    return await this.entityManager.transaction(async (em) => {
+    return await this.entityManager.transaction(async () => {
       const bodyPart = await this.bodyPartRepository.findOne({
         where: { id },
       });
@@ -79,16 +79,22 @@ export class BodyPartService {
           IMAGING_SERVICE
         );
       }
-      const existingBodyPart = await this.bodyPartRepository.findOne({
-        where: { name: updateBodyPartDto.name },
-      });
+      // Only check duplicate if name is provided and changed (trimmed)
+      const incomingName = updateBodyPartDto.name?.trim();
+      const currentName = bodyPart.name?.trim();
 
-      if (existingBodyPart) {
-        throw ThrowMicroserviceException(
-          HttpStatus.CONFLICT,
-          'Body part with the same name already exists',
-          IMAGING_SERVICE
-        );
+      if (incomingName && incomingName !== currentName) {
+        const existingBodyPart = await this.bodyPartRepository.findOne({
+          where: { name: incomingName, id: Not(id), isDeleted: false },
+        });
+
+        if (existingBodyPart) {
+          throw ThrowMicroserviceException(
+            HttpStatus.CONFLICT,
+            'Body part with the same name already exists',
+            IMAGING_SERVICE
+          );
+        }
       }
 
       return await this.bodyPartRepository.update(id, updateBodyPartDto);

@@ -246,14 +246,14 @@ const MedicalRecordMain = ({
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabValue)} className="w-full">
           <TabsList className="bg-transparent border-b border-gray-200">
             {[
-              { value: "info", label: "Nhận ca", icon: <Lock className="w-4 h-4 mr-2" /> },
-              { value: "view", label: "Xem hình", icon: <Eye className="w-4 h-4 mr-2" /> },
-              { value: "advanced", label: "Advanced Tools", icon: <Settings className="w-4 h-4 mr-2" /> },
-              { value: "video", label: "Video", icon: <Video className="w-4 h-4 mr-2" /> },
-              { value: "files", label: "Files", icon: <FileText className="w-4 h-4 mr-2" /> },
-              { value: "ikq", label: "In IKQ", icon: <Image className="w-4 h-4 mr-2" /> },
-              { value: "receive", label: "In nhận", icon: <MessageSquare className="w-4 h-4 mr-2" /> },
-              { value: "portal", label: "Portal", icon: <Mail className="w-4 h-4 mr-2" /> },
+              { value: "info", label: "Nhận ca", icon: <Lock className="w-4 h-4" /> },
+              { value: "view", label: "Xem hình", icon: <Eye className="w-4 h-4" /> },
+              { value: "advanced", label: "Advanced Tools", icon: <Settings className="w-4 h-4" /> },
+              { value: "video", label: "Video", icon: <Video className="w-4 h-4" /> },
+              { value: "files", label: "Files", icon: <FileText className="w-4 h-4" /> },
+              { value: "ikq", label: "In IKQ", icon: <Image className="w-4 h-4" /> },
+              { value: "receive", label: "In nhận", icon: <MessageSquare className="w-4 h-4" /> },
+              { value: "portal", label: "Portal", icon: <Mail className="w-4 h-4" /> },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}

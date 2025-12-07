@@ -975,14 +975,14 @@ export function DiagnosisReportDetail({
                 onClick={handleEditDescriptionOpen}
               >
                 <div className="flex items-center justify-center">
-                  <Notebook className="w-4 h-4 mr-2" />
+                  <Notebook className="w-4 h-4" />
                   Edit Report Description
                 </div>
               </Button>
             ) : (
               <Button className="w-full" onClick={handleEditDescriptionClose}>
                 <div className="flex items-center justify-center">
-                  <Notebook className="w-4 h-4 mr-2" />
+                  <Notebook className="w-4 h-4" />
                   Close Edit Mode
                 </div>
               </Button>
@@ -1077,7 +1077,7 @@ export function DiagnosisReportDetail({
                       disabled={!editedDescription.trim()}
                       className="bg-linear-to-r from-teal-600 to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Notebook className="w-4 h-4 mr-2" />
+                      <Notebook className="w-4 h-4" />
                       Apply to Description
                     </Button>
                   </div>
@@ -1105,7 +1105,7 @@ export function DiagnosisReportDetail({
                       }
                       className="bg-linear-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Download className="w-4 h-4 mr-2" />
+                      <Download className="w-4 h-4" />
                       {isUpdating ? "Saving..." : "Save Description"}
                     </Button>
                   </div>
@@ -1154,7 +1154,7 @@ export function DiagnosisReportDetail({
                     disabled={isUpdating || isApprovingDiagnosis}
                     className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
-                    <Star className="w-4 h-4 mr-2" />
+                    <Star className="w-4 h-4" />
                     <span>
                       {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
                     </span>
@@ -1164,7 +1164,7 @@ export function DiagnosisReportDetail({
                     disabled={isUpdating || isRejectingDiagnosis}
                     className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
-                    <CircleX className="w-4 h-4 mr-2" />
+                    <CircleX className="w-4 h-4" />
                     <span>Reject Report</span>
                   </Button>
                 </div>
@@ -1187,7 +1187,7 @@ export function DiagnosisReportDetail({
                 }
                 className="bg-linear-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg transition-all hover:shadow-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Image className="w-4 h-4 mr-2" />
+                <Image className="w-4 h-4" />
                 {physicianSignatureData?.data
                   ? "Study Already Signed"
                   : DicomStudyStatus.APPROVED ===
@@ -1200,7 +1200,7 @@ export function DiagnosisReportDetail({
                 disabled={isUpdating || isHasSignatureLoading}
                 className="bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
               >
-                <Image className="w-4 h-4 mr-2" />
+                <Image className="w-4 h-4" />
                 View Image
               </Button>
               {dicomStudyData?.data.studyStatus !==
@@ -1210,7 +1210,7 @@ export function DiagnosisReportDetail({
                   disabled={isUpdating || isUpdatingDicomStudy}
                   className="bg-linear-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                 >
-                  <Printer className="w-4 h-4 mr-2" />
+                  <Printer className="w-4 h-4" />
                   Print Report
                 </Button>
               )}

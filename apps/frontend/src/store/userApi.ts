@@ -45,7 +45,7 @@ export const userApi = createApi({
         method: "GET",
         params: {
           ...params,
-          sortField: params?.sortBy || params?.sort,
+          sortField: params?.sortBy,  
           order: params?.order,
         },
       }),

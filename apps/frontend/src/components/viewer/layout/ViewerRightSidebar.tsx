@@ -68,45 +68,43 @@ const ViewerRightSidebar = ({
     return Array.isArray(extracted) ? extracted : [];
   }, [imagingOrdersData]);
 
-  // Update order status when orders change
+  // Update order status and expand folders when orders change
   useEffect(() => {
-    if (resolvedOrders.length > 0 && onOrderStatusChange) {
-      // Get the first order's status (assuming single order context in viewer)
-      const firstOrder = resolvedOrders[0] as any;
+    if (resolvedOrders.length === 0) return;
+    
+    const firstOrder = resolvedOrders[0] as any;
+    
+    // Update order status
+    if (onOrderStatusChange) {
       const status = firstOrder?.orderStatus || null;
       onOrderStatusChange(status);
     }
-  }, [resolvedOrders, onOrderStatusChange]);
-  useEffect(() => {
-    if (!studyId || resolvedOrders.length === 0) return;
-    const firstOrder = resolvedOrders[0] as any;
-    if (firstOrder?.id) {
+    
+    // Expand folder if studyId matches
+    if (studyId && firstOrder?.id) {
       setExpandedFolders((prev) => {
         if (prev.has(firstOrder.id)) return prev;
         return new Set(prev).add(firstOrder.id);
       });
     }
-  }, [studyId, resolvedOrders]);
+  }, [resolvedOrders, studyId, onOrderStatusChange]);
   
-  // Sync selectedSeries with parent
+  // Sync selectedSeries with parent and active viewport
   useEffect(() => {
     if (selectedSeriesFromParent) {
       setSelectedSeries(selectedSeriesFromParent.id);
+      return;
     }
-  }, [selectedSeriesFromParent]);
-  
-  useEffect(() => {
+    
     const activeViewportSeries = getViewportSeries(state.activeViewport);
     if (activeViewportSeries) {
       if (activeViewportSeries.id !== selectedSeries) {
         setSelectedSeries(activeViewportSeries.id);
       }
-      return;
-    }
-    if (selectedSeries) {
+    } else if (selectedSeries) {
       setSelectedSeries(null);
     }
-  }, [state.activeViewport, getViewportSeries, selectedSeries]);
+  }, [selectedSeriesFromParent, state.activeViewport, getViewportSeries, selectedSeries]);
 
   const handleSeriesClick = useCallback((seriesItem: DicomSeries) => {
     setSelectedSeries(seriesItem.id);
@@ -118,18 +116,6 @@ const ViewerRightSidebar = ({
     try {
       if (viewMode === 'folders') {
         setExpandedFolders(new Set());
-        
-        // Clear current viewport to prevent stale data
-        const activeViewport = state.activeViewport;
-        const currentSeries = state.viewportSeries.get(activeViewport);
-        
-        // Dispatch event to clear viewport
-        if (currentSeries) {
-          window.dispatchEvent(new CustomEvent('clearViewport', { 
-            detail: { viewport: activeViewport } 
-          }));
-        }
-        
         await refetchImagingOrders();
         toast.success('Imaging orders refreshed');
       } else {
@@ -141,7 +127,7 @@ const ViewerRightSidebar = ({
     } finally {
       setIsRefreshing(false);
     }
-  }, [viewMode, refetchImagingOrders, refetchSegmentationLayers, state.activeViewport, state.viewportSeries]);
+  }, [viewMode, refetchImagingOrders, refetchSegmentationLayers]);
   const handleSaveLayer = useCallback(async (layerId: string) => {
     try {
       const layers = getSegmentationLayers();
@@ -163,6 +149,7 @@ const ViewerRightSidebar = ({
       toast.success("Segmentation layer saved to database");
       await refetchSegmentationLayers();
     } catch (error) {
+      console.error("Error saving segmentation layer:", error);
       toast.error("Error saving segmentation layer to database");
     }
   }, [getSegmentationLayers, createImageSegmentationLayers, refetchSegmentationLayers]);
@@ -180,6 +167,7 @@ const ViewerRightSidebar = ({
       deleteSegmentationLayer(layerId);
       toast.success("Segmentation layer deleted");
     } catch (error) {
+      console.error("Error deleting segmentation layer:", error);
       toast.error("Error deleting segmentation layer");
     }
   }, [getSegmentationLayers, deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);

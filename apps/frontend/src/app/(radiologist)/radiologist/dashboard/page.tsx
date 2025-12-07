@@ -84,7 +84,7 @@ export default function RadiologistDashboard() {
   const isLoading = analyticsLoading;
   const chartData = analyticsData?.data;
 
-  const recentStudiesArray = recentStudiesData?.data?.data?.data || [];
+  const recentStudiesArray = recentStudiesData?.data || [];
 
   const handleGoToWorkTree = () => {
     router.push("/radiologist/work-tree");
@@ -131,7 +131,6 @@ export default function RadiologistDashboard() {
         period={period}
         value={value}
         appliedPeriod={appliedPeriod}
-        appliedValue={appliedValue}
         onPeriodChange={handlePeriodChange}
         onValueChange={setValue}
         onApplyFilter={handleApplyFilter}

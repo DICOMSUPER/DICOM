@@ -115,23 +115,66 @@ export class NotificationsService {
     //   return cachedService;
     // }
 
-    // Build query options
+    // If title filter is used, we need query builder for ILike support
+    if (title) {
+      try {
+        const safePage = Math.max(1, page || 1);
+        const safeLimit = Math.max(1, Math.min(limit || 10, 100));
+        const skip = (safePage - 1) * safeLimit;
+
+        const queryBuilder = this.notificationRepository
+          .createQueryBuilder('notification')
+          .where('notification.title ILIKE :title', { title: `%${title}%` });
+
+        if (type) {
+          queryBuilder.andWhere('notification.notificationType = :type', { type });
+        }
+        if (priority) {
+          queryBuilder.andWhere('notification.priority = :priority', { priority });
+        }
+        if (isRead !== undefined) {
+          queryBuilder.andWhere('notification.isRead = :isRead', { isRead });
+        }
+
+        queryBuilder
+          .orderBy('notification.createdAt', 'DESC')
+          .skip(skip)
+          .take(safeLimit);
+
+        const [data, total] = await queryBuilder.getManyAndCount();
+
+        const totalPages = Math.ceil(total / safeLimit);
+        const result = new PaginatedResponseDto<Notification>(
+          data,
+          total,
+          safePage,
+          safeLimit,
+          totalPages,
+          safePage < totalPages,
+          safePage > 1
+        );
+
+        await this.redisService.set(keyName, result, 1800);
+        console.log(`📊 Found ${result.data.length} notifications`);
+
+        return result;
+      } catch (error) {
+        console.error('❌ Database error:', error);
+        throw new BadRequestException('Error querying notifications: ' + error);
+      }
+    }
+
+    // Build query options for exact matches (no title filter)
     const options: any = {
       where: {},
       order: { createdAt: 'DESC' },
     };
 
     // Apply filters
-    if (title) {
-      options.where = {
-        ...options.where,
-        title,
-      };
-    }
     if (type) {
       options.where = {
         ...options.where,
-        type,
+        notificationType: type,
       };
     }
     if (priority) {
@@ -173,6 +216,34 @@ export class NotificationsService {
       filter
     );
     const { title, type, priority, isRead } = filter;
+
+    // Use query builder for ILike support when title filter is present
+    if (title) {
+      const queryBuilder = this.notificationRepository
+        .createQueryBuilder('notification')
+        .where('notification.recipientId = :userId', { userId })
+        .andWhere('notification.title ILIKE :title', { title: `%${title}%` });
+
+      if (type) {
+        queryBuilder.andWhere('notification.notificationType = :type', { type });
+      }
+      if (priority) {
+        queryBuilder.andWhere('notification.priority = :priority', { priority });
+      }
+      if (isRead !== undefined) {
+        queryBuilder.andWhere('notification.isRead = :isRead', { isRead });
+      }
+
+      queryBuilder.orderBy('notification.createdAt', 'DESC');
+
+      const notifications = await queryBuilder.getMany();
+      console.log(
+        `Found ${notifications.length} notifications for user: ${userId}`
+      );
+      return notifications;
+    }
+
+    // Use find for exact matches (no title filter)
     const options: any = {
       where: {
         recipientId: userId,
@@ -181,16 +252,10 @@ export class NotificationsService {
     };
 
     // Apply filters
-    if (title) {
-      options.where = {
-        ...options.where,
-        title,
-      };
-    }
     if (type) {
       options.where = {
         ...options.where,
-        type,
+        notificationType: type,
       };
     }
     if (priority) {

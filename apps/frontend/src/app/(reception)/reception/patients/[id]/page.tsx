@@ -354,7 +354,7 @@ export default function PatientDetail() {
               router.push("/reception/patients");
             }}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
           <RefreshButton
@@ -369,7 +369,7 @@ export default function PatientDetail() {
                 router.push(`/reception/patients/edit/${patient?.id}`);
               }}
             >
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-4 h-4" />
               Edit Patient
             </Button>
           )}
