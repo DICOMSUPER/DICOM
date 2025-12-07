@@ -38,7 +38,8 @@ const authSlice = createSlice({
         Cookies.set("accessToken", action.payload.token, {
           expires: expiresInDays,
           path: "/",
-          sameSite: "strict",
+          sameSite: "none",   // ✅ Cho phép cross-site
+          secure: true,
         });
         Cookies.set("user", JSON.stringify(action.payload.user), {
           expires: expiresInDays,
