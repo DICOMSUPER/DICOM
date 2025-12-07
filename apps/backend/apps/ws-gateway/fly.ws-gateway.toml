@@ -5,8 +5,10 @@ primary_region = "sin"
   image = "anhminh123/ws-gateway:latest"
 
 [env]
-  PORT = "3006"
+  PORT = "5006"
+  HTTP_SOCKET_PORT = "3006"
 
+# Service 1: HTTP/WebSocket for client connections (port 3006)
 [[services]]
   internal_port = 3006
   protocol = "tcp"
@@ -15,11 +17,35 @@ primary_region = "sin"
   min_machines_running = 0
 
   [[services.ports]]
-    port = 3006
-    handlers = []
+    port = 443
+    handlers = ["tls", "http"]
 
   [[services.ports]]
-    port = 5006   
+    port = 80
+    handlers = ["http"]
+
+  [services.concurrency]
+    type = "connections"
+    soft_limit = 25
+    hard_limit = 50
+
+  [[services.http_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+# Service 2: TCP microservice for inter-service communication (port 5006)
+[[services]]
+  internal_port = 5006
+  protocol = "tcp"
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 5006
     handlers = []
 
   [services.concurrency]
