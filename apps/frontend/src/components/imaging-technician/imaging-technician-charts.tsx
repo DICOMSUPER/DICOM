@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { ImagingTechnicianAnalyticsData } from "@/store/analyticsApi";
+import { formatPieLabel, formatPieTooltip } from "@/components/common/chart-utils";
 
 interface ImagingTechnicianChartsProps {
   data?: ImagingTechnicianAnalyticsData;
@@ -55,7 +56,6 @@ export function ImagingTechnicianCharts({
   period,
   value,
   appliedPeriod,
-  appliedValue,
   onPeriodChange,
   onValueChange,
   onApplyFilter,
@@ -215,18 +215,7 @@ export function ImagingTechnicianCharts({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) => {
-                      const status = entry.status || entry.name || "";
-                      const percent = entry.percent;
-                      if (!status || percent === undefined || percent === null)
-                        return "";
-                      const statusStr =
-                        typeof status === "string" ? status : String(status);
-                      const capitalizedName =
-                        statusStr?.charAt(0).toUpperCase() +
-                        statusStr.slice(1).toLowerCase().replace(/_/g, " ");
-                      return `${capitalizedName}: ${(percent * 100).toFixed(0)}%`;
-                    }}
+                    label={formatPieLabel}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
@@ -238,26 +227,7 @@ export function ImagingTechnicianCharts({
                       />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: any, name: any) => {
-                      // Ensure name is a string before calling string methods
-                      const nameStr = typeof name === 'string' ? name : String(name || '');
-                      if (!nameStr) return [value, ''];
-                      const capitalizedName =
-                        nameStr.charAt(0).toUpperCase() +
-                        nameStr.slice(1).toLowerCase().replace(/_/g, " ");
-                      return [value, capitalizedName];
-                    }}
-                    labelFormatter={(label: any) => {
-                      // Ensure label is a string before calling string methods
-                      const labelStr = typeof label === 'string' ? label : String(label || '');
-                      if (!labelStr) return '';
-                      return (
-                        labelStr.charAt(0).toUpperCase() +
-                        labelStr.slice(1).toLowerCase().replace(/_/g, " ")
-                      );
-                    }}
-                  />
+                  <Tooltip formatter={formatPieTooltip} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -279,18 +249,7 @@ export function ImagingTechnicianCharts({
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: any) => {
-                        const modality = entry.modality || entry.name || "";
-                        const percent = entry.percent;
-                        if (!modality || percent === undefined || percent === null)
-                          return "";
-                        const modalityStr =
-                          typeof modality === "string" ? modality : String(modality);
-                        const capitalizedName =
-                          modalityStr?.charAt(0).toUpperCase() +
-                          modalityStr.slice(1).toLowerCase().replace(/_/g, " ");
-                        return `${capitalizedName}: ${(percent * 100).toFixed(0)}%`;
-                      }}
+                      label={formatPieLabel}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
@@ -302,26 +261,7 @@ export function ImagingTechnicianCharts({
                         />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(value: any, name: any) => {
-                        // Ensure name is a string before calling string methods
-                        const nameStr = typeof name === 'string' ? name : String(name || '');
-                        if (!nameStr) return [value, ''];
-                        const capitalizedName =
-                          nameStr.charAt(0).toUpperCase() +
-                          nameStr.slice(1).toLowerCase().replace(/_/g, " ");
-                        return [value, capitalizedName];
-                      }}
-                      labelFormatter={(label: any) => {
-                        // Ensure label is a string before calling string methods
-                        const labelStr = typeof label === 'string' ? label : String(label || '');
-                        if (!labelStr) return '';
-                        return (
-                          labelStr.charAt(0).toUpperCase() +
-                          labelStr.slice(1).toLowerCase().replace(/_/g, " ")
-                        );
-                      }}
-                    />
+                    <Tooltip formatter={formatPieTooltip} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>

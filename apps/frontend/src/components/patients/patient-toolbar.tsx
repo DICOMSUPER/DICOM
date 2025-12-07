@@ -42,19 +42,19 @@ export function PatientToolbar() {
       {/* Right - Actions */}
       <div className="flex items-center space-x-2">
         <Button variant="outline" size="sm" className="border-border">
-          <Filter className="w-4 h-4 mr-2" />
+          <Filter className="w-4 h-4" />
           Filters
         </Button>
         <Button variant="outline" size="sm" className="border-border">
-          <CalendarDays className="w-4 h-4 mr-2" />
+          <CalendarDays className="w-4 h-4" />
           Schedule
         </Button>
         <Button variant="outline" size="sm" className="border-border">
-          <Download className="w-4 h-4 mr-2" />
+          <Download className="w-4 h-4" />
           Export
         </Button>
         <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <UserPlus className="w-4 h-4 mr-2" />
+          <UserPlus className="w-4 h-4" />
           New Patient
         </Button>
       </div>

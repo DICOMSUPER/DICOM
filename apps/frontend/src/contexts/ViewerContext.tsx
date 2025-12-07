@@ -3268,7 +3268,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     [setLayerVisibility, state.segmentationLayerVisibility]
   );
 
-  const getSegmentationLayers = useCallback(() => {
+  // Memoize segmentation layers to avoid recreating array on every call
+  const memoizedSegmentationLayers = useMemo(() => {
     return Array.from(state.segmentationLayers.entries()).map(
       ([layerId, layerData]) => ({
         id: layerId,
@@ -3287,6 +3288,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     state.selectedSegmentationLayer,
     state.segmentationLayerVisibility,
   ]);
+
+  const getSegmentationLayers = useCallback(() => {
+    return memoizedSegmentationLayers;
+  }, [memoizedSegmentationLayers]);
 
   const getCurrentSegmentationLayerIndex = useCallback(() => {
     const layers = Array.from(state.segmentationLayers.keys());

@@ -9,17 +9,18 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, FolderTree, ArrowRight, Image, Inbox } from "lucide-react";
+import { FileText, FolderTree, ArrowRight, Image as ImageIcon, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Study {
   id: string;
-  studyInstanceUID?: string;
-  patientName?: string;
+  studyInstanceUid?: string;
+  patientId?: string;
+  patientCode?: string;
   studyDate?: string;
   modality?: string;
-  status?: string;
+  studyStatus?: string;
   patient?: {
     firstName?: string;
     lastName?: string;
@@ -74,7 +75,7 @@ export function RadiologistDashboardPreview({
       <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
           <CardTitle className="text-foreground flex items-center text-lg">
-            <Image className="w-5 h-5 mr-2 text-primary" />
+            <ImageIcon className="w-5 h-5 mr-2 text-primary" aria-hidden="true" />
             Recent Studies
           </CardTitle>
           <CardDescription className="text-foreground">
@@ -101,16 +102,14 @@ export function RadiologistDashboardPreview({
               ))
             ) : (
               studies?.slice(0, 5).map((study, index) => {
-              const patientName = study.patient
-                ? `${study.patient.lastName || ""} ${study.patient.firstName || ""}`.trim()
-                : study.patientName || "Unknown Patient";
+              const title = "Patient " + study.patientCode
 
               return (
                 <div
                   onClick={() => {
                     // Navigate to study detail or viewer
-                    if (study.studyInstanceUID) {
-                      router.push(`/viewer?studyInstanceUID=${study.studyInstanceUID}`);
+                    if (study.studyInstanceUid) {
+                      router.push(`/viewer?studyInstanceUid=${study.studyInstanceUid}`);
                     }
                   }}
                   key={study.id}
@@ -124,10 +123,10 @@ export function RadiologistDashboardPreview({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-foreground truncate">
-                        {patientName}
+                        {title}
                       </p>
                       <p className="text-xs text-foreground">
-                        {study.modality || "N/A"} • {formatDate(study.studyDate)}
+                        {formatDate(study.studyDate)}
                       </p>
                     </div>
                   </div>
@@ -137,11 +136,11 @@ export function RadiologistDashboardPreview({
                       study.status
                     )}`}
                   >
-                    {study.status
-                      ? study.status
+                    {study.studyStatus
+                      ? study.studyStatus
                           .charAt(0)
                           .toUpperCase() +
-                        study.status.slice(1).toLowerCase().replace(/_/g, " ")
+                        study.studyStatus.slice(1).toLowerCase().replace(/_/g, " ")
                       : "Unknown"}
                   </Badge>
                 </div>
@@ -186,7 +185,7 @@ export function RadiologistDashboardPreview({
               className="w-full justify-start"
               onClick={onViewWorkTree}
             >
-              <FolderTree className="w-4 h-4 mr-2" />
+              <FolderTree className="w-4 h-4" />
               View Work Tree
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -195,7 +194,7 @@ export function RadiologistDashboardPreview({
               className="w-full justify-start"
               onClick={onViewReports}
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4" />
               View Reports
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -204,7 +203,7 @@ export function RadiologistDashboardPreview({
               className="w-full justify-start"
               onClick={() => router.push("/radiologist/schedule")}
             >
-              <Image className="w-4 h-4 mr-2" />
+              <ImageIcon className="w-4 h-4" aria-hidden="true" />
               View Schedule
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>

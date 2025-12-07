@@ -12,14 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -49,7 +43,7 @@ interface RoomServiceFormModalProps {
 
 const roomServiceFormSchema = z.object({
   roomId: z.string().min(1, 'Room is required'),
-  serviceId: z.string().min(1, 'Service is required'),
+  serviceIds: z.array(z.string().min(1)).min(1, 'Select at least one service'),
   isActive: z.boolean(),
   notes: z.string().optional(),
 });
@@ -69,7 +63,7 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
     resolver: zodResolver(roomServiceFormSchema),
     defaultValues: {
       roomId: '',
-      serviceId: '',
+      serviceIds: [],
       isActive: true,
       notes: '',
     },
@@ -79,14 +73,14 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
     if (roomService) {
       form.reset({
         roomId: roomService.roomId || '',
-        serviceId: roomService.serviceId || '',
+        serviceIds: roomService.serviceId ? [roomService.serviceId] : [],
         isActive: roomService.isActive ?? true,
         notes: roomService.notes || '',
       });
     } else {
       form.reset({
         roomId: '',
-        serviceId: '',
+        serviceIds: [],
         isActive: true,
         notes: '',
       });
@@ -95,19 +89,37 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
 
   const onSubmit = async (data: RoomServiceFormValues) => {
     try {
-      const payload = {
+      const payloads = data.serviceIds.map((serviceId) => ({
         roomId: data.roomId,
-        serviceId: data.serviceId,
+        serviceId,
         isActive: data.isActive,
         notes: data.notes || undefined,
-      };
+      }));
 
       if (isEdit && roomService) {
-        await updateServiceRoom({ id: roomService.id, data: { isActive: payload.isActive, notes: payload.notes } }).unwrap();
+        await updateServiceRoom({
+          id: roomService.id,
+          data: { isActive: data.isActive, notes: data.notes || undefined },
+        }).unwrap();
         toast.success('Room service assignment updated successfully');
+      } else if (payloads.length > 0) {
+        await Promise.all(payloads.map((p) => createServiceRoom(p).unwrap()));
+        toast.success(
+          payloads.length > 1
+            ? `Assigned ${payloads.length} services to room`
+            : 'Room service assignment created successfully'
+        );
       } else {
-        await createServiceRoom(payload).unwrap();
-        toast.success('Room service assignment created successfully');
+        // If no services selected, remove existing (unassign all)
+        if (roomService) {
+          await updateServiceRoom({
+            id: roomService.id,
+            data: { isActive: false, notes: data.notes || undefined },
+          }).unwrap();
+          toast.success('Unassigned room services');
+        } else {
+          toast.success('No services selected; nothing to assign');
+        }
       }
       onSuccess?.();
       onClose();
@@ -171,28 +183,53 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
                     />
                     <FormField
                       control={form.control}
-                      name="serviceId"
+                      name="serviceIds"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Service *</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            disabled={isEdit}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="text-foreground">
-                                <SelectValue placeholder="Select service" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {services.map((service) => (
-                                <SelectItem key={service.id} value={service.id}>
-                                  {service.serviceCode} - {service.serviceName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel className="text-foreground">Services *</FormLabel>
+                          <div className="space-y-2 rounded-lg border border-border p-3">
+                            <p className="text-xs text-foreground">
+                              {isEdit
+                                ? 'Service cannot be changed after creation.'
+                                : 'Select one or more services to assign to this room.'}
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
+                              {services.map((service) => {
+                                const checked = field.value?.includes(service.id);
+                                return (
+                                  <label
+                                    key={service.id}
+                                    className="flex items-start gap-3 rounded-md border border-border px-3 py-2 hover:bg-muted/50 cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      disabled={isEdit}
+                                      onCheckedChange={(val) => {
+                                        if (isEdit) return;
+                                        const next = new Set(field.value || []);
+                                        if (val) {
+                                          next.add(service.id);
+                                        } else {
+                                          next.delete(service.id);
+                                        }
+                                        field.onChange(Array.from(next));
+                                      }}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-medium text-foreground">
+                                        {service.serviceCode} - {service.serviceName}
+                                      </span>
+                                      {service.description && (
+                                        <span className="text-xs text-foreground line-clamp-2">
+                                          {service.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

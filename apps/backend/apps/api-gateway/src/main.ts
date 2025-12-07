@@ -50,10 +50,11 @@ async function bootstrap() {
     // CORS
     app.use(
       cors({
+        // Allow local dev and production frontend (whole domain, not a single path)
         origin: [
           'http://localhost:3000',
           'http://localhost:5173',
-          'https://fedicom.vercel.app/login',
+          'https://fedicom.vercel.app',
         ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

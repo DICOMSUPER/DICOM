@@ -416,7 +416,7 @@ export class UsersService {
           options: {
             httpOnly: true,
             secure: this.configService.get<string>('NODE_ENV') === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: maxAge,
             path: '/',
           },
@@ -473,7 +473,7 @@ export class UsersService {
           options: {
             httpOnly: true,
             secure: this.configService.get<string>('NODE_ENV') === 'production',
-            sameSite: 'strict',
+            sameSite: 'none',
             maxAge: maxAge,
             path: '/',
           },

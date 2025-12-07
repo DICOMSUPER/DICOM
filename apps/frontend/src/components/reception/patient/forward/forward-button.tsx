@@ -39,7 +39,7 @@ export default function ForwardButton({
         </>
       ) : (
         <>
-          <CheckCircle className="w-4 h-4 mr-2" />
+          <CheckCircle className="w-4 h-4" />
           Forward Patient
           {encounterInfo.priority === EncounterPriorityLevel.STAT && " - STAT"}
           {encounterInfo.priority === EncounterPriorityLevel.URGENT &&

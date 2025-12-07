@@ -17,9 +17,10 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   isConnected: boolean;
+  isFetching: boolean;
   markAsRead: (notificationId: string) => void;
   markAllAsRead: () => void;
-  fetchNotifications: () => void;
+  fetchNotifications: () => Promise<any>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -48,8 +49,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   const [unreadCount, setUnreadCount] = useState(0);
 
   const dispatch = useDispatch<AppDispatch>();
-  const { data: notificationsResponse, refetch } =
-    useGetNotificationsByUserQuery({});
+  const {
+    data: notificationsResponse,
+    refetch,
+    isFetching,
+  } = useGetNotificationsByUserQuery({});
 
   const [markAsReadMutation] = useMarkAsReadMutation();
   const [markAllAsReadMutation] = useMarkAllAsReadMutation();
@@ -69,7 +73,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5006";
 
     const newSocket = io(socketUrl, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       withCredentials: true,
     });
 
@@ -150,6 +154,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         markAsRead,
         markAllAsRead,
         fetchNotifications: () => refetch(),
+        isFetching,
       }}
     >
       {children}

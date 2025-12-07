@@ -168,12 +168,12 @@ export class ConnectionGateway
         )
       );
 
-      if (!user?.data) {
+      if (!user) {
         this.logger.warn(`User ${userId} not found in database`);
         return false;
       }
 
-      const isActive = user.data.isActive !== false && !user.data.isDeleted;
+      const isActive = user.isActive !== false && !user.isDeleted;
       
       // Cache the result
       this.userStatusCache.set(userId, {

@@ -173,7 +173,7 @@ export function ImagingTechnicianDashboardPreview({
               className="w-full justify-start"
               onClick={onViewOrders}
             >
-              <Image className="w-4 h-4 mr-2" />
+              <Image className="w-4 h-4" />
               View All Imaging Orders
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -182,7 +182,7 @@ export function ImagingTechnicianDashboardPreview({
               className="w-full justify-start"
               onClick={onViewMachines}
             >
-              <Activity className="w-4 h-4 mr-2" />
+              <Activity className="w-4 h-4" />
               Manage Modality Machines
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -191,7 +191,7 @@ export function ImagingTechnicianDashboardPreview({
               className="w-full justify-start"
               onClick={() => router.push("/imaging-technician/schedule")}
             >
-              <Camera className="w-4 h-4 mr-2" />
+              <Camera className="w-4 h-4" />
               View Schedule
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
