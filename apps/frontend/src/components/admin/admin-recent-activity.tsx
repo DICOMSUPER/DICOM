@@ -10,7 +10,8 @@ import {
   Settings,
   Activity,
   Database,
-  Shield
+  Shield,
+  Inbox
 } from "lucide-react";
 
 interface ActivityItem {
@@ -121,8 +122,9 @@ export function AdminRecentActivity({
             Latest system events and user actions
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-foreground">No recent activity</p>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <Inbox className="w-12 h-12 text-foreground mb-3" />
+          <p className="text-sm text-foreground text-center">No recent activity</p>
         </CardContent>
       </Card>
     );

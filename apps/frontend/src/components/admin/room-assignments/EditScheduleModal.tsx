@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, Clock, Calendar } from "lucide-react";
+import { Loader2, Clock, Calendar, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -244,7 +244,10 @@ export function EditScheduleModal({
         <div className="space-y-6 py-4">
           {!isDateInAdvance && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-              <p className="font-medium">⚠️ Cannot edit this schedule</p>
+              <p className="font-medium flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>Cannot edit this schedule</span>
+              </p>
               <p className="mt-1">
                 Only schedules scheduled at least 1 day in advance can be edited.
               </p>
@@ -342,16 +345,20 @@ export function EditScheduleModal({
             )}
 
             {hasConflict && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                ⚠️ This schedule conflicts with another schedule for the same room and date
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 flex items-start gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>This schedule conflicts with another schedule for the same room and date</span>
               </div>
             )}
 
             {!areTimesValid && (startTime || endTime || (shiftTemplateId && shiftTemplateId !== "__none__")) && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800">
-                ⚠️ {useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__")
-                  ? "Please select a shift template or switch to manual time entry"
-                  : (getTimeValidationError || "Start time and end time are required")}
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 flex items-start gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  {(useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__"))
+                    ? "Please select a shift template or switch to manual time entry"
+                    : (getTimeValidationError || "Start time and end time are required")}
+                </span>
               </div>
             )}
 

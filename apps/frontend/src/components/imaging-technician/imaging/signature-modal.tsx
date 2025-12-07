@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { X, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useHasSignatureQuery } from "@/store/digitalSignatureApi";
-import { useGetUserByIdQuery } from "@/store/userApi";
 import SignatureAnimation from "signature-animation";
 import { useTechnicianVerifyStudyMutation } from "@/store/dicomStudySignatureApi";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import SignatureDisplay from "@/components/common/signature-display";
 
 export default function SignatureModal({
@@ -32,14 +32,7 @@ export default function SignatureModal({
   const [technicianVerify, { isLoading: isVerifyingStudy }] =
     useTechnicianVerifyStudyMutation();
 
-  const cookieUser = JSON.parse(Cookies.get("user") || "{}");
-  const userId = cookieUser?.id;
-
-  const { data: userData, isLoading: isLoadingUserData } = useGetUserByIdQuery(
-    userId,
-    { skip: !userId || !isOpen }
-  );
-  const user = userData?.data;
+  const user = useSelector((state: RootState) => state.auth.user);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -160,12 +153,10 @@ export default function SignatureModal({
                   Your Signature
                 </label>
                 <div className="border-2 border-gray-300 rounded-md bg-gray-50 h-32 flex flex-col items-center justify-center">
-                  {isLoadingUserData ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-200 border-t-blue-600"></div>
-                  ) : user ? (
+                  {user?.firstName && user?.lastName ? (
                     <SignatureDisplay
-                      firstName={user?.firstName}
-                      lastName={user?.lastName}
+                      firstName={user.firstName}
+                      lastName={user.lastName}
                       role="Kỹ thuật viên"
                     />
                   ) : (
@@ -265,10 +256,10 @@ export default function SignatureModal({
                     No signature found, please consider setting up your
                     signature.
                   </p>
-                  {user && (
+                  {user?.firstName && user?.lastName && (
                     <SignatureDisplay
-                      firstName={user?.firstName}
-                      lastName={user?.lastName}
+                      firstName={user.firstName}
+                      lastName={user.lastName}
                       role="Kỹ thuật viên"
                     />
                   )}

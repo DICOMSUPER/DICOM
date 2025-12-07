@@ -157,14 +157,67 @@ export class ImagingOrdersController {
       order,
     };
 
-    const orders = await firstValueFrom(
+    const ordersResponse = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindMany', {
         paginationDto,
       })
     );
 
-    await this.redisService.set(pattern, orders, CACHE_TTL_SECONDS);
-    return orders;
+    const orders = ordersResponse.data || [];
+    
+    // Enrich orders with patient and physician data
+    const patientIds = orders
+      .map((o: ImagingOrder) => {
+        return o.imagingOrderForm?.patientId;
+      })
+      .filter(Boolean);
+
+    let patients: Patient[] = [];
+    if (patientIds.length > 0) {
+      patients =
+        (await firstValueFrom(
+          this.patientService.send('PatientService.Patient.Filter', {
+            patientIds,
+          })
+        )) || [];
+    }
+
+    const physicianIds = orders
+      .map((o: ImagingOrder) => {
+        return o?.imagingOrderForm?.orderingPhysicianId;
+      })
+      .filter(Boolean);
+
+    let physicians: User[] = [];
+    if (physicianIds.length > 0) {
+      physicians =
+        (await firstValueFrom(
+          this.userService.send('UserService.Users.GetUsersByIds', {
+            userIds: physicianIds,
+          })
+        )) || [];
+    }
+
+    // Combine orders with patient and physician data
+    const enrichedOrders = orders.map((order: ImagingOrder) => {
+      return {
+        ...order,
+        patient: patients.find(
+          (p: Patient) => p.id === order.imagingOrderForm?.patientId
+        ),
+        orderPhysician: physicians.find(
+          (u: User) => u.id === order.imagingOrderForm?.orderingPhysicianId
+        ),
+      };
+    });
+
+    const enrichedResponse = {
+      ...ordersResponse,
+      data: enrichedOrders,
+    };
+
+    await this.redisService.set(pattern, enrichedResponse, CACHE_TTL_SECONDS);
+    return enrichedResponse;
   }
 
   @Get('reference/:id')
@@ -444,13 +497,17 @@ export class ImagingOrdersController {
     if (cachedStats) {
       return cachedStats;
     }
+    // Ensure dates are properly parsed - NestJS query params come as strings
+    const parsedStartDate = startDate ? new Date(startDate as any) : undefined;
+    const parsedEndDate = endDate ? new Date(endDate as any) : undefined;
+    
     const stats = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.GetQueueStatsInDate',
         {
           id,
-          startDate,
-          endDate,
+          startDate: parsedStartDate,
+          endDate: parsedEndDate,
         }
       )
     );

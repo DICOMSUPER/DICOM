@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -98,7 +98,10 @@ export function DeleteAssignmentModal({
         <div className="space-y-4 py-4">
           {!isDateInAdvance && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-              <p className="font-medium">⚠️ Cannot delete this assignment</p>
+              <p className="font-medium flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>Cannot delete this assignment</span>
+              </p>
               <p className="mt-1">
                 Only assignments for schedules at least 1 day in advance can be deleted.
               </p>

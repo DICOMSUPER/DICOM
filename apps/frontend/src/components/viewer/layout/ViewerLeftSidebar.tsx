@@ -23,6 +23,7 @@ import {
   FileClock,
   Eye,
   EyeOff,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,8 @@ interface ViewerLeftSidebarProps {
   onViewAllAnnotations?: () => void;
   onViewDraftAnnotations?: () => void;
   activeAnnotationView?: "all" | "draft" | null;
+  viewportReady?: boolean; // Add viewport ready flag to disable tools until image is loaded
+  isOrderFinalized?: boolean; // Disable annotation/segmentation tools if order is completed/cancelled
 }
 
 const SERIES_LAYOUTS = [
@@ -115,6 +118,8 @@ export default function ViewerLeftSidebar({
   onViewAllAnnotations,
   onViewDraftAnnotations,
   activeAnnotationView,
+  viewportReady = false,
+  isOrderFinalized = false,
 }: ViewerLeftSidebarProps) {
   const {
     resetView,
@@ -401,17 +406,27 @@ export default function ViewerLeftSidebar({
                   ? { ...tool, icon: state.showAnnotations ? Eye : EyeOff }
                   : tool;
                 
+                // Disable annotation management if viewport not ready OR order is finalized
+                const isDisabled = !viewportReady || isOrderFinalized;
+                
                 return (
                   <ToolButton
                     key={tool.id}
                     tool={toolWithDynamicIcon}
                     isActive={false}
                     onClick={() => handleTransformAction(tool.action)}
+                    disabled={isDisabled}
                     className={getActionButtonClasses(tool.id)}
                   />
                 );
               })}
             </div>
+            {isOrderFinalized && (
+              <div className="text-xs text-amber-400 bg-amber-900/20 border border-amber-700/30 rounded px-2 py-1.5 mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                <span>Order is finalized. Annotations are read-only.</span>
+              </div>
+            )}
           </div>
 
           {/* Navigation & View Control Tools Section */}
@@ -430,6 +445,7 @@ export default function ViewerLeftSidebar({
                       tool={tool}
                       isActive={false}
                       onClick={() => handleTransformAction(tool.action)}
+                      disabled={!viewportReady}
                       className={getActionButtonClasses(tool.id)}
                     />
                   );
@@ -441,6 +457,7 @@ export default function ViewerLeftSidebar({
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
                     onClick={() => handleToolSelect(tool.id)}
+                    disabled={!viewportReady}
                   />
                 );
               })}
@@ -469,6 +486,7 @@ export default function ViewerLeftSidebar({
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
                   onClick={() => handleToolSelect(tool.id)}
+                  disabled={!viewportReady || isOrderFinalized}
                 />
               ))}
             </div>
@@ -487,6 +505,7 @@ export default function ViewerLeftSidebar({
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
                   onClick={() => handleToolSelect(tool.id)}
+                  disabled={!viewportReady || isOrderFinalized}
                 />
               ))}
             </div>
@@ -547,7 +566,7 @@ export default function ViewerLeftSidebar({
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
                     onClick={() => handleToolSelect(tool.id)}
-                    disabled={segmentationState.disabled}
+                    disabled={segmentationState.disabled || isOrderFinalized}
                   />
                 ))}
               </div>

@@ -9,11 +9,15 @@ COPY libs ./libs
 COPY entities ./entities
 
 RUN npm ci
+RUN npx nx sync
 RUN npx nx build imaging-service
 
 # Stage 2 – runtime image
 FROM node:20-alpine
 WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk update && apk add --no-cache dumb-init
 
 # install runtime deps (root package.json is enough)
 COPY package*.json ./
@@ -23,4 +27,5 @@ RUN npm ci --omit=dev
 COPY --from=builder /workspace/apps/imaging-service/dist ./
 
 EXPOSE 5003
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "main.js"]

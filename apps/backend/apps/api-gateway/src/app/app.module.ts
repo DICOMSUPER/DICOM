@@ -9,6 +9,8 @@ import { PatientServiceModule } from './modules/patient-service/patient-service.
 import {
   ImagingServiceClientModule,
   PatientServiceClientModule,
+  SocketServiceClientModule,
+  SystemServiceClientModule,
   UserServiceClientModule,
 } from '@backend/shared-client';
 import { AuthGuard, RoleGuard } from '@backend/shared-guards';
@@ -34,6 +36,8 @@ dotenv.config();
     UserServiceClientModule,
     PatientServiceClientModule,
     ImagingServiceClientModule,
+    SystemServiceClientModule,
+    SocketServiceClientModule,
 
     // Feature Modules
     UserServiceModule,

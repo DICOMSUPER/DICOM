@@ -29,6 +29,16 @@ export class AppController {
     }
   }
 
+  @Get('health')
+  httpHealthCheck() {
+    this.logger.log('Health check requested via HTTP');
+    return {
+      status: 'ok',
+      message: 'PatientService is running',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @MessagePattern(`${PATIENT_SERVICE}.HealthCheck`)
   async healthCheck(): Promise<{ status: string; message: string; timestamp: string }> {
     this.logger.log(`Using pattern: ${PATIENT_SERVICE}.HealthCheck`);

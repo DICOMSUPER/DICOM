@@ -82,6 +82,32 @@ export const analyticsApi = createApi({
       },
       providesTags: ["AnalyticsStats"],
     }),
+    getImagingTechnicianAnalytics: builder.query<ApiResponse<ImagingTechnicianAnalyticsData>, GetAnalyticsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.value) queryParams.append('value', params.value);
+        const queryString = queryParams.toString();
+        return {
+          url: `/imaging-technician-stats${queryString ? `?${queryString}` : ''}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["AnalyticsStats"],
+    }),
+    getRadiologistAnalytics: builder.query<ApiResponse<RadiologistAnalyticsData>, GetAnalyticsParams | void>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.period) queryParams.append('period', params.period);
+        if (params?.value) queryParams.append('value', params.value);
+        const queryString = queryParams.toString();
+        return {
+          url: `/radiologist-stats${queryString ? `?${queryString}` : ''}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["AnalyticsStats"],
+    }),
   }),
 });
 
@@ -114,5 +140,65 @@ export interface PhysicianAnalyticsData {
   imagingOrdersByStatus?: { status: string; count: number }[];
 }
 
-export const { useGetAnalyticsQuery, useGetReceptionAnalyticsQuery, useGetPhysicianAnalyticsQuery } = analyticsApi;
+export interface ImagingTechnicianAnalyticsStats {
+  totalImagingOrders: number;
+  pendingImagingOrders: number;
+  inProgressImagingOrders: number;
+  completedImagingOrders: number;
+  todayImagingOrders: number;
+  totalStudies: number;
+  todayStudies: number;
+  activeMachines: number;
+}
+
+export interface ImagingTechnicianChartDataPoint {
+  date: string;
+  imagingOrders?: number;
+  studies?: number;
+  completedOrders?: number;
+}
+
+export interface ImagingTechnicianAnalyticsData {
+  stats: ImagingTechnicianAnalyticsStats;
+  imagingOrdersOverTime: ImagingTechnicianChartDataPoint[];
+  studiesOverTime: ImagingTechnicianChartDataPoint[];
+  imagingOrdersByStatus?: { status: string; count: number }[];
+  ordersByModality?: { modality: string; count: number }[];
+}
+
+export interface RadiologistAnalyticsStats {
+  totalStudies: number;
+  pendingStudies: number;
+  inProgressStudies: number;
+  completedStudies: number;
+  todayStudies: number;
+  totalReports: number;
+  pendingReports: number;
+  completedReports: number;
+  todayReports: number;
+}
+
+export interface RadiologistChartDataPoint {
+  date: string;
+  studies?: number;
+  reports?: number;
+  completedReports?: number;
+}
+
+export interface RadiologistAnalyticsData {
+  stats: RadiologistAnalyticsStats;
+  studiesOverTime: RadiologistChartDataPoint[];
+  reportsOverTime: RadiologistChartDataPoint[];
+  studiesByStatus?: { status: string; count: number }[];
+  reportsByStatus?: { status: string; count: number }[];
+  studiesByModality?: { modality: string; count: number }[];
+}
+
+export const { 
+  useGetAnalyticsQuery, 
+  useGetReceptionAnalyticsQuery, 
+  useGetPhysicianAnalyticsQuery,
+  useGetImagingTechnicianAnalyticsQuery,
+  useGetRadiologistAnalyticsQuery 
+} = analyticsApi;
 

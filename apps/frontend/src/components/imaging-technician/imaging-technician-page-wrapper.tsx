@@ -12,13 +12,13 @@ import {
   useUpdateImagingOrderMutation,
 } from "@/store/imagingOrderApi";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
-import Loading from "../common/Loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import CurrentStatus, { CurrentStatusRef } from "./current-status";
 import { useRef } from "react";
-import Cookies from "js-cookie";
-import UserNotFoundInCookies from "../common/user-not-found-in-cookies";
 import UserDontHaveRoomAssignment from "../common/user-dont-have-room-assignment";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { Pagination } from "@/components/common/PaginationV1";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
@@ -27,12 +27,12 @@ import { sortConfigToQueryParams } from "@/utils/sort-utils";
 import { prepareApiFilters } from "@/utils/filter-utils";
 import { toast } from "sonner";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { useRouter } from "next/navigation";
 
 export default function ImageTechnicianPageWrapper() {
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
+  const router = useRouter();
   const [filters, setFilters] = useState<ImagingOrderFilters>({
     patientFirstName: searchParams.get("patientFirstName") || undefined,
     patientLastName: searchParams.get("patientLastName") || undefined,
@@ -62,26 +62,12 @@ export default function ImageTechnicianPageWrapper() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
   const statsRef = useRef<CurrentStatusRef>(null);
 
-  useEffect(() => {
-    setIsClient(true);
-    const userString = Cookies.get("user");
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error("Error parsing user cookie:", error);
-        setUserId(null);
-      }
-    }
-  }, []);
 
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
-  } = useGetCurrentEmployeeRoomAssignmentQuery(userId || "", {
-    skip: !userId,
-  });
+    error: roomAssignmentError,
+  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!);
 
   const currentRoomId =
     currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;
@@ -142,7 +128,7 @@ export default function ImageTechnicianPageWrapper() {
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
 
   const handleViewDetails = (id: string) => {
-    window.location.href = `/imaging-technician/order/${id}`;
+    router.push(`/imaging-technician/order-details/${id}`);
   };
 
   const handleCallIn = async (id: string) => {
@@ -221,15 +207,27 @@ export default function ImageTechnicianPageWrapper() {
     await Promise.all([refetchOrder(), statsRef.current?.refetch()]);
   }, [refetchOrder]);
 
-  if (!isClient || !userId) {
-    return <UserNotFoundInCookies />;
-  }
-
   if (isLoadingCurrentEmployeeSchedule) {
-    return <Loading />;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
   }
 
-  if (!currentEmployeeSchedule?.data?.roomSchedule?.room_id || !currentRoomId) {
+  // Show error only if we have a response but no room assignment
+  if (!isLoadingCurrentEmployeeSchedule && (!currentEmployeeSchedule?.data?.roomSchedule?.room_id || !currentRoomId)) {
     return <UserDontHaveRoomAssignment />;
   }
 
@@ -260,7 +258,7 @@ export default function ImageTechnicianPageWrapper() {
       />
 
       <OrderTable
-        orders={orderData || orderData?.data || []}
+        orders={(orderData as any)?.data || []}
         onViewDetails={handleViewDetails}
         onCallIn={handleCallIn}
         onMarkCompleted={handleMarkCompleted}

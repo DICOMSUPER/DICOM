@@ -3,6 +3,10 @@
 import { NotificationsPage } from "@/components/notification/NotificationsPage";
 
 export default function ImagingTechnicianNotificationsPage() {
-  return <NotificationsPage />;
+  return (
+    <div className="flex flex-col">
+      <NotificationsPage />
+    </div>
+  );
 }
 

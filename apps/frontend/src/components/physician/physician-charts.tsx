@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { PhysicianAnalyticsData } from "@/store/analyticsApi";
+import { Inbox } from "lucide-react";
 
 interface PhysicianChartsProps {
   data?: PhysicianAnalyticsData;
@@ -231,16 +232,16 @@ export function PhysicianCharts({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {data.encountersByStatus && data.encountersByStatus.length > 0 && (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Encounters by Status</CardTitle>
-              <CardDescription>
-                Distribution of encounter statuses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Encounters by Status</CardTitle>
+            <CardDescription>
+              Distribution of encounter statuses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.encountersByStatus && data.encountersByStatus.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
@@ -275,24 +276,38 @@ export function PhysicianCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: any, name: string) => {
+                    formatter={(value: any, name: any) => {
+                      // Ensure name is a string before calling string methods
+                      const nameStr = typeof name === 'string' ? name : String(name || '');
+                      if (!nameStr) return [value, ''];
                       const capitalizedName =
-                        name?.charAt(0).toUpperCase() +
-                        name.slice(1).toLowerCase().replace(/_/g, " ");
+                        nameStr.charAt(0).toUpperCase() +
+                        nameStr.slice(1).toLowerCase().replace(/_/g, " ");
                       return [value, capitalizedName];
                     }}
-                    labelFormatter={(label: string) => {
+                    labelFormatter={(label: any) => {
+                      // Ensure label is a string before calling string methods
+                      const labelStr = typeof label === 'string' ? label : String(label || '');
+                      if (!labelStr) return '';
                       return (
-                        label?.charAt(0).toUpperCase() +
-                        label.slice(1).toLowerCase().replace(/_/g, " ")
+                        labelStr.charAt(0).toUpperCase() +
+                        labelStr.slice(1).toLowerCase().replace(/_/g, " ")
                       );
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[250px] text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                  <Inbox className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-sm font-medium text-slate-600">No encounter data</p>
+                <p className="text-xs text-slate-400 mt-1">No encounters found for this period</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {data.reportsByStatus && data.reportsByStatus.length > 0 && (
           <Card className="border-border">
@@ -335,16 +350,22 @@ export function PhysicianCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: any, name: string) => {
+                    formatter={(value: any, name: any) => {
+                      // Ensure name is a string before calling string methods
+                      const nameStr = typeof name === 'string' ? name : String(name || '');
+                      if (!nameStr) return [value, ''];
                       const capitalizedName =
-                        name?.charAt(0).toUpperCase() +
-                        name.slice(1).toLowerCase().replace(/_/g, " ");
+                        nameStr.charAt(0).toUpperCase() +
+                        nameStr.slice(1).toLowerCase().replace(/_/g, " ");
                       return [value, capitalizedName];
                     }}
-                    labelFormatter={(label: string) => {
+                    labelFormatter={(label: any) => {
+                      // Ensure label is a string before calling string methods
+                      const labelStr = typeof label === 'string' ? label : String(label || '');
+                      if (!labelStr) return '';
                       return (
-                        label?.charAt(0).toUpperCase() +
-                        label.slice(1).toLowerCase().replace(/_/g, " ")
+                        labelStr.charAt(0).toUpperCase() +
+                        labelStr.slice(1).toLowerCase().replace(/_/g, " ")
                       );
                     }}
                   />
@@ -354,22 +375,21 @@ export function PhysicianCharts({
           </Card>
         )}
 
-        {data.imagingOrdersByStatus &&
-          data.imagingOrdersByStatus.length > 0 && (
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle>Imaging Orders by Status</CardTitle>
-                <CardDescription>
-                  Distribution of imaging order statuses
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={data.imagingOrdersByStatus}
-                      cx="50%"
-                      cy="50%"
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Imaging Orders by Status</CardTitle>
+            <CardDescription>
+              Distribution of imaging order statuses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.imagingOrdersByStatus && data.imagingOrdersByStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={data.imagingOrdersByStatus}
+                    cx="50%"
+                    cy="50%"
                       labelLine={false}
                       label={(entry: any) => {
                         // Recharts Pie label receives an object with the data entry and percent
@@ -402,24 +422,38 @@ export function PhysicianCharts({
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: any, name: string) => {
+                      formatter={(value: any, name: any) => {
+                        // Ensure name is a string before calling string methods
+                        const nameStr = typeof name === 'string' ? name : String(name || '');
+                        if (!nameStr) return [value, ''];
                         const capitalizedName =
-                          name?.charAt(0).toUpperCase() +
-                          name.slice(1).toLowerCase().replace(/_/g, " ");
+                          nameStr.charAt(0).toUpperCase() +
+                          nameStr.slice(1).toLowerCase().replace(/_/g, " ");
                         return [value, capitalizedName];
                       }}
-                      labelFormatter={(label: string) => {
+                      labelFormatter={(label: any) => {
+                        // Ensure label is a string before calling string methods
+                        const labelStr = typeof label === 'string' ? label : String(label || '');
+                        if (!labelStr) return '';
                         return (
-                          label.charAt(0).toUpperCase() +
-                          label.slice(1).toLowerCase().replace(/_/g, " ")
+                          labelStr.charAt(0).toUpperCase() +
+                          labelStr.slice(1).toLowerCase().replace(/_/g, " ")
                         );
                       }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[250px] text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                  <Inbox className="h-7 w-7 text-slate-400" />
+                </div>
+                <p className="text-sm font-medium text-slate-600">No imaging order data</p>
+                <p className="text-xs text-slate-400 mt-1">No imaging orders found for this period</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

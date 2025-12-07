@@ -4,7 +4,6 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
 import {
   Stethoscope,
   Calendar,
@@ -19,6 +18,7 @@ import {
   UserPlus,
   CalendarClock,
   Loader2,
+  Inbox,
 } from "lucide-react";
 import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
 import { useGetAllServiceRoomsQuery } from "@/store/serviceRoomApi";
@@ -114,11 +114,13 @@ export function EncounterList({
           <Stethoscope className="h-5 w-5" />
           Recent Encounters
         </div>
-        <EmptyState
-          icon={<Stethoscope className="h-16 w-16 text-foreground/40" />}
-          title="No Encounters Found"
-          description="No patient encounters have been recorded yet. Encounters will appear here once they are created."
-        />
+        <div className="flex flex-col items-center justify-center flex-1 py-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+            <Inbox className="w-6 h-6 text-slate-400" />
+          </div>
+          <p className="text-sm font-medium text-slate-600">No recent encounters</p>
+          <p className="text-xs text-slate-400 mt-1">No encounters found</p>
+        </div>
       </div>
     );
   }

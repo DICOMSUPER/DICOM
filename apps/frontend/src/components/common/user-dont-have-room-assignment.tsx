@@ -1,19 +1,20 @@
 import React from "react";
 import { CalendarX, RefreshCw, HelpCircle } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { Roles } from "@/enums/user.enum";
 export default function UserDontHaveRoomAssignment() {
   const router = useRouter();
 
   const handleRefresh = () => {
-    window.location.reload();
+    router.refresh();
   };
 
   const getRouterForRole = (role: string) => {
     switch (role) {
       case Roles.IMAGING_TECHNICIAN:
-        return "/imaging-technician";
+        return "/imaging-technician/dashboard";
 
       case Roles.PHYSICIAN:
         return "/physician";
@@ -28,11 +29,11 @@ export default function UserDontHaveRoomAssignment() {
   };
 
   //this is meant for roles that includes schedules, like physicians, imaging-technicians, radiologists
+  const user = useSelector((state: RootState) => state.auth.user);
   const viewSchedule = () => {
-    const userString = Cookies.get("user");
-    const user = JSON.parse((userString as string) || "");
-
-    router.push(`${getRouterForRole(user.role)}/schedule`);
+    if (user?.role) {
+      router.push(`${getRouterForRole(user.role)}/schedule`);
+    }
   };
 
   return (

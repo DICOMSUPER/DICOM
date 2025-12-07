@@ -220,7 +220,11 @@ const ensureLabelmapImagesForViewport = async (
       });
     }
 
-    if (!cache.getImageLoadObject(derivedImageId)) {
+    // Check if image already exists in cache (both load object and actual image)
+    const existingImage = cache.getImage(derivedImageId);
+    const existingLoadObject = cache.getImageLoadObject(derivedImageId);
+    
+    if (!existingImage && !existingLoadObject) {
       try {
         await imageLoader.loadAndCacheImage(referencedImageId);
         const derivedImage = imageLoader.createAndCacheDerivedImage(
@@ -246,17 +250,32 @@ const ensureLabelmapImagesForViewport = async (
             `[Segmentation] Could not initialize labelmap ${derivedImageId} - no pixel data access`
           );
         }
-      } catch (error) {
-        console.error(
-          "[Segmentation] Failed to prepare labelmap image",
-          referencedImageId,
-          error
-        );
-        throw error;
+      } catch (error: any) {
+        // Handle "already in cache" error gracefully
+        if (error?.message?.includes("already in cache")) {
+          console.log(
+            `[Segmentation] Labelmap ${derivedImageId} already in cache, using existing`
+          );
+          // Try to get the existing image
+          const cachedImage = cache.getImage(derivedImageId);
+          if (cachedImage && typeof cachedImage.getPixelData === "function") {
+            const pixelData = cachedImage.getPixelData();
+            if (pixelData instanceof Uint8Array) {
+              // Ensure it's cleared
+              pixelData.fill(0);
+            }
+          }
+        } else {
+          console.error(
+            "[Segmentation] Failed to prepare labelmap image",
+            referencedImageId,
+            error
+          );
+          throw error;
+        }
       }
     } else {
       // Labelmap already exists - ensure it's still cleared
-      const existingImage = cache.getImage(derivedImageId);
       if (existingImage && typeof existingImage.getPixelData === "function") {
         const pixelData = existingImage.getPixelData();
         if (pixelData instanceof Uint8Array) {
@@ -265,6 +284,10 @@ const ensureLabelmapImagesForViewport = async (
             `[Segmentation] Existing labelmap ${derivedImageId}: hasData=${hasData}, pixels=${pixelData.length}`
           );
         }
+      } else if (existingLoadObject) {
+        console.log(
+          `[Segmentation] Labelmap ${derivedImageId} is being loaded, waiting...`
+        );
       }
     }
 

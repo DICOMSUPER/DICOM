@@ -21,6 +21,7 @@ export default function ReceptionDashboard() {
     "week" | "month" | "year" | undefined
   >();
   const [appliedValue, setAppliedValue] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const getWeekNumber = (date: Date): string => {
     const d = new Date(
@@ -122,11 +123,16 @@ export default function ReceptionDashboard() {
   };
 
   const handleRefresh = async () => {
-    await Promise.all([
-      refetchAnalytics(),
-      refetchPatientStats(),
-      refetchEncounterStats(),
-    ]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchAnalytics(),
+        refetchPatientStats(),
+        refetchEncounterStats(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -143,7 +149,7 @@ export default function ReceptionDashboard() {
         <RefreshButton
           onRefresh={handleRefresh}
           loading={
-            analyticsLoading || patientStatsLoading || encounterStatsLoading
+            isRefreshing || analyticsLoading || patientStatsLoading || encounterStatsLoading
           }
         />
       </div>
@@ -166,6 +172,7 @@ export default function ReceptionDashboard() {
         encounters={recentEncountersArray || []}
         onViewAll={handleGoToPatients}
         onViewEncounters={handleGoToEncounters}
+        isLoading={encountersLoading}
       />
     </div>
   );
