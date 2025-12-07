@@ -21,12 +21,12 @@ import {
   TransformInterceptor,
 } from '@backend/shared-interceptor';
 import { RepositoryPaginationDto } from '@backend/database';
-import { RedisService } from '@backend/redis';
 import {
   CACHE_TTL_SECONDS,
   CacheEntity,
 } from '../../../../../src/constant/cache';
 import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
+import { RedisService } from '@backend/redis';
 @Controller('patient-conditions')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientConditionController {
@@ -35,7 +35,6 @@ export class PatientConditionController {
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy,
-    @Inject('REDIS_SERVICE')
     private readonly redisService: RedisService
   ) {}
 

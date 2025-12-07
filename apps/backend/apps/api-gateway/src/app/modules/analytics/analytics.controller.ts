@@ -15,9 +15,6 @@ import {
 import { Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 import { AnalyticsService } from './analytics.service';
-import { cacheKeyBuilder } from '../../../utils/cache-builder.utils';
-import { CACHE_TTL_SECONDS, CacheEntity } from '../../../../src/constant/cache';
-import { RedisService } from 'libs/redis/src';
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -26,8 +23,6 @@ export class AnalyticsController {
 
   constructor(
     private readonly analyticsService: AnalyticsService,
-    @Inject(RedisService)
-    private readonly redisService: RedisService
   ) {}
 
   @Get('reception-stats')

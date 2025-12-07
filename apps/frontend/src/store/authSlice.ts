@@ -32,9 +32,15 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
 
-      // Save to cookies with expiration (7 days)
+      // Save to localStorage and cookies with expiration (7 days)
       if (typeof window !== "undefined") {
         const expiresInDays = 7;
+        try {
+          localStorage.setItem("token", action.payload.token);
+          localStorage.setItem("user", JSON.stringify(action.payload.user));
+        } catch (err) {
+          console.error("Failed to write auth to localStorage", err);
+        }
         Cookies.set("accessToken", action.payload.token, {
           expires: expiresInDays,
           path: "/",
@@ -62,9 +68,19 @@ const authSlice = createSlice({
     },
     loadCredentials: (state) => {
       if (typeof window !== "undefined") {
-        // Load from cookies (not localStorage since we're using cookies)
-        const token = Cookies.get("accessToken");
-        const userString = Cookies.get("user");
+        // Prefer localStorage (works even if cookie domain doesn't match), fallback to cookies
+        let token: string | undefined | null = null;
+        let userString: string | undefined | null = null;
+
+        try {
+          token = localStorage.getItem("token");
+          userString = localStorage.getItem("user");
+        } catch (err) {
+          console.error("Failed to read auth from localStorage", err);
+        }
+
+        if (!token) token = Cookies.get("accessToken");
+        if (!userString) userString = Cookies.get("user");
 
         if (token) {
           state.token = token;

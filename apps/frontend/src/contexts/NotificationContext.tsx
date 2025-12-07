@@ -1,15 +1,15 @@
 "use client";
 
 import { Notification } from "@/interfaces/system/notification.interface";
-import { AppDispatch } from "@/store";
+import { AppDispatch, RootState } from "@/store";
 import {
   notificationApi,
   useGetNotificationsByUserQuery,
   useMarkAllAsReadMutation,
   useMarkAsReadMutation,
 } from "@/store/notificationApi";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
@@ -43,11 +43,12 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const dispatch = useDispatch<AppDispatch>();
+  const reduxToken = useSelector((state: RootState) => state.auth.token);
   const { data: notificationsResponse, refetch } =
     useGetNotificationsByUserQuery({});
 
@@ -68,9 +69,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     const socketUrl =
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5006";
 
+    const tokenFromStorage =
+      typeof window !== "undefined"
+        ? localStorage.getItem("token")
+        : undefined;
+    const authToken = reduxToken || tokenFromStorage;
+
     const newSocket = io(socketUrl, {
       transports: ["websocket"],
       withCredentials: true,
+      auth: authToken ? { token: authToken } : undefined,
     });
 
     newSocket.on("connect", () => {
@@ -111,12 +119,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
       setUnreadCount((prev) => prev + 1);
     });
 
-    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     return () => {
       newSocket.close();
+      socketRef.current = null;
     };
-  }, [dispatch]);
+  }, [dispatch, reduxToken]);
 
   const markAsRead = async (notificationId: string) => {
     try {
