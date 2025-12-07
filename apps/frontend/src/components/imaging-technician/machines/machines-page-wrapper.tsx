@@ -1,7 +1,8 @@
 "use client";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   useGetAllModalityMachineQuery,
   useUpdateModalityMachineMutation,
@@ -21,7 +22,7 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { MachineStatsCards } from "./machine-stats-cards";
 
 export default function MachinePageWrapper() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
 
   const [filters, setFilters] = useState<MachineFilters>({
     machineName: undefined,
@@ -48,21 +49,8 @@ export default function MachinePageWrapper() {
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
-  useEffect(() => {
-    const userString = Cookies.get("user");
-    if (userString) {
-      try {
-        const user = JSON.parse(userString);
-        setUserId(user?.id || null);
-      } catch (error) {
-        console.error("Error parsing user cookie:", error);
-        setUserId(null);
-      }
-    }
-  }, []);
-
   const { data: currentEmployeeSchedule } =
-    useGetCurrentEmployeeRoomAssignmentQuery(userId || "", { skip: !userId });
+    useGetCurrentEmployeeRoomAssignmentQuery(userId!);
 
   const currentRoomId =
     currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;

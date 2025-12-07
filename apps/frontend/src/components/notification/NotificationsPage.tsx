@@ -12,74 +12,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCheck, Search, RotateCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { CheckCheck, Search, Bell } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshButton } from "@/components/ui/refresh-button";
+import { NotificationType, NotificationPriority } from "@/enums/notification.enum";
+import { getNotificationTypeConfig, getNotificationPriorityConfig } from "@/utils/notification-utils";
+import { useGetNotificationsByUserQuery } from "@/store/notificationApi";
+import { FilterNotificationDto } from "@/interfaces/system/notification.interface";
 
 export function NotificationsPage() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, fetchNotifications } =
-    useNotifications();
+  const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<"all" | "read" | "unread">(
-    "all"
-  );
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  // Build filter parameters for API
+  const filterParams = useMemo<FilterNotificationDto>(() => {
+    const params: FilterNotificationDto = {};
+
+    // Search by title
+    if (searchQuery.trim()) {
+      params.title = searchQuery.trim();
+    }
+
+    // Type filter
+    if (filterType !== "all") {
+      params.type = filterType as NotificationType;
+    }
+
+    // Priority filter
+    if (filterPriority !== "all" && filterPriority !== "none") {
+      params.priority = filterPriority as NotificationPriority;
+    }
+
+    // Status filter
+    if (filterStatus !== "all") {
+      params.isRead = filterStatus === "read";
+    }
+
+    return params;
+  }, [searchQuery, filterType, filterPriority, filterStatus]);
+
+  // Fetch notifications with filters
+  const {
+    data: notificationsResponse,
+    isLoading,
+    refetch,
+  } = useGetNotificationsByUserQuery({ filter: filterParams });
+
+  const notifications = notificationsResponse?.data || [];
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      fetchNotifications();
-      // Small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [fetchNotifications]);
-
-  const filteredNotifications = useMemo(() => {
-    return notifications.filter((notification) => {
-      // Search filter
-      const matchesSearch =
-        notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        notification.message.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Type filter
-      const matchesType =
-        filterType === "all" || notification.notificationType === filterType;
-
-      // Status filter
-      const matchesStatus =
-        filterStatus === "all" ||
-        (filterStatus === "read" && notification.isRead) ||
-        (filterStatus === "unread" && !notification.isRead);
-
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [notifications, searchQuery, filterType, filterStatus]);
-
-  const unreadNotifications = useMemo(
-    () => filteredNotifications.filter((n) => !n.isRead),
-    [filteredNotifications]
-  );
-
-  const readNotifications = useMemo(
-    () => filteredNotifications.filter((n) => n.isRead),
-    [filteredNotifications]
-  );
-
-  const uniqueTypes = useMemo(() => {
-    const types = new Set(notifications.map((n) => n.notificationType));
-    return Array.from(types);
-  }, [notifications]);
+    await refetch();
+  }, [refetch]);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full flex flex-col space-y-6 h-[calc(100vh-8.5rem)]">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
             Notifications
@@ -102,15 +93,15 @@ export function NotificationsPage() {
               Mark all as read
             </Button>
           )}
-          <RefreshButton onRefresh={handleRefresh} loading={isRefreshing} />
+          <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-lg">
+      <div className="bg-card rounded-lg shrink-0">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search notifications..."
               value={searchQuery}
@@ -124,123 +115,83 @@ export function NotificationsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {uniqueTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.replace(/_/g, " ")}
-                </SelectItem>
-              ))}
+              {Object.values(NotificationType).map((type) => {
+                const config = getNotificationTypeConfig(type);
+                return (
+                  <SelectItem key={type} value={type}>
+                    {config.label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="All Priorities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              {Object.values(NotificationPriority).map((priority) => {
+                const config = getNotificationPriorityConfig(priority);
+                return (
+                  <SelectItem key={priority} value={priority}>
+                    {config?.label || priority}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="unread">Unread</SelectItem>
+              <SelectItem value="read">Read</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       {/* Notifications List */}
-      <div className="bg-card rounded-lg overflow-hidden">
-        <Tabs
-          defaultValue="all"
-          value={filterStatus}
-          onValueChange={(value) => setFilterStatus(value as any)}
-        >
-          <div>
-            <TabsList className="h-12">
-              <TabsTrigger value="all">
-                All
-                <Badge variant="secondary" className="ml-2 text-white">
-                  {filteredNotifications.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="unread">
-                Unread
-                <Badge variant="secondary" className="ml-2 text-white">
-                  {unreadNotifications.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="read">
-                Read
-                <Badge variant="secondary" className="ml-2 text-white">
-                  {readNotifications.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
+      <div className="bg-card rounded-lg overflow-hidden flex flex-col flex-1 min-h-0 border border-border">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center flex-1 w-full">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4" />
+              <p className="text-sm font-medium text-slate-600">Loading notifications...</p>
+            </div>
           </div>
-
-          <TabsContent value="all" className="mt-0">
-            {filteredNotifications.length === 0 ? (
-              <div className="p-12 text-center text-foreground">
-                <p className="text-sm font-medium">
-                  No notifications found
-                </p>
-                <p className="text-sm mt-1">
-                  {searchQuery
-                    ? "Try adjusting your search"
-                    : "You're all caught up!"}
-                </p>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center flex-1 w-full">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                <Bell className="h-7 w-7 text-slate-400" />
               </div>
-            ) : (
-              <ScrollArea className="h-[600px]">
-                <div>
-                  {filteredNotifications.map((notification) => (
-                    <NotificationItem
-                      key={notification.id}
-                      notification={notification}
-                      onMarkAsRead={markAsRead}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-
-          <TabsContent value="unread" className="mt-0">
-            {unreadNotifications.length === 0 ? (
-              <div className="p-12 text-center text-foreground">
-                <p className="text-sm font-medium">
-                  All caught up!
-                </p>
-                <p className="text-sm mt-1">
-                  You have no unread notifications
-                </p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[600px]">
-                <div>
-                  {unreadNotifications.map((notification) => (
-                    <NotificationItem
-                      key={notification.id}
-                      notification={notification}
-                      onMarkAsRead={markAsRead}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-
-          <TabsContent value="read" className="mt-0">
-            {readNotifications.length === 0 ? (
-              <div className="p-12 text-center text-foreground">
-                <p className="text-sm font-medium">
-                  No read notifications
-                </p>
-                <p className="text-sm mt-1">
-                  Read notifications will appear here
-                </p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[600px]">
-                <div>
-                  {readNotifications.map((notification) => (
-                    <NotificationItem
-                      key={notification.id}
-                      notification={notification}
-                      onMarkAsRead={markAsRead}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </TabsContent>
-        </Tabs>
+              <p className="text-sm font-medium text-slate-600">No notifications yet</p>
+              <p className="text-xs text-slate-400 mt-1">
+                {searchQuery
+                  ? "Try adjusting your search"
+                  : "We'll notify you when something arrives"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ScrollArea className="flex-1 h-full">
+            <div>
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={markAsRead}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        )}
       </div>
     </div>
   );

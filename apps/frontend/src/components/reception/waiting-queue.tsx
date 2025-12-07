@@ -61,7 +61,7 @@ export function WaitingQueue() {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                <div className={`w-8 h-8 min-w-8 rounded-full flex items-center justify-center shrink-0 ${
                   patient.isUrgent 
                     ? "bg-red-100" 
                     : patient.id === "2" 

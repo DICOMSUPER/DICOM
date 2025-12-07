@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, List, Grid3X3, Filter, Search, X } from 'lucide-react';
+import { List, Grid3X3, Filter, Search, X, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -12,15 +12,13 @@ import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { DicomStudy } from '@/interfaces/image-dicom/dicom-study.interface';
 
 interface StudiesPanelProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
   onSeriesSelect?: (series: DicomSeries) => void;
   studies?: DicomStudy[];
   series?: DicomSeries[];
   showSeriesOnly?: boolean;
 }
 
-const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies = [], series = [], showSeriesOnly = false }: StudiesPanelProps) => {
+const StudiesPanel = ({ onSeriesSelect, studies = [], series = [], showSeriesOnly = false }: StudiesPanelProps) => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -35,7 +33,8 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
   // Filter series based on search and modality
   const filteredSeries = series.filter(s => {
     const matchesSearch = searchQuery === '' || (s.seriesDescription || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesModality = filterModality === 'All' || (typeof s.modality === 'string' ? s.modality === filterModality : (s.modality as any)?.modalityCode === filterModality);
+    const matchesModality = filterModality === 'All' || 
+      (typeof s.modality === 'string' ? s.modality === filterModality : s.modality?.modalityCode === filterModality);
     return matchesSearch && matchesModality;
   });
 
@@ -148,9 +147,9 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="bg-slate-600 text-white text-xs">
-                            {typeof series.modality === 'string' ? series.modality : (series.modality as any)?.modalityCode || 'Unknown'}
+                            {typeof series.modality === 'string' ? series.modality : series.modality?.modalityCode || 'Series'}
                           </Badge>
-                          <span className="text-sm font-medium">Series</span>
+                          <span className="text-sm font-medium">Series {series.seriesNumber}</span>
                         </div>
                         <div className="text-xs text-slate-400">{series.numberOfInstances} instances</div>
                       </div>
@@ -162,7 +161,8 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-slate-500 py-8">
+                <div className="flex flex-col items-center justify-center text-center text-slate-500 py-8">
+                  <Inbox className="w-12 h-12 mb-3 text-slate-400" />
                   <div className="text-sm">No series available</div>
                   <div className="text-xs mt-1">Load series to view them here</div>
                 </div>
@@ -175,7 +175,11 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
                   <div className="px-2 py-1 bg-slate-800 rounded text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-white font-medium">{study.studyDate}</span>
-                      <span className="text-blue-400 text-xs">{typeof study.modality === 'string' ? study.modality : (study.modality as any)?.modalityCode || 'Unknown'}</span>
+                      <span className="text-blue-400 text-xs">
+                        {typeof study.modality === 'string' 
+                          ? study.modality 
+                          : study.modality?.modalityCode || study.modalityMachine?.modality?.modalityCode || study.modalityMachine?.modality?.modalityName || 'Unknown'}
+                      </span>
                     </div>
                     <div className="text-slate-300 text-xs truncate">{study.studyDescription || 'No description'}</div>
                     <div className="text-slate-500 text-xs">{study.numberOfSeries} series</div>
@@ -196,9 +200,9 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="bg-slate-600 text-white text-xs">
-                              {typeof series.modality === 'string' ? series.modality : (series.modality as any)?.modalityCode || 'Unknown'}
+                              {typeof series.modality === 'string' ? series.modality : series.modality?.modalityCode || 'Series'}
                             </Badge>
-                            <span className="text-xs font-medium">Series</span>
+                            <span className="text-xs font-medium">{series.seriesDescription || 'No description'}</span>
                           </div>
                           <div className="text-xs text-slate-400">{series.numberOfInstances} instances</div>
                         </div>
@@ -211,7 +215,8 @@ const StudiesPanel = ({ isCollapsed, onToggleCollapse, onSeriesSelect, studies =
                   </div>
                 </div>
               )) : (
-                <div className="text-center text-slate-500 py-8">
+                <div className="flex flex-col items-center justify-center text-center text-slate-500 py-8">
+                  <Inbox className="w-12 h-12 mb-3 text-slate-400" />
                   <div className="text-sm">No studies available</div>
                   <div className="text-xs mt-1">Load studies to view them here</div>
                 </div>

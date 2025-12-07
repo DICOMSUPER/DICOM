@@ -62,7 +62,6 @@ export class DicomStudy extends BaseEntity {
   @Column({ name: 'reason', length: 255, nullable: true })
   reason?: string;
 
-
   @Column({ name: 'verifying_radiologist_id', nullable: true })
   verifyingRadiologistId?: string;
 

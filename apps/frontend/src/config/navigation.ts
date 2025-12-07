@@ -212,19 +212,25 @@ export const roleNavigation: RoleNavigation = {
   // Imaging Technician - DICOM and imaging
   "Imaging Technician": [
     {
-      href: "/imaging-technician",
-      label: "Imaging Orders",
+      href: "/imaging-technician/dashboard",
+      label: "Dashboard",
       icon: BarChart3,
+      description: "Daily overview",
+    },
+    {
+      href: "/imaging-technician/imaging-orders",
+      label: "Imaging Orders",
+      icon: Camera,
       description: "Manage imaging orders",
     },
     {
-      href: "/imaging-technician/order",
+      href: "/imaging-technician/order-details",
       label: "Order Details",
       icon: File,
       description: "View and manage DICOM studies",
     },
     {
-      href: "/imaging-technician/machines",
+      href: "/imaging-technician/modality-machines",
       label: "Modality Machines",
       icon: Activity,
       description: "Manage modality machines",
@@ -252,7 +258,7 @@ export const roleNavigation: RoleNavigation = {
   // Radiologist - Medical imaging interpretation
   Radiologist: [
     {
-      href: "/radiologist",
+      href: "/radiologist/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "Clinical overview",

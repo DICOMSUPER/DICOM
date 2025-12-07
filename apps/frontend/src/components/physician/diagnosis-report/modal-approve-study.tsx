@@ -22,7 +22,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import * as z from "zod";
 import SignatureDisplay from "@/components/common/signature-display";
 
@@ -48,12 +49,11 @@ export function ModalApproveStudy({
 }: ModalApproveStudyProps) {
   const [showPin, setShowPin] = useState(false);
 
-  const cookieUser = JSON.parse(Cookies.get("user") || "{}");
-  const userId = cookieUser?.id;
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
 
   const { data: userData, isLoading: isLoadingUserData } = useGetUserByIdQuery(
-    userId,
-    { skip: !userId || !open }
+    userId!,
+    { skip: !open }
   );
   const user = userData?.data;
   const form = useForm<SetUpFormValues>({

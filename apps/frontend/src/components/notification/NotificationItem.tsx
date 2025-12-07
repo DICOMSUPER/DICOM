@@ -3,21 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Calendar,
-  CreditCard,
-  Info,
-  Mail,
-  AlertCircle,
-  CheckCircle2,
-  Bell,
-  Eye,
-} from "lucide-react";
+import { Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Notification } from "@/interfaces/system/notification.interface";
 import { RelatedEntityType } from "@/enums/notification.enum";
 import { Button } from "@/components/ui/button";
 import { NotificationDetailModal } from "./NotificationDetailModal";
+import {
+  getNotificationIcon,
+  getNotificationTypeBadge,
+  getNotificationPriorityBadge,
+} from "@/utils/notification-utils";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -31,25 +27,6 @@ export const NotificationItem = ({
   const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // 1. Logic xác định Icon dựa trên Type
-  const getIcon = (type: string) => {
-    switch (type) {
-      case "APPOINTMENT": // Ví dụ các enum type
-      case "APPOINTMENT_REMINDER":
-        return <Calendar className="h-5 w-5 text-blue-500" />;
-      case "PAYMENT":
-      case "INVOICE":
-        return <CreditCard className="h-5 w-5 text-green-500" />;
-      case "MESSAGE":
-        return <Mail className="h-5 w-5 text-yellow-500" />;
-      case "SYSTEM_ALERT":
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case "SUCCESS":
-        return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
-      default:
-        return <Bell className="h-5 w-5 text-gray-500" />;
-    }
-  };
 
   const handleMarkAsRead = () => {
     if (onMarkAsRead) {
@@ -80,7 +57,7 @@ export const NotificationItem = ({
         break;
       case RelatedEntityType.ORDER:
         router.push(
-          `/imaging-technician/order/${notification.relatedEntityId}`
+          `/imaging-technician/order-details/${notification.relatedEntityId}`
         );
         break;
       case RelatedEntityType.REPORT:
@@ -117,7 +94,7 @@ export const NotificationItem = ({
             : "bg-slate-100 group-hover:bg-slate-200 group-hover:scale-105"
         )}
       >
-        {getIcon(notification.notificationType)}
+        {getNotificationIcon(notification.notificationType)}
       </div>
 
       {/* Content */}
@@ -152,6 +129,12 @@ export const NotificationItem = ({
         >
           {notification.message}
         </p>
+
+        {/* Type and Priority Badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {getNotificationTypeBadge(notification.notificationType)}
+          {getNotificationPriorityBadge(notification.priority)}
+        </div>
 
         {/* Action Button - Always visible */}
         <div className="pt-2">

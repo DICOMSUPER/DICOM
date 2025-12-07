@@ -14,6 +14,8 @@ import { AppModule } from './app/app.module';
 import { AllExceptionsFilter } from './utils/exception-filter.utils';
 import { urlencoded, json } from 'express';
 
+process.setMaxListeners(20);
+
 process.on('unhandledRejection', (reason, promise) => {
   const logger = new Logger('UnhandledRejection');
   logger.error('Unhandled Promise Rejection:', reason);

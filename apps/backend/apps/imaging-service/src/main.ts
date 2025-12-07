@@ -9,6 +9,8 @@ import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
 import { IMAGING_SERVICE } from './constant/microservice.constant';
 
+process.setMaxListeners(20);
+
 process.on('unhandledRejection', (reason: any, promise) => {
   const logger = new Logger('UnhandledRejection');
   

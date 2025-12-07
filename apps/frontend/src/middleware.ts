@@ -25,13 +25,13 @@ function getDashboardByRole(role: Roles): string {
     case Roles.SYSTEM_ADMIN:
       return "/admin";
     case Roles.IMAGING_TECHNICIAN:
-      return "/imaging-technician";
+      return "/imaging-technician/dashboard";
     case Roles.RECEPTION_STAFF:
       return "/reception/dashboard";
     case Roles.PHYSICIAN:
       return "/physician/dashboard";
     case Roles.RADIOLOGIST:
-      return "/radiologist";
+      return "/radiologist/dashboard";
     default:
       return "/dashboard";
   }

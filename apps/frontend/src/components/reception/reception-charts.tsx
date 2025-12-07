@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { AnalyticsData } from "@/store/analyticsApi";
+import { Inbox } from "lucide-react";
 
 interface ReceptionChartsProps {
   data?: AnalyticsData;
@@ -149,37 +150,47 @@ export function ReceptionCharts({
             </CardDescription>
           </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={encountersOverTime}>
-              <defs>
-                <linearGradient id="colorEncounters" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#0088FE" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={formatXAxisLabel}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(value) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString();
-                }}
-              />
-              <Legend />
-              <Area 
-                type="monotone" 
-                dataKey="encounters" 
-                stroke="#0088FE" 
-                fillOpacity={1}
-                fill="url(#colorEncounters)"
-                name="Encounters"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {encountersOverTime.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={encountersOverTime}>
+                <defs>
+                  <linearGradient id="colorEncounters" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#0088FE" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={formatXAxisLabel}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString();
+                  }}
+                />
+                <Legend />
+                <Area 
+                  type="monotone" 
+                  dataKey="encounters" 
+                  stroke="#0088FE" 
+                  fillOpacity={1}
+                  fill="url(#colorEncounters)"
+                  name="Encounters"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                <Inbox className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-600">No encounter data</p>
+              <p className="text-xs text-slate-400 mt-1">No encounters found for this period</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -194,30 +205,40 @@ export function ReceptionCharts({
             </CardDescription>
           </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={patientsOverTime}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={formatXAxisLabel}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(value) => {
-                  const date = new Date(value);
-                  return date.toLocaleDateString();
-                }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="patients" 
-                stroke="#00C49F" 
-                strokeWidth={2}
-                name="Patients"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {patientsOverTime.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={patientsOverTime}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={formatXAxisLabel}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString();
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="patients" 
+                  stroke="#00C49F" 
+                  strokeWidth={2}
+                  name="Patients"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[300px] text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                <Inbox className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-600">No patient data</p>
+              <p className="text-xs text-slate-400 mt-1">No patients found for this period</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       </div>

@@ -57,6 +57,8 @@ export default function LoginPage() {
             id: decoded.userId || decoded.sub,
             email: decoded.email || email,
             role: role,
+            firstName: decoded.firstName,
+            lastName: decoded.lastName,
           },
         })
       );
@@ -70,16 +72,16 @@ export default function LoginPage() {
             router.push("/admin");
             break;
           case "imaging_technician":
-            router.push("/imaging-technician");
+            router.push("/imaging-technician/dashboard");
             break;
           case "reception_staff":
-            router.push("/reception");
+            router.push("/reception/dashboard");
             break;
           case "physician":
             router.push("/physician/dashboard");
             break;
           case "radiologist":
-            router.push("/radiologist");
+            router.push("/radiologist/dashboard");
             break;
           default:
             router.push("/dashboard");

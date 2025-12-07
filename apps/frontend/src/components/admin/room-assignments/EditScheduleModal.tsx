@@ -354,9 +354,11 @@ export function EditScheduleModal({
             {!areTimesValid && (startTime || endTime || (shiftTemplateId && shiftTemplateId !== "__none__")) && (
               <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 flex items-start gap-1.5">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__")
-                  ? "Please select a shift template or switch to manual time entry"
-                  : (getTimeValidationError || "Start time and end time are required")}
+                <span>
+                  {(useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__"))
+                    ? "Please select a shift template or switch to manual time entry"
+                    : (getTimeValidationError || "Start time and end time are required")}
+                </span>
               </div>
             )}
 
