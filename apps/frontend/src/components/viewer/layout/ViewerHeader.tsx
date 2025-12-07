@@ -33,7 +33,7 @@ export default function ViewerHeader({
     // Navigate to role-specific dashboard (matching login redirect routes)
     switch (user.role) {
       case Roles.SYSTEM_ADMIN:
-        router.push('/admin');
+        router.push('/admin/dashboard');
         break;
       case Roles.IMAGING_TECHNICIAN:
         router.push('/imaging-technician/dashboard');

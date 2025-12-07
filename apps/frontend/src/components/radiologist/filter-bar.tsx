@@ -8,6 +8,7 @@ import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { RefreshCw } from "lucide-react";
 
 const formatDateISO = (date: Date | undefined) => {
   if (!date) return undefined;
@@ -18,10 +19,12 @@ export default function FilterBar({
   onRefetch,
   caseNumber,
   maxCases,
+  loading = false,
 }: {
   onRefetch: () => void;
   caseNumber: number;
   maxCases: number;
+  loading?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -189,8 +192,16 @@ export default function FilterBar({
           <Button
             className="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-200 min-w-[100px]"
             onClick={handleRefresh}
+            disabled={loading}
           >
-            Refresh
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Refreshing...
+              </span>
+            ) : (
+              "Refresh"
+            )}
           </Button>
 
           <Button

@@ -152,9 +152,6 @@ export default function ViewerLeftSidebar({
   const [deleteImageSegmentationLayer] =
     useDeleteImageSegmentationLayerMutation();
 
-  const handleToolSelect = useCallback((toolId: string) => {
-    onToolSelect(toolId);
-  }, [onToolSelect]);
 
   const saveSegmentationLayerToDatabase = useCallback(async (layerId: string) => {
     try {
@@ -178,6 +175,7 @@ export default function ViewerLeftSidebar({
       toast.success("Segmentation layer saved to database");
       await refetchSegmentationLayers([layerId]);
     } catch (error) {
+      console.error("Error saving segmentation layer:", error);
       toast.error("Error saving segmentation layer to database");
     }
   }, [getSegmentationLayers, createImageSegmentationLayers, refetchSegmentationLayers]);
@@ -188,18 +186,21 @@ export default function ViewerLeftSidebar({
       deleteSegmentationLayer(layerId);
       await refetchSegmentationLayers();
 
-      const layers = getSegmentationLayers();
-      if (layers.length === 0) {
-        handleToolSelect("WindowLevel");
+      // Reset tool if no layers remain
+      const remainingLayers = getSegmentationLayers();
+      if (remainingLayers.length === 0) {
+        onToolSelect("WindowLevel");
       }
 
       toast.success("Segmentation layer deleted from database");
     } catch (error) {
+      console.error("Error deleting segmentation layer:", error);
       toast.error("Error deleting segmentation layer from database");
     }
-  }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers, getSegmentationLayers, handleToolSelect]);
+  }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers, getSegmentationLayers, onToolSelect]);
 
-  const toolDisplayNameMap = useMemo(() => new Map<string, string>([
+  // Tool display name mapping - constant, no need for useMemo
+  const TOOL_DISPLAY_NAME_MAP = new Map<string, string>([
     ["Rotate", "PlanarRotate"],
     ["WindowLevel", "WindowLevel"],
     ["Pan", "Pan"],
@@ -226,11 +227,11 @@ export default function ViewerLeftSidebar({
     ["CircleScissors", "CircleScissors"],
     ["RectangleScissors", "RectangleScissors"],
     ["SphereScissors", "SphereScissors"],
-  ]), []);
+  ]);
 
-  const getToolDisplayName = useCallback((toolId: string) => {
-    return toolDisplayNameMap.get(toolId) || toolId;
-  }, [toolDisplayNameMap]);
+  const getToolDisplayName = (toolId: string) => {
+    return TOOL_DISPLAY_NAME_MAP.get(toolId) || toolId;
+  };
 
   const actionHandlers = useMemo(() => ({
     reset: resetView,
@@ -251,29 +252,22 @@ export default function ViewerLeftSidebar({
     }
   }, [actionHandlers]);
 
+  // Action button class mapping - more efficient than multiple if statements
   const getActionButtonClasses = useCallback((toolId: string) => {
-    if (toolId === "clear") {
-      return "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300";
-    }
-    if (toolId === "clear-viewport") {
-      return "bg-slate-800 text-slate-400 hover:bg-orange-900/30 hover:text-orange-300";
-    }
-    if (toolId === "toggle-annotations") {
-      return state.showAnnotations
+    const classMap: Record<string, string> = {
+      "clear": "bg-slate-800 text-slate-400 hover:bg-red-900/30 hover:text-red-300",
+      "clear-viewport": "bg-slate-800 text-slate-400 hover:bg-orange-900/30 hover:text-orange-300",
+      "toggle-annotations": state.showAnnotations
         ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
-        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
-    }
-    if (toolId === "view-all-annotations") {
-      return activeAnnotationView === "all"
+        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300",
+      "view-all-annotations": activeAnnotationView === "all"
         ? "bg-linear-to-br from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/30"
-        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
-    }
-    if (toolId === "view-draft-annotations") {
-      return activeAnnotationView === "draft"
+        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300",
+      "view-draft-annotations": activeAnnotationView === "draft"
         ? "bg-linear-to-br from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/30"
-        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
-    }
-    return "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
+        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300",
+    };
+    return classMap[toolId] || "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300";
   }, [activeAnnotationView, state.showAnnotations]);
 
   const segmentationState = useMemo(() => {
@@ -456,7 +450,7 @@ export default function ViewerLeftSidebar({
                     key={tool.id}
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
-                    onClick={() => handleToolSelect(tool.id)}
+                    onClick={() => onToolSelect(tool.id)}
                     disabled={!viewportReady}
                   />
                 );
@@ -485,7 +479,7 @@ export default function ViewerLeftSidebar({
                   key={tool.id}
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
-                  onClick={() => handleToolSelect(tool.id)}
+                  onClick={() => onToolSelect(tool.id)}
                   disabled={!viewportReady || isOrderFinalized}
                 />
               ))}
@@ -504,7 +498,7 @@ export default function ViewerLeftSidebar({
                   key={tool.id}
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
-                  onClick={() => handleToolSelect(tool.id)}
+                  onClick={() => onToolSelect(tool.id)}
                   disabled={!viewportReady || isOrderFinalized}
                 />
               ))}
@@ -565,7 +559,7 @@ export default function ViewerLeftSidebar({
                     key={tool.id}
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
-                    onClick={() => handleToolSelect(tool.id)}
+                    onClick={() => onToolSelect(tool.id)}
                     disabled={segmentationState.disabled || isOrderFinalized}
                   />
                 ))}

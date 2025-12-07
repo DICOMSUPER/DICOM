@@ -262,7 +262,7 @@ export default function ModalityMachinePage() {
             onClick={handleCreate}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             Add Machine
           </Button>
         </div>

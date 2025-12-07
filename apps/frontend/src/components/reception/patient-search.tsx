@@ -192,7 +192,7 @@ export function PatientSearch({
             </div>
           </div>
           <Button onClick={handleSearch}>
-            <Search className="w-4 h-4 mr-2" />
+            <Search className="w-4 h-4" />
             Search
           </Button>
         </div>
@@ -204,7 +204,7 @@ export function PatientSearch({
             size="sm"
             onClick={() => setShowAdvanced(!showAdvanced)}
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="w-4 h-4" />
             {showAdvanced ? 'Hide' : 'Show'} Filters
             {showAdvanced ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
           </Button>
@@ -213,7 +213,7 @@ export function PatientSearch({
             size="sm"
             onClick={handleClear}
           >
-            <X className="w-4 h-4 mr-2" />
+            <X className="w-4 h-4" />
             Clear
           </Button>
         </div>

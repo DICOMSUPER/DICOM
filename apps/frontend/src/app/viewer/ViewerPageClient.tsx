@@ -151,7 +151,7 @@ function ViewerPageContent() {
   }, []);
 
   const handleAnnotationModalOpenChange = useCallback(
-    (type: "all" | "draft") => (open: boolean) => {
+    (type: "all" | "draft", open: boolean) => {
       setActiveAnnotationsModal(open ? type : null);
     },
     []
@@ -235,12 +235,12 @@ function ViewerPageContent() {
       {/* Annotation Modals */}
       <SeriesAnnotationsModal
         open={activeAnnotationsModal === "all"}
-        onOpenChange={handleAnnotationModalOpenChange("all")}
+        onOpenChange={(open) => handleAnnotationModalOpenChange("all", open)}
         cachedSeriesList={series}
       />
       <DraftAnnotationsModal
         open={activeAnnotationsModal === "draft"}
-        onOpenChange={handleAnnotationModalOpenChange("draft")}
+        onOpenChange={(open) => handleAnnotationModalOpenChange("draft", open)}
         cachedSeriesList={series}
       />
     </div>

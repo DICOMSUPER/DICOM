@@ -88,11 +88,11 @@ export function MedicalHistoryTab({
               />
             </div>
             <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
+              <Filter className="w-4 h-4" />
               Filter
             </Button>
             <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4" />
               Add New
             </Button>
           </div>

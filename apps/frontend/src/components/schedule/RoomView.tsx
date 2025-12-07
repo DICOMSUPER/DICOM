@@ -189,15 +189,6 @@ export function RoomView({
     return Array.from(roomMap.values()).sort((a, b) => a.roomCode.localeCompare(b.roomCode));
   }, [schedulesByRoom, roomsData]);
 
-  // Initialize selected rooms with all available rooms on mount
-  useEffect(() => {
-    if (selectedRoomIds.size === 0 && availableRooms.length > 0) {
-      const allRoomCodes = new Set(availableRooms.map((r) => r.roomCode));
-      allRoomCodes.add("Unassigned");
-      setSelectedRoomIds(allRoomCodes);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availableRooms.length]);
 
   const handleAddRoom = (roomCode: string) => {
     if (!roomCode) return;

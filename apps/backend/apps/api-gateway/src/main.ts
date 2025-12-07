@@ -51,6 +51,7 @@ async function bootstrap() {
  
     app.use(
       cors({
+        // Allow local dev and production frontend (whole domain, not a single path)
         origin: [
           'http://localhost:3000',
           'http://localhost:5173',

@@ -58,6 +58,7 @@ export function NotificationsPage() {
   const {
     data: notificationsResponse,
     isLoading,
+    isFetching,
     refetch,
   } = useGetNotificationsByUserQuery({ filter: filterParams });
 
@@ -93,7 +94,7 @@ export function NotificationsPage() {
               Mark all as read
             </Button>
           )}
-          <RefreshButton onRefresh={handleRefresh} loading={isLoading} />
+          <RefreshButton onRefresh={handleRefresh} loading={isFetching || isLoading} />
         </div>
       </div>
 
