@@ -33,6 +33,7 @@ import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
 import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 
 @ApiTags('Modality Machines')
 @Controller('modality-machines')
@@ -44,6 +45,30 @@ export class ModalityMachinesController {
     @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
+
+  private async uncacheModalityMachine(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.modalityMachines, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.findAll(CacheEntity.modalityMachines)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.modalityMachines)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.stats(CacheEntity.modalityMachines)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byRoomId(CacheEntity.modalityMachines)
+    );
+  }
 
   @Public()
   @Get()
@@ -73,41 +98,41 @@ export class ModalityMachinesController {
     @Query('sortBy') sortBy?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    try {
-      const pattern = `${CacheEntity.modalityMachines}.${
-        CacheKeyPattern.all
-      }?modalityId=${modalityId || ''}&roomId=${roomId || ''}&status=${
-        status || ''
-      }&machineName=${machineName || ''}&manufacturer=${
-        manufacturer || ''
-      }&serialNumber=${serialNumber || ''}&model=${model || ''}&page=${
-        page || ''
-      }&limit=${limit || ''}&sortBy=${sortBy || ''}&order=${order || ''}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.modalityMachines, {
+      modalityId,
+      roomId,
+      status,
+      machineName,
+      manufacturer,
+      serialNumber,
+      model,
+      page,
+      limit,
+      sortBy,
+      order,
+    });
 
-      const cachedMachines = await this.redisService.get(pattern);
-      if (cachedMachines) {
-        return cachedMachines;
-      }
-      const machines = await firstValueFrom(
-        this.imagingService.send('ImagingService.ModalityMachines.FindAll', {
-          modalityId,
-          roomId,
-          status,
-          machineName,
-          manufacturer,
-          serialNumber,
-          model,
-          page: page ? Number(page) : undefined,
-          limit: limit ? Number(limit) : undefined,
-          sortBy,
-          order,
-        })
-      );
-      await this.redisService.set(pattern, machines, CACHE_TTL_SECONDS); // Cache for 5 minutes
-      return machines;
-    } catch (error) {
-      console.log(error);
+    const cachedMachines = await this.redisService.get(pattern);
+    if (cachedMachines) {
+      return cachedMachines;
     }
+    const machines = await firstValueFrom(
+      this.imagingService.send('ImagingService.ModalityMachines.FindAll', {
+        modalityId,
+        roomId,
+        status,
+        machineName,
+        manufacturer,
+        serialNumber,
+        model,
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+        sortBy,
+        order,
+      })
+    );
+    await this.redisService.set(pattern, machines, CACHE_TTL_SECONDS); // Cache for 5 minutes
+    return machines;
   }
 
   @Get('paginated')
@@ -138,15 +163,17 @@ export class ModalityMachinesController {
     @Query('modalityId') modalityId?: string,
     @Query('status') status?: string
   ) {
-    const pattern = `${CacheEntity.modalityMachines}.${
-      CacheKeyPattern.paginated
-    }?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }&includeDeleted=${includeDeleted || ''}&modalityId=${
-      modalityId || ''
-    }&status=${status || ''}`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.modalityMachines, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField: sortField || sortBy,
+      order,
+      includeDeleted,
+      modalityId,
+      status,
+    });
 
     const cachedPaginated = await this.redisService.get(pattern);
     if (cachedPaginated) {
@@ -178,9 +205,9 @@ export class ModalityMachinesController {
   @ApiResponse({ status: 200, description: 'Modality machines statistics' })
   @ApiQuery({ name: 'roomId', required: false })
   async getStats(@Query('roomId') roomId?: string) {
-    const pattern = `${CacheEntity.modalityMachines}.${
-      CacheKeyPattern.stats
-    }?roomId=${roomId || ''}`;
+    const pattern = cacheKeyBuilder.stats(CacheEntity.modalityMachines, {
+      roomId,
+    });
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -202,11 +229,15 @@ export class ModalityMachinesController {
   })
   @ApiParam({ name: 'roomId', description: 'The ID of the room' })
   async findByRoomId(@Param('roomId') roomId: string) {
-    const pattern = `${CacheEntity.modalityMachines}.${CacheKeyPattern.byRoomId}/${roomId}`;
+    const pattern = cacheKeyBuilder.byRoomId(
+      CacheEntity.modalityMachines,
+      roomId
+    );
     const cachedMachines = await this.redisService.get(pattern);
     if (cachedMachines) {
       return cachedMachines;
     }
+
     const machines = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
         roomId,
@@ -221,16 +252,19 @@ export class ModalityMachinesController {
   @ApiResponse({ status: 200, description: 'Modality machine details' })
   @ApiParam({ name: 'id', required: true, type: String })
   async findOne(@Param('id') id: string) {
-    const pattern = `${CacheEntity.modalityMachines}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.modalityMachines, id);
+
     const cachedMachine = await this.redisService.get(pattern);
     if (cachedMachine) {
       return cachedMachine;
     }
+
     const machine = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindOne', {
         id,
       })
     );
+
     await this.redisService.set(pattern, machine, CACHE_TTL_SECONDS);
     return machine;
   }
@@ -248,20 +282,15 @@ export class ModalityMachinesController {
         createModalityMachineDto,
       })
     );
-    const pattern = `${CacheEntity.modalityMachines}.${CacheKeyPattern.id}/${machine.id}`;
+
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.modalityMachines,
+      machine.id
+    );
+
+    await this.uncacheModalityMachine();
+
     await this.redisService.set(pattern, machine, CACHE_TTL_SECONDS);
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.byRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.stats}`
-    );
 
     return machine;
   }
@@ -284,20 +313,13 @@ export class ModalityMachinesController {
       })
     );
 
-    const pattern = `${CacheEntity.modalityMachines}.${CacheKeyPattern.id}/${machine.id}`;
+    await this.uncacheModalityMachine(id);
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.modalityMachines,
+      machine.id
+    );
     await this.redisService.set(pattern, machine, CACHE_TTL_SECONDS);
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.byRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.stats}`
-    );
+
     return machine;
   }
 
@@ -313,21 +335,9 @@ export class ModalityMachinesController {
         id,
       })
     );
-    const pattern = `${CacheEntity.modalityMachines}.${CacheKeyPattern.id}/${id}`;
-    await this.redisService.delete(pattern);
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.byRoomId}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.modalityMachines}.${CacheKeyPattern.stats}`
-    );
+    await this.uncacheModalityMachine(id);
+
     return result;
   }
 }

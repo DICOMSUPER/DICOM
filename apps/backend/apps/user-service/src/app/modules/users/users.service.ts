@@ -32,7 +32,7 @@ export class UsersService {
     private userRepository: Repository<User>,
     @InjectRepository(Department)
     private departmentRepository: Repository<Department>
-  ) {}
+  ) { }
 
   async findByEmail(email: string): Promise<User | null> {
     try {
@@ -166,8 +166,8 @@ export class UsersService {
     departmentId?: string;
     includeInactive?: boolean;
     includeDeleted?: boolean;
-      sortField?: string;
-      order?: 'asc' | 'desc';
+    sortField?: string;
+    order?: 'asc' | 'desc';
   }) {
     try {
       const page = query.page ?? 1;
@@ -203,11 +203,11 @@ export class UsersService {
 
       const mapSortField = (fieldName: string): string => {
         const allowedSortFields = ['username', 'email', 'employeeId'];
-        
+
         if (!allowedSortFields.includes(fieldName)) {
           return 'user.createdAt';
         }
-        
+
         return `user.${fieldName}`;
       };
 
@@ -370,7 +370,7 @@ export class UsersService {
       options: {
         httpOnly: boolean;
         secure: boolean;
-        sameSite: 'strict' | 'lax' | 'none';
+        sameSite: 'none';
         maxAge: number;
         path: string;
       };
@@ -396,7 +396,7 @@ export class UsersService {
 
       const user = await this.findByEmail(email);
       if (!user) {
-        throw new UserNotFoundException(undefined,'Không tìm thấy người dùng');
+        throw new UserNotFoundException(undefined, 'Không tìm thấy người dùng');
       }
 
       const { passwordHash, ...userWithoutPassword } = user;
@@ -472,8 +472,8 @@ export class UsersService {
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
-            secure: this.configService.get<string>('NODE_ENV') === 'production',
-            sameSite: 'none',
+            secure: true,        
+            sameSite: 'none',    
             maxAge: maxAge,
             path: '/',
           },

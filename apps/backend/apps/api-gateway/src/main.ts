@@ -32,7 +32,7 @@ process.on('uncaughtException', (error) => {
 async function bootstrap() {
   const startTime = Date.now();
   const logger = new Logger('ApiGateway');
-  
+
   try {
     logger.log('🚀 Starting API Gateway...');
 
@@ -48,6 +48,7 @@ async function bootstrap() {
     const configService = app.get(ConfigService);
 
     // CORS
+ 
     app.use(
       cors({
         // Allow local dev and production frontend (whole domain, not a single path)
@@ -55,6 +56,7 @@ async function bootstrap() {
           'http://localhost:3000',
           'http://localhost:5173',
           'https://fedicom.vercel.app',
+          'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app'
         ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -62,8 +64,7 @@ async function bootstrap() {
       })
     );
     app.use(cookieParser());
-    
-    // Express setup
+    // ✅ Express setup
     app.use(json({ limit: '200mb' }));
     app.use(urlencoded({ extended: true, limit: '200mb' }));
     expressApp.set('query parser', (str: any) => qs.parse(str, { depth: 10 }));

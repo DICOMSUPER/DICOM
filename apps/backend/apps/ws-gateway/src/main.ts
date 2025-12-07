@@ -39,11 +39,17 @@ async function bootstrap() {
     // CORS
     app.use(
       cors({
-        origin: ['http://localhost:3000'],
+        origin: [
+          'http://localhost:3000',
+          'https://fedicom.vercel.app',
+
+          'https://fedicom-mkip4rxmu-anhminhs-projects.vercel.app',
+        ],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       })
     );
+
     app.use(cookieParser());
 
     // Connect microservice
@@ -59,12 +65,16 @@ async function bootstrap() {
 
     const startServicesStart = Date.now();
     await app.startAllMicroservices();
-    logger.log(`⏱️  Start All Microservices: ${Date.now() - startServicesStart}ms`);
+    logger.log(
+      `⏱️  Start All Microservices: ${Date.now() - startServicesStart}ms`
+    );
 
     const listenStart = Date.now();
     await app.listen(socketPort);
     logger.log(`⏱️  HTTP Listen: ${Date.now() - listenStart}ms`);
-    logger.log(`🎯 WebSocket Gateway is running on: http://localhost:${socketPort}`);
+    logger.log(
+      `🎯 WebSocket Gateway is running on: http://localhost:${socketPort}`
+    );
     logger.log(`🎯 Microservice is running on: ${host}:${port}`);
 
     const totalTime = Date.now() - startTime;

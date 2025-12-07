@@ -4,6 +4,7 @@ import {
   Logger,
   UseInterceptors,
   Query,
+  Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { handleError } from '@backend/shared-utils';
@@ -14,20 +15,37 @@ import {
 import { Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 import { AnalyticsService } from './analytics.service';
-
+import { cacheKeyBuilder } from '../../../utils/cache-builder.utils';
+import { CACHE_TTL_SECONDS, CacheEntity } from '../../../../src/constant/cache';
+import { RedisService } from 'libs/redis/src';
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class AnalyticsController {
   private readonly logger = new Logger('AnalyticsController');
 
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    @Inject(RedisService)
+    private readonly redisService: RedisService
+  ) {}
 
   @Get('reception-stats')
   @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get reception staff analytics and statistics' })
-  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
-  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'year'],
+    description: 'Period type for time-based charts',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description:
+      'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year',
+  })
   @ApiResponse({
     status: 200,
     description: 'Reception analytics data retrieved successfully',
@@ -38,11 +56,14 @@ export class AnalyticsController {
   })
   async getReceptionAnalytics(
     @Query('period') period?: 'week' | 'month' | 'year',
-    @Query('value') value?: string,
+    @Query('value') value?: string
   ) {
     try {
       this.logger.log('Fetching reception analytics data');
-      const analytics = await this.analyticsService.getReceptionAnalytics(period, value);
+      const analytics = await this.analyticsService.getReceptionAnalytics(
+        period,
+        value
+      );
       this.logger.log('Reception analytics data retrieved successfully');
 
       return analytics;
@@ -55,8 +76,19 @@ export class AnalyticsController {
   @Get('stats')
   @Role(Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get admin analytics and statistics' })
-  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
-  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'year'],
+    description: 'Period type for time-based charts',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description:
+      'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year',
+  })
   @ApiResponse({
     status: 200,
     description: 'Analytics data retrieved successfully',
@@ -67,7 +99,7 @@ export class AnalyticsController {
   })
   async getAnalytics(
     @Query('period') period?: 'week' | 'month' | 'year',
-    @Query('value') value?: string,
+    @Query('value') value?: string
   ) {
     try {
       this.logger.log('Fetching analytics data');
@@ -84,8 +116,19 @@ export class AnalyticsController {
   @Get('physician-stats')
   @Role(Roles.PHYSICIAN, Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get physician analytics and statistics' })
-  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
-  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'year'],
+    description: 'Period type for time-based charts',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description:
+      'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year',
+  })
   @ApiResponse({
     status: 200,
     description: 'Physician analytics data retrieved successfully',
@@ -96,11 +139,14 @@ export class AnalyticsController {
   })
   async getPhysicianAnalytics(
     @Query('period') period?: 'week' | 'month' | 'year',
-    @Query('value') value?: string,
+    @Query('value') value?: string
   ) {
     try {
       this.logger.log('Fetching physician analytics data');
-      const analytics = await this.analyticsService.getPhysicianAnalytics(period, value);
+      const analytics = await this.analyticsService.getPhysicianAnalytics(
+        period,
+        value
+      );
       this.logger.log('Physician analytics data retrieved successfully');
 
       return analytics;
@@ -113,8 +159,19 @@ export class AnalyticsController {
   @Get('imaging-technician-stats')
   @Role(Roles.IMAGING_TECHNICIAN, Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get imaging technician analytics and statistics' })
-  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
-  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'year'],
+    description: 'Period type for time-based charts',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description:
+      'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year',
+  })
   @ApiResponse({
     status: 200,
     description: 'Imaging technician analytics data retrieved successfully',
@@ -125,16 +182,25 @@ export class AnalyticsController {
   })
   async getImagingTechnicianAnalytics(
     @Query('period') period?: 'week' | 'month' | 'year',
-    @Query('value') value?: string,
+    @Query('value') value?: string
   ) {
     try {
       this.logger.log('Fetching imaging technician analytics data');
-      const analytics = await this.analyticsService.getImagingTechnicianAnalytics(period, value);
-      this.logger.log('Imaging technician analytics data retrieved successfully');
+      const analytics =
+        await this.analyticsService.getImagingTechnicianAnalytics(
+          period,
+          value
+        );
+      this.logger.log(
+        'Imaging technician analytics data retrieved successfully'
+      );
 
       return analytics;
     } catch (error) {
-      this.logger.error('Failed to fetch imaging technician analytics data', error);
+      this.logger.error(
+        'Failed to fetch imaging technician analytics data',
+        error
+      );
       throw handleError(error);
     }
   }
@@ -142,8 +208,19 @@ export class AnalyticsController {
   @Get('radiologist-stats')
   @Role(Roles.RADIOLOGIST, Roles.SYSTEM_ADMIN)
   @ApiOperation({ summary: 'Get radiologist analytics and statistics' })
-  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'year'], description: 'Period type for time-based charts' })
-  @ApiQuery({ name: 'value', required: false, type: String, description: 'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['week', 'month', 'year'],
+    description: 'Period type for time-based charts',
+  })
+  @ApiQuery({
+    name: 'value',
+    required: false,
+    type: String,
+    description:
+      'Period value: week (YYYY-WW) for week, month (YYYY-MM) for month, year (YYYY) for year',
+  })
   @ApiResponse({
     status: 200,
     description: 'Radiologist analytics data retrieved successfully',
@@ -154,11 +231,14 @@ export class AnalyticsController {
   })
   async getRadiologistAnalytics(
     @Query('period') period?: 'week' | 'month' | 'year',
-    @Query('value') value?: string,
+    @Query('value') value?: string
   ) {
     try {
       this.logger.log('Fetching radiologist analytics data');
-      const analytics = await this.analyticsService.getRadiologistAnalytics(period, value);
+      const analytics = await this.analyticsService.getRadiologistAnalytics(
+        period,
+        value
+      );
       this.logger.log('Radiologist analytics data retrieved successfully');
 
       return analytics;
@@ -168,4 +248,3 @@ export class AnalyticsController {
     }
   }
 }
-

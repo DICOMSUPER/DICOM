@@ -32,6 +32,7 @@ import {
   UpdateImagingModalityDto,
 } from '@backend/shared-domain';
 import { ApiBody } from '@nestjs/swagger/dist/decorators/api-body.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 @ApiTags('Imaging Modalities')
 @Controller('imaging-modalities')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
@@ -43,11 +44,29 @@ export class ImagingModalitiesController {
     private readonly redisService: RedisService
   ) {}
 
+  private async uncacheImagingModalities(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.imagingModalities, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.findAll(CacheEntity.imagingModalities)
+    );
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.paginated(CacheEntity.imagingModalities)
+    );
+    await this.redisService.delete(
+      cacheKeyBuilder.stats(CacheEntity.imagingModalities)
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all imaging modalities' })
   @ApiResponse({ status: 200, description: 'List of imaging modalities' })
   async getImagingModalities() {
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.all}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.imagingModalities);
     const cachedModalities = await this.redisService.get(pattern);
     if (cachedModalities) {
       return cachedModalities;
@@ -83,15 +102,16 @@ export class ImagingModalitiesController {
     @Query('includeInactive') includeInactive?: boolean,
     @Query('includeDeleted') includeDeleted?: boolean
   ) {
-    const pattern = `${CacheEntity.imagingModalities}.${
-      CacheKeyPattern.paginated
-    }?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&searchField=${searchField || ''}&sortField=${sortField || ''}&order=${
-      order || ''
-    }&includeInactive=${includeInactive || ''}&includeDeleted=${
-      includeDeleted || ''
-    }`;
+    const pattern = cacheKeyBuilder.paginated(CacheEntity.imagingModalities, {
+      page,
+      limit,
+      search,
+      searchField,
+      sortField,
+      order,
+      includeInactive,
+      includeDeleted,
+    });
 
     const cachedModalities = await this.redisService.get(pattern);
     if (cachedModalities) {
@@ -121,7 +141,7 @@ export class ImagingModalitiesController {
   @ApiOperation({ summary: 'Get imaging modalities statistics' })
   @ApiResponse({ status: 200, description: 'Imaging modalities statistics' })
   async getStats() {
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.stats}`;
+    const pattern = cacheKeyBuilder.stats(CacheEntity.imagingModalities);
     const cachedStats = await this.redisService.get(pattern);
     if (cachedStats) {
       return cachedStats;
@@ -148,7 +168,7 @@ export class ImagingModalitiesController {
   @ApiResponse({ status: 200, description: 'Imaging modality details' })
   @ApiParam({ name: 'id', required: true, type: String })
   async getImagingModalityById(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingModalities, id);
     const cachedModality = await this.redisService.get(pattern);
     if (cachedModality) {
       return cachedModality;
@@ -179,18 +199,14 @@ export class ImagingModalitiesController {
       )
     );
 
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.id}/${modality.id}`;
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.imagingModalities,
+      modality.id
+    );
+
     await this.redisService.set(pattern, modality, CACHE_TTL_SECONDS);
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.stats}`
-    );
+    await this.uncacheImagingModalities();
 
     return modality;
   }
@@ -206,7 +222,8 @@ export class ImagingModalitiesController {
     @Param('id') id: string,
     @Body() updateImagingModalityDto: UpdateImagingModalityDto
   ) {
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingModalities, id);
+
     const modality = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.Update', {
         id,
@@ -214,34 +231,16 @@ export class ImagingModalitiesController {
       })
     );
 
-    await this.redisService.set(pattern, modality, CACHE_TTL_SECONDS);
+    await this.uncacheImagingModalities(id);
 
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.stats}`
-    );
+    await this.redisService.set(pattern, modality, CACHE_TTL_SECONDS);
 
     return modality;
   }
 
   @Delete(':id')
   async deleteImagingModality(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imagingModalities}.${CacheKeyPattern.id}/${id}`;
-    await this.redisService.delete(pattern);
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingModalities}.${CacheKeyPattern.stats}`
-    );
+    await this.uncacheImagingModalities(id);
 
     return await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.Delete', {

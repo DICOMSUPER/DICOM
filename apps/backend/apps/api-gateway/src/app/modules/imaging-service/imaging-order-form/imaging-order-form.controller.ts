@@ -39,6 +39,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 import { ApiParam } from '@nestjs/swagger/dist/decorators/api-param.decorator';
 import { ApiTags } from '@nestjs/swagger/dist/decorators/api-use-tags.decorator';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 
 @ApiTags('Imaging Order Forms')
 @Controller('imaging-order-form')
@@ -52,6 +53,20 @@ export class ImagingOrderFormController {
     @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
+
+  private async uncacheImagingOrderForms(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.imagingOrderForms, id)
+      );
+    }
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byPatientId(CacheEntity.imagingOrderForms)
+    );
+    await this.redisService.delete(
+      cacheKeyBuilder.findAll(CacheEntity.imagingOrderForms)
+    );
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new imaging order form' })
@@ -96,22 +111,15 @@ export class ImagingOrderFormController {
       })
     );
 
-    const pattern = `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.id}/${orderForm.id}`;
+    const pattern = cacheKeyBuilder.id(
+      CacheEntity.imagingOrderForms,
+      orderForm.id
+    );
+
+    await this.uncacheImagingOrderForms();
+
     await this.redisService.set(pattern, orderForm, CACHE_TTL_SECONDS);
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.stats}`
-    );
-
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
-    );
     return orderForm;
   }
 
@@ -136,23 +144,25 @@ export class ImagingOrderFormController {
   ) {
     const userId = req.userInfo.userId;
 
-    const pattern = `${CacheEntity.imagingOrderForms}.${
-      CacheKeyPattern.paginated
-    }?page=${filter.page || ''}&limit=${filter.limit || ''}&order=${
-      filter.order || ''
-    }&patientName=${filter.patientName || ''}&status=${filter.status || ''}`;
+    const pattern = cacheKeyBuilder.findAll(CacheEntity.imagingOrderForms, {
+      ...filter,
+      userId,
+    });
 
     const cachedOrderForms = await this.redisService.get(pattern);
     if (cachedOrderForms) {
       return cachedOrderForms;
     }
+
     const orderForms = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.FindAll', {
         filter,
         userId,
       })
     );
+
     await this.redisService.set(pattern, orderForms, CACHE_TTL_SECONDS);
+
     return orderForms;
   }
 
@@ -161,7 +171,7 @@ export class ImagingOrderFormController {
   @ApiResponse({ status: 200, description: 'Imaging order form details' })
   @ApiParam({ name: 'id', description: 'Imaging Order Form ID' })
   async getImagingOrderForm(@Param('id') id: string) {
-    const pattern = `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrderForms, id);
 
     const cachedOrderForm = await this.redisService.get(pattern);
     if (cachedOrderForm) {
@@ -173,7 +183,9 @@ export class ImagingOrderFormController {
         id,
       })
     );
+
     await this.redisService.set(pattern, orderForm, CACHE_TTL_SECONDS);
+
     return orderForm;
   }
 
@@ -188,7 +200,7 @@ export class ImagingOrderFormController {
     @Param('id') id: string,
     @Body() updateImagingOrderFormDto: any
   ) {
-    const pattern = `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.id}/${id}`;
+    const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrderForms, id);
     const result = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.Update', {
         id,
@@ -196,19 +208,10 @@ export class ImagingOrderFormController {
       })
     );
 
+    await this.uncacheImagingOrderForms(id);
+
     await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.stats}`
-    );
+
     return result;
   }
 
@@ -224,23 +227,7 @@ export class ImagingOrderFormController {
       this.imagingService.send('ImagingService.ImagingOrderForm.Delete', { id })
     );
 
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.paginated}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.all}`
-    );
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.stats}`
-    );
-
-    await this.redisService.deleteKeyStartingWith(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.byPatientId}`
-    );
-
-    await this.redisService.delete(
-      `${CacheEntity.imagingOrderForms}.${CacheKeyPattern.id}/${id}`
-    );
+    await this.uncacheImagingOrderForms(id);
 
     return result;
   }
@@ -271,11 +258,17 @@ export class ImagingOrderFormController {
     @Query('sortField') sortField?: string,
     @Query('order') order?: 'asc' | 'desc'
   ) {
-    const pattern = `${CacheEntity.imagingOrderForms}.${
-      CacheKeyPattern.byPatientId
-    }/${patientId}?page=${page || ''}&limit=${limit || ''}&search=${
-      search || ''
-    }&sortField=${sortField || ''}&order=${order || ''}`;
+    const pattern = cacheKeyBuilder.byPatientId(
+      CacheEntity.imagingOrderForms,
+      patientId,
+      {
+        page,
+        limit,
+        search,
+        sortField,
+        order,
+      }
+    );
 
     const cachedOrderForms = await this.redisService.get(pattern);
     if (cachedOrderForms) {
