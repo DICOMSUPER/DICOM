@@ -43,6 +43,36 @@ export class AppController {
     description: 'Health status retrieved successfully',
   })
   async checkAllServicesHealth() {
+    // Run all health checks in parallel to ensure all services are checked
+    const [
+      userService,
+      patientService,
+      imagingService,
+      systemService,
+      websocketGateway,
+    ] = await Promise.allSettled([
+      this.checkServiceHealth(
+        this.userServiceClient,
+        'UserService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.patientServiceClient,
+        'PatientService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.imagingServiceClient,
+        'ImagingService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.systemServiceClient,
+        'SystemService.HealthCheck'
+      ),
+      this.checkServiceHealth(
+        this.websocketServiceClient,
+        'WebSocketGateway.HealthCheck'
+      ),
+    ]);
+
     const results = {
       apiGateway: {
         status: 'healthy',
@@ -50,31 +80,47 @@ export class AppController {
         timestamp: new Date().toISOString(),
       },
       services: {
-        userService: await this.checkServiceHealth(
-          this.userServiceClient,
-          'UserService.HealthCheck'
-        ),
-        patientService: await this.checkServiceHealth(
-          this.patientServiceClient,
-          'PatientService.HealthCheck'
-        ),
-        imagingService: await this.checkServiceHealth(
-          this.imagingServiceClient,
-          'ImagingService.HealthCheck'
-        ),
-        systemService: await this.checkServiceHealth(
-          this.systemServiceClient,
-          'SystemService.HealthCheck'
-        ),
-        websocketGateway: await this.checkServiceHealth(
-          this.websocketServiceClient,
-          'WebSocketGateway.HealthCheck'
-        ),
+        userService:
+          userService.status === 'fulfilled'
+            ? userService.value
+            : {
+                status: 'unhealthy',
+                error: userService.reason?.message || 'Health check failed',
+              },
+        patientService:
+          patientService.status === 'fulfilled'
+            ? patientService.value
+            : {
+                status: 'unhealthy',
+                error: patientService.reason?.message || 'Health check failed',
+              },
+        imagingService:
+          imagingService.status === 'fulfilled'
+            ? imagingService.value
+            : {
+                status: 'unhealthy',
+                error: imagingService.reason?.message || 'Health check failed',
+              },
+        systemService:
+          systemService.status === 'fulfilled'
+            ? systemService.value
+            : {
+                status: 'unhealthy',
+                error: systemService.reason?.message || 'Health check failed',
+              },
+        websocketGateway:
+          websocketGateway.status === 'fulfilled'
+            ? websocketGateway.value
+            : {
+                status: 'unhealthy',
+                error:
+                  websocketGateway.reason?.message || 'Health check failed',
+              },
       },
     };
 
     const allHealthy = Object.values(results.services).every(
-      (service: any) => service.status === 'healthy'
+      (service: { status: string }) => service.status === 'healthy'
     );
 
     return {
@@ -178,6 +224,14 @@ export class AppController {
     serviceClient: ClientProxy,
     pattern: string
   ): Promise<{ status: string; message?: string; error?: string }> {
+    // Check if client is available
+    if (!serviceClient) {
+      return {
+        status: 'unhealthy',
+        error: 'Service client not available',
+      };
+    }
+
     try {
       const response = await firstValueFrom(
         serviceClient.send(pattern, {}).pipe(
@@ -191,10 +245,16 @@ export class AppController {
         status: 'healthy',
         message: response?.message || 'Service is running',
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+          ? error
+          : String(error) || 'Service not available';
       return {
         status: 'unhealthy',
-        error: error.message || 'Service not available',
+        error: errorMessage,
       };
     }
   }

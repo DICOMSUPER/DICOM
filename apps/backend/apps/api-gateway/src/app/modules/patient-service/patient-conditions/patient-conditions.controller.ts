@@ -21,6 +21,12 @@ import {
   TransformInterceptor,
 } from '@backend/shared-interceptor';
 import { RepositoryPaginationDto } from '@backend/database';
+import { RedisService } from '@backend/redis';
+import {
+  CACHE_TTL_SECONDS,
+  CacheEntity,
+} from '../../../../../src/constant/cache';
+import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 @Controller('patient-conditions')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientConditionController {
@@ -28,18 +34,45 @@ export class PatientConditionController {
 
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-    private readonly patientService: ClientProxy
+    private readonly patientService: ClientProxy,
+    @Inject('REDIS_SERVICE')
+    private readonly redisService: RedisService
   ) {}
+
+  private async uncachePatientConditions(id?: string) {
+    if (id) {
+      await this.redisService.delete(
+        cacheKeyBuilder.id(CacheEntity.patientConditions, id)
+      );
+    }
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.findAll(CacheEntity.patientConditions)
+    );
+
+    await this.redisService.deleteKeyStartingWith(
+      cacheKeyBuilder.byPatientId(CacheEntity.patientConditions)
+    );
+  }
 
   @Post()
   async create(@Body() createPatientConditionDto: any) {
     try {
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send(
           'PatientService.PatientCondition.Create',
           createPatientConditionDto
         )
       );
+
+      await this.uncachePatientConditions();
+
+      await this.redisService.set(
+        cacheKeyBuilder.id(CacheEntity.patientConditions, result.id),
+        result,
+        CACHE_TTL_SECONDS
+      );
+      return result;
     } catch (error) {
       this.logger.error('Error creating patient condition:', error);
       throw error;
@@ -59,15 +92,28 @@ export class PatientConditionController {
         limit
       );
 
+      const pattern = cacheKeyBuilder.findAll(CacheEntity.patientConditions, {
+        ...validatedParams,
+        ...searchDto,
+      });
+
+      const cachedData = await this.redisService.get(pattern);
+      if (cachedData) {
+        return cachedData;
+      }
+
       const paginationDto = {
         ...validatedParams,
         ...searchDto,
       };
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.FindMany', {
           paginationDto,
         })
       );
+
+      await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+      return result;
     } catch (error) {
       this.logger.error('Error finding all patient conditions:', error);
       throw error;
@@ -85,12 +131,27 @@ export class PatientConditionController {
         page: pagination.page ?? 1,
         limit: pagination.limit ?? 10,
       };
-      return await firstValueFrom(
+
+      const pattern = cacheKeyBuilder.byPatientId(
+        CacheEntity.patientConditions,
+        id,
+        paginationDto
+      );
+
+      const cachedData = await this.redisService.get(pattern);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const result = await firstValueFrom(
         this.patientService.send(
           'PatientService.PatientCondition.FindByPatientId',
           { patientId: id, paginationDto }
         )
       );
+
+      await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+      return result;
     } catch (error) {
       this.logger.error(
         'Error finding patient conditions by patient ID:',
@@ -108,11 +169,21 @@ export class PatientConditionController {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
 
-      return await firstValueFrom(
+      const pattern = cacheKeyBuilder.id(CacheEntity.patientConditions, id);
+
+      const cachedData = await this.redisService.get(pattern);
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const result = await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.FindOne', {
           id,
         })
       );
+
+      await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+      return result;
     } catch (error) {
       this.logger.error('Error finding patient condition by ID:', error);
       throw error;
@@ -130,7 +201,7 @@ export class PatientConditionController {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
 
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.Update', {
           id,
           updatePatientConditionDto,
@@ -150,11 +221,15 @@ export class PatientConditionController {
         throw new BadRequestException(`Invalid UUID format: ${id}`);
       }
 
-      return await firstValueFrom(
+      const result = await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.Delete', {
           id,
         })
       );
+
+      await this.uncachePatientConditions(id);
+
+      return result;
     } catch (error) {
       this.logger.error('Error deleting patient condition:', error);
       throw error;

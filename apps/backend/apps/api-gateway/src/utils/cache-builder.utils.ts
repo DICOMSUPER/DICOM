@@ -126,6 +126,12 @@ export const cacheKeyBuilder = {
   byRoomId: (entity: CacheEntity, roomId?: string) => {
     return `${entity}.${CacheKeyPattern.byRoomId}/${roomId ? roomId : ''}`;
   },
+
+  physicianStats: (entity: CacheEntity, query?: object) => {
+    const basePattern = `${entity}.${CacheKeyPattern.receptionStats}`;
+    const hashedQuery = hashQuery(query);
+    return hashedQuery ? `${basePattern}?${hashedQuery}` : basePattern;
+  },
 };
 
 // hash query for shorter key => better performance

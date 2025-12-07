@@ -12,7 +12,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetBodyPartsPaginatedQuery } from "@/store/bodyPartApi";
-import { useGetTemplatesByModalityBodyPartMutation } from "@/store/diagnosisReportTeamplateApi";
+import { useGetTemplatesByModalityBodyPartMutation } from "@/store/diagnosisReportTemplateApi";
 
 interface SelectTemplateDialogProps {
     open: boolean;
