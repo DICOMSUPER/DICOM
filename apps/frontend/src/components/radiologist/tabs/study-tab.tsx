@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
+import { AlertCircle } from "lucide-react";
 import SidebarTab from "@/components/radiologist/patientDetailTab/SideBarTab";
 import MedicalRecordMain from "@/components/radiologist/patientDetailTab/MainDetail";
 import { usePatientService } from "@/hooks/usePatientService";
@@ -54,11 +55,23 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
 
     console.log("check 2 : ",diagnosisData)
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
-  if (isError) return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
+if (isLoading)
+  return (
+    <div className="flex flex-col items-center justify-center h-full flex-1 text-slate-500 gap-2">
+      <span className="inline-flex h-8 w-8 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
+      Đang tải...
+    </div>
+  );
+if (isError)
+  return (
+    <div className="flex flex-col items-center justify-center h-full flex-1 text-red-600 gap-2">
+      <AlertCircle className="h-8 w-8 text-red-500" />
+      Lỗi tải dữ liệu: {(error as any)?.message || "Không thể tải dữ liệu"}
+    </div>
+  );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex bg-gray-50">
 
       {patientData?.data && (
         <SidebarTab

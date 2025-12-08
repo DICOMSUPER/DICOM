@@ -72,10 +72,16 @@ export default function Sidebar() {
         </div>
         <div className="py-2">
           {isLoadingModality && (
-            <div className="px-3 py-2 text-xs text-foreground">Loading...</div>
+            <div className="px-3 py-4 text-xs text-foreground flex items-center justify-center gap-2">
+              <span className="inline-flex h-4 w-4 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
+              Loading...
+            </div>
           )}
           {!isLoadingModality && modalities.length === 0 && (
-            <div className="px-3 py-2 text-xs text-foreground">No data</div>
+            <div className="px-3 py-4 text-xs text-foreground flex items-center justify-center gap-2">
+              <span className="inline-flex h-4 w-4 rounded-full border border-dashed border-slate-300" />
+              No data
+            </div>
           )}
 
           {!isLoadingModality &&

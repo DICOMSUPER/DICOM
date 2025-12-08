@@ -2,12 +2,12 @@
 
 import { TabData, useTabs } from "./tab-context";
 import TabBar from "./tab-bar";
-import { ReactNode, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Loading from "@/components/common/Loading";
 
 export default function TabLayout() {
-  const { availableTabs, activeTabId, setActiveTabId } = useTabs();
+  const { availableTabs, activeTabId } = useTabs();
   const [currentTab, setCurrentTab] = useState<TabData | null | undefined>(
     null
   );
@@ -32,14 +32,13 @@ export default function TabLayout() {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {/* Tab bar */}
           <TabBar />
           {/* Tab content */}
-          <div className="max-h-[75vh] overflow-y-auto">
-            {" "}
+          <div className="flex-1 min-h-0 overflow-hidden">
             {currentTab && (
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 min-h-0 h-full overflow-hidden">
                 {currentTab.tabContent}
               </div>
             )}

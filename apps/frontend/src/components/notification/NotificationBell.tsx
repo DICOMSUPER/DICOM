@@ -125,8 +125,10 @@ const NotificationBell: React.FC = () => {
               {unreadCount > 99 ? "99+" : unreadCount}
             </div>
           )}
-          {isConnected && (
+          {isConnected ? (
             <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-white" />
+          ) : (
+            <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-slate-300 ring-2 ring-white" />
           )}
         </Button>
       </DropdownMenuTrigger>

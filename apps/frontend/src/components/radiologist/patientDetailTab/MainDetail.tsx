@@ -6,7 +6,19 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Lock, Eye, Settings, Video, FileText, Image, MessageSquare, Mail, Clipboard, CheckCircle } from "lucide-react";
+import {
+  Lock,
+  Eye,
+  Settings,
+  Video,
+  FileText,
+  Image,
+  MessageSquare,
+  Mail,
+  Clipboard,
+  CheckCircle,
+  Stethoscope,
+} from "lucide-react";
 
 import { useCreateDiagnosisMutation, useUpdateDiagnosisMutation } from "@/store/diagnosisApi";
 import { CreateDiagnosisReportDto, DiagnosisStatus, DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
@@ -213,9 +225,9 @@ const MedicalRecordMain = ({
   if (!selectedStudyId) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
-        <Card className="p-12 text-center shadow-lg rounded-2xl max-w-lg bg-white">
+        {/* <Card className="p-12 text-center shadow-lg rounded-2xl max-w-lg bg-white border-border"> */}
           <div className="flex flex-col items-center gap-4">
-            <div className="text-6xl animate-bounce">🩺</div>
+            <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-700">Chào mừng đến với Medical Record</h1>
             <p className="text-gray-500">
               Vui lòng chọn một <span className="font-medium text-blue-600">Study</span> để bắt đầu.
@@ -229,7 +241,7 @@ const MedicalRecordMain = ({
               Hướng dẫn chọn Study
             </Button>
           </div>
-        </Card>
+        {/* </Card> */}
       </div>
     );
   }
