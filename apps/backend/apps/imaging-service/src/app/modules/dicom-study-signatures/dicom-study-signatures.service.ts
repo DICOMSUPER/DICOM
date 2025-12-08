@@ -147,13 +147,13 @@ export class DicomStudySignaturesService {
     }
 
     // Check if study has been verified by technician
-    if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
-      throw new InvalidStudyStatusException(
-        study.studyStatus,
-        DicomStudyStatus.TECHNICIAN_VERIFIED,
-        studyId
-      );
-    }
+    // if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
+    //   throw new InvalidStudyStatusException(
+    //     study.studyStatus,
+    //     DicomStudyStatus.TECHNICIAN_VERIFIED,
+    //     studyId
+    //   );
+    // }
 
     // Check if physician has already approved
     const existingSignature = study.studySignatures?.find(
