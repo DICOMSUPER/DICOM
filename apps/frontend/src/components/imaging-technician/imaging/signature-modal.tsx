@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import SignatureDisplay from "@/components/common/signature-display";
+import { useGetUserByIdQuery } from "@/store/userApi";
 
 export default function SignatureModal({
   isOpen,
@@ -32,7 +33,10 @@ export default function SignatureModal({
   const [technicianVerify, { isLoading: isVerifyingStudy }] =
     useTechnicianVerifyStudyMutation();
 
-  const user = useSelector((state: RootState) => state.auth.user);
+  const user = useGetUserByIdQuery(
+    useSelector((state: RootState) => state.auth.user?.id) || "",
+    { skip: !useSelector((state: RootState) => state.auth.user?.id) }
+  ).data?.data;
 
   // Reset state when modal closes
   useEffect(() => {
@@ -153,7 +157,7 @@ export default function SignatureModal({
                   Your Signature
                 </label>
                 <div className="border-2 border-gray-300 rounded-md bg-gray-50 h-32 flex flex-col items-center justify-center">
-                  {user?.firstName && user?.lastName ? (
+                  {user && user?.firstName && user?.lastName ? (
                     <SignatureDisplay
                       firstName={user.firstName}
                       lastName={user.lastName}
