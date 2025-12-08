@@ -114,7 +114,7 @@ const MedicalRecordMain = ({
     try {
       const payload = {
         reason,
-        status: "rejected" as const,
+        status: DicomStudyStatus.REJECTED,
       };
 
       await updateStudyDicom({ id: selectedStudyId, data: payload });
