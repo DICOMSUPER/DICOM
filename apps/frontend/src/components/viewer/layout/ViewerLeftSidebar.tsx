@@ -52,7 +52,8 @@ interface ViewerLeftSidebarProps {
   onViewDraftAnnotations?: () => void;
   activeAnnotationView?: "all" | "draft" | null;
   viewportReady?: boolean; // Add viewport ready flag to disable tools until image is loaded
-  isOrderFinalized?: boolean; // Disable annotation/segmentation tools if order is completed/cancelled
+  isStudyLocked?: boolean; // Disable annotation/segmentation tools if study is finalized
+  onReloadSeries?: () => void; // reload current series into viewport
 }
 
 const SERIES_LAYOUTS = [
@@ -62,11 +63,18 @@ const SERIES_LAYOUTS = [
   { id: "2x2", icon: Layout, label: "2x2" },
 ] as const;
 
-const NAVIGATION_TOOLS = [
+type ToolConfig = {
+  id: string;
+  icon: any;
+  label: string;
+  shortcut?: string;
+  action?: string;
+};
+
+const NAVIGATION_TOOLS: readonly ToolConfig[] = [
   { id: "WindowLevel", icon: ScanLine, label: "Window/Level", shortcut: "W" },
   { id: "Pan", icon: Move, label: "Pan", shortcut: "P" },
   { id: "Zoom", icon: Search, label: "Zoom", shortcut: "Z" },
-  { id: "Probe", icon: Target, label: "Probe", shortcut: "I" },
   { id: "Magnify", icon: Maximize2, label: "Magnify", shortcut: "M" },
   { id: "PlanarRotate", icon: RotateCw, label: "Planar Rotate", shortcut: "O" },
   { id: "TrackballRotate", icon: RotateCw, label: "Trackball Rotate", shortcut: "R" },
@@ -74,7 +82,7 @@ const NAVIGATION_TOOLS = [
   { id: "invert", icon: MousePointer, label: "Invert Colors", action: "invert" },
 ] as const;
 
-const MEASUREMENT_TOOLS = [
+const MEASUREMENT_TOOLS: readonly ToolConfig[] = [
   { id: "Length", icon: Ruler, label: "Length", shortcut: "L" },
   { id: "Height", icon: Ruler, label: "Height", shortcut: "H" },
   { id: "CircleROI", icon: Circle, label: "Circle ROI", shortcut: "C" },
@@ -84,9 +92,10 @@ const MEASUREMENT_TOOLS = [
   { id: "ArrowAnnotate", icon: ArrowRight, label: "Arrow", shortcut: "Shift+A" },
   { id: "CobbAngle", icon: RotateCcwIcon, label: "Cobb Angle", shortcut: "Shift+C" },
   { id: "SplineROI", icon: Circle, label: "Spline ROI", shortcut: "S" },
+  { id: "Probe", icon: Target, label: "Probe", shortcut: "I" },
 ] as const;
 
-const ANNOTATION_MANAGEMENT_TOOLS = [
+const ANNOTATION_MANAGEMENT_TOOLS: readonly ToolConfig[] = [
   { id: "toggle-annotations", icon: Eye, label: "Toggle Annotations", action: "toggleAnnotations" },
   { id: "view-all-annotations", icon: FileText, label: "View All Annotations", action: "viewAllAnnotations" },
   { id: "view-draft-annotations", icon: FileClock, label: "View Draft Annotations", action: "viewDraftAnnotations" },
@@ -96,14 +105,9 @@ const ANNOTATION_MANAGEMENT_TOOLS = [
 ] as const;
 
 
-const ANNOTATION_TOOLS = [
-  { id: "KeyImage", icon: MousePointer, label: "Key Image", shortcut: "Q" },
-  { id: "Label", icon: MousePointer, label: "Label", shortcut: "N" },
-  { id: "DragProbe", icon: Target, label: "Drag Probe", shortcut: "F" },
-  { id: "PaintFill", icon: MousePointer, label: "Paint Fill", shortcut: "Y" },
-] as const;
+const ANNOTATION_TOOLS: readonly ToolConfig[] = [];
 
-const SEGMENTATION_TOOLS = [
+const SEGMENTATION_TOOLS: readonly ToolConfig[] = [
   { id: "Brush", icon: Paintbrush, label: "Brush", shortcut: "S" },
   { id: "CircleScissors", icon: CircleDot, label: "Circle Scissors", shortcut: "G" },
   { id: "RectangleScissors", icon: Square, label: "Rectangle Scissors", shortcut: "X" },
@@ -119,7 +123,8 @@ export default function ViewerLeftSidebar({
   onViewDraftAnnotations,
   activeAnnotationView,
   viewportReady = false,
-  isOrderFinalized = false,
+  isStudyLocked = false,
+  onReloadSeries,
 }: ViewerLeftSidebarProps) {
   const {
     resetView,
@@ -186,18 +191,12 @@ export default function ViewerLeftSidebar({
       deleteSegmentationLayer(layerId);
       await refetchSegmentationLayers();
 
-      // Reset tool if no layers remain
-      const remainingLayers = getSegmentationLayers();
-      if (remainingLayers.length === 0) {
-        onToolSelect("WindowLevel");
-      }
-
       toast.success("Segmentation layer deleted from database");
     } catch (error) {
       console.error("Error deleting segmentation layer:", error);
       toast.error("Error deleting segmentation layer from database");
     }
-  }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers, getSegmentationLayers, onToolSelect]);
+  }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);
 
   // Tool display name mapping - constant, no need for useMemo
   const TOOL_DISPLAY_NAME_MAP = new Map<string, string>([
@@ -273,7 +272,7 @@ export default function ViewerLeftSidebar({
   const segmentationState = useMemo(() => {
     const selectedLayerCount = getSelectedLayerCount();
     const historyState = getSegmentationHistoryState();
-    const layers = getSegmentationLayers();
+    const layers = getSegmentationLayers() as any[];
     const currentLayerIndex = getCurrentSegmentationLayerIndex();
     const currentLayer = layers.find(
       (layer) => layer.id === layers[currentLayerIndex]?.id
@@ -401,24 +400,31 @@ export default function ViewerLeftSidebar({
                   : tool;
                 
                 // Disable annotation management if viewport not ready OR order is finalized
-                const isDisabled = !viewportReady || isOrderFinalized;
+                const isDisabled =
+                  tool.id === "view-all-annotations"
+                    ? false
+                    : !viewportReady || isStudyLocked;
                 
                 return (
                   <ToolButton
                     key={tool.id}
                     tool={toolWithDynamicIcon}
                     isActive={false}
-                    onClick={() => handleTransformAction(tool.action)}
+                    onClick={() => {
+                      if (tool.action) {
+                        handleTransformAction(tool.action);
+                      }
+                    }}
                     disabled={isDisabled}
                     className={getActionButtonClasses(tool.id)}
                   />
                 );
               })}
             </div>
-            {isOrderFinalized && (
+            {isStudyLocked && (
               <div className="text-xs text-amber-400 bg-amber-900/20 border border-amber-700/30 rounded px-2 py-1.5 mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="h-3 w-3 shrink-0" />
-                <span>Order is finalized. Annotations are read-only.</span>
+                <span>Study is finalized. Annotations are read-only.</span>
               </div>
             )}
           </div>
@@ -438,7 +444,11 @@ export default function ViewerLeftSidebar({
                       key={tool.id}
                       tool={tool}
                       isActive={false}
-                      onClick={() => handleTransformAction(tool.action)}
+                      onClick={() => {
+                        if (tool.action) {
+                          handleTransformAction(tool.action);
+                        }
+                      }}
                       disabled={!viewportReady}
                       className={getActionButtonClasses(tool.id)}
                     />
@@ -455,6 +465,13 @@ export default function ViewerLeftSidebar({
                   />
                 );
               })}
+              <ToolButton
+                key="reload-series"
+                tool={{ id: "reload-series", icon: RefreshCw, label: "Reload Series", shortcut: "" } as any}
+                isActive={false}
+                onClick={() => onReloadSeries?.()}
+                disabled={!viewportReady}
+              />
             </div>
           </div>
 
@@ -467,11 +484,11 @@ export default function ViewerLeftSidebar({
             <AIDiagnosisButton />
           </div>
 
-          {/* Measurement Tools Section */}
+          {/* Annotation Tools Section */}
           <div>
-            <h3 className="text-white font-semibold mb-3">Measurement Tools</h3>
+            <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
             <p className="text-slate-400 text-xs mb-3">
-              Measure and analyze regions of interest (ROI)
+              Add notes, measure, and analyze regions of interest (ROI)
             </p>
             <div className="grid grid-cols-2 gap-2">
               {MEASUREMENT_TOOLS.map((tool) => (
@@ -480,13 +497,13 @@ export default function ViewerLeftSidebar({
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
                   onClick={() => onToolSelect(tool.id)}
-                  disabled={!viewportReady || isOrderFinalized}
+                  disabled={!viewportReady}
                 />
               ))}
             </div>
           </div>
 
-          {/* Annotation Tools Section */}
+          {/* (Legacy) Annotation Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
             <p className="text-slate-400 text-xs mb-3">
@@ -499,7 +516,7 @@ export default function ViewerLeftSidebar({
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
                   onClick={() => onToolSelect(tool.id)}
-                  disabled={!viewportReady || isOrderFinalized}
+                  disabled={!viewportReady || isStudyLocked}
                 />
               ))}
             </div>
@@ -560,7 +577,7 @@ export default function ViewerLeftSidebar({
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
                     onClick={() => onToolSelect(tool.id)}
-                    disabled={segmentationState.disabled || isOrderFinalized}
+                    disabled={segmentationState.disabled || isStudyLocked}
                   />
                 ))}
               </div>

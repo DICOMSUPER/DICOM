@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, forwardRef, useImperativeHandle, useMemo, useCallback, memo } from "react";
+import { useEffect, useRef, forwardRef, useImperativeHandle, useMemo, useCallback } from "react";
 import {
   addTool,
   ToolGroupManager,
@@ -7,7 +7,6 @@ import {
   PlanarFreehandROITool,
   StackScrollTool,
   PlanarRotateTool,
-  ScaleOverlayTool,
   annotation,
   segmentation,
   Enums as SegmentationEnums,
@@ -20,6 +19,8 @@ import {
   Enums as CoreEnums,
 } from "@cornerstonejs/core";
 import { AnnotationType } from "@/enums/image-dicom.enum";
+import viewportStateManager from "@/utils/viewportStateManager";
+import { ViewportStatus } from "@/types/viewport-state";
 import {
   useViewer,
   type AnnotationHistoryEntry,
@@ -36,19 +37,12 @@ import { extractMeasurementFromAnnotation, formatMeasurement } from "@/utils/dic
 // Import tool constants from separate file for better tree-shaking
 import {
   TOOL_MAPPINGS,
-  TOOL_BINDINGS,
-  getToolMapping,
   getToolName,
-  getToolClass,
   isCustomTool,
   getToolByKeyboardShortcut,
-  getKeyboardShortcut,
-  getAllKeyboardShortcuts,
-  getNonCustomMappings,
   getAllToolNames,
+  getNonCustomMappings,
   type ToolType,
-  type ToolMapping,
-  type ToolBindings,
 } from "./tool-constants";
 
 // Tool mappings and constants imported from separate file for better code splitting
@@ -106,33 +100,33 @@ const isDatabaseAnnotation = (annotationCandidate?: Annotation | null) => {
   return sourceValue === "db";
 };
 
-const removeDraftAnnotationsFromElement = (element: HTMLDivElement | null) => {
-  if (!element) {
-    return;
-  }
+// const removeDraftAnnotationsFromElement = (element: HTMLDivElement | null) => {
+//   if (!element) {
+//     return;
+//   }
 
-  annotationToolNames.forEach((toolName) => {
-    try {
-      const annotationsForTool = annotation.state.getAnnotations(
-        toolName,
-        element
-      ) as Annotation[] | undefined;
-      if (!annotationsForTool?.length) {
-        return;
-      }
-      annotationsForTool.forEach((annotationItem) => {
-        if (isDatabaseAnnotation(annotationItem)) {
-          return;
-        }
-        if (annotationItem?.annotationUID) {
-          annotation.state.removeAnnotation(annotationItem.annotationUID);
-        }
-      });
-    } catch (error) {
-      console.warn(`Failed to remove annotations for tool ${toolName}:`, error);
-    }
-  });
-};
+//   annotationToolNames.forEach((toolName) => {
+//     try {
+//       const annotationsForTool = annotation.state.getAnnotations(
+//         toolName,
+//         element
+//       ) as Annotation[] | undefined;
+//       if (!annotationsForTool?.length) {
+//         return;
+//       }
+//       annotationsForTool.forEach((annotationItem) => {
+//         if (isDatabaseAnnotation(annotationItem)) {
+//           return;
+//         }
+//         if (annotationItem?.annotationUID) {
+//           annotation.state.removeAnnotation(annotationItem.annotationUID);
+//         }
+//       });
+//     } catch (error) {
+//       console.warn(`Failed to remove annotations for tool ${toolName}:`, error);
+//     }
+//   });
+// };
 
 // Keyboard shortcut helpers are imported from tool-constants
 
@@ -413,11 +407,6 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       });
       if (restored) {
         viewport?.render?.();
-        console.log(`[Segmentation] ${action} applied`, {
-          viewportId,
-          segmentationId: snapshot.segmentationId,
-          slices: snapshot.imageData.length,
-        });
       }
     }, [viewport, viewportId]);
 
@@ -663,6 +652,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       }
 
       let initialized = false;
+      let unsubscribeViewportState: (() => void) | null = null;
 
       try {
         nonCustomMappings.forEach(({ toolClass }) => addTool(toolClass));
@@ -711,7 +701,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
             console.warn(`Viewport not available for ${viewportId}, deferring tool group attachment`);
           } else {
             const imageData = (currentViewport as any).getImageData?.();
-            if (imageData && imageData.imageData) {
+            const stateData = viewportStateManager.getState(viewportId);
+            const resolvedImageData = imageData?.imageData || stateData?.imageData;
+
+            if (resolvedImageData) {
               toolGroup.addViewport(viewportId, renderingEngineId);
               initialized = true;
               viewportRegisteredRef.current = true;
@@ -726,6 +719,22 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       }
 
       if (!initialized) {
+        // Fallback: subscribe to viewport state changes and attach once image data is ready
+        unsubscribeViewportState = viewportStateManager.subscribe(viewportId, (state) => {
+          if (viewportRegisteredRef.current) return;
+          if (state.status === ViewportStatus.READY && state.imageData) {
+            const currentToolGroup = toolGroupRef.current;
+            if (!currentToolGroup) return;
+            try {
+              currentToolGroup.addViewport(viewportId, renderingEngineId);
+              viewportRegisteredRef.current = true;
+              console.log(`✅ Added viewport ${viewportId} via viewportStateManager READY event`);
+            } catch (err) {
+              console.warn("Failed to add viewport via state manager:", err);
+            }
+          }
+        });
+
         if (!imageRenderedHandlerRef.current) {
           imageRenderedHandlerRef.current = (evt: any) => {
             const { viewportId: renderedViewportId } = evt.detail || {};
@@ -814,11 +823,15 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
             );
             imageRenderedHandlerRef.current = null;
           }
+          if (unsubscribeViewportState) {
+            unsubscribeViewportState();
+            unsubscribeViewportState = null;
+          }
           const toolGroupInstance = toolGroupRef.current;
           if (toolGroupInstance) {
             try {
               toolGroupInstance.removeViewports(renderingEngineId, viewportId);
-            } catch (error) {
+            } catch {
               // Ignore cleanup errors
             }
           }
@@ -826,11 +839,15 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       }
 
       return () => {
+        if (unsubscribeViewportState) {
+          unsubscribeViewportState();
+          unsubscribeViewportState = null;
+        }
         const toolGroupInstance = toolGroupRef.current;
         if (toolGroupInstance) {
           try {
             toolGroupInstance.removeViewports(renderingEngineId, viewportId);
-          } catch (error) {
+          } catch {
             // Ignore cleanup errors
           }
         }
@@ -1022,7 +1039,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
                   batchedRender(vp);
                 }
               });
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
           }
@@ -1163,6 +1180,8 @@ export {
   getToolByKeyboardShortcut,
   getKeyboardShortcut,
   getAllKeyboardShortcuts,
+  getAllToolNames,
+  getNonCustomMappings,
   type ToolType,
   type ToolMapping,
   type ToolBindings,

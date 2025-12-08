@@ -1733,10 +1733,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             batchedRender(stackViewport);
           }
         } catch (error) {
-          console.warn(
-            "[Segmentation] Failed to re-render after frame change:",
-            error
-          );
         }
       };
 
@@ -1756,9 +1752,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         const activeLayerId = selectedSegmentationLayerRef.current;
         if (!activeLayerId) {
-          console.warn(
-            "[Segmentation] No active layer selected, skipping snapshot"
-          );
           return;
         }
 
@@ -1772,10 +1765,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           imageIdInstanceMapRef.current.get(viewport);
 
         if (!currentViewportId) {
-          console.warn(
-            "[Segmentation] No viewport ID found for viewport",
-            viewport
-          );
           return;
         }
 
@@ -1785,10 +1774,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           imageIdToInstanceMap
         );
         if (!snapshot) {
-          console.warn(
-            "[Segmentation] Unable to capture snapshot for",
-            segmentationId
-          );
           return;
         }
 
@@ -1865,7 +1850,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           }
           
           if (viewportState.status !== ViewportStatus.READY) {
-            console.warn(`Viewport ${activeViewportId} not ready (status: ${viewportState.status})`);
+            toast.warning(`Viewport is not ready, please wait...`);
           }
         }
       }
@@ -2492,22 +2477,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             existingViewport.resetCamera();
             batchedRender(existingViewport);
 
-            // Diagnostics: verify per-viewport imageId->instanceId mapping
-            if (imageIdToInstance) {
-              const keys = Object.keys(imageIdToInstance);
-              console.log(
-                `[Segmentation] SetStack(existing): viewport=${viewport} mapSize=${keys.length} sample=`,
-                keys.slice(0, 3).map((k) => ({
-                  imageId: k,
-                  instanceId: imageIdToInstance[k],
-                }))
-              );
-            } else {
-              console.log(
-                `[Segmentation] SetStack(existing): viewport=${viewport} has no imageIdToInstanceMap`
-              );
-            }
-
             await ensureViewportLabelmapSegmentation({
               viewportId: currentViewportId,
               imageIds,
@@ -2601,21 +2570,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         readyViewport.resize?.();
         readyViewport.resetCamera();
         batchedRender(readyViewport);
-
-        // Diagnostics: verify per-viewport imageId->instanceId mapping
-        if (imageIdToInstance) {
-          const keys = Object.keys(imageIdToInstance);
-          console.log(
-            `[Segmentation] SetStack(new): viewport=${viewport} mapSize=${keys.length} sample=`,
-            keys
-              .slice(0, 3)
-              .map((k) => ({ imageId: k, instanceId: imageIdToInstance[k] }))
-          );
-        } else {
-          console.log(
-            `[Segmentation] SetStack(new): viewport=${viewport} has no imageIdToInstanceMap`
-          );
-        }
 
         await ensureViewportLabelmapSegmentation({
           viewportId: currentViewportId,
@@ -2741,10 +2695,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             layers,
             selectedLayer: firstLayerId ?? null,
           });
-
-          console.log(
-            `[Segmentation] Loaded ${layers.size} layer(s) from database for series ${seriesId}`
-          );
         }
       } catch (error) {
         console.error("Failed to load segmentation layers", error);
@@ -2760,7 +2710,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const seriesId = series?.id;
 
       if (!seriesId) {
-        console.warn("[Segmentation] No series loaded, cannot refetch layers");
         return;
       }
 
@@ -2824,17 +2773,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           selectedLayer: selectedLayer ?? null,
         });
 
-        console.log(
-          `[Segmentation] Refetched layers - Local: ${
-            Array.from(mergedLayers.values()).filter(
-              (l) => l.metadata.origin === "local"
-            ).length
-          }, Database: ${
-            Array.from(mergedLayers.values()).filter(
-              (l) => l.metadata.origin === "database"
-            ).length
-          }`
-        );
       } catch (error) {
         console.error("Failed to refetch segmentation layers", error);
       }
@@ -3023,11 +2961,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const undoSegmentation = () => {
+  const undoSegmentation = useCallback(() => {
     const viewportIndex = state.activeViewport;
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] Cannot undo without an active layer");
       return;
     }
     const activeViewportId =
@@ -3044,13 +2981,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       layerId,
       entry: historyEntry,
     });
-  };
+  }, [state.activeViewport, state.selectedSegmentationLayer, consumeSegmentationUndo, removeLatestLayerSnapshot, notifySegmentationHistoryChange, viewerEventService, state.viewportIds]);
 
-  const redoSegmentation = () => {
+  const redoSegmentation = useCallback(() => {
     const viewportIndex = state.activeViewport;
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] Cannot redo without an active layer");
       return;
     }
     const activeViewportId =
@@ -3071,7 +3007,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       layerId,
       entry: historyEntry,
     });
-  };
+  }, [state.activeViewport, state.selectedSegmentationLayer, consumeSegmentationRedo, persistLayerSnapshot, notifySegmentationHistoryChange, viewerEventService, state.viewportIds]);
 
   // AI Diagnosis - dispatch event to ViewPortMain
   const diagnosisViewport = useCallback(
@@ -3315,7 +3251,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const toggleSegmentationView = useCallback(() => {
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] No active layer to toggle visibility");
       return;
     }
     toggleSegmentationLayerVisibility(layerId);
@@ -3344,18 +3279,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const currentViewportId = state.viewportIds.get(viewport);
       const imageIdToInstanceMap = imageIdInstanceMapRef.current.get(viewport);
 
-      console.log("[Debug] getCurrentSegmentationSnapshot called:", {
-        viewport,
-        currentViewportId,
-        hasImageIdToInstanceMap: !!imageIdToInstanceMap,
-        layerIndex,
-      });
-
       if (!currentViewportId) {
-        console.warn(
-          "[Segmentation] No viewport ID found for viewport",
-          viewport
-        );
         return null;
       }
 
@@ -3365,10 +3289,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const segState = segmentation.state.getSegmentation(segmentationId);
 
       if (!segState) {
-        console.warn(
-          "[Segmentation] No segmentation found with ID:",
-          segmentationId
-        );
         return null;
       }
 
@@ -3390,7 +3310,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const layerId = state.selectedSegmentationLayer;
 
       if (!layerId) {
-        console.warn("[Segmentation] No layer selected");
         return null;
       }
 

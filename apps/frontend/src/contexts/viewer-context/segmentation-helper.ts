@@ -144,10 +144,6 @@ const disposeLabelmapImages = (viewportId: string) => {
     try {
       cache.removeImageLoadObject(imageId, { force: true });
     } catch (error) {
-      console.warn(
-        `[Segmentation] Failed to remove labelmap image ${imageId}`,
-        error
-      );
     }
   });
 
@@ -205,21 +201,6 @@ const ensureLabelmapImagesForViewport = async (
       instanceId,
     });
 
-    // Debug: Log first 3 and last 3 frames to see the pattern
-    if (index < 3 || index >= referenceImageIds.length - 3) {
-      console.log(`[Segmentation] Created mapping for ${derivedImageId}:`, {
-        index: index + 1,
-        referencedImageId,
-        extractedFrameNumber: frameNumber,
-        instanceId,
-        derivedImageId,
-        hasInstanceMapProvided: !!imageIdToInstanceMap,
-        instanceMapHasThisKey: imageIdToInstanceMap
-          ? referencedImageId in imageIdToInstanceMap
-          : false,
-      });
-    }
-
     // Check if image already exists in cache (both load object and actual image)
     const existingImage = cache.getImage(derivedImageId);
     const existingLoadObject = cache.getImageLoadObject(derivedImageId);
@@ -241,21 +222,11 @@ const ensureLabelmapImagesForViewport = async (
           const pixelData = derivedImage.getPixelData();
           if (pixelData instanceof Uint8Array) {
             pixelData.fill(0);
-            console.log(
-              `[Segmentation] Initialized labelmap ${derivedImageId} with ${pixelData.length} zero pixels`
-            );
           }
-        } else {
-          console.warn(
-            `[Segmentation] Could not initialize labelmap ${derivedImageId} - no pixel data access`
-          );
         }
       } catch (error: any) {
         // Handle "already in cache" error gracefully
         if (error?.message?.includes("already in cache")) {
-          console.log(
-            `[Segmentation] Labelmap ${derivedImageId} already in cache, using existing`
-          );
           // Try to get the existing image
           const cachedImage = cache.getImage(derivedImageId);
           if (cachedImage && typeof cachedImage.getPixelData === "function") {
@@ -266,11 +237,6 @@ const ensureLabelmapImagesForViewport = async (
             }
           }
         } else {
-          console.error(
-            "[Segmentation] Failed to prepare labelmap image",
-            referencedImageId,
-            error
-          );
           throw error;
         }
       }
@@ -280,14 +246,8 @@ const ensureLabelmapImagesForViewport = async (
         const pixelData = existingImage.getPixelData();
         if (pixelData instanceof Uint8Array) {
           const hasData = pixelData.some((p) => p !== 0);
-          console.log(
-            `[Segmentation] Existing labelmap ${derivedImageId}: hasData=${hasData}, pixels=${pixelData.length}`
-          );
         }
       } else if (existingLoadObject) {
-        console.log(
-          `[Segmentation] Labelmap ${derivedImageId} is being loaded, waiting...`
-        );
       }
     }
 
@@ -337,10 +297,6 @@ const safelyRemoveSegmentation = (segmentationId: string) => {
   try {
     segmentation.removeSegmentation(segmentationId);
   } catch (error) {
-    console.warn(
-      `[Segmentation] Failed to remove segmentation ${segmentationId}`,
-      error
-    );
   }
 };
 
@@ -550,10 +506,6 @@ export async function ensureViewportLabelmapSegmentation(options: {
       }
     });
 
-    console.log(
-      `[Segmentation] Creating segmentation with ${imageIds.length} frames, using imageIdReferenceMap (ensures per-frame independence)`
-    );
-
     segmentation.addSegmentations([
       {
         segmentationId,
@@ -600,28 +552,14 @@ export function captureSegmentationSnapshot(
   viewportId?: string,
   imageIdToInstanceMap?: Record<string, string>
 ): SegmentationSnapshot | null {
-  console.log("[Debug] captureSegmentationSnapshot called:", {
-    segmentationId,
-    viewportId,
-    hasImageIdToInstanceMap: !!imageIdToInstanceMap,
-  });
 
   if (!segmentationId) {
-    console.warn("[Segmentation] No segmentationId provided");
     return null;
   }
 
   const segState = segmentation.state.getSegmentation(segmentationId);
-  console.log("[Debug] Segmentation state:", {
-    hasSegState: !!segState,
-    segState: segState ? "exists" : "null",
-  });
 
   const labelmapData = segState?.representationData?.Labelmap;
-  console.log("[Debug] Labelmap data:", {
-    hasLabelmapData: !!labelmapData,
-    labelmapDataKeys: labelmapData ? Object.keys(labelmapData) : [],
-  });
 
   // Extract labelmap image IDs from imageIdReferenceMap (new format) or imageIds (legacy)
   let imageIds: string[] = [];
@@ -629,79 +567,20 @@ export function captureSegmentationSnapshot(
   if (labelmapData && "imageIdReferenceMap" in labelmapData) {
     const refMap = labelmapData.imageIdReferenceMap as Map<string, string>;
     imageIds = Array.from(refMap.values());
-    console.log("[Debug] Using imageIdReferenceMap:", {
-      imageIdsLength: imageIds.length,
-      firstTwo: imageIds.slice(0, 2),
-    });
   } else if (
     labelmapData &&
     "imageIds" in labelmapData &&
     Array.isArray(labelmapData.imageIds)
   ) {
     imageIds = labelmapData.imageIds as string[];
-    console.log("[Debug] Using legacy imageIds array:", {
-      imageIdsLength: imageIds.length,
-      firstTwo: imageIds.slice(0, 2),
-    });
   }
 
   if (!imageIds.length) {
-    console.warn("[Segmentation] No image IDs found in labelmap data");
     return null;
-  }
-
-  // DIAGNOSTIC: Check if multiple labelmap images share the same buffer
-  if (imageIds.length > 1) {
-    const img1 = cache.getImage(imageIds[0]);
-    const img2 = cache.getImage(imageIds[1]);
-    if (img1 && img2) {
-      const pixels1 =
-        typeof img1.getPixelData === "function" ? img1.getPixelData() : null;
-      const pixels2 =
-        typeof img2.getPixelData === "function" ? img2.getPixelData() : null;
-      if (pixels1 instanceof Uint8Array && pixels2 instanceof Uint8Array) {
-        const sameBuffer = pixels1.buffer === pixels2.buffer;
-        console.warn(
-          `[Segmentation] CRITICAL: Frame 1 and Frame 2 share same buffer: ${sameBuffer}`
-        );
-        if (sameBuffer) {
-          console.error(
-            "[Segmentation] BUG DETECTED: All frames are using the same memory buffer! This is why segmentation appears on all frames."
-          );
-        }
-      }
-    }
   }
 
   // Get the mapping for this viewport
   const mapping = viewportId ? viewportImageMappings.get(viewportId) : null;
-
-  console.log("[Debug] Viewport mapping info:", {
-    viewportId,
-    hasMapping: !!mapping,
-    mappingSize: mapping?.size || 0,
-    hasImageIdToInstanceMap: !!imageIdToInstanceMap,
-    imageIdToInstanceMapKeys: imageIdToInstanceMap
-      ? Object.keys(imageIdToInstanceMap).slice(0, 3)
-      : [],
-    allViewportIds: Array.from(viewportImageMappings.keys()),
-    firstLabelmapId: imageIds[0],
-  });
-
-  // If no mapping found, log all available mappings for debugging
-  if (!mapping || mapping.size === 0) {
-    console.error("[Segmentation] CRITICAL: No mapping found for viewport!", {
-      requestedViewportId: viewportId,
-      availableViewportIds: Array.from(viewportImageMappings.keys()),
-      allMappings: Array.from(viewportImageMappings.entries()).map(
-        ([vid, map]) => ({
-          viewportId: vid,
-          mappingCount: map.size,
-          firstMapping: Array.from(map.entries())[0],
-        })
-      ),
-    });
-  }
 
   const imageData: Array<{
     imageId: string;
@@ -743,24 +622,6 @@ export function captureSegmentationSnapshot(
     let instanceId: string | undefined = mappingInfo?.instanceId;
     if (!instanceId && imageIdToInstanceMap && originalImageId) {
       instanceId = imageIdToInstanceMap[originalImageId];
-    }
-
-    // Check if this frame actually has segmentation data (non-zero pixels)
-    const hasSegmentationData = clone.some((pixel) => pixel !== 0);
-
-    if (idx === 0 || hasSegmentationData) {
-      console.log(`[Debug] Frame ${idx + 1} mapping:`, {
-        labelmapImageId: imageId,
-        originalImageId,
-        frameNumber,
-        instanceId,
-        hasMappingInfo: !!mappingInfo,
-        hasSegmentationData,
-        nonZeroPixels: hasSegmentationData
-          ? clone.filter((p) => p !== 0).length
-          : 0,
-        totalPixels: clone.length,
-      });
     }
 
     imageData.push({

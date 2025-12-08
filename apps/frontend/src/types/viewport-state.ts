@@ -31,7 +31,7 @@ export interface ViewportState {
  * Valid state transitions
  */
 export const VALID_TRANSITIONS: Record<ViewportStatus, ViewportStatus[]> = {
-  [ViewportStatus.INITIALIZING]: [ViewportStatus.IDLE, ViewportStatus.ERROR, ViewportStatus.DISPOSING],
+  [ViewportStatus.INITIALIZING]: [ViewportStatus.IDLE, ViewportStatus.LOADING, ViewportStatus.ERROR, ViewportStatus.DISPOSING],
   [ViewportStatus.IDLE]: [ViewportStatus.LOADING, ViewportStatus.DISPOSING, ViewportStatus.ERROR],
   [ViewportStatus.LOADING]: [ViewportStatus.READY, ViewportStatus.ERROR, ViewportStatus.DISPOSING],
   [ViewportStatus.READY]: [ViewportStatus.LOADING, ViewportStatus.DISPOSING, ViewportStatus.ERROR],
