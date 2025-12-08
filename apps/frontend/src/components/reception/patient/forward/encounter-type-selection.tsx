@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { EncounterType } from "@/enums/patient-workflow.enum";
 
 import React from "react";
 
@@ -7,6 +8,7 @@ export default function EncounterTypeSelection({
   encounterInfo,
   onChangeEncounterInfo,
   formatEncounterType,
+  hasFollowUp,
 }: {
   EncounterTypeArray: string[];
   encounterInfo: {
@@ -16,6 +18,7 @@ export default function EncounterTypeSelection({
     priority: string;
     notes: string;
   };
+  hasFollowUp: boolean;
   onChangeEncounterInfo: (
     field:
       | "patientId"
@@ -35,27 +38,34 @@ export default function EncounterTypeSelection({
       </label>
       <div className="flex items-center gap-2 flex-wrap">
         {EncounterTypeArray &&
-          EncounterTypeArray.map((type) => (
-            <Button
-              key={type}
-              type="button"
-              aria-pressed={encounterInfo.encounterType === type}
-              size="sm"
-              className={`${
-                encounterInfo.encounterType === type
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border bg-background text-foreground hover:bg-muted"
-              }`}
-              variant={
-                encounterInfo.encounterType === type ? "default" : "outline"
-              }
-              onClick={() => {
-                onChangeEncounterInfo("encounterType", type);
-              }}
-            >
-              {formatEncounterType(type)}
-            </Button>
-          ))}
+          EncounterTypeArray.map((type) => {
+            // Hide follow-up option if patient doesn't have follow-up
+            if (!hasFollowUp && type === EncounterType.FOLLOW_UP) {
+              return null;
+            }
+
+            return (
+              <Button
+                key={type}
+                type="button"
+                aria-pressed={encounterInfo.encounterType === type}
+                size="sm"
+                className={`${
+                  encounterInfo.encounterType === type
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border bg-background text-foreground hover:bg-muted"
+                }`}
+                variant={
+                  encounterInfo.encounterType === type ? "default" : "outline"
+                }
+                onClick={() => {
+                  onChangeEncounterInfo("encounterType", type);
+                }}
+              >
+                {formatEncounterType(type)}
+              </Button>
+            );
+          })}
       </div>
     </div>
   );

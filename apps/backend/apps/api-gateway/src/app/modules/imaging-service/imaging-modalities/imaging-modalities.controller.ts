@@ -68,9 +68,9 @@ export class ImagingModalitiesController {
   async getImagingModalities() {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.imagingModalities);
     const cachedModalities = await this.redisService.get(pattern);
-    if (cachedModalities) {
-      return cachedModalities;
-    }
+    // if (cachedModalities) {
+    //   return cachedModalities;
+    // }
     const modalities = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.FindAll', {})
     );
@@ -114,9 +114,9 @@ export class ImagingModalitiesController {
     });
 
     const cachedModalities = await this.redisService.get(pattern);
-    if (cachedModalities) {
-      return cachedModalities;
-    }
+    // if (cachedModalities) {
+    //   return cachedModalities;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -143,9 +143,9 @@ export class ImagingModalitiesController {
   async getStats() {
     const pattern = cacheKeyBuilder.stats(CacheEntity.imagingModalities);
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.GetStats', {})
     );
@@ -170,9 +170,9 @@ export class ImagingModalitiesController {
   async getImagingModalityById(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.imagingModalities, id);
     const cachedModality = await this.redisService.get(pattern);
-    if (cachedModality) {
-      return cachedModality;
-    }
+    // if (cachedModality) {
+    //   return cachedModality;
+    // }
     const modality = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingModalities.FindOne', {
         id,

@@ -15,15 +15,17 @@ import {
 import { Role } from '@backend/shared-decorators';
 import { Roles } from '@backend/shared-enums';
 import { AnalyticsService } from './analytics.service';
+import { cacheKeyBuilder } from '../../../utils/cache-builder.utils';
+import { CACHE_TTL_SECONDS, CacheEntity } from '../../../../src/constant/cache';
+import { RedisService } from '@backend/redis';
+
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class AnalyticsController {
   private readonly logger = new Logger('AnalyticsController');
 
-  constructor(
-    private readonly analyticsService: AnalyticsService,
-  ) {}
+  constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('reception-stats')
   @Role(Roles.RECEPTION_STAFF, Roles.SYSTEM_ADMIN)

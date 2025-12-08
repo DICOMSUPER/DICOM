@@ -161,9 +161,9 @@ export class ImageSegmentationLayersController {
     );
     const cachedSegmentations = await this.redisService.get(pattern);
 
-    if (cachedSegmentations) {
-      return cachedSegmentations;
-    }
+    // if (cachedSegmentations) {
+    //   return cachedSegmentations;
+    // }
 
     const segmentations = await firstValueFrom(
       this.imagingService.send(
@@ -209,9 +209,9 @@ export class ImageSegmentationLayersController {
     );
 
     const cachedPaginated = await this.redisService.get(pattern);
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
 
     const paginationDto = {
       page: page ? parseInt(page) : undefined,
@@ -245,9 +245,9 @@ export class ImageSegmentationLayersController {
       seriesId
     );
     const cachedSegmentations = await this.redisService.get(pattern);
-    if (cachedSegmentations) {
-      return cachedSegmentations;
-    }
+    // if (cachedSegmentations) {
+    //   return cachedSegmentations;
+    // }
 
     const segmentations = await firstValueFrom(
       this.imagingService.send(
@@ -275,9 +275,9 @@ export class ImageSegmentationLayersController {
     const pattern = cacheKeyBuilder.id(CacheEntity.imageSegmentationLayers, id);
 
     const cachedSegmentation = await this.redisService.get(pattern);
-    if (cachedSegmentation) {
-      return cachedSegmentation;
-    }
+    // if (cachedSegmentation) {
+    //   return cachedSegmentation;
+    // }
 
     const segmentation = await firstValueFrom(
       this.imagingService.send(

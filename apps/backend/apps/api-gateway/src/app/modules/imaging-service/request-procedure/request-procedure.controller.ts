@@ -74,9 +74,9 @@ export class RequestProcedureController {
     });
 
     const cachedProcedures = await this.redisService.get(pattern);
-    if (cachedProcedures) {
-      return cachedProcedures;
-    }
+    // if (cachedProcedures) {
+    //   return cachedProcedures;
+    // }
 
     const procedures = await firstValueFrom(
       this.imagingService.send('ImagingService.RequestProcedure.FindAll', {
@@ -117,9 +117,9 @@ export class RequestProcedureController {
     });
 
     const cachedProcedures = await this.redisService.get(pattern);
-    if (cachedProcedures) {
-      return cachedProcedures;
-    }
+    // if (cachedProcedures) {
+    //   return cachedProcedures;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -147,9 +147,9 @@ export class RequestProcedureController {
   async getRequestProcedureById(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.requestProcedures, id);
     const cachedProcedure = await this.redisService.get(pattern);
-    if (cachedProcedure) {
-      return cachedProcedure;
-    }
+    // if (cachedProcedure) {
+    //   return cachedProcedure;
+    // }
     const procedure = await firstValueFrom(
       this.imagingService.send('ImagingService.RequestProcedure.FindOne', {
         id,

@@ -70,9 +70,9 @@ export class BodyPartController {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.bodyParts, {});
 
     const cachedParts = await this.redisService.get(pattern);
-    if (cachedParts) {
-      return cachedParts;
-    }
+    // if (cachedParts) {
+    //   return cachedParts;
+    // }
 
     const parts = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindAll', {})
@@ -128,9 +128,9 @@ export class BodyPartController {
 
     const cachedPaginated = await this.redisService.get(pattern);
 
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
     // Handle array format (from query string, arrays come as comma-separated or repeated params)
     const sortFieldsArray = Array.isArray(sortFields)
       ? sortFields
@@ -184,9 +184,9 @@ export class BodyPartController {
   async getBodyPartById(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.bodyParts, id);
     const cachedPart = await this.redisService.get(pattern);
-    if (cachedPart) {
-      return cachedPart;
-    }
+    // if (cachedPart) {
+    //   return cachedPart;
+    // }
 
     const part = await firstValueFrom(
       this.imagingService.send('ImagingService.BodyPart.FindOne', {

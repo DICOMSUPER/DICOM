@@ -218,10 +218,10 @@ export class DiagnosesReportService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<DiagnosesReport>
     >(keyName);
-    if (cachedService) {
-      console.log('📦 DiagnosesReports retrieved from cache');
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   console.log('📦 DiagnosesReports retrieved from cache');
+    //   return cachedService;
+    // }
 
     const skip = (page - 1) * limit;
 
@@ -400,7 +400,6 @@ export class DiagnosesReportService {
     await firstValueFrom(
       this.systemService.send('notification.create', notificationPayload)
     );
-
 
     return updatedReport!;
   };

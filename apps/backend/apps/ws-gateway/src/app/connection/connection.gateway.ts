@@ -62,7 +62,9 @@ export class ConnectionGateway
           .find((c) => c.startsWith('accessToken='))
           ?.split('=')[1];
         if (token) {
-          this.logger.debug('Token from handshake.headers.cookie (accessToken)');
+          this.logger.debug(
+            'Token from handshake.headers.cookie (accessToken)'
+          );
         }
       }
 
@@ -152,7 +154,7 @@ export class ConnectionGateway
    * - Stale cache (< 10 min): Use during brief outages (resilience)
    * - No cache/service down: Block connection (security)
    */
-  private async verifyUserActive(userId: string): Promise<boolean> {
+  private async verifyUserActive(userId: string): Promise<boolean | undefined> {
     try {
       // Check cache first
       const cached = this.userStatusCache.get(userId);
@@ -194,13 +196,12 @@ export class ConnectionGateway
       );
 
       if (!user) {
-      if (!user) {
         this.logger.warn(`User ${userId} not found in database`);
         return false;
       }
 
       const isActive = user.isActive !== false && !user.isDeleted;
-      
+
       // Cache the result
       this.userStatusCache.set(userId, {
         isActive,

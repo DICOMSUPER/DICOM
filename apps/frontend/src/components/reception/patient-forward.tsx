@@ -43,7 +43,13 @@ const formatEncounterType = (type: string): string => {
 
 type DepartmentOption = Department & { value: string; label: string };
 
-export function PatientForward({ patientId }: { patientId: string }) {
+export function PatientForward({
+  patientId,
+  hasFollowUp,
+}: {
+  patientId: string;
+  hasFollowUp: boolean;
+}) {
   const router = useRouter();
   const [encounterInfo, setEncounterInfo] = useState({
     patientId: patientId,
@@ -222,6 +228,7 @@ export function PatientForward({ patientId }: { patientId: string }) {
             encounterInfo={encounterInfo}
             formatEncounterType={formatEncounterType}
             onChangeEncounterInfo={onChangeEncounterInfo}
+            hasFollowUp={hasFollowUp}
           />
 
           <PriorityLevelSelection

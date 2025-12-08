@@ -359,7 +359,14 @@ export default function PatientDetail() {
           </Button>
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={patientLoading || patientFetching || encountersLoading || encountersFetching || conditionsLoading || conditionsFetching}
+            loading={
+              patientLoading ||
+              patientFetching ||
+              encountersLoading ||
+              encountersFetching ||
+              conditionsLoading ||
+              conditionsFetching
+            }
           />
           {!patientLoading && (
             <Button
@@ -415,8 +422,12 @@ export default function PatientDetail() {
               </div>
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
-                <p className="text-sm font-medium text-foreground">Loading conditions...</p>
-                <p className="text-xs text-foreground mt-1">Please wait while we fetch the data</p>
+                <p className="text-sm font-medium text-foreground">
+                  Loading conditions...
+                </p>
+                <p className="text-xs text-foreground mt-1">
+                  Please wait while we fetch the data
+                </p>
               </div>
             </div>
           )}
@@ -429,7 +440,10 @@ export default function PatientDetail() {
             {patientLoading ? (
               <PatientForwardSkeleton />
             ) : patient && patient.id ? (
-              <PatientForward patientId={patient?.id} />
+              <PatientForward
+                patientId={patient?.id}
+                hasFollowUp={encounters.length !== 0}
+              />
             ) : null}
           </div>
         </div>

@@ -82,9 +82,9 @@ export class ImageAnnotationsController {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.imageAnnotations);
     const cachedAnnotations = await this.redisService.get(pattern);
 
-    if (cachedAnnotations) {
-      return cachedAnnotations;
-    }
+    // if (cachedAnnotations) {
+    //   return cachedAnnotations;
+    // }
 
     const annotations =
       (await firstValueFrom(
@@ -156,9 +156,9 @@ export class ImageAnnotationsController {
 
     const cachedAnnotations = await this.redisService.get(pattern);
 
-    if (cachedAnnotations) {
-      return cachedAnnotations;
-    }
+    // if (cachedAnnotations) {
+    //   return cachedAnnotations;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -252,9 +252,9 @@ export class ImageAnnotationsController {
 
     const cachedAnnotations = await this.redisService.get(pattern);
 
-    if (cachedAnnotations) {
-      return cachedAnnotations;
-    }
+    // if (cachedAnnotations) {
+    //   return cachedAnnotations;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -349,9 +349,9 @@ export class ImageAnnotationsController {
 
     const cachedAnnotations = await this.redisService.get(pattern);
 
-    if (cachedAnnotations) {
-      return cachedAnnotations;
-    }
+    // if (cachedAnnotations) {
+    //   return cachedAnnotations;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -449,9 +449,9 @@ export class ImageAnnotationsController {
 
     const cachedAnnotations = await this.redisService.get(pattern);
 
-    if (cachedAnnotations) {
-      return cachedAnnotations;
-    }
+    // if (cachedAnnotations) {
+    //   return cachedAnnotations;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -516,9 +516,9 @@ export class ImageAnnotationsController {
     const pattern = cacheKeyBuilder.id(CacheEntity.imageAnnotations, id);
 
     const cachedAnnotation = await this.redisService.get(pattern);
-    if (cachedAnnotation) {
-      return cachedAnnotation;
-    }
+    // if (cachedAnnotation) {
+    //   return cachedAnnotation;
+    // }
 
     const annotation = await firstValueFrom(
       this.imagingService.send('ImagingService.ImageAnnotations.FindOne', {

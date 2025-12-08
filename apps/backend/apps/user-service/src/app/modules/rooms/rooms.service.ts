@@ -136,10 +136,10 @@ export class RoomsService {
       }:order=${query.order ?? 'desc'}`;
 
       const cachedData = await this.redisService.get<any>(cacheKey);
-      if (cachedData) {
-        this.logger.log(`[CACHE HIT] Dữ liệu lấy từ Redis key: ${cacheKey}`);
-        return cachedData;
-      }
+      // if (cachedData) {
+      //   this.logger.log(`[CACHE HIT] Dữ liệu lấy từ Redis key: ${cacheKey}`);
+      //   return cachedData;
+      // }
 
       this.logger.log(`[CACHE MISS] Lấy dữ liệu từ DB, key: ${cacheKey}`);
 
@@ -356,9 +356,8 @@ export class RoomsService {
           }
         )
       );
-      console.log("modalityMachineRepo",modalityMachineRepo);
-      
-      
+      console.log('modalityMachineRepo', modalityMachineRepo);
+
       if (modalityMachineRepo.length > 0) {
         throw new RoomDeletionFailedException(
           'Cannot delete room with associated modality machines',
@@ -577,12 +576,12 @@ export class RoomsService {
       }:dept=${departmentId ?? 'all'}:page=${page}:limit=${limit}`;
 
       const cachedData = await this.redisService.get<any>(cacheKey);
-      if (cachedData) {
-        this.logger.log(
-          `✅ [CACHE HIT] Dữ liệu filter lấy từ Redis key: ${cacheKey}`
-        );
-        return cachedData;
-      }
+      // if (cachedData) {
+      //   this.logger.log(
+      //     `✅ [CACHE HIT] Dữ liệu filter lấy từ Redis key: ${cacheKey}`
+      //   );
+      //   return cachedData;
+      // }
 
       this.logger.log(
         `⚙️ [CACHE MISS] Lấy dữ liệu filter từ DB key: ${cacheKey}`

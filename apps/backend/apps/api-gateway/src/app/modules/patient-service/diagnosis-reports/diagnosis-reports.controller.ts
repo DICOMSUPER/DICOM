@@ -136,10 +136,10 @@ export class DiagnosisReportsController {
       const pattern = cacheKeyBuilder.findAll(CacheEntity.diagnosticReports);
 
       const cached = await this.redisService.get(pattern);
-      if (cached) {
-        this.logger.log('Returning cached diagnosis reports');
-        return cached;
-      }
+      // if (cached) {
+      //   this.logger.log('Returning cached diagnosis reports');
+      //   return cached;
+      // }
 
       const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindAll', {})
@@ -180,10 +180,10 @@ export class DiagnosisReportsController {
       });
 
       const cached = await this.redisService.get(pattern);
-      if (cached) {
-        this.logger.log('Returning cached diagnosis reports');
-        return cached;
-      }
+      // if (cached) {
+      //   this.logger.log('Returning cached diagnosis reports');
+      //   return cached;
+      // }
 
       const paginationDto = {
         page: page ? Number(page) : undefined,
@@ -220,10 +220,10 @@ export class DiagnosisReportsController {
       filter
     );
     const cached = await this.redisService.get(pattern);
-    if (cached) {
-      this.logger.log('Returning cached diagnosis reports with filter');
-      return cached;
-    }
+    // if (cached) {
+    //   this.logger.log('Returning cached diagnosis reports with filter');
+    //   return cached;
+    // }
 
     const reports = await firstValueFrom(
       this.patientService.send(
@@ -251,10 +251,10 @@ export class DiagnosisReportsController {
         studyId
       );
       const cached = await this.redisService.get(pattern);
-      if (cached) {
-        this.logger.log('Returning cached diagnosis report by studyId');
-        return cached;
-      }
+      // if (cached) {
+      //   this.logger.log('Returning cached diagnosis report by studyId');
+      //   return cached;
+      // }
 
       const reports = await firstValueFrom(
         this.patientService.send(
@@ -280,10 +280,10 @@ export class DiagnosisReportsController {
     try {
       const pattern = cacheKeyBuilder.stats(CacheEntity.diagnosticReports);
       const cached = await this.redisService.get(pattern);
-      if (cached) {
-        this.logger.log('Returning cached diagnosis report stats');
-        return cached;
-      }
+      // if (cached) {
+      //   this.logger.log('Returning cached diagnosis report stats');
+      //   return cached;
+      // }
 
       const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.GetStats', {
@@ -313,10 +313,10 @@ export class DiagnosisReportsController {
 
       const cached = await this.redisService.get(pattern);
 
-      if (cached) {
-        this.logger.log('Returning cached diagnosis report by ID');
-        return cached;
-      }
+      // if (cached) {
+      //   this.logger.log('Returning cached diagnosis report by ID');
+      //   return cached;
+      // }
 
       const reports = await firstValueFrom(
         this.patientService.send('PatientService.DiagnosesReport.FindOne', {

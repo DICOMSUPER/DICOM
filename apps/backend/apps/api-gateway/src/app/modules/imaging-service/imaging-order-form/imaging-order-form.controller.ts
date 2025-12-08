@@ -150,9 +150,9 @@ export class ImagingOrderFormController {
     });
 
     const cachedOrderForms = await this.redisService.get(pattern);
-    if (cachedOrderForms) {
-      return cachedOrderForms;
-    }
+    // if (cachedOrderForms) {
+    //   return cachedOrderForms;
+    // }
 
     const orderForms = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.FindAll', {
@@ -174,9 +174,9 @@ export class ImagingOrderFormController {
     const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrderForms, id);
 
     const cachedOrderForm = await this.redisService.get(pattern);
-    if (cachedOrderForm) {
-      return cachedOrderForm;
-    }
+    // if (cachedOrderForm) {
+    //   return cachedOrderForm;
+    // }
 
     const orderForm = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrderForm.FindOne', {
@@ -271,9 +271,9 @@ export class ImagingOrderFormController {
     );
 
     const cachedOrderForms = await this.redisService.get(pattern);
-    if (cachedOrderForms) {
-      return cachedOrderForms;
-    }
+    // if (cachedOrderForms) {
+    //   return cachedOrderForms;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,

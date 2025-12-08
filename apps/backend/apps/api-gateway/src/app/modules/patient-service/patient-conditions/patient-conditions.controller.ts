@@ -35,6 +35,7 @@ export class PatientConditionController {
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy,
+    @Inject(RedisService)
     private readonly redisService: RedisService
   ) {}
 
@@ -66,11 +67,13 @@ export class PatientConditionController {
 
       await this.uncachePatientConditions();
 
-      await this.redisService.set(
-        cacheKeyBuilder.id(CacheEntity.patientConditions, result.id),
-        result,
-        CACHE_TTL_SECONDS
+      const pattern = cacheKeyBuilder.id(
+        CacheEntity.patientConditions,
+        result.id
       );
+
+      await this.redisService.set(pattern, result, CACHE_TTL_SECONDS);
+
       return result;
     } catch (error) {
       this.logger.error('Error creating patient condition:', error);

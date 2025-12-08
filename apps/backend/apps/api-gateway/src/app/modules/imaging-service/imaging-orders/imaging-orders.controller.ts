@@ -88,9 +88,11 @@ export class ImagingOrdersController {
     await this.redisService.deleteKeyStartingWith(
       cacheKeyBuilder.roomStats2(CacheEntity.imagingOrders)
     );
+
     await this.redisService.deleteKeyStartingWith(
       cacheKeyBuilder.roomStatsInDateRange(CacheEntity.imagingOrders)
     );
+
     await this.redisService.deleteKeyStartingWith(
       cacheKeyBuilder.byPatientId(CacheEntity.imagingOrders)
     );
@@ -127,9 +129,9 @@ export class ImagingOrdersController {
   async getAllImagingOrders() {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.imagingOrders);
     const cachedOrders = await this.redisService.get(pattern);
-    if (cachedOrders) {
-      return cachedOrders;
-    }
+    // if (cachedOrders) {
+    //   return cachedOrders;
+    // }
 
     const orders = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindAll', {})
@@ -166,9 +168,9 @@ export class ImagingOrdersController {
     });
 
     const cachedOrders = await this.redisService.get(pattern);
-    if (cachedOrders) {
-      return cachedOrders;
-    }
+    // if (cachedOrders) {
+    //   return cachedOrders;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -186,7 +188,7 @@ export class ImagingOrdersController {
     );
 
     const orders = ordersResponse.data || [];
-    
+
     // Enrich orders with patient and physician data
     const patientIds = orders
       .map((o: ImagingOrder) => {
@@ -278,9 +280,9 @@ export class ImagingOrdersController {
     );
 
     const cachedOrders = await this.redisService.get(pattern);
-    if (cachedOrders) {
-      return cachedOrders;
-    }
+    // if (cachedOrders) {
+    //   return cachedOrders;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -306,9 +308,9 @@ export class ImagingOrdersController {
   async getImagingOrderRoomStats(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.roomStats(CacheEntity.imagingOrders, id);
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
 
     const room = await firstValueFrom(
       this.userService.send('room.get-by-id', { id })
@@ -384,9 +386,9 @@ export class ImagingOrdersController {
     );
 
     const cachedOrders = await this.redisService.get(pattern);
-    if (cachedOrders) {
-      return cachedOrders;
-    }
+    // if (cachedOrders) {
+    //   return cachedOrders;
+    // }
 
     let startDateValue = startDate;
     let endDateValue = endDate;
@@ -502,9 +504,9 @@ export class ImagingOrdersController {
     // console.log('GetQueueStats');
     const pattern = cacheKeyBuilder.roomStats2(CacheEntity.imagingOrders, id);
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.GetQueueStats', {
         id,
@@ -538,13 +540,13 @@ export class ImagingOrdersController {
     );
 
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
     // Ensure dates are properly parsed - NestJS query params come as strings
     const parsedStartDate = startDate ? new Date(startDate as any) : undefined;
     const parsedEndDate = endDate ? new Date(endDate as any) : undefined;
-    
+
     const stats = await firstValueFrom(
       this.imagingService.send(
         'ImagingService.ImagingOrders.GetQueueStatsInDate',
@@ -567,9 +569,9 @@ export class ImagingOrdersController {
   async getImagingOrder(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.imagingOrders, id);
     const cachedOrder = await this.redisService.get(pattern);
-    if (cachedOrder) {
-      return cachedOrder;
-    }
+    // if (cachedOrder) {
+    //   return cachedOrder;
+    // }
     const order = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindOne', { id })
     );
@@ -634,9 +636,9 @@ export class ImagingOrdersController {
       patientId
     );
     const cachedOrders = await this.redisService.get(pattern);
-    if (cachedOrders) {
-      return cachedOrders;
-    }
+    // if (cachedOrders) {
+    //   return cachedOrders;
+    // }
     const orders = await firstValueFrom(
       this.imagingService.send('ImagingService.ImagingOrders.FindByPatientId', {
         patientId,

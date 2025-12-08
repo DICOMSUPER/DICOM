@@ -15,11 +15,13 @@ export default function OrderInfo({
   patient,
   physician,
   procedure,
+  handleChangeMrn,
 }: {
   order: ImagingOrder;
   patient?: Patient;
   physician?: User;
   procedure?: RequestProcedure;
+  handleChangeMrn?: (id: string) => void;
 }) {
   if (!order) {
     return <div>No order information available</div>;
@@ -29,7 +31,9 @@ export default function OrderInfo({
     <div className="bg-white border-gray-100 rounded-md shadow-sm p-6 border border-gray-200">
       <div>{order && <OrderName order={order} />}</div>
       <div className="grid grid-cols-3 md:grid-cols-3 gap-4 text-sm my-5">
-        {patient && <PatientInfo patient={patient} />}
+        {patient && (
+          <PatientInfo patient={patient} handleChangeMrn={handleChangeMrn} />
+        )}
 
         {procedure && <ProcedureInfo procedure={procedure} />}
 

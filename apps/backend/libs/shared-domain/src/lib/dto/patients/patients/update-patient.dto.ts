@@ -1,4 +1,12 @@
-import { IsString, IsEnum, IsOptional, IsBoolean, MinLength, MaxLength, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+  MinLength,
+  MaxLength,
+  IsDateString,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { Gender, BloodType } from '@backend/shared-enums';
 import { IsInsuranceNumber } from '@backend/shared-utils';
@@ -15,6 +23,11 @@ export class UpdatePatientDto {
   @MinLength(2)
   @MaxLength(50)
   lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  patientCode?: string;
 
   @IsOptional()
   @IsDateString()

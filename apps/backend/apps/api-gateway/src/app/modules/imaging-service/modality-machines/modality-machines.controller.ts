@@ -113,9 +113,9 @@ export class ModalityMachinesController {
     });
 
     const cachedMachines = await this.redisService.get(pattern);
-    if (cachedMachines) {
-      return cachedMachines;
-    }
+    // if (cachedMachines) {
+    //   return cachedMachines;
+    // }
     const machines = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindAll', {
         modalityId,
@@ -176,9 +176,9 @@ export class ModalityMachinesController {
     });
 
     const cachedPaginated = await this.redisService.get(pattern);
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -209,9 +209,9 @@ export class ModalityMachinesController {
       roomId,
     });
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.GetStats', {
         roomId,
@@ -234,9 +234,9 @@ export class ModalityMachinesController {
       roomId
     );
     const cachedMachines = await this.redisService.get(pattern);
-    if (cachedMachines) {
-      return cachedMachines;
-    }
+    // if (cachedMachines) {
+    //   return cachedMachines;
+    // }
 
     const machines = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindByRoomId', {
@@ -255,9 +255,9 @@ export class ModalityMachinesController {
     const pattern = cacheKeyBuilder.id(CacheEntity.modalityMachines, id);
 
     const cachedMachine = await this.redisService.get(pattern);
-    if (cachedMachine) {
-      return cachedMachine;
-    }
+    // if (cachedMachine) {
+    //   return cachedMachine;
+    // }
 
     const machine = await firstValueFrom(
       this.imagingService.send('ImagingService.ModalityMachines.FindOne', {

@@ -152,6 +152,7 @@ export interface CreatePatientDto {
 export interface UpdatePatientDto {
   firstName?: string;
   lastName?: string;
+  patientCode?: string;
   dateOfBirth?: string;
   gender?: Gender;
   phoneNumber?: string;

@@ -102,83 +102,93 @@ export default function UploadedStudies({
         </h3>
       </div>
 
-      <div className="divide-y divide-gray-200">
-        {studies.map((study) => {
-          const isStudyExpanded = !!expandedStudies[study.id];
-          const name =
-            study.studyDescription ||
-            study.studyInstanceUid ||
-            `Study ${study.id}`;
-          const date = study.studyDate;
-          const studySeries =
-            selectedStudy?.id === study.id ? seriesForSelectedStudy : [];
-          const isLast = studies[studies.length - 1] === study;
-          return (
-            <div key={study.id}>
-              {/* Study Level */}
-              <StudyLevel
-                study={study}
-                isExpanded={isStudyExpanded}
-                onToggle={toggleStudy}
-                name={name}
-                date={date}
-                seriesCount={study.numberOfSeries ?? studySeries.length}
-                isLast={isLast}
-                refetch={refetchStudy}
-                forwardingStudyId={forwardingStudyId}
-                setForwardingStudyId={setForwardingStudyId}
-              />
+      {studies.length === 0 ? (
+        <div>
+          <div className="px-5 py-20 mx-auto flex justify-center items-center bg-[var(--background)]  p-6 rounded-b-lg ">
+            <span className="text-gray-400 italic text-s font-semibold">
+              No studies uploaded yet
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-200">
+          {studies.map((study) => {
+            const isStudyExpanded = !!expandedStudies[study.id];
+            const name =
+              study.studyDescription ||
+              study.studyInstanceUid ||
+              `Study ${study.id}`;
+            const date = study.studyDate;
+            const studySeries =
+              selectedStudy?.id === study.id ? seriesForSelectedStudy : [];
+            const isLast = studies[studies.length - 1] === study;
+            return (
+              <div key={study.id}>
+                {/* Study Level */}
+                <StudyLevel
+                  study={study}
+                  isExpanded={isStudyExpanded}
+                  onToggle={toggleStudy}
+                  name={name}
+                  date={date}
+                  seriesCount={study.numberOfSeries ?? studySeries.length}
+                  isLast={isLast}
+                  refetch={refetchStudy}
+                  forwardingStudyId={forwardingStudyId}
+                  setForwardingStudyId={setForwardingStudyId}
+                />
 
-              {/* Series Level - Hidden by default */}
-              {isStudyExpanded && (
-                <div className="bg-gray-50 divide-y divide-gray-200">
-                  {studySeries.map((ser) => {
-                    const isSeriesExpanded = !!expandedSeries[ser.id];
-                    const serName =
-                      ser.seriesDescription ||
-                      ser.seriesInstanceUid ||
-                      `Series ${ser.id}`;
-                    const seriesInstances =
-                      selectedSeries?.id === ser.id ? instances : [];
-                    const isLastSeries =
-                      studySeries[studySeries.length - 1] === ser;
-                    return (
-                      <div key={ser.id}>
-                        {/* Series Header */}
-                        <SeriesLevel
-                          series={ser}
-                          isExpanded={isSeriesExpanded}
-                          onToggle={toggleSeries}
-                          name={serName}
-                          instanceCount={
-                            ser.numberOfInstances ?? seriesInstances.length
-                          }
-                          isLast={isLastSeries}
-                        />
+                {/* Series Level - Hidden by default */}
+                {isStudyExpanded && (
+                  <div className="bg-gray-50 divide-y divide-gray-200">
+                    {studySeries.map((ser) => {
+                      const isSeriesExpanded = !!expandedSeries[ser.id];
+                      const serName =
+                        ser.seriesDescription ||
+                        ser.seriesInstanceUid ||
+                        `Series ${ser.id}`;
+                      const seriesInstances =
+                        selectedSeries?.id === ser.id ? instances : [];
+                      const isLastSeries =
+                        studySeries[studySeries.length - 1] === ser;
+                      return (
+                        <div key={ser.id}>
+                          {/* Series Header */}
+                          <SeriesLevel
+                            series={ser}
+                            isExpanded={isSeriesExpanded}
+                            onToggle={toggleSeries}
+                            name={serName}
+                            instanceCount={
+                              ser.numberOfInstances ?? seriesInstances.length
+                            }
+                            isLast={isLastSeries}
+                          />
 
-                        {/* Instances Level - Hidden by default */}
-                        {isSeriesExpanded && (
-                          <div className="bg-white border-t border-gray-200">
-                            {seriesInstances.map((instance, index) => (
-                              <InstancesLevel
-                                key={instance.id}
-                                instance={instance}
-                                isLast={index === seriesInstances.length - 1}
-                                selectedStudy={selectedStudy}
-                                selectedSeries={selectedSeries}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                          {/* Instances Level - Hidden by default */}
+                          {isSeriesExpanded && (
+                            <div className="bg-white border-t border-gray-200">
+                              {seriesInstances.map((instance, index) => (
+                                <InstancesLevel
+                                  key={instance.id}
+                                  instance={instance}
+                                  isLast={index === seriesInstances.length - 1}
+                                  selectedStudy={selectedStudy}
+                                  selectedSeries={selectedSeries}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

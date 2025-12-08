@@ -106,9 +106,9 @@ export class DicomStudiesController {
     const pattern = cacheKeyBuilder.findAll(CacheEntity.dicomStudies, {});
 
     const cachedStudies = await this.redisService.get(pattern);
-    if (cachedStudies) {
-      return cachedStudies;
-    }
+    // if (cachedStudies) {
+    //   return cachedStudies;
+    // }
 
     const studies = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindAll', {})
@@ -160,9 +160,9 @@ export class DicomStudiesController {
     });
 
     const cachedPaginated = await this.redisService.get(pattern);
-    if (cachedPaginated) {
-      return cachedPaginated;
-    }
+    // if (cachedPaginated) {
+    //   return cachedPaginated;
+    // }
 
     const studies = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindMany', {
@@ -219,9 +219,9 @@ export class DicomStudiesController {
     );
 
     const cachedStudies = await this.redisService.get(pattern);
-    if (cachedStudies) {
-      return cachedStudies;
-    }
+    // if (cachedStudies) {
+    //   return cachedStudies;
+    // }
 
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -295,9 +295,9 @@ export class DicomStudiesController {
         roomId,
       });
       const cachedStudies = await this.redisService.get(pattern);
-      if (cachedStudies) {
-        return cachedStudies;
-      }
+      // if (cachedStudies) {
+      //   return cachedStudies;
+      // }
 
       //  Filter studies in imaging service
       let studies = await firstValueFrom(
@@ -447,9 +447,9 @@ export class DicomStudiesController {
     );
 
     const cachedStudies = await this.redisService.get(pattern);
-    if (cachedStudies) {
-      return cachedStudies;
-    }
+    // if (cachedStudies) {
+    //   return cachedStudies;
+    // }
 
     const userInfo = req.userInfo;
     const studies = await firstValueFrom(
@@ -491,9 +491,9 @@ export class DicomStudiesController {
     });
 
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
 
     const today = new Date().toISOString().split('T')[0];
     const finalDateFrom = dateFrom || today;
@@ -528,9 +528,9 @@ export class DicomStudiesController {
   async getDicomStudyById(@Param('id') id: string) {
     const pattern = cacheKeyBuilder.id(CacheEntity.dicomStudies, id);
     const cachedStudy = await this.redisService.get(pattern);
-    if (cachedStudy) {
-      return cachedStudy;
-    }
+    // if (cachedStudy) {
+    //   return cachedStudy;
+    // }
     const study = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindOne', { id })
     );
@@ -613,9 +613,9 @@ export class DicomStudiesController {
       orderId
     );
     const cachedStudy = await this.redisService.get(pattern);
-    if (cachedStudy) {
-      return cachedStudy;
-    }
+    // if (cachedStudy) {
+    //   return cachedStudy;
+    // }
 
     const study = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.FindByOrderId', {

@@ -142,9 +142,9 @@ export class DicomStudySignaturesController {
 
     const cachedSignatures = await this.redisService.get(pattern);
 
-    if (cachedSignatures) {
-      return cachedSignatures;
-    }
+    // if (cachedSignatures) {
+    //   return cachedSignatures;
+    // }
 
     const result = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudySignature.GetAll', {
@@ -179,9 +179,9 @@ export class DicomStudySignaturesController {
     );
 
     const cachedDetails = await this.redisService.get(pattern);
-    if (cachedDetails) {
-      return cachedDetails;
-    }
+    // if (cachedDetails) {
+    //   return cachedDetails;
+    // }
 
     const result = await firstValueFrom(
       this.imagingService.send(
