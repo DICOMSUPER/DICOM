@@ -46,6 +46,7 @@ import {
 import { useGetUserByIdQuery } from "@/store/userApi";
 import SignatureDisplay from "@/components/common/signature-display";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
+import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 
 const AdvancedToolsTab = () => <div>Advanced Tools Content</div>;
 const VideoTab = () => <div>Video Content</div>;
@@ -92,12 +93,13 @@ const MedicalRecordMain = ({
   const [isReasonOpen, setIsReasonOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  
+
 
   const { data: studyDetail, refetch: refetchStudy } = useGetOneDicomStudyQuery(selectedStudyId, {
     skip: !selectedStudyId,
   });
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
+
 
 
   const technicianId = studyDetail?.data?.performingTechnicianId;
@@ -224,12 +226,14 @@ const MedicalRecordMain = ({
         id: studyDetail?.data?.imagingOrder?.id!,
         body: { orderStatus: "completed" },
       });
-      
+
+      await updateStudyDicom({ id: selectedStudyId, data: { status: DicomStudyStatus.PENDING_APPROVAL  } });
+
       // Refetch để hiển thị diagnosis vừa tạo
       if (refetchDiagnosis) {
         await refetchDiagnosis();
       }
-      
+
       toast.success("Đã lưu chẩn đoán thành công!");
     } catch (err) {
       console.error(err);
@@ -257,21 +261,21 @@ const MedicalRecordMain = ({
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
         {/* <Card className="p-12 text-center shadow-lg rounded-2xl max-w-lg bg-white border-border"> */}
-          <div className="flex flex-col items-center gap-4">
-            <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-700">Chào mừng đến với Medical Record</h1>
-            <p className="text-gray-500">
-              Vui lòng chọn một <span className="font-medium text-blue-600">Study</span> để bắt đầu.
-            </p>
-            <Button
-              size="lg"
-              variant="outline"
-              className="mt-4"
-              onClick={() => toast("Hãy chọn Study từ danh sách bên trái!")}
-            >
-              Hướng dẫn chọn Study
-            </Button>
-          </div>
+        <div className="flex flex-col items-center gap-4">
+          <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-700">Chào mừng đến với Medical Record</h1>
+          <p className="text-gray-500">
+            Vui lòng chọn một <span className="font-medium text-blue-600">Study</span> để bắt đầu.
+          </p>
+          <Button
+            size="lg"
+            variant="outline"
+            className="mt-4"
+            onClick={() => toast("Hãy chọn Study từ danh sách bên trái!")}
+          >
+            Hướng dẫn chọn Study
+          </Button>
+        </div>
         {/* </Card> */}
       </div>
     );
