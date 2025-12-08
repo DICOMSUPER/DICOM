@@ -1,6 +1,7 @@
 import React, { useMemo, forwardRef, useImperativeHandle } from "react";
 import {
   useGetOrderStatsForRoomInDateQuery,
+  useGetOrderStatsForRoomQuery,
 } from "@/store/imagingOrderApi";
 import { Clock, Activity, CheckCircle, XCircle, Users } from "lucide-react";
 import { StatsCards } from "@/components/ui/stats-cards";
@@ -26,8 +27,14 @@ const CurrentStatus = forwardRef<CurrentStatusRef, CurrentStatusProps>(
       };
     }, [roomId, startDate, endDate]);
 
-  const { data, isLoading, error, refetch } =
-    useGetOrderStatsForRoomInDateQuery(dateParams);
+  const {
+    data: todayData,
+    isLoading: isLoadingToday,
+    error,
+    refetch,
+  } = useGetOrderStatsForRoomInDateQuery(dateParams);
+  const { data: allTimeData, isLoading: isLoadingAllTime } =
+    useGetOrderStatsForRoomQuery(roomId);
 
     useImperativeHandle(ref, () => ({
       refetch,
@@ -41,47 +48,97 @@ const CurrentStatus = forwardRef<CurrentStatusRef, CurrentStatusProps>(
     );
   }
 
-  const stats = data?.data?.stats;
+  const todayStats = todayData?.data?.stats;
+  const allTimeStats = allTimeData?.data?.stats;
 
-  const statsData = [
+  const statsToday = [
     {
-      title: 'Total Orders',
-      value: stats?.total || 0,
-      description: 'All registered orders',
+      title: 'Today\'s Orders',
+      value: todayStats?.total || 0,
+      description: 'Today\'s registered orders',
       icon: Users,
-      isLoading,
+      isLoading: isLoadingToday,
     },
     {
       title: 'Waiting',
-      value: stats?.waiting || 0,
+      value: todayStats?.waiting || 0,
       description: 'Currently in queue',
       icon: Clock,
-      isLoading,
+      isLoading: isLoadingToday,
     },
     {
       title: 'In Progress',
-      value: stats?.inProgress || 0,
+      value: todayStats?.inProgress || 0,
       description: 'Being processed',
       icon: Activity,
-      isLoading,
+      isLoading: isLoadingToday,
     },
     {
       title: 'Completed',
-      value: stats?.completed || 0,
+      value: todayStats?.completed || 0,
       description: 'Finished orders',
       icon: CheckCircle,
-      isLoading,
+      isLoading: isLoadingToday,
     },
     {
       title: 'Cancelled',
-      value: stats?.cancelled || 0,
+      value: todayStats?.cancelled || 0,
       description: 'Cancelled orders',
       icon: XCircle,
-      isLoading,
+      isLoading: isLoadingToday,
     },
   ];
 
-  return <StatsCards stats={statsData} className="grid-cols-1 md:grid-cols-2 lg:grid-cols-5" />;
+  const statsAllTime = [
+    {
+      title: 'Total Orders',
+      value: allTimeStats?.total || 0,
+      description: 'All registered orders',
+      icon: Users,
+      isLoading: isLoadingAllTime,
+    },
+    {
+      title: 'Waiting',
+      value: allTimeStats?.waiting || 0,
+      description: 'All-time waiting',
+      icon: Clock,
+      isLoading: isLoadingAllTime,
+    },
+    {
+      title: 'In Progress',
+      value: allTimeStats?.inProgress || 0,
+      description: 'All-time in progress',
+      icon: Activity,
+      isLoading: isLoadingAllTime,
+    },
+    {
+      title: 'Completed',
+      value: allTimeStats?.completed || 0,
+      description: 'All-time finished orders',
+      icon: CheckCircle,
+      isLoading: isLoadingAllTime,
+    },
+    {
+      title: 'Cancelled',
+      value: allTimeStats?.cancelled || 0,
+      description: 'All-time cancelled orders',
+      icon: XCircle,
+      isLoading: isLoadingAllTime,
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <StatsCards
+        stats={statsToday}
+        className="grid-cols-1 md:grid-cols-2 lg:grid-cols-5"
+      />
+      <StatsCards
+        stats={statsAllTime}
+        className="grid-cols-1 md:grid-cols-2 lg:grid-cols-5"
+      />
+    </div>
+  );
   }
 );
 
