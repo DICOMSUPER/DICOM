@@ -11,15 +11,19 @@ import { IMAGING_SERVICE } from './constant/microservice.constant';
 
 process.setMaxListeners(20);
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 process.on('unhandledRejection', (reason: any, promise) => {
   const logger = new Logger('UnhandledRejection');
-  
+
   // Enhance database connection errors with connection details
-  if (reason?.message?.includes('connection') || 
-      reason?.message?.includes('database') ||
-      reason?.code === 'ETIMEDOUT' || 
-      reason?.code === 'ECONNREFUSED' ||
-      reason?.message?.includes('Connection terminated')) {
+  if (
+    reason?.message?.includes('connection') ||
+    reason?.message?.includes('database') ||
+    reason?.code === 'ETIMEDOUT' ||
+    reason?.code === 'ECONNREFUSED' ||
+    reason?.message?.includes('Connection terminated')
+  ) {
     const errorMessage = reason?.message || String(reason);
     logger.error(
       `Database connection error detected. Check your database configuration and ensure the database server is running.`,
@@ -70,21 +74,23 @@ async function bootstrap() {
     logger.log(`🎉 Cold Start completed! Total time: ${totalTime}ms`);
   } catch (error: any) {
     logger.error('❌ Failed to start Imaging Service:', error);
-    
+
     // Check if it's a database connection error
-    if (error?.message?.includes('database') || 
-        error?.message?.includes('connection') ||
-        error?.message?.includes('Unable to connect')) {
+    if (
+      error?.message?.includes('database') ||
+      error?.message?.includes('connection') ||
+      error?.message?.includes('Unable to connect')
+    ) {
       const dbHost = process.env.IMAGING_DB_HOST || 'localhost';
       const dbPort = process.env.IMAGING_DB_PORT || 5432;
       const dbName = process.env.IMAGING_DB_NAME || 'dicom_imaging_service';
       const dbUser = process.env.IMAGING_DB_USERNAME || 'postgres';
-      
+
       logger.error(
         `Database connection error. Attempted connection: host=${dbHost} port=${dbPort} database=${dbName} username=${dbUser}`
       );
     }
-    
+
     if (error?.message) {
       logger.error('Error message:', error.message);
     }

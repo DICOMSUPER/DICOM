@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Dialog,
@@ -6,12 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { BodyPart } from '@/interfaces/imaging/body-part.interface';
-import { Activity, Calendar } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { Activity, Calendar } from "lucide-react";
 
 interface BodyPartViewModalProps {
   bodyPart: BodyPart | null;
@@ -26,37 +26,41 @@ export function BodyPartViewModal({
   onClose,
   onEdit,
 }: BodyPartViewModalProps) {
-
   const formatDateTime = (dateValue?: string | Date | null) => {
-    if (!dateValue) return '—';
-    const date = typeof dateValue === 'string' || dateValue instanceof Date ? new Date(dateValue) : null;
-    if (!date || Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
+    if (!dateValue) return "—";
+    const date =
+      typeof dateValue === "string" || dateValue instanceof Date
+        ? new Date(dateValue)
+        : null;
+    if (!date || Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[50vw] max-w-[800px] sm:max-w-[50vw] max-h-[75vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[50vw] max-w-[800px] sm:max-w-[50vw] h-[75vh] flex flex-col border-0 p-0 overflow-hidden">
         {/* Fixed Header */}
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">Body Part Details</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">
+            Body Part Details
+          </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 overflow-auto px-6">
           {!bodyPart ? (
-            <div className="space-y-8 pr-4 pb-2">
+            <div className="space-y-8 pr-4 pb-6">
               <Skeleton className="h-32 w-full" />
               <Skeleton className="h-48 w-full" />
               <Skeleton className="h-64 w-full" />
             </div>
           ) : (
-            <div className="space-y-8 pr-4 pb-2">
+            <div className="space-y-8 pr-4 pb-6">
               <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="space-y-4">
@@ -151,4 +155,3 @@ export function BodyPartViewModal({
     </Dialog>
   );
 }
-

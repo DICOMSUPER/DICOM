@@ -369,6 +369,19 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
 
     const repository = this.getRepository();
 
+    console.log(
+      'Stats query',
+      repository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
+        .andWhere('imagingOrderForm.roomId = :roomId', { roomId: data.id })
+        .andWhere('order.createdAt BETWEEN :start AND :end', {
+          start: startOfDay,
+          end: endOfDay,
+        })
+        .andWhere('order.isDeleted = :notDeleted', { notDeleted: false })
+    );
+
     // Get all orders for this room today
     const allOrders = await repository
       .createQueryBuilder('order')

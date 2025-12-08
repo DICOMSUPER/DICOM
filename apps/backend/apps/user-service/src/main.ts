@@ -12,6 +12,8 @@ process.on('unhandledRejection', (reason, promise) => {
   logger.error('Promise:', promise);
 });
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 process.on('uncaughtException', (error) => {
   const logger = new Logger('UncaughtException');
   logger.error('Uncaught Exception:', error);

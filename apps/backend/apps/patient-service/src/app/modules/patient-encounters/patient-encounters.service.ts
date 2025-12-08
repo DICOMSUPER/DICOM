@@ -405,7 +405,10 @@ export class PatientEncounterService {
         const waitingEncounters = await this.encounterRepository.findAll(
           {
             where: {
-              encounterDate: Or(Between(today, endOfDay), LessThan(today)), //in case missed previous date
+              encounterDate: Or(
+                // Between(today, endOfDay),
+                LessThan(today)
+              ), //in case missed previous date
               status: In([EncounterStatus.WAITING]),
               isDeleted: false,
             },
