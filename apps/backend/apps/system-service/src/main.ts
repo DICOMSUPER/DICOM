@@ -9,6 +9,8 @@ import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common';
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 process.setMaxListeners(20);
 
 process.on('unhandledRejection', (reason, promise) => {

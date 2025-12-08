@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -21,18 +21,28 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { ServiceRoom } from '@/interfaces/user/service-room.interface';
-import { useCreateServiceRoomMutation, useUpdateServiceRoomMutation } from '@/store/serviceRoomApi';
-import { useGetRoomsQuery } from '@/store/roomsApi';
-import { useGetServicesQuery } from '@/store/serviceApi';
-import { Room } from '@/interfaces/user/room.interface';
-import { Services } from '@/interfaces/user/service.interface';
-import { Link2 } from 'lucide-react';
+} from "@/components/ui/form";
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import {
+  useCreateServiceRoomMutation,
+  useUpdateServiceRoomMutation,
+} from "@/store/serviceRoomApi";
+import { useGetRoomsQuery } from "@/store/roomsApi";
+import { useGetServicesQuery } from "@/store/serviceApi";
+import { Room } from "@/interfaces/user/room.interface";
+import { Services } from "@/interfaces/user/service.interface";
+import { Link2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RoomServiceFormModalProps {
   roomService: ServiceRoom | null;
@@ -42,15 +52,20 @@ interface RoomServiceFormModalProps {
 }
 
 const roomServiceFormSchema = z.object({
-  roomId: z.string().min(1, 'Room is required'),
-  serviceIds: z.array(z.string().min(1)).min(1, 'Select at least one service'),
+  roomId: z.string().min(1, "Room is required"),
+  serviceIds: z.array(z.string().min(1)).min(1, "Select at least one service"),
   isActive: z.boolean(),
   notes: z.string().optional(),
 });
 
 type RoomServiceFormValues = z.infer<typeof roomServiceFormSchema>;
 
-export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }: RoomServiceFormModalProps) {
+export function RoomServiceFormModal({
+  roomService,
+  isOpen,
+  onClose,
+  onSuccess,
+}: RoomServiceFormModalProps) {
   const isEdit = !!roomService;
   const [createServiceRoom] = useCreateServiceRoomMutation();
   const [updateServiceRoom] = useUpdateServiceRoomMutation();
@@ -62,27 +77,27 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
   const form = useForm<RoomServiceFormValues>({
     resolver: zodResolver(roomServiceFormSchema),
     defaultValues: {
-      roomId: '',
+      roomId: "",
       serviceIds: [],
       isActive: true,
-      notes: '',
+      notes: "",
     },
   });
 
   useEffect(() => {
     if (roomService) {
       form.reset({
-        roomId: roomService.roomId || '',
+        roomId: roomService.roomId || "",
         serviceIds: roomService.serviceId ? [roomService.serviceId] : [],
         isActive: roomService.isActive ?? true,
-        notes: roomService.notes || '',
+        notes: roomService.notes || "",
       });
     } else {
       form.reset({
-        roomId: '',
+        roomId: "",
         serviceIds: [],
         isActive: true,
-        notes: '',
+        notes: "",
       });
     }
   }, [roomService, isOpen, form]);
@@ -101,13 +116,13 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
           id: roomService.id,
           data: { isActive: data.isActive, notes: data.notes || undefined },
         }).unwrap();
-        toast.success('Room service assignment updated successfully');
+        toast.success("Room service assignment updated successfully");
       } else if (payloads.length > 0) {
         await Promise.all(payloads.map((p) => createServiceRoom(p).unwrap()));
         toast.success(
           payloads.length > 1
             ? `Assigned ${payloads.length} services to room`
-            : 'Room service assignment created successfully'
+            : "Room service assignment created successfully"
         );
       } else {
         // If no services selected, remove existing (unassign all)
@@ -116,16 +131,19 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
             id: roomService.id,
             data: { isActive: false, notes: data.notes || undefined },
           }).unwrap();
-          toast.success('Unassigned room services');
+          toast.success("Unassigned room services");
         } else {
-          toast.success('No services selected; nothing to assign');
+          toast.success("No services selected; nothing to assign");
         }
       }
       onSuccess?.();
       onClose();
       form.reset();
     } catch (error: any) {
-      toast.error(error?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} room service assignment`);
+      toast.error(
+        error?.data?.message ||
+          `Failed to ${isEdit ? "update" : "create"} room service assignment`
+      );
     }
   };
 
@@ -139,12 +157,17 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <DialogTitle className="text-xl font-semibold">
-            {isEdit ? 'Edit Room Service Assignment' : 'Create New Room Service Assignment'}
+            {isEdit
+              ? "Edit Room Service Assignment"
+              : "Create New Room Service Assignment"}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col flex-1 min-h-0"
+          >
             <ScrollArea className="flex-1 min-h-0 h-full px-6">
               <div className="space-y-8 pr-4 pb-2">
                 <section className="rounded-2xl p-6 shadow border-border border space-y-4">
@@ -158,7 +181,9 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
                       name="roomId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Room *</FormLabel>
+                          <FormLabel className="text-foreground">
+                            Room *
+                          </FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
@@ -186,16 +211,20 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
                       name="serviceIds"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Services *</FormLabel>
+                          <FormLabel className="text-foreground">
+                            Services *
+                          </FormLabel>
                           <div className="space-y-2 rounded-lg border border-border p-3">
                             <p className="text-xs text-foreground">
                               {isEdit
-                                ? 'Service cannot be changed after creation.'
-                                : 'Select one or more services to assign to this room.'}
+                                ? "Service cannot be changed after creation."
+                                : "Select one or more services to assign to this room."}
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
                               {services.map((service) => {
-                                const checked = field.value?.includes(service.id);
+                                const checked = field.value?.includes(
+                                  service.id
+                                );
                                 return (
                                   <label
                                     key={service.id}
@@ -217,7 +246,8 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
                                     />
                                     <div className="flex flex-col">
                                       <span className="text-sm font-medium text-foreground">
-                                        {service.serviceCode} - {service.serviceName}
+                                        {service.serviceCode} -{" "}
+                                        {service.serviceName}
                                       </span>
                                       {service.description && (
                                         <span className="text-xs text-foreground line-clamp-2">
@@ -282,11 +312,20 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
             </ScrollArea>
 
             <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={form.formState.isSubmitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Update Assignment' : 'Create Assignment'}
+                {form.formState.isSubmitting
+                  ? "Saving..."
+                  : isEdit
+                  ? "Update Assignment"
+                  : "Create Assignment"}
               </Button>
             </DialogFooter>
           </form>
@@ -295,4 +334,3 @@ export function RoomServiceFormModal({ roomService, isOpen, onClose, onSuccess }
     </Dialog>
   );
 }
-

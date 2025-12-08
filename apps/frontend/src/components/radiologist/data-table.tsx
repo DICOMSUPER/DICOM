@@ -25,8 +25,15 @@ const calculateAge = (dateOfBirth: string): number => {
 
 // Helper function to format date (e.g., "1993-03-25" to "3/25/93")
 const formatDate = (date: string): string => {
-  const [year, month, day] = date.split("-");
+  const dateObj = new Date(date);
+  const [month, day, year] = dateObj.toLocaleDateString("vi-VN").split("/");
   return `${parseInt(month)}/${parseInt(day)}/${year.slice(2)}`;
+};
+
+const formatCreatedAt = (date: string): string => {
+  const dateObj = new Date(date);
+  const [day, month, year] = dateObj.toLocaleDateString("vi-VN").split("/");
+  return `${parseInt(day)}/${parseInt(month)}/${year.slice(2)}`;
 };
 
 // Helper function to format time (e.g., "13:57:31" to "13:57")
@@ -129,6 +136,10 @@ export default function DataTable({
                   Study Time
                 </th>
                 <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
+                  Import Date
+                </th>
+
+                <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
                   Room
                 </th>
                 <th className="px-4 py-2 text-left font-semibold text-gray-700 border-r border-gray-300">
@@ -170,7 +181,6 @@ export default function DataTable({
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700 font-medium">
                       {row.patient?.firstName}
                     </td>
-
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                       {(() => {
                         const badge = studyStatusBadge(row.studyStatus);
@@ -203,6 +213,9 @@ export default function DataTable({
                     </td>
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                       {formatTime(row.studyTime)}
+                    </td>{" "}
+                    <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
+                      {formatCreatedAt(row.createdAt)}
                     </td>
                     <td className="px-4 py-2 border-r border-gray-200 text-gray-700">
                       {row.room?.roomCode}
@@ -237,7 +250,7 @@ export default function DataTable({
                             row.studyInstanceUid,
                             `${row.patient?.lastName} ${
                               row.patient?.firstName
-                            } - (${row.studyDate.toString()})`,
+                            } - (${formatCreatedAt(row.createdAt)})`,
                             <StudyTab patientId={row.patient?.id as string} />
                           );
                         }}

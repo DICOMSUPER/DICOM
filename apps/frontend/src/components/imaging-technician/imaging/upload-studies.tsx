@@ -88,6 +88,12 @@ export default function UploadedStudies({
     }
   };
 
+  const formatCreatedAt = (date: string): string => {
+    const dateObj = new Date(date);
+    const [day, month, year] = dateObj.toLocaleDateString("vi-VN").split("/");
+    return `${parseInt(day)}/${parseInt(month)}/${year.slice(2)}`;
+  };
+
   const seriesForSelectedStudy = useMemo(() => {
     if (!selectedStudy) return [];
     // series prop already reflects selectedStudy from parent hook
@@ -118,7 +124,7 @@ export default function UploadedStudies({
               study.studyDescription ||
               study.studyInstanceUid ||
               `Study ${study.id}`;
-            const date = study.studyDate;
+            const date = study.createdAt;
             const studySeries =
               selectedStudy?.id === study.id ? seriesForSelectedStudy : [];
             const isLast = studies[studies.length - 1] === study;
@@ -130,7 +136,7 @@ export default function UploadedStudies({
                   isExpanded={isStudyExpanded}
                   onToggle={toggleStudy}
                   name={name}
-                  date={date}
+                  date={formatCreatedAt(date)}
                   seriesCount={study.numberOfSeries ?? studySeries.length}
                   isLast={isLast}
                   refetch={refetchStudy}

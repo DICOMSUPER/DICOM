@@ -271,7 +271,7 @@ export class ImagingOrdersService {
               ]),
               isDeleted: false,
               createdAt: Or(
-                Between(startOfToday, endOfToday),
+                // Between(startOfToday, endOfToday),
                 LessThan(startOfToday) //Incase missing previous date
               ),
             },
