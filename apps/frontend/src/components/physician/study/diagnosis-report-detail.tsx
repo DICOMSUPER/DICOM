@@ -1203,8 +1203,7 @@ export function DiagnosisReportDetail({
                 <Image className="w-4 h-4" />
                 View Image
               </Button>
-              {dicomStudyData?.data.studyStatus !==
-                DicomStudyStatus.APPROVED && (
+              {physicianSignatureData?.data && (
                 <Button
                   onClick={handleDownloadReport}
                   disabled={isUpdating || isUpdatingDicomStudy}

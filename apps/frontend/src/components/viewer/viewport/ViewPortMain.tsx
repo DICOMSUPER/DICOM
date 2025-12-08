@@ -442,7 +442,7 @@ const ViewPortMain = ({
 
         setPredictions(predictions);
         const stackViewport = currentViewport as Types.IStackViewport;
-        const canvas = stackViewport.canvas;
+        // const canvas = stackViewport.canvas;
         const currentImageId = stackViewport.getCurrentImageId?.() || "";
         setAiImageMetadata({ width: image.width, height: image.height });
         setAnalyzedImageId(currentImageId);
@@ -454,8 +454,8 @@ const ViewPortMain = ({
           resolvedRenderingEngineId as string,
           image.width,
           image.height,
-          canvas.width,
-          canvas.height
+          // canvas.width,
+          // canvas.height
         );
         batchedRender(currentViewport);
       } catch (error) {

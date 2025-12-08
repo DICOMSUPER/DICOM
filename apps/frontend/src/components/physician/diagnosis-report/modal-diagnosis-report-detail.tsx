@@ -20,7 +20,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
 import { TemplateType } from "@/enums/report-template.enum";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
 import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
 import {
   FilterReportTemplate,
@@ -36,7 +35,10 @@ import {
   useGetOneDicomStudyQuery,
   useUpdateDicomStudyMutation,
 } from "@/store/dicomStudyApi";
-import { usePhysicianApproveStudyMutation } from "@/store/dicomStudySignatureApi";
+import {
+  useGetSignatureDetailsQuery,
+  usePhysicianApproveStudyMutation,
+} from "@/store/dicomStudySignatureApi";
 import {
   useHasSignatureQuery,
   useSetupSignatureMutation,
@@ -63,6 +65,8 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ModalApproveStudy } from "./modal-approve-study";
 import { ModalSetUpSignature } from "./modal-setup";
+import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { SignatureType } from "@/enums/signature-type";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;
@@ -185,6 +189,16 @@ export function ModalDiagnosisReportDetail({
     usePhysicianApproveStudyMutation();
 
   const router = useRouter();
+  const { data: physicianSignatureData, isLoading: isCheckingSignature } =
+    useGetSignatureDetailsQuery(
+      {
+        studyId: report?.data?.studyId || "",
+        signatureType: SignatureType.PHYSICIAN_APPROVE,
+      },
+      {
+        skip: !report?.data?.studyId,
+      }
+    );
 
   // Load template content when selected
   useEffect(() => {
@@ -323,25 +337,25 @@ export function ModalDiagnosisReportDetail({
     };
 
     switch (status) {
-      case DiagnosisStatus.ACTIVE:
+      case DiagnosisStatus.APPROVED:
         return (
           <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-200 transition-colors">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
             Active
           </Badge>
         );
-      case DiagnosisStatus.RESOLVED:
+      case DiagnosisStatus.REJECTED:
         return (
           <Badge className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200 transition-colors">
             <div className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
-            Resolved
+            Rejected
           </Badge>
         );
-      case DiagnosisStatus.RULED_OUT:
+      case DiagnosisStatus.PENDING_APPROVAL:
         return (
           <Badge className="bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 transition-colors">
             <div className="w-2 h-2 bg-slate-500 rounded-full mr-2" />
-            Ruled Out
+            Pending Approval
           </Badge>
         );
       default:
@@ -366,21 +380,10 @@ export function ModalDiagnosisReportDetail({
     }
   };
 
-  const handleEnterApprove = async (studyId: string) => {
-    try {
-      if (hasSignatureData?.data.hasSignature === false) {
-        toast.error(
-          "You need to set up your digital signature before approving."
-        );
-        setModalSetupOpen(true);
-        return;
-      }
-      setSelectedStudyId(studyId);
-      setModalApproveOpen(true);
-    } catch (error: any) {}
-  };
   const handleViewImage = () => {
-    router.push(`/viewer?study=${report?.data.studyId}`);
+    router.push(
+      `/viewer?study=${report?.data.studyId}&patient=${report?.data.encounter?.patient?.id}`
+    );
   };
   const handleDownloadReport = async () => {
     try {
@@ -839,6 +842,94 @@ export function ModalDiagnosisReportDetail({
               </div>
 
               <Separator className="my-6 bg-slate-200/50" />
+              {physicianSignatureData?.data && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <svg
+                        className="w-5 h-5 text-emerald-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-emerald-900">
+                        Digital Signature Verified
+                      </h3>
+                      <p className="text-sm text-emerald-700">
+                        This study has been digitally signed and approved
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                        Signed At
+                      </div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {new Date(
+                          physicianSignatureData.data.signedAt
+                        ).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                        Signature Type
+                      </div>
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                        Physician Approval
+                      </Badge>
+                    </div>
+
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                        Certificate Serial
+                      </div>
+                      <div className="text-xs font-mono text-slate-700 truncate">
+                        {physicianSignatureData.data.certificateSerial}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 bg-white/60 backdrop-blur rounded-lg p-3 border border-emerald-100">
+                    <div className="flex items-center gap-2 text-sm text-emerald-800">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
+                      </svg>
+                      <span className="font-medium">
+                        This signature ensures the authenticity and integrity of
+                        the study approval
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {!isEditDescriptionOpen ? (
                 <Button
@@ -1028,39 +1119,21 @@ export function ModalDiagnosisReportDetail({
                 >
                   Close
                 </Button>
-                <Button
-                  onClick={() => handleEnterApprove(report.data.studyId)}
-                  disabled={
-                    isUpdating ||
-                    isHasSignatureLoading ||
-                    dicomStudyData?.data.studyStatus ===
-                      DicomStudyStatus.APPROVED ||
-                    dicomStudyData?.data.studyStatus ===
-                      DicomStudyStatus.RESULT_PRINTED
-                  }
-                  className="bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
-                >
-                  <Image className="w-4 h-4" />
-                  {DicomStudyStatus.APPROVED ===
-                  dicomStudyData?.data.studyStatus
-                    ? "Sign to Approve Study"
-                    : "Study Approved"}
-                </Button>
+
                 <Button
                   onClick={handleViewImage}
                   disabled={isUpdating || isHasSignatureLoading}
-                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  className="bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                 >
                   <Image className="w-4 h-4" />
                   View Image
                 </Button>
-                {dicomStudyData?.data.studyStatus !==
-                  DicomStudyStatus.APPROVED && (
+                {physicianSignatureData?.data && (
                   <Button
                     onClick={handleDownloadReport}
                     // onClick={handleGeneratePDF}
                     disabled={isUpdating || isUpdatingDicomStudy}
-                    className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                    className="bg-linear-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
                     <Printer className="w-4 h-4" />
                     Print Report
