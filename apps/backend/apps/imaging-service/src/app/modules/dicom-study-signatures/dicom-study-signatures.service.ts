@@ -144,7 +144,7 @@ export class DicomStudySignaturesService {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    // // Check if study has been verified by technician
+    // Check if study has been verified by technician
     // if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
     //   throw new InvalidStudyStatusException(
     //     study.studyStatus,

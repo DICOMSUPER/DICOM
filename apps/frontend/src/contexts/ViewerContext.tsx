@@ -3089,14 +3089,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+    const eventData = {
+      viewportId,
+      viewportIndex: viewport,
+      modelId: options?.modelId,
+      modelName: options?.modelName,
+      versionName: options?.versionName,
+    };
 
-      viewerEventService.publish(ViewerEvents.DIAGNOSE_VIEWPORT, {
-        viewportId,
-        viewportIndex: viewport,
-        modelId: options?.modelId,
-        modelName: options?.modelName,
-        versionName: options?.versionName,
-      });
+    console.log("Publishing DIAGNOSE_VIEWPORT event:", eventData); 
+
+    viewerEventService.publish(ViewerEvents.DIAGNOSE_VIEWPORT, eventData);
+
     },
     [getViewportId]
   );
