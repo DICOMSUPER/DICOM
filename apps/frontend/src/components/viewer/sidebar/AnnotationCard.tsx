@@ -132,7 +132,7 @@ export function AnnotationCard({
   const measurement = getMeasurementDisplay(annotation);
   
   // Check if user is physician
-  const isPhysician = userRole === Roles.PHYSICIAN || userRole === Roles.RADIOLOGIST;
+  const isPhysician = userRole === Roles.PHYSICIAN;
   const isLocal = (annotation as any).isLocal;
   const currentStatus = annotation.annotationStatus;
   

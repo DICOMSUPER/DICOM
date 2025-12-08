@@ -155,7 +155,6 @@ export const DiagnosisReportPDF = ({
 
   const signatureWidth = 60;
 
-  const leftSignatureX = marginLeft + 20;
   const rightSignatureX = pageWidth - marginRight - signatureWidth - 20;
 
   const signatureStartY = y;
@@ -238,6 +237,29 @@ export const DiagnosisReportPDF = ({
     signatureStartY + 30,
     { align: "center" }
   );
+
+  // Footer metadata (ensure new line)
+  const footerY = signatureStartY + 46;
+  doc.setFontSize(9);
+  doc.setTextColor(60);
+  doc.text(
+    `Report ID: ${diagnosisReportPDF.report?.id || "N/A"}`,
+    marginLeft,
+    footerY
+  );
+  doc.text(
+    `Exported: ${new Date().toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`,
+    marginLeft,
+    footerY + 6
+  );
+  doc.setTextColor(0);
 
 
   doc.save(

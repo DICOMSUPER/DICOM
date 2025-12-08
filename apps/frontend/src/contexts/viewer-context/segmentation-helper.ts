@@ -1,6 +1,10 @@
 import type { MutableRefObject } from "react";
 import { cache, eventTarget, imageLoader } from "@cornerstonejs/core";
-import { segmentation, Enums as ToolEnums } from "@cornerstonejs/tools";
+import {
+  segmentation,
+  Enums as ToolEnums,
+  utilities as csToolsUtilities,
+} from "@cornerstonejs/tools";
 import pako from "pako";
 /**
  * Segmentation history types and helpers.
@@ -464,8 +468,10 @@ export async function ensureViewportLabelmapSegmentation(options: {
   viewportId: string;
   imageIds: string[];
   imageIdToInstanceMap?: Record<string, string>;
+  toolGroupId?: string;
 }) {
   const { viewportId, imageIds, imageIdToInstanceMap } = options;
+  const toolGroupId = options.toolGroupId ?? `toolGroup_${viewportId}`;
 
   if (!viewportId || !imageIds?.length) {
     return;
@@ -528,6 +534,48 @@ export async function ensureViewportLabelmapSegmentation(options: {
       },
     ],
   });
+
+  // Also register the representation with the tool group (if available) so tools like Eraser work
+  try {
+    const segUtilsAny = (csToolsUtilities as any)?.segmentation;
+    if (
+      toolGroupId &&
+      typeof segUtilsAny?.addSegmentationRepresentations === "function"
+    ) {
+      segUtilsAny.addSegmentationRepresentations(toolGroupId, [
+        {
+          segmentationId,
+          type: ToolEnums.SegmentationRepresentations.Labelmap,
+        },
+      ]);
+    }
+
+    if (
+      toolGroupId &&
+      typeof segUtilsAny?.setActiveSegmentationRepresentation === "function"
+    ) {
+      segUtilsAny.setActiveSegmentationRepresentation(toolGroupId, segmentationId);
+    }
+
+    if (
+      toolGroupId &&
+      typeof segUtilsAny?.setActiveSegmentation === "function"
+    ) {
+      // Some versions expose setActiveSegmentation
+      segUtilsAny.setActiveSegmentation(toolGroupId, segmentationId);
+    }
+
+    // Default active segment index to 1 (background is 0)
+    if (
+      toolGroupId &&
+      typeof segUtilsAny?.setActiveSegmentIndex === "function"
+    ) {
+      segUtilsAny.setActiveSegmentIndex(toolGroupId, 1);
+    }
+  } catch (err) {
+    // Swallow optional API errors to avoid breaking older versions
+    console.debug("[Segmentation] Tool-group registration failed", err);
+  }
 
   // Apply a softer default style so the base image stays visible.
   segmentation.config.style.setStyle(

@@ -74,7 +74,7 @@ if (isError)
   );
 
   return (
-    <div className="flex bg-gray-50">
+    <div className="flex">
 
       {patientData?.data && (
         <SidebarTab

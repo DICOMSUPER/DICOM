@@ -101,6 +101,8 @@ function ViewerPageContent() {
   const handleSeriesSelect = useCallback((series: DicomSeries) => {
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
+    // Auto-select Pan after loading a series
+    setSelectedTool("Pan");
     console.log("Series selected:", series);
     updateURLParams({
       patient: patientId || "",
@@ -214,7 +216,6 @@ function ViewerPageContent() {
             studyId={studyId || undefined}
             patientId={patientId || undefined}
             selectedSeriesFromParent={selectedSeries}
-            urlSeriesId={undefined}
           />
         </ResizablePanel>
       </div>

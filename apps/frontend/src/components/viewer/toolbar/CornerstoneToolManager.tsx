@@ -10,6 +10,7 @@ import {
   annotation,
   segmentation,
   Enums as SegmentationEnums,
+  utilities as csToolsUtilities,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
 import {
@@ -44,6 +45,7 @@ import {
   getNonCustomMappings,
   type ToolType,
 } from "./tool-constants";
+import { segmentationIdForViewport } from "@/contexts/viewer-context/segmentation-helper";
 
 // Tool mappings and constants imported from separate file for better code splitting
 
@@ -676,9 +678,6 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       nonCustomMappings.forEach(({ toolName }) => {
         if (toolGroup && !toolGroup.hasTool(toolName)) {
           try {
-            // if (toolName === ScaleOverlayTool.toolName) {
-            //   return;
-            // }
             toolGroup.addTool(toolName);
           } catch (error) {
             console.warn(`Failed to add tool ${toolName}:`, error);
@@ -897,6 +896,10 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
       // Handle Cornerstone.js tools using mapping
       const actualToolName = getToolName(selectedTool as ToolType);
+      const toolCategory =
+        TOOL_MAPPINGS[selectedTool as ToolType]?.category ||
+        TOOL_MAPPINGS[actualToolName as ToolType]?.category;
+      const isSegmentationTool = toolCategory === "segmentation";
       if (
         actualToolName &&
         toolGroupRef.current.hasTool &&
@@ -911,6 +914,70 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
         // Activate selected tool
         if (typeof toolGroupRef.current.setToolActive === "function") {
+          // Before activation, ensure segmentation/segment is active for segmentation tools (Brush/Eraser/etc.)
+          if (isSegmentationTool) {
+            const segUtilsAny = (csToolsUtilities as any)?.segmentation;
+            const segmentationId = segmentationIdForViewport(viewportId);
+            if (segmentationId) {
+              try {
+                if (
+                  typeof segUtilsAny?.addSegmentationRepresentations === "function"
+                ) {
+                  segUtilsAny.addSegmentationRepresentations(toolGroupId, [
+                    {
+                      segmentationId,
+                      type: SegmentationEnums.SegmentationRepresentations.Labelmap,
+                    },
+                  ]);
+                }
+                if (
+                  typeof segUtilsAny?.setActiveSegmentationRepresentation === "function"
+                ) {
+                  segUtilsAny.setActiveSegmentationRepresentation(
+                    toolGroupId,
+                    segmentationId
+                  );
+                }
+                if (
+                  typeof segUtilsAny?.setActiveSegmentation === "function"
+                ) {
+                  segUtilsAny.setActiveSegmentation(toolGroupId, segmentationId);
+                }
+                if (
+                  typeof segUtilsAny?.setActiveSegmentationForViewport === "function"
+                ) {
+                  segUtilsAny.setActiveSegmentationForViewport(
+                    viewportId,
+                    segmentationId
+                  );
+                }
+                if (typeof segUtilsAny?.setActiveSegmentIndex === "function") {
+                  const isEraser =
+                    actualToolName === TOOL_MAPPINGS.Eraser.toolName;
+                  segUtilsAny.setActiveSegmentIndex(
+                    toolGroupId,
+                    isEraser ? 0 : 1
+                  );
+                }
+                if (
+                  typeof segUtilsAny?.setActiveSegmentIndexForViewport === "function"
+                ) {
+                  const isEraser =
+                    actualToolName === TOOL_MAPPINGS.Eraser.toolName;
+                  segUtilsAny.setActiveSegmentIndexForViewport(
+                    viewportId,
+                    isEraser ? 0 : 1
+                  );
+                }
+              } catch (err) {
+                console.debug(
+                  "[Segmentation] Tool activation could not set active segmentation/segment",
+                  err
+                );
+              }
+            }
+          }
+
           toolGroupRef.current.setToolActive(actualToolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });

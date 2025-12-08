@@ -5,7 +5,6 @@ import type React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 
 interface LoginFormProps {
@@ -16,7 +15,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,8 +22,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true);
     try {
       await onLogin(email, password);
-    } finally {
+      // Keep loading state until navigation; unmount will reset it
+    } catch (error) {
       setIsLoading(false);
+      throw error;
     }
   };
 
@@ -110,7 +110,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 disabled:opacity-50"
+          className="w-full h-12 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 disabled:opacity-50"
         >
           {isLoading ? "Signing In..." : "Sign In"}
         </Button>

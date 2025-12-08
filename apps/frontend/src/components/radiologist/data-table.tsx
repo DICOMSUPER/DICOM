@@ -51,7 +51,7 @@ const STUDY_STATUS_LABELS: Record<string, string> = {
 };
 
 const studyStatusBadge = (status?: string) => {
-  if (!status) return { label: "NA", className: "text-gray-600" };
+  if (!status) return { label: "N/A", className: "text-gray-600" };
   const label = STUDY_STATUS_LABELS[status] || status;
   const map: Record<string, string> = {
     [DicomStudyStatus.SCANNED]: "text-slate-700",
@@ -73,7 +73,7 @@ const REPORT_STATUS_LABELS: Record<string, string> = {
 };
 
 const reportStatusBadge = (status?: string) => {
-  if (!status) return { label: "NA", className: "text-gray-600" };
+  if (!status) return { label: "N/A", className: "text-gray-600" };
   const label = REPORT_STATUS_LABELS[status] || status;
   const map: Record<string, string> = {
     [DiagnosisStatus.PENDING_APPROVAL]: "text-amber-700",
@@ -186,7 +186,7 @@ export default function DataTable({
                         ? `${row.patient.gender.charAt(0).toUpperCase()}, ${calculateAge(
                             row.patient?.dateOfBirth as unknown as string
                           )}`
-                        : "NA"}
+                        : "N/A"}
                     </div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.imagingOrder?.procedure?.bodyPart?.name}</div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">{formatDate(row.studyDate)}</div>

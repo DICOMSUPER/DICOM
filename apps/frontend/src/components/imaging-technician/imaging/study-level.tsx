@@ -102,7 +102,7 @@ export default function StudyLevel({
       className={`w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors ${
         study.series?.length === 0
           ? "cursor-not-allowed opacity-50"
-          : "cursor-pointer"
+          : "cursor-pointer hover:shadow-sm"
       } ${isLast ? "rounded-b-lg" : ""}`}
     >
       <div className="flex items-center space-x-4 flex-1 text-left">
@@ -128,16 +128,16 @@ export default function StudyLevel({
             setForwardingStudyId(study.id);
           }}
           disabled={isForwarded}
-          className={`text-sm transition-colors ${
+          className={`text-sm transition-colors inline-flex items-center gap-2 rounded-md border px-3 py-1.5 ${
             isForwarded
-              ? "text-gray-400 cursor-not-allowed"
-              : "text-blue-600 hover:text-blue-700 hover:underline"
+              ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+              : "border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
           }`}
         >
           Forward Study
         </button>
 
-        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
           {seriesCount} series
         </span>
       </div>

@@ -41,7 +41,8 @@ import {
   useDeleteImageSegmentationLayerMutation,
 } from "@/store/imageSegmentationLayerApi";
 import { toast } from "sonner";
-import { useMemo, useCallback, memo } from "react";
+import { useMemo, useCallback, memo, useState } from "react";
+import { Slider } from "@/components/ui/slider";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -111,7 +112,7 @@ const SEGMENTATION_TOOLS: readonly ToolConfig[] = [
   { id: "Brush", icon: Paintbrush, label: "Brush", shortcut: "S" },
   { id: "CircleScissors", icon: CircleDot, label: "Circle Scissors", shortcut: "G" },
   { id: "RectangleScissors", icon: Square, label: "Rectangle Scissors", shortcut: "X" },
-  { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "Shift+Z" },
+  // { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "Shift+Z" }, // temporarily hidden
 ] as const;
 
 export default function ViewerLeftSidebar({
@@ -150,6 +151,7 @@ export default function ViewerLeftSidebar({
     isSegmentationControlPanelOpen,
     getSegmentationHistoryState,
     refetchSegmentationLayers,
+  setSegmentationBrushSize,
   } = useViewer();
 
   const [createImageSegmentationLayers] =
@@ -291,6 +293,12 @@ export default function ViewerLeftSidebar({
       disabled,
     };
   }, [getSelectedLayerCount, getSegmentationHistoryState, getSegmentationLayers, getCurrentSegmentationLayerIndex]);
+
+  const [brushSize, setBrushSize] = useState(3);
+  const isSegmentationTool = useMemo(
+    () => SEGMENTATION_TOOLS.some((t) => t.id === selectedTool),
+    [selectedTool]
+  );
 
   const ToolButton = memo(({ 
     tool, 
@@ -532,9 +540,32 @@ export default function ViewerLeftSidebar({
               Segment and draw masks on images
             </p>
             <div className="grid grid-cols-1 gap-2">
-              <Button onClick={() => toggleSegmentationControlPanel()}>
+              <Button 
+                onClick={() => toggleSegmentationControlPanel()}
+                disabled={!viewportReady || isStudyLocked}
+              >
                 Segmentation Control Panel
               </Button>
+              {isSegmentationTool && (
+                <div className="space-y-2 px-1">
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <span>Brush/Eraser Size</span>
+                    <span className="font-semibold text-white">{brushSize} mm</span>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={[brushSize]}
+                    onValueChange={(vals) => {
+                      const next = vals?.[0] ?? brushSize;
+                      setBrushSize(next);
+                      setSegmentationBrushSize(next, true);
+                    }}
+                    className="py-2"
+                  />
+                </div>
+              )}
               {isSegmentationControlPanelOpen() && (
                 <SegmentationControlPanelModal
                   onClose={() => toggleSegmentationControlPanel()}
@@ -578,7 +609,7 @@ export default function ViewerLeftSidebar({
                     tool={tool}
                     isActive={selectedTool === getToolDisplayName(tool.id)}
                     onClick={() => onToolSelect(tool.id)}
-                    disabled={segmentationState.disabled || isStudyLocked}
+                    disabled={!viewportReady || segmentationState.disabled || isStudyLocked}
                   />
                 ))}
               </div>

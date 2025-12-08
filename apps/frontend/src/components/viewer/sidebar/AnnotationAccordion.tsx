@@ -10,8 +10,8 @@ import {
 } from "@/components/ui-next/Accordion";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import { AnnotationStatus } from "@/enums/image-dicom.enum";
+import { Roles } from "@/enums/user.enum";
 import { Database, FileEdit, Layers, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   useLazyGetAnnotationsBySeriesIdQuery,
   useCreateAnnotationMutation,
@@ -63,7 +63,7 @@ export default function AnnotationAccordion({
   const [targetStatus, setTargetStatus] = useState<AnnotationStatus>(AnnotationStatus.FINAL);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadedSeriesRef = useRef<Set<string>>(new Set());
-  const [forceRefresh, setForceRefresh] = useState(0);
+  const [forceRefresh] = useState(0);
   
   const { publish } = useViewerEvents();
   const { state, reloadAnnotationsForSeries } = useViewer();
@@ -145,7 +145,9 @@ export default function AnnotationAccordion({
                   colorCode = a !== undefined ? `rgba(${r}, ${g}, ${b}, ${a})` : `rgb(${r}, ${g}, ${b})`;
                 }
               }
-            } catch (error) {}
+            } catch {
+              // ignore style lookup errors
+            }
           }
 
 
@@ -509,6 +511,10 @@ export default function AnnotationAccordion({
         throw new Error('Invalid status transition: final can only be changed to reviewed');
       }
 
+      if (newStatus === AnnotationStatus.REVIEWED && user?.role !== Roles.PHYSICIAN) {
+        return;
+      }
+
       await updateAnnotation({
         id: annotationId,
         data: {
@@ -528,17 +534,15 @@ export default function AnnotationAccordion({
       toast.error('Failed to update annotation status');
       throw error;
     }
-  }, [updateAnnotation, annotations]);
+  }, [updateAnnotation, annotations, user?.role]);
 
   // State for save annotation modal
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [annotationToSave, setAnnotationToSave] = useState<ImageAnnotation | null>(null);
-  const [saveAsStatus, setSaveAsStatus] = useState<AnnotationStatus>(AnnotationStatus.DRAFT);
   
   // Handle clicking save button - open modal
   const handleSaveLocalAnnotation = useCallback((annotation: ImageAnnotation) => {
     setAnnotationToSave(annotation);
-    setSaveAsStatus(AnnotationStatus.DRAFT);
     setSaveModalOpen(true);
   }, []);
   

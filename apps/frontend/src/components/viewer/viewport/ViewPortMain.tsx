@@ -15,6 +15,7 @@ import {
 import { Types } from "@cornerstonejs/core";
 import { batchedRender } from "@/utils/renderBatcher";
 import { Loader2, ImageOff } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
@@ -24,89 +25,40 @@ import {
   ViewerEvents,
 } from "@/contexts/ViewerEventContext";
 
-// Frame scrollbar component with draggable thumb
-function FrameScrollbarComponent({
+// Compact frame slider (short, not full height)
+function FrameSlider({
   currentFrame,
   totalFrames,
   onFrameChange,
+  sliderRef,
 }: {
   currentFrame: number;
   totalFrames: number;
   onFrameChange: (frame: number) => void;
+  sliderRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const scrollbarRef = useRef<HTMLDivElement>(null);
-  const thumbRef = useRef<HTMLDivElement>(null);
-  const isDraggingRef = useRef(false);
-  const startYRef = useRef(0);
-  const startFrameRef = useRef(0);
+  if (totalFrames <= 1) return null;
 
-  const thumbHeight = Math.max(20, (100 / totalFrames) * 100);
-  const thumbPosition = (currentFrame / (totalFrames - 1)) * 100;
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!scrollbarRef.current || !thumbRef.current) return;
-
-      const rect = scrollbarRef.current.getBoundingClientRect();
-      const clickY = e.clientY - rect.top;
-      const clickPercent = (clickY / rect.height) * 100;
-
-      const thumbRect = thumbRef.current.getBoundingClientRect();
-      const thumbTop = thumbRect.top - rect.top;
-      const thumbBottom = thumbTop + thumbRect.height;
-
-      if (clickY >= thumbTop && clickY <= thumbBottom) {
-        isDraggingRef.current = true;
-        startYRef.current = e.clientY;
-        startFrameRef.current = currentFrame;
-
-        const handleMouseMove = (e: MouseEvent) => {
-          if (!isDraggingRef.current || !scrollbarRef.current) return;
-
-          const rect = scrollbarRef.current.getBoundingClientRect();
-          const deltaY = e.clientY - startYRef.current;
-          const deltaPercent = (deltaY / rect.height) * 100;
-          const deltaFrames = Math.round(
-            (deltaPercent / 100) * (totalFrames - 1)
-          );
-
-          const newFrame = startFrameRef.current + deltaFrames;
-          onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
-        };
-
-        const handleMouseUp = () => {
-          isDraggingRef.current = false;
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-      } else {
-        const newFrame = Math.round((clickPercent / 100) * (totalFrames - 1));
-        onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
-      }
-    },
-    [currentFrame, totalFrames, onFrameChange]
-  );
+  const value = Number.isFinite(currentFrame) ? currentFrame : 0;
+  const clamped = Math.max(0, Math.min(totalFrames - 1, value));
 
   return (
     <div
-      ref={scrollbarRef}
-      className="absolute right-0 top-0 bottom-0 w-4 z-50 cursor-pointer"
-      onMouseDown={handleMouseDown}
+      ref={sliderRef}
+      className="absolute right-3 top-1/2 -translate-y-1/2 z-50 h-64 w-6 flex items-center justify-center"
     >
-      <div className="absolute inset-0 bg-gray-800/30 hover:bg-gray-800/50 transition-colors" />
-      <div
-        ref={thumbRef}
-        className="absolute right-0 w-3 bg-gray-400/80 hover:bg-gray-300 rounded-sm transition-all cursor-grab active:cursor-grabbing"
-        style={{
-          top: `${Math.max(
-            0,
-            Math.min(100 - thumbHeight, thumbPosition - thumbHeight / 2)
-          )}%`,
-          height: `${thumbHeight}%`,
+      <Slider
+        orientation="vertical"
+        min={0}
+        max={Math.max(1, totalFrames - 1)}
+        step={1}
+        value={[totalFrames - 1 - clamped]}
+        onValueChange={(vals) => {
+          const next = vals?.[0] ?? 0;
+          const inverted = totalFrames - 1 - next;
+          onFrameChange(Math.max(0, Math.min(totalFrames - 1, inverted)));
         }}
+        className="w-6 h-64 cursor-pointer"
       />
     </div>
   );
@@ -145,6 +97,7 @@ const ViewPortMain = ({
 
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement | null>(null);
   const toolManagerRef = useRef<any>(null);
   const disposeViewportRef = useRef(disposeViewport);
   const loadSeriesRef = useRef(loadSeriesIntoViewport);
@@ -243,6 +196,11 @@ const ViewPortMain = ({
       const throttleDelay = 50;
 
       const direction = event.deltaY > 0 ? 1 : event.deltaY < 0 ? -1 : 0;
+      // Ignore wheel when hovering the slider
+      if (sliderRef.current && event.target instanceof Node && sliderRef.current.contains(event.target)) {
+        return;
+      }
+
       if (direction === 0) return;
 
       wheelScrollHandlerRef.current.pendingDirection = direction;
@@ -653,7 +611,7 @@ const ViewPortMain = ({
     });
   }, [
     viewportIndex,
-    selectedSeries?.id,
+    selectedSeries,
     selectedStudy?.id,
     viewportState.seriesId,
     viewportState.viewportReady,
@@ -668,15 +626,16 @@ const ViewPortMain = ({
       return;
     }
 
+    const handlerSnapshot = wheelScrollHandlerRef.current;
+
     element.setAttribute("tabindex", "0");
     element.addEventListener("keydown", handleKeyDown);
     element.addEventListener("wheel", wheelScrollHandler, { passive: false });
 
     return () => {
-      // Cleanup wheel handler RAF
-      if (wheelScrollHandlerRef.current.rafId !== null) {
-        cancelAnimationFrame(wheelScrollHandlerRef.current.rafId);
-        wheelScrollHandlerRef.current.rafId = null;
+      if (handlerSnapshot.rafId !== null) {
+        cancelAnimationFrame(handlerSnapshot.rafId);
+        handlerSnapshot.rafId = null;
       }
 
       element.removeEventListener("keydown", handleKeyDown);
@@ -829,13 +788,13 @@ const ViewPortMain = ({
 
             {showNavigationOverlay && totalFrames > 1 && (
               <>
-                {/* Vertical scrollbar on the right edge */}
-                <FrameScrollbarComponent
+                <FrameSlider
                   currentFrame={currentFrame}
                   totalFrames={totalFrames}
                   onFrameChange={(frame: number) =>
                     goToFrame(viewportIndex, frame)
                   }
+                  sliderRef={sliderRef}
                 />
 
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-medium z-50">
