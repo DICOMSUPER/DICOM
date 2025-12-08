@@ -20,11 +20,22 @@ import {
   Stethoscope,
 } from "lucide-react";
 
-import { useCreateDiagnosisMutation, useUpdateDiagnosisMutation } from "@/store/diagnosisApi";
-import { CreateDiagnosisReportDto, DiagnosisStatus, DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
+import {
+  useCreateDiagnosisMutation,
+  useUpdateDiagnosisMutation,
+} from "@/store/diagnosisApi";
+import {
+  CreateDiagnosisReportDto,
+  DiagnosisStatus,
+  DiagnosisType,
+  Severity,
+} from "@/interfaces/patient/patient-workflow.interface";
 
 import PinDialog from "./PinDialog";
-import { useSignDataMutation, useGetDigitalSignatureByIdQuery } from "@/store/digitalSignatureApi";
+import {
+  useSignDataMutation,
+  useGetDigitalSignatureByIdQuery,
+} from "@/store/digitalSignatureApi";
 import { SignDataDto } from "@/interfaces/user/digital-signature.interface";
 import RichTextEditor from "@/components/radiologist/editor/RichTextEditor";
 import SelectTemplateDialog from "./SelectTemplateDialog";
@@ -34,7 +45,10 @@ import RejectDicomDialog from "./RejectDicomDialog";
 
 import html2pdf from "html2pdf.js";
 import PrintDiagnosis from "./PrintDiagnosis";
-import { useGetOneDicomStudyQuery, useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
+import {
+  useGetOneDicomStudyQuery,
+  useUpdateDicomStudyMutation,
+} from "@/store/dicomStudyApi";
 
 import {
   Dialog,
@@ -46,6 +60,7 @@ import {
 import { useGetUserByIdQuery } from "@/store/userApi";
 import SignatureDisplay from "@/components/common/signature-display";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
+import { DicomStudyStatus, ImagingOrderStatus } from "@/enums/image-dicom.enum";
 
 const AdvancedToolsTab = () => <div>Advanced Tools Content</div>;
 const VideoTab = () => <div>Video Content</div>;
@@ -92,13 +107,13 @@ const MedicalRecordMain = ({
   const [isReasonOpen, setIsReasonOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  
-
-  const { data: studyDetail, refetch: refetchStudy } = useGetOneDicomStudyQuery(selectedStudyId, {
-    skip: !selectedStudyId,
-  });
+  const { data: studyDetail, refetch: refetchStudy } = useGetOneDicomStudyQuery(
+    selectedStudyId,
+    {
+      skip: !selectedStudyId,
+    }
+  );
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
-
 
   const technicianId = studyDetail?.data?.performingTechnicianId;
 
@@ -106,13 +121,11 @@ const MedicalRecordMain = ({
     skip: !technicianId,
   });
 
-
-
   const handleRejectDicom = async (reason: string) => {
     try {
       const payload = {
         reason,
-        status: "rejected" as const,
+        studyStatus: DicomStudyStatus.REJECTED,
       };
 
       await updateStudyDicom({ id: selectedStudyId, data: payload });
@@ -124,8 +137,6 @@ const MedicalRecordMain = ({
       toast.error("Reject thất bại!");
     }
   };
-
-
 
   const handleUpdateDiagnosis = async () => {
     const payload = {
@@ -201,8 +212,7 @@ const MedicalRecordMain = ({
     if (!selectedStudyId || !encounterId)
       return toast.warning("Thiếu study hoặc encounter ID!");
 
-    if (!signerId)
-      return toast.warning("Cần xác nhận PIN người ký!");
+    if (!signerId) return toast.warning("Cần xác nhận PIN người ký!");
 
     const payload: CreateDiagnosisReportDto = {
       encounterId,
@@ -222,14 +232,19 @@ const MedicalRecordMain = ({
       await createDiagnosis(payload);
       await updateImagingOrder({
         id: studyDetail?.data?.imagingOrder?.id!,
-        body: { orderStatus: "completed" },
+        body: { orderStatus: ImagingOrderStatus.COMPLETED },
       });
-      
+
+      await updateStudyDicom({
+        id: selectedStudyId,
+        data: { studyStatus: DicomStudyStatus.PENDING_APPROVAL },
+      });
+
       // Refetch để hiển thị diagnosis vừa tạo
       if (refetchDiagnosis) {
         await refetchDiagnosis();
       }
-      
+
       toast.success("Đã lưu chẩn đoán thành công!");
     } catch (err) {
       console.error(err);
@@ -257,46 +272,87 @@ const MedicalRecordMain = ({
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 p-6">
         {/* <Card className="p-12 text-center shadow-lg rounded-2xl max-w-lg bg-white border-border"> */}
-          <div className="flex flex-col items-center gap-4">
-            <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-700">Chào mừng đến với Medical Record</h1>
-            <p className="text-gray-500">
-              Vui lòng chọn một <span className="font-medium text-blue-600">Study</span> để bắt đầu.
-            </p>
-            <Button
-              size="lg"
-              variant="outline"
-              className="mt-4"
-              onClick={() => toast("Hãy chọn Study từ danh sách bên trái!")}
-            >
-              Hướng dẫn chọn Study
-            </Button>
-          </div>
+        <div className="flex flex-col items-center gap-4">
+          <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-700">
+            Chào mừng đến với Medical Record
+          </h1>
+          <p className="text-gray-500">
+            Vui lòng chọn một{" "}
+            <span className="font-medium text-blue-600">Study</span> để bắt đầu.
+          </p>
+          <Button
+            size="lg"
+            variant="outline"
+            className="mt-4"
+            onClick={() => toast("Hãy chọn Study từ danh sách bên trái!")}
+          >
+            Hướng dẫn chọn Study
+          </Button>
+        </div>
         {/* </Card> */}
       </div>
     );
   }
 
   if (isDiagnosisLoading)
-    return <div className="flex-1 flex items-center justify-center">Đang tải...</div>;
+    return (
+      <div className="flex-1 flex items-center justify-center">Đang tải...</div>
+    );
 
   const hasDiagnosis = diagnosisData?.data?.length > 0;
   const diagnosis = diagnosisData?.data?.[0];
 
   return (
-    <main className="flex-1 flex flex-col">
+    <main className="flex-1 flex flex-col h-full overflow-y-auto">
       <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabValue)} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as TabValue)}
+          className="w-full"
+        >
           <TabsList className="bg-transparent border-b border-gray-200">
             {[
-              { value: "info", label: "Nhận ca", icon: <Lock className="w-4 h-4" /> },
-              { value: "view", label: "Xem hình", icon: <Eye className="w-4 h-4" /> },
-              { value: "advanced", label: "Advanced Tools", icon: <Settings className="w-4 h-4" /> },
-              { value: "video", label: "Video", icon: <Video className="w-4 h-4" /> },
-              { value: "files", label: "Files", icon: <FileText className="w-4 h-4" /> },
-              { value: "ikq", label: "In IKQ", icon: <Image className="w-4 h-4" /> },
-              { value: "receive", label: "In nhận", icon: <MessageSquare className="w-4 h-4" /> },
-              { value: "portal", label: "Portal", icon: <Mail className="w-4 h-4" /> },
+              {
+                value: "info",
+                label: "Nhận ca",
+                icon: <Lock className="w-4 h-4" />,
+              },
+              {
+                value: "view",
+                label: "Xem hình",
+                icon: <Eye className="w-4 h-4" />,
+              },
+              {
+                value: "advanced",
+                label: "Advanced Tools",
+                icon: <Settings className="w-4 h-4" />,
+              },
+              {
+                value: "video",
+                label: "Video",
+                icon: <Video className="w-4 h-4" />,
+              },
+              {
+                value: "files",
+                label: "Files",
+                icon: <FileText className="w-4 h-4" />,
+              },
+              {
+                value: "ikq",
+                label: "In IKQ",
+                icon: <Image className="w-4 h-4" />,
+              },
+              {
+                value: "receive",
+                label: "In nhận",
+                icon: <MessageSquare className="w-4 h-4" />,
+              },
+              {
+                value: "portal",
+                label: "Portal",
+                icon: <Mail className="w-4 h-4" />,
+              },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -304,7 +360,9 @@ const MedicalRecordMain = ({
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 px-4 py-2"
                 onClick={() => {
                   if (tab.value === "view") {
-                    router.push(`/viewer?study=${selectedStudyId}&patient=${patientId}`);
+                    router.push(
+                      `/viewer?study=${selectedStudyId}&patient=${patientId}`
+                    );
                   }
 
                   if (tab.value === "ikq") {
@@ -321,10 +379,15 @@ const MedicalRecordMain = ({
 
       <ScrollArea className="flex-1 p-6">
         {activeTab === "info" ? (
-          <Card className="p-6 mx-auto">
+          <Card className="p-6 mx-auto border-border overflow-y-auto">
             {!hasDiagnosis ? (
               <div>
-                <Button size="sm" variant="outline" onClick={() => setIsTemplateOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsTemplateOpen(true)}
+                  className="mb-4"
+                >
                   Chọn Template
                 </Button>
 
@@ -335,8 +398,15 @@ const MedicalRecordMain = ({
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="font-medium text-sm">Người ký (Alt + 1):</span>
-                      <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={handleOpenPinDialog}>
+                      <span className="font-medium text-sm">
+                        Người ký (Alt + 1):
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={handleOpenPinDialog}
+                      >
                         <Clipboard className="h-4 w-4" />
                       </Button>
                       {signerId && (
@@ -359,7 +429,6 @@ const MedicalRecordMain = ({
                         "Chưa ký"
                       )}
                     </div>
-
                   </div>
 
                   <div>
@@ -379,22 +448,32 @@ const MedicalRecordMain = ({
                       )}
                     </div>
                   </div>
-
                 </div>
 
-                <Button className="mt-6" onClick={handleCreateDiagnosis} disabled={!signerId}>
+                <Button
+                  className="mt-6"
+                  onClick={handleCreateDiagnosis}
+                  disabled={!signerId}
+                >
                   Tạo chẩn đoán
                 </Button>
 
-                <Button variant="destructive" className="mt-6 ml-3" onClick={() => setIsRejectOpen(true)}>
-                  Reject DICOM
+                <Button
+                  variant="destructive"
+                  className="mt-6 ml-3"
+                  onClick={() => setIsRejectOpen(true)}
+                >
+                  Từ chối
                 </Button>
               </div>
             ) : (
               <div className="space-y-6">
                 {diagnosis.diagnosisStatus === "rejected" && (
                   <div className="flex gap-4 mb-4">
-                    <Button variant="destructive" onClick={() => setIsReasonOpen(true)}>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setIsReasonOpen(true)}
+                    >
                       View Reason
                     </Button>
 
@@ -412,16 +491,22 @@ const MedicalRecordMain = ({
 
                 {!isEditMode ? (
                   <>
-                    <Button onClick={handleExportPdf}>In nhận (Xuất PDF)</Button>
+                    <Button onClick={handleExportPdf}>
+                      In nhận (Xuất PDF)
+                    </Button>
 
-                    <p className="whitespace-pre-line">{diagnosis.description}</p>
+                    <p className="whitespace-pre-line">
+                      {diagnosis.description}
+                    </p>
 
                     <Separator />
 
                     <h3 className="font-semibold">Thông tin người ký</h3>
                     <div className="grid grid-cols-2 gap-8">
                       <div>
-                        <span className="font-medium text-sm block mb-3">Người ký:</span>
+                        <span className="font-medium text-sm block mb-3">
+                          Người ký:
+                        </span>
                         <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
                           {signerUser ? (
                             <SignatureDisplay
@@ -438,7 +523,9 @@ const MedicalRecordMain = ({
                       </div>
 
                       <div>
-                        <span className="font-medium text-sm block mb-3">Kỹ thuật viên:</span>
+                        <span className="font-medium text-sm block mb-3">
+                          Kỹ thuật viên:
+                        </span>
                         <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
                           {technicianSignature?.data ? (
                             <SignatureDisplay
@@ -459,11 +546,17 @@ const MedicalRecordMain = ({
                   <div>
                     <h2 className="font-semibold mb-4">Edit Diagnosis</h2>
 
-                    <RichTextEditor value={description} onChange={setDescription} />
+                    <RichTextEditor
+                      value={description}
+                      onChange={setDescription}
+                    />
 
                     <div className="flex gap-3 mt-4">
                       <Button onClick={handleUpdateDiagnosis}>Save</Button>
-                      <Button variant="outline" onClick={() => setIsEditMode(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditMode(false)}
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -502,9 +595,17 @@ const MedicalRecordMain = ({
           onSelect={handleSelectTemplate}
         />
 
-        <PinDialog open={isPinDialogOpen} onClose={() => setIsPinDialogOpen(false)} onSign={handleConfirmPin} />
+        <PinDialog
+          open={isPinDialogOpen}
+          onClose={() => setIsPinDialogOpen(false)}
+          onSign={handleConfirmPin}
+        />
 
-        <RejectDicomDialog open={isRejectOpen} onClose={() => setIsRejectOpen(false)} onConfirm={handleRejectDicom} />
+        <RejectDicomDialog
+          open={isRejectOpen}
+          onClose={() => setIsRejectOpen(false)}
+          onConfirm={handleRejectDicom}
+        />
 
         <Dialog open={isReasonOpen} onOpenChange={setIsReasonOpen}>
           <DialogContent>
@@ -512,7 +613,9 @@ const MedicalRecordMain = ({
               <DialogTitle>Lý do bị từ chối</DialogTitle>
             </DialogHeader>
 
-            <p className="text-sm text-gray-700">{diagnosis?.rejectionReason || "Không có lý do"}</p>
+            <p className="text-sm text-gray-700">
+              {diagnosis?.rejectionReason || "Không có lý do"}
+            </p>
 
             <DialogFooter>
               <Button onClick={() => setIsReasonOpen(false)}>Đóng</Button>

@@ -30,7 +30,7 @@ export default function InstancesLevel({
         className="text-xs text-blue-600 hover:text-blue-700 font-medium"
         onClick={() =>
           router.push(
-            `/viewer?study=${selectedStudy?.id}&series=${selectedSeries?.id}&instance=${instance.id}`
+            `/viewer?study=${selectedStudy?.id}&series=${selectedSeries?.id}&instance=${instance.id}&patient=${selectedStudy?.patientId}`
           )
         }
       >

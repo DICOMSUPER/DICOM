@@ -31,7 +31,7 @@ export const ExamItemDetail = React.memo(
         </button>
 
         {shouldFetch && (
-          <div className="px-3 py-2 bg-gray-50 text-xs space-y-2">
+          <div className="px-3 py-2 bg-gray-50 text-xs space-y-2 rounded">
             {isLoading && <div>Đang tải dữ liệu...</div>}
 
             {study && (

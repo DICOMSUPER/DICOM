@@ -55,7 +55,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   if (!patient) return <div>Patient not found</div>;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200">
+    <aside className="w-64 bg-white border-r border-gray-200 h-full overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b">
         <h3 className="font-medium text-sm mb-2">Thông tin ca</h3>
