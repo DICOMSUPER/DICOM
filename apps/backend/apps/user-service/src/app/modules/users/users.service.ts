@@ -32,7 +32,7 @@ export class UsersService {
     private userRepository: Repository<User>,
     @InjectRepository(Department)
     private departmentRepository: Repository<Department>
-  ) { }
+  ) {}
 
   async findByEmail(email: string): Promise<User | null> {
     try {
@@ -58,7 +58,8 @@ export class UsersService {
       const user = await this.findByEmail(email);
       if (!user) {
         throw new UserNotFoundException(
-          undefined, 'Không tìm thấy người dùng với email này'
+          undefined,
+          'Không tìm thấy người dùng với email này'
         );
       }
 
@@ -241,11 +242,15 @@ export class UsersService {
       }
 
       if (query.excludeRole) {
-        qb.andWhere('user.role != :excludeRole', { excludeRole: query.excludeRole });
+        qb.andWhere('user.role != :excludeRole', {
+          excludeRole: query.excludeRole,
+        });
       }
 
       if (query.departmentId) {
-        qb.andWhere('user.departmentId = :departmentId', { departmentId: query.departmentId });
+        qb.andWhere('user.departmentId = :departmentId', {
+          departmentId: query.departmentId,
+        });
       }
 
       const [data, total] = await qb.getManyAndCount();
@@ -305,17 +310,24 @@ export class UsersService {
       }
 
       if (query?.excludeRole) {
-        qb.andWhere('user.role != :excludeRole', { excludeRole: query.excludeRole });
+        qb.andWhere('user.role != :excludeRole', {
+          excludeRole: query.excludeRole,
+        });
       }
 
       if (query?.departmentId) {
-        qb.andWhere('user.departmentId = :departmentId', { departmentId: query.departmentId });
+        qb.andWhere('user.departmentId = :departmentId', {
+          departmentId: query.departmentId,
+        });
       }
 
       const data = await qb.getMany();
       return data;
     } catch (error: any) {
-      console.error(`Error in findAllWithoutPagination: ${error?.message}`, error?.stack);
+      console.error(
+        `Error in findAllWithoutPagination: ${error?.message}`,
+        error?.stack
+      );
       throw new DatabaseException('Lỗi khi lấy danh sách người dùng');
     }
   }
@@ -472,8 +484,8 @@ export class UsersService {
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
-            secure: true,        
-            sameSite: 'none',    
+            secure: true,
+            sameSite: 'none',
             maxAge: maxAge,
             path: '/',
           },
@@ -584,7 +596,10 @@ export class UsersService {
   ): Promise<Omit<User, 'passwordHash'> | null> {
     const staffAccountDto: CreateUserDto = {
       ...createUserDto,
-      isVerified: createUserDto.isVerified !== undefined ? createUserDto.isVerified : true,
+      isVerified:
+        createUserDto.isVerified !== undefined
+          ? createUserDto.isVerified
+          : true,
       createdBy: createdBy || createUserDto.createdBy,
     };
     return this.register(staffAccountDto);
@@ -656,7 +671,10 @@ export class UsersService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto
+  ): Promise<Omit<User, 'passwordHash'>> {
     try {
       if (!id) {
         throw new ValidationException('User ID is required');
@@ -687,7 +705,10 @@ export class UsersService {
         }
       }
 
-      if (updateUserDto.employeeId && updateUserDto.employeeId !== user.employeeId) {
+      if (
+        updateUserDto.employeeId &&
+        updateUserDto.employeeId !== user.employeeId
+      ) {
         const existingUserByEmployeeId = await this.userRepository.findOne({
           where: { employeeId: updateUserDto.employeeId },
         });
@@ -698,8 +719,11 @@ export class UsersService {
 
       const targetDepartmentId = updateUserDto.targetDepartmentId;
       const sentDepartmentId = updateUserDto.departmentId;
-      const isChangingDepartment = sentDepartmentId !== undefined && sentDepartmentId !== user.departmentId;
-      const effectiveDepartmentId = sentDepartmentId !== undefined ? sentDepartmentId : user.departmentId;
+      const isChangingDepartment =
+        sentDepartmentId !== undefined &&
+        sentDepartmentId !== user.departmentId;
+      const effectiveDepartmentId =
+        sentDepartmentId !== undefined ? sentDepartmentId : user.departmentId;
 
       if (targetDepartmentId !== undefined) {
         if (targetDepartmentId) {
@@ -729,33 +753,53 @@ export class UsersService {
       });
 
       if (isChangingDepartment && currentHeadDepartments.length > 0) {
-        if (targetDepartmentId === undefined || (targetDepartmentId !== null && targetDepartmentId !== sentDepartmentId)) {
-          const departmentNames = currentHeadDepartments.map(dept => dept.departmentName).join(', ');
+        if (
+          targetDepartmentId === undefined ||
+          (targetDepartmentId !== null &&
+            targetDepartmentId !== sentDepartmentId)
+        ) {
+          const departmentNames = currentHeadDepartments
+            .map((dept) => dept.departmentName)
+            .join(', ');
           throw new ValidationException(
             `Người dùng đang là trưởng phòng của ${departmentNames}. Khi thay đổi phòng ban, phải đặt người dùng làm trưởng phòng của phòng ban mới hoặc bổ nhiệm trưởng phòng mới trước khi thay đổi.`
           );
         }
       }
 
-      const departmentsToUpdate: { departmentId: string; headUserId: string | null }[] = [];
+      const departmentsToUpdate: {
+        departmentId: string;
+        headUserId: string | null;
+      }[] = [];
 
       if (targetDepartmentId !== undefined) {
         for (const dept of currentHeadDepartments) {
           if (dept.id !== targetDepartmentId) {
-            departmentsToUpdate.push({ departmentId: dept.id, headUserId: null });
+            departmentsToUpdate.push({
+              departmentId: dept.id,
+              headUserId: null,
+            });
           }
         }
 
         if (targetDepartmentId) {
-          const existingUpdate = departmentsToUpdate.find(d => d.departmentId === targetDepartmentId);
+          const existingUpdate = departmentsToUpdate.find(
+            (d) => d.departmentId === targetDepartmentId
+          );
           if (!existingUpdate) {
-            departmentsToUpdate.push({ departmentId: targetDepartmentId, headUserId: id });
+            departmentsToUpdate.push({
+              departmentId: targetDepartmentId,
+              headUserId: id,
+            });
           } else {
             existingUpdate.headUserId = id;
           }
         } else {
           for (const dept of currentHeadDepartments) {
-            departmentsToUpdate.push({ departmentId: dept.id, headUserId: null });
+            departmentsToUpdate.push({
+              departmentId: dept.id,
+              headUserId: null,
+            });
           }
         }
       }
@@ -766,7 +810,9 @@ export class UsersService {
             where: { id: deptUpdate.departmentId },
           });
           if (!department) {
-            throw new ValidationException(`Không tìm thấy phòng ban với ID: ${deptUpdate.departmentId}`);
+            throw new ValidationException(
+              `Không tìm thấy phòng ban với ID: ${deptUpdate.departmentId}`
+            );
           }
           department.headDepartmentId = deptUpdate.headUserId;
           await this.departmentRepository.save(department);
@@ -775,12 +821,18 @@ export class UsersService {
             throw deptError;
           }
           throw new DatabaseException(
-            `Lỗi khi cập nhật phòng ban: ${deptError?.message || 'Unknown error'}`
+            `Lỗi khi cập nhật phòng ban: ${
+              deptError?.message || 'Unknown error'
+            }`
           );
         }
       }
 
-      const { targetDepartmentId: _, departmentId: departmentIdToUpdate, ...userUpdateData } = updateUserDto;
+      const {
+        targetDepartmentId: _,
+        departmentId: departmentIdToUpdate,
+        ...userUpdateData
+      } = updateUserDto;
 
       if (userUpdateData.password) {
         try {
@@ -798,10 +850,13 @@ export class UsersService {
         Object.assign(user, userUpdateData);
         if (departmentIdToUpdate !== undefined) {
           user.departmentId = departmentIdToUpdate;
-          user.department!.id = departmentIdToUpdate!;
+          user.department && (user.department.id = departmentIdToUpdate!);
         }
         const updatedUser = await this.userRepository.save(user);
-        if (departmentIdToUpdate !== undefined && updatedUser.departmentId !== departmentIdToUpdate) {
+        if (
+          departmentIdToUpdate !== undefined &&
+          updatedUser.departmentId !== departmentIdToUpdate
+        ) {
           throw new DatabaseException(
             `Failed to update departmentId. Expected: ${departmentIdToUpdate}, Got: ${updatedUser.departmentId}`
           );
@@ -809,20 +864,38 @@ export class UsersService {
         const { passwordHash, ...userWithoutPassword } = updatedUser;
         return userWithoutPassword as Omit<User, 'passwordHash'>;
       } catch (saveError: any) {
-        if (saveError?.code === '23505' || saveError?.message?.includes('duplicate')) {
-          if (saveError?.message?.includes('email') || saveError?.constraint?.includes('email')) {
+        if (
+          saveError?.code === '23505' ||
+          saveError?.message?.includes('duplicate')
+        ) {
+          if (
+            saveError?.message?.includes('email') ||
+            saveError?.constraint?.includes('email')
+          ) {
             throw new UserAlreadyExistsException('Email đã được sử dụng');
           }
-          if (saveError?.message?.includes('username') || saveError?.constraint?.includes('username')) {
-            throw new UserAlreadyExistsException('Tên đăng nhập đã được sử dụng');
+          if (
+            saveError?.message?.includes('username') ||
+            saveError?.constraint?.includes('username')
+          ) {
+            throw new UserAlreadyExistsException(
+              'Tên đăng nhập đã được sử dụng'
+            );
           }
-          if (saveError?.message?.includes('employeeId') || saveError?.constraint?.includes('employee_id')) {
-            throw new UserAlreadyExistsException('Mã nhân viên đã được sử dụng');
+          if (
+            saveError?.message?.includes('employeeId') ||
+            saveError?.constraint?.includes('employee_id')
+          ) {
+            throw new UserAlreadyExistsException(
+              'Mã nhân viên đã được sử dụng'
+            );
           }
           throw new UserAlreadyExistsException('Thông tin đã được sử dụng');
         }
         throw new DatabaseException(
-          `Lỗi khi lưu thông tin người dùng: ${saveError?.message || 'Unknown error'}`
+          `Lỗi khi lưu thông tin người dùng: ${
+            saveError?.message || 'Unknown error'
+          }`
         );
       }
     } catch (error: any) {
@@ -925,12 +998,19 @@ export class UsersService {
     verifiedUsers: number;
   }> {
     try {
-      const [totalUsers, activeUsers, inactiveUsers, verifiedUsers] = await Promise.all([
-        this.userRepository.count({ where: { isDeleted: false } }),
-        this.userRepository.count({ where: { isActive: true, isDeleted: false } }),
-        this.userRepository.count({ where: { isActive: false, isDeleted: false } }),
-        this.userRepository.count({ where: { isVerified: true, isDeleted: false } }),
-      ]);
+      const [totalUsers, activeUsers, inactiveUsers, verifiedUsers] =
+        await Promise.all([
+          this.userRepository.count({ where: { isDeleted: false } }),
+          this.userRepository.count({
+            where: { isActive: true, isDeleted: false },
+          }),
+          this.userRepository.count({
+            where: { isActive: false, isDeleted: false },
+          }),
+          this.userRepository.count({
+            where: { isVerified: true, isDeleted: false },
+          }),
+        ]);
 
       return {
         totalUsers,
