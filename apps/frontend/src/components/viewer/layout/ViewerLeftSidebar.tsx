@@ -226,6 +226,7 @@ export default function ViewerLeftSidebar({
     ["CircleScissors", "CircleScissors"],
     ["RectangleScissors", "RectangleScissors"],
     ["SphereScissors", "SphereScissors"],
+    ["PlanarFreehandROITool", "PlanarFreehandROITool"],
   ]);
 
   const getToolDisplayName = (toolId: string) => {

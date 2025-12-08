@@ -110,6 +110,12 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
       return;
     }
 
+          const viewportId = state.viewportIds.get(state.activeViewport);
+  if (!viewportId) {
+    console.error("❌ No viewport ID found for active viewport");
+    alert("Viewport not ready. Please wait for the image to load.");
+    return;
+  }
     setIsProcessing(true);
     
     try {

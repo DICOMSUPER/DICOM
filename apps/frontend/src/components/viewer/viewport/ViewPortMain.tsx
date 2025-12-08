@@ -18,7 +18,11 @@ import { Loader2, ImageOff } from "lucide-react";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
 import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
-import { useViewerEvent, useViewerEvents, ViewerEvents } from "@/contexts/ViewerEventContext";
+import {
+  useViewerEvent,
+  useViewerEvents,
+  ViewerEvents,
+} from "@/contexts/ViewerEventContext";
 
 // Frame scrollbar component with draggable thumb
 function FrameScrollbarComponent({
@@ -42,7 +46,7 @@ function FrameScrollbarComponent({
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!scrollbarRef.current || !thumbRef.current) return;
-      
+
       const rect = scrollbarRef.current.getBoundingClientRect();
       const clickY = e.clientY - rect.top;
       const clickPercent = (clickY / rect.height) * 100;
@@ -62,7 +66,9 @@ function FrameScrollbarComponent({
           const rect = scrollbarRef.current.getBoundingClientRect();
           const deltaY = e.clientY - startYRef.current;
           const deltaPercent = (deltaY / rect.height) * 100;
-          const deltaFrames = Math.round((deltaPercent / 100) * (totalFrames - 1));
+          const deltaFrames = Math.round(
+            (deltaPercent / 100) * (totalFrames - 1)
+          );
 
           const newFrame = startFrameRef.current + deltaFrames;
           onFrameChange(Math.max(0, Math.min(totalFrames - 1, newFrame)));
@@ -95,7 +101,10 @@ function FrameScrollbarComponent({
         ref={thumbRef}
         className="absolute right-0 w-3 bg-gray-400/80 hover:bg-gray-300 rounded-sm transition-all cursor-grab active:cursor-grabbing"
         style={{
-          top: `${Math.max(0, Math.min(100 - thumbHeight, thumbPosition - (thumbHeight / 2)))}%`,
+          top: `${Math.max(
+            0,
+            Math.min(100 - thumbHeight, thumbPosition - thumbHeight / 2)
+          )}%`,
           height: `${thumbHeight}%`,
         }}
       />
@@ -168,7 +177,7 @@ const ViewPortMain = ({
   const viewportIdRef = useRef(resolvedViewportId);
   const viewportRef = useRef(viewport);
   const toolManagerRefValue = useRef(toolManagerRef.current);
-  
+
   useEffect(() => {
     viewportIdRef.current = resolvedViewportId;
     viewportRef.current = viewport;
@@ -193,7 +202,9 @@ const ViewPortMain = ({
   const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
 
   const totalFramesRef = useRef(totalFrames);
-  const diagnosisImageByAIRef = useRef<ReturnType<typeof useDiagnosisImageByAIMutation>[0] | undefined>(undefined);
+  const diagnosisImageByAIRef = useRef<
+    ReturnType<typeof useDiagnosisImageByAIMutation>[0] | undefined
+  >(undefined);
 
   // AI Diagnosis mutation
   const [diagnosisImageByAI] = useDiagnosisImageByAIMutation();
@@ -206,7 +217,9 @@ const ViewPortMain = ({
   const { publish } = useViewerEvents();
 
   const dispatchClearAnnotations = useCallback(() => {
-    publish(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, { activeViewportId: viewportIdRef.current });
+    publish(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, {
+      activeViewportId: viewportIdRef.current,
+    });
   }, [publish]);
 
   const dispatchResetView = useCallback(() => {
@@ -219,29 +232,40 @@ const ViewPortMain = ({
     pendingDirection: number | null;
   }>({ rafId: null, lastTime: 0, pendingDirection: null });
 
-  const wheelScrollHandler = useCallback((event: WheelEvent) => {
-    event.preventDefault();
-    
-    if (totalFramesRef.current <= 1) return;
+  const wheelScrollHandler = useCallback(
+    (event: WheelEvent) => {
+      event.preventDefault();
 
-    const now = performance.now();
-    const timeSinceLastCall = now - wheelScrollHandlerRef.current.lastTime;
-    const throttleDelay = 50;
+      if (totalFramesRef.current <= 1) return;
 
-    const direction = event.deltaY > 0 ? 1 : event.deltaY < 0 ? -1 : 0;
-    if (direction === 0) return;
+      const now = performance.now();
+      const timeSinceLastCall = now - wheelScrollHandlerRef.current.lastTime;
+      const throttleDelay = 50;
 
-    wheelScrollHandlerRef.current.pendingDirection = direction;
+      const direction = event.deltaY > 0 ? 1 : event.deltaY < 0 ? -1 : 0;
+      if (direction === 0) return;
 
-    if (wheelScrollHandlerRef.current.rafId !== null) {
-      return;
-    }
+      wheelScrollHandlerRef.current.pendingDirection = direction;
 
-    if (timeSinceLastCall < throttleDelay) {
-      wheelScrollHandlerRef.current.rafId = requestAnimationFrame(() => {
-        const direction = wheelScrollHandlerRef.current.pendingDirection;
-        wheelScrollHandlerRef.current.rafId = null;
-        wheelScrollHandlerRef.current.lastTime = performance.now();
+      if (wheelScrollHandlerRef.current.rafId !== null) {
+        return;
+      }
+
+      if (timeSinceLastCall < throttleDelay) {
+        wheelScrollHandlerRef.current.rafId = requestAnimationFrame(() => {
+          const direction = wheelScrollHandlerRef.current.pendingDirection;
+          wheelScrollHandlerRef.current.rafId = null;
+          wheelScrollHandlerRef.current.lastTime = performance.now();
+          wheelScrollHandlerRef.current.pendingDirection = null;
+
+          if (direction === 1) {
+            nextFrame(viewportIndex);
+          } else if (direction === -1) {
+            prevFrame(viewportIndex);
+          }
+        });
+      } else {
+        wheelScrollHandlerRef.current.lastTime = now;
         wheelScrollHandlerRef.current.pendingDirection = null;
 
         if (direction === 1) {
@@ -249,29 +273,31 @@ const ViewPortMain = ({
         } else if (direction === -1) {
           prevFrame(viewportIndex);
         }
-      });
-    } else {
-      wheelScrollHandlerRef.current.lastTime = now;
-      wheelScrollHandlerRef.current.pendingDirection = null;
-      
-      if (direction === 1) {
-        nextFrame(viewportIndex);
-      } else if (direction === -1) {
-        prevFrame(viewportIndex);
       }
-    }
-  }, [nextFrame, prevFrame, viewportIndex]);
+    },
+    [nextFrame, prevFrame, viewportIndex]
+  );
 
   // Viewport transform handlers
-  const handleRotateViewport = useCallback((data: { viewportId?: string; degrees: number }) => {
-    if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.rotateViewport?.(data.degrees);
-  }, []);
+  const handleRotateViewport = useCallback(
+    (data: { viewportId?: string; degrees: number }) => {
+      if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.rotateViewport?.(data.degrees);
+    },
+    []
+  );
 
-  const handleFlipViewport = useCallback((data: { viewportId?: string; direction: 'horizontal' | 'vertical' }) => {
-    if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.flipViewport?.(data.direction);
-  }, []);
+  const handleFlipViewport = useCallback(
+    (data: { viewportId?: string; direction: "horizontal" | "vertical" }) => {
+      if (data.viewportId && data.viewportId !== viewportIdRef.current) return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.flipViewport?.(data.direction);
+    },
+    []
+  );
 
   const handleResetView = useCallback(() => {
     toolManagerRefValue.current?.getToolHandlers?.()?.resetView?.();
@@ -291,172 +317,268 @@ const ViewPortMain = ({
     toolManagerRefValue.current?.getToolHandlers?.()?.clearAnnotations?.();
   }, []);
 
-  const handleClearViewportAnnotations = useCallback((data?: { activeViewportId?: string }) => {
-    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.clearViewportAnnotations?.();
-  }, []);
+  const handleClearViewportAnnotations = useCallback(
+    (data?: { activeViewportId?: string }) => {
+      if (
+        data?.activeViewportId &&
+        data.activeViewportId !== viewportIdRef.current
+      )
+        return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.clearViewportAnnotations?.();
+    },
+    []
+  );
 
-  const handleUndoAnnotation = useCallback((data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
-    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.undoAnnotation?.(data?.entry);
-  }, []);
+  const handleUndoAnnotation = useCallback(
+    (data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
+      if (
+        data?.activeViewportId &&
+        data.activeViewportId !== viewportIdRef.current
+      )
+        return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.undoAnnotation?.(data?.entry);
+    },
+    []
+  );
 
-  const handleRedoAnnotation = useCallback((data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
-    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.redoAnnotation?.(data?.entry);
-  }, []);
+  const handleRedoAnnotation = useCallback(
+    (data?: { activeViewportId?: string; entry?: AnnotationHistoryEntry }) => {
+      if (
+        data?.activeViewportId &&
+        data.activeViewportId !== viewportIdRef.current
+      )
+        return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.redoAnnotation?.(data?.entry);
+    },
+    []
+  );
 
-  const handleUndoSegmentation = useCallback((data?: { activeViewportId?: string; entry?: SegmentationHistoryEntry }) => {
-    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.undoSegmentation?.(data?.entry);
-  }, []);
+  const handleUndoSegmentation = useCallback(
+    (data?: {
+      activeViewportId?: string;
+      entry?: SegmentationHistoryEntry;
+    }) => {
+      if (
+        data?.activeViewportId &&
+        data.activeViewportId !== viewportIdRef.current
+      )
+        return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.undoSegmentation?.(data?.entry);
+    },
+    []
+  );
 
-  const handleRedoSegmentation = useCallback((data?: { activeViewportId?: string; entry?: SegmentationHistoryEntry }) => {
-    if (data?.activeViewportId && data.activeViewportId !== viewportIdRef.current) return;
-    toolManagerRefValue.current?.getToolHandlers?.()?.redoSegmentation?.(data?.entry);
-  }, []);
+  const handleRedoSegmentation = useCallback(
+    (data?: {
+      activeViewportId?: string;
+      entry?: SegmentationHistoryEntry;
+    }) => {
+      if (
+        data?.activeViewportId &&
+        data.activeViewportId !== viewportIdRef.current
+      )
+        return;
+      toolManagerRefValue.current
+        ?.getToolHandlers?.()
+        ?.redoSegmentation?.(data?.entry);
+    },
+    []
+  );
 
   // AI Diagnosis handlers
-  const handleAIDiagnosis = useCallback(async (event: Event) => {
-    const customEvent = event as CustomEvent;
-    const { viewportId: eventViewportId, modelId, modelName, versionName } = customEvent.detail || {};
-    const currentViewportId = viewportIdRef.current;
-    if (eventViewportId !== currentViewportId || !currentViewportId) return;
-    
-    const currentElement = elementRef.current;
-    const currentViewport = viewportRef.current;
-    if (!currentElement || !currentViewport) return;
-
-    setIsDiagnosing(true);
-    try {
-      const base64Image = getCanvasAsBase64(currentElement);
-      if (!base64Image) throw new Error("Failed to convert canvas to base64");
-
-      const response = await diagnosisImageByAIRef.current?.({
-        base64Image,
-        aiModelId: modelId,
+  const handleAIDiagnosis = useCallback(
+    async (data: any) => {
+      const {
+        viewportId,
+        modelId,
         modelName,
         versionName,
-        selectedStudyId: studyId !== null ? studyId : undefined,
-      }).unwrap();
+      } = data || {};
+      const currentViewportId = viewportIdRef.current;
 
-      if (!response?.data) return;
-      const { predictions, image } = response.data;
-      if (!predictions || !Array.isArray(predictions) || predictions.length === 0) return;
-
-      setPredictions(predictions);
-      const stackViewport = currentViewport as Types.IStackViewport;
-      const canvas = stackViewport.canvas;
-      const currentImageId = stackViewport.getCurrentImageId?.() || "";
-      setAiImageMetadata({ width: image.width, height: image.height });
-      setAnalyzedImageId(currentImageId);
-
-      drawAIPredictions(
-        predictions,
+      console.log("🔍 Viewport check:", {
+        viewportId,
         currentViewportId,
-        currentImageId,
-        resolvedRenderingEngineId as string,
-        image.width,
-        image.height,
-        canvas.width,
-        canvas.height
-      );
-      batchedRender(currentViewport);
-    } catch (error) {
-      console.error("AI diagnosis failed:", error);
-    } finally {
-      setIsDiagnosing(false);
-    }
-  }, [resolvedRenderingEngineId, studyId]);
-
-  const handleClearAIAnnotations = useCallback((data: { viewportId?: string }) => {
-    const currentViewportId = viewportIdRef.current;
-    if (data.viewportId !== currentViewportId || !currentViewportId) return;
-
-    clearAIAnnotationsUtil(currentViewportId);
-    setPredictions([]);
-    setAiImageMetadata(null);
-    setAnalyzedImageId("");
-
-    const currentViewport = viewportRef.current;
-    batchedRender(currentViewport);
-  }, []);
-
-  // Annotation visibility handler
-  const handleToggleAnnotations = useCallback((data: { showAnnotations?: boolean }) => {
-    const currentElement = elementRef.current;
-    const currentViewport = viewportRef.current;
-    if (!currentElement || !currentViewport) return;
-
-    try {
-      const svgElements = currentElement.querySelectorAll("svg");
-      svgElements.forEach((svg) => {
-        const hasAnnotationElements =
-          svg.querySelector("g[data-tool-name]") ||
-          svg.querySelector("g[data-annotation-uid]") ||
-          svg.classList.contains("annotation-svg");
-
-        if (hasAnnotationElements) {
-          if (data.showAnnotations === false) {
-            svg.style.display = "none";
-            svg.classList.add("annotations-hidden");
-          } else {
-            svg.style.display = "";
-            svg.classList.remove("annotations-hidden");
-          }
-        }
+        willProcess: viewportId === currentViewportId,
       });
 
-      const annotationCanvas = currentElement.querySelector("canvas.annotation-canvas");
-      if (annotationCanvas) {
-        (annotationCanvas as HTMLElement).style.display = data.showAnnotations === false ? "none" : "";
-      }
+      if (viewportId !== currentViewportId || !currentViewportId) return;
 
-      if (typeof currentViewport.render === "function") {
+      const currentElement = elementRef.current;
+      const currentViewport = viewportRef.current;
+      if (!currentElement || !currentViewport) return;
+
+      setIsDiagnosing(true);
+      try {
+        const base64Image = getCanvasAsBase64(currentElement);
+        if (!base64Image) throw new Error("Failed to convert canvas to base64");
+
+        const response = await diagnosisImageByAIRef
+          .current?.({
+            base64Image,
+            aiModelId: modelId,
+            modelName,
+            versionName,
+            selectedStudyId: studyId !== null ? studyId : undefined,
+          })
+          .unwrap();
+
+        if (!response?.data) return;
+        const { predictions, image } = response.data;
+        if (
+          !predictions ||
+          !Array.isArray(predictions) ||
+          predictions.length === 0
+        )
+          return;
+
+        setPredictions(predictions);
+        const stackViewport = currentViewport as Types.IStackViewport;
+        const canvas = stackViewport.canvas;
+        const currentImageId = stackViewport.getCurrentImageId?.() || "";
+        setAiImageMetadata({ width: image.width, height: image.height });
+        setAnalyzedImageId(currentImageId);
+
+        drawAIPredictions(
+          predictions,
+          currentViewportId,
+          currentImageId,
+          resolvedRenderingEngineId as string,
+          image.width,
+          image.height,
+          canvas.width,
+          canvas.height
+        );
         batchedRender(currentViewport);
+      } catch (error) {
+        console.error("AI diagnosis failed:", error);
+      } finally {
+        setIsDiagnosing(false);
       }
-    } catch (error) {
-      console.error("Error toggling annotation visibility:", error);
-    }
-  }, []);
+    },
+    [resolvedRenderingEngineId, studyId]
+  );
+
+  const handleClearAIAnnotations = useCallback(
+    (data: { viewportId?: string }) => {
+      const currentViewportId = viewportIdRef.current;
+      if (data.viewportId !== currentViewportId || !currentViewportId) return;
+
+      clearAIAnnotationsUtil(currentViewportId);
+      setPredictions([]);
+      setAiImageMetadata(null);
+      setAnalyzedImageId("");
+
+      const currentViewport = viewportRef.current;
+      batchedRender(currentViewport);
+    },
+    []
+  );
+
+  // Annotation visibility handler
+  const handleToggleAnnotations = useCallback(
+    (data: { showAnnotations?: boolean }) => {
+      const currentElement = elementRef.current;
+      const currentViewport = viewportRef.current;
+      if (!currentElement || !currentViewport) return;
+
+      try {
+        const svgElements = currentElement.querySelectorAll("svg");
+        svgElements.forEach((svg) => {
+          const hasAnnotationElements =
+            svg.querySelector("g[data-tool-name]") ||
+            svg.querySelector("g[data-annotation-uid]") ||
+            svg.classList.contains("annotation-svg");
+
+          if (hasAnnotationElements) {
+            if (data.showAnnotations === false) {
+              svg.style.display = "none";
+              svg.classList.add("annotations-hidden");
+            } else {
+              svg.style.display = "";
+              svg.classList.remove("annotations-hidden");
+            }
+          }
+        });
+
+        const annotationCanvas = currentElement.querySelector(
+          "canvas.annotation-canvas"
+        );
+        if (annotationCanvas) {
+          (annotationCanvas as HTMLElement).style.display =
+            data.showAnnotations === false ? "none" : "";
+        }
+
+        if (typeof currentViewport.render === "function") {
+          batchedRender(currentViewport);
+        }
+      } catch (error) {
+        console.error("Error toggling annotation visibility:", error);
+      }
+    },
+    []
+  );
 
   // Annotation selection handlers
-  const handleSelectAnnotation = useCallback((data: {
-    annotationId: string;
-    annotationUID?: string;
-    annotationType?: string;
-    instanceId?: string;
-  }) => {
-    if (data.annotationId) {
-      toolManagerRefValue.current?.getToolHandlers?.()?.selectAnnotation?.(data);
-    }
-  }, []);
+  const handleSelectAnnotation = useCallback(
+    (data: {
+      annotationId: string;
+      annotationUID?: string;
+      annotationType?: string;
+      instanceId?: string;
+    }) => {
+      if (data.annotationId) {
+        toolManagerRefValue.current
+          ?.getToolHandlers?.()
+          ?.selectAnnotation?.(data);
+      }
+    },
+    []
+  );
 
   const handleDeselectAnnotation = useCallback(() => {
     toolManagerRefValue.current?.getToolHandlers?.()?.deselectAnnotation?.();
   }, []);
 
-  const handleUpdateAnnotationColor = useCallback((data: {
-    annotationId: string;
-    annotationUID?: string;
-    colorCode: string;
-    instanceId?: string;
-  }) => {
-    if (data.annotationId && data.colorCode) {
-      toolManagerRefValue.current?.getToolHandlers?.()?.updateAnnotationColor?.(data);
-    }
-  }, []);
+  const handleUpdateAnnotationColor = useCallback(
+    (data: {
+      annotationId: string;
+      annotationUID?: string;
+      colorCode: string;
+      instanceId?: string;
+    }) => {
+      if (data.annotationId && data.colorCode) {
+        toolManagerRefValue.current
+          ?.getToolHandlers?.()
+          ?.updateAnnotationColor?.(data);
+      }
+    },
+    []
+  );
 
-  const handleLockAnnotation = useCallback((data: {
-    annotationId: string;
-    annotationUID?: string;
-    locked: boolean;
-    instanceId?: string;
-  }) => {
-    if (data.annotationId) {
-      toolManagerRefValue.current?.getToolHandlers?.()?.lockAnnotation?.(data);
-    }
-  }, []);
+  const handleLockAnnotation = useCallback(
+    (data: {
+      annotationId: string;
+      annotationUID?: string;
+      locked: boolean;
+      instanceId?: string;
+    }) => {
+      if (data.annotationId) {
+        toolManagerRefValue.current
+          ?.getToolHandlers?.()
+          ?.lockAnnotation?.(data);
+      }
+    },
+    []
+  );
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -556,32 +678,67 @@ const ViewPortMain = ({
         cancelAnimationFrame(wheelScrollHandlerRef.current.rafId);
         wheelScrollHandlerRef.current.rafId = null;
       }
-      
+
       element.removeEventListener("keydown", handleKeyDown);
       element.removeEventListener("wheel", wheelScrollHandler);
     };
   }, [viewportReady, handleKeyDown, wheelScrollHandler]);
 
   // Subscribe to viewer events using pub/sub service
-  useViewerEvent(ViewerEvents.ROTATE_VIEWPORT, handleRotateViewport, [handleRotateViewport]);
-  useViewerEvent(ViewerEvents.FLIP_VIEWPORT, handleFlipViewport, [handleFlipViewport]);
+  useViewerEvent(ViewerEvents.ROTATE_VIEWPORT, handleRotateViewport, [
+    handleRotateViewport,
+  ]);
+  useViewerEvent(ViewerEvents.FLIP_VIEWPORT, handleFlipViewport, [
+    handleFlipViewport,
+  ]);
   useViewerEvent(ViewerEvents.RESET_VIEW, handleResetView, [handleResetView]);
-  useViewerEvent(ViewerEvents.INVERT_COLORMAP, handleInvertColorMap, [handleInvertColorMap]);
-  useViewerEvent(ViewerEvents.CLEAR_ANNOTATIONS, handleClearAnnotations, [handleClearAnnotations]);
-  useViewerEvent(ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS, handleClearViewportAnnotations, [handleClearViewportAnnotations]);
-  useViewerEvent(ViewerEvents.UNDO_ANNOTATION, handleUndoAnnotation, [handleUndoAnnotation]);
-  useViewerEvent(ViewerEvents.REDO_ANNOTATION, handleRedoAnnotation, [handleRedoAnnotation]);
-  useViewerEvent(ViewerEvents.UNDO_SEGMENTATION, handleUndoSegmentation, [handleUndoSegmentation]);
-  useViewerEvent(ViewerEvents.REDO_SEGMENTATION, handleRedoSegmentation, [handleRedoSegmentation]);
+  useViewerEvent(ViewerEvents.INVERT_COLORMAP, handleInvertColorMap, [
+    handleInvertColorMap,
+  ]);
+  useViewerEvent(ViewerEvents.CLEAR_ANNOTATIONS, handleClearAnnotations, [
+    handleClearAnnotations,
+  ]);
+  useViewerEvent(
+    ViewerEvents.CLEAR_VIEWPORT_ANNOTATIONS,
+    handleClearViewportAnnotations,
+    [handleClearViewportAnnotations]
+  );
+  useViewerEvent(ViewerEvents.UNDO_ANNOTATION, handleUndoAnnotation, [
+    handleUndoAnnotation,
+  ]);
+  useViewerEvent(ViewerEvents.REDO_ANNOTATION, handleRedoAnnotation, [
+    handleRedoAnnotation,
+  ]);
+  useViewerEvent(ViewerEvents.UNDO_SEGMENTATION, handleUndoSegmentation, [
+    handleUndoSegmentation,
+  ]);
+  useViewerEvent(ViewerEvents.REDO_SEGMENTATION, handleRedoSegmentation, [
+    handleRedoSegmentation,
+  ]);
   useViewerEvent(ViewerEvents.REFRESH_VIEWPORT, handleRefresh, [handleRefresh]);
-  useViewerEvent(ViewerEvents.DIAGNOSE_VIEWPORT, handleAIDiagnosis, [handleAIDiagnosis]);
-  useViewerEvent(ViewerEvents.CLEAR_AI_ANNOTATIONS, handleClearAIAnnotations, [handleClearAIAnnotations]);
-  useViewerEvent(ViewerEvents.TOGGLE_ANNOTATIONS, handleToggleAnnotations, [handleToggleAnnotations]);
-  useViewerEvent(ViewerEvents.SELECT_ANNOTATION, handleSelectAnnotation, [handleSelectAnnotation]);
-  useViewerEvent(ViewerEvents.DESELECT_ANNOTATION, handleDeselectAnnotation, [handleDeselectAnnotation]);
-  useViewerEvent(ViewerEvents.UPDATE_ANNOTATION_COLOR, handleUpdateAnnotationColor, [handleUpdateAnnotationColor]);
-  useViewerEvent(ViewerEvents.LOCK_ANNOTATION, handleLockAnnotation, [handleLockAnnotation]);
-
+  useViewerEvent(ViewerEvents.DIAGNOSE_VIEWPORT, handleAIDiagnosis, [
+    handleAIDiagnosis,
+  ]);
+  useViewerEvent(ViewerEvents.CLEAR_AI_ANNOTATIONS, handleClearAIAnnotations, [
+    handleClearAIAnnotations,
+  ]);
+  useViewerEvent(ViewerEvents.TOGGLE_ANNOTATIONS, handleToggleAnnotations, [
+    handleToggleAnnotations,
+  ]);
+  useViewerEvent(ViewerEvents.SELECT_ANNOTATION, handleSelectAnnotation, [
+    handleSelectAnnotation,
+  ]);
+  useViewerEvent(ViewerEvents.DESELECT_ANNOTATION, handleDeselectAnnotation, [
+    handleDeselectAnnotation,
+  ]);
+  useViewerEvent(
+    ViewerEvents.UPDATE_ANNOTATION_COLOR,
+    handleUpdateAnnotationColor,
+    [handleUpdateAnnotationColor]
+  );
+  useViewerEvent(ViewerEvents.LOCK_ANNOTATION, handleLockAnnotation, [
+    handleLockAnnotation,
+  ]);
 
   const showNavigationOverlay = useMemo(
     () => totalFrames > 1 && !isLoading,
@@ -676,7 +833,9 @@ const ViewPortMain = ({
                 <FrameScrollbarComponent
                   currentFrame={currentFrame}
                   totalFrames={totalFrames}
-                  onFrameChange={(frame: number) => goToFrame(viewportIndex, frame)}
+                  onFrameChange={(frame: number) =>
+                    goToFrame(viewportIndex, frame)
+                  }
                 />
 
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm font-medium z-50">
@@ -684,7 +843,6 @@ const ViewPortMain = ({
                 </div>
               </>
             )}
-
           </>
         ) : (
           <div className="w-full h-full bg-black flex items-center justify-center">
