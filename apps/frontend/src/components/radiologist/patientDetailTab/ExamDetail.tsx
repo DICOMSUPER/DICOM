@@ -6,16 +6,18 @@ import { skipToken } from "@reduxjs/toolkit/query";
 
 export const ExamItemDetail = React.memo(
   ({ exam, expandedId, handleToggle, setSelectedExam }: any) => {
-    // 🔹 Chỉ gọi API khi exam này được mở
+    // ✅ chỉ fetch khi expand
     const shouldFetch = expandedId === exam.id;
-    const { data, isLoading, error } = useGetDicomStudiesByOrderIdQuery(
-      shouldFetch ? exam.id : skipToken,
-    );
+
+    const { data, isLoading, error } =
+      useGetDicomStudiesByOrderIdQuery(
+        shouldFetch ? exam.id : skipToken
+      );
 
     const study = data?.data?.[0];
 
     if (error) {
-      return <div className="border rounded"> </div>;
+      return <div className="border rounded"></div>;
     }
 
     return (
@@ -36,26 +38,24 @@ export const ExamItemDetail = React.memo(
               <>
                 <div>
                   <span className="font-medium">
-                    {study?.imagingOrder?.procedure?.name}
+                    {study.imagingOrder?.procedure?.name}
                   </span>
                 </div>
+
                 <div>
-                  (S)- {study?.performingTechnicianId || "Không rõ"}
+                  (S)- {study.performingTechnicianId || "Không rõ"}
                   <br />
-                  (A)- {study?.verifyingRadiologistId || "Không rõ"}
+                  (A)- {study.verifyingRadiologistId || "Không rõ"}
                 </div>
 
+                {/* ✅ FIX: truyền ĐỦ 2 tham số */}
                 <button
-                  onClick={() => {
-                    // Lấy luôn studyId + encounterId
-                    setSelectedExam(study ? study.id : null);
-                    if (study) {
-                      handleToggle(
-                        study.id,
-                        study?.imagingOrder?.imagingOrderForm?.encounterId
-                      );
-                    }
-                  }}
+                  onClick={() =>
+                    setSelectedExam(
+                      study.id,
+                      study.imagingOrder?.imagingOrderForm?.encounterId ?? null
+                    )
+                  }
                   className="text-blue-600 hover:underline text-xs"
                 >
                   Xem chi tiết

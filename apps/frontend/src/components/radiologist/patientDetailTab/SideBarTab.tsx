@@ -13,12 +13,16 @@ export interface ExamItem {
   label: string;
   modality: string;
   date: string;
-  status: "in-progress" | "completed" | string; 
+  status: "in-progress" | "completed" | string;
   studyId: string | null;
+  encounterId: string | null; // ✅ BẮT BUỘC PHẢI CÓ
 }
 
 export interface SidebarTabProps {
-  setSelectedExam: (examId: string) => void;
+  setSelectedExam: (
+    studyId: string | null,
+    encounterId: string | null
+  ) => void; // ✅ SỬA CALLBACK ĐÚNG 2 THAM SỐ
   examHistory: ExamItem[];
   patient?: Patient;
 }
@@ -30,12 +34,10 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-
   const handleToggle = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  console.log("check", examHistory)
   // --- Lọc exam theo status ---
   const inProgressExams = useMemo(
     () => examHistory.filter((exam) => exam.status === OrderStatus.IN_PROGRESS),
@@ -48,6 +50,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   );
 
   if (!patient) return <div>Patient not found</div>;
+
   return (
     <aside className="w-64 bg-white border-r border-gray-200">
       {/* Header */}
@@ -104,7 +107,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
                   exam={exam}
                   expandedId={expandedId}
                   handleToggle={handleToggle}
-                  setSelectedExam={setSelectedExam}
+                  setSelectedExam={setSelectedExam} // ✅ TRUYỀN ĐÚNG CALLBACK
                 />
               ))}
               {inProgressExams.length === 0 && (
@@ -131,7 +134,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
                   exam={exam}
                   expandedId={expandedId}
                   handleToggle={handleToggle}
-                  setSelectedExam={setSelectedExam}
+                  setSelectedExam={setSelectedExam} // ✅ TRUYỀN ĐÚNG CALLBACK
                 />
               ))}
               {progressExams.length === 0 && (
