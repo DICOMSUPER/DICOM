@@ -1,16 +1,15 @@
 "use client";
-import React, { useState } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LoginForm } from "../../components/loginPage/LoginForm";
-import { Header } from "../../components/loginPage/Header";
-import { Background } from "../../components/loginPage/Background";
-import { CheckCircle, Monitor, Users, FileText } from "lucide-react";
-import { setCredentials } from "../../store/authSlice";
-import { useDispatch } from "react-redux";
+import { LoginForm } from "@/components/loginPage/LoginForm";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/store/authSlice";
+import { Monitor, CheckCircle, Users, FileText } from "lucide-react";
 
-export default function LoginPage() {
+export default function Page() {
   const router = useRouter();
   const dispatch = useDispatch();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -18,16 +17,12 @@ export default function LoginPage() {
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      console.log("🔵 Attempting login with:", { email, password: "***" });
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
         credentials: "include",
       });
-
-      console.log("🔵 Response status:", res.status, res.statusText);
 
       const data = await res.json();
 
@@ -37,19 +32,17 @@ export default function LoginPage() {
         throw new Error(errorMessage);
       }
 
-      // Lưu token
+      // Save token
       const token = data.data.tokenResponse.accessToken;
 
-      // Giải mã token để lấy user info và role
+      // Decode token to get user info and role
       const decoded: any = jwtDecode(token);
-      console.log("🧩 Token payload:", decoded);
 
       const role = decoded.role;
       if (!role) {
-        toast.error("Không tìm thấy role trong token");
+        toast.error("Role not found in token");
       }
 
-      // Dispatch credentials with user info
       dispatch(
         setCredentials({
           token,
@@ -89,13 +82,9 @@ export default function LoginPage() {
       }, 1000);
       setIsLoggedIn(true);
     } catch (error) {
-      console.error("Login error:", error);
-      // Only show network error toast if it's a network/fetch error
-      // Login errors already have their own toast messages
       if (error instanceof TypeError) {
         toast.error("Unable to connect to server");
       }
-      // Re-throw the error so LoginForm can reset loading state
       throw error;
     }
   };
@@ -108,7 +97,6 @@ export default function LoginPage() {
   if (isLoggedIn && user) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Background />
         <div className="relative z-10">
           {/* Header */}
           <div className="bg-white shadow-sm border-b border-gray-200">
@@ -149,7 +137,6 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Quick Stats */}
               <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -188,27 +175,6 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
-
-            {/* Quick Actions */}
-            <div className="mt-8 bg-white rounded-lg shadow-md p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <button className="bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 transition-colors cursor-pointer">
-                  View Studies
-                </button>
-                <button className="bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition-colors cursor-pointer">
-                  New Patient
-                </button>
-                <button className="bg-purple-600 text-white px-4 py-3 rounded-md hover:bg-purple-700 transition-colors cursor-pointer">
-                  Reports
-                </button>
-                <button className="bg-orange-600 text-white px-4 py-3 rounded-md hover:bg-orange-700 transition-colors cursor-pointer">
-                  Settings
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -216,61 +182,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
-      <Background />
+    <div
+      className="relative min-h-screen w-full flex items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage:
+          "url(https://img.freepik.com/premium-photo/stethoscope-eounceass-grouping-digital-background_961875-396154.jpg?semt=ais_hybrid&w=740&q=80)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="absolute inset-0 bg-black/40" />
 
-      {/* Left side - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="w-full max-w-md animate-in fade-in slide-in-from-left-4 duration-700">
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-8 lg:p-10 transform transition-all hover:shadow-3xl">
-            <Header />
-            <LoginForm onLogin={handleLogin} />
-          </div>
-        </div>
-      </div>
-
-      {/* Right side - Medical themed illustration area */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-200 to-blue-800 items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
-
-        {/* Animated floating shapes */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl animate-float"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-white/10 rounded-full blur-xl animate-float-delayed"></div>
-        <div className="absolute top-1/2 left-10 w-24 h-24 bg-white/10 rounded-full blur-xl animate-float-slow"></div>
-        <div className="absolute top-1/3 right-1/4 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float"></div>
-
-        {/* Medical equipment silhouettes */}
-        <div className="relative z-10 text-center text-white animate-in fade-in slide-in-from-right-4 duration-700">
-          <div className="mb-8">
-            <div className="mb-6 transform hover:scale-110 transition-transform duration-300">
-              <Monitor
-                size={80}
-                className="mx-auto mb-4 opacity-95 drop-shadow-2xl"
-              />
-            </div>
-            <h2 className="text-4xl font-bold mb-4 drop-shadow-lg">
-              DICOM Imaging System
-            </h2>
-            <p className="text-xl opacity-95 max-w-md leading-relaxed">
-              Professional medical imaging and diagnostic tools
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mt-12 max-w-sm mx-auto">
-            <div className="text-center transform hover:scale-105 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center shadow-lg">
-                <CheckCircle size={32} />
-              </div>
-              <p className="text-sm font-medium">Fast & Reliable</p>
-            </div>
-            <div className="text-center transform hover:scale-105 transition-transform duration-300">
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 mb-3 mx-auto w-16 h-16 flex items-center justify-center shadow-lg">
-                <Monitor size={32} />
-              </div>
-              <p className="text-sm font-medium">HD Quality</p>
-            </div>
-          </div>
-        </div>
+      <div className="relative z-10 w-full px-6 flex justify-center">
+        <LoginForm onLogin={handleLogin} />
       </div>
     </div>
   );

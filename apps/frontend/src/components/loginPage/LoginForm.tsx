@@ -1,143 +1,127 @@
-import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+"use client";
+
+import type React from "react";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 
 interface LoginFormProps {
-  onLogin: (
-    email: string,
-    password: string
-  ) => Promise<void> | void;
+  onLogin: (email: string, password: string) => Promise<void>;
 }
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address").min(1, "Email is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, touchedFields },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (values: LoginFormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     try {
-      await onLogin(values.email, values.password);
-    } catch (error) {
+      await onLogin(email, password);
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md">
-      <form 
-        onSubmit={handleSubmit(onSubmit)}
-        method="post"
-        className="space-y-5" 
-        autoComplete="on"
-      >
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
-          <label
-            htmlFor="email"
-            className="block text-sm font-semibold text-gray-700 mb-2"
-          >
-            Email
-          </label>
-          <div className="relative group">
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register("email")}
-              className={`w-full px-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
-                touchedFields.email && errors.email 
-                  ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              placeholder="you@example.com"
-            />
-            {touchedFields.email && errors.email && (
-              <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{errors.email.message}</p>
-            )}
+    <div className="backdrop-blur-md bg-blue-950/30 border border-blue-500/20 rounded-2xl p-8 shadow-2xl w-full max-w-md">
+      <div className="mb-8 text-center pb-6 border-b border-blue-400/20">
+        <h2 className="text-2xl font-bold text-white mb-2">
+          DICOM Imaging System
+        </h2>
+        <p className="text-blue-200/60 text-sm">
+          Professional medical imaging and diagnostic tools
+        </p>
+      </div>
+
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold text-white mb-2">Sign In</h1>
+        <p className="text-blue-200/60 text-sm">
+          Access your medical imaging workspace
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Email Input */}
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">
+            <User size={20} />
           </div>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="pl-12 h-12 bg-blue-900/20 border-blue-500/30 text-white placeholder:text-blue-300/50 focus:border-blue-400 focus:bg-blue-900/30 rounded-full"
+            required
+          />
         </div>
 
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
-          <label
-            htmlFor="password"
-            className="block text-sm font-semibold text-gray-700 mb-2"
-          >
-            Password
-          </label>
-          <div className="relative group">
-            <input
-              id="password"
+        {/* Password Input */}
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">
+            <Lock size={20} />
+          </div>
+          <div className="relative">
+            <Input
               type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              {...register("password")}
-              className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gray-50/50 backdrop-blur-sm ${
-                touchedFields.password && errors.password 
-                  ? "border-red-400 bg-red-50/50 focus:ring-red-500/50 focus:border-red-500" 
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-              placeholder="••••••••"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-12 pr-12 h-12 bg-blue-900/20 border-blue-500/30 text-white placeholder:text-blue-300/50 focus:border-blue-400 focus:bg-blue-900/30 rounded-full"
+              required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 right-0 -translate-y-1/2 pr-4 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-300 transition-colors"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          {touchedFields.password && errors.password && (
-            <p className="mt-2 text-sm text-red-500 animate-in fade-in duration-200">{errors.password.message}</p>
-          )}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-3.5 px-4 rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300"
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              Signing in...
-            </div>
-          ) : (
-            "Sign In"
-          )}
-        </button>
-
-        <div className="flex items-center justify-center animate-in fade-in slide-in-from-bottom-2 duration-500 delay-400">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              // TODO: Implement forgot password functionality
-            }}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors hover:underline"
+        {/* Remember Me & Forgot Password
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              className="border-blue-400/50 bg-blue-900/20"
+            />
+            <span className="text-sm text-blue-100">Remember me</span>
+          </label>
+          <a
+            href="#"
+            className="text-sm text-blue-300 hover:text-blue-200 transition-colors"
           >
             Forgot password?
-          </button>
-        </div>
+          </a>
+        </div> */}
+
+        {/* Login Button */}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-full transition-all duration-300 shadow-lg hover:shadow-blue-500/50 disabled:opacity-50"
+        >
+          {isLoading ? "Signing In..." : "Sign In"}
+        </Button>
       </form>
+
+      <div className="mt-8 pt-6 border-t border-blue-400/20 text-center">
+        <p className="text-blue-200/60 text-sm">
+          System Status: <span className="text-green-400">Online</span>
+        </p>
+        {/* <p className="text-blue-200/40 text-xs mt-1">v2.4.1</p> */}
+      </div>
     </div>
   );
 }
