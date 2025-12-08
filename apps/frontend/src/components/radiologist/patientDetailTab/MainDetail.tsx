@@ -85,18 +85,11 @@ const MedicalRecordMain = ({
   const { data: studyDetail, refetch: refetchStudy } = useGetOneDicomStudyQuery(selectedStudyId, {
     skip: !selectedStudyId,
   });
-  console.log("check 1 ", studyDetail)
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
 
 
   const technicianId = studyDetail?.data?.performingTechnicianId;
 
-  console.log('technicianSignatureId', technicianId);
-  console.log("cehck encounte ID", encounterId)
-  console.log("check study ID", selectedStudyId)
-
-
-  console.log("check diagnose",diagnosisData)
   const { data: technicianSignature } = useGetUserByIdQuery(technicianId!, {
     skip: !technicianId,
   });
