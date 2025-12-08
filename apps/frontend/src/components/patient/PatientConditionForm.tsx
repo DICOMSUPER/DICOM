@@ -136,7 +136,7 @@ export function PatientConditionForm({
             </CardDescription>
           </div>
           <Button onClick={addCondition} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             Add Condition
           </Button>
         </div>
@@ -358,7 +358,7 @@ export function PatientConditionForm({
             </Button>
           )}
           <Button onClick={handleSave}>
-            <Save className="w-4 h-4 mr-2" />
+            <Save className="w-4 h-4" />
             {isEditing ? "Update Conditions" : "Save Conditions"}
           </Button>
         </div>

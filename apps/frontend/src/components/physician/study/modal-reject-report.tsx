@@ -126,7 +126,7 @@ export function ModalRejectReport({
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-4 h-4 mr-2" />
+                    <XCircle className="w-4 h-4" />
                     Reject Report
                   </>
                 )}

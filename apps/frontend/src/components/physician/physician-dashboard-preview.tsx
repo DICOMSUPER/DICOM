@@ -160,7 +160,7 @@ export function PhysicianDashboardPreview({
               className="w-full justify-start"
               onClick={onViewReports}
             >
-              <FileText className="w-4 h-4 mr-2" />
+              <FileText className="w-4 h-4" />
               View Diagnosis Reports
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -169,7 +169,7 @@ export function PhysicianDashboardPreview({
               className="w-full justify-start"
               onClick={onViewImagingOrders}
             >
-              <Image className="w-4 h-4 mr-2" />
+              <Image className="w-4 h-4" />
               View Imaging Orders
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>
@@ -178,7 +178,7 @@ export function PhysicianDashboardPreview({
               className="w-full justify-start"
               onClick={onViewEncounters}
             >
-              <Stethoscope className="w-4 h-4 mr-2" />
+              <Stethoscope className="w-4 h-4" />
               View All Encounters
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Button>

@@ -121,7 +121,7 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             onClick={() => handleViewDetail(row.original.id)}
           >
-            <Eye className="w-4 h-4 mr-1" />
+            <Eye className="w-4 h-4" />
             View Details
           </Button>
         </div>
@@ -173,7 +173,7 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
           <p className="text-gray-600 text-sm mt-1">Patient visit history and encounters.</p>
         </div>
         {/* <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           New Encounter
         </Button> */}
       </div>

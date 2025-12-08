@@ -80,7 +80,7 @@ export function AppHeader({
                 className="border-border relative"
                 onClick={onNotificationClick}
               >
-                <Bell className="w-4 h-4 mr-2" />
+                <Bell className="w-4 h-4" />
                 Alerts
                 {notificationCount > 0 && (
                   <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5">
@@ -99,7 +99,7 @@ export function AppHeader({
                   size="sm" 
                   className="border-border"
                 >
-                  <User className="w-4 h-4 mr-2" />
+                  <User className="w-4 h-4" />
                   {displayName}
                 </Button>
               </DropdownMenuTrigger>

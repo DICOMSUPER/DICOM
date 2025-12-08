@@ -852,14 +852,14 @@ export function ModalDiagnosisReportDetail({
                   onClick={handleEditDescriptionOpen}
                 >
                   <div className="flex items-center justify-center">
-                    <Notebook className="w-4 h-4 mr-2" />
+                    <Notebook className="w-4 h-4" />
                     Edit Report Description
                   </div>
                 </Button>
               ) : (
                 <Button className="w-full" onClick={handleEditDescriptionClose}>
                   <div className="flex items-center justify-center">
-                    <Notebook className="w-4 h-4 mr-2" />
+                    <Notebook className="w-4 h-4" />
                     Close Edit Mode
                   </div>
                 </Button>
@@ -954,7 +954,7 @@ export function ModalDiagnosisReportDetail({
                         disabled={!editedDescription.trim()}
                         className="bg-gradient-to-r from-teal-600 to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Notebook className="w-4 h-4 mr-2" />
+                        <Notebook className="w-4 h-4" />
                         Apply to Description
                       </Button>
                     </div>
@@ -978,7 +978,7 @@ export function ModalDiagnosisReportDetail({
                         disabled={!editedReportDescription.trim() || isUpdating}
                         className="bg-gradient-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Download className="w-4 h-4 mr-2" />
+                        <Download className="w-4 h-4" />
                         {isUpdating ? "Saving..." : "Save Description"}
                       </Button>
                     </div>
@@ -1040,7 +1040,7 @@ export function ModalDiagnosisReportDetail({
                   }
                   className="bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                 >
-                  <Image className="w-4 h-4 mr-2" />
+                  <Image className="w-4 h-4" />
                   {DicomStudyStatus.APPROVED ===
                   dicomStudyData?.data.studyStatus
                     ? "Sign to Approve Study"
@@ -1051,7 +1051,7 @@ export function ModalDiagnosisReportDetail({
                   disabled={isUpdating || isHasSignatureLoading}
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                 >
-                  <Image className="w-4 h-4 mr-2" />
+                  <Image className="w-4 h-4" />
                   View Image
                 </Button>
                 {dicomStudyData?.data.studyStatus !==
@@ -1062,7 +1062,7 @@ export function ModalDiagnosisReportDetail({
                     disabled={isUpdating || isUpdatingDicomStudy}
                     className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
-                    <Printer className="w-4 h-4 mr-2" />
+                    <Printer className="w-4 h-4" />
                     Print Report
                   </Button>
                 )}

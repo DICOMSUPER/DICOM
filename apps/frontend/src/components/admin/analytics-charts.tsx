@@ -342,9 +342,7 @@ export function AnalyticsCharts({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`
-                    }
+                    label={formatPieLabel}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
@@ -356,7 +354,7 @@ export function AnalyticsCharts({
                       />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={formatPieTooltip} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -378,9 +376,7 @@ export function AnalyticsCharts({
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`
-                    }
+                    label={formatPieLabel}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
@@ -392,7 +388,7 @@ export function AnalyticsCharts({
                       />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip formatter={formatPieTooltip} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

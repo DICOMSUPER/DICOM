@@ -236,7 +236,7 @@ export default function SignatureModal({
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <CheckCircle className="w-4 h-4" />
                       Verify Study
                     </span>
                   )}

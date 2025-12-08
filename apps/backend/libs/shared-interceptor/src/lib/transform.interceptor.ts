@@ -78,11 +78,29 @@ export class TransformInterceptor<T>
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
+        // Unwrap RPC/microservice error payloads so status/message are meaningful
+        const rpcPayload =
+          (error as any)?.response ||
+          (error as any)?.message ||
+          (error as any)?.error;
+        const payloadCode =
+          (rpcPayload as any)?.code ||
+          (rpcPayload as any)?.statusCode ||
+          (rpcPayload as any)?.status;
+        const payloadMessage =
+          typeof rpcPayload === 'string'
+            ? rpcPayload
+            : (rpcPayload as any)?.message || (error as any)?.message;
+
         const errResponse: StandardResponse<null> = {
           success: false,
           data: null,
-          statusCode: (error as any)?.status || 500,
-          message: (error as any)?.message || 'Internal Server Error',
+          statusCode:
+            (error as any)?.status ||
+            payloadCode ||
+            (error as any)?.statusCode ||
+            500,
+          message: payloadMessage || 'Internal Server Error',
           timestamp: new Date().toISOString(),
           path,
           method,

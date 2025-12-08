@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -28,6 +28,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Department } from '@/interfaces/user/department.interface';
 import { useCreateDepartmentMutation, useUpdateDepartmentMutation } from '@/store/departmentApi';
+import { useGetRoomsQuery, useUpdateRoomMutation } from '@/store/roomsApi';
 import { Building } from 'lucide-react';
 
 interface DepartmentFormModalProps {
@@ -42,6 +43,7 @@ const departmentFormSchema = z.object({
   name: z.string().min(1, 'Department name is required'),
   description: z.string().optional(),
   isActive: z.boolean(),
+  roomIds: z.array(z.string()).optional(),
 });
 
 type DepartmentFormValues = z.infer<typeof departmentFormSchema>;
@@ -55,6 +57,21 @@ export function DepartmentFormModal({
   const isEdit = !!department;
   const [createDepartment] = useCreateDepartmentMutation();
   const [updateDepartment] = useUpdateDepartmentMutation();
+  const [updateRoom] = useUpdateRoomMutation();
+  const { data: roomsData } = useGetRoomsQuery({ page: 1, limit: 1000, includeInactive: true });
+  const rooms = useMemo(() => roomsData?.data ?? [], [roomsData?.data]);
+  const currentDepartmentId = department?.id;
+
+  const availableRooms = useMemo(() => {
+    return rooms.filter(
+      (room) => !room.departmentId || room.departmentId === currentDepartmentId
+    );
+  }, [rooms, currentDepartmentId]);
+
+  const initiallySelectedRoomIds = useMemo(() => {
+    if (!currentDepartmentId) return [];
+    return rooms.filter((room) => room.departmentId === currentDepartmentId).map((r) => r.id);
+  }, [rooms, currentDepartmentId]);
 
   const form = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentFormSchema),
@@ -63,6 +80,7 @@ export function DepartmentFormModal({
       name: '',
       description: '',
       isActive: true,
+      roomIds: [],
     },
   });
 
@@ -73,6 +91,7 @@ export function DepartmentFormModal({
         name: department.departmentName || '',
         description: department.description || '',
         isActive: department.isActive ?? true,
+        roomIds: initiallySelectedRoomIds,
       });
     } else {
       form.reset({
@@ -80,12 +99,18 @@ export function DepartmentFormModal({
         name: '',
         description: '',
         isActive: true,
+        roomIds: [],
       });
     }
-  }, [department, isOpen, form]);
+  }, [department, isOpen, form, initiallySelectedRoomIds]);
 
   const onSubmit = async (data: DepartmentFormValues) => {
     try {
+      const desiredRoomIds = data.roomIds || [];
+      const existingRoomIds = rooms
+        .filter((room) => room.departmentId === department?.id)
+        .map((r) => r.id);
+
       if (isEdit && department) {
         const payload = {
           code: data.code,
@@ -94,6 +119,18 @@ export function DepartmentFormModal({
           isActive: data.isActive,
         };
         await updateDepartment({ id: department.id, data: payload }).unwrap();
+
+        const toAssign = desiredRoomIds.filter((id) => !existingRoomIds.includes(id));
+        const toUnassign = existingRoomIds.filter((id) => !desiredRoomIds.includes(id));
+
+        await Promise.all([
+          ...toAssign.map((id) =>
+            updateRoom({ id, data: { department: department.id } }).unwrap()
+          ),
+          ...toUnassign.map((id) =>
+            updateRoom({ id, data: { department: null as any } }).unwrap()
+          ),
+        ]);
         toast.success('Department updated successfully');
       } else {
         const payload = {
@@ -101,7 +138,15 @@ export function DepartmentFormModal({
           name: data.name,
           description: data.description,
         };
-        await createDepartment(payload).unwrap();
+        const created = await createDepartment(payload).unwrap();
+        const newDepartmentId = (created as any)?.id || (created as any)?.data?.id;
+        if (newDepartmentId && desiredRoomIds.length > 0) {
+          await Promise.all(
+            desiredRoomIds.map((id) =>
+              updateRoom({ id, data: { department: newDepartmentId } }).unwrap()
+            )
+          );
+        }
         toast.success('Department created successfully');
       }
       onSuccess?.();
@@ -205,6 +250,67 @@ export function DepartmentFormModal({
                         <FormLabel className="text-foreground cursor-pointer">
                           Active
                         </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <Building className="h-5 w-5" />
+                    Rooms
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="roomIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Assign Rooms</FormLabel>
+                        <div className="space-y-2 rounded-lg border border-border p-3">
+                          <p className="text-xs text-foreground">
+                            Select rooms to associate with this department. Rooms already linked to
+                            other departments are hidden.
+                          </p>
+                          {availableRooms.length === 0 ? (
+                            <p className="text-sm text-foreground">No available rooms</p>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
+                              {availableRooms.map((room) => {
+                                const checked = field.value?.includes(room.id);
+                                return (
+                                  <label
+                                    key={room.id}
+                                    className="flex items-start gap-3 rounded-md border border-border px-3 py-2 hover:bg-muted/50 cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(val) => {
+                                        const next = new Set(field.value || []);
+                                        if (val) {
+                                          next.add(room.id);
+                                        } else {
+                                          next.delete(room.id);
+                                        }
+                                        field.onChange(Array.from(next));
+                                      }}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span className="text-sm font-medium text-foreground">
+                                        {room.roomCode} {room.roomType ? `- ${room.roomType}` : ''}
+                                      </span>
+                                      {room.description && (
+                                        <span className="text-xs text-foreground line-clamp-2">
+                                          {room.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />

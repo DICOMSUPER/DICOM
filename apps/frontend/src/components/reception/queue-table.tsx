@@ -162,7 +162,7 @@ export function QueueTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onEditAssignment(assignment)}>
-                      <Edit className="w-4 h-4 mr-2 text-teal-600" />
+                      <Edit className="w-4 h-4 text-teal-600" />
                       Edit
                     </DropdownMenuItem>
                     {onRemoveFromQueue && (
@@ -170,7 +170,7 @@ export function QueueTable({
                         onClick={() => onRemoveFromQueue(assignment)}
                         className="text-red-600 focus:text-red-600"
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-4 h-4" />
                         Remove from Queue
                       </DropdownMenuItem>
                     )}

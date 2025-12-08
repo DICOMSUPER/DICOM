@@ -18,21 +18,17 @@ import {
 interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead?: (id: string) => void;
+  highlight?: boolean;
 }
 
 export const NotificationItem = ({
   notification,
   onMarkAsRead,
+  highlight = false,
 }: NotificationItemProps) => {
   const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-
-  const handleMarkAsRead = () => {
-    if (onMarkAsRead) {
-      onMarkAsRead(notification.id);
-    }
-  };
 
   const handleViewDetails = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,18 +73,19 @@ export const NotificationItem = ({
         // Subtle hover effect without borders
         "hover:bg-slate-50/80",
         // Unread styling - subtle background
-        !notification.isRead ? "bg-blue-50/30" : "bg-white"
+        !notification.isRead ? "bg-blue-50/30" : "bg-white",
+        highlight && "ring-2 ring-blue-200/70 animate-pulse"
       )}
     >
       {/* Unread indicator - elegant left accent */}
       {!notification.isRead && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-blue-600" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-blue-500 to-blue-600" />
       )}
 
       {/* Icon container - cleaner without border ring */}
       <div
         className={cn(
-          "mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all",
+          "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all",
           !notification.isRead
             ? "bg-blue-100 group-hover:bg-blue-200 group-hover:scale-105"
             : "bg-slate-100 group-hover:bg-slate-200 group-hover:scale-105"
@@ -108,7 +105,8 @@ export const NotificationItem = ({
           >
             {notification.title}
           </p>
-          <span className="text-xs text-slate-400 whitespace-nowrap flex-shrink-0">
+          <span className="text-xs text-slate-400 whitespace-nowrap shrink-0">
+            {/* Keep non-wrapping time text compact */}
             {notification.createdAt
               ? formatDistanceToNow(
                   new Date(

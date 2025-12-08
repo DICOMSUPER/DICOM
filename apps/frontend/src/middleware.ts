@@ -23,7 +23,7 @@ function getAllowedRolesForPath(path: string): Roles[] {
 function getDashboardByRole(role: Roles): string {
   switch (role) {
     case Roles.SYSTEM_ADMIN:
-      return "/admin";
+      return "/admin/dashboard";
     case Roles.IMAGING_TECHNICIAN:
       return "/imaging-technician/dashboard";
     case Roles.RECEPTION_STAFF:
@@ -41,7 +41,7 @@ function getDashboardByRole(role: Roles): string {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("accessToken")?.value;
-
+  console.log("Token:", token);
   // ✅ CASE 1: User trying to access /login while authenticated
   if (pathname === "/login") {
     if (token) {

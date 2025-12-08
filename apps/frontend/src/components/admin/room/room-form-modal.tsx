@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox as UICheckbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -36,13 +36,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Room } from '@/interfaces/user/room.interface';
 import { RoomStatus, RoomType } from '@/enums/room.enum';
-import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
 import { useCreateRoomMutation, useUpdateRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { Department } from '@/interfaces/user/department.interface';
-import { useGetAllModalityMachineQuery, useGetModalitiesInRoomQuery } from '@/store/modalityMachineApi';
-import { useUpdateModalityMachineMutation } from '@/store/modalityMachineApi';
-import { extractApiData } from '@/utils/api';
 import { Building2 } from 'lucide-react';
 
 interface RoomFormModalProps {
@@ -77,7 +73,6 @@ const roomFormSchema = z.object({
   hasOxygenSupply: z.boolean(),
   hasNurseCallButton: z.boolean(),
   isActive: z.boolean(),
-  modalityMachineId: z.string().optional(),
 });
 
 type RoomFormValues = z.infer<typeof roomFormSchema>;
@@ -86,15 +81,8 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
   const isEdit = !!room;
   const [createRoom] = useCreateRoomMutation();
   const [updateRoom] = useUpdateRoomMutation();
-  const [updateModalityMachine] = useUpdateModalityMachineMutation();
   const { data: departmentsData, isLoading: departmentsLoading } = useGetDepartmentsQuery({ page: 1, limit: 10000 });
-  const { data: machinesData } = useGetAllModalityMachineQuery({});
-  const { data: roomMachinesData } = useGetModalitiesInRoomQuery(room?.id || '', {
-    skip: !room?.id,
-  });
   const departments: Department[] = departmentsData?.data ?? [];
-  const machines = extractApiData<ModalityMachine>(machinesData);
-  const roomMachines = extractApiData<ModalityMachine>(roomMachinesData);
 
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
@@ -121,6 +109,9 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
   });
 
   useEffect(() => {
+    // Prevent repeated resets on every render; only run when modal opens or data changes
+    if (!isOpen) return;
+
     if (room) {
       form.reset({
         roomCode: room.roomCode || '',
@@ -128,9 +119,12 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         department: room.department?.id || room.departmentId || '',
         floor: room.floor?.toString() || '',
         capacity: room.capacity?.toString() || '',
-        pricePerDay: room.pricePerDay !== undefined && room.pricePerDay !== null 
-          ? (typeof room.pricePerDay === 'number' ? room.pricePerDay.toString() : String(room.pricePerDay))
-          : '',
+        pricePerDay:
+          room.pricePerDay !== undefined && room.pricePerDay !== null
+            ? typeof room.pricePerDay === 'number'
+              ? room.pricePerDay.toString()
+              : String(room.pricePerDay)
+            : '',
         status: room.status || RoomStatus.AVAILABLE,
         description: room.description || '',
         notes: room.notes || '',
@@ -143,7 +137,6 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         hasOxygenSupply: room.hasOxygenSupply || false,
         hasNurseCallButton: room.hasNurseCallButton || false,
         isActive: room.isActive ?? true,
-        modalityMachineId: roomMachines.length > 0 ? roomMachines[0].id : '',
       });
     } else {
       form.reset({
@@ -165,7 +158,6 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
         hasOxygenSupply: false,
         hasNurseCallButton: false,
         isActive: true,
-        modalityMachineId: '',
       });
     }
   }, [room, isOpen, form]);
@@ -211,19 +203,6 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
           return;
         }
         toast.success('Room created successfully');
-      }
-
-      if (data.modalityMachineId && data.modalityMachineId.trim() !== '') {
-        try {
-          await updateModalityMachine({
-            id: data.modalityMachineId,
-            data: { roomId },
-          }).unwrap();
-        } catch (machineError: any) {
-          toast.warning(
-            machineError?.data?.message || 'Room saved but failed to assign modality machine'
-          );
-        }
       }
 
       onSuccess?.();
@@ -435,38 +414,6 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="modalityMachineId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Modality Machine</FormLabel>
-                          <Select
-                            onValueChange={(value) =>
-                              field.onChange(value === "none" ? "" : value)
-                            }
-                            value={field.value || "none"}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select modality machine (optional)" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {machines
-                                .filter((m) => m.status === 'ACTIVE')
-                                .map((machine) => (
-                                  <SelectItem key={machine.id} value={machine.id}>
-                                    {machine.name} ({machine.modality?.modalityCode || 'N/A'})
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                 </section>
 
@@ -527,7 +474,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -544,7 +491,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -561,7 +508,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -578,7 +525,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -595,7 +542,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -612,7 +559,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -629,7 +576,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
@@ -646,7 +593,7 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
-                            <Checkbox
+                            <UICheckbox
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />

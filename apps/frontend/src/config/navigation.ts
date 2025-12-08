@@ -2,20 +2,16 @@ import {
   Activity,
   BarChart3,
   Bell,
-  BookOpen,
   Building2,
   Camera,
   Clock,
   Cog,
-  Database,
   FileText,
   Logs,
   Monitor,
   Search,
   Settings,
-  Shield,
   Stethoscope,
-  Timer,
   UserCheck,
   Users,
   Building,
@@ -42,7 +38,7 @@ export const roleNavigation: RoleNavigation = {
   // Administrator - Full system access
   Administrator: [
     {
-      href: "/admin",
+      href: "/admin/dashboard",
       label: "Dashboard",
       icon: BarChart3,
       description: "System overview and analytics",
@@ -102,8 +98,8 @@ export const roleNavigation: RoleNavigation = {
       description: "Manage clinic services and offerings",
     },
     {
-      href: "/admin/procedure",
-      label: "Procedure Management",
+      href: "/admin/procedures",
+      label: "Procedures",
       icon: GitPullRequest,
       description: "Manage request procedures and modalities",
     },
@@ -112,12 +108,6 @@ export const roleNavigation: RoleNavigation = {
       label: "Shift Templates",
       icon: Clock,
       description: "Manage shift templates",
-    },
-    {
-      href: "/admin/settings",
-      label: "System Settings",
-      icon: Settings,
-      description: "Configure system settings",
     },
   ],
 
@@ -240,12 +230,6 @@ export const roleNavigation: RoleNavigation = {
       label: "Schedule",
       icon: Calendar,
       description: "View your work schedule",
-    },
-    {
-      href: "/imaging-technician/settings",
-      label: "Settings",
-      icon: Settings,
-      description: "Imaging settings",
     },
     {
       href: "/imaging-technician/notifications",
