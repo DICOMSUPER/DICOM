@@ -13,14 +13,12 @@ export const StudyItem = ({
   onSeriesClick,
   viewMode,
   urlStudyId,
-  urlSeriesId,
 }: {
   study: any;
   selectedSeries: string | null;
   onSeriesClick: (series: DicomSeries) => void;
   viewMode: "grid" | "list";
   urlStudyId?: string;
-  urlSeriesId?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const [localThumbnailPaths, setLocalThumbnailPaths] = useState<Record<string, string>>({});
@@ -33,20 +31,6 @@ export const StudyItem = ({
       setOpen(true);
     }
   }, [urlStudyId, study.id, open]);
-
-  // Auto-select series from URL
-  useEffect(() => {
-    if (!urlSeriesId || !open || !study.series) return;
-    
-    const matchingSeries = study.series.find((s: DicomSeries) => s.id === urlSeriesId);
-    if (matchingSeries && selectedSeries !== matchingSeries.id) {
-      // Small delay to ensure thumbnails are loaded
-      const timer = setTimeout(() => {
-        onSeriesClick(matchingSeries);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [urlSeriesId, open, study.series, selectedSeries, onSeriesClick]);
 
   const filteredSeries = study.series || [];
 

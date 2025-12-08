@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { FolderOpen, Loader2, Grid3X3, List, FileText, Layers, FolderTree, RefreshCw, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { FolderOpen, Loader2, Grid3X3, List, FileText, FolderTree, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
 import { useViewer } from '@/contexts/ViewerContext';
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
@@ -14,7 +13,6 @@ import AnnotationAccordion from '../sidebar/AnnotationAccordion';
 import SegmentationAccordion from '../sidebar/SegmentationAccordion';
 import { extractApiData } from '@/utils/api';
 import { toast } from 'sonner';
-import { Pagination } from '@/components/common/PaginationV1';
 
 interface ViewerRightSidebarProps {
   onSeriesSelect?: (series: DicomSeries) => void;
@@ -22,7 +20,6 @@ interface ViewerRightSidebarProps {
   studyId?: string;
   patientId?: string;
   selectedSeriesFromParent?: DicomSeries | null;
-  urlSeriesId?: string;
   onOrderStatusChange?: (status: string | null) => void;
 }
 
@@ -32,12 +29,9 @@ const ViewerRightSidebar = ({
   studyId,
   patientId,
   selectedSeriesFromParent,
-  urlSeriesId,
   onOrderStatusChange,
 }: ViewerRightSidebarProps) => {
   const { 
-    state, 
-    getViewportSeries,
     getSegmentationLayers,
     deleteSegmentationLayer,
     updateSegmentationLayerMetadata,
@@ -46,10 +40,9 @@ const ViewerRightSidebar = ({
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'annotations' | 'folders'>('folders');
   const [folderListMode, setFolderListMode] = useState<'grid' | 'list'>('grid');
-  const [annotationsTab, setAnnotationsTab] = useState<'annotations' | 'segmentations'>('annotations');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [hasLoadedAnnotations, setHasLoadedAnnotations] = useState(false);
+  const manualSeriesSelectionRef = useRef(false);
   
   const [createImageSegmentationLayers] = useCreateImageSegmentationLayerMutation();
   const [deleteImageSegmentationLayer] = useDeleteImageSegmentationLayerMutation();
@@ -89,24 +82,24 @@ const ViewerRightSidebar = ({
     }
   }, [resolvedOrders, studyId, onOrderStatusChange]);
   
-  // Sync selectedSeries with parent and active viewport
+  // Sync selectedSeries with parent-provided selection only; avoid viewport-driven overrides
   useEffect(() => {
     if (selectedSeriesFromParent) {
       setSelectedSeries(selectedSeriesFromParent.id);
-      return;
     }
-    
-    const activeViewportSeries = getViewportSeries(state.activeViewport);
-    if (activeViewportSeries) {
-      if (activeViewportSeries.id !== selectedSeries) {
-        setSelectedSeries(activeViewportSeries.id);
-      }
-    } else if (selectedSeries) {
-      setSelectedSeries(null);
-    }
-  }, [selectedSeriesFromParent, state.activeViewport, getViewportSeries, selectedSeries]);
+  }, [selectedSeriesFromParent]);
 
   const handleSeriesClick = useCallback((seriesItem: DicomSeries) => {
+    console.log("Series selected from right sidebar:", {
+      id: seriesItem.id,
+      seriesInstanceUid: seriesItem.seriesInstanceUid,
+      studyId: seriesItem.studyId,
+      seriesNumber: seriesItem.seriesNumber,
+      description: seriesItem.seriesDescription,
+      bodyPart: seriesItem.bodyPartExamined,
+      instances: seriesItem.numberOfInstances,
+    });
+    manualSeriesSelectionRef.current = true;
     setSelectedSeries(seriesItem.id);
     onSeriesSelect?.(seriesItem);
   }, [onSeriesSelect]);
@@ -353,7 +346,6 @@ const ViewerRightSidebar = ({
                        viewMode={folderListMode}
                        onSeriesClick={handleSeriesClick}
                        urlStudyId={studyId || undefined}
-                       urlSeriesId={urlSeriesId}
                      />
                      );
                    })
@@ -380,54 +372,31 @@ const ViewerRightSidebar = ({
                  )}
                </div>
           ) : (
-            <Tabs 
-              value={annotationsTab} 
-              onValueChange={(val) => setAnnotationsTab(val as 'annotations' | 'segmentations')} 
-              className="h-full flex flex-col"
-            >
-              <TabsList className="w-full justify-start border-b border-slate-800 bg-slate-900/50 rounded-none h-12 px-2 shrink-0">
-                <TabsTrigger 
-                  value="annotations" 
-                  className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Annotations</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="segmentations"
-                  className="flex items-center gap-2 data-[state=active]:bg-teal-900/40 data-[state=active]:text-teal-300"
-                >
-                  <Layers className="h-4 w-4" />
-                  <span>Segmentations</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent 
-                value="annotations" 
-                className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
-                forceMount
-                hidden={annotationsTab !== 'annotations'}
-              >
-                <AnnotationAccordion 
-                  selectedSeriesId={selectedSeries} 
-                  seriesList={series}
-                />
-              </TabsContent>
-              
-              <TabsContent 
-                value="segmentations" 
-                className="flex-1 overflow-y-auto p-3 mt-0 min-h-0"
-                forceMount
-                hidden={annotationsTab !== 'segmentations'}
-              >
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto p-3">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-white font-semibold">Annotations</h3>
+              <AnnotationAccordion 
+                selectedSeriesId={selectedSeries} 
+                seriesList={series}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-white font-semibold">Segmentations</h3>
+              {selectedSeries ? (
                 <SegmentationAccordion
                   selectedSeriesId={selectedSeries}
                   onSaveLayer={handleSaveLayer}
                   onDeleteLayer={handleDeleteLayer}
                   onUpdateLayerMetadata={updateSegmentationLayerMetadata}
                 />
-              </TabsContent>
-            </Tabs>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-slate-400 text-sm py-6">
+                  Please select a series to view segmentations
+                </div>
+              )}
+            </div>
+          </div>
           )}
          </div>
       </div>

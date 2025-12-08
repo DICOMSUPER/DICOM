@@ -24,7 +24,7 @@ interface AIDiagnosisButtonProps {
 }
 
 export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
-  const { state, diagnosisViewport, clearAIAnnotations } = useViewer();
+  const { state, diagnosisViewport, clearAIAnnotations, getViewportSeries } = useViewer();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
@@ -131,16 +131,25 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
       console.error('AI diagnosis error:', error);
       setIsProcessing(false);
     }
-  }, [diagnosisViewport, state.activeViewport, selectedProjectId, selectedVersionId]);
+  }, [
+    diagnosisViewport,
+    state.activeViewport,
+    selectedProjectId,
+    selectedVersionId,
+    versions,
+    projects,
+  ]);
 
   const handleClearAI = useCallback(() => {
     clearAIAnnotations(state.activeViewport);
   }, [clearAIAnnotations, state.activeViewport]);
 
+  const hasSeriesInViewport = !!getViewportSeries(state.activeViewport);
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Model Selection */}
-      <div className="space-y-2">
+      <div className="space-y-2 flex flex-col">
         <label className="text-sm text-slate-300 font-medium">
           Select Model Name
         </label>
@@ -165,7 +174,7 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
       </div>
 
       {/* Version Selection */}
-      <div className="space-y-2">
+      <div className="space-y-2 flex flex-col">
         <label className="text-sm text-slate-300 font-medium">
           Select Version
         </label>
@@ -205,7 +214,13 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
         {/* AI Diagnosis Button */}
         <button
           onClick={handleDiagnose}
-          disabled={disabled || isProcessing || !selectedProjectId || !selectedVersionId}
+          disabled={
+            disabled ||
+            isProcessing ||
+            !selectedProjectId ||
+            !selectedVersionId ||
+            !hasSeriesInViewport
+          }
           className={`
             flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
             transition-all duration-200 font-medium
@@ -213,7 +228,14 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
               ? 'bg-blue-600 cursor-wait' 
               : 'bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'
             }
-            ${disabled || !selectedProjectId || !selectedVersionId ? 'opacity-50 cursor-not-allowed' : ''}
+            ${
+              disabled ||
+              !selectedProjectId ||
+              !selectedVersionId ||
+              !hasSeriesInViewport
+                ? 'opacity-50 cursor-not-allowed'
+                : ''
+            }
             text-white shadow-lg hover:shadow-xl
             border border-blue-400/30
           `}
