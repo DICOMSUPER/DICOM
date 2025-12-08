@@ -33,6 +33,8 @@ import EncounterTypeSelection from "./patient/forward/encounter-type-selection";
 import PriorityLevelSelection from "./patient/forward/priority-level-selection";
 import NoteInput from "./patient/forward/note-input";
 import ForwardButton from "./patient/forward/forward-button";
+import { formatISO } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 const formatEncounterType = (type: string): string => {
   return type
@@ -53,7 +55,7 @@ export function PatientForward({
   const router = useRouter();
   const [encounterInfo, setEncounterInfo] = useState({
     patientId: patientId,
-    encounterDate: "",
+    encounterDate: formatISO(toZonedTime(new Date(), "Asia/Ho_Chi_Minh")),
     encounterType: EncounterType.INPATIENT,
     priority: EncounterPriorityLevel.ROUTINE,
     notes: "",

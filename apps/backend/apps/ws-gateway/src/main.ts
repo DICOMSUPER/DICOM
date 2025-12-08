@@ -8,6 +8,8 @@ import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 
 process.setMaxListeners(20);
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 process.on('unhandledRejection', (reason, promise) => {
   const logger = new Logger('UnhandledRejection');
   logger.error('Unhandled Promise Rejection:', reason);

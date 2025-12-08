@@ -34,7 +34,7 @@ import RejectDicomDialog from "./RejectDicomDialog";
 
 import html2pdf from "html2pdf.js";
 import PrintDiagnosis from "./PrintDiagnosis";
-import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
+import { useGetOneDicomStudyQuery, useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
 
 import {
   Dialog,
@@ -43,6 +43,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useGetUserByIdQuery } from "@/store/userApi";
+import SignatureDisplay from "@/components/common/signature-display";
+import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
 
 const AdvancedToolsTab = () => <div>Advanced Tools Content</div>;
 const VideoTab = () => <div>Video Content</div>;
@@ -65,7 +68,8 @@ const MedicalRecordMain = ({
   selectedExam,
   selectedStudyId,
   diagnosisData,
-  isDiagnosisLoading, 
+  isDiagnosisLoading,
+  refetchDiagnosis,
   encounterId,
   patientId,
 }: any) => {
@@ -88,6 +92,22 @@ const MedicalRecordMain = ({
   const [isReasonOpen, setIsReasonOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  
+
+  const { data: studyDetail, refetch: refetchStudy } = useGetOneDicomStudyQuery(selectedStudyId, {
+    skip: !selectedStudyId,
+  });
+  const [updateImagingOrder] = useUpdateImagingOrderMutation();
+
+
+  const technicianId = studyDetail?.data?.performingTechnicianId;
+
+  const { data: technicianSignature } = useGetUserByIdQuery(technicianId!, {
+    skip: !technicianId,
+  });
+
+
+
   const handleRejectDicom = async (reason: string) => {
     try {
       const payload = {
@@ -104,7 +124,8 @@ const MedicalRecordMain = ({
       toast.error("Reject thất bại!");
     }
   };
-  
+
+
 
   const handleUpdateDiagnosis = async () => {
     const payload = {
@@ -199,6 +220,16 @@ const MedicalRecordMain = ({
 
     try {
       await createDiagnosis(payload);
+      await updateImagingOrder({
+        id: studyDetail?.data?.imagingOrder?.id!,
+        body: { orderStatus: "completed" },
+      });
+      
+      // Refetch để hiển thị diagnosis vừa tạo
+      if (refetchDiagnosis) {
+        await refetchDiagnosis();
+      }
+      
       toast.success("Đã lưu chẩn đoán thành công!");
     } catch (err) {
       console.error(err);
@@ -315,17 +346,40 @@ const MedicalRecordMain = ({
                         </span>
                       )}
                     </div>
-                    <div className="border border-gray-300 rounded h-24 bg-gray-50 flex items-center justify-center text-sm text-gray-700">
-                      {signerUser ? `${signerUser.firstName} ${signerUser.lastName}` : "Chưa ký"}
+                    <div className="border border-gray-300 rounded h-24 bg-gray-50 flex flex-col items-center justify-center text-sm text-gray-700">
+                      {signerUser ? (
+                        <SignatureDisplay
+                          firstName={signerUser.firstName}
+                          lastName={signerUser.lastName}
+                          role="Bác sĩ"
+                          duration={1}
+                          delay={0.3}
+                        />
+                      ) : (
+                        "Chưa ký"
+                      )}
                     </div>
+
                   </div>
 
                   <div>
                     <span className="font-medium text-sm">Kỹ thuật viên:</span>
-                    <div className="border rounded h-24 bg-gray-50 flex items-center justify-center mt-3">
-                      Nguyen Van Tech
+
+                    <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center mt-3 text-sm text-gray-700">
+                      {technicianSignature?.data ? (
+                        <SignatureDisplay
+                          firstName={technicianSignature.data.firstName}
+                          lastName={technicianSignature.data.lastName}
+                          role="Kỹ thuật viên"
+                          duration={1}
+                          delay={0.3}
+                        />
+                      ) : (
+                        "Không tìm thấy kỹ thuật viên"
+                      )}
                     </div>
                   </div>
+
                 </div>
 
                 <Button className="mt-6" onClick={handleCreateDiagnosis} disabled={!signerId}>
@@ -366,14 +420,38 @@ const MedicalRecordMain = ({
 
                     <h3 className="font-semibold">Thông tin người ký</h3>
                     <div className="grid grid-cols-2 gap-8">
-                      <div className="border rounded h-24 bg-gray-50 flex items-center justify-center">
-                        {signerUser
-                          ? `${signerUser.firstName} ${signerUser.lastName}`
-                          : "Không tìm thấy người ký"}
+                      <div>
+                        <span className="font-medium text-sm block mb-3">Người ký:</span>
+                        <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
+                          {signerUser ? (
+                            <SignatureDisplay
+                              firstName={signerUser.firstName}
+                              lastName={signerUser.lastName}
+                              role="Bác sĩ"
+                              duration={1}
+                              delay={0.3}
+                            />
+                          ) : (
+                            "Chưa ký"
+                          )}
+                        </div>
                       </div>
 
-                      <div className="border rounded h-24 bg-gray-50 flex items-center justify-center">
-                        Kỹ thuật viên: Nguyen Van Tech
+                      <div>
+                        <span className="font-medium text-sm block mb-3">Kỹ thuật viên:</span>
+                        <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
+                          {technicianSignature?.data ? (
+                            <SignatureDisplay
+                              firstName={technicianSignature.data.firstName}
+                              lastName={technicianSignature.data.lastName}
+                              role="Kỹ thuật viên"
+                              duration={1}
+                              delay={0.3}
+                            />
+                          ) : (
+                            "Không tìm thấy kỹ thuật viên"
+                          )}
+                        </div>
                       </div>
                     </div>
                   </>

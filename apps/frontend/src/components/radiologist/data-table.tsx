@@ -24,8 +24,15 @@ const calculateAge = (dateOfBirth: string): number => {
 
 // Helper function to format date (e.g., "1993-03-25" to "3/25/93")
 const formatDate = (date: string): string => {
-  const [year, month, day] = date.split("-");
+  const dateObj = new Date(date);
+  const [month, day, year] = dateObj.toLocaleDateString("vi-VN").split("/");
   return `${parseInt(month)}/${parseInt(day)}/${year.slice(2)}`;
+};
+
+const formatCreatedAt = (date: string): string => {
+  const dateObj = new Date(date);
+  const [day, month, year] = dateObj.toLocaleDateString("vi-VN").split("/");
+  return `${parseInt(day)}/${parseInt(month)}/${year.slice(2)}`;
 };
 
 // Helper function to format time (e.g., "13:57:31" to "13:57")
@@ -207,7 +214,7 @@ export default function DataTable({
                             row.studyInstanceUid,
                             `${row.patient?.lastName} ${
                               row.patient?.firstName
-                            } - (${row.studyDate.toString()})`,
+                            } - (${formatCreatedAt(row.createdAt)})`,
                             <StudyTab patientId={row.patient?.id as string} />
                           );
                         }}

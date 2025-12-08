@@ -22,8 +22,11 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 async function bootstrap() {
   const startTime = Date.now();
+
   const logger = new Logger('PatientService');
   const transport = Number(process.env.TRANSPORT) || Transport.TCP;
   const host = process.env.HOST || '0.0.0.0';

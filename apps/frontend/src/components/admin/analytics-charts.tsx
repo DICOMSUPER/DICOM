@@ -39,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { AnalyticsData } from "@/store/analyticsApi";
+import { formatPieLabel, formatPieTooltip } from "../common/chart-utils";
 
 interface AnalyticsChartsProps {
   data?: AnalyticsData;

@@ -305,7 +305,7 @@ export default function FilterBar({
                 </svg>
               </div>
             </div>
-
+            {/* 
             <div className="flex flex-col gap-1">
               <Label
                 className="text-xs font-semibold text-gray-700"
@@ -342,6 +342,43 @@ export default function FilterBar({
                 </svg>
               </div>
             </div>
+
+             <div className="flex flex-col gap-1">
+              <Label
+                className="text-xs font-semibold text-gray-700"
+                title="Timestamp when import dicom file to the system"
+              >
+                Import Date To
+              </Label>
+              <div className="flex items-center gap-2">
+                <DatePickerDropdown
+                  date={endDate}
+                  onSelect={handleEndDateChange}
+                  placeholder="End Date"
+                  disabled={(date) => (startDate ? date < startDate : false)}
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={endDate === undefined ? "gray" : "red"}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`lucide lucide-ban hover:opacity-70 flex-shrink-0
+               ${
+                 endDate === undefined ? "cursor-not-allowed" : "cursor-pointer"
+               }`}
+                  onClick={() => setEndDate(undefined)}
+                  aria-disabled={!!endDate}
+                >
+                  <path d="M4.929 4.929 19.07 19.071" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
+            </div> */}
 
             <div className="flex flex-col gap-1 min-w-[120px]">
               <Label className="text-xs font-semibold text-gray-700">
