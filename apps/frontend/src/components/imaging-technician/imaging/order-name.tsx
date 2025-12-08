@@ -5,15 +5,15 @@ import React from "react";
 const getStatusBadgeColor = (status: ImagingOrderStatus) => {
   switch (status) {
     case ImagingOrderStatus.COMPLETED:
-      return "bg-green-100 text-green-700";
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100";
     case ImagingOrderStatus.IN_PROGRESS:
-      return "bg-blue-100 text-blue-700";
+      return "bg-blue-50 text-blue-700 ring-1 ring-blue-100";
     case ImagingOrderStatus.CANCELLED:
-      return "bg-red-100 text-red-700";
+      return "bg-red-50 text-red-700 ring-1 ring-red-100";
     case ImagingOrderStatus.PENDING:
-      return "bg-gray-100 text-gray-700";
+      return "bg-slate-50 text-slate-700 ring-1 ring-slate-100";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-slate-50 text-slate-700 ring-1 ring-slate-100";
   }
 };
 
@@ -23,17 +23,17 @@ const getStatusLabel = (status: ImagingOrderStatus) => {
 };
 export default function OrderName({ order }: { order: ImagingOrder }) {
   return (
-    <div className="flex items-start justify-between mb-8">
-      <div>
-        <h2 className="text-3xl font-semibold text-gray-900 mb-1">
+    <div className="flex flex-wrap items-start justify-between gap-3 mb-8">
+      <div className="space-y-1">
+        <h2 className="text-3xl font-semibold text-gray-900 leading-tight">
           {order?.procedure?.name}
         </h2>
-        <p className="text-sm text-gray-600">
-          Order #{String(order.orderNumber).padStart(6, "0")}
+        <p className="text-sm text-gray-600 tracking-tight">
+          Order <span className="font-semibold text-gray-900">#{String(order.orderNumber).padStart(6, "0")}</span>
         </p>
       </div>
       <span
-        className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusBadgeColor(
+        className={`px-3 py-1.5 rounded-full text-sm font-semibold ${getStatusBadgeColor(
           order.orderStatus as ImagingOrderStatus
         )}`}
       >

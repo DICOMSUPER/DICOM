@@ -11,6 +11,10 @@ export interface ImagingOrderPDFProps {
 export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
   const doc = new jsPDF();
 
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 12;
+  const contentWidth = pageWidth - margin * 2;
+
   let y = addPDFHeader(doc, {
     title: "Radiology Request Form",
     clinicName: "Custom Clinic Name",
@@ -18,45 +22,58 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
     phone: "(999) 888-7777",
   });
 
+  const line = (label: string, value: string | number | undefined, offsetY: number) => {
+    const val = value ?? "N/A";
+    doc.setFontSize(9.5);
+    doc.setTextColor(60);
+    doc.text(`${label}`, margin + 6, offsetY);
+    doc.setFontSize(11);
+    doc.setTextColor(20);
+    doc.text(String(val), margin + 6, offsetY + 5);
+    return offsetY + 12;
+  };
+
+  // Card: Patient & Order info (queue ticket style)
+  const cardHeight = 60;
+  doc.setDrawColor(220);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(margin, y, contentWidth, cardHeight, 3, 3, "FD");
 
   doc.setFont("Roboto");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
+  doc.setTextColor(90);
+  doc.text("Patient & Order", margin + 6, y + 8);
+  doc.setTextColor(20);
 
-  doc.text(`Patient Name: ${imagingProcedurePDF.patientName}`, 10, y);
-  doc.text(`Age: ${imagingProcedurePDF.age}`, 90, y);
-  doc.text(`Gender: ${imagingProcedurePDF.gender}`, 150, y);
+  let infoY = y + 16;
+  infoY = line("Patient Name", imagingProcedurePDF.patientName, infoY);
+  infoY = line("Age / Gender", `${imagingProcedurePDF.age} / ${imagingProcedurePDF.gender}`, infoY);
+  infoY = line("Patient ID", imagingProcedurePDF.patientCode, infoY);
+  infoY = line("Insurance", imagingProcedurePDF.insuranceNumber, infoY);
 
-  y += 8;
+  // Second column inside card
+  let infoY2 = y + 16;
+  const col2X = margin + contentWidth / 2;
+  const line2 = (label: string, value: string | number | undefined, offsetY: number) => {
+    const val = value ?? "N/A";
+    doc.setFontSize(9.5);
+    doc.setTextColor(60);
+    doc.text(label, col2X, offsetY);
+    doc.setFontSize(11);
+    doc.setTextColor(20);
+    doc.text(String(val), col2X, offsetY + 5);
+    return offsetY + 12;
+  };
+  infoY2 = line2("Department / Room", `${imagingProcedurePDF.departmentName} - ${imagingProcedurePDF.roomName}`, infoY2);
+  infoY2 = line2("Address", imagingProcedurePDF.address, infoY2);
+  infoY2 = line2("Diagnosis", imagingProcedurePDF.diagnosis, infoY2);
+  infoY2 = line2("Notes", imagingProcedurePDF.notes, infoY2);
 
-  doc.text(`Address: ${imagingProcedurePDF.address}`, 10, y);
+  y += cardHeight + 12;
 
-  y += 8;
-
-  doc.text(
-    `Department/Room: ${imagingProcedurePDF.departmentName} - ${imagingProcedurePDF.roomName}`,
-    10,
-    y
-  );
-
-  y += 8;
-
-  doc.text(`Patient ID: ${imagingProcedurePDF.patientCode}`, 10, y);
-  y += 8;
-
-  doc.text(`Insurance Number: ${imagingProcedurePDF.insuranceNumber}`, 10, y);
-
-  y += 8;
-
-  doc.text(`Diagnosis: ${imagingProcedurePDF.diagnosis}`, 10, y);
-
-  y += 8;
-
-  // Notes
-  doc.text(`Notes: ${imagingProcedurePDF.notes}`, 10, y);
-
-  y += 10;
   doc.setFontSize(13);
-  doc.text("Procedures:", 12, y);
+  doc.setTextColor(20);
+  doc.text("Procedures", margin, y);
 
   const tableData = imagingProcedurePDF.procedures.map((proc, index) => [
     index + 1,
@@ -66,7 +83,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
   ]);
 
   autoTable(doc, {
-    startY: y + 5,
+    startY: y + 4,
     head: [["#", "Procedure Name", "Body Part", "Clinical Indication"]],
     body: tableData,
     styles: {
@@ -74,24 +91,25 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
       fontSize: 10,
       cellPadding: 3,
       valign: "middle",
-      lineColor: [200, 200, 200],
+      lineColor: [222, 226, 230],
       lineWidth: 0.2,
     },
     headStyles: {
       font: "Roboto",
-      fillColor: [0, 128, 128],
+      fillColor: [24, 144, 255],
       textColor: 255,
       fontStyle: "bold",
     },
-    alternateRowStyles: { fillColor: [245, 245, 245] },
-    tableLineColor: [220, 220, 220],
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    tableLineColor: [222, 226, 230],
+    tableWidth: contentWidth,
+    margin: { left: margin, right: margin },
   });
 
-  y += (tableData.length + 1) * 10 + 20;
+  y += (tableData.length + 1) * 10 + 24;
 
-  const pageWidth = doc.internal.pageSize.getWidth();
   const signatureWidth = 60;
-  const signatureX = pageWidth - 15 - signatureWidth;
+  const signatureX = pageWidth - margin - signatureWidth;
   const signatureY = y + 12;
 
   doc.setFontSize(12);

@@ -21,7 +21,6 @@ import {
   TrackballRotateTool,
   MIPJumpToClickTool,
   SegmentBidirectionalTool,
-  ScaleOverlayTool,
   KeyImageTool,
   LabelTool,
   DragProbeTool,
@@ -55,8 +54,7 @@ export type MeasurementTool =
   | "ArrowAnnotate"
   | "CobbAngle"
   | "SplineROI"
-  | "SegmentBidirectional"
-  | "ScaleOverlay";
+  | "SegmentBidirectional";
 
 export type AdvancedTool = "PlanarRotate" | "Magnify";
 
@@ -64,14 +62,14 @@ export type AnnotationTool =
   | "KeyImage"
   | "Label"
   | "DragProbe"
-  | "PaintFill"
-  | "Eraser";
+  | "PaintFill";
 
 export type SegmentationTool =
   | "Brush"
   | "CircleScissors"
   | "RectangleScissors"
-  | "SphereScissors";
+  | "SphereScissors"
+  | "Eraser"; // Eraser works on segmentation labelmaps
 
 export type CustomTool =
   | "Rotate"
@@ -212,11 +210,6 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     toolClass: SegmentBidirectionalTool,
     category: "measurement",
   },
-  ScaleOverlay: {
-    toolName: ScaleOverlayTool.toolName,
-    toolClass: ScaleOverlayTool,
-    category: "measurement",
-  },
 
   // Advanced tools
   PlanarRotate: {
@@ -254,7 +247,7 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
   Eraser: {
     toolName: EraserTool.toolName,
     toolClass: EraserTool,
-    category: "annotation",
+    category: "segmentation", // Changed from "annotation" - Eraser works on segmentation labelmaps
   },
 
   // Segmentation tools
@@ -329,7 +322,6 @@ export const TOOL_BINDINGS: Record<string, ToolBindings> = {
   [TrackballRotateTool.toolName]: { keyboard: "r" },
   [MIPJumpToClickTool.toolName]: { keyboard: "j" },
   [SegmentBidirectionalTool.toolName]: { keyboard: "d" },
-  [ScaleOverlayTool.toolName]: { keyboard: "v" },
   [KeyImageTool.toolName]: { keyboard: "q" },
   [LabelTool.toolName]: { keyboard: "n" },
   [DragProbeTool.toolName]: { keyboard: "f" },

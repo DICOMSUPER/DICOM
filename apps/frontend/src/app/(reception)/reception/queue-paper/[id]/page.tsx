@@ -421,16 +421,30 @@ export default function Page({
         </div>
 
         {/* Footer */}
-        <div className="border-t-2 border-black p-4">
-          <div className="mb-3 pb-3 border-b border-gray-300">
-            <div className="text-xs font-semibold text-gray-600 mb-1">
-              Encounter Reference ID
+        <div className="border-t-2 border-black p-4 space-y-3 text-sm text-gray-700">
+          <div className="flex flex-col gap-2">
+            <div className="block font-semibold leading-snug">
+              <span className="font-semibold">ID: </span>
+              <span className="font-mono break-all block">
+                {encounter?.id}
+              </span>
             </div>
-            <div className="font-mono text-xs break-all text-gray-700">
-              {encounter?.id}
+            <div className="block font-semibold leading-snug">
+              <span className="font-semibold">Exported: </span>
+              <span className="block">
+                {new Date().toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </span>
             </div>
           </div>
-          <div className="text-xs text-gray-700">
+
+          <div className="text-sm text-gray-700 mt-2">
             <span className="font-bold">IMPORTANT INSTRUCTIONS:</span>
             <ul className="mt-2 ml-4 list-disc">
               <li className="mb-1">
@@ -449,17 +463,6 @@ export default function Page({
                 document
               </li>
             </ul>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-300 text-center text-xs text-gray-500">
-            Printed on:{" "}
-            {new Date().toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            })}
           </div>
         </div>
       </div>
