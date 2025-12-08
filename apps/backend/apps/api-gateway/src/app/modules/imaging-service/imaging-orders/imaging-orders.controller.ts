@@ -58,8 +58,8 @@ export class ImagingOrdersController {
     private readonly redisService: RedisService
   ) {}
 
-  private async uncacheImagingOrders(id?: string, skipIndividual = false) {
-    if (id && !skipIndividual) {
+  private async uncacheImagingOrders(id?: string) {
+    if (id) {
       await this.redisService.delete(
         cacheKeyBuilder.id(CacheEntity.imagingOrders, id)
       );
