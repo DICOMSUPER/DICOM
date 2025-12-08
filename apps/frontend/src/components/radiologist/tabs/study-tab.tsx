@@ -13,7 +13,6 @@ interface MedicalRecordPageProps {
 }
 
 export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps) {
-
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
@@ -21,23 +20,29 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
   const { getPatientById } = usePatientService();
   const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
 
-  const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({ patientId });
-  console.log("check 3 : ",imagingOrdersData)
+  const { data: imagingOrdersData } =
+    useGetImagingOrdersByPatientIdQuery({ patientId });
 
+    console.log("check imagingOrdersData", imagingOrdersData);
+
+  // ✅ MAP ĐÚNG encounterId + studyId
   const examHistory = useMemo(() => {
-    const list = imagingOrdersData?.data || [];
+    const list = imagingOrdersData || [];
 
     return list.map((order: any) => ({
       id: order.id,
-      label: `${order.procedure?.modality?.modalityCode || "Không rõ"} - ${new Date(order.createdAt).toLocaleDateString("vi-VN")}`,
+      label: `${order.procedure?.modality?.modalityCode || "Không rõ"} - ${new Date(
+        order.createdAt
+      ).toLocaleDateString("vi-VN")}`,
       modality: order.procedure?.modality?.modalityCode || "Không rõ",
       date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
-      encounterId: order.imagingOrderForm.encounterId,
+      encounterId: order.imagingOrderForm?.encounterId || null, 
       status: order.orderStatus,
-      studyId: order.studyId,   // ⬅️ Quan trọng: thêm studyId để Sidebar biết lấy
+      studyId: order.studyId || null, // ✅ CHUẨN
     }));
   }, [imagingOrdersData]);
 
+ 
   const handleSelectExam = useCallback(
     (studyId: string | null, encounterId: string | null) => {
       setSelectedStudyId(studyId);
@@ -52,19 +57,19 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       skip: !selectedStudyId,
     });
 
-    console.log("check 2 : ",diagnosisData)
+  if (isLoading)
+    return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
 
-  if (isLoading) return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
-  if (isError) return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
+  if (isError)
+    return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
 
   return (
     <div className="flex h-screen bg-gray-50">
-
       {patientData?.data && (
         <SidebarTab
           examHistory={examHistory}
           patient={patientData.data}
-          setSelectedExam={handleSelectExam}
+          setSelectedExam={handleSelectExam} // ✅ KẾT NỐI ĐÚNG
         />
       )}
 
@@ -73,7 +78,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
         selectedStudyId={selectedStudyId}
         diagnosisData={diagnosisData}
         isDiagnosisLoading={isDiagnosisLoading}
-        encounterId={selectedEncounterId}
+        encounterId={selectedEncounterId} // ✅ GIỜ ĐÃ CÓ GIÁ TRỊ ĐÚNG
         patientId={patientId}
       />
     </div>
