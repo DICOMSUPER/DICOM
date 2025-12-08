@@ -23,7 +23,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
   const { data: imagingOrdersData } =
     useGetImagingOrdersByPatientIdQuery({ patientId });
 
-    console.log("check imagingOrdersData", imagingOrdersData);
+
 
   // ✅ MAP ĐÚNG encounterId + studyId
   const examHistory = useMemo(() => {
