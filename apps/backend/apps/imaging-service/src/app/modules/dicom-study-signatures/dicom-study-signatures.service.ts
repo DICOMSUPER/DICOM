@@ -35,10 +35,8 @@ export class DicomStudySignaturesService {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
     @Inject()
-    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject() // private readonly imagingOrdersService: ImagingOrdersService
-  ) // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
-  // private readonly patientServiceClient: ClientProxy
-  {}
+    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject() // private readonly imagingOrdersService: ImagingOrdersService // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE') // private readonly patientServiceClient: ClientProxy
+  ) {}
 
   private async ensureUserHasDigitalSignature(userId: string): Promise<void> {
     try {
@@ -146,14 +144,14 @@ export class DicomStudySignaturesService {
       throw new ResourceNotFoundException('DicomStudy', studyId);
     }
 
-    // Check if study has been verified by technician
-    if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
-      throw new InvalidStudyStatusException(
-        study.studyStatus,
-        DicomStudyStatus.TECHNICIAN_VERIFIED,
-        studyId
-      );
-    }
+    // // Check if study has been verified by technician
+    // if (study.studyStatus !== DicomStudyStatus.TECHNICIAN_VERIFIED) {
+    //   throw new InvalidStudyStatusException(
+    //     study.studyStatus,
+    //     DicomStudyStatus.TECHNICIAN_VERIFIED,
+    //     studyId
+    //   );
+    // }
 
     // Check if physician has already approved
     const existingSignature = study.studySignatures?.find(
@@ -164,12 +162,12 @@ export class DicomStudySignaturesService {
       throw new DigitalSignatureAlreadyExistsException(userId);
     }
 
-    // Check if all annotations are reviewed
-    const hasReviewedAnnotations =
-      await this.imageAnnotationsService.isReviewedInStudy(studyId);
-    if (!hasReviewedAnnotations.isReviewed) {
-      throw new ValidationException(hasReviewedAnnotations.message);
-    }
+    // // Check if all annotations are reviewed
+    // const hasReviewedAnnotations =
+    //   await this.imageAnnotationsService.isReviewedInStudy(studyId);
+    // if (!hasReviewedAnnotations.isReviewed) {
+    //   throw new ValidationException(hasReviewedAnnotations.message);
+    // }
 
     // Sign the study
     const signature = await this.signStudy(
