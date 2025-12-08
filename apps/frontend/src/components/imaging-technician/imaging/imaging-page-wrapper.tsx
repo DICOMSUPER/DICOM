@@ -18,7 +18,10 @@ import { RootState } from "@/store";
 import { useGetAllModalityMachineQuery } from "@/store/modalityMachineApi";
 import { useGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import { useUploadDicomFileMutation } from "@/store/imagingApi";
-import { useGetPatientByIdQuery } from "@/store/patientApi";
+import {
+  useGetPatientByIdQuery,
+  useUpdatePatientMutation,
+} from "@/store/patientApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import PatientInfo from "./patient-info";
 import PhysicianInfo from "./physician-info";
@@ -31,6 +34,8 @@ import {
   useHasSignatureQuery,
   useSetupSignatureMutation,
 } from "@/store/digitalSignatureApi";
+import { toast } from "sonner";
+import ChangeMrnModal from "./change-mrn-modal";
 
 export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   const [file, setFile] = useState<File | null>(null);
@@ -45,6 +50,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
   );
   const [setupSignatureModal, setSetupSignatureModal] =
     useState<boolean>(false);
+  const [changeMrnModal, setChangeMrnModal] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Get userId from Redux auth state - middleware already handles authentication
@@ -112,7 +118,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     );
 
   const [uploadDicomFile] = useUploadDicomFileMutation();
-
+  const [updatePatient] = useUpdatePatientMutation();
   // Store orderId in localStorage when order page loads
   useEffect(() => {
     if (order_id) {
@@ -151,7 +157,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     await uploadDicomFile({
       dicomFile,
       orderId: order?.id as string,
-      performingTechnicianId: userId,
+      performingTechnicianId: userId as string,
       modalityMachineId,
     }).unwrap();
 
@@ -159,6 +165,17 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     if (selectedStudy) refetchSeries();
     if (selectedSeries) refetchInstance();
   };
+
+  const handleChangeMrn = async (id: string, mrn: string) => {
+    try {
+      await updatePatient({ id, data: { patientCode: mrn } });
+      setChangeMrnModal(null);
+      toast.success("Patient MRN updated successfully");
+    } catch (error) {
+      toast.error("Failed to update Patient MRN");
+    }
+  };
+
   return (
     <div>
       <div className="py-1">
@@ -168,6 +185,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             patient={patient}
             physician={physician}
             procedure={procedure}
+            handleChangeMrn={(id: string) => setChangeMrnModal(id)}
           ></OrderInfo>
         )}
       </div>
@@ -236,6 +254,14 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
         onClose={() => {
           setSetupSignatureModal(false);
         }}
+      />
+      <ChangeMrnModal
+        isOpen={changeMrnModal !== null}
+        onClose={() => {
+          setChangeMrnModal(null);
+        }}
+        onSave={handleChangeMrn}
+        patientId={changeMrnModal as string}
       />
     </div>
   );

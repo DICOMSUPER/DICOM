@@ -250,7 +250,9 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     let endDate: Date | undefined;
 
     if (data.startDate) {
-      startDate = new Date(data.startDate);
+      const startDateTimestamp =
+        new Date(data.startDate).getTime() - 24 * 60 * 60 * 1000;
+      startDate = new Date(startDateTimestamp);
       startDate.setUTCHours(0, 0, 0, 0);
     }
 
@@ -273,7 +275,7 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
       .innerJoinAndSelect('procedure.bodyPart', 'bodyPart')
       .leftJoinAndSelect('order.studies', 'studies')
       .andWhere('order.isDeleted = :notDeleted', { notDeleted: false });
-    
+
     if (data.modalityId) {
       qb.andWhere('procedure.modalityId = :modalityId', {
         modalityId: data.modalityId,
@@ -307,10 +309,18 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
     }
 
     if (data.sortBy && data.order) {
-      const sortField = data.sortBy === 'orderNumber' ? 'orderNumber' : 
-                       data.sortBy === 'createdAt' ? 'createdAt' : 
-                       data.sortBy === 'completedDate' ? 'completedDate' : 'createdAt';
-      qb.orderBy(`order.${sortField}`, data.order.toUpperCase() as 'ASC' | 'DESC');
+      const sortField =
+        data.sortBy === 'orderNumber'
+          ? 'orderNumber'
+          : data.sortBy === 'createdAt'
+          ? 'createdAt'
+          : data.sortBy === 'completedDate'
+          ? 'completedDate'
+          : 'createdAt';
+      qb.orderBy(
+        `order.${sortField}`,
+        data.order.toUpperCase() as 'ASC' | 'DESC'
+      );
     } else {
       qb.orderBy('order.createdAt', 'ASC');
     }
@@ -341,14 +351,18 @@ export class ImagingOrderRepository extends BaseRepository<ImagingOrder> {
   }) {
     const date = new Date();
     // Ensure proper date parsing - handle both Date objects and ISO strings
-    const startDate = data.startDate 
-      ? (typeof data.startDate === 'string' ? new Date(data.startDate) : data.startDate)
+    const startDate = data.startDate
+      ? typeof data.startDate === 'string'
+        ? new Date(data.startDate)
+        : data.startDate
       : date;
     const startOfDay = new Date(startDate);
     startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const endDate = data.endDate 
-      ? (typeof data.endDate === 'string' ? new Date(data.endDate) : data.endDate)
+    const endDate = data.endDate
+      ? typeof data.endDate === 'string'
+        ? new Date(data.endDate)
+        : data.endDate
       : date;
     const endOfDay = new Date(endDate);
     endOfDay.setUTCHours(23, 59, 59, 999);

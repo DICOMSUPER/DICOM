@@ -35,10 +35,7 @@ export class PatientConditionController {
   constructor(
     @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE')
     private readonly patientService: ClientProxy,
-<<<<<<< HEAD
     @Inject(RedisService)
-=======
->>>>>>> 7c15b644cbe54c381386a0aa5bab112384721fbe
     private readonly redisService: RedisService
   ) {}
 

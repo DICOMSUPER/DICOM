@@ -72,19 +72,24 @@ export default function QueuePage() {
     useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
   const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
 
-  const { data, isLoading, isFetching, error, refetch: refetchEncounters } =
-    useGetPatientEncountersInRoomQuery(
-      {
-        filters: {
-          ...apiFilters,
-          roomId: roomId,
-        },
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+    refetch: refetchEncounters,
+  } = useGetPatientEncountersInRoomQuery(
+    {
+      filters: {
+        ...apiFilters,
+        roomId: roomId,
       },
-      {
-        skip: !roomId,
-        refetchOnMountOrArgChange: false,
-      }
-    );
+    },
+    {
+      skip: !roomId,
+      refetchOnMountOrArgChange: false,
+    }
+  );
 
   const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
@@ -102,7 +107,11 @@ export default function QueuePage() {
   const [updatePatientEncounter, { isLoading: isUpdating }] =
     useUpdatePatientEncounterMutation();
 
-  const { data: statsData, isLoading: isStatsLoading, refetch: refetchStats } = useGetStatsInDateRangeQuery(
+  const {
+    data: statsData,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useGetStatsInDateRangeQuery(
     {
       dateFrom: format(new Date(), "yyyy-MM-dd") as string,
       dateTo: format(new Date(), "yyyy-MM-dd") as string,
@@ -200,7 +209,6 @@ export default function QueuePage() {
     setPagination({ ...pagination, page: 1 });
   };
 
-
   const handlePageChange = (newPage: number) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
   };
@@ -234,12 +242,15 @@ export default function QueuePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Clinic Visit
-          </h1>
-          <p className="text-foreground">Search and manage patient encounters</p>
+          <h1 className="text-3xl font-bold text-foreground">Clinic Visit</h1>
+          <p className="text-foreground">
+            Search and manage patient encounters
+          </p>
         </div>
-        <RefreshButton onRefresh={handleRefresh} loading={isFetching || isStatsLoading} />
+        <RefreshButton
+          onRefresh={handleRefresh}
+          loading={isFetching || isStatsLoading}
+        />
       </div>
 
       <EncounterStatsCards stats={statsData?.data} isLoading={isStatsLoading} />
@@ -252,7 +263,7 @@ export default function QueuePage() {
       />
       <PatientEncounterTable
         employeeId={currentRoom?.data?.[0]?.employeeId as string}
-        encounterItems={data?.data || []}
+        encounterItems={data?.data || data || []}
         onStartServing={handleStartServing}
         onComplete={handleComplete}
         onViewDetails={handleViewDetails}

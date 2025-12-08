@@ -261,9 +261,9 @@ export class DicomStudiesService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<DicomStudy>
     >(keyName);
-    if (cachedService) {
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   return cachedService;
+    // }
 
     const skip = (page - 1) * limit;
     const queryBuilder = this.dicomStudiesRepository

@@ -24,9 +24,8 @@ export class AiAnalysesService {
     @InjectRepository(AiAnalysis)
     private readonly aiAnalysisRepository: Repository<AiAnalysis>,
     private readonly redisService: RedisService,
-    private readonly paginationService: PaginationService
-  ) // private readonly cloudinaryService: CloudinaryService
-  {}
+    private readonly paginationService: PaginationService // private readonly cloudinaryService: CloudinaryService
+  ) {}
   async create(createAiAnalysisDto: CreateAiAnalysisDto): Promise<AiAnalysis> {
     console.log('Creating AI analysis:', createAiAnalysisDto);
 
@@ -57,7 +56,7 @@ export class AiAnalysesService {
     aiModelId: string,
     modelName: string,
     versionName: string,
-    
+
     userId: string,
     selectedStudyId?: string
   ): Promise<AiResultDiagnosis> {
@@ -117,10 +116,10 @@ export class AiAnalysesService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<AiAnalysis>
     >(keyName);
-    if (cachedService) {
-      console.log('AI analyses retrieved from cache');
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   console.log('AI analyses retrieved from cache');
+    //   return cachedService;
+    // }
 
     // Build query options
     const options: any = {
@@ -194,6 +193,4 @@ export class AiAnalysesService {
     console.log('✅ AI analysis updated successfully:', updatedAnalysis.id);
     return updatedAnalysis;
   }
-
-
 }
