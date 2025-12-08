@@ -398,7 +398,7 @@ export function DiagnosisReportDetail({
   };
 
   const handleViewImage = () => {
-    router.push(`/viewer?study=${report?.data.studyId}&patientId=${report?.data.encounter?.patientId}`);
+    router.push(`/viewer?study=${report?.data.studyId}&patient=${report?.data.encounter?.patientId}`);
   };
 
   // const handleRefresh = async () => {
