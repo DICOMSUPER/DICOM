@@ -16,16 +16,17 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
 
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedStudyId, setSelectedStudyId] = useState<string | null>(null);
+  const [selectedImagingOrderId, setSelectedImagingOrderId] = useState<string | null>(null);
   const [selectedEncounterId, setSelectedEncounterId] = useState<string | null>(null);
 
   const { getPatientById } = usePatientService();
   const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
 
   const { data: imagingOrdersData } = useGetImagingOrdersByPatientIdQuery({ patientId });
-  console.log("check 3 : ",imagingOrdersData)
+
 
   const examHistory = useMemo(() => {
-    const list = imagingOrdersData?.data || [];
+    const list = imagingOrdersData || [];
 
     return list.map((order: any) => ({
       id: order.id,
@@ -34,14 +35,15 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
       encounterId: order.imagingOrderForm.encounterId,
       status: order.orderStatus,
-      studyId: order.studyId,   // ⬅️ Quan trọng: thêm studyId để Sidebar biết lấy
+      studyId: order.studyId,   
     }));
   }, [imagingOrdersData]);
 
   const handleSelectExam = useCallback(
-    (studyId: string | null, encounterId: string | null) => {
+    (studyId: string | null, encounterId: string | null, imagingOrderId: string | null) => {
       setSelectedStudyId(studyId);
       setSelectedEncounterId(encounterId);
+      setSelectedImagingOrderId(imagingOrderId);
       setSelectedExam(studyId ? "existing" : "new");
     },
     []
@@ -52,7 +54,8 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       skip: !selectedStudyId,
     });
 
-    console.log("check 2 : ",diagnosisData)
+    
+
 
   if (isLoading) return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
   if (isError) return <div className="text-red-600">Lỗi tải dữ liệu: {(error as any)?.message}</div>;
@@ -69,7 +72,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       )}
 
       <MedicalRecordMain
-        selectedExam={selectedExam}
+        selectedExam={selectedImagingOrderId}
         selectedStudyId={selectedStudyId}
         diagnosisData={diagnosisData}
         isDiagnosisLoading={isDiagnosisLoading}
