@@ -58,9 +58,6 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       skip: !selectedStudyId,
     });
 
-  if (isLoading)
-    return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
-
 if (isLoading)
   return (
     <div className="flex flex-col items-center justify-center h-full flex-1 text-slate-500 gap-2">

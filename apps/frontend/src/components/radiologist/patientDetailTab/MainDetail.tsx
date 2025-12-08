@@ -288,7 +288,7 @@ const MedicalRecordMain = ({
   const diagnosis = diagnosisData?.data?.[0];
 
   return (
-    <main className="flex-1 flex flex-col">
+    <main className="flex-1 flex flex-col h-full overflow-y-auto">
       <div className="bg-white border-b border-gray-200 px-6 py-3">
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as TabValue)} className="w-full">
           <TabsList className="bg-transparent border-b border-gray-200">
@@ -325,10 +325,10 @@ const MedicalRecordMain = ({
 
       <ScrollArea className="flex-1 p-6">
         {activeTab === "info" ? (
-          <Card className="p-6 mx-auto">
+          <Card className="p-6 mx-auto border-border overflow-y-auto">
             {!hasDiagnosis ? (
               <div>
-                <Button size="sm" variant="outline" onClick={() => setIsTemplateOpen(true)}>
+                <Button size="sm" variant="outline" onClick={() => setIsTemplateOpen(true)} className="mb-4">
                   Chọn Template
                 </Button>
 
@@ -391,7 +391,7 @@ const MedicalRecordMain = ({
                 </Button>
 
                 <Button variant="destructive" className="mt-6 ml-3" onClick={() => setIsRejectOpen(true)}>
-                  Reject DICOM
+                  Từ chối
                 </Button>
               </div>
             ) : (
