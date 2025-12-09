@@ -1,7 +1,14 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Image, Clock, CheckCircle, AlertCircle, Activity, Camera } from "lucide-react";
+import {
+  Image,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Activity,
+  Camera,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ImagingTechnicianDashboardStatsProps {
@@ -18,11 +25,14 @@ interface ImagingTechnicianDashboardStatsProps {
   isLoading?: boolean;
 }
 
-export function ImagingTechnicianDashboardStats({ stats, isLoading = false }: ImagingTechnicianDashboardStatsProps) {
+export function ImagingTechnicianDashboardStats({
+  stats,
+  isLoading = false,
+}: ImagingTechnicianDashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Today's Imaging Orders */}
-      <Card className="border-border">
+      {/* <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-foreground">
             Today&apos;s Orders
@@ -39,7 +49,7 @@ export function ImagingTechnicianDashboardStats({ stats, isLoading = false }: Im
           )}
           <p className="text-xs text-foreground">Imaging orders today</p>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Pending Imaging Orders */}
       <Card className="border-border">
@@ -183,4 +193,3 @@ export function ImagingTechnicianDashboardStats({ stats, isLoading = false }: Im
     </div>
   );
 }
-
