@@ -62,6 +62,7 @@ export default function ImageTechnicianPageWrapper() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
   const statsRef = useRef<CurrentStatusRef>(null);
 
+  //current employee room assignment
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,

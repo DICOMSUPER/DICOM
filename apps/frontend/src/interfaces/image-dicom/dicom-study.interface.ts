@@ -65,7 +65,7 @@ export interface DicomStudy extends BaseEntity {
   series?: DicomSeries[]; // Included for filter API
   report?: DiagnosisReport; // Included for filter API
   room?: Room; // Included for filter API
-  
+
   modality?: string | ImagingModality; // Can be string (modalityCode) or full ImagingModality object when joined
 }
 export interface UpdateDicomStudyPayload {
@@ -74,6 +74,8 @@ export interface UpdateDicomStudyPayload {
   referringPhysicianId?: string;
   performingTechnicianId?: string;
   verifyingRadiologistId?: string;
+  patientId?: string;
+  patientCode?: string;
   studyStatus?: DicomStudyStatus;
   reason?: string;
 }
