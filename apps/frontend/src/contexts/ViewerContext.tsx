@@ -26,6 +26,7 @@ import {
   Enums as ToolEnums,
   segmentation,
   annotation,
+  utilities as csToolsUtilities,
 } from "@cornerstonejs/tools";
 import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
@@ -61,6 +62,8 @@ import { ImageSegmentationLayer } from "@/interfaces/image-dicom/image-segmentat
 import { toast } from "sonner";
 import { batchedRender } from "@/utils/renderBatcher";
 
+const DEFAULT_BRUSH_SIZE_MM = 3;
+
 export type ToolType =
   | "WindowLevel"
   | "Zoom"
@@ -88,7 +91,6 @@ export type ToolType =
   | "TrackballRotate"
   | "MIPJumpToClick"
   | "SegmentBidirectional"
-  | "ScaleOverlay"
   | "KeyImage"
   | "Label"
   | "DragProbe"
@@ -184,6 +186,7 @@ export interface ViewerContextType {
   redoAnnotation: () => void;
   undoSegmentation: () => void;
   redoSegmentation: () => void;
+  setSegmentationBrushSize: (radius: number, isInMM?: boolean) => void;
   recordAnnotationHistoryEntry: (
     viewport: number,
     entry: AnnotationHistoryEntry
@@ -991,6 +994,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const previousViewportIdRef = useRef<string | undefined>(
     state.viewportIds.get(state.activeViewport)
   );
+  // Track visibility changes for selected layer
+  const previousLayerVisibilityRef = useRef<boolean | undefined>(undefined);
 
   useEffect(() => {
     const viewportIndex = state.activeViewport;
@@ -1000,12 +1005,20 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     const currentViewportId = state.viewportIds.get(viewportIndex);
     const viewportIdChanged =
       previousViewportIdRef.current !== currentViewportId;
+    
+    // Check if visibility changed for the selected layer
+    const currentLayerId = state.selectedSegmentationLayer;
+    const currentVisibility = currentLayerId 
+      ? state.segmentationLayerVisibility.get(currentLayerId) ?? true 
+      : undefined;
+    const visibilityChanged = previousLayerVisibilityRef.current !== currentVisibility;
 
     previousLayerSelectionRef.current = state.selectedSegmentationLayer;
     previousActiveViewportRef.current = viewportIndex;
     previousViewportIdRef.current = currentViewportId;
+    previousLayerVisibilityRef.current = currentVisibility;
 
-    if (!layerChanged && !viewportChanged && !viewportIdChanged) {
+    if (!layerChanged && !viewportChanged && !viewportIdChanged && !visibilityChanged) {
       return;
     }
 
@@ -1058,6 +1071,25 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         clearSegmentationData(segmentationId, {
           reason: "layer-sync-clear",
         });
+      }
+
+      // Force viewport render after restoring/clearing segmentation data
+      if (!cancelled) {
+        try {
+          // Use batchedRender for the stack viewport
+          batchedRender(stackViewport);
+          
+          // Also try to trigger segmentation-specific render if available
+          const renderingEngineId = renderingEngineIdsRef.current.get(viewportIndex);
+          if (renderingEngineId) {
+            const engine = getRenderingEngine(renderingEngineId);
+            if (engine) {
+              engine.renderViewports([currentViewportId]);
+            }
+          }
+        } catch (renderError) {
+          console.debug("Segmentation render after apply:", renderError);
+        }
       }
     };
 
@@ -1606,9 +1638,30 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const imageIdsArrays = await Promise.all(imageIdsPromises);
-      const imageIds = imageIdsArrays
+      const rawImageIds = imageIdsArrays
         .flat()
         .filter((id: string): id is string => Boolean(id));
+
+      // Ensure every frame has a unique imageId (some sources might reuse ids across frames)
+      const seen = new Map<string, number>();
+      const imageIds: string[] = [];
+      rawImageIds.forEach((id) => {
+        if (!id) return;
+        const count = seen.get(id) ?? 0;
+        if (count === 0) {
+          seen.set(id, 1);
+          imageIds.push(id);
+        } else {
+          const uniqueId = `${id}&dup=${count + 1}`;
+          seen.set(id, count + 1);
+          imageIds.push(uniqueId);
+          // keep instance mapping aligned
+          const instanceId = imageIdToInstance[id] || imageIdToInstance[`${id}?frame=1`] || imageIdToInstance[id.split("?")[0]];
+          if (instanceId) {
+            imageIdToInstance[uniqueId] = instanceId;
+          }
+        }
+      });
 
       return { imageIds, imageIdToInstance };
     },
@@ -1733,10 +1786,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             batchedRender(stackViewport);
           }
         } catch (error) {
-          console.warn(
-            "[Segmentation] Failed to re-render after frame change:",
-            error
-          );
         }
       };
 
@@ -1756,9 +1805,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         const activeLayerId = selectedSegmentationLayerRef.current;
         if (!activeLayerId) {
-          console.warn(
-            "[Segmentation] No active layer selected, skipping snapshot"
-          );
           return;
         }
 
@@ -1772,10 +1818,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           imageIdInstanceMapRef.current.get(viewport);
 
         if (!currentViewportId) {
-          console.warn(
-            "[Segmentation] No viewport ID found for viewport",
-            viewport
-          );
           return;
         }
 
@@ -1785,10 +1827,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           imageIdToInstanceMap
         );
         if (!snapshot) {
-          console.warn(
-            "[Segmentation] Unable to capture snapshot for",
-            segmentationId
-          );
           return;
         }
 
@@ -1820,6 +1858,28 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         // await saveSegmentationSnapshotToStorage(snapshot);
 
+        // Force a re-render so new segmentation strokes appear without needing frame change
+        try {
+          const currentViewport = getStackViewport(viewport);
+          const viewportId = viewportIdsRef.current.get(viewport);
+          const renderingEngineId = renderingEngineIdsRef.current.get(viewport);
+          
+          if (currentViewport) {
+            // Direct viewport render for immediate feedback
+            currentViewport.render?.();
+          }
+          
+          // Also trigger via rendering engine for complete render pipeline
+          if (renderingEngineId && viewportId) {
+            const engine = getRenderingEngine(renderingEngineId);
+            if (engine) {
+              engine.renderViewports([viewportId]);
+            }
+          }
+        } catch {
+          // ignore render errors
+        }
+
       };
 
       const element = viewportElementsRef.current.get(viewport);
@@ -1849,6 +1909,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const setActiveTool = useCallback(
     (tool: ToolType) => {
       const activeViewportId = state.viewportIds.get(state.activeViewport);
+      const toolGroupId = activeViewportId ? `toolGroup_${activeViewportId}` : null;
       
       if (activeViewportId) {
         const viewportState = viewportStateManager.getState(activeViewportId);
@@ -1865,7 +1926,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           }
           
           if (viewportState.status !== ViewportStatus.READY) {
-            console.warn(`Viewport ${activeViewportId} not ready (status: ${viewportState.status})`);
+            toast.warning(`Viewport is not ready, please wait...`);
           }
         }
       }
@@ -1898,15 +1959,69 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      if (segmentationTools.includes(tool) && state.selectedSegmentationLayer) {
-        const selectedLayer = state.segmentationLayers.get(
-          state.selectedSegmentationLayer
-        );
-        if (selectedLayer?.metadata.origin === "database") {
-          toast.warning(
-            "Cannot edit this layer: It's saved in the database. Please create a new local layer to draw."
-          );
-          return;
+      if (segmentationTools.includes(tool)) {
+        // Ensure the tool group has the active segmentation/segment registered so Eraser/Brush work
+        const segUtilsAny = (csToolsUtilities as any)?.segmentation;
+        const segmentationId = activeViewportId
+          ? segmentationIdForViewport(activeViewportId)
+          : undefined;
+        const isEraser = tool === "Eraser";
+        try {
+          if (toolGroupId && segmentationId) {
+            if (
+              typeof segUtilsAny?.addSegmentationRepresentations === "function"
+            ) {
+              segUtilsAny.addSegmentationRepresentations(toolGroupId, [
+                {
+                  segmentationId,
+                  type: ToolEnums.SegmentationRepresentations.Labelmap,
+                },
+              ]);
+            }
+            if (
+              typeof segUtilsAny?.setActiveSegmentationRepresentation === "function"
+            ) {
+              segUtilsAny.setActiveSegmentationRepresentation(
+                toolGroupId,
+                segmentationId
+              );
+            }
+            if (typeof segUtilsAny?.setActiveSegmentation === "function") {
+              segUtilsAny.setActiveSegmentation(toolGroupId, segmentationId);
+            }
+            if (
+              typeof segUtilsAny?.setActiveSegmentationForViewport === "function" &&
+              activeViewportId
+            ) {
+              segUtilsAny.setActiveSegmentationForViewport(
+                activeViewportId,
+                segmentationId
+              );
+            }
+            if (
+              typeof segUtilsAny?.setActiveSegmentationForToolGroup === "function"
+            ) {
+              segUtilsAny.setActiveSegmentationForToolGroup(
+                toolGroupId,
+                segmentationId
+              );
+            }
+            if (typeof segUtilsAny?.setActiveSegmentIndex === "function") {
+              // Use segment 0 for eraser (background), otherwise default to 1
+              segUtilsAny.setActiveSegmentIndex(toolGroupId, isEraser ? 0 : 1);
+            }
+            if (
+              typeof segUtilsAny?.setActiveSegmentIndexForViewport === "function" &&
+              activeViewportId
+            ) {
+              segUtilsAny.setActiveSegmentIndexForViewport(
+                activeViewportId,
+                isEraser ? 0 : 1
+              );
+            }
+          }
+        } catch (err) {
+          console.debug("[Segmentation] Failed to set active segmentation for tool group", err);
         }
       }
 
@@ -1915,9 +2030,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     [dispatch, state.selectedSegmentationLayer, state.segmentationLayers, state.activeViewport, state.viewportIds]
   );
 
-  const setLayout = (layout: GridLayout) => {
+  const setLayout = useCallback((layout: GridLayout) => {
     dispatch({ type: "SET_LAYOUT", layout, recordHistory: true });
-  };
+  }, [dispatch]);
 
   const setActiveViewport = useCallback(
     (viewport: number) => {
@@ -2452,6 +2567,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                 viewportElement:
                   existingViewport.element as HTMLDivElement | null,
                 bailIfStale,
+                forceReload: true,
+              });
+              await ensureViewportLabelmapSegmentation({
+                viewportId: currentViewportId,
+                imageIds,
+                imageIdToInstanceMap: imageIdToInstance,
               });
               safeUpdateRuntime((prev) => ({
                 ...prev,
@@ -2492,22 +2613,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             existingViewport.resetCamera();
             batchedRender(existingViewport);
 
-            // Diagnostics: verify per-viewport imageId->instanceId mapping
-            if (imageIdToInstance) {
-              const keys = Object.keys(imageIdToInstance);
-              console.log(
-                `[Segmentation] SetStack(existing): viewport=${viewport} mapSize=${keys.length} sample=`,
-                keys.slice(0, 3).map((k) => ({
-                  imageId: k,
-                  instanceId: imageIdToInstance[k],
-                }))
-              );
-            } else {
-              console.log(
-                `[Segmentation] SetStack(existing): viewport=${viewport} has no imageIdToInstanceMap`
-              );
-            }
-
             await ensureViewportLabelmapSegmentation({
               viewportId: currentViewportId,
               imageIds,
@@ -2525,7 +2630,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
               viewportElement:
                 existingViewport.element as HTMLDivElement | null,
               bailIfStale,
+              forceReload: true,
             });
+            await loadDatabaseSegmentationForViewports(seriesId);
 
             safeUpdateRuntime((prev) => ({
               ...prev,
@@ -2601,21 +2708,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         readyViewport.resize?.();
         readyViewport.resetCamera();
         batchedRender(readyViewport);
-
-        // Diagnostics: verify per-viewport imageId->instanceId mapping
-        if (imageIdToInstance) {
-          const keys = Object.keys(imageIdToInstance);
-          console.log(
-            `[Segmentation] SetStack(new): viewport=${viewport} mapSize=${keys.length} sample=`,
-            keys
-              .slice(0, 3)
-              .map((k) => ({ imageId: k, instanceId: imageIdToInstance[k] }))
-          );
-        } else {
-          console.log(
-            `[Segmentation] SetStack(new): viewport=${viewport} has no imageIdToInstanceMap`
-          );
-        }
 
         await ensureViewportLabelmapSegmentation({
           viewportId: currentViewportId,
@@ -2741,10 +2833,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
             layers,
             selectedLayer: firstLayerId ?? null,
           });
-
-          console.log(
-            `[Segmentation] Loaded ${layers.size} layer(s) from database for series ${seriesId}`
-          );
         }
       } catch (error) {
         console.error("Failed to load segmentation layers", error);
@@ -2760,7 +2848,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const seriesId = series?.id;
 
       if (!seriesId) {
-        console.warn("[Segmentation] No series loaded, cannot refetch layers");
         return;
       }
 
@@ -2824,17 +2911,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
           selectedLayer: selectedLayer ?? null,
         });
 
-        console.log(
-          `[Segmentation] Refetched layers - Local: ${
-            Array.from(mergedLayers.values()).filter(
-              (l) => l.metadata.origin === "local"
-            ).length
-          }, Database: ${
-            Array.from(mergedLayers.values()).filter(
-              (l) => l.metadata.origin === "database"
-            ).length
-          }`
-        );
       } catch (error) {
         console.error("Failed to refetch segmentation layers", error);
       }
@@ -3023,11 +3099,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const undoSegmentation = () => {
+  const undoSegmentation = useCallback(() => {
     const viewportIndex = state.activeViewport;
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] Cannot undo without an active layer");
       return;
     }
     const activeViewportId =
@@ -3044,13 +3119,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       layerId,
       entry: historyEntry,
     });
-  };
+  }, [state.activeViewport, state.selectedSegmentationLayer, consumeSegmentationUndo, removeLatestLayerSnapshot, notifySegmentationHistoryChange, viewerEventService, state.viewportIds]);
 
-  const redoSegmentation = () => {
+  const redoSegmentation = useCallback(() => {
     const viewportIndex = state.activeViewport;
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] Cannot redo without an active layer");
       return;
     }
     const activeViewportId =
@@ -3071,7 +3145,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       layerId,
       entry: historyEntry,
     });
-  };
+  }, [state.activeViewport, state.selectedSegmentationLayer, consumeSegmentationRedo, persistLayerSnapshot, notifySegmentationHistoryChange, viewerEventService, state.viewportIds]);
 
   // AI Diagnosis - dispatch event to ViewPortMain
   const diagnosisViewport = useCallback(
@@ -3165,6 +3239,69 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const isSegmentationControlPanelOpen = () => {
     return state.isSegmentationControlModalOpen;
   };
+
+  const setSegmentationBrushSize = useCallback(
+    (radius: number, isInMM: boolean = true) => {
+      const viewportId = state.viewportIds.get(state.activeViewport);
+      const toolGroupId = viewportId ? `toolGroup_${viewportId}` : null;
+      
+      // Try the utilities API first (Cornerstone.js tools v2)
+      const segUtilities = (csToolsUtilities as any)?.segmentation;
+      let success = false;
+      
+      if (toolGroupId && typeof segUtilities?.setBrushSizeForToolGroup === "function") {
+        try {
+          segUtilities.setBrushSizeForToolGroup(toolGroupId, radius);
+          console.log(`[Segmentation] Set brush size via utilities API: ${radius} for toolGroup ${toolGroupId}`);
+          success = true;
+        } catch (_err) {
+          console.debug("[Segmentation] setBrushSizeForToolGroup failed, trying fallback");
+        }
+      }
+
+      // Fallback: Try per-element config
+      if (!success) {
+        const element = viewportElementsRef.current.get(state.activeViewport);
+        const configAny = segmentation.config as any;
+        if (element && typeof configAny?.setBrushSizeForElement === "function") {
+          try {
+            configAny.setBrushSizeForElement(element, {
+              radius,
+              isInMM,
+            });
+            console.log(`[Segmentation] Set brush size via setBrushSizeForElement: ${radius}`);
+            success = true;
+          } catch (_err) {
+            // ignore per-element config errors
+          }
+        }
+
+        // Fallback: set global brush size
+        if (!success && typeof configAny?.setGlobalConfig === "function") {
+          try {
+            configAny.setGlobalConfig({
+              brushSize: radius,
+              brushSizeInMM: isInMM,
+            });
+            console.log(`[Segmentation] Set brush size via global config: ${radius}`);
+            success = true;
+          } catch (_err) {
+            // ignore global config errors
+          }
+        }
+      }
+      
+      // Invalidate brush cursor to reflect the new size
+      if (success && toolGroupId && typeof segUtilities?.invalidateBrushCursor === "function") {
+        try {
+          segUtilities.invalidateBrushCursor(toolGroupId);
+        } catch (_err) {
+          // ignore cursor invalidation errors
+        }
+      }
+    },
+    [state.activeViewport, state.viewportIds]
+  );
   const addSegmentationLayer = useCallback(() => {
     const newLayerId = uuidv4();
 
@@ -3319,7 +3456,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const toggleSegmentationView = useCallback(() => {
     const layerId = state.selectedSegmentationLayer;
     if (!layerId) {
-      console.warn("[Segmentation] No active layer to toggle visibility");
       return;
     }
     toggleSegmentationLayerVisibility(layerId);
@@ -3348,18 +3484,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const currentViewportId = state.viewportIds.get(viewport);
       const imageIdToInstanceMap = imageIdInstanceMapRef.current.get(viewport);
 
-      console.log("[Debug] getCurrentSegmentationSnapshot called:", {
-        viewport,
-        currentViewportId,
-        hasImageIdToInstanceMap: !!imageIdToInstanceMap,
-        layerIndex,
-      });
-
       if (!currentViewportId) {
-        console.warn(
-          "[Segmentation] No viewport ID found for viewport",
-          viewport
-        );
         return null;
       }
 
@@ -3369,10 +3494,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const segState = segmentation.state.getSegmentation(segmentationId);
 
       if (!segState) {
-        console.warn(
-          "[Segmentation] No segmentation found with ID:",
-          segmentationId
-        );
         return null;
       }
 
@@ -3394,7 +3515,6 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       const layerId = state.selectedSegmentationLayer;
 
       if (!layerId) {
-        console.warn("[Segmentation] No layer selected");
         return null;
       }
 
@@ -3489,6 +3609,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       getAllLayerSnapshots,
       getAllCurrentLayerSnapshots,
       refetchSegmentationLayers,
+      setSegmentationBrushSize,
     }),
     [
       state,
@@ -3546,6 +3667,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       getAllLayerSnapshots,
       getAllCurrentLayerSnapshots,
       refetchSegmentationLayers,
+      setSegmentationBrushSize,
     ]
   );
 

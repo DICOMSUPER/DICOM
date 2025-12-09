@@ -56,7 +56,7 @@ const CornerstoneViewport = ({
     toolGroup.setToolPassive(ZoomTool.toolName);
     toolGroup.setToolPassive(PanTool.toolName);
 
-    // Set active tool based on context
+    // Set active tool based on context; no default auto-select to Window/Level
     switch (activeTool) {
       case "WindowLevel":
         toolGroup.setToolActive(WindowLevelTool.toolName, {
@@ -83,13 +83,7 @@ const CornerstoneViewport = ({
         });
         break;
       default:
-        // Default to Window/Level
-        toolGroup.setToolActive(WindowLevelTool.toolName, {
-          bindings: [{ mouseButton: 1 }],
-        });
-        toolGroup.setToolActive(ZoomTool.toolName, {
-          bindings: [{ mouseButton: 2 }],
-        });
+        // Do not auto-activate any tool here
         break;
     }
 
@@ -149,7 +143,7 @@ const CornerstoneViewport = ({
         // Store tool group reference
         toolGroupRef.current = toolGroup;
 
-        // Set default tool bindings
+        // Set default tool bindings based on current activeTool (may be no-op if none)
         setToolBindings(toolGroup, state.activeTool);
 
         setInitialized(true);

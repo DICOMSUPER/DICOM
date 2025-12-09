@@ -29,11 +29,10 @@ export default function PatientInfo({
           {handleChangeMrn && (
             <button
               onClick={() => handleChangeMrn(patient.id)}
-              className="mt-2 text-xs text-blue-600 hover:underline"
+              className="mt-3 inline-flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
             >
-              <span className="flex justify-center items-center gap-2">
-                <UserRoundPen /> Change MRN
-              </span>
+              <UserRoundPen className="h-4 w-4" />
+              Change MRN
             </button>
           )}
         </div>

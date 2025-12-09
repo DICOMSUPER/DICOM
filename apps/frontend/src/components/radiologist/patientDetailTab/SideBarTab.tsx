@@ -55,7 +55,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   if (!patient) return <div>Patient not found</div>;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-full overflow-y-auto">
+    <aside className="not-even:w-64 bg-white border-r border-gray-200 h-full overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b">
         <h3 className="font-medium text-sm mb-2">Thông tin ca</h3>
@@ -64,7 +64,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 h-full">
         {/* Thông tin bệnh nhân */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
@@ -102,7 +102,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
             Chưa chẩn đoán
           </h4>
-          <ScrollArea className="h-48">
+          <ScrollArea className="h-full">
             {isLoading ? (
               <div className="flex h-48 items-center justify-center text-gray-500 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -135,7 +135,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
             LỊCH SỬ KHÁM
           </h4>
-          <ScrollArea className="h-48">
+          <ScrollArea className="h-full">
             {isLoading ? (
               <div className="flex h-48 items-center justify-center text-gray-500 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -43,7 +43,7 @@ const initials = (first?: string | null, last?: string | null) => {
   const firstInitial = first?.[0] ?? "";
   const lastInitial = last?.[0] ?? "";
   const combined = `${firstInitial}${lastInitial}`;
-  return combined || "NA";
+  return combined || "N/A";
 };
 
 const statusBadgeClass = (status: string) => {

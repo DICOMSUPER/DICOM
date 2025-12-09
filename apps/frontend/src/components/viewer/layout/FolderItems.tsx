@@ -3,7 +3,6 @@ import { FolderOpen, Loader2, Calendar, Clock, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
 import { StudyItem } from "./StudyItem";
 import { format } from "date-fns";
 
@@ -18,7 +17,6 @@ interface FolderItemProps {
   viewMode: "grid" | "list";
   onSeriesClick: (series: DicomSeries) => void;
   urlStudyId?: string;
-  urlSeriesId?: string;
 }
 
 export const FolderItem = ({
@@ -32,7 +30,6 @@ export const FolderItem = ({
   viewMode,
   onSeriesClick,
   urlStudyId,
-  urlSeriesId,
 }: FolderItemProps) => {
   const { data, isLoading, isError } = useGetDicomStudiesByOrderIdQuery(
     orderId,
@@ -42,7 +39,7 @@ export const FolderItem = ({
     }
   );
 
-  const studies = data?.data || [];
+  const studies = useMemo(() => data?.data || [], [data]);
 
   // Get status badge color
   const getStatusColor = (status?: string) => {
@@ -185,7 +182,6 @@ export const FolderItem = ({
                 viewMode={viewMode}
                 onSeriesClick={onSeriesClick}
                 urlStudyId={urlStudyId}
-                urlSeriesId={urlSeriesId}
               />
             ))
           )}

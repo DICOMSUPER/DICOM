@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ChevronDown, ImageOff } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
 import { ViewerEventProvider } from "@/contexts/ViewerEventContext";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { useLazyGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
-import { extractApiData } from "@/utils/api";
 import ViewerHeader from "@/components/viewer/layout/ViewerHeader";
 import ViewerLeftSidebar from "@/components/viewer/layout/ViewerLeftSidebar";
 import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
@@ -15,6 +13,9 @@ import ViewportGrid from "@/components/viewer/viewport/ViewportGrid";
 import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
 import { DraftAnnotationsModal } from "@/components/viewer/modals/DraftAnnotationsModal";
 import { SeriesAnnotationsModal } from "@/components/viewer/modals/SeriesAnnotationsModal";
+import { useGetOneDicomStudyQuery } from "@/store/dicomStudyApi";
+import { DicomStudyStatus } from "@/enums/image-dicom.enum";
+import { toast } from "sonner";
 
 function ViewerLoading() {
   return (
@@ -32,14 +33,11 @@ function ViewerPageContent() {
   const searchParams = useSearchParams();
   const studyId = searchParams.get("study");
   const patientId = searchParams.get("patient");
-  const seriesId = searchParams.get("series");
 
   const {
     state,
     setActiveViewport,
     setViewportSeries,
-    toggleSegmentationControlPanel,
-    isSegmentationControlPanelOpen,
   } = useViewer();
 
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
@@ -48,13 +46,10 @@ function ViewerPageContent() {
   const [selectedTool, setSelectedTool] = useState<string>("");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
   const [viewportReady, setViewportReady] = useState(false);
-  const [hasSetInitialTool, setHasSetInitialTool] = useState(false);
 
   const [selectedSeries, setSelectedSeries] = useState<DicomSeries | null>(null);
-  const [series, setSeries] = useState<DicomSeries[]>([]);
-  const [fetchSeriesByReference] = useLazyGetDicomSeriesByReferenceQuery();
+  const [series] = useState<DicomSeries[]>([]);
   const [activeAnnotationsModal, setActiveAnnotationsModal] = useState<"all" | "draft" | null>(null);
-  const [currentOrderStatus, setCurrentOrderStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveViewport(0);
@@ -66,19 +61,11 @@ function ViewerPageContent() {
     const isReady = activeViewportState?.viewportReady || false;
     
     setViewportReady(isReady);
-
-    // Auto-select WindowLevel tool when viewport becomes ready with an image
-    if (isReady && !hasSetInitialTool) {
-      setSelectedTool("WindowLevel");
-      setHasSetInitialTool(true);
-      console.log("✅ Viewport ready - WindowLevel tool automatically selected");
-    }
-  }, [state.viewportRuntimeStates, state.activeViewport, hasSetInitialTool]);
+  }, [state.viewportRuntimeStates, state.activeViewport]);
 
   // Reset initial tool flag when series changes
   useEffect(() => {
     if (selectedSeries) {
-      setHasSetInitialTool(false);
       setViewportReady(false);
     }
   }, [selectedSeries]);
@@ -90,57 +77,52 @@ function ViewerPageContent() {
     }
   };
 
-  const handleSeriesLoaded = useCallback(
-    (loadedSeries: DicomSeries[]) => {
-      setSeries(loadedSeries);
-      setActiveViewport(0);
+  const updateURLParams = useCallback(
+    (params: Record<string, string>) => {
+      if (typeof window === "undefined") return;
 
-      if (seriesId) {
-        const targetSeries = loadedSeries.find((s) => s.id === seriesId);
-        if (targetSeries) {
-          setSelectedSeries(targetSeries);
-          setViewportSeries(0, targetSeries);
+      const url = new URL(window.location.href);
+      const current = url.searchParams;
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          current.set(key, value);
+        } else {
+          current.delete(key);
         }
-      }
+      });
+
+      url.search = current.toString();
+      router.replace(url.toString(), { scroll: false });
     },
-    [seriesId, setActiveViewport, setViewportSeries]
+    [router]
   );
-
-  const updateURLParams = useCallback((params: Record<string, string>) => {
-    const current = new URLSearchParams(Array.from(searchParams.entries()));
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        current.set(key, value);
-      } else {
-        current.delete(key);
-      }
-    });
-
-    const search = current.toString();
-    const query = search ? `?${search}` : "";
-    router.push(`/viewer${query}`, { scroll: false });
-  }, [searchParams, router]);
 
   const handleSeriesSelect = useCallback((series: DicomSeries) => {
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
-    
+    // Auto-select Pan after loading a series
+    setSelectedTool("Pan");
+    console.log("Series selected:", series);
     updateURLParams({
-      patient: patientId || '',
-      study: studyId || '',
-      series: series.id,
+      patient: patientId || "",
+      study: studyId || series.studyId || "",
     });
   }, [patientId, studyId, updateURLParams, setViewportSeries, state.activeViewport]);
 
-  const handleOrderStatusChange = useCallback((status: string | null) => {
-    setCurrentOrderStatus(status);
-  }, []);
-
-  // Check if order is in a final state (completed or cancelled)
-  const isOrderFinalized = useMemo(() => {
-    return currentOrderStatus === 'completed' || currentOrderStatus === 'cancelled';
-  }, [currentOrderStatus]);
+  // Study status lock: disable annotation/segmentation when study finalized
+  const { data: studyDetail } = useGetOneDicomStudyQuery(studyId || "", {
+    skip: !studyId,
+  });
+  const studyStatus = (studyDetail?.data as any)?.status as DicomStudyStatus | undefined;
+  const isStudyLocked = useMemo(() => {
+    if (!studyStatus) return false;
+    return (
+      studyStatus === DicomStudyStatus.APPROVED ||
+      studyStatus === DicomStudyStatus.RESULT_PRINTED ||
+      studyStatus === DicomStudyStatus.REJECTED
+    );
+  }, [studyStatus]);
 
   const handleViewAllAnnotations = useCallback(() => {
     setActiveAnnotationsModal("all");
@@ -198,7 +180,15 @@ function ViewerPageContent() {
             onViewDraftAnnotations={handleViewDraftAnnotations}
             activeAnnotationView={activeAnnotationsModal}
             viewportReady={viewportReady}
-            isOrderFinalized={isOrderFinalized}
+            isStudyLocked={isStudyLocked}
+            onReloadSeries={() => {
+              if (selectedSeries) {
+                setViewportSeries(state.activeViewport, selectedSeries);
+                toast.success("Reloaded series into viewport");
+              } else {
+                toast.info("No series selected");
+              }
+            }}
           />
         </ResizablePanel>
 
@@ -226,8 +216,6 @@ function ViewerPageContent() {
             studyId={studyId || undefined}
             patientId={patientId || undefined}
             selectedSeriesFromParent={selectedSeries}
-            urlSeriesId={seriesId || undefined}
-            onOrderStatusChange={handleOrderStatusChange}
           />
         </ResizablePanel>
       </div>

@@ -179,7 +179,7 @@ export function ScheduleDetailModal({
   const getInitials = (first?: string | null, last?: string | null) => {
     const firstInitial = first?.[0] ?? "";
     const lastInitial = last?.[0] ?? "";
-    return (firstInitial + lastInitial || "NA").toUpperCase();
+    return (firstInitial + lastInitial || "N/A").toUpperCase();
   };
 
   const getStatusBadgeClass = (status: string | boolean | undefined, type: 'schedule' | 'machine' | 'service' | 'assignment' = 'schedule'): string => {

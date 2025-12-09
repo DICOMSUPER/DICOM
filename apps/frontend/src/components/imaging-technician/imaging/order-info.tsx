@@ -28,9 +28,9 @@ export default function OrderInfo({
   }
 
   return (
-    <div className="bg-white border-gray-100 rounded-md shadow-sm p-6 border border-gray-200">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
       <div>{order && <OrderName order={order} />}</div>
-      <div className="grid grid-cols-3 md:grid-cols-3 gap-4 text-sm my-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm my-5">
         {patient && (
           <PatientInfo patient={patient} handleChangeMrn={handleChangeMrn} />
         )}
@@ -38,16 +38,16 @@ export default function OrderInfo({
         {procedure && <ProcedureInfo procedure={procedure} />}
 
         <ClinicalIndication
-          indication={order.clinicalIndication || "NA"}
+          indication={order.clinicalIndication || "N/A"}
           contrastRequired={order.contrastRequired || false}
         />
       </div>
-      <div className="grid grid-cols-2 gap-6 mb-8 my-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 my-5">
         {physician && <PhysicianInfo physician={physician} />}
         {order && (
           <SpecialInstructions
-            instructions={order.specialInstructions || "NA"}
-            note={order.imagingOrderForm?.notes || "NA"}
+            instructions={order.specialInstructions || "N/A"}
+            note={order.imagingOrderForm?.notes || "N/A"}
           />
         )}
       </div>

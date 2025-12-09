@@ -1,33 +1,32 @@
 "use client";
+import Pagination from "@/components/common/PaginationV1";
+import { EncounterStatsCards } from "@/components/physician/patient-encounter/encounter-stats-cards";
 import ModalTransferPhysician from "@/components/physician/patient-encounter/modal-transfer-physician";
 import { PatientEncounterFiltersSection } from "@/components/physician/patient-encounter/patient-encounter-filters";
 import { PatientEncounterTable } from "@/components/physician/patient-encounter/patient-encounter-table";
-import Pagination from "@/components/common/PaginationV1";
+import { SortConfig } from "@/components/ui/data-table";
+import { RefreshButton } from "@/components/ui/refresh-button";
 import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
 import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
 import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
-import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
-import { RoomSchedule } from "@/interfaces/user/room-schedule.interface";
-import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { RootState } from "@/store";
 import {
-  useGetEmployeeRoomAssignmentsInCurrentSessionQuery,
-  useGetEmployeeRoomAssignmentsQuery,
+  useGetCurrentEmployeeRoomAssignmentQuery,
+  useGetEmployeeRoomAssignmentsQuery
 } from "@/store/employeeRoomAssignmentApi";
 import {
   useGetPatientEncountersInRoomQuery,
   useGetStatsInDateRangeQuery,
-  useSkipEncounterMutation,
-  useUpdatePatientEncounterMutation,
+  useUpdatePatientEncounterMutation
 } from "@/store/patientEncounterApi";
-import { EncounterStatsCards } from "@/components/physician/patient-encounter/encounter-stats-cards";
 import { prepareApiFilters } from "@/utils/filter-utils";
+import { sortConfigToQueryParams } from "@/utils/sort-utils";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
-import { RefreshButton } from "@/components/ui/refresh-button";
 
 export default function QueuePage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -68,9 +67,27 @@ export default function QueuePage() {
     return { ...baseFilters, ...sortParams };
   }, [filters, pagination, sortConfig]);
 
-  const { data: currentRoom, isLoading: isCurrentRoomLoading } =
-    useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
-  const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
+  // const { data: currentRoom, isLoading: isCurrentRoomLoading } =
+  //   useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
+  // const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
+
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
+  console.log("User :", userId);
+
+  // const user = Cookies.get("user")
+  //current employee room assignment
+  const {
+    data: currentEmployeeSchedule,
+    isLoading: isLoadingCurrentEmployeeSchedule,
+    error: roomAssignmentError,
+  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!,{
+    skip: !userId,
+  });
+
+  console.log("Current Employee Schedule:", currentEmployeeSchedule);
+
+  const currentRoomId =
+    currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;
 
   const {
     data,
@@ -82,26 +99,27 @@ export default function QueuePage() {
     {
       filters: {
         ...apiFilters,
-        roomId: roomId,
+        roomId: currentRoomId as string,
       },
     },
     {
-      skip: !roomId,
+      skip: !currentRoomId,
       refetchOnMountOrArgChange: false,
     }
   );
 
   const { data: employeeAssignInRoom } = useGetEmployeeRoomAssignmentsQuery(
     {
-      filter: { roomScheduleId: currentRoom?.data?.[0]?.roomScheduleId },
+      filter: { roomScheduleId: currentEmployeeSchedule?.data?.roomScheduleId },
     },
     {
-      skip: !currentRoom?.data?.[0]?.roomScheduleId,
+      skip: !currentEmployeeSchedule?.data?.roomScheduleId,
     }
   );
 
   const anotherEmployeeAssignInRoom = employeeAssignInRoom?.data.filter(
-    (assignment) => assignment.employeeId !== currentRoom?.data?.[0]?.employeeId
+    (assignment) =>
+      assignment.employeeId !== currentEmployeeSchedule?.data?.employeeId
   );
 
   const [updatePatientEncounter, { isLoading: isUpdating }] =
@@ -115,10 +133,10 @@ export default function QueuePage() {
     {
       dateFrom: format(new Date(), "yyyy-MM-dd") as string,
       dateTo: format(new Date(), "yyyy-MM-dd") as string,
-      roomId: roomId,
+      roomId: currentRoomId as string,
     },
     {
-      skip: !roomId,
+      skip: !currentRoomId,
     }
   );
 
@@ -151,7 +169,8 @@ export default function QueuePage() {
       const arrivedEncounter = data?.data.find(
         (item) =>
           item.status === EncounterStatus.ARRIVED &&
-          item.assignedPhysicianId === currentRoom?.data?.[0]?.employeeId &&
+          item.assignedPhysicianId ===
+            currentEmployeeSchedule?.data?.employeeId &&
           item.id !== id
       );
 
@@ -166,7 +185,7 @@ export default function QueuePage() {
         id,
         data: {
           status: EncounterStatus.ARRIVED,
-          assignedPhysicianId: currentRoom?.data?.[0]?.employeeId,
+          assignedPhysicianId: currentEmployeeSchedule?.data?.employeeId,
         },
       }).unwrap();
       toast.success("Started serving patient");
@@ -259,15 +278,15 @@ export default function QueuePage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onReset={handleReset}
-        isSearching={isLoading || isCurrentRoomLoading}
+        isSearching={isLoading || isLoadingCurrentEmployeeSchedule}
       />
       <PatientEncounterTable
-        employeeId={currentRoom?.data?.[0]?.employeeId as string}
+        employeeId={currentEmployeeSchedule?.data?.employeeId as string}
         encounterItems={data?.data || data || []}
         onStartServing={handleStartServing}
         onComplete={handleComplete}
         onViewDetails={handleViewDetails}
-        isLoading={isLoading || isCurrentRoomLoading}
+        isLoading={isLoading || isLoadingCurrentEmployeeSchedule}
         page={paginationMeta?.page ?? pagination.page}
         limit={pagination.limit}
         onTransferPhysician={handleOpenTransferModal}

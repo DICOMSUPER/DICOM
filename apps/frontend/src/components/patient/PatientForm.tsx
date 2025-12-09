@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { User, Save, Loader2, Phone, MapPin, Calendar, Heart, FileText } from "lucide-react";
+import DatePickerDropdown from "@/components/radiologist/date-picker";
 import {
   PatientFormProps,
   CreatePatientDto,
@@ -159,16 +160,20 @@ const PatientForm: React.FC<PatientFormProps> = ({
                     <Calendar className="h-3.5 w-3.5" />
                     Date of Birth *
                   </Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) =>
-                      handleInputChange("dateOfBirth", e.target.value)
+                  <DatePickerDropdown
+                    date={
+                      formData.dateOfBirth
+                        ? new Date(formData.dateOfBirth)
+                        : undefined
                     }
-                    className={errors.dateOfBirth ? "border-red-500" : ""}
-                    required
-                    disabled={loading}
+                    onSelect={(date) =>
+                      handleInputChange(
+                        "dateOfBirth",
+                        date ? date.toISOString().split("T")[0] : ""
+                      )
+                    }
+                    placeholder="Select date"
+                    disabled={(date) => date > new Date()}
                   />
                   {errors.dateOfBirth && (
                     <p className="text-xs text-red-600">{errors.dateOfBirth}</p>

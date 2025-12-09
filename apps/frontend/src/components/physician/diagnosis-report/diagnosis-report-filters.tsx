@@ -97,10 +97,10 @@ export function DiagnosisReportFiltersSection({
             </SelectTrigger>
             <SelectContent className="border-border">
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value={DiagnosisStatus.ACTIVE}>Active</SelectItem>
-              <SelectItem value={DiagnosisStatus.RESOLVED}>Resolved</SelectItem>
-              <SelectItem value={DiagnosisStatus.INACTIVE}>Inactive</SelectItem>
-              <SelectItem value={DiagnosisStatus.RULED_OUT}>Ruled Out</SelectItem>
+              {/* <SelectItem value={DiagnosisStatus.DRAFT}>Active</SelectItem> */}
+              <SelectItem value={DiagnosisStatus.REJECTED}>Rejected</SelectItem>
+              <SelectItem value={DiagnosisStatus.APPROVED}>Approved</SelectItem>
+              <SelectItem value={DiagnosisStatus.PENDING_APPROVAL}>Ruled Out</SelectItem>
             </SelectContent>
           </Select>
           <Select

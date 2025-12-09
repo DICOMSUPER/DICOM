@@ -32,7 +32,6 @@ export const lengthToolsMenu = [
   { item: 'Arrow Annotate', icon: Pen },
   { item: 'Spline ROI', icon: Spline },
   { item: 'SegmentBidirectional', icon: ArrowDownLeft },
-  { item: 'ScaleOverlay', icon: Ruler },
 ];
 
 export const shapeToolsMenu = [
