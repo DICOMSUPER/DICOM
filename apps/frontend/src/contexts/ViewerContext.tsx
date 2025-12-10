@@ -1066,6 +1066,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       if (layerId && latestSnapshot && layerVisible) {
         restoreSegmentationSnapshot(latestSnapshot, {
           reason: "layer-sync-restore",
+          viewportId: currentViewportId,
         });
       } else {
         clearSegmentationData(segmentationId, {

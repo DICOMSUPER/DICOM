@@ -406,6 +406,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
       const restored = restoreSegmentationSnapshot(snapshot, {
         reason: action === "undo" ? "history-undo" : "history-redo",
+        viewportId,
       });
       if (restored) {
         viewport?.render?.();

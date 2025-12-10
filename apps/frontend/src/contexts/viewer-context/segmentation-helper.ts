@@ -81,13 +81,39 @@ export interface SegmentationHistoryHelpers {
   ) => SegmentationHistoryStacks | undefined;
 }
 // Helper functions for compression
+// Safe base64 helpers that also work in non-browser contexts (e.g. SSR)
+const getBtoa =
+  () =>
+    (typeof window !== "undefined" && typeof window.btoa === "function"
+      ? window.btoa.bind(window)
+      : typeof globalThis !== "undefined" && typeof (globalThis as any).btoa === "function"
+        ? (globalThis as any).btoa
+        : typeof Buffer !== "undefined"
+          ? (input: string) => Buffer.from(input, "binary").toString("base64")
+          : null);
+
+const getAtob =
+  () =>
+    (typeof window !== "undefined" && typeof window.atob === "function"
+      ? window.atob.bind(window)
+      : typeof globalThis !== "undefined" && typeof (globalThis as any).atob === "function"
+        ? (globalThis as any).atob
+        : typeof Buffer !== "undefined"
+          ? (input: string) => Buffer.from(input, "base64").toString("binary")
+          : null);
+
 export const uint8ArrayToBase64 = (bytes: Uint8Array) => {
+  const btoaFn = getBtoa();
+  if (!btoaFn) {
+    console.warn("[Segmentation] No base64 encoder available");
+    return "";
+  }
   let binary = "";
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return window.btoa(binary);
+  return btoaFn(binary);
 };
 
 export const compressSnapshots = (snapshots: any[]) => {
@@ -112,7 +138,12 @@ export const decompressSnapshots = (snapshots: any[]) => {
     ...snapshot,
     imageData: snapshot.imageData.map((data: any) => {
       if (data.isCompressed && typeof data.pixelData === "string") {
-        const binaryString = window.atob(data.pixelData);
+        const atobFn = getAtob();
+        if (!atobFn) {
+          console.warn("[Segmentation] No base64 decoder available, skipping decompress");
+          return data;
+        }
+        const binaryString = atobFn(data.pixelData);
         const len = binaryString.length;
         const compressed = new Uint8Array(len);
         for (let i = 0; i < len; i++) {
@@ -167,6 +198,21 @@ const viewportImageMappings = new Map<
     }
   >
 >();
+
+const normalizeImageIdReferenceMap = (
+  mapLike: unknown
+): Map<string, string> | null => {
+  if (!mapLike) {
+    return null;
+  }
+  if (mapLike instanceof Map) {
+    return mapLike as Map<string, string>;
+  }
+  if (typeof mapLike === "object") {
+    return new Map(Object.entries(mapLike as Record<string, string>));
+  }
+  return null;
+};
 
 const ensureLabelmapImagesForViewport = async (
   viewportId: string,
@@ -501,17 +547,24 @@ export async function ensureViewportLabelmapSegmentation(options: {
     imageIdToInstanceMap
   );
 
-  if (!segmentation.state.getSegmentation(segmentationId)) {
-    // Create imageIdReferenceMap: maps original DICOM imageIds to labelmap imageIds
-    // This ensures each frame has its own independent segmentation data
-    const imageIdReferenceMap = new Map<string, string>();
-    imageIds.forEach((originalImageId, index) => {
-      const labelmapImageId = labelmapImageIds[index];
-      if (labelmapImageId) {
-        imageIdReferenceMap.set(originalImageId, labelmapImageId);
-      }
-    });
+  const mappingForViewport = viewportImageMappings.get(viewportId);
+  const imageIdReferenceMap = mappingForViewport
+    ? new Map<string, string>(
+        Array.from(mappingForViewport.entries()).map(
+          ([labelmapImageId, info]) => [info.originalImageId, labelmapImageId]
+        )
+      )
+    : undefined;
 
+  if (
+    imageIdReferenceMap &&
+    existingSegmentation?.representationData?.Labelmap
+  ) {
+    (existingSegmentation.representationData.Labelmap as any).imageIdReferenceMap =
+      imageIdReferenceMap;
+  }
+
+  if (!segmentation.state.getSegmentation(segmentationId)) {
     segmentation.addSegmentations([
       {
         segmentationId,
@@ -519,6 +572,7 @@ export async function ensureViewportLabelmapSegmentation(options: {
           type: ToolEnums.SegmentationRepresentations.Labelmap,
           data: {
             imageIds: labelmapImageIds,
+            ...(imageIdReferenceMap ? { imageIdReferenceMap } : {}),
           },
         },
       },
@@ -611,10 +665,13 @@ export function captureSegmentationSnapshot(
 
   // Extract labelmap image IDs from imageIdReferenceMap (new format) or imageIds (legacy)
   let imageIds: string[] = [];
+  let referenceMap: Map<string, string> | null = null;
 
   if (labelmapData && "imageIdReferenceMap" in labelmapData) {
-    const refMap = labelmapData.imageIdReferenceMap as Map<string, string>;
-    imageIds = Array.from(refMap.values());
+    referenceMap = normalizeImageIdReferenceMap(
+      (labelmapData as any).imageIdReferenceMap
+    );
+    imageIds = referenceMap ? Array.from(referenceMap.values()) : [];
   } else if (
     labelmapData &&
     "imageIds" in labelmapData &&
@@ -629,6 +686,14 @@ export function captureSegmentationSnapshot(
 
   // Get the mapping for this viewport
   const mapping = viewportId ? viewportImageMappings.get(viewportId) : null;
+  const reverseReferenceMap = referenceMap
+    ? new Map<string, string>(
+        Array.from(referenceMap.entries()).map(([original, labelmap]) => [
+          labelmap,
+          original,
+        ])
+      )
+    : null;
 
   const imageData: Array<{
     imageId: string;
@@ -638,7 +703,7 @@ export function captureSegmentationSnapshot(
     pixelData: Uint8Array;
   }> = [];
 
-  imageIds.forEach((imageId, idx) => {
+  imageIds.forEach((imageId) => {
     if (!imageId) {
       return;
     }
@@ -663,8 +728,14 @@ export function captureSegmentationSnapshot(
 
     // Get original image info from mapping
     const mappingInfo = mapping?.get(imageId);
-    const originalImageId = mappingInfo?.originalImageId || imageId;
-    const frameNumber = mappingInfo?.frameNumber || extractFrameNumber(imageId);
+    const referenceOriginal = reverseReferenceMap?.get(imageId);
+    const originalImageId =
+      mappingInfo?.originalImageId || referenceOriginal || imageId;
+    const frameNumber =
+      mappingInfo?.frameNumber ||
+      (referenceOriginal
+        ? extractFrameNumber(referenceOriginal)
+        : extractFrameNumber(imageId));
 
     // Use the original image ID to look up the instance ID from the map
     let instanceId: string | undefined = mappingInfo?.instanceId;
@@ -710,34 +781,73 @@ export function getCurrentSegmentationSnapshot(
 
 export function restoreSegmentationSnapshot(
   snapshot: SegmentationSnapshot | null | undefined,
-  options?: { reason?: string }
+  options?: { reason?: string; viewportId?: string }
 ): boolean {
   if (!snapshot?.segmentationId || !snapshot.imageData?.length) {
     return false;
   }
 
+  const viewportMapping = options?.viewportId
+    ? viewportImageMappings.get(options.viewportId)
+    : undefined;
+
+  const reverseOriginalToLabelmap = viewportMapping
+    ? new Map<string, string>(
+        Array.from(viewportMapping.entries()).map(
+          ([labelmapId, info]) => [info.originalImageId, labelmapId]
+        )
+      )
+    : undefined;
+
+  const resolveByFrameAndInstance = (
+    frameNumber?: number,
+    instanceId?: string
+  ): string | null => {
+    if (!viewportMapping || typeof frameNumber !== "number") {
+      return null;
+    }
+    for (const [labelmapId, info] of viewportMapping.entries()) {
+      const frameMatches = info.frameNumber === frameNumber;
+      const instanceMatches =
+        !instanceId || !info.instanceId || info.instanceId === instanceId;
+      if (frameMatches && instanceMatches) {
+        return labelmapId;
+      }
+    }
+    return null;
+  };
+
   let changedSlices = 0;
   const modifiedSliceIds: string[] = [];
 
-  snapshot.imageData.forEach(({ imageId, pixelData }) => {
-    const cachedImage = imageId ? cache.getImage(imageId) : null;
-    if (!cachedImage) {
-      return;
+  snapshot.imageData.forEach(
+    ({ imageId, pixelData, originalImageId, frameNumber, instanceId }) => {
+      const targetImageId =
+        (originalImageId && reverseOriginalToLabelmap?.get(originalImageId)) ||
+        resolveByFrameAndInstance(frameNumber, instanceId) ||
+        imageId;
+
+      const cachedImage = targetImageId
+        ? cache.getImage(targetImageId)
+        : null;
+      if (!cachedImage) {
+        return;
+      }
+
+      const targetPixels =
+        typeof cachedImage.getPixelData === "function"
+          ? cachedImage.getPixelData()
+          : (cachedImage as { pixelData?: Uint8Array }).pixelData;
+
+      if (!targetPixels || targetPixels.length !== pixelData.length) {
+        return;
+      }
+
+      targetPixels.set(pixelData);
+      changedSlices += 1;
+      modifiedSliceIds.push(targetImageId);
     }
-
-    const targetPixels =
-      typeof cachedImage.getPixelData === "function"
-        ? cachedImage.getPixelData()
-        : (cachedImage as { pixelData?: Uint8Array }).pixelData;
-
-    if (!targetPixels || targetPixels.length !== pixelData.length) {
-      return;
-    }
-
-    targetPixels.set(pixelData);
-    changedSlices += 1;
-    modifiedSliceIds.push(imageId);
-  });
+  );
 
   if (changedSlices === 0) {
     return false;

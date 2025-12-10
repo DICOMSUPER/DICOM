@@ -259,7 +259,7 @@ export const RoomScheduleApi = createApi({
     // Update schedule status
     updateScheduleStatus: builder.mutation<
       RoomSchedule,
-      { id: string; status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' }
+      { id: string; status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' }
     >({
       query: ({ id, status }) => ({
         url: `/${id}/status`,
