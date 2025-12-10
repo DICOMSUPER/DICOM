@@ -8,7 +8,10 @@ import UploadedStudies from "./upload-studies";
 import FileUpload from "./file-upload";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { useGetImagingOrderByIdQuery } from "@/store/imagingOrderApi";
-import { useUseGetDicomStudyByReferenceIdQuery } from "@/store/dicomStudyApi";
+import {
+  useUpdateDicomStudyMutation,
+  useUseGetDicomStudyByReferenceIdQuery,
+} from "@/store/dicomStudyApi";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { useGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
@@ -119,6 +122,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
 
   const [uploadDicomFile] = useUploadDicomFileMutation();
   const [updatePatient] = useUpdatePatientMutation();
+  const [updateDicomStudy] = useUpdateDicomStudyMutation();
   // Store orderId in localStorage when order page loads
   useEffect(() => {
     if (order_id) {
@@ -170,6 +174,19 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     try {
       await updatePatient({ id, data: { patientCode: mrn } });
       setChangeMrnModal(null);
+
+      studies.forEach(async (s) => {
+        try {
+          updateDicomStudy({ id: s.id, data: { patientCode: mrn } });
+        } catch (error) {
+          console.log(
+            "Failed to update related studies for patient MRN",
+            error
+          );
+        }
+      });
+      refetchStudy();
+
       toast.success("Patient MRN updated successfully");
     } catch (error) {
       toast.error("Failed to update Patient MRN");

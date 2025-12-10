@@ -62,7 +62,7 @@ export function DiagnosisReportTable({
         return (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-green-700">Active</span>
+            <span className="text-sm font-medium text-green-700">Approved</span>
           </div>
         );
       case DiagnosisStatus.PENDING_APPROVAL:

@@ -2,15 +2,17 @@ import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
 import {
   getEnabledElement,
   getRenderingEngine,
-  type Types,
+  type Types
 } from "@cornerstonejs/core";
 import {
   annotation,
   PlanarFreehandROITool,
   RectangleROITool,
   ToolGroupManager,
-  utilities as toolsUtilities,
+  utilities as toolsUtilities
 } from "@cornerstonejs/tools";
+
+
 import type { Annotation } from "@cornerstonejs/tools/types";
 
 export const getCanvasAsBase64 = (
@@ -87,8 +89,8 @@ export const drawAIPredictions = (
   renderingEngineId: string,
   aiImageWidth: number,
   aiImageHeight: number,
-  canvasWidth: number,
-  canvasHeight: number
+  // canvasWidth: number,
+  // canvasHeight: number
 ): void => {
   console.log(
     "Drawing",
@@ -132,6 +134,18 @@ export const drawAIPredictions = (
     }
     console.log("Element found:", element);
 
+
+    const rect = element.getBoundingClientRect();
+    const canvasClientWidth = rect.width;
+    const canvasClientHeight = rect.height;
+
+    const scaleX = canvasClientWidth / aiImageWidth;
+    const scaleY = canvasClientHeight / aiImageHeight;
+
+    console.log(
+      `Scaling Canvas: AI(${aiImageWidth}) -> Client(${canvasClientWidth}). Ratio: ${scaleX}`
+    );
+
     // Clear existing AI annotations
     clearAIAnnotations(viewportId);
 
@@ -148,9 +162,8 @@ export const drawAIPredictions = (
       if (!foundToolGroup.hasTool(RectangleROITool.toolName)) {
         foundToolGroup.addTool(RectangleROITool.toolName);
         console.log("✅ Added RectangleROI tool");
-
       }
-      
+
       foundToolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
       foundToolGroup.setToolEnabled(RectangleROITool.toolName);
       console.log("✅ Tools enabled for rendering");
@@ -174,40 +187,112 @@ export const drawAIPredictions = (
         //   const canvasPoint: Types.Point2 = [p.x, p.y];
         //   return viewport.canvasToWorld(canvasPoint);
         // });
-        const worldPoints: Types.Point3[] = prediction.points.map((p) => {
-          const normX = p.x / aiImageWidth;
-          const normY = p.y / aiImageHeight;
-          const canvasX = normX * canvasWidth;
-          const canvasY = normY * canvasHeight;
+        // const worldPoints: Types.Point3[] = prediction.points.map((p) => {
+        //   // Vì aiImageWidth = canvasWidth và aiImageHeight = canvasHeight
+        //   // AI coordinates chính là canvas pixel coordinates
+        //   const worldPos = viewport.canvasToWorld([p.x, p.y] as Types.Point2);
+        //   return [worldPos[0], worldPos[1], 0] as Types.Point3;
+        // });
+        const worldPoints : Types.Point3[]= prediction.points.map((p: any) => {
+          // B1: Scale tọa độ AI về tọa độ màn hình hiện tại (CSS Pixel)
+          const screenX = p.x * scaleX;
+          const screenY = p.y * scaleY;
 
-          // Lấy tọa độ World (bao gồm X, Y thực tế tính bằng mm)
-          const worldPos = viewport.canvasToWorld([canvasX, canvasY]);
+          // B2: Hỏi Viewport: "Tại pixel màn hình này, trong không gian 3D là điểm nào?"
+          // Hàm này tự động xử lý việc ảnh đang bị Zoom hay Pan.
+          const worldPos = viewport.canvasToWorld([screenX, screenY]);
 
-          return [worldPos[0], worldPos[1], 0] as Types.Point3;
+          return [worldPos[0], worldPos[1], 0];
         });
 
         console.log("worldPoint", worldPoints);
 
-        let minY = Infinity;
-        let sumX = 0;
-        prediction.points.forEach((p) => {
-          if (p.y < minY) minY = p.y;
-          sumX += p.x;
-        });
+ const enabledElement = getEnabledElement(element);
+  // if (enabledElement) {
+  //   const { viewport: vp } = enabledElement;
+    
+  //   // ✅ Tìm hoặc tạo SVG layer
+  //   let svgLayer = element.querySelector('.cornerstone-svg-layer') as HTMLDivElement;
+    
+  //   if (!svgLayer) {
+  //     svgLayer = document.createElement('div');
+  //     svgLayer.classList.add('cornerstone-svg-layer');
+  //     svgLayer.style.position = 'absolute';
+  //     svgLayer.style.top = '0';
+  //     svgLayer.style.left = '0';
+  //     svgLayer.style.width = '100%';
+  //     svgLayer.style.height = '100%';
+  //     svgLayer.style.pointerEvents = 'none';
+  //     element.appendChild(svgLayer);
+  //   }
 
-        const labelX = sumX / prediction.points.length;
-        const labelY = minY - 10;
-        const labelWorldPos = viewport.canvasToWorld([
-          labelX,
-          labelY,
-        ] as Types.Point2);
-        const labelWorldPosFinal = [
-          labelWorldPos[0],
-          labelWorldPos[1],
-          0,
-        ] as Types.Point3;
+  //   // ✅ TẠO SVGDrawingHelper object
+  //   const nodeCache: Record<string, SVGElement> = {};
+  //   const touchedNodes = new Set<string>();
+    
+  //   const svgDrawingHelper = {
+  //     svgLayerElement: svgLayer,
+  //     svgNodeCacheForCanvas: nodeCache,
+      
+  //     getSvgNode: (cacheKey: string) => {
+  //       return nodeCache[cacheKey] as SVGGElement | undefined;
+  //     },
+      
+  //     appendNode: (svgNode: SVGElement, cacheKey: string) => {
+  //       nodeCache[cacheKey] = svgNode;
+  //       if (!svgLayer.contains(svgNode)) {
+  //         svgLayer.appendChild(svgNode);
+  //       }
+  //     },
+      
+  //     setNodeTouched: (cacheKey: string) => {
+  //       touchedNodes.add(cacheKey);
+  //     },
+      
+  //     clearUntouched: () => {
+  //       Object.keys(nodeCache).forEach(key => {
+  //         if (!touchedNodes.has(key) && nodeCache[key]) {
+  //           nodeCache[key].remove();
+  //           delete nodeCache[key];
+  //         }
+  //       });
+  //       touchedNodes.clear();
+  //     }
+  //   };
+
+  //   // Convert world position → canvas position
+  //   const canvasPos = vp.worldToCanvas(labelWorldPos);
+    
+  //   const textLines = [
+  //     `${prediction.class.toUpperCase()}`,
+  //     `${(prediction.confidence * 100).toFixed(1)}%`
+  //   ];
+
+  //   const textUID = `text-${annotationUID}`;
+    
+  //   // ✅ BÂY GIỜ CÓ THỂ DÙNG drawTextBox
+  //   drawing.drawTextBox(
+  //     svgDrawingHelper,
+  //     annotationUID,
+  //     textUID,
+  //     textLines,
+  //     [canvasPos[0], canvasPos[1]],
+  //     {
+  //       color: color,
+  //       background: "rgba(0, 0, 0, 0.8)",
+  //       fontFamily: "Arial",
+  //       fontSize: "14px",
+  //       padding: 5,
+  //       centerX: true,
+  //       centerY: false
+  //     }
+  //   );
+
+  //   console.log(`✅ Drew text box for ${prediction.class} at canvas (${canvasPos[0]}, ${canvasPos[1]})`);
+  // }
+
+
         const camera = viewport.getCamera();
-        const enabledElement = getEnabledElement(element);
 
         const className = prediction.class;
         const confidence = (prediction.confidence * 100).toFixed(1) + "%";
@@ -231,7 +316,7 @@ export const drawAIPredictions = (
               textBox: {
                 hasMoved: false,
                 //
-                worldPosition: labelWorldPosFinal,
+                worldPosition: [0,0,0],
                 worldBoundingBox: {
                   topLeft: [0, 0, 0] as Types.Point3,
                   topRight: [0, 0, 0] as Types.Point3,
@@ -257,7 +342,6 @@ export const drawAIPredictions = (
               statsArray: [
                 { key: "Diagnosis", value: className },
                 { key: "Confidence", value: confidence },
-              
               ],
             },
             contour: {
@@ -376,7 +460,7 @@ export const drawAIPredictions = (
 
     console.log("✅ All predictions added to state");
     console.log("🔄 Triggering annotation renders...");
-    
+
     // Force annotation rendering
     toolsUtilities.triggerAnnotationRenderForViewportIds([viewportId]);
     viewport.render();

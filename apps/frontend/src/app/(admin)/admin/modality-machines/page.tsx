@@ -276,13 +276,13 @@ export default function ModalityMachinePage() {
         />
       )}
 
-      <ModalityMachineStatsCards
+      {/* <ModalityMachineStatsCards
         totalCount={stats.total}
         activeCount={stats.active}
         inactiveCount={stats.inactive}
         maintenanceCount={stats.maintenance}
         isLoading={isLoading || modalityMachineStatsLoading}
-      />
+      /> */}
 
       <ModalityMachineFiltersSection
         filters={filters}
