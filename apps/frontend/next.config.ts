@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  images:{
+    domains: ["tse3.mm.bing.net"],
+    formats: ["image/avif", "image/webp"],
+  },
 
   webpack: (config, { isServer }) => {
     // resolve fs for one of the dependencies
