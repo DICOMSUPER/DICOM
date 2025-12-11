@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import SignatureDisplay from "@/components/common/signature-display";
 import { decryptPayload } from "@/utils/encryption";
@@ -7,7 +7,7 @@ import { useGetRoomByIdQuery } from "@/store/roomsApi";
 import { formatDateLocal } from "@/utils/schedule/utils";
 import { formatDateTime } from "@/lib/formatTimeDate";
 
-export default function Page() {
+function OrderPaperContent() {
   const searchParams = useSearchParams();
   const data = searchParams.get("data");
   const signatureRef = useRef<HTMLDivElement>(null);
@@ -480,5 +480,21 @@ export default function Page() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-xl font-semibold text-gray-600">
+            Loading order form...
+          </div>
+        </div>
+      }
+    >
+      <OrderPaperContent />
+    </Suspense>
   );
 }
