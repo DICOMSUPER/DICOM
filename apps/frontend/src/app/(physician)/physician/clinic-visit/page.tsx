@@ -140,6 +140,27 @@ export default function QueuePage() {
     }
   );
 
+  // Derive stats from the currently fetched encounters to avoid backend/shape mismatches.
+  const derivedStats = useMemo(() => {
+    const encounters = data?.data ?? [];
+    const totalEncounters = encounters.length;
+    const totalArrivedEncounters = encounters.filter(
+      (enc) => enc.status === EncounterStatus.ARRIVED
+    ).length;
+    const totalCompletedEncounters = encounters.filter(
+      (enc) => enc.status === EncounterStatus.FINISHED
+    ).length;
+    return {
+      totalEncounters,
+      totalArrivedEncounters,
+      totalCompletedEncounters,
+    };
+  }, [data?.data]);
+
+  // Prefer derived stats; fall back to backend stats if no local data yet.
+  const statsForCards =
+    derivedStats.totalEncounters > 0 ? derivedStats : statsData?.data;
+
   useEffect(() => {
     if (data) {
       setPaginationMeta({
@@ -272,7 +293,7 @@ export default function QueuePage() {
         />
       </div>
 
-      <EncounterStatsCards stats={statsData?.data} isLoading={isStatsLoading} />
+      <EncounterStatsCards stats={statsForCards} isLoading={isStatsLoading} />
 
       <PatientEncounterFiltersSection
         filters={filters}

@@ -81,10 +81,9 @@ export interface RoomSchedule {
   actual_end_time?: string;
   schedule_status:
     | "scheduled"
-    | "confirmed"
+    | "in_progress"
     | "completed"
-    | "cancelled"
-    | "no_show";
+    | "cancelled";
   notes?: string;
   overtime_hours: number;
   created_by?: string;

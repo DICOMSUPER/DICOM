@@ -17,6 +17,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import axios from 'axios';
 import { Repository } from 'typeorm';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class AiAnalysesService {
@@ -24,7 +25,8 @@ export class AiAnalysesService {
     @InjectRepository(AiAnalysis)
     private readonly aiAnalysisRepository: Repository<AiAnalysis>,
     private readonly redisService: RedisService,
-    private readonly paginationService: PaginationService // private readonly cloudinaryService: CloudinaryService
+    private readonly paginationService: PaginationService,
+    private readonly cloudinaryService: CloudinaryService
   ) {}
   async create(createAiAnalysisDto: CreateAiAnalysisDto): Promise<AiAnalysis> {
     console.log('Creating AI analysis:', createAiAnalysisDto);
@@ -56,8 +58,8 @@ export class AiAnalysesService {
     aiModelId: string,
     modelName: string,
     versionName: string,
-
     userId: string,
+    folder: string,
     selectedStudyId?: string
   ): Promise<AiResultDiagnosis> {
     try {
@@ -72,7 +74,11 @@ export class AiAnalysesService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      this.aiAnalysisRepository.save({
+      const image = await this.cloudinaryService.uploadBase64ToCloudinary(base64Image, {
+        folder: folder,
+        resource_type: 'auto',
+      });
+      await this.aiAnalysisRepository.save({
         analysisResults: result.data,
         analysisStatus: AnalysisStatus.COMPLETED,
         aiModelId: aiModelId,
@@ -80,12 +86,14 @@ export class AiAnalysesService {
         versionName: versionName,
         userId: userId,
         studyId: selectedStudyId || '',
+        originalImageUrl: image.secure_url,
+        originalImageName: image.public_id,
       });
 
       return result.data;
     } catch (error: any) {
       console.log('Error diagnosing image:', error);
-      this.aiAnalysisRepository.save({
+      await this.aiAnalysisRepository.save({
         errorMessage: error.message,
         analysisStatus: AnalysisStatus.FAILED,
         aiModelId: aiModelId,
@@ -116,10 +124,10 @@ export class AiAnalysesService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<AiAnalysis>
     >(keyName);
-    // if (cachedService) {
-    //   console.log('AI analyses retrieved from cache');
-    //   return cachedService;
-    // }
+    if (cachedService) {
+      console.log('AI analyses retrieved from cache');
+      return cachedService;
+    }
 
     // Build query options
     const options: any = {
@@ -186,11 +194,38 @@ export class AiAnalysesService {
     id: string,
     updateAiAnalysisDto: UpdateAiAnalysisDto
   ): Promise<AiAnalysis> {
-    console.log(`🔄 Updating AI analysis: ${id}`);
+    console.log(` Updating AI analysis: ${id}`);
     const aiAnalysis = await this.findOne(id);
     Object.assign(aiAnalysis, updateAiAnalysisDto);
     const updatedAnalysis = await this.aiAnalysisRepository.save(aiAnalysis);
-    console.log('✅ AI analysis updated successfully:', updatedAnalysis.id);
+    console.log('AI analysis updated successfully:', updatedAnalysis.id);
+    return updatedAnalysis;
+  }
+
+  async submitFeedback(
+    id: string,
+    userId: string,
+    isHelpful: boolean,
+    feedbackComment?: string
+  ): Promise<AiAnalysis> {
+    console.log(`📝 Submitting feedback for AI analysis: ${id}`);
+    const aiAnalysis = await this.findOne(id);
+
+    aiAnalysis.isHelpful = isHelpful;
+    aiAnalysis.feedbackComment = feedbackComment;
+    aiAnalysis.feedbackUserId = userId;
+    aiAnalysis.feedbackAt = new Date();
+
+    const updatedAnalysis = await this.aiAnalysisRepository.save(aiAnalysis);
+    console.log('Feedback submitted successfully:', updatedAnalysis.id);
+
+    const keyName = createCacheKey.system(
+      'ai_analyses',
+      undefined,
+      'filter_ai_analyses'
+    );
+    await this.redisService.delete(keyName);
+
     return updatedAnalysis;
   }
 }

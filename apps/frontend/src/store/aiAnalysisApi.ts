@@ -6,6 +6,7 @@ import {
     AiAnalysis,
     CreateAiAnalysisDto,
     FilterAiAnalysisDto,
+    SubmitFeedbackDto,
 } from "@/interfaces/system/ai-analysis.interface";
 import { AiResultDiagnosis } from "@/interfaces/system/ai-result.interface";
 import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
@@ -32,20 +33,6 @@ export const aiAnalysisApi = createApi({
             ]
           : [{ type: "AiAnalysis", id: "LIST" }],
     }),
-    //       @Post('/diagnosis-image')
-    //   @Public()
-    //   async diagnosisImageByAI(
-    //     @Body()
-    //     body: {
-    //       base64Image: string;
-    //       aiModelId?: string;
-    //     }
-    //   ) {
-    //     return this.systemService.send(
-    //       'SystemService.AiAnalysis.DiagnosisImage',
-    //       body
-    //     );
-    //   }
     diagnosisImageByAI: builder.mutation<
       ApiResponse<AiResultDiagnosis>,
       { base64Image: string; aiModelId?: string, modelName?: string, versionName?: string, selectedStudyId?: string }
@@ -78,6 +65,21 @@ export const aiAnalysisApi = createApi({
         { type: "AiAnalysis", id: "LIST" },
       ],
     }),
+
+    submitFeedback: builder.mutation<
+      ApiResponse<AiAnalysis>,
+      { id: string; feedback: SubmitFeedbackDto }
+    >({
+      query: ({ id, feedback }) => ({
+        url: `/${id}/feedback`,
+        method: "POST",
+        data: feedback,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "AiAnalysis", id },
+        { type: "AiAnalysis", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -87,4 +89,5 @@ export const {
   useCreateAiAnalysisMutation,
   useDeleteAiAnalysisMutation,
   useDiagnosisImageByAIMutation,
+  useSubmitFeedbackMutation,
 } = aiAnalysisApi;

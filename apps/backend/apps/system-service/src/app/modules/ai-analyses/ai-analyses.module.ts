@@ -5,11 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm/dist';
 
 import { AiAnalysesController } from './ai-analyses.controller';
 import { AiAnalysesService } from './ai-analyses.service';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AiAnalysis]),
-    // CloudinaryModule,
+    CloudinaryModule,
   ],
   controllers: [AiAnalysesController],
   providers: [AiAnalysesService, PaginationService],

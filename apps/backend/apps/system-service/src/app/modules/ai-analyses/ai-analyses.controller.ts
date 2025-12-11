@@ -6,6 +6,7 @@ import {
   FilterAiAnalysisDto,
   UpdateAiAnalysisDto,
 } from '@backend/shared-domain';
+import { handleErrorFromMicroservices } from '@backend/shared-utils';
 
 @Controller()
 export class AiAnalysesController {
@@ -23,26 +24,54 @@ export class AiAnalysesController {
 
   @MessagePattern('SystemService.AiAnalysis.DiagnosisImage')
   async diagnosisImageByAI(
-    @Payload() data: {body: { base64Image: string; aiModelId: string; modelName: string; versionName: string , selectedStudyId?: string}, userId: string }
+    @Payload()
+    data: {
+      body: {
+        base64Image: string;
+        aiModelId: string;
+        modelName: string;
+        versionName: string;
+        selectedStudyId?: string;
+      };
+      userId: string;
+      folder: string;
+    }
   ) {
     return await this.aiAnalysesService.diagnosisImageByAI(
       data.body.base64Image,
       data.body.aiModelId,
       data.body.modelName,
       data.body.versionName,
-      data.userId
+      data.userId,
+      data.folder,
+      data.body.selectedStudyId
     );
   }
 
-
   @MessagePattern('ai_analysis.findAll')
   async findAll(@Payload() filter: FilterAiAnalysisDto) {
-    return await this.aiAnalysesService.findAll(filter);
+    try {
+      return await this.aiAnalysesService.findAll(filter);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find all AI analyses',
+        'SystemService'
+      );
+    }
   }
 
   @MessagePattern('ai_analysis.findOne')
   async findOne(@Payload() payload: { id: string }) {
-    return await this.aiAnalysesService.findOne(payload.id);
+    try {
+      return await this.aiAnalysesService.findOne(payload.id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to find one AI analysis',
+        'SystemService'
+      );
+    }
   }
 
   @MessagePattern('ai_analysis.update')
@@ -50,5 +79,29 @@ export class AiAnalysesController {
     return await this.aiAnalysesService.update(payload.id, payload.data);
   }
 
-
+  @MessagePattern('ai_analysis.submitFeedback')
+  async submitFeedback(
+    @Payload()
+    payload: {
+      id: string;
+      userId: string;
+      isHelpful: boolean;
+      feedbackComment?: string;
+    }
+  ) {
+    try {
+      return await this.aiAnalysesService.submitFeedback(
+        payload.id,
+        payload.userId,
+        payload.isHelpful,
+        payload.feedbackComment
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to submit feedback',
+        'SystemService'
+      );
+    }
+  }
 }

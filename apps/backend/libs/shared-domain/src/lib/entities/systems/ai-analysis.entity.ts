@@ -10,6 +10,12 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'study_id', nullable: true })
   studyId!: string;
 
+  @Column({ name: 'original_image_url', nullable: true })
+  originalImage?: string;
+
+  @Column({ name: 'original_image_name', nullable: true })
+  originalImageName?: string;
+
   @Column({
     name: 'analysis_status',
     type: 'enum',
@@ -20,9 +26,6 @@ export class AiAnalysis extends BaseEntity {
 
   @Column({ name: 'analysis_results', type: 'json', nullable: true })
   analysisResults?: any;
-
-  @Column({ type: 'text', nullable: true })
-  findings?: string;
 
   @Column({ name: 'error_message', type: 'text', nullable: true })
   errorMessage?: string;
@@ -39,5 +42,15 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'version_name', length: 50, nullable: true })
   versionName?: string;
 
+  @Column({ name: 'is_helpful', type: 'boolean', nullable: true })
+  isHelpful?: boolean;
 
+  @Column({ name: 'feedback_comment', type: 'text', nullable: true })
+  feedbackComment?: string;
+
+  @Column({ name: 'feedback_user_id', type: 'uuid', nullable: true })
+  feedbackUserId?: string;
+
+  @Column({ name: 'feedback_at', type: 'timestamp', nullable: true })
+  feedbackAt?: Date;
 }

@@ -38,7 +38,7 @@ export interface RoomSchedule {
   work_date: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  schedule_status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
   overtime_hours: number;
   created_by?: string;
@@ -55,7 +55,7 @@ export interface CreateRoomScheduleDto {
   work_date: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  schedule_status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
   overtime_hours?: number;
 }
@@ -66,7 +66,7 @@ export interface UpdateRoomScheduleDto {
   work_date?: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  schedule_status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   notes?: string;
   overtime_hours?: number;
 }
@@ -102,10 +102,9 @@ export interface PaginatedResponse<T> {
 export interface ScheduleStats {
   total: number;
   scheduled: number;
-  confirmed: number;
+  in_progress: number;
   completed: number;
   cancelled: number;
-  no_show: number;
   today: number;
   this_week: number;
   this_month: number;

@@ -21,6 +21,7 @@ import {
   Layers,
   GitPullRequest,
   File,
+  Brain,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -102,6 +103,12 @@ export const roleNavigation: RoleNavigation = {
       label: "Procedures",
       icon: GitPullRequest,
       description: "Manage request procedures and modalities",
+    },
+    {
+      href: "/admin/ai-analysis",
+      label: "AI Analysis",
+      icon: Brain,
+      description: "Manage AI analyses",
     },
     {
       href: "/admin/shift-templates",

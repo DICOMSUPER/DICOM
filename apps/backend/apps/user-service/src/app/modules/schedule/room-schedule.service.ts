@@ -26,6 +26,9 @@ export class RoomScheduleService {
     createDto: CreateRoomScheduleDto
   ): Promise<RoomSchedule> {
     try {
+      // Force default status to SCHEDULED regardless of payload
+      createDto.schedule_status = ScheduleStatus.SCHEDULED;
+
       // Validate work_date is at least 1 day in the future
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -74,7 +77,10 @@ export class RoomScheduleService {
       // Room schedules are room-based, not employee-based
       // Employees are assigned to room schedules via employee_room_assignments
 
-      const schedule = this.RoomScheduleRepository.create(createDto);
+      const schedule = this.RoomScheduleRepository.create({
+        ...createDto,
+        schedule_status: ScheduleStatus.SCHEDULED,
+      });
       return await this.RoomScheduleRepository.save(schedule);
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -150,6 +156,16 @@ export class RoomScheduleService {
     try {
       const schedule = await this.findOne(id);
 
+      // Disallow any updates if already COMPLETED or CANCELLED
+      if (
+        schedule.schedule_status === ScheduleStatus.COMPLETED ||
+        schedule.schedule_status === ScheduleStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          'Completed or cancelled schedules cannot be edited'
+        );
+      }
+
       // Determine the values after update
       const finalEndTime = updateDto.actual_end_time !== undefined 
         ? updateDto.actual_end_time 
@@ -160,6 +176,35 @@ export class RoomScheduleService {
         : schedule.actual_start_time;
 
       const finalWorkDate = updateDto.work_date || schedule.work_date;
+
+      // Guard: only allow cancelling when current status is SCHEDULED and work_date is at least 1 day in the future.
+      // Also disallow changing status to anything else.
+      if (updateDto.schedule_status !== undefined) {
+        if (updateDto.schedule_status === ScheduleStatus.CANCELLED) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const workDate = new Date(finalWorkDate);
+          workDate.setHours(0, 0, 0, 0);
+
+          const diffTime = workDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (
+            schedule.schedule_status !== ScheduleStatus.SCHEDULED ||
+            diffDays < 1
+          ) {
+            throw new BadRequestException(
+              'Only schedules with status SCHEDULED and at least 1 day in the future can be cancelled'
+            );
+          }
+        } else if (updateDto.schedule_status !== schedule.schedule_status) {
+          // Any other status change is not allowed
+          throw new BadRequestException(
+            'Schedule status can only change from SCHEDULED to CANCELLED'
+          );
+        }
+      }
 
       // Check if schedule should be automatically marked as completed
       // A schedule is considered "done" when:
@@ -176,14 +221,15 @@ export class RoomScheduleService {
         if (workDate <= today) {
           // Only auto-complete if:
           // - Status is not explicitly being set to something else in the update
-          // - Current status is not CANCELLED or NO_SHOW
+          // - Current status is not CANCELLED
           // - Status is not already COMPLETED (to avoid unnecessary updates)
           const explicitStatusUpdate = updateDto.schedule_status !== undefined;
-          const isCancelledOrNoShow = schedule.schedule_status === ScheduleStatus.CANCELLED || 
-                                      schedule.schedule_status === ScheduleStatus.NO_SHOW;
-          const isAlreadyCompleted = schedule.schedule_status === ScheduleStatus.COMPLETED;
-          
-          if (!explicitStatusUpdate && !isCancelledOrNoShow && !isAlreadyCompleted) {
+          const isCancelled =
+            schedule.schedule_status === ScheduleStatus.CANCELLED;
+          const isAlreadyCompleted =
+            schedule.schedule_status === ScheduleStatus.COMPLETED;
+
+          if (!explicitStatusUpdate && !isCancelled && !isAlreadyCompleted) {
             updateDto.schedule_status = ScheduleStatus.COMPLETED;
           }
         }
@@ -382,6 +428,16 @@ export class RoomScheduleService {
       for (const update of updates) {
         const schedule = await this.findOne(update.id);
         
+        // Disallow any updates if already COMPLETED or CANCELLED
+        if (
+          schedule.schedule_status === ScheduleStatus.COMPLETED ||
+          schedule.schedule_status === ScheduleStatus.CANCELLED
+        ) {
+          throw new BadRequestException(
+            'Completed or cancelled schedules cannot be edited'
+          );
+        }
+
         // Apply the same auto-completion logic as in the update method
         const finalEndTime = update.data.actual_end_time !== undefined 
           ? update.data.actual_end_time 
@@ -393,6 +449,35 @@ export class RoomScheduleService {
 
         const finalWorkDate = update.data.work_date || schedule.work_date;
 
+        // Guard: only allow cancelling when current status is SCHEDULED and work_date is at least 1 day in the future.
+        // Also disallow changing status to anything else.
+        if (update.data.schedule_status !== undefined) {
+          if (update.data.schedule_status === ScheduleStatus.CANCELLED) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const workDate = new Date(finalWorkDate);
+            workDate.setHours(0, 0, 0, 0);
+
+            const diffTime = workDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (
+              schedule.schedule_status !== ScheduleStatus.SCHEDULED ||
+              diffDays < 1
+            ) {
+              throw new BadRequestException(
+                'Only schedules with status SCHEDULED and at least 1 day in the future can be cancelled'
+              );
+            }
+          } else if (update.data.schedule_status !== schedule.schedule_status) {
+            // Any other status change is not allowed
+            throw new BadRequestException(
+              'Schedule status can only change from SCHEDULED to CANCELLED'
+            );
+          }
+        }
+
         if (finalStartTime && finalEndTime && finalWorkDate) {
           const workDate = new Date(finalWorkDate);
           workDate.setHours(0, 0, 0, 0);
@@ -401,14 +486,15 @@ export class RoomScheduleService {
           today.setHours(0, 0, 0, 0);
           
           if (workDate <= today) {
-            const explicitStatusUpdate = update.data.schedule_status !== undefined;
-            const isCancelledOrNoShow = schedule.schedule_status === ScheduleStatus.CANCELLED || 
-                                        schedule.schedule_status === ScheduleStatus.NO_SHOW;
-            const isAlreadyCompleted = schedule.schedule_status === ScheduleStatus.COMPLETED;
+          const explicitStatusUpdate = update.data.schedule_status !== undefined;
+          const isCancelled =
+            schedule.schedule_status === ScheduleStatus.CANCELLED;
+          const isAlreadyCompleted =
+            schedule.schedule_status === ScheduleStatus.COMPLETED;
             
-            if (!explicitStatusUpdate && !isCancelledOrNoShow && !isAlreadyCompleted) {
-              update.data.schedule_status = ScheduleStatus.COMPLETED;
-            }
+          if (!explicitStatusUpdate && !isCancelled && !isAlreadyCompleted) {
+            update.data.schedule_status = ScheduleStatus.COMPLETED;
+          }
           }
         }
         
@@ -555,7 +641,7 @@ export class RoomScheduleService {
    * 1. The work_date is in the past, OR
    * 2. The work_date is today and the actual_end_time has passed
    * 3. Both actual_start_time and actual_end_time are set
-   * 4. Status is SCHEDULED or CONFIRMED (not already COMPLETED, CANCELLED, or NO_SHOW)
+   * 4. Status is SCHEDULED or IN_PROGRESS (not already COMPLETED or CANCELLED)
    */
   async autoMarkCompletedSchedules(): Promise<{
     updatedCount: number;
@@ -569,22 +655,26 @@ export class RoomScheduleService {
       const currentTime = now.toTimeString().substring(0, 8); // HH:MM:SS format
 
       // Use repository's findWithFilters to efficiently query only schedules that could be completed
-      // Get SCHEDULED schedules with work_date <= today
-      const scheduledSchedules = await this.RoomScheduleRepository.findWithFilters({
-        workDateTo: todayStr,
-        scheduleStatus: ScheduleStatus.SCHEDULED,
-      });
-
-      // Get CONFIRMED schedules
-      const confirmedSchedules = await this.RoomScheduleRepository.findWithFilters({
-        workDateTo: todayStr,
-        scheduleStatus: ScheduleStatus.CONFIRMED,
-      });
+      // Get SCHEDULED/IN_PROGRESS schedules with work_date <= today
+      const scheduledSchedules =
+        await this.RoomScheduleRepository.findWithFilters({
+          workDateTo: todayStr,
+          scheduleStatus: ScheduleStatus.SCHEDULED,
+        });
+      const inProgressSchedules =
+        await this.RoomScheduleRepository.findWithFilters({
+          workDateTo: todayStr,
+          scheduleStatus: ScheduleStatus.IN_PROGRESS,
+        });
 
       // Combine and filter to only those that should be completed
       const candidateSchedules = [
-        ...scheduledSchedules.filter(s => s.actual_start_time && s.actual_end_time),
-        ...confirmedSchedules.filter(s => s.actual_start_time && s.actual_end_time),
+        ...scheduledSchedules.filter(
+          (s) => s.actual_start_time && s.actual_end_time
+        ),
+        ...inProgressSchedules.filter(
+          (s) => s.actual_start_time && s.actual_end_time
+        ),
       ];
       
       const schedulesToComplete = candidateSchedules.filter((schedule) => {
@@ -623,5 +713,46 @@ export class RoomScheduleService {
         'Failed to auto-mark completed schedules'
       );
     }
+  }
+
+  /**
+   * Automatically mark schedules as IN_PROGRESS when their actual start time is reached.
+   * Applies to schedules that are currently SCHEDULED and have:
+   * - work_date = today
+   * - actual_start_time set
+   * - current time >= actual_start_time
+   */
+  async autoMarkInProgressSchedules(): Promise<{
+    updatedCount: number;
+    schedules: RoomSchedule[];
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    const now = new Date();
+    const currentTime = now.toTimeString().substring(0, 8); // HH:MM:SS
+
+    const candidates = await this.RoomScheduleRepository.findWithFilters({
+      workDateFrom: todayStr,
+      workDateTo: todayStr,
+      scheduleStatus: ScheduleStatus.SCHEDULED,
+    });
+
+    const toUpdate = candidates.filter(
+      (schedule) =>
+        schedule.actual_start_time &&
+        schedule.actual_start_time.substring(0, 8) <= currentTime
+    );
+
+    let updatedCount = 0;
+    const updatedSchedules: RoomSchedule[] = [];
+    for (const schedule of toUpdate) {
+      schedule.schedule_status = ScheduleStatus.IN_PROGRESS;
+      const saved = await this.RoomScheduleRepository.save(schedule);
+      updatedSchedules.push(saved);
+      updatedCount++;
+    }
+
+    return { updatedCount, schedules: updatedSchedules };
   }
 }

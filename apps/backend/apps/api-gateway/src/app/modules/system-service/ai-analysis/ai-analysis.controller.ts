@@ -3,6 +3,7 @@ import {
   CreateAiAnalysisDto,
   FilterAiAnalysisDto,
   UpdateAiAnalysisDto,
+  SubmitFeedbackDto,
 } from '@backend/shared-domain';
 import {
   RequestLoggingInterceptor,
@@ -111,5 +112,25 @@ export class AiAnalysisController {
   @Put(':id/status')
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.systemService.send('ai_analysis.updateStatus', { id, status });
+  }
+
+  @Post(':id/feedback')
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN,
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN
+  )
+  async submitFeedback(
+    @Param('id') id: string,
+    @Body() body: SubmitFeedbackDto,
+    @Req() req: IAuthenticatedRequest
+  ) {
+    return this.systemService.send('ai_analysis.submitFeedback', {
+      id,
+      userId: req.userInfo?.userId,
+      isHelpful: body.isHelpful,
+      feedbackComment: body.feedbackComment,
+    });
   }
 }

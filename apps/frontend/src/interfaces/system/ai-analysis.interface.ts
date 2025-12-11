@@ -2,17 +2,29 @@ import { AnalysisStatus } from "@/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
 import { QueryParams } from "../pagination/pagination.interface";
 import { AiModel } from "./ai-model.interface";
+import { AiResultDiagnosis } from "./ai-result.interface";
 
 export interface AiAnalysis extends BaseEntity {
   analysisId: string;
   studyId: string;
   analysisStatus?: AnalysisStatus;
-  analysisResults?: Record<string, any>;
-  findings?: string;
+  analysisResults?: AiResultDiagnosis;
+  // findings?: string;
   errorMessage?: string;
   aiModelId: string;
-  aiModel?: AiModel;
+  modelName?: string;
+  versionName?: string;
+  originalImage?: string;
+  originalImageName?: string;
+  // aiModel?: AiModel;
+  
+  // Feedback fields
+  isHelpful?: boolean;
+  feedbackComment?: string;
+  feedbackUserId?: string;
+  feedbackAt?: Date;
 }
+
 export interface CreateAiAnalysisDto {
   patientId: string;
   studyId: string;
@@ -29,4 +41,10 @@ export interface FilterAiAnalysisDto extends QueryParams {
   status?: AnalysisStatus;
   startDate?: string;
   endDate?: string;
+  isHelpful?: boolean;
+}
+
+export interface SubmitFeedbackDto {
+  isHelpful: boolean;
+  feedbackComment?: string;
 }
