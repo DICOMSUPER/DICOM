@@ -1,14 +1,23 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { X, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
 import { useHasSignatureQuery } from "@/store/digitalSignatureApi";
-import SignatureAnimation from "signature-animation";
 import { useTechnicianVerifyStudyMutation } from "@/store/dicomStudySignatureApi";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import SignatureDisplay from "@/components/common/signature-display";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function SignatureModal({
   isOpen,
@@ -46,8 +55,6 @@ export default function SignatureModal({
       setShowPin(false);
     }
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   // Validate PIN
   const validatePin = (value: string): boolean => {
@@ -113,18 +120,10 @@ export default function SignatureModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-40"
-        onClick={handleClose}
-      />
-
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             {signatureData?.data?.hasSignature ? (
               <>
                 <CheckCircle className="w-5 h-5 text-green-600" />
@@ -133,30 +132,23 @@ export default function SignatureModal({
             ) : (
               "Digital Signature Required"
             )}
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Content */}
-        <div className="px-6 py-6">
+        <div className="space-y-6 py-4">
           {isLoadingSignature ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600 mb-3"></div>
-              <p className="text-sm text-gray-600">Loading signature...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading signature...
+              </p>
             </div>
           ) : signatureData?.data?.hasSignature ? (
             <>
               {/* Signature Display */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Signature
-                </label>
-                <div className="border-2 border-gray-300 rounded-md bg-gray-50 h-32 flex flex-col items-center justify-center">
+              <div className="space-y-2">
+                <Label>Your Signature</Label>
+                <div className="border-2 rounded-md bg-muted h-32 flex flex-col items-center justify-center">
                   {user && user?.firstName && user?.lastName ? (
                     <SignatureDisplay
                       firstName={user.firstName}
@@ -164,7 +156,7 @@ export default function SignatureModal({
                       role="Kỹ thuật viên"
                     />
                   ) : (
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       No signature available
                     </p>
                   )}
@@ -172,12 +164,11 @@ export default function SignatureModal({
               </div>
 
               {/* PIN Input */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter PIN to Verify Study
-                </label>
+              <div className="space-y-2">
+                <Label htmlFor="pin">Enter PIN to Verify Study</Label>
                 <div className="relative">
-                  <input
+                  <Input
+                    id="pin"
                     type={showPin ? "text" : "password"}
                     placeholder="Enter your PIN (min. 6 characters)"
                     value={pin}
@@ -187,76 +178,47 @@ export default function SignatureModal({
                         handleVerifyStudy();
                       }
                     }}
-                    className={`w-full border ${
-                      pinError ? "border-red-500" : "border-gray-300"
-                    } rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 ${
-                      pinError ? "focus:ring-red-500" : "focus:ring-blue-500"
-                    }`}
+                    className={pinError ? "border-destructive" : ""}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPin(!showPin)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                    {showPin ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
                 {pinError && (
-                  <p className="text-red-500 text-xs mt-1">{pinError}</p>
+                  <p className="text-destructive text-xs">{pinError}</p>
                 )}
-                <div className="flex justify-end mt-2">
-                  <button
+                <div className="flex justify-end">
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={handleClear}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="px-0 h-auto"
                   >
                     Clear
-                  </button>
+                  </Button>
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleClose}
-                  disabled={isVerifyingStudy}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleVerifyStudy}
-                  disabled={
-                    !pin.trim() ||
-                    pin.length < 6 ||
-                    isVerifyingStudy ||
-                    !!pinError
-                  }
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isVerifyingStudy ? (
-                    <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Verifying...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4" />
-                      Verify Study
-                    </span>
-                  )}
-                </button>
               </div>
             </>
           ) : (
             <>
               {/* No Signature - Setup Required */}
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-muted-foreground">
                 A digital signature is required to complete this imaging study.
                 Please setup your signature to proceed.
               </p>
-              <div className="flex justify-center mb-6 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                <div className="text-center">
-                  <p className="text-gray-400 text-sm mb-2">
+              <div className="flex justify-center p-6 bg-muted rounded-lg border-2 border-dashed">
+                <div className="text-center space-y-2">
+                  <p className="text-muted-foreground text-sm">
                     No signature found, please consider setting up your
                     signature.
                   </p>
@@ -265,32 +227,66 @@ export default function SignatureModal({
                       firstName={user.firstName}
                       lastName={user.lastName}
                       role="Kỹ thuật viên"
+                      duration={0.1}
+                      delay={0}
                     />
                   )}
                 </div>
               </div>
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    onSetupSignature();
-                    handleClose();
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Setup Signature
-                </button>
-              </div>
             </>
           )}
         </div>
-      </div>
-    </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          {signatureData?.data?.hasSignature ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={isVerifyingStudy}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleVerifyStudy}
+                disabled={
+                  !pin.trim() ||
+                  pin.length < 6 ||
+                  isVerifyingStudy ||
+                  !!pinError
+                }
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isVerifyingStudy ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Verifying...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    Verify Study
+                  </span>
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  onSetupSignature();
+                  handleClose();
+                }}
+              >
+                Setup Signature
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

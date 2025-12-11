@@ -22,7 +22,11 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
     phone: "(999) 888-7777",
   });
 
-  const line = (label: string, value: string | number | undefined, offsetY: number) => {
+  const line = (
+    label: string,
+    value: string | number | undefined,
+    offsetY: number
+  ) => {
     const val = value ?? "N/A";
     doc.setFontSize(9.5);
     doc.setTextColor(60);
@@ -47,14 +51,22 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
 
   let infoY = y + 16;
   infoY = line("Patient Name", imagingProcedurePDF.patientName, infoY);
-  infoY = line("Age / Gender", `${imagingProcedurePDF.age} / ${imagingProcedurePDF.gender}`, infoY);
+  infoY = line(
+    "Age / Gender",
+    `${imagingProcedurePDF.age} / ${imagingProcedurePDF.gender}`,
+    infoY
+  );
   infoY = line("Patient ID", imagingProcedurePDF.patientCode, infoY);
   infoY = line("Insurance", imagingProcedurePDF.insuranceNumber, infoY);
 
   // Second column inside card
   let infoY2 = y + 16;
   const col2X = margin + contentWidth / 2;
-  const line2 = (label: string, value: string | number | undefined, offsetY: number) => {
+  const line2 = (
+    label: string,
+    value: string | number | undefined,
+    offsetY: number
+  ) => {
     const val = value ?? "N/A";
     doc.setFontSize(9.5);
     doc.setTextColor(60);
@@ -64,7 +76,11 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
     doc.text(String(val), col2X, offsetY + 5);
     return offsetY + 12;
   };
-  infoY2 = line2("Department / Room", `${imagingProcedurePDF.departmentName} - ${imagingProcedurePDF.roomName}`, infoY2);
+  infoY2 = line2(
+    "Department / Room",
+    `${imagingProcedurePDF.departmentName} - ${imagingProcedurePDF.roomName}`,
+    infoY2
+  );
   infoY2 = line2("Address", imagingProcedurePDF.address, infoY2);
   infoY2 = line2("Diagnosis", imagingProcedurePDF.diagnosis, infoY2);
   infoY2 = line2("Notes", imagingProcedurePDF.notes, infoY2);
@@ -130,7 +146,7 @@ export const ImagingOrder = ({ imagingProcedurePDF }: ImagingOrderPDFProps) => {
   const centerX = signatureX + signatureWidth / 2;
   doc.text(physicianName, centerX, signatureY + 22, { align: "center" });
 
-   doc.save(`Imaging_Order_${imagingProcedurePDF.patientCode}.pdf`);
+  doc.save(`Imaging_Order_${imagingProcedurePDF.patientCode}.pdf`);
   // === Return Blob URL ===
   // const pdfBlob = doc.output("blob");
   // return URL.createObjectURL(pdfBlob);

@@ -43,7 +43,8 @@ import {
   useGetUserByIdQuery,
 } from "@/store/userApi";
 import { toast } from "sonner";
-
+import { handleEncrypt } from "@/utils/encryption";
+import { useRouter } from "next/navigation";
 export interface ImagingProcedure {
   id: string;
   modality: string;
@@ -67,6 +68,8 @@ export interface ImagingProcedurePDF {
   notes: string;
   orderingPhysicianName?: string;
   procedures: ImagingProcedure[];
+  roomId?: string;
+  date?: string;
 }
 
 interface CreateImagingOrderProps {
@@ -103,6 +106,7 @@ export default function CreateImagingOrder({
   const [createImagingOrderForm, { isLoading: isCreating }] =
     useCreateImagingOrderFormMutation();
 
+  const router = useRouter();
   // const addProcedure = () => {
   //   const newProcedure: ImagingProcedure = {
   //     id: Date.now().toString(),
@@ -154,56 +158,55 @@ export default function CreateImagingOrder({
     return basicInfoValid && proceduresValid;
   };
 
-const handleSave = async () => {
-  if (!isFormValid()) {
-    console.log("Form is invalid");
-    toast.error("Please fill in all required fields");
-    return;
-  }
-
-  try {
-    const imagingOrders: CreateImagingOrderDto[] = procedures.map(
-      (procedure) => ({
-        request_procedure_id: procedure.procedureServiceId,
-        clinicalIndication: procedure.clinicalIndication ?? "",
-        contrastRequired: false,
-        specialInstructions: procedure.specialInstructions ?? "",
-      })
-    );
-
-    const payload: ICreateImagingOrderForm = {
-      patientId: patient.id as string,
-      encounterId: encounterId,
-      roomId: room,
-      notes,
-      diagnosis,
-      imagingOrders,
-    };
-
-
-    
-    const result = await createImagingOrderForm(payload).unwrap();
-    
-    console.log("✅ API Response:", result);
-    
-
-    if (result?.success || result?.data) {
-      toast.success("Imaging orders created successfully!");
-      handleDownloadPDF();
-      handleCancel();
-    } else {
-      throw new Error("Unexpected response format");
+  const handleSave = async () => {
+    if (!isFormValid()) {
+      console.log("Form is invalid");
+      toast.error("Please fill in all required fields");
+      return;
     }
-  } catch (error: any) {
-    console.error("❌ Error creating imaging orders:", error);
-    const errorMessage =
-      error?.data?.message || 
-      error?.message || 
-      "Failed to create imaging orders. Please try again.";
-    
-    toast.error(errorMessage);
-  }
-};
+
+    try {
+      const imagingOrders: CreateImagingOrderDto[] = procedures.map(
+        (procedure) => ({
+          request_procedure_id: procedure.procedureServiceId,
+          clinicalIndication: procedure.clinicalIndication ?? "",
+          contrastRequired: false,
+          specialInstructions: procedure.specialInstructions ?? "",
+        })
+      );
+
+      const payload: ICreateImagingOrderForm = {
+        patientId: patient.id as string,
+        encounterId: encounterId,
+        roomId: room,
+        notes,
+        diagnosis,
+        imagingOrders,
+      };
+
+      const result = await createImagingOrderForm(payload).unwrap();
+
+      console.log("✅ API Response:", result);
+
+      if (result?.success || result?.data) {
+        console.log("orderform:", result?.data);
+        toast.success("Imaging orders created successfully!");
+        handleDownloadPDF();
+
+        handleCancel();
+      } else {
+        throw new Error("Unexpected response format");
+      }
+    } catch (error: any) {
+      console.error("❌ Error creating imaging orders:", error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to create imaging orders. Please try again.";
+
+      toast.error(errorMessage);
+    }
+  };
   const { data: departmentsData, isLoading: isDepartmentsLoading } =
     useGetDepartmentsQuery({
       limit: 100,
@@ -254,10 +257,37 @@ const handleSave = async () => {
       procedures: procedures,
       departmentName: departmentName,
       roomName: roomName,
+      roomId: room,
+      date: new Date().toLocaleDateString("vi-VN"),
+      notes: notes,
+      orderingPhysicianName: `${profile?.data?.firstName} ${profile?.data?.lastName}`,
+    };
+
+    // console.log("imagingProcedurePDF: ", imagingProcedurePDF);
+    const encryptedData = handleEncrypt(imagingProcedurePDF);
+
+    // console.log("encryptedData: ", encryptedData);
+    router.push(
+      `/physician/order-paper?data=${encodeURIComponent(encryptedData)}`
+    );
+    // ImagingOrder({ imagingProcedurePDF });
+  };
+
+  const handleNavigateToOrder = () => {
+    const imagingProcedurePDF: ImagingProcedurePDF = {
+      patientCode: patient.patientCode || "",
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      address: patient.address || "",
+      gender: patient.gender || "",
+      age: calculateAge(patient.dateOfBirth as Date),
+      insuranceNumber: patient.insuranceNumber || "Nothing",
+      diagnosis: diagnosis,
+      procedures: procedures,
+      departmentName: departmentName,
+      roomName: roomName,
       notes: notes,
       orderingPhysicianName: `${profile?.data.firstName} ${profile?.data.lastName}`,
     };
-    ImagingOrder({ imagingProcedurePDF });
   };
 
   return (
@@ -527,7 +557,9 @@ const handleSave = async () => {
                       bodyPartsData={bodyPartsData?.data}
                       updateProcedure={updateProcedure}
                       removeProcedure={removeProcedure}
-                       selectedProcedureIds={procedures.map(p => p.procedureServiceId).filter(Boolean)} 
+                      selectedProcedureIds={procedures
+                        .map((p) => p.procedureServiceId)
+                        .filter(Boolean)}
                     />
                   ))}
                   {/* <Button
