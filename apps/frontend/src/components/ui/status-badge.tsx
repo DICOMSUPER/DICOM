@@ -92,7 +92,6 @@ export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
           icon: CheckCircle2,
           text: "Finished",
         };
-      case "cancelled":
       case "left":
       case "departed":
         return {
@@ -100,14 +99,6 @@ export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
             "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-100",
           icon: LogOut,
           text: "Cancelled",
-        };
-      case "no-show":
-      case "no_show":
-        return {
-          className:
-            "bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-50",
-          icon: AlertCircle,
-          text: "No Show",
         };
       default:
         return {

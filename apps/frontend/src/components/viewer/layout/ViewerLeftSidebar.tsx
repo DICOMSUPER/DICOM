@@ -35,7 +35,10 @@ import {
 import { useViewer } from "@/contexts/ViewerContext";
 import AIDiagnosisButton from "@/components/viewer/toolbar/AIDiagnosisButton";
 import SegmentationControlPanelModal from "../modals/segmentation-control-panel-modal";
-import { compressSnapshots } from "@/contexts/viewer-context/segmentation-helper";
+import {
+  compressSnapshots,
+  type SegmentationSnapshot,
+} from "@/contexts/viewer-context/segmentation-helper";
 import {
   useCreateImageSegmentationLayerMutation,
   useDeleteImageSegmentationLayerMutation,
@@ -115,6 +118,15 @@ const SEGMENTATION_TOOLS: readonly ToolConfig[] = [
   // { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "Shift+Z" }, // temporarily hidden
 ] as const;
 
+const deriveFrameForLayer = (snapshots: SegmentationSnapshot[]): number => {
+  const latestSnapshot = snapshots?.[snapshots.length - 1];
+  const firstImage = latestSnapshot?.imageData?.[0];
+  const frameNumber = firstImage?.frameNumber;
+  return typeof frameNumber === "number" && Number.isFinite(frameNumber)
+    ? frameNumber
+    : 1;
+};
+
 export default function ViewerLeftSidebar({
   seriesLayout,
   onSeriesLayoutChange,
@@ -169,13 +181,14 @@ export default function ViewerLeftSidebar({
         return;
       }
 
+      const frame = deriveFrameForLayer(layer.snapshots as SegmentationSnapshot[]);
       const compressedSnapshots = compressSnapshots(layer.snapshots);
 
       await createImageSegmentationLayers({
         layerName: layer.name,
         instanceId: layer.instanceId as string,
         notes: layer.notes,
-        frame: 1,
+        frame,
         snapshots: compressedSnapshots,
       }).unwrap();
 

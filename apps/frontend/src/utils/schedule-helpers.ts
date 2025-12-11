@@ -134,7 +134,6 @@ export const getMonthDates = (date: Date): Date[] => {
 export const getScheduleStatusColor = (status: string): string => {
   const statusColors: Record<string, string> = {
     scheduled: 'bg-blue-100 text-blue-800',
-    confirmed: 'bg-green-100 text-green-800',
     in_progress: 'bg-yellow-100 text-yellow-800',
     completed: 'bg-gray-100 text-gray-800',
     cancelled: 'bg-red-100 text-red-800',
@@ -146,7 +145,6 @@ export const getScheduleStatusColor = (status: string): string => {
 export const getScheduleStatusIcon = (status: string): LucideIcon => {
   const statusIcons: Record<string, LucideIcon> = {
     scheduled: Calendar,
-    confirmed: CheckCircle,
     in_progress: RefreshCw,
     completed: Check,
     cancelled: X,

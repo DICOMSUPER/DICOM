@@ -69,16 +69,46 @@ export default function ImagingTechnicianDashboard() {
       order: "desc",
     });
 
-  const stats = analyticsData?.data?.stats || {
-    totalImagingOrders: 0,
-    pendingImagingOrders: 0,
-    inProgressImagingOrders: 0,
-    completedImagingOrders: 0,
-    todayImagingOrders: 0,
-    totalStudies: 0,
-    todayStudies: 0,
-    activeMachines: 0,
-  };
+  // Derive stats defensively from analytics data; if backend shape differs, map from status arrays.
+  const stats = (() => {
+    const base =
+      analyticsData?.data?.stats || {
+        totalImagingOrders: 0,
+        pendingImagingOrders: 0,
+        inProgressImagingOrders: 0,
+        completedImagingOrders: 0,
+        todayImagingOrders: 0,
+        totalStudies: 0,
+        todayStudies: 0,
+        activeMachines: 0,
+      };
+
+    // If imagingOrdersByStatus is present, recompute to match UI buckets.
+    const byStatus = analyticsData?.data?.imagingOrdersByStatus;
+    if (Array.isArray(byStatus) && byStatus.length > 0) {
+      const countFor = (statuses: string[]) =>
+        byStatus
+          .filter((item) =>
+            statuses.some((s) => s.toLowerCase() === item.status.toLowerCase())
+          )
+          .reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+      const pending = countFor(["pending"]);
+      const inProgress = countFor(["in_progress", "in-progress"]);
+      const completed = countFor(["completed"]);
+      const total = byStatus.reduce((sum, item) => sum + (item.count ?? 0), 0);
+
+      return {
+        ...base,
+        pendingImagingOrders: pending || base.pendingImagingOrders,
+        inProgressImagingOrders: inProgress || base.inProgressImagingOrders,
+        completedImagingOrders: completed || base.completedImagingOrders,
+        totalImagingOrders: total || base.totalImagingOrders,
+      };
+    }
+
+    return base;
+  })();
   
   const isLoading = analyticsLoading;
   const chartData = analyticsData?.data;

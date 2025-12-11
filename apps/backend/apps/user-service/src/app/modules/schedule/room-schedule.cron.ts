@@ -11,13 +11,29 @@ export class RoomScheduleCronService {
   ) {}
 
   /**
+   * Auto-mark schedules as IN_PROGRESS when their actual start time is reached
+   * Runs every minute (local time)
+   */
+  @Cron('*/1 * * * *', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+  })
+  async handleAutoMarkInProgress() {
+    const result = await this.roomScheduleService.autoMarkInProgressSchedules();
+    if (result.updatedCount > 0) {
+      this.logger.log(
+        `✅ Auto-marked ${result.updatedCount} schedules as IN_PROGRESS`
+      );
+    }
+  }
+
+  /**
    * Auto-mark completed schedules
    * Runs every 15 minutes to check and mark completed schedules
    * A schedule is marked as COMPLETED when:
    * - work_date is today or in the past
    * - Both actual_start_time and actual_end_time are set
    * - If work_date is today, actual_end_time has passed
-   * - Status is SCHEDULED or CONFIRMED
+   * - Status is SCHEDULED or IN_PROGRESS
    */
   @Cron('*/15 * * * *', {
     timeZone: 'Asia/Ho_Chi_Minh',

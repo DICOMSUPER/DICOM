@@ -25,7 +25,7 @@ import {
   useUpdateRoomScheduleMutation 
 } from "@/store/scheduleApi";
 import { toast } from "sonner";
-import { UserRole, ROLE_OPTIONS } from "@/enums/role.enum";
+import { ROLE_OPTIONS } from "@/enums/role.enum";
 
 // Schema validation
 const scheduleSchema = z.object({
@@ -35,7 +35,9 @@ const scheduleSchema = z.object({
   actual_end_time: z.string().optional(),
   room_id: z.string().optional(),
   shift_template_id: z.string().optional(),
-  schedule_status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]).optional(),
+  schedule_status: z
+    .enum(["scheduled", "in_progress", "completed", "cancelled"])
+    .optional(),
   notes: z.string().optional(),
   overtime_hours: z.number().min(0).optional(),
 }).refine(
@@ -51,8 +53,6 @@ const scheduleSchema = z.object({
     path: ["actual_end_time"],
   }
 );
-
-type ScheduleFormData = z.infer<typeof scheduleSchema>;
 
 interface ScheduleFormProps {
   schedule?: any;
@@ -128,6 +128,24 @@ export function ScheduleForm({
   const [updateSchedule, { isLoading: isUpdating }] = useUpdateRoomScheduleMutation();
 
   const selectedShiftTemplateId = watch("shift_template_id");
+  const watchedWorkDate = watch("work_date");
+
+  const workDateObj = watchedWorkDate ? new Date(watchedWorkDate) : undefined;
+  if (workDateObj) {
+    workDateObj.setHours(0, 0, 0, 0);
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = workDateObj
+    ? Math.ceil((workDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const canCancel =
+    isEdit &&
+    schedule?.schedule_status === "scheduled" &&
+    diffDays >= 1;
+  const isLocked =
+    schedule?.schedule_status === "completed" ||
+    schedule?.schedule_status === "cancelled";
 
   // Reset form when schedule prop changes (for edit mode)
   useEffect(() => {
@@ -159,6 +177,14 @@ export function ScheduleForm({
 
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
+
+    // Block submits if schedule is locked
+    if (isLocked) {
+      toast.error("Completed or cancelled schedules cannot be edited.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       // Convert "none" and empty string values to undefined for optional fields
       // Add default values for optional fields
@@ -166,7 +192,10 @@ export function ScheduleForm({
         ...data,
         room_id: (data.room_id === "none" || data.room_id === "") ? undefined : data.room_id,
         shift_template_id: (data.shift_template_id === "none" || data.shift_template_id === "") ? undefined : data.shift_template_id,
-        schedule_status: data.schedule_status || "scheduled",
+        // Enforce status rules: create always scheduled; edit only allowed transition scheduled -> cancelled
+        schedule_status: isEdit
+          ? data.schedule_status || schedule?.schedule_status || "scheduled"
+          : "scheduled",
         overtime_hours: data.overtime_hours || 0,
       };
 
@@ -197,6 +226,7 @@ export function ScheduleForm({
   };
 
   const isLoading = isCreating || isUpdating || isSubmitting;
+  const isFormDisabled = isLoading || isLocked;
 
   // Show loading state if users data is not loaded yet
   if (users.length === 0 || usersLoading) {
@@ -392,18 +422,22 @@ export function ScheduleForm({
         </Label>
         <Select
           value={watch("schedule_status")}
-          onValueChange={(value: any) => setValue("schedule_status", value)}
-          disabled={isLoading}
+          onValueChange={(value: any) => {
+            if (!canCancel) return; // block forbidden transitions on the client
+            setValue("schedule_status", value);
+          }}
+          disabled={isLoading || isLocked || !isEdit || !canCancel}
         >
           <SelectTrigger id="schedule_status">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent className="border-border">
-            <SelectItem value="scheduled">Scheduled</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-            <SelectItem value="no_show">No Show</SelectItem>
+            <SelectItem value="scheduled" disabled>Scheduled (default)</SelectItem>
+            {canCancel && (
+              <SelectItem value="cancelled">
+                Cancelled (only when scheduled & ≥1 day before)
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>

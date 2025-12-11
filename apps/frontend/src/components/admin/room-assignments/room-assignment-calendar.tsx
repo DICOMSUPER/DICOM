@@ -46,10 +46,9 @@ const timeSlots = [
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-800",
-  confirmed: "bg-emerald-100 text-emerald-700",
+  in_progress: "bg-amber-100 text-amber-800",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-rose-100 text-rose-700",
-  no_show: "bg-amber-100 text-amber-700",
 };
 
 export function RoomAssignmentCalendar({
