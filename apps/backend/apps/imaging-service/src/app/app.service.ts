@@ -1,18 +1,18 @@
+import { Patient } from '@backend/shared-domain';
+import { DicomStudyStatus } from '@backend/shared-enums';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { InjectEntityManager } from '@nestjs/typeorm';
 import dcmjs from 'dcmjs';
+import { EntityManager } from 'typeorm';
+import { IMAGING_SERVICE } from '../constant/microservice.constant';
+import { BodyPartRepository } from './modules/body-part/body-part.repository';
 import { DicomInstancesRepository } from './modules/dicom-instances/dicom-instances.repository';
 import { DicomSeriesRepository } from './modules/dicom-series/dicom-series.repository';
 import { DicomStudiesRepository } from './modules/dicom-studies/dicom-studies.repository';
-import { EntityManager } from 'typeorm';
-import { InjectEntityManager } from '@nestjs/typeorm';
 import { ImagingModalityRepository } from './modules/imaging-modalities/imaging-modalities.repository';
 import { ImagingOrderRepository } from './modules/imaging-orders/imaging-orders.repository';
-import { ThrowMicroserviceException } from '@backend/shared-utils';
-import { IMAGING_SERVICE } from '../constant/microservice.constant';
-import { DicomStudyStatus } from '@backend/shared-enums';
-import { Patient } from '@backend/shared-domain';
 import { ModalityMachinesRepository } from './modules/modality-machines/modality-machines.repository';
-import { BodyPartRepository } from './modules/body-part/body-part.repository';
 
 export interface DICOMMetadata {
   // General Image Information
