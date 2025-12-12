@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatStatus } from "@/utils/format-status";
 
 const patients = [
   {
@@ -64,7 +65,7 @@ export function PatientList() {
                 <Badge
                   variant={patient.status === "Active" ? "success" : "secondary"}
                 >
-                  {patient.status}
+                  {formatStatus(patient.status)}
                 </Badge>
               </TableCell>
               <TableCell>{patient.studyCount} studies</TableCell>

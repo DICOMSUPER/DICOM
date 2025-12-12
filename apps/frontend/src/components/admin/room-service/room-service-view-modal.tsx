@@ -17,9 +17,8 @@ import {
   Building2,
   Stethoscope,
   Calendar,
-  Check,
-  X,
 } from 'lucide-react';
+import { formatStatus, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
 
 interface RoomServiceViewModalProps {
   roomService: ServiceRoom | null;
@@ -84,7 +83,8 @@ export function RoomServiceViewModal({ roomService, isOpen, onClose, onEdit }: R
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <Badge className={`${roomService.isActive ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'} px-4 py-1 text-xs font-semibold shadow-sm border`}>
+                  <Badge className={`${modalStyles.badge[getStatusBadgeColor(roomService.isActive)]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
+                    <div className={`w-2 h-2 rounded-full ${roomService.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
                     {roomService.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
@@ -109,7 +109,7 @@ export function RoomServiceViewModal({ roomService, isOpen, onClose, onEdit }: R
                     <Building2 className="h-4 w-4" />
                     Room Type
                   </div>
-                  <p className="text-base font-semibold text-foreground">{roomService.room?.roomType || '—'}</p>
+                  <p className="text-base font-semibold text-foreground">{formatStatus(roomService.room?.roomType) || '—'}</p>
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <div className="flex items-center gap-2 text-sm text-foreground">

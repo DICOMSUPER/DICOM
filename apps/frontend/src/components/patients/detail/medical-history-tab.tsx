@@ -24,6 +24,7 @@ import {
   Visit, 
   Immunization 
 } from '@/types/patient-detail';
+import { formatStatus } from '@/utils/format-status';
 
 interface MedicalHistoryTabProps {
   procedures: MedicalProcedure[];
@@ -154,7 +155,7 @@ export function MedicalHistoryTab({
                         <div className="flex items-center gap-3">
                           <h4 className="font-semibold text-gray-900">{diagnosis.condition}</h4>
                           <Badge variant="outline" className={getStatusColor(diagnosis.status)}>
-                            {diagnosis.status}
+                            {formatStatus(diagnosis.status)}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -199,7 +200,7 @@ export function MedicalHistoryTab({
                       <div className="flex items-center gap-3">
                         <h4 className="font-semibold text-gray-900">{visit.type}</h4>
                         <Badge variant="outline" className={getStatusColor(visit.status)}>
-                          {visit.status}
+                          {formatStatus(visit.status)}
                         </Badge>
                       </div>
                       <div className="text-sm text-gray-500">

@@ -26,15 +26,31 @@ import {
   Monitor,
   Stethoscope,
   Loader2,
+  Clock,
+  Wifi,
+  Phone,
+  Tv,
+  Wind,
+  Accessibility,
+  Heart,
+  Bell,
 } from "lucide-react";
-import { format } from "date-fns";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/utils/api";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
 
 interface RoomViewModalProps {
-  room: Room | null;
+  room: (Room & {
+    staffForDay?: {
+      id?: string;
+      name: string;
+      role?: string;
+      scheduleStatus?: string;
+    }[];
+    selectedDate?: string;
+  }) | null;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (room: Room) => void;
@@ -66,93 +82,9 @@ export function RoomViewModal({
     return room.serviceRooms.filter((sr) => sr.isActive && sr.service);
   }, [room]);
 
+  const staffForDay = room?.staffForDay || [];
+
   if (!room) return null;
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case RoomStatus.AVAILABLE:
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
-      case RoomStatus.OCCUPIED:
-        return "bg-rose-100 text-rose-700 border-rose-200";
-      case RoomStatus.MAINTENANCE:
-        return "bg-amber-100 text-amber-700 border-amber-200";
-      default:
-        return "bg-muted text-foreground border-border";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case RoomStatus.AVAILABLE:
-        return "Available";
-      case RoomStatus.OCCUPIED:
-        return "Occupied";
-      case RoomStatus.MAINTENANCE:
-        return "Maintenance";
-      default:
-        return status || "Unknown";
-    }
-  };
-
-  const getStatusBadgeClass = (
-    status: string | boolean | undefined,
-    type: "machine" | "service" = "service"
-  ): string => {
-    if (type === "service") {
-      const isActive =
-        status === true || status === "true" || status === "ACTIVE";
-      return isActive
-        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-        : "bg-gray-100 text-gray-700 border-gray-200";
-    }
-
-    if (type === "machine") {
-      const statusStr = String(status || "").toUpperCase();
-      if (statusStr === "ACTIVE" || statusStr === "AVAILABLE") {
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
-      } else if (statusStr === "INACTIVE" || statusStr === "UNAVAILABLE") {
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      } else if (statusStr === "MAINTENANCE") {
-        return "bg-amber-100 text-amber-700 border-amber-200";
-      }
-      return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-
-    return "bg-muted text-foreground border-border";
-  };
-
-  const getStatusLabelForBadge = (
-    status: string | boolean | undefined,
-    type: "machine" | "service" = "service"
-  ): string => {
-    if (type === "service") {
-      const isActive =
-        status === true || status === "true" || status === "ACTIVE";
-      return isActive ? "Active" : "Inactive";
-    }
-
-    if (type === "machine") {
-      const statusStr = String(status || "Unknown").toLowerCase();
-      return statusStr
-        .split(" ")
-        .map((word) => word?.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-    }
-
-    return String(status || "Unknown");
-  };
-
-  const formatDate = (dateStr: string | Date | null | undefined) => {
-    if (!dateStr) return "—";
-    const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
 
   const formatDateTime = (dateValue?: string | Date | null) => {
     if (!dateValue) return "—";
@@ -170,475 +102,378 @@ export function RoomViewModal({
     });
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusLower = status?.toUpperCase();
+    let color: keyof typeof modalStyles.badge = 'slate';
+    let dotColor: keyof typeof modalStyles.statusDot = 'slate';
+    let animate = false;
+
+    switch (statusLower) {
+      case RoomStatus.AVAILABLE:
+        color = 'green';
+        dotColor = 'green';
+        break;
+      case RoomStatus.OCCUPIED:
+        color = 'red';
+        dotColor = 'red';
+        break;
+      case RoomStatus.MAINTENANCE:
+        color = 'amber';
+        dotColor = 'amber';
+        animate = true;
+        break;
+      default:
+        color = 'slate';
+        dotColor = 'slate';
+    }
+
+    return (
+      <Badge className={modalStyles.badge[color]}>
+        <div className={animate ? modalStyles.statusDot.amber : `w-2 h-2 bg-${dotColor === 'green' ? 'green' : dotColor === 'red' ? 'red' : 'slate'}-500 rounded-full mr-2`} />
+        {formatStatus(status)}
+      </Badge>
+    );
+  };
+
+  const getMachineStatusBadge = (status: string | boolean | undefined) => {
+    const color = getStatusBadgeColor(status);
+    return (
+      <Badge className={modalStyles.badge[color]}>
+        {formatStatus(String(status))}
+      </Badge>
+    );
+  };
+
+  const getActiveStatusBadge = (isActive: boolean) => {
+    const color = getStatusBadgeColor(isActive);
+    return (
+      <Badge className={modalStyles.badge[color]}>
+        <div className={isActive ? modalStyles.statusDot.green : modalStyles.statusDot.slate} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             Room Details
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           {!room ? (
-            <div className="space-y-8 pr-4 pb-2">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-64 w-full" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : (
-            <div className="space-y-8 pr-4 pb-2">
+            <div className="space-y-6">
               {/* Hero Section */}
-              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+              <section className={modalStyles.heroSection}>
                 <div className="flex flex-wrap items-start justify-between gap-6">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                      <DoorOpen className="h-3.5 w-3.5" />
+                  <div className="space-y-3">
+                    <div className={modalStyles.heroLabel}>
+                      <DoorOpen className="h-3.5 w-3.5 inline mr-1" />
                       {room.roomCode}
                     </div>
                     <div>
-                      <p className="text-3xl font-semibold text-foreground leading-tight">
+                      <p className={modalStyles.heroTitle}>
                         {room.roomType || "N/A"}
                       </p>
-                      <div className="mt-3 grid gap-2 text-sm text-foreground">
-                        <p className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          {room.floor !== undefined
-                            ? `Floor ${room.floor}`
-                            : "Floor N/A"}{" "}
-                          • {room.department?.departmentName || "No Department"}
+                      <div className="mt-3 space-y-2">
+                        <p className={modalStyles.heroSubtitle}>
+                          <MapPin className="h-4 w-4 text-teal-600" />
+                          Floor {room.floor !== undefined ? room.floor : "N/A"} • {room.department?.departmentName || "No Department"}
                         </p>
                         {room.capacity !== undefined && (
-                          <p className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
+                          <p className={modalStyles.heroSubtitle}>
+                            <Users className="h-4 w-4 text-teal-600" />
                             Capacity: {room.capacity} people
-                            {room.roomStats?.currentInProgress !==
-                              undefined && (
-                              <span className="text-xs text-foreground ml-2">
-                                ({room.roomStats.currentInProgress} currently
-                                assigned)
-                              </span>
-                            )}
                           </p>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-4 text-right">
-                    <Badge
-                      className={`${getStatusColor(
-                        room.status
-                      )} px-4 py-1 text-xs font-semibold shadow-sm`}
-                    >
-                      {getStatusLabel(room.status)}
-                    </Badge>
-                    {room.pricePerDay !== undefined &&
-                      room.pricePerDay !== null && (
-                        <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
-                          <p className="uppercase text-xs tracking-wide">
-                            Price per Day
-                          </p>
-                          <p className="text-base font-semibold text-foreground flex items-center gap-1 justify-end">
-                            <DollarSign className="h-4 w-4" />
-                            {typeof room.pricePerDay === "number"
-                              ? room.pricePerDay.toLocaleString()
-                              : Number(room.pricePerDay).toLocaleString()}{" "}
-                            ₫
-                          </p>
-                        </div>
-                      )}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">
-                        Room Type
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {room.roomType || "N/A"}
-                      </p>
-                      <p className="text-xs text-foreground">Category</p>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <MapPin className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">
-                        Location
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        Floor {room.floor}
-                      </p>
-                      <p className="text-xs text-foreground">
-                        {room.department?.departmentName || "Unassigned"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">
-                        Capacity
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {room.capacity} people
-                      </p>
-                      <p className="text-xs text-foreground">
-                        Maximum occupancy
-                      </p>
-                    </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    {getStatusBadge(room.status)}
+                    {room.pricePerDay !== undefined && room.pricePerDay !== null && (
+                      <div className="bg-white/80 backdrop-blur rounded-lg px-4 py-2 border border-teal-100">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide">Price/Day</p>
+                        <p className="text-lg font-bold text-slate-900 flex items-center gap-1">
+                          <DollarSign className="h-4 w-4 text-teal-600" />
+                          {typeof room.pricePerDay === "number"
+                            ? room.pricePerDay.toLocaleString()
+                            : Number(room.pricePerDay).toLocaleString()} ₫
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
 
-              {/* Overview Section */}
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Building2 className="h-5 w-5" />
-                  Room Overview
-                </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Building2 className="h-4 w-4" />
-                      Room Code
-                    </div>
-                    <p className="text-base font-semibold text-foreground">
-                      {room.roomCode}
-                    </p>
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Building2 className={modalStyles.gridCardIcon} />
+                    Room Type
                   </div>
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <MapPin className="h-4 w-4" />
-                      Floor
-                    </div>
-                    <p className="text-base font-semibold text-foreground">
-                      {room.floor}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Building2 className="h-4 w-4" />
-                      Department
-                    </div>
-                    <p className="text-base font-semibold text-foreground">
-                      {room.department?.departmentName || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <div className="grid gap-6 xl:grid-cols-3">
-                <div className="xl:col-span-2 space-y-6">
-                  {/* Description */}
-                  {room.description && (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-3">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Building2 className="h-5 w-5" />
-                        Description
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
-                        {room.description}
-                      </p>
-                    </section>
-                  )}
-
-                  {/* Modality Machines */}
-                  {isLoadingModalities ? (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Monitor className="h-5 w-5" />
-                        Modality Machines
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-foreground" />
-                        <span className="text-sm text-foreground">
-                          Loading modalities...
-                        </span>
-                      </div>
-                    </section>
-                  ) : modalities.length > 0 ? (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Monitor className="h-5 w-5" />
-                        Modality Machines ({modalities.length})
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {modalities.map((machine: ModalityMachine) => {
-                          const displayName =
-                            machine.name ||
-                            machine.modality?.modalityName ||
-                            `${machine.manufacturer || ""} ${
-                              machine.model || ""
-                            }`.trim() ||
-                            "Unnamed Machine";
-
-                          return (
-                            <div
-                              key={machine.id}
-                              className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
-                            >
-                              <p className="text-sm font-semibold text-foreground">
-                                {displayName}
-                              </p>
-                              {machine.modality?.modalityName &&
-                                machine.name && (
-                                  <p className="text-xs text-foreground">
-                                    Type: {machine.modality.modalityName}
-                                  </p>
-                                )}
-                              {machine.model && (
-                                <p className="text-xs text-foreground">
-                                  Model: {machine.model}
-                                </p>
-                              )}
-                              {machine.manufacturer && (
-                                <p className="text-xs text-foreground">
-                                  Manufacturer: {machine.manufacturer}
-                                </p>
-                              )}
-                              {machine.status && (
-                                <Badge
-                                  className={`${getStatusBadgeClass(
-                                    machine.status,
-                                    "machine"
-                                  )} text-xs font-medium mt-1 border`}
-                                >
-                                  {getStatusLabelForBadge(
-                                    machine.status,
-                                    "machine"
-                                  )}
-                                </Badge>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ) : (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Monitor className="h-5 w-5" />
-                        Modality Machines
-                      </div>
-                      <p className="text-sm text-foreground/70 italic">
-                        No modality machines available in this room
-                      </p>
-                    </section>
-                  )}
-
-                  {/* Services */}
-                  {roomServices.length > 0 ? (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Stethoscope className="h-5 w-5" />
-                        Room Services ({roomServices.length})
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {roomServices
-                          .filter(
-                            (sr: ServiceRoom) => sr.isActive && sr.service
-                          )
-                          .map((sr: ServiceRoom) => (
-                            <div
-                              key={sr.id}
-                              className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <p className="text-sm font-semibold text-foreground">
-                                    {sr.service?.serviceName ||
-                                      "Unknown Service"}
-                                  </p>
-                                  {sr.service?.serviceCode && (
-                                    <p className="text-xs text-foreground/70 mt-0.5">
-                                      Code: {sr.service.serviceCode}
-                                    </p>
-                                  )}
-                                </div>
-                                <Badge
-                                  className={`${getStatusBadgeClass(
-                                    sr.isActive,
-                                    "service"
-                                  )} text-xs font-medium shrink-0 border`}
-                                >
-                                  {getStatusLabelForBadge(
-                                    sr.isActive,
-                                    "service"
-                                  )}
-                                </Badge>
-                              </div>
-                              {sr.service?.description && (
-                                <p className="text-xs text-foreground/80 line-clamp-2 mt-1">
-                                  {sr.service.description}
-                                </p>
-                              )}
-                              {sr.notes && (
-                                <div className="mt-2 pt-2 border-t border-border/20">
-                                  <p className="text-xs font-medium text-foreground/70">
-                                    Notes:
-                                  </p>
-                                  <p className="text-xs text-foreground/80 mt-0.5">
-                                    {sr.notes}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                      </div>
-                    </section>
-                  ) : (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Stethoscope className="h-5 w-5" />
-                        Room Services
-                      </div>
-                      <p className="text-sm text-foreground/70 italic">
-                        No services available in this room
-                      </p>
-                    </section>
-                  )}
-
-                  {/* Facilities */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Building2 className="h-5 w-5" />
-                      Equipment & Amenities
-                    </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {[
-                        { key: "hasTV", label: "TV", value: room.hasTV },
-                        {
-                          key: "hasAirConditioning",
-                          label: "Air Conditioning",
-                          value: room.hasAirConditioning,
-                        },
-                        { key: "hasWiFi", label: "WiFi", value: room.hasWiFi },
-                        {
-                          key: "hasTelephone",
-                          label: "Telephone",
-                          value: room.hasTelephone,
-                        },
-                        {
-                          key: "hasAttachedBathroom",
-                          label: "Attached Bathroom",
-                          value: room.hasAttachedBathroom,
-                        },
-                        {
-                          key: "isWheelchairAccessible",
-                          label: "Wheelchair Accessible",
-                          value: room.isWheelchairAccessible,
-                        },
-                        {
-                          key: "hasOxygenSupply",
-                          label: "Oxygen Supply",
-                          value: room.hasOxygenSupply,
-                        },
-                        {
-                          key: "hasNurseCallButton",
-                          label: "Nurse Call Button",
-                          value: room.hasNurseCallButton,
-                        },
-                      ].map(({ key, label, value }) => (
-                        <div
-                          key={key}
-                          className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10"
-                        >
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            {value ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-red-600" />
-                            )}
-                            {label}
-                          </div>
-                          <p className="text-base font-semibold text-foreground">
-                            {value ? "Available" : "Not Available"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Notes */}
-                  {room.notes && (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-3">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Building2 className="h-5 w-5" />
-                        Notes
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
-                        {room.notes}
-                      </p>
-                    </section>
-                  )}
+                  <p className={modalStyles.gridCardValue}>{room.roomType || "N/A"}</p>
                 </div>
 
-                <div className="space-y-6">
-                  {/* Additional Information */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Building2 className="h-5 w-5" />
-                      Additional Info
-                    </div>
-                    <div className="space-y-3">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Active Status</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {room.isActive ? "Active" : "Inactive"}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <MapPin className={modalStyles.gridCardIcon} />
+                    Location
+                  </div>
+                  <p className={modalStyles.gridCardValue}>Floor {room.floor}</p>
+                  <p className="text-xs text-slate-500">{room.department?.departmentName || "Unassigned"}</p>
+                </div>
 
-                  {/* Timestamps */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Calendar className="h-5 w-5" />
-                      Timestamps
-                    </div>
-                    <div className="space-y-3">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Created At</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {formatDateTime(room.createdAt)}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Updated At</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {formatDateTime(room.updatedAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Users className={modalStyles.gridCardIcon} />
+                    Capacity
+                  </div>
+                  <p className={modalStyles.gridCardValue}>{room.capacity} people</p>
                 </div>
               </div>
+
+              {/* Staff for selected day */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Users className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Staff for {room.selectedDate || "selected day"}</h3>
+                </div>
+                {staffForDay.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {staffForDay.map((staff) => (
+                      <div key={staff.id || staff.name} className={modalStyles.infoCard}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{staff.name || "Unknown"}</p>
+                            {staff.role && (
+                              <p className="text-xs text-slate-500 mt-0.5">{formatStatus(staff.role)}</p>
+                            )}
+                          </div>
+                          {staff.scheduleStatus && (
+                            <Badge className={modalStyles.badge.slate}>
+                              {formatStatus(staff.scheduleStatus)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-4">
+                    No staff scheduled for this room on the selected date.
+                  </p>
+                )}
+              </section>
+
+              {/* Description */}
+              {room.description && (
+                <section className={modalStyles.section}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Building2 className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Description</h3>
+                  </div>
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    {room.description}
+                  </p>
+                </section>
+              )}
+
+              {/* Modality Machines */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Monitor className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>
+                    Modality Machines {modalities.length > 0 && `(${modalities.length})`}
+                  </h3>
+                </div>
+                {isLoadingModalities ? (
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Loading modalities...</span>
+                  </div>
+                ) : modalities.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {modalities.map((machine: ModalityMachine) => {
+                      const displayName = machine.name || machine.modality?.modalityName ||
+                        `${machine.manufacturer || ""} ${machine.model || ""}`.trim() || "Unnamed Machine";
+
+                      return (
+                        <div key={machine.id} className={modalStyles.infoCard}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{displayName}</p>
+                              {machine.modality?.modalityName && machine.name && (
+                                <p className="text-xs text-slate-500">Type: {machine.modality.modalityName}</p>
+                              )}
+                              {machine.model && <p className="text-xs text-slate-500">Model: {machine.model}</p>}
+                              {machine.manufacturer && <p className="text-xs text-slate-500">Manufacturer: {machine.manufacturer}</p>}
+                            </div>
+                            {machine.status && getMachineStatusBadge(machine.status)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-4">
+                    No modality machines available in this room
+                  </p>
+                )}
+              </section>
+
+              {/* Services */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Stethoscope className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>
+                    Room Services {roomServices.length > 0 && `(${roomServices.length})`}
+                  </h3>
+                </div>
+                {roomServices.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {roomServices.filter((sr: ServiceRoom) => sr.isActive && sr.service).map((sr: ServiceRoom) => (
+                      <div key={sr.id} className={modalStyles.infoCard}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {sr.service?.serviceName || "Unknown Service"}
+                            </p>
+                            {sr.service?.serviceCode && (
+                              <p className="text-xs text-slate-500">Code: {sr.service.serviceCode}</p>
+                            )}
+                            {sr.service?.description && (
+                              <p className="text-xs text-slate-500 line-clamp-2 mt-1">{sr.service.description}</p>
+                            )}
+                          </div>
+                          {getActiveStatusBadge(sr.isActive)}
+                        </div>
+                        {sr.notes && (
+                          <div className="mt-2 pt-2 border-t border-slate-100">
+                            <p className="text-xs text-slate-500">Notes: {sr.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-4">
+                    No services available in this room
+                  </p>
+                )}
+              </section>
+
+              {/* Equipment & Amenities */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Building2 className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Equipment & Amenities</h3>
+                </div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  {[
+                    { key: "hasTV", label: "TV", value: room.hasTV, icon: Tv },
+                    { key: "hasAirConditioning", label: "Air Conditioning", value: room.hasAirConditioning, icon: Wind },
+                    { key: "hasWiFi", label: "WiFi", value: room.hasWiFi, icon: Wifi },
+                    { key: "hasTelephone", label: "Telephone", value: room.hasTelephone, icon: Phone },
+                    { key: "hasAttachedBathroom", label: "Attached Bathroom", value: room.hasAttachedBathroom, icon: DoorOpen },
+                    { key: "isWheelchairAccessible", label: "Wheelchair Accessible", value: room.isWheelchairAccessible, icon: Accessibility },
+                    { key: "hasOxygenSupply", label: "Oxygen Supply", value: room.hasOxygenSupply, icon: Heart },
+                    { key: "hasNurseCallButton", label: "Nurse Call", value: room.hasNurseCallButton, icon: Bell },
+                  ].map(({ key, label, value }) => (
+                    <div key={key} className={`${modalStyles.infoCard} flex items-center gap-3`}>
+                      <div className={`p-2 rounded-lg ${value ? 'bg-green-100' : 'bg-slate-100'}`}>
+                        {value ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <X className="h-4 w-4 text-slate-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">{label}</p>
+                        <p className={`text-xs ${value ? 'text-green-600' : 'text-slate-400'}`}>
+                          {value ? "Available" : "Not Available"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Notes */}
+              {room.notes && (
+                <section className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-6 shadow-sm">
+                  <div className={modalStyles.sectionHeader}>
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <Building2 className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-amber-900">Notes</h3>
+                  </div>
+                  <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap">
+                    {room.notes}
+                  </p>
+                </section>
+              )}
+
+              {/* Timestamps */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Clock className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Created At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>{formatDateTime(room.createdAt)}</p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Updated At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>{formatDateTime(room.updatedAt)}</p>
+                  </div>
+                </div>
+              </section>
             </div>
           )}
         </ScrollArea>
 
-        {/* Fixed Footer */}
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {onAssignService && room && (
-            <Button variant="default" onClick={() => onAssignService(room)}>
+            <Button onClick={() => onAssignService(room)} className={`${modalStyles.primaryButton} bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800`}>
               Assign Service
             </Button>
           )}
           {onEdit && room && (
-            <Button variant="default" onClick={() => onEdit(room)}>
+            <Button onClick={() => onEdit(room)} className={modalStyles.primaryButton}>
               Edit Room
             </Button>
           )}

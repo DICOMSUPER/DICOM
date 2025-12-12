@@ -11,7 +11,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -39,7 +38,8 @@ import { RoomStatus, RoomType } from '@/enums/room.enum';
 import { useCreateRoomMutation, useUpdateRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { Department } from '@/interfaces/user/department.interface';
-import { Building2 } from 'lucide-react';
+import { Building2, MapPin, FileText, Settings, Tv, Wind, Wifi, Phone, DoorOpen, Accessibility, Heart, Bell } from 'lucide-react';
+import { formatStatus, modalStyles } from '@/utils/format-status';
 
 interface RoomFormModalProps {
   room: Room | null;
@@ -109,7 +109,6 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
   });
 
   useEffect(() => {
-    // Prevent repeated resets on every render; only run when modal opens or data changes
     if (!isOpen) return;
 
     if (room) {
@@ -218,23 +217,37 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
     onClose();
   };
 
+  const facilityFields = [
+    { name: 'hasTV' as const, label: 'TV', icon: Tv },
+    { name: 'hasAirConditioning' as const, label: 'Air Conditioning', icon: Wind },
+    { name: 'hasWiFi' as const, label: 'WiFi', icon: Wifi },
+    { name: 'hasTelephone' as const, label: 'Telephone', icon: Phone },
+    { name: 'hasAttachedBathroom' as const, label: 'Attached Bathroom', icon: DoorOpen },
+    { name: 'isWheelchairAccessible' as const, label: 'Wheelchair Accessible', icon: Accessibility },
+    { name: 'hasOxygenSupply' as const, label: 'Oxygen Supply', icon: Heart },
+    { name: 'hasNurseCallButton' as const, label: 'Nurse Call Button', icon: Bell },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             {isEdit ? 'Edit Room' : 'Create New Room'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-            <ScrollArea className="flex-1 min-h-0 h-full px-6">
-              <div className="space-y-8 pr-4 pb-2">
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Building2 className="h-5 w-5" />
-                    Basic Information
+            <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Building2 className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Basic Information</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -242,11 +255,11 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="roomCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Room Code *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Room Code *</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., R101"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -259,13 +272,13 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="roomType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Room Type *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Room Type *</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500">
                                 <SelectValue placeholder="Select room type" />
                               </SelectTrigger>
                             </FormControl>
@@ -288,14 +301,14 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="department"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Department *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Department *</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                             disabled={departmentsLoading || departments.length === 0}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500">
                                 <SelectValue placeholder={departmentsLoading ? "Loading departments..." : "Select department"} />
                               </SelectTrigger>
                             </FormControl>
@@ -320,37 +333,49 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Status *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Status *</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={(value) => field.onChange(value as RoomStatus)}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value={RoomStatus.AVAILABLE}>Available</SelectItem>
-                              <SelectItem value={RoomStatus.OCCUPIED}>Occupied</SelectItem>
-                              <SelectItem value={RoomStatus.MAINTENANCE}>Maintenance</SelectItem>
+                              <SelectItem value={RoomStatus.AVAILABLE}>{formatStatus(RoomStatus.AVAILABLE)}</SelectItem>
+                              <SelectItem value={RoomStatus.OCCUPIED}>{formatStatus(RoomStatus.OCCUPIED)}</SelectItem>
+                              <SelectItem value={RoomStatus.MAINTENANCE}>{formatStatus(RoomStatus.MAINTENANCE)}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+                </section>
+
+                {/* Location & Capacity */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <MapPin className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Location & Capacity</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="floor"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Floor *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Floor *</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="e.g., 1"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -363,12 +388,12 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="capacity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Capacity *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Capacity *</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="e.g., 2"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -381,12 +406,12 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="pricePerDay"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Price per Day</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Price per Day (₫)</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               placeholder="e.g., 500000"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -394,33 +419,34 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="isActive"
-                      render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel className="text-foreground">Status</FormLabel>
-                          <div className="flex items-center space-x-2 pt-2">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <Label className="text-foreground cursor-pointer">
-                              Active
-                            </Label>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-3 pt-4 border-t border-slate-100 mt-4">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-teal-600"
+                          />
+                        </FormControl>
+                        <FormLabel className={`${modalStyles.formLabel} cursor-pointer mt-0!`}>
+                          Active Status
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
                 </section>
 
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Building2 className="h-5 w-5" />
-                    Description & Notes
+                {/* Description & Notes */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <FileText className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Description & Notes</h3>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <FormField
@@ -428,12 +454,12 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Description</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Description</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Room description..."
                               rows={3}
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -446,12 +472,12 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                       name="notes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Notes</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Notes</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Additional notes..."
                               rows={3}
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -462,158 +488,49 @@ export function RoomFormModal({ room, isOpen, onClose, onSuccess }: RoomFormModa
                   </div>
                 </section>
 
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Building2 className="h-5 w-5" />
-                    Facilities
+                {/* Facilities */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Settings className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Facilities & Amenities</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="hasTV"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            TV
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasAirConditioning"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Air Conditioning
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasWiFi"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            WiFi
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasTelephone"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Telephone
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasAttachedBathroom"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Attached Bathroom
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="isWheelchairAccessible"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Wheelchair Accessible
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasOxygenSupply"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Oxygen Supply
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hasNurseCallButton"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <UICheckbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-foreground cursor-pointer">
-                            Nurse Call Button
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {facilityFields.map(({ name, label, icon: Icon }) => (
+                      <FormField
+                        key={name}
+                        control={form.control}
+                        name={name}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-3 rounded-lg border border-slate-200 p-3 bg-slate-50/50 hover:bg-slate-100/50 transition-colors">
+                            <FormControl>
+                              <UICheckbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                              />
+                            </FormControl>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-slate-500" />
+                              <FormLabel className={`${modalStyles.formLabel} cursor-pointer mt-0! text-xs`}>
+                                {label}
+                              </FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
                   </div>
                 </section>
               </div>
             </ScrollArea>
 
-            <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting}>
+            <DialogFooter className={modalStyles.dialogFooter}>
+              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting} className={modalStyles.secondaryButton}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting} className={modalStyles.primaryButton}>
                 {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Update Room' : 'Create Room'}
               </Button>
             </DialogFooter>

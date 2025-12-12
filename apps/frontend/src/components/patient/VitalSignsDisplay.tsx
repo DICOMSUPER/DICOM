@@ -12,6 +12,7 @@ import {
   Droplets
 } from 'lucide-react';
 import { VitalSignsCollection } from '@/interfaces/patient/patient-workflow.interface';
+import { formatStatus } from '@/utils/format-status';
 
 interface VitalSignsDisplayProps {
   vitalSigns: VitalSignsCollection;
@@ -145,7 +146,7 @@ export function VitalSignsDisplay({
                   variant="outline" 
                   className={`${status.color} border-0`}
                 >
-                  {status.status}
+                  {formatStatus(status.status)}
                 </Badge>
               )}
             </div>

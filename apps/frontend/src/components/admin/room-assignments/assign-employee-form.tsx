@@ -38,6 +38,7 @@ import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssig
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/utils/api";
 import { formatTimeRange } from "@/utils/schedule-helpers";
+import { formatStatus } from "@/utils/format-status";
 
 interface AssignEmployeeFormProps {
   initialScheduleId?: string;
@@ -916,7 +917,7 @@ export function AssignEmployeeForm({ initialScheduleId }: AssignEmployeeFormProp
                       <div className="space-y-1">
                         <p className="text-xs text-foreground font-medium">Status</p>
                         <Badge variant="outline" className="text-xs">
-                          {selectedRoom.status}
+                          {formatStatus(selectedRoom.status)}
                         </Badge>
                       </div>
                     )}

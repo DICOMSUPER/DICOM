@@ -1,6 +1,7 @@
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
 import React from "react";
+import { formatStatus } from "@/utils/format-status";
 
 const getStatusBadgeColor = (status: ImagingOrderStatus) => {
   switch (status) {
@@ -15,11 +16,6 @@ const getStatusBadgeColor = (status: ImagingOrderStatus) => {
     default:
       return "bg-slate-50 text-slate-700 ring-1 ring-slate-100";
   }
-};
-
-const getStatusLabel = (status: ImagingOrderStatus) => {
-  const text = String(status).toLowerCase().replace(/_/g, " ");
-  return text?.charAt(0).toUpperCase() + text.slice(1);
 };
 export default function OrderName({ order }: { order: ImagingOrder }) {
   return (
@@ -37,7 +33,7 @@ export default function OrderName({ order }: { order: ImagingOrder }) {
           order.orderStatus as ImagingOrderStatus
         )}`}
       >
-        {getStatusLabel(order.orderStatus as ImagingOrderStatus)}
+        {formatStatus(order.orderStatus)}
       </span>
     </div>
   );

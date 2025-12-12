@@ -194,8 +194,6 @@ export enum ConditionVerificationStatus {
 export enum EncounterStatus {
   WAITING = "waiting",
   ARRIVED = "arrived",
-  // TRIAGED = "triaged",
-  // IN_PROGRESS = "in-progress",
   FINISHED = "finished",
   CANCELLED = "cancelled",
 }

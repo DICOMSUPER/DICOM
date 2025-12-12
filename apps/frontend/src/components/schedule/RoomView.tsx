@@ -21,6 +21,7 @@ import {
   scheduleFallsInSegment,
 } from "@/utils/time-segment-utils";
 import { useGetRoomsQuery } from "@/store/roomsApi";
+import { formatStatus } from "@/utils/format-status";
 
 interface RoomViewProps {
   selectedDate: Date;
@@ -438,12 +439,38 @@ export function RoomView({
                     className="text-sm h-7 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-md border border-primary/20"
                     onClick={() => {
                       // Add current occupancy to room data for modal
+                      const matchedSchedules = schedulesWithTemplates.filter(
+                        (schedule) =>
+                          (schedule.room?.id && schedule.room.id === fullRoomData.id) ||
+                          (schedule.room_id && schedule.room_id === fullRoomData.id) ||
+                          (schedule.room?.roomCode && schedule.room.roomCode === fullRoomData.roomCode)
+                      );
+
+                      const staffForDay = Array.from(
+                        new Map(
+                          matchedSchedules
+                            .flatMap((schedule) =>
+                              (schedule.employeeRoomAssignments || [])
+                                .filter((a) => a.isActive && a.employee)
+                                .map((a) => ({
+                                  id: a.employee?.id || `${a.employee?.firstName}-${a.employee?.lastName}`,
+                                  name: `${a.employee?.firstName || ""} ${a.employee?.lastName || ""}`.trim() || "Unknown",
+                                  role: a.employee?.role || undefined,
+                                  scheduleStatus: schedule.schedule_status,
+                                }))
+                            )
+                            .map((staff) => [staff.id, staff])
+                        ).values()
+                      );
+
                       const roomWithOccupancy = {
                         ...fullRoomData,
                         roomStats: {
                           currentInProgress: currentOccupancy,
                           maxWaiting: fullRoomData.capacity,
                         },
+                        staffForDay,
+                        selectedDate: selectedDateStr,
                       };
                       setSelectedRoomForDetails(roomWithOccupancy);
                       setIsRoomModalOpen(true);
@@ -494,7 +521,7 @@ export function RoomView({
                   {fullRoomData.status && (
                     <div>
                       <Badge variant="outline" className="text-xs">
-                        {fullRoomData.status}
+                        {formatStatus(fullRoomData.status)}
                       </Badge>
                     </div>
                   )}

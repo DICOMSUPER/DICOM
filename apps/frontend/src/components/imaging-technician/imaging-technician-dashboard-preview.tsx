@@ -15,6 +15,7 @@ import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
 import { useRouter } from "next/navigation";
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatStatus } from "@/utils/format-status";
 
 interface ImagingTechnicianDashboardPreviewProps {
   orders: ImagingOrder[];
@@ -124,12 +125,7 @@ export function ImagingTechnicianDashboardPreview({
                       order.orderStatus
                     )}`}
                   >
-                    {order.orderStatus
-                      ? order.orderStatus
-                          .charAt(0)
-                          .toUpperCase() +
-                        order.orderStatus.slice(1).toLowerCase().replace(/_/g, " ")
-                      : "Unknown"}
+                    {formatStatus(order.orderStatus)}
                   </Badge>
                 </div>
               );

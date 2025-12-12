@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
 import { AnnotationStatus } from "@/enums/image-dicom.enum";
@@ -26,6 +26,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Info } from "lucide-react";
+import { useLazyGetUserByIdQuery } from "@/store/userApi";
 
 interface AnnotationCardProps {
   annotation: ImageAnnotation;
@@ -47,6 +49,34 @@ interface AnnotationCardProps {
   formatAnnotationType: (type: string) => string;
   formatDate: (value?: string) => string;
 }
+
+const useUserName = (userId?: string) => {
+  const [name, setName] = useState<string | null>(null);
+  const [fetchUser, { isFetching }] = useLazyGetUserByIdQuery();
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!userId) return;
+      try {
+        const res = await fetchUser(userId).unwrap();
+        const u: any = res?.data || res?.user || res;
+        if (active && u) {
+          const full = [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
+          setName(full || u.email || u.id || null);
+        }
+      } catch {
+        if (active) setName(null);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, [userId, fetchUser]);
+
+  return { name, isFetching };
+};
 
 const getStatusColorClasses = (status: AnnotationStatus | undefined, isHighlight: boolean) => {
   if (!status) {
@@ -130,6 +160,9 @@ export function AnnotationCard({
 }: AnnotationCardProps) {
   const statusColors = getStatusColorClasses(annotation.annotationStatus, isHighlight);
   const measurement = getMeasurementDisplay(annotation);
+  const [showInfo, setShowInfo] = useState(false);
+  const { name: reviewerName, isFetching: reviewerLoading } = useUserName(annotation.reviewerId);
+  const { name: annotatorName, isFetching: annotatorLoading } = useUserName(annotation.annotatorId);
   
   // Check if user is physician
   const isPhysician = userRole === Roles.PHYSICIAN;
@@ -241,7 +274,7 @@ export function AnnotationCard({
           </div>
           
           {/* Action buttons - 2x2 grid */}
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-3 gap-1">
             {/* Save Button for Local Annotations */}
             {isLocal && onSaveLocal && (
               <div
@@ -326,6 +359,26 @@ export function AnnotationCard({
               </DropdownMenu>
             )}
             
+            {/* Info */}
+            <div
+              role="button"
+              tabIndex={0}
+              className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowInfo((v) => !v);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  setShowInfo((v) => !v);
+                }
+              }}
+              title="Annotation info"
+            >
+              <Info className="h-3 w-3 text-slate-300" />
+            </div>
+
             {!isEditDeleteDisabled && (
               <AnnotationColorPicker
                 annotationId={annotation.id}
@@ -403,6 +456,37 @@ export function AnnotationCard({
           </div>
         </div>
       </div>
+
+      {showInfo && (
+        <div className="mt-2 rounded-md border border-slate-700/60 bg-slate-900/60 p-2 text-[11px] text-slate-200 space-y-1.5">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Status</span>
+            <span className="font-semibold">{annotation.annotationStatus}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Annotator</span>
+            <span className="font-semibold">
+              {annotatorLoading ? "Loading..." : annotatorName || annotation.annotatorId || "—"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Reviewer</span>
+            <span className="font-semibold">
+              {reviewerLoading ? "Loading..." : reviewerName || annotation.reviewerId || "—"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Reviewed</span>
+            <span className="font-semibold">
+              {annotation.reviewDate ? formatDate(annotation.reviewDate as any) : "—"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Color</span>
+            <span className="font-semibold">{annotation.colorCode || color || "—"}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

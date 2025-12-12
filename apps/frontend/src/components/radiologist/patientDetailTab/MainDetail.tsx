@@ -252,17 +252,50 @@ const MedicalRecordMain = ({
     }
   };
 
+  const renderEmptyTab = (
+    title: string,
+    description = "Không có dữ liệu hiển thị cho mục này.",
+    icon?: React.ReactNode
+  ) => (
+    <div className="h-full flex flex-1 flex-col items-center justify-center text-center gap-3 py-10 text-sm text-gray-600">
+      {icon && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+          {icon}
+        </div>
+      )}
+      <div className="text-base font-semibold text-gray-800">{title}</div>
+      <p className="max-w-md">{description}</p>
+    </div>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "advanced":
         return <AdvancedToolsTab />;
       case "video":
-        return <VideoTab />;
+        return renderEmptyTab(
+          "Video",
+          "Chưa có video cho ca này.",
+          <Video className="h-6 w-6" />
+        );
       case "files":
+        return renderEmptyTab(
+          "Files",
+          "Chưa có tệp đính kèm cho ca này.",
+          <FileText className="h-6 w-6" />
+        );
       case "receive":
-        return <ReceiveTab />;
+        return renderEmptyTab(
+          "In nhận",
+          "Chưa có dữ liệu in nhận cho ca này.",
+          <MessageSquare className="h-6 w-6" />
+        );
       case "portal":
-        return <PortalTab />;
+        return renderEmptyTab(
+          "Portal",
+          "Không có liên kết portal cho ca này.",
+          <Mail className="h-6 w-6" />
+        );
       default:
         return null;
     }
@@ -306,11 +339,21 @@ const MedicalRecordMain = ({
   return (
     <main className="flex-1 flex flex-col h-full overflow-y-auto">
       <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) => setActiveTab(val as TabValue)}
-          className="w-full"
-        >
+          <Tabs
+            value={activeTab}
+            onValueChange={(val) => {
+              if (val === "view") {
+                router.push(`/viewer?study=${selectedStudyId}&patient=${patientId}`);
+                return; // do not switch tab, it's a navigation action
+              }
+              if (val === "ikq") {
+                handleExportPdf();
+                return; // keep current tab
+              }
+              setActiveTab(val as TabValue);
+            }}
+            className="w-full"
+          >
           <TabsList className="bg-transparent border-b border-gray-200">
             {[
               {
@@ -358,17 +401,6 @@ const MedicalRecordMain = ({
                 key={tab.value}
                 value={tab.value}
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 px-4 py-2"
-                onClick={() => {
-                  if (tab.value === "view") {
-                    router.push(
-                      `/viewer?study=${selectedStudyId}&patient=${patientId}`
-                    );
-                  }
-
-                  if (tab.value === "ikq") {
-                    handleExportPdf();
-                  }
-                }}
               >
                 {tab.icon} {tab.label}
               </TabsTrigger>
@@ -584,7 +616,7 @@ const MedicalRecordMain = ({
             )}
           </Card>
         ) : (
-          <Card className="p-6 mx-auto">{renderTabContent()}</Card>
+          <Card className="p-6 mx-auto flex-1">{renderTabContent()}</Card>
         )}
 
         <SelectTemplateDialog

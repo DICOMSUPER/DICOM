@@ -128,10 +128,16 @@ export const NotificationItem = ({
           {notification.message}
         </p>
 
-        {/* Type and Priority Badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {getNotificationTypeBadge(notification.notificationType)}
-          {getNotificationPriorityBadge(notification.priority)}
+        {/* Type and Priority Badges with labels */}
+        <div className="flex items-center gap-3 flex-wrap text-xs text-slate-600">
+          <div className="inline-flex items-center gap-1">
+            <span className="font-semibold">Type:</span>
+            {getNotificationTypeBadge(notification.notificationType)}
+          </div>
+          <div className="inline-flex items-center gap-1">
+            <span className="font-semibold">Priority:</span>
+            {getNotificationPriorityBadge(notification.priority)}
+          </div>
         </div>
 
         {/* Action Button - Always visible */}

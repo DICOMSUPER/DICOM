@@ -34,6 +34,7 @@ import { TZDate } from "@date-fns/tz";
 import { VisitInformationForm } from "./visit-information-form";
 import { VisitInformationFormValues } from "@/lib/validation/visit-information-form";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
+import { formatStatus } from "@/utils/format-status";
 
 interface ClinicVisitProps {
   detail: PatientEncounter;
@@ -470,7 +471,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
                   Visit Type:
                 </span>
                 <span className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                  {detail.encounterType}
+                  {formatStatus(detail.encounterType)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-100">

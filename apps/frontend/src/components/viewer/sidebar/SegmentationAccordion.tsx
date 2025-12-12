@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -16,9 +16,9 @@ import {
   Trash2,
   Save,
   Database,
-  RefreshCw,
   Plus,
   Edit3,
+  Info,
 } from "lucide-react";
 import { useViewer } from "@/contexts/ViewerContext";
 import type { SegmentationLayerData } from "@/contexts/ViewerContext";
@@ -35,16 +35,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useGetUserByIdQuery } from "@/store/userApi";
 
 interface SegmentationAccordionProps {
-  selectedSeriesId?: string | null;
   onSaveLayer: (layerId: string) => void;
   onDeleteLayer: (layerId: string) => void;
   onUpdateLayerMetadata: (layerId: string, updates: { name?: string; notes?: string }) => void;
 }
 
 export default function SegmentationAccordion({
-  selectedSeriesId,
   onSaveLayer,
   onDeleteLayer,
   onUpdateLayerMetadata,
@@ -53,6 +52,9 @@ export default function SegmentationAccordion({
   const [editingLayer, setEditingLayer] = useState<SegmentationLayerData | null>(null);
   const [layerName, setLayerName] = useState("");
   const [layerNotes, setLayerNotes] = useState("");
+  const [infoLayerId, setInfoLayerId] = useState<string | null>(null);
+  const [infoSegmentatorId, setInfoSegmentatorId] = useState<string | undefined>();
+  const [infoReviewerId, setInfoReviewerId] = useState<string | undefined>();
 
   const {
     state,
@@ -101,6 +103,22 @@ export default function SegmentationAccordion({
   }, [layerToDelete, onDeleteLayer]);
 
   const isGloballyVisible = isSegmentationVisible();
+
+  const { data: segmentatorUser } = useGetUserByIdQuery(infoSegmentatorId!, {
+    skip: !infoSegmentatorId,
+  });
+  const { data: reviewerUser } = useGetUserByIdQuery(infoReviewerId!, {
+    skip: !infoReviewerId,
+  });
+
+  useEffect(() => {
+    if (!infoLayerId) return;
+    const layer = layers.find((l) => l.metadata.id === infoLayerId);
+    if (!layer) return;
+    const meta: any = layer.metadata;
+    setInfoSegmentatorId(meta.segmentatorId);
+    setInfoReviewerId(meta.reviewerId);
+  }, [infoLayerId, layers]);
 
   return (
     <>
@@ -195,6 +213,8 @@ export default function SegmentationAccordion({
                   const isSelected = selectedLayerId === layerId;
                   const isVisible = state.segmentationLayerVisibility.get(layerId) ?? true;
                   const isFromDatabase = layer.metadata.origin === "database";
+                  const showInfo = infoLayerId === layerId;
+                  const meta: any = layer.metadata;
 
                   return (
                     <div
@@ -296,6 +316,18 @@ export default function SegmentationAccordion({
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-4 w-4 p-0 hover:bg-slate-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoLayerId((prev) => (prev === layerId ? null : layerId));
+                              }}
+                            >
+                              <Info className="h-2.5 w-2.5 text-slate-300" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-4 w-4 p-0 hover:bg-slate-700 hover:text-red-500"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -306,6 +338,63 @@ export default function SegmentationAccordion({
                             </Button>
                           </div>
                         </div>
+
+                        {showInfo && (
+                          <div className="mt-2 rounded-md border border-slate-700/60 bg-slate-900/60 p-2 text-[11px] text-slate-200 space-y-1.5">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Status</span>
+                              <span className="font-semibold">
+                                {meta.segmentationStatus || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Frame</span>
+                              <span className="font-semibold">
+                                {meta.frame != null ? meta.frame : "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Segmentator</span>
+                              <span className="font-semibold">
+                                {segmentatorUser?.data
+                                  ? [segmentatorUser.data.firstName, segmentatorUser.data.lastName]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                      .trim()
+                                  : meta.segmentatorId || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Reviewer</span>
+                              <span className="font-semibold">
+                                {reviewerUser?.data
+                                  ? [reviewerUser.data.firstName, reviewerUser.data.lastName]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                      .trim()
+                                  : meta.reviewerId || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Segmentation Date</span>
+                              <span className="font-semibold">
+                                {meta.segmentationDate || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Review Date</span>
+                              <span className="font-semibold">
+                                {meta.reviewDate || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Color</span>
+                              <span className="font-semibold">
+                                {meta.colorCode || "—"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

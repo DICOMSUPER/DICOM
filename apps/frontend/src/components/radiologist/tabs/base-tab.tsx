@@ -1,18 +1,12 @@
 "use client";
 import React, { Suspense, useMemo } from "react";
-import { useSelector } from "react-redux";
 import FilterBar from "../filter-bar";
 import DataTable from "../data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
 import { DicomStudyFilterQuery } from "@/interfaces/image-dicom/dicom-study.interface";
-import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
-import UserDontHaveRoomAssignment from "@/components/common/user-dont-have-room-assignment";
-import { RootState } from "@/store";
 
 export default function BaseTab() {
-  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
-
   const searchParams = useSearchParams();
 
   const initial = useMemo(() => {
@@ -32,45 +26,13 @@ export default function BaseTab() {
     };
   }, [searchParams]);
 
-  // Call hooks before any conditional returns
-  const {
-    data: currentEmployeeSchedule,
-    isLoading: isLoadingCurrentEmployeeSchedule,
-  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!);
-
-  // Extract roomId from the response: data.roomSchedule.room_id
-  const currentRoomId =
-    currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;
-
-  // Physician create order to a room
-  // Technician in that room upload dicom file => create dicom study => forward to radiologist
-  // Radiologist in that room review study
+  // Radiologists can view work tree without a schedule/room assignment
   const {
     data: studyData,
     isLoading: isLoadingStudy,
     refetch: refetchStudy,
     error: studyError,
-  } = useGetDicomStudiesFilteredQuery(
-    { ...initial, roomId: currentRoomId } as DicomStudyFilterQuery,
-    { skip: !currentRoomId }
-  );
-
-  if (isLoadingCurrentEmployeeSchedule) {
-    return (
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="space-y-4 w-full max-w-4xl p-4">
-            <div className="h-12 bg-slate-200 rounded animate-pulse" />
-            <div className="h-64 bg-slate-200 rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentRoomId) {
-    return <UserDontHaveRoomAssignment />;
-  }
+  } = useGetDicomStudiesFilteredQuery(initial as DicomStudyFilterQuery);
 
   return (
     <Suspense

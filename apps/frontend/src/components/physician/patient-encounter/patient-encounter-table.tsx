@@ -33,6 +33,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { formatStatus } from "@/utils/format-status";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -78,38 +79,23 @@ export function PatientEncounterTable({
   };
 
   const getStatusBadge = (status: EncounterStatus) => {
-    switch (status) {
-      case EncounterStatus.WAITING:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-blue-700">Waiting</span>
-          </div>
-        );
-      case EncounterStatus.ARRIVED:
-        return (
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-700">
-              Arrived
-            </span>
-          </div>
-        );
-      case EncounterStatus.FINISHED:
-        return (
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-700">Finished</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-slate-400 rounded-full" />
-            <span className="text-sm font-medium text-foreground">{status}</span>
-          </div>
-        );
-    }
+    const statusConfig: Record<EncounterStatus, { dotColor: string; textColor: string; animate: boolean }> = {
+      [EncounterStatus.WAITING]: { dotColor: "bg-blue-500", textColor: "text-blue-700", animate: true },
+      [EncounterStatus.ARRIVED]: { dotColor: "bg-emerald-500", textColor: "text-emerald-700", animate: false },
+      [EncounterStatus.FINISHED]: { dotColor: "bg-amber-500", textColor: "text-amber-700", animate: false },
+      [EncounterStatus.CANCELLED]: { dotColor: "bg-red-500", textColor: "text-red-700", animate: false },
+    };
+
+    const config = statusConfig[status] || { dotColor: "bg-slate-400", textColor: "text-slate-700", animate: false };
+    
+    return (
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${config.dotColor} ${config.animate ? 'animate-pulse' : ''}`} />
+        <span className={`text-sm font-medium ${config.textColor}`}>
+          {formatStatus(status)}
+        </span>
+      </div>
+    );
   };
 
 
@@ -207,7 +193,7 @@ export function PatientEncounterTable({
           variant="outline"
           className="bg-slate-100 text-slate-700 border-slate-200 font-medium"
         >
-          {encounter.encounterType}
+          {formatStatus(encounter.encounterType)}
         </Badge>
       ),
     },

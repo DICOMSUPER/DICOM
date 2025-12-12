@@ -21,6 +21,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useLogout } from "@/hooks/use-logout";
 import NotificationBell from "./notification/NotificationBell";
+import { formatStatus } from "@/utils/format-status";
 
 interface AppHeaderProps {
   notificationCount?: number;
@@ -119,8 +120,8 @@ export function AppHeader({
                         {mounted && user?.email ? user.email : "No email"}
                       </p>
                       {mounted && user?.role && (
-                        <p className="text-xs leading-none text-foreground capitalize">
-                          {user.role.replace(/_/g, " ")}
+                        <p className="text-xs leading-none text-foreground">
+                          {formatStatus(user.role)}
                         </p>
                       )}
                     </div>

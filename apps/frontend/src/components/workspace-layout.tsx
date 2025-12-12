@@ -10,6 +10,7 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RootState } from "@/store";
 import { useLogout } from "@/hooks/use-logout";
+import { formatStatus } from "@/utils/format-status";
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode;
@@ -114,7 +115,7 @@ export function WorkspaceLayout({
                     {isMounted ? (user?.email?.split("@")[0] || "User") : "User"}
                   </p>
                   <p className="text-xs text-foreground truncate">
-                    {isMounted ? (user?.role?.replace(/_/g, " ") || "Role") : "Role"}
+                    {isMounted ? formatStatus(user?.role) || "Role" : "Role"}
                   </p>
                 </div>
               </div>

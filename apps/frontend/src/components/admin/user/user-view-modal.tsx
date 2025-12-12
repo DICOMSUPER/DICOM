@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User } from '@/interfaces/user/user.interface';
 import {
@@ -18,9 +19,10 @@ import {
   Calendar,
   Shield,
   Building2,
-  Badge as BadgeIcon,
+  BadgeCheck,
+  Clock,
 } from 'lucide-react';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
+import { formatStatus, formatRole, modalStyles, getStatusBadgeColor, shouldAnimateDot } from '@/utils/format-status';
 
 interface UserViewModalProps {
   user: User | null;
@@ -45,173 +47,198 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
     });
   };
 
-  const getRoleLabel = (role?: string) => {
-    if (!role) return '—';
-    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const getActiveStatusBadge = (isActive: boolean) => {
+    const color = getStatusBadgeColor(isActive);
+    const dotClass = isActive ? modalStyles.statusDot.green : modalStyles.statusDot.slate;
+    return (
+      <Badge className={modalStyles.badge[color]}>
+        <div className={dotClass} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
+  };
+
+  const getVerifiedStatusBadge = (isVerified: boolean) => {
+    const color = isVerified ? 'blue' : 'slate';
+    return (
+      <Badge className={modalStyles.badge[color]}>
+        <div className={isVerified ? modalStyles.statusDot.blue : modalStyles.statusDot.slate} />
+        {isVerified ? 'Verified' : 'Not Verified'}
+      </Badge>
+    );
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">User Details</DialogTitle>
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>User Details</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           {!user ? (
-            <div className="space-y-8 pr-4 pb-2">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-64 w-full" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : (
-            <div className="space-y-4 pr-4 pb-2">
-              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
-              <div className="flex flex-wrap items-start justify-between gap-6">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                    <UserIcon className="h-3.5 w-3.5" />
-                    {user.username}
-                  </div>
-                  <div>
-                    <p className="text-3xl font-semibold text-foreground leading-tight">
-                      {user.firstName} {user.lastName}
-                    </p>
-                    <div className="mt-3 grid gap-2 text-sm text-foreground">
-                      <p className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        {user.email}
+            <div className="space-y-6">
+              {/* Hero Section */}
+              <section className={modalStyles.heroSection}>
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div className="space-y-3">
+                    <div className={modalStyles.heroLabel}>
+                      <UserIcon className="h-3.5 w-3.5 inline mr-1" />
+                      {user.username}
+                    </div>
+                    <div>
+                      <p className={modalStyles.heroTitle}>
+                        {user.firstName} {user.lastName}
                       </p>
-                      {user.phone && (
-                        <p className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          {user.phone}
+                      <div className="mt-3 space-y-2">
+                        <p className={modalStyles.heroSubtitle}>
+                          <Mail className="h-4 w-4 text-teal-600" />
+                          {user.email}
                         </p>
-                      )}
+                        {user.phone && (
+                          <p className={modalStyles.heroSubtitle}>
+                            <Phone className="h-4 w-4 text-teal-600" />
+                            {user.phone}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    {getActiveStatusBadge(user.isActive ?? true)}
+                    {getVerifiedStatusBadge(user.isVerified ?? false)}
+                  </div>
                 </div>
-                <div className="space-y-4 text-right">
-                  {getBooleanStatusBadge(user.isActive ?? true)}
-                </div>
-              </div>
-            </section>
+              </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <UserIcon className="h-5 w-5" />
-                Personal & Contact Information
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <UserIcon className="h-4 w-4" />
-                    Username
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{user.username}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <UserIcon className="h-4 w-4" />
-                    First Name
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{user.firstName}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <UserIcon className="h-4 w-4" />
-                    Last Name
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{user.lastName}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{user.email}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Phone className="h-4 w-4" />
-                    Phone
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{user.phone || '—'}</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Shield className="h-5 w-5" />
-                Role, Department & Additional Information
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Shield className="h-4 w-4" />
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Shield className={modalStyles.gridCardIcon} />
                     Role
                   </div>
-                  <p className="text-base font-semibold text-foreground">{getRoleLabel(user.role)}</p>
+                  <Badge className={modalStyles.badge.teal}>
+                    {formatRole(user.role)}
+                  </Badge>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Building2 className="h-4 w-4" />
+
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Building2 className={modalStyles.gridCardIcon} />
                     Department
                   </div>
-                  <p className="text-base font-semibold text-foreground">
+                  <p className={modalStyles.gridCardValue}>
                     {user.department?.departmentName || '—'}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <BadgeIcon className="h-4 w-4" />
+
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <BadgeCheck className={modalStyles.gridCardIcon} />
                     Employee ID
                   </div>
-                  <p className="text-base font-semibold text-foreground">{user.employeeId || '—'}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Shield className="h-4 w-4" />
-                    Verified
-                  </div>
-                  <p className="text-base font-semibold text-foreground">
-                    {user.isVerified ? 'Yes' : 'No'}
+                  <p className={modalStyles.gridCardValue}>
+                    {user.employeeId || '—'}
                   </p>
                 </div>
               </div>
-            </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Calendar className="h-5 w-5" />
-                Timestamps
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Created At</p>
-                  <p className="text-base font-semibold text-foreground">
-                    {formatDateTime(user.createdAt)}
-                  </p>
+              {/* Personal Information */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <UserIcon className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Personal Information</h3>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Updated At</p>
-                  <p className="text-base font-semibold text-foreground">
-                    {formatDateTime(user.updatedAt)}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Username</div>
+                    <p className={modalStyles.infoCardLarge}>{user.username}</p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>First Name</div>
+                    <p className={modalStyles.infoCardLarge}>{user.firstName}</p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Last Name</div>
+                    <p className={modalStyles.infoCardLarge}>{user.lastName}</p>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+
+              {/* Contact Information */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Mail className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Contact Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Mail className="w-3 h-3 inline mr-1" />
+                      Email
+                    </div>
+                    <p className={modalStyles.infoCardValue}>{user.email}</p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Phone className="w-3 h-3 inline mr-1" />
+                      Phone
+                    </div>
+                    <p className={modalStyles.infoCardValue}>{user.phone || '—'}</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Timestamps */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Clock className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Created At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(user.createdAt)}
+                    </p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Updated At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(user.updatedAt)}
+                    </p>
+                  </div>
+                </div>
+              </section>
             </div>
           )}
         </ScrollArea>
 
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {onEdit && user && (
-            <Button variant="default" onClick={() => onEdit(user)}>
+            <Button onClick={() => onEdit(user)} className={modalStyles.primaryButton}>
               Edit User
             </Button>
           )}
@@ -220,4 +247,3 @@ export function UserViewModal({ user, isOpen, onClose, onEdit }: UserViewModalPr
     </Dialog>
   );
 }
-

@@ -820,6 +820,20 @@ export function restoreSegmentationSnapshot(
   let changedSlices = 0;
   const modifiedSliceIds: string[] = [];
 
+  // Clear all labelmap buffers for this viewport before applying snapshot to avoid bleed across frames
+  if (viewportMapping && viewportMapping.size > 0) {
+    for (const labelmapId of viewportMapping.keys()) {
+      const cachedImage = cache.getImage(labelmapId);
+      const targetPixels =
+        cachedImage && typeof cachedImage.getPixelData === "function"
+          ? cachedImage.getPixelData()
+          : (cachedImage as { pixelData?: Uint8Array } | null)?.pixelData;
+      if (targetPixels) {
+        targetPixels.fill(0);
+      }
+    }
+  }
+
   snapshot.imageData.forEach(
     ({ imageId, pixelData, originalImageId, frameNumber, instanceId }) => {
       const targetImageId =

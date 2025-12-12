@@ -5,6 +5,7 @@ import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
 import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
 import { StudyItem } from "./StudyItem";
 import { format } from "date-fns";
+import { formatStatus } from "@/utils/format-status";
 
 interface FolderItemProps {
   orderId: string;
@@ -95,13 +96,14 @@ export const FolderItem = ({
               </span>
               {orderStatus && (
                 <Badge className={`text-[10px] px-1.5 py-0 border ${getStatusColor(orderStatus)}`}>
-                  {orderStatus.replace(/_/g, ' ').toUpperCase()}
+                  <span className="font-semibold">Order:</span>
+                  {formatStatus(orderStatus)}
                 </Badge>
               )}
               {studySummary?.studyStatus && (
                 <Badge className={`text-[10px] px-1.5 py-0 border ${getStudyStatusColor(studySummary.studyStatus)}`}>
-                  <Activity className="h-2.5 w-2.5 mr-0.5" />
-                  {studySummary.studyStatus.replace(/_/g, ' ').toUpperCase()}
+                  <span className="font-semibold">Study:</span>
+                  {formatStatus(studySummary.studyStatus)}
                 </Badge>
               )}
             </div>

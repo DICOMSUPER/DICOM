@@ -139,7 +139,7 @@ export default function SignatureModal({
           {isLoadingSignature ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600 mb-3"></div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 Loading signature...
               </p>
             </div>
@@ -156,7 +156,7 @@ export default function SignatureModal({
                       role="Kỹ thuật viên"
                     />
                   ) : (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-foreground text-sm">
                       No signature available
                     </p>
                   )}
@@ -212,13 +212,13 @@ export default function SignatureModal({
           ) : (
             <>
               {/* No Signature - Setup Required */}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-foreground">
                 A digital signature is required to complete this imaging study.
                 Please setup your signature to proceed.
               </p>
               <div className="flex justify-center p-6 bg-muted rounded-lg border-2 border-dashed">
                 <div className="text-center space-y-2">
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-foreground text-sm">
                     No signature found, please consider setting up your
                     signature.
                   </p>

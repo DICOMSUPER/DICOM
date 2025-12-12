@@ -16,3 +16,4 @@ export * from './lib/vital-signs-unit.enum';
 export * from './lib/machine-status.enum';
 export * from './lib/report-templates.enum';
 export * from './lib/study-signature-type.enum';
+export * from './lib/segmentation-status.enum';
