@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetServiceByIdQuery } from "@/store/serviceApi";
 import { useGetRoomsByServiceQuery } from "@/store/serviceRoomApi";
-import { getBooleanStatusBadge, getRoomStatusBadge } from "@/utils/status-badge";
 import { extractApiData } from "@/utils/api";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
 import { DataTable } from "@/components/ui/data-table";
@@ -22,8 +21,8 @@ import {
   Calendar,
   Building2,
   Stethoscope,
-  Loader2,
 } from "lucide-react";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
 
 interface ModalServiceDetailProps {
   open: boolean;
@@ -54,6 +53,31 @@ export function ModalServiceDetail({
   const roomServices = extractApiData<ServiceRoom>(roomServicesData);
   const totalRooms = roomServices.length;
 
+  const getStatusBadge = (isActive: boolean) => {
+    const colorKey = getStatusBadgeColor(isActive);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-2 py-0.5 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
+  };
+
+  const getRoomStatusBadge = (status: string) => {
+    const colorKey = getStatusBadgeColor(status);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-2 py-0.5 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${
+          colorKey === 'green' ? 'bg-emerald-500' : 
+          colorKey === 'amber' ? 'bg-amber-500 animate-pulse' : 
+          colorKey === 'red' ? 'bg-red-500' :
+          'bg-slate-400'
+        }`} />
+        {formatStatus(status)}
+      </Badge>
+    );
+  };
+
   const roomServiceColumns = [
     {
       header: 'Room Code',
@@ -67,7 +91,7 @@ export function ModalServiceDetail({
       header: 'Room Type',
       cell: (roomService: ServiceRoom) => (
         <div className="text-foreground">
-          {roomService?.room?.roomType || "—"}
+          {formatStatus(roomService?.room?.roomType) || "—"}
         </div>
       ),
     },
@@ -98,7 +122,7 @@ export function ModalServiceDetail({
     {
       header: 'Assignment Status',
       cell: (roomService: ServiceRoom) => (
-        getBooleanStatusBadge(roomService?.isActive ?? false)
+        getStatusBadge(roomService?.isActive ?? false)
       ),
     },
   ];
@@ -118,12 +142,6 @@ export function ModalServiceDetail({
       hour: "numeric",
       minute: "2-digit",
     });
-  };
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-      : "bg-rose-100 text-rose-700 border-rose-200";
   };
 
   return (

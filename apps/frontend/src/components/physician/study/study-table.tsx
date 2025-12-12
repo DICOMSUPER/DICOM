@@ -4,11 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, SortConfig } from "@/components/ui/data-table";
 import {
-  CheckCircle2,
   Clock,
   Eye,
   User,
-  Zap,
 } from "lucide-react";
 import {
   Tooltip,
@@ -19,6 +17,7 @@ import {
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { formatDate } from "@/lib/formatTimeDate";
+import { formatStatus } from "@/utils/format-status";
 
 interface DicomStudyTableProps {
   dicomStudies: DicomStudy[];
@@ -46,40 +45,32 @@ export function DicomStudyTable({
   initialSort,
 }: DicomStudyTableProps) {
   const getStatusBadge = (status: DicomStudyStatus) => {
-    switch (status) {
-      case DicomStudyStatus.RESULT_PRINTED:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-blue-700">
-              Result Printed
-            </span>
-          </div>
-        );
-      case DicomStudyStatus.PENDING_APPROVAL:
-        return (
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm font-medium text-emerald-700">
-              Pending Approval
-            </span>
-          </div>
-        );
-      case DicomStudyStatus.APPROVED:
-        return (
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-700">Approved</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-slate-400 rounded-full" />
-            <span className="text-sm font-medium text-foreground">{status}</span>
-          </div>
-        );
-    }
+    const getStatusConfig = (status: DicomStudyStatus) => {
+      switch (status) {
+        case DicomStudyStatus.RESULT_PRINTED:
+          return { dotColor: "bg-blue-500", textColor: "text-blue-700", animate: true };
+        case DicomStudyStatus.PENDING_APPROVAL:
+          return { dotColor: "bg-amber-500", textColor: "text-amber-700", animate: true };
+        case DicomStudyStatus.APPROVED:
+          return { dotColor: "bg-emerald-500", textColor: "text-emerald-700", animate: false };
+        case DicomStudyStatus.TECHNICIAN_VERIFIED:
+          return { dotColor: "bg-blue-500", textColor: "text-blue-700", animate: false };
+        case DicomStudyStatus.REJECTED:
+          return { dotColor: "bg-red-500", textColor: "text-red-700", animate: false };
+        default:
+          return { dotColor: "bg-slate-400", textColor: "text-slate-700", animate: false };
+      }
+    };
+
+    const config = getStatusConfig(status);
+    return (
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${config.dotColor} ${config.animate ? 'animate-pulse' : ''}`} />
+        <span className={`text-sm font-medium ${config.textColor}`}>
+          {formatStatus(status)}
+        </span>
+      </div>
+    );
   };
 
   const columns = [

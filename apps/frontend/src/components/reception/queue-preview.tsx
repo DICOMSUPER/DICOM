@@ -15,6 +15,7 @@ import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
 import { useRouter } from "next/navigation";
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatStatus } from "@/utils/format-status";
 
 export interface QueuePreviewProps {
   encounters: PatientEncounter[];
@@ -107,7 +108,7 @@ export function QueuePreview({
                       : "bg-gray-100 text-gray-800 border-gray-200"
                   }`}
                 >
-                  {encounter.priority}
+                  {formatStatus(encounter.priority)}
                 </Badge>
               </div>
             );

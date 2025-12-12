@@ -95,97 +95,117 @@ export function ModalServiceForm({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
-            {serviceId ? "Edit Service" : "Add New Service"}
-          </DialogTitle>
-          <DialogDescription>
-            {serviceId
-              ? "Update the service information below"
-              : "Fill in the details to create a new service"}
-          </DialogDescription>
+      <DialogContent className="w-[50vw] max-w-[700px] sm:max-w-[50vw] h-auto max-h-[85vh] flex flex-col border-0 p-0 overflow-hidden">
+        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
+          <div>
+            <DialogTitle className="text-xl font-semibold">
+              {serviceId ? "Edit Service" : "Add New Service"}
+            </DialogTitle>
+            <DialogDescription className="mt-1">
+              {serviceId
+                ? "Update the service information below"
+                : "Fill in the details to create a new service"}
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
+            className="flex flex-col flex-1 min-h-0"
           >
-            
-              <FormField
-                control={form.control}
-                name="serviceCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Code (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="SVC-001"
-                        {...field}
-                        // disabled={!!serviceId}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-            <FormField
-              control={form.control}
-              name="serviceName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Service Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="General Consultation" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter service description..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-2">
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base cursor-pointer">Active</FormLabel>
-                    <FormDescription>
-                      Enable or disable this service
-                    </FormDescription>
+            <div className="flex-1 min-h-0 h-full px-6 py-6 overflow-y-auto">
+              <div className="space-y-6">
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    Basic Information
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="serviceCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Service Code (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="SVC-001"
+                            className="text-foreground"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <DialogFooter>
+                  <FormField
+                    control={form.control}
+                    name="serviceName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Service Name *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="General Consultation" 
+                            className="text-foreground"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter service description..."
+                            className="resize-none text-foreground"
+                            rows={4}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    Status
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base cursor-pointer text-foreground">Active</FormLabel>
+                          <FormDescription>
+                            Enable or disable this service
+                          </FormDescription>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
               <Button
                 type="button"
                 variant="outline"

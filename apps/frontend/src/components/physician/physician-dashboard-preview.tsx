@@ -15,6 +15,7 @@ import { EncounterStatus } from "@/enums/patient-workflow.enum";
 import { useRouter } from "next/navigation";
 import { formatDate, formatTime } from "@/lib/formatTimeDate";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatStatus } from "@/utils/format-status";
 
 interface PhysicianDashboardPreviewProps {
   encounters: PatientEncounter[];
@@ -113,10 +114,7 @@ export function PhysicianDashboardPreview({
                     }
                     className="ml-2 shrink-0"
                   >
-                    {encounter.status
-                      ? encounter.status.charAt(0).toUpperCase() +
-                        encounter.status.slice(1).toLowerCase().replace(/_/g, " ")
-                      : "Unknown"}
+                    {formatStatus(encounter.status)}
                   </Badge>
                 </div>
               );

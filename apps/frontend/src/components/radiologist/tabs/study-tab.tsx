@@ -30,17 +30,31 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
   const examHistory = useMemo(() => {
     const list = imagingOrdersData || [];
 
-    return list.map((order: any) => ({
-      id: order.id,
-      label: `${order.procedure?.modality?.modalityCode || "Không rõ"} - ${new Date(
-        order.createdAt
-      ).toLocaleDateString("vi-VN")}`,
-      modality: order.procedure?.modality?.modalityCode || "Không rõ",
-      date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
-      encounterId: order.imagingOrderForm?.encounterId || null, 
-      status: order.orderStatus,
-      studyId: order.studyId || null, // ✅ CHUẨN
-    }));
+    return list.map((order: any) => {
+      const statusRaw = String(order.orderStatus || "").trim();
+      const statusLabel =
+        statusRaw.length > 0
+          ? `${statusRaw
+              .split("_")
+              .map(
+                (part: string) =>
+                  part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+              )
+              .join(" ")}`
+          : "ORDER";
+
+      return {
+        id: order.id,
+        label: `${statusLabel} • ${
+          order.procedure?.modality?.modalityCode || "Không rõ"
+        } • ${new Date(order.createdAt).toLocaleDateString("vi-VN")}`,
+        modality: order.procedure?.modality?.modalityCode || "Không rõ",
+        date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
+        encounterId: order.imagingOrderForm?.encounterId || null,
+        status: order.orderStatus,
+        studyId: order.studyId || null, // ✅ CHUẨN
+      };
+    });
   }, [imagingOrdersData]);
 
  
@@ -74,7 +88,7 @@ if (isError)
   );
 
   return (
-    <div className="flex">
+    <div className="flex h-full">
 
       {patientData?.data && (
         <SidebarTab

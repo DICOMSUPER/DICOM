@@ -22,7 +22,6 @@ import {
   Stethoscope,
   ClipboardList,
   MapPin,
-  X,
   User,
 } from "lucide-react";
 import {
@@ -32,6 +31,7 @@ import {
   getPriorityColor,
 } from "@/utils/patient/[id]/color";
 import { getEncounterStatusBadge } from "@/utils/status-badge";
+import { formatStatus } from "@/utils/format-status";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 
@@ -226,7 +226,7 @@ export default function EncounterModal({
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                       {encounter.priority && (
                         <Badge className={`${getPriorityColor(encounter.priority)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                          {encounter.priority}
+                          {formatStatus(encounter.priority)}
                         </Badge>
                       )}
                       {getEncounterStatusBadge(encounter.status)}
@@ -297,7 +297,7 @@ export default function EncounterModal({
                           <FileText className="h-4 w-4" />
                           Encounter ID
                         </div>
-                        <p className="text-base font-semibold text-foreground font-mono text-xs break-all">
+                        <p className="font-semibold text-foreground font-mono text-xs break-all">
                           {encounter.id}
                         </p>
                       </div>

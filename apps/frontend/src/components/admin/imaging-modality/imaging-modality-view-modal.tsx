@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetImagingModalityByIdQuery } from "@/store/imagingModalityApi";
-import { getBooleanStatusBadge } from "@/utils/status-badge";
 import { formatDate } from "@/lib/formatTimeDate";
 import { Scan, Calendar, Activity } from "lucide-react";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
 
 interface ImagingModalityViewModalProps {
   open: boolean;
@@ -38,24 +38,28 @@ export function ImagingModalityViewModal({
 
   const modalityMachines = modality?.modalityMachines || [];
 
-  const getStatusBadgeClass = (status: string | undefined): string => {
-    const statusStr = String(status || "").toUpperCase();
-    if (statusStr === "ACTIVE" || statusStr === "AVAILABLE") {
-      return "bg-emerald-100 text-emerald-700 border-emerald-200";
-    } else if (statusStr === "INACTIVE" || statusStr === "UNAVAILABLE") {
-      return "bg-gray-100 text-gray-700 border-gray-200";
-    } else if (statusStr === "MAINTENANCE") {
-      return "bg-amber-100 text-amber-700 border-amber-200";
-    }
-    return "bg-gray-100 text-gray-700 border-gray-200";
+  const getStatusBadge = (isActive: boolean) => {
+    const colorKey = getStatusBadgeColor(isActive);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
   };
 
-  const getStatusLabelForBadge = (status: string | undefined): string => {
-    const statusStr = String(status || "Unknown").toLowerCase();
-    return statusStr
-      .split(" ")
-      .map((word) => word?.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const getMachineStatusBadge = (status: string | undefined) => {
+    const colorKey = getStatusBadgeColor(status);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${
+          colorKey === 'green' ? 'bg-emerald-500' : 
+          colorKey === 'amber' ? 'bg-amber-500 animate-pulse' : 
+          'bg-slate-400'
+        }`} />
+        {formatStatus(status)}
+      </Badge>
+    );
   };
 
   if (isLoading) {
@@ -113,7 +117,7 @@ export function ImagingModalityViewModal({
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  {getBooleanStatusBadge(modality.isActive)}
+                  {getStatusBadge(modality.isActive)}
                 </div>
               </div>
             </section>
@@ -219,15 +223,7 @@ export function ImagingModalityViewModal({
                             Room ID: {machine.roomId}
                           </p>
                         )}
-                        {machine.status && (
-                          <Badge
-                            className={`${getStatusBadgeClass(
-                              machine.status
-                            )} text-xs font-medium mt-1 border`}
-                          >
-                            {getStatusLabelForBadge(machine.status)}
-                          </Badge>
-                        )}
+                        {machine.status && getMachineStatusBadge(machine.status)}
                       </div>
                     );
                   })}

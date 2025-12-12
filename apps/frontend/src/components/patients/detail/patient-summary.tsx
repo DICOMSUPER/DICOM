@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/table';
 import { PatientCondition } from '@/interfaces/patient/patient-condition.interface';
 import { PatientOverview, VitalSignsSimplified } from '@/interfaces/patient/patient-workflow.interface';
+import { formatStatus } from '@/utils/format-status';
 
 
 
@@ -264,7 +265,7 @@ export function PatientSummaryTab({ overview }: { overview: PatientOverview }) {
                       'bg-blue-50 text-blue-700 border-blue-200'
                     }
                   >
-                    {vital.status.charAt(0).toUpperCase() + vital.status.slice(1)}
+                    {formatStatus(vital.status)}
                   </Badge>
                 </div>
               </div>

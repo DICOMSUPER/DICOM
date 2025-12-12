@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, FolderTree, ArrowRight, Image as ImageIcon, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatStatus } from "@/utils/format-status";
 
 interface Study {
   id: string;
@@ -137,10 +138,7 @@ export function RadiologistDashboardPreview({
                     )}`}
                   >
                     {study.studyStatus
-                      ? study.studyStatus
-                          .charAt(0)
-                          .toUpperCase() +
-                        study.studyStatus.slice(1).toLowerCase().replace(/_/g, " ")
+                      ?                         formatStatus(study.studyStatus)
                       : "Unknown"}
                   </Badge>
                 </div>

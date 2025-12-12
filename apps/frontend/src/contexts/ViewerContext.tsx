@@ -2424,6 +2424,8 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         console.debug('Viewport state manager not ready, continuing without state tracking');
       }
 
+      const jitter = () => Math.min(99, Math.max(1, Math.floor(Math.random() * 12)));
+
       safeUpdateRuntime((prev) => ({
         ...prev,
         seriesId,
@@ -2436,7 +2438,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       try {
         safeUpdateRuntime((prev) => ({
           ...prev,
-          loadingProgress: 5,
+          loadingProgress: jitter(),
         }));
         await ensureCornerstoneInitialized();
         if (bailIfStale()) {
@@ -2497,7 +2499,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         safeUpdateRuntime((prev) => ({
           ...prev,
-          loadingProgress: 20,
+          loadingProgress: Math.min(35, 15 + jitter()),
         }));
 
         const instances = await loadSeriesInstances(studyId, seriesId);
@@ -2507,7 +2509,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         safeUpdateRuntime((prev) => ({
           ...prev,
-          loadingProgress: 30,
+          loadingProgress: Math.min(50, 25 + jitter()),
         }));
 
         const { imageIds, imageIdToInstance } =
@@ -2533,7 +2535,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
         safeUpdateRuntime((prev) => ({
           ...prev,
-          loadingProgress: 40,
+          loadingProgress: Math.min(65, 35 + jitter()),
           totalFrames: imageIds.length,
         }));
 
@@ -2820,6 +2822,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                 instanceId: layer.instanceId,
                 createdAt: Date.now(), // Fallback - ideally from backend
                 createdBy: layer.segmentatorId,
+                frame: layer.frame ?? null,
+                segmentationStatus: (layer as any).segmentationStatus,
+                colorCode: (layer as any).colorCode,
+                segmentationDate: (layer as any).segmentationDate,
+                reviewerId: (layer as any).reviewerId,
+                reviewDate: (layer as any).reviewDate,
                 origin: "database",
               },
               snapshots: decompressedSnapshots as SegmentationSnapshot[],
@@ -2885,6 +2893,12 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
                 instanceId: layer.instanceId,
                 createdAt: Date.now(),
                 createdBy: layer.segmentatorId,
+                  frame: layer.frame ?? null,
+                  segmentationStatus: (layer as any).segmentationStatus,
+                  colorCode: (layer as any).colorCode,
+                  segmentationDate: (layer as any).segmentationDate,
+                  reviewerId: (layer as any).reviewerId,
+                  reviewDate: (layer as any).reviewDate,
                 origin: "database",
               },
               snapshots: decompressedSnapshots as SegmentationSnapshot[],

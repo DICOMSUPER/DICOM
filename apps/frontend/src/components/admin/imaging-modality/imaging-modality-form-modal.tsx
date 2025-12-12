@@ -105,13 +105,13 @@ export function ImagingModalityFormModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[70vw] max-w-[800px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[50vw] max-w-[700px] sm:max-w-[50vw] h-auto max-h-[85vh] flex flex-col border-0 p-0 overflow-hidden">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
           <div>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
               {modalityId ? "Edit Imaging Modality" : "Create Imaging Modality"}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-1">
               {modalityId
                 ? "Update the imaging modality information"
                 : "Add a new imaging modality to the system"}
@@ -119,109 +119,120 @@ export function ImagingModalityFormModal({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSubmit)}
-              className="flex flex-col flex-1 min-h-0 space-y-6 py-6"
-            >
-              <FormField
-                control={form.control}
-                name="modalityCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Modality Code</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., CT, MRI, XRAY"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="modalityName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Modality Name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Computed Tomography"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter description"
-                        {...field}
-                        disabled={isLoading}
-                        rows={4}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel className="text-foreground">Status</FormLabel>
-                    <div className="flex items-center space-x-2 pt-2">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isLoading}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-foreground cursor-pointer">
-                        Active
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </form>
-          </Form>
-        </ScrollArea>
-
-        <DialogFooter className="flex flex-row items-center justify-end gap-2 border-t border-gray-100 shrink-0 px-6 py-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isLoading}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="flex flex-col flex-1 min-h-0"
           >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={form.handleSubmit(handleSubmit)}
-            disabled={isLoading}
-          >
-            {isLoading ? "Saving..." : modalityId ? "Update" : "Create"}
-          </Button>
-        </DialogFooter>
+            <ScrollArea className="flex-1 min-h-0 h-full px-6">
+              <div className="space-y-6 pr-4 py-6">
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    Basic Information
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="modalityCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Modality Code *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., CT, MRI, XRAY"
+                            className="text-foreground"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="modalityName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Modality Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Computed Tomography"
+                            className="text-foreground"
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter description"
+                            className="text-foreground"
+                            {...field}
+                            disabled={isLoading}
+                            rows={4}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </section>
+
+                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    Status
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-foreground cursor-pointer">
+                          Active
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </section>
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : modalityId ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

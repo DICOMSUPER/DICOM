@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { DicomInstance } from './dicom-instance.entity';
+import { SegmentationStatus } from '@backend/shared-enums';
 
 @Entity('image_segmentation_layers')
 export class ImageSegmentationLayer extends BaseEntity {
@@ -29,8 +30,32 @@ export class ImageSegmentationLayer extends BaseEntity {
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
-  @Column({ name: 'frame', type: 'int' })
-  frame?: number = 1;
+  @Column({ name: 'frame', type: 'int', nullable: true })
+  frame?: number | null;
+
+  @Column({ name: 'color_code', length: 7, nullable: true })
+  colorCode?: string;
+
+  @Column({
+    name: 'segmentation_status',
+    type: 'enum',
+    enum: SegmentationStatus,
+    default: SegmentationStatus.DRAFT,
+  })
+  segmentationStatus!: SegmentationStatus;
+
+  @Column({
+    name: 'segmentation_date',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  segmentationDate!: Date;
+
+  @Column({ name: 'reviewer_id', type: 'uuid', nullable: true })
+  reviewerId?: string;
+
+  @Column({ name: 'review_date', type: 'timestamp', nullable: true })
+  reviewDate?: Date;
 
   @Column({ name: 'snapshots', type: 'json' })
   snapshots!: object[];

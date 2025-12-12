@@ -20,6 +20,7 @@ import { Bell, User } from "lucide-react";
 import type { RootState } from "@/store";
 import { useLogout } from "@/hooks/use-logout";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { formatStatus } from "@/utils/format-status";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
@@ -220,8 +221,8 @@ export function RadiologistWorkspaceLayout({
                             {user?.email || "No email"}
                           </p>
                           {user?.role && (
-                            <p className="text-xs leading-none text-foreground capitalize">
-                              {user.role.replace(/_/g, " ")}
+                            <p className="text-xs leading-none text-foreground">
+                              {formatStatus(user.role)}
                             </p>
                           )}
                         </div>

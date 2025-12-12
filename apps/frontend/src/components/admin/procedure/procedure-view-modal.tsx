@@ -11,8 +11,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
-import { Building, Mail, Phone, User, Calendar, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { Building, Calendar, Users, Activity } from 'lucide-react';
+import { formatStatus, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
 
 interface RequestProcedureViewModalProps {
   procedure: RequestProcedure | null;
@@ -29,10 +29,14 @@ export function RequestProcedureViewModal({
 }: RequestProcedureViewModalProps) {
   if (!procedure) return null;
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive
-      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      : 'bg-rose-100 text-rose-700 border-rose-200';
+  const getStatusBadge = (isActive: boolean) => {
+    const colorKey = getStatusBadgeColor(isActive);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
   };
 
   const formatDateTime = (dateValue?: string | Date | null) => {
@@ -80,9 +84,7 @@ export function RequestProcedureViewModal({
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <Badge className={`${getStatusColor(procedure?.isActive as boolean)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                    {procedure.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  {getStatusBadge(procedure?.isActive as boolean)}
                 </div>
               </div>
 
@@ -111,13 +113,11 @@ export function RequestProcedureViewModal({
                 </div>
                 <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
                   <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                    <User className="h-5 w-5" />
+                    <Activity className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-foreground">Status</p>
-                    <Badge className={`${getStatusColor(procedure?.isActive as boolean)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                      {procedure.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    {getStatusBadge(procedure?.isActive as boolean)}
                   </div>
                 </div>
               </div>
@@ -150,9 +150,7 @@ export function RequestProcedureViewModal({
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Status</p>
-                  <Badge className={`${getStatusColor(procedure?.isActive as boolean)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                    {procedure.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  {getStatusBadge(procedure?.isActive as boolean)}
                 </div>
               </div>
             </section>

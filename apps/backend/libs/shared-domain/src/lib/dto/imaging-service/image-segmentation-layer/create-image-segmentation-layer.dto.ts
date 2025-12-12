@@ -1,10 +1,12 @@
 import {
   IsArray,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { SegmentationStatus } from '@backend/shared-enums';
 
 export class CreateImageSegmentationLayerDto {
   @IsString()
@@ -24,7 +26,27 @@ export class CreateImageSegmentationLayerDto {
 
   @IsOptional()
   @IsNumber()
-  frame?: number = 1;
+  frame?: number | null;
+
+  @IsOptional()
+  @IsString()
+  colorCode?: string;
+
+  @IsOptional()
+  @IsEnum(SegmentationStatus)
+  segmentationStatus?: SegmentationStatus;
+
+  @IsOptional()
+  @IsUUID()
+  reviewerId?: string;
+
+  @IsOptional()
+  @IsString()
+  reviewDate?: string;
+
+  @IsOptional()
+  @IsString()
+  segmentationDate?: string;
 
   @IsArray()
   snapshots!: object[];

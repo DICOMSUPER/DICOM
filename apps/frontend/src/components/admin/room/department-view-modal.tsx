@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Department } from '@/interfaces/user/department.interface';
 import { Building, Mail, Phone, User, Calendar, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatStatus, formatRole, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
 
 interface DepartmentViewModalProps {
   department: Department | null;
@@ -29,10 +29,14 @@ export function DepartmentViewModal({
   onEdit,
 }: DepartmentViewModalProps) {
 
-  const getStatusColor = (isActive: boolean) => {
-    return isActive
-      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      : 'bg-rose-100 text-rose-700 border-rose-200';
+  const getStatusBadge = (isActive: boolean) => {
+    const colorKey = getStatusBadgeColor(isActive);
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+        {isActive ? 'Active' : 'Inactive'}
+      </Badge>
+    );
   };
 
   const formatDateTime = (dateValue?: string | Date | null) => {
@@ -85,9 +89,7 @@ export function DepartmentViewModal({
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <Badge className={`${getStatusColor(department.isActive)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                    {department.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  {getStatusBadge(department.isActive)}
                   {department.rooms && department.rooms.length > 0 && (
                     <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
                       <p className="uppercase text-xs tracking-wide">Total Rooms</p>
@@ -167,9 +169,7 @@ export function DepartmentViewModal({
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Status</p>
-                  <Badge className={`${getStatusColor(department.isActive)} px-4 py-1 text-xs font-semibold shadow-sm`}>
-                    {department.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  {getStatusBadge(department.isActive)}
                 </div>
               </div>
             </section>
@@ -207,7 +207,7 @@ export function DepartmentViewModal({
                       <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                         <p className="text-sm text-foreground">Role</p>
                         <p className="text-base font-semibold text-foreground">
-                          {department.headDepartment.role || 'N/A'}
+                          {formatRole(department.headDepartment.role) || 'N/A'}
                         </p>
                       </div>
                       {department.headDepartment.email && (

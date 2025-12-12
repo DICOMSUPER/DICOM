@@ -9,6 +9,7 @@ import { DicomStudyStatus } from "@/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
 import { Suspense } from "react";
 import { AlertCircle } from "lucide-react";
+import { formatStatus } from "@/utils/format-status";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth: string): number => {
@@ -40,19 +41,8 @@ const formatTime = (time: string): string => {
   return time.slice(0, 5); // Keep only hours and minutes
 };
 
-const STUDY_STATUS_LABELS: Record<string, string> = {
-  [DicomStudyStatus.SCANNED]: "Scanned",
-  [DicomStudyStatus.TECHNICIAN_VERIFIED]: "Technician Verified",
-  [DicomStudyStatus.REJECTED]: "Rejected",
-  [DicomStudyStatus.READING]: "Reading",
-  [DicomStudyStatus.PENDING_APPROVAL]: "Pending Approval",
-  [DicomStudyStatus.APPROVED]: "Approved",
-  [DicomStudyStatus.RESULT_PRINTED]: "Result Printed",
-};
-
 const studyStatusBadge = (status?: string) => {
   if (!status) return { label: "N/A", className: "text-gray-600" };
-  const label = STUDY_STATUS_LABELS[status] || status;
   const map: Record<string, string> = {
     [DicomStudyStatus.SCANNED]: "text-slate-700",
     [DicomStudyStatus.TECHNICIAN_VERIFIED]: "text-blue-700",
@@ -62,26 +52,18 @@ const studyStatusBadge = (status?: string) => {
     [DicomStudyStatus.RESULT_PRINTED]: "text-emerald-700",
     [DicomStudyStatus.REJECTED]: "text-red-700",
   };
-  return { label, className: map[status] || "text-slate-700" };
-};
-
-const REPORT_STATUS_LABELS: Record<string, string> = {
-  [DiagnosisStatus.PENDING_APPROVAL]: "Pending Approval",
-  [DiagnosisStatus.APPROVED]: "Approved",
-  [DiagnosisStatus.REJECTED]: "Rejected",
-  [DiagnosisStatus.DRAFT]: "Draft",
+  return { label: formatStatus(status), className: map[status] || "text-slate-700" };
 };
 
 const reportStatusBadge = (status?: string) => {
   if (!status) return { label: "N/A", className: "text-gray-600" };
-  const label = REPORT_STATUS_LABELS[status] || status;
   const map: Record<string, string> = {
     [DiagnosisStatus.PENDING_APPROVAL]: "text-amber-700",
     [DiagnosisStatus.APPROVED]: "text-emerald-700",
     [DiagnosisStatus.REJECTED]: "text-red-700",
     [DiagnosisStatus.DRAFT]: "text-slate-700",
   };
-  return { label, className: map[status] || "text-slate-700" };
+  return { label: formatStatus(status), className: map[status] || "text-slate-700" };
 };
 
 export default function DataTable({

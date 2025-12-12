@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 import { format } from "date-fns";
 import { formatRole } from "@/utils/role-formatter";
+import { formatStatus } from "@/utils/format-status";
 
 interface ListViewProps {
   schedules: RoomSchedule[];
@@ -170,9 +171,9 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
               {/* Right Side: Badges and Button */}
               <div className="flex flex-col items-end gap-3">
                 <Badge 
-                  className={`${getStatusColor(schedule.schedule_status)} border-border text-xs font-semibold uppercase`}
+                  className={`${getStatusColor(schedule.schedule_status)} border-border text-xs font-semibold`}
                 >
-                  {schedule.schedule_status.replace(/_/g, ' ')}
+                  {formatStatus(schedule.schedule_status)}
                 </Badge>
                 <Badge className="bg-gray-800 text-white border-border text-xs font-semibold flex items-center gap-1">
                   <User className="h-3 w-3" />

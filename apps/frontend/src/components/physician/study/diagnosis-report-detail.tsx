@@ -68,6 +68,7 @@ import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
 import { ModalRejectReport } from "./modal-reject-report";
 import { EmptyReportState } from "./empty-report";
 import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { formatStatus } from "@/utils/format-status";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -616,8 +617,7 @@ export function DiagnosisReportDetail({
                       }
                     `}
                   >
-                    {dicomStudyData?.data.studyStatus?.replace(/_/g, " ") ||
-                      "N/A"}
+                    {formatStatus(dicomStudyData?.data.studyStatus)}
                   </Badge>
                 </div>
 
@@ -718,7 +718,7 @@ export function DiagnosisReportDetail({
                           }
                         `}
                       >
-                        {dicomStudyData.data.imagingOrder.orderStatus}
+                        {formatStatus(dicomStudyData.data.imagingOrder.orderStatus)}
                       </Badge>
                     </div>
                     <div>

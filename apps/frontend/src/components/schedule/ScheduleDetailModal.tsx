@@ -41,6 +41,7 @@ import { formatTimeRange } from "@/utils/schedule-helpers";
 import { Monitor, Stethoscope, Loader2 } from "lucide-react";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import { formatStatus } from "@/utils/format-status";
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;
@@ -218,13 +219,7 @@ export function ScheduleDetailModal({
       return isActive ? 'Active' : 'Inactive';
     }
 
-    if (type === 'machine') {
-      const statusStr = String(status || 'Unknown').toLowerCase();
-      return statusStr.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
-
-    const statusStr = String(status || 'Unknown').toLowerCase();
-    return statusStr.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    return formatStatus(String(status || 'Unknown'));
   };
 
   const notes = schedule.notes?.trim();

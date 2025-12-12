@@ -11,7 +11,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -37,7 +36,8 @@ import { User } from '@/interfaces/user/user.interface';
 import { useCreateUserMutation, useCreateStaffAccountMutation, useUpdateUserMutation, useGetCurrentProfileQuery } from '@/store/userApi';
 import { Department } from '@/interfaces/user/department.interface';
 import { Roles } from '@/enums/user.enum';
-import { User as UserIcon } from 'lucide-react';
+import { User as UserIcon, Shield, BadgeCheck, Building2 } from 'lucide-react';
+import { formatRole, modalStyles } from '@/utils/format-status';
 
 interface UserFormModalProps {
   user: User | null;
@@ -199,7 +199,7 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
     .filter(role => isEdit || role !== Roles.SYSTEM_ADMIN)
     .map(role => ({
       value: role,
-      label: role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      label: formatRole(role),
     }));
 
   const handleClose = () => {
@@ -209,21 +209,24 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             {isEdit ? 'Edit User' : 'Create New User'}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-            <ScrollArea className="flex-1 min-h-0 h-full px-6">
-              <div className="space-y-8 pr-4 pb-2">
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <UserIcon className="h-5 w-5" />
-                    Basic Information
+            <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <UserIcon className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Basic Information</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -231,11 +234,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Username *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Username *</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., johndoe"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               disabled={isEdit}
                               {...field}
                             />
@@ -249,12 +252,12 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Email *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Email *</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
                               placeholder="e.g., john.doe@example.com"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -268,12 +271,12 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-foreground">Password *</FormLabel>
+                            <FormLabel className={modalStyles.formLabel}>Password *</FormLabel>
                             <FormControl>
                               <Input
                                 type="password"
                                 placeholder="Enter password"
-                                className="text-foreground"
+                                className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                                 {...field}
                               />
                             </FormControl>
@@ -287,11 +290,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">First Name *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>First Name *</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., John"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -304,11 +307,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Last Name *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Last Name *</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., Doe"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -321,11 +324,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Phone</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Phone</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., +1234567890"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -338,11 +341,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="employeeId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Employee ID</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Employee ID</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., EMP001"
-                              className="text-foreground"
+                              className="border-slate-200 focus:border-teal-500 focus:ring-teal-500"
                               {...field}
                             />
                           </FormControl>
@@ -355,25 +358,29 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                     control={form.control}
                     name="isActive"
                     render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 pt-2">
+                      <FormItem className="flex items-center space-x-3 pt-4 border-t border-slate-100 mt-4">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-teal-600"
                           />
                         </FormControl>
-                        <FormLabel className="text-foreground cursor-pointer">
-                          Active
+                        <FormLabel className={`${modalStyles.formLabel} cursor-pointer mt-0!`}>
+                          Active Status
                         </FormLabel>
                       </FormItem>
                     )}
                   />
                 </section>
 
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <UserIcon className="h-5 w-5" />
-                    Role & Department
+                {/* Role & Department */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Shield className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Role & Department</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -381,13 +388,13 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="role"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Role *</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Role *</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500">
                                 <SelectValue placeholder="Select role" />
                               </SelectTrigger>
                             </FormControl>
@@ -408,13 +415,13 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       name="departmentId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-foreground">Department</FormLabel>
+                          <FormLabel className={modalStyles.formLabel}>Department *</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground w-full">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500 w-full">
                                 <SelectValue placeholder="Select department" />
                               </SelectTrigger>
                             </FormControl>
@@ -434,14 +441,14 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                       control={form.control}
                       name="targetDepartmentId"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground">Head of Department</FormLabel>
+                        <FormItem className="col-span-2">
+                          <FormLabel className={modalStyles.formLabel}>Head of Department</FormLabel>
                           <Select
                             value={field.value || "none"}
                             onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-foreground">
+                              <SelectTrigger className="border-slate-200 focus:border-teal-500 focus:ring-teal-500">
                                 <SelectValue placeholder="Select department to head" />
                               </SelectTrigger>
                             </FormControl>
@@ -461,24 +468,28 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
                   </div>
                 </section>
 
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <UserIcon className="h-5 w-5" />
-                    Verification
+                {/* Verification */}
+                <section className={modalStyles.formSection}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <BadgeCheck className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Verification</h3>
                   </div>
                   <FormField
                     control={form.control}
                     name="isVerified"
                     render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
+                      <FormItem className="flex items-center space-x-3 rounded-lg border border-slate-200 p-4 bg-slate-50/50">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
                           />
                         </FormControl>
-                        <FormLabel className="text-foreground cursor-pointer">
-                          Verified
+                        <FormLabel className={`${modalStyles.formLabel} cursor-pointer mt-0!`}>
+                          Mark user as verified
                         </FormLabel>
                       </FormItem>
                     )}
@@ -487,11 +498,11 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
               </div>
             </ScrollArea>
 
-            <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting}>
+            <DialogFooter className={modalStyles.dialogFooter}>
+              <Button type="button" variant="outline" onClick={handleClose} disabled={form.formState.isSubmitting} className={modalStyles.secondaryButton}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting} className={modalStyles.primaryButton}>
                 {form.formState.isSubmitting ? 'Saving...' : isEdit ? 'Update User' : 'Create User'}
               </Button>
             </DialogFooter>
@@ -501,4 +512,3 @@ export function UserFormModal({ user, departments, isOpen, onClose, onSuccess }:
     </Dialog>
   );
 }
-

@@ -3,6 +3,7 @@
 import React, { use } from "react";
 import { useGetPatientEncounterByIdQuery } from "@/store/patientEncounterApi";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
+import { formatStatus } from "@/utils/format-status";
 
 export default function Page({
   params,
@@ -292,8 +293,8 @@ export default function Page({
                     <div className="text-xs font-semibold text-gray-600 mb-1">
                       Current Status
                     </div>
-                    <div className="text-sm capitalize font-medium">
-                      {encounter.status || "N/A"}
+                    <div className="text-sm font-medium">
+                      {formatStatus(encounter.status)}
                     </div>
                   </div>
                 </div>

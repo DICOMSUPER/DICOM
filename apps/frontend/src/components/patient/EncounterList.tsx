@@ -218,7 +218,7 @@ function EncounterCard({
                 {encounter.priority === EncounterPriorityLevel.STAT && (
                   <AlertCircle className="w-3 h-3 mr-0.5" />
                 )}
-                {encounter.priority}
+                {formatStatus(encounter.priority)}
               </Badge>
             )}
             <Badge
@@ -322,7 +322,7 @@ function EncounterCard({
                   </p>
                   {physician.role && (
                     <p className="text-[10px] text-emerald-600 truncate">
-                      {physician.role.replace(/_/g, " ")}
+                      {formatStatus(physician.role)}
                     </p>
                   )}
                 </>
@@ -345,7 +345,7 @@ function EncounterCard({
                 </p>
                 {createdBy.role && (
                   <p className="text-[10px] text-indigo-600 truncate">
-                    {createdBy.role.replace(/_/g, " ")}
+                    {formatStatus(createdBy.role)}
                   </p>
                 )}
               </div>

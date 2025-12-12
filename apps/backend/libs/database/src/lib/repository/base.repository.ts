@@ -39,6 +39,12 @@ export class BaseRepository<T extends ObjectLiteral> {
     return candidate.isDeleted === true;
   }
 
+  protected getDefaultOrder(entityManager?: EntityManager) {
+    const repository = this.getRepository(entityManager);
+    const hasCreatedAt = !!repository.metadata.findColumnWithPropertyName('createdAt');
+    return hasCreatedAt ? { createdAt: 'DESC' as const } : undefined;
+  }
+
   protected withNotDeletedWhere(
     where: FindOptionsWhere<T> | FindOptionsWhere<T>[] | undefined,
     entityManager?: EntityManager
@@ -70,6 +76,7 @@ export class BaseRepository<T extends ObjectLiteral> {
     const mergedOptions: FindManyOptions<T> = {
       ...options,
       where: this.withNotDeletedWhere(options?.where, entityManager),
+      order: options?.order ?? this.getDefaultOrder(entityManager),
       relations: relations ?? options?.relations,
     };
     return repository.find(mergedOptions);
@@ -311,6 +318,11 @@ export class BaseRepository<T extends ObjectLiteral> {
       Object.entries(options.order).forEach(([key, value]) => {
         query.addOrderBy(`entity.${key}`, value as 'ASC' | 'DESC');
       });
+    } else {
+      const defaultOrder = this.getDefaultOrder(entityManager);
+      if (defaultOrder?.createdAt) {
+        query.orderBy('entity.createdAt', defaultOrder.createdAt);
+      }
     }
 
     // Exclude soft-deleted

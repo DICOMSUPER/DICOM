@@ -67,6 +67,7 @@ import { ModalApproveStudy } from "./modal-approve-study";
 import { ModalSetUpSignature } from "./modal-setup";
 import { BodyPart } from "@/interfaces/imaging/body-part.interface";
 import { SignatureType } from "@/enums/signature-type";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;
@@ -332,39 +333,19 @@ export function ModalDiagnosisReportDetail({
   }, [onClose]);
 
   const getStatusBadge = (status: DiagnosisStatus) => {
-    const capitalizeFirst = (str: string) => {
-      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    };
-
-    switch (status) {
-      case DiagnosisStatus.APPROVED:
-        return (
-          <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-200 transition-colors">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
-            Active
-          </Badge>
-        );
-      case DiagnosisStatus.REJECTED:
-        return (
-          <Badge className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200 transition-colors">
-            <div className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
-            Rejected
-          </Badge>
-        );
-      case DiagnosisStatus.PENDING_APPROVAL:
-        return (
-          <Badge className="bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 transition-colors">
-            <div className="w-2 h-2 bg-slate-500 rounded-full mr-2" />
-            Pending Approval
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline">
-            {capitalizeFirst(status || "Unknown")}
-          </Badge>
-        );
-    }
+    const colorKey = getStatusBadgeColor(status);
+    const isAnimated = status === DiagnosisStatus.PENDING_APPROVAL;
+    return (
+      <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
+        <div className={`w-2 h-2 rounded-full ${
+          colorKey === 'green' ? 'bg-emerald-500 animate-pulse' : 
+          colorKey === 'red' ? 'bg-red-500' :
+          colorKey === 'amber' ? 'bg-amber-500 animate-pulse' :
+          'bg-slate-400'
+        }`} />
+        {formatStatus(status)}
+      </Badge>
+    );
   };
 
   const handleApproveStudy = async (studyId: string, pin: string) => {
@@ -573,8 +554,7 @@ export function ModalDiagnosisReportDetail({
           }
         `}
                     >
-                      {dicomStudyData?.data.studyStatus?.replace(/_/g, " ") ||
-                        "N/A"}
+                      {formatStatus(dicomStudyData?.data.studyStatus)}
                     </Badge>
                   </div>
 
@@ -683,7 +663,7 @@ export function ModalDiagnosisReportDetail({
               }
             `}
                         >
-                          {dicomStudyData.data.imagingOrder.orderStatus}
+                          {formatStatus(dicomStudyData.data.imagingOrder.orderStatus)}
                         </Badge>
                       </div>
                       <div>
