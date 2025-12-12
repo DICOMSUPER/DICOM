@@ -4,9 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../entities"
-    },
-    {
       "path": "../../libs/shared-client"
     },
     {

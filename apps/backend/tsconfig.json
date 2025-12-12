@@ -28,9 +28,6 @@
       "path": "./libs/shared-decorators"
     },
     {
-      "path": "./entities"
-    },
-    {
       "path": "./apps/patient-service-e2e"
     },
     {
