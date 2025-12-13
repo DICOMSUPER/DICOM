@@ -6,6 +6,7 @@ import { Eye, Edit, Power, Users, Mail, Phone } from 'lucide-react';
 import { User } from '@/interfaces/user/user.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
+import { formatDateTime } from '@/utils/format-status';
 
 interface UserTableProps {
   users: User[];
@@ -114,6 +115,22 @@ export const UserTable: React.FC<UserTableProps> = ({
       sortable: false,
       cell: (user: User) => (
         <div className="text-foreground">{user.isVerified ? 'Yes' : 'No'}</div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (user: User) => (
+        <div className="text-foreground text-sm">{formatDateTime(user.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (user: User) => (
+        <div className="text-foreground text-sm">{formatDateTime(user.updatedAt)}</div>
       ),
     },
     {

@@ -16,6 +16,7 @@ import { getRoomStatusBadge, getMachineStatusBadge } from "@/utils/status-badge"
 import { formatDate } from "@/lib/formatTimeDate";
 import { Monitor, Calendar, Building2 } from "lucide-react";
 import { Room } from "@/interfaces/user/room.interface";
+import { modalStyles } from "@/utils/format-status";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 
 interface ModalityMachineViewModalProps {
@@ -49,174 +50,146 @@ export function ModalityMachineViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">Modality Machine Details</DialogTitle>
+      <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>Modality Machine Details</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           {isLoading ? (
-            <div className="space-y-4 py-6">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : !machine ? (
-            <div className="space-y-4 py-6">
-              <p className="text-foreground/60">Machine not found</p>
+            <div className="text-center py-12">
+              <Monitor className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+              <p className="text-sm text-slate-500 italic">Machine not found</p>
             </div>
           ) : (
-          <div className="space-y-4 pr-4 pb-2">
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+          <div className="space-y-6">
+            {/* Hero Section */}
+            <section className={modalStyles.heroSection}>
               <div className="flex flex-wrap items-start justify-between gap-6">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                    <Monitor className="h-3.5 w-3.5" />
+                <div className="space-y-3">
+                  <div className={modalStyles.heroLabel}>
+                    <Monitor className="h-3.5 w-3.5 inline mr-1" />
                     {machine.name || 'Unnamed Machine'}
                   </div>
                   <div>
-                    <p className="text-3xl font-semibold text-foreground leading-tight">
+                    <p className={modalStyles.heroTitle}>
                       {machine.name || '—'}
                     </p>
                     {machine.modality && (
-                      <p className="mt-3 text-sm text-foreground">
+                      <p className={modalStyles.heroSubtitle}>
+                        <Monitor className="h-4 w-4 text-teal-600" />
                         {machine.modality.modalityName} ({machine.modality.modalityCode})
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="space-y-4 text-right">
+                <div className="flex flex-col gap-2 items-end">
                   {getMachineStatusBadge(machine.status)}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Monitor className="h-5 w-5" />
-                Basic Information
+            {/* Quick Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={modalStyles.gridCard}>
+                <div className={modalStyles.gridCardLabel}>
+                  <Monitor className={modalStyles.gridCardIcon} />
+                  Manufacturer
+                </div>
+                <p className={modalStyles.gridCardValue}>
+                  {machine.manufacturer || '—'}
+                </p>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Monitor className="h-4 w-4" />
-                    Machine Name
-                  </div>
-                  <p className="text-base font-semibold text-blue-600">{machine.name || '—'}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Monitor className="h-4 w-4" />
-                    Imaging Modality
-                  </div>
-                  <p className="text-base font-semibold text-foreground">
-                    {machine.modality?.modalityName || '—'} ({machine.modality?.modalityCode || '—'})
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Monitor className="h-4 w-4" />
-                    Manufacturer
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{machine.manufacturer || '—'}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Monitor className="h-4 w-4" />
-                    Model
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{machine.model || '—'}</p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Monitor className="h-4 w-4" />
-                    Serial Number
-                  </div>
-                  <p className="text-base font-semibold text-foreground">{machine.serialNumber || '—'}</p>
-                </div>
-              </div>
-            </section>
 
-            {assignedRoom && (
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Building2 className="h-5 w-5" />
-                  Assigned Room
+              <div className={modalStyles.gridCard}>
+                <div className={modalStyles.gridCardLabel}>
+                  <Monitor className={modalStyles.gridCardIcon} />
+                  Model
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Building2 className="h-4 w-4" />
-                      Room Code
-                    </div>
-                    <p className="text-base font-semibold text-foreground">{assignedRoom.roomCode || '—'}</p>
+                <p className={modalStyles.gridCardValue}>
+                  {machine.model || '—'}
+                </p>
+              </div>
+
+              <div className={modalStyles.gridCard}>
+                <div className={modalStyles.gridCardLabel}>
+                  <Monitor className={modalStyles.gridCardIcon} />
+                  Serial Number
+                </div>
+                <p className={modalStyles.gridCardValue}>
+                  {machine.serialNumber || '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Assigned Room */}
+            {assignedRoom && (
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Building2 className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Assigned Room</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Room Code</div>
+                    <p className={modalStyles.infoCardLarge}>{assignedRoom.roomCode || '—'}</p>
                   </div>
                   {assignedRoom.roomType && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Building2 className="h-4 w-4" />
-                        Room Type
-                      </div>
-                      <p className="text-base font-semibold text-foreground">{assignedRoom.roomType || '—'}</p>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Room Type</div>
+                      <p className={modalStyles.infoCardValue}>{assignedRoom.roomType}</p>
                     </div>
                   )}
                   {assignedRoom.floor != null && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Building2 className="h-4 w-4" />
-                        Floor
-                      </div>
-                      <p className="text-base font-semibold text-foreground">{assignedRoom.floor}</p>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Floor</div>
+                      <p className={modalStyles.infoCardValue}>{assignedRoom.floor}</p>
                     </div>
                   )}
                   {assignedRoom.department && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Building2 className="h-4 w-4" />
-                        Department
-                      </div>
-                      <p className="text-base font-semibold text-foreground">
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Department</div>
+                      <p className={modalStyles.infoCardValue}>
                         {assignedRoom.department.departmentName || '—'}
                       </p>
                     </div>
                   )}
                   {assignedRoom.status && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Building2 className="h-4 w-4" />
-                        Status
-                      </div>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Status</div>
                       <div>{getRoomStatusBadge(assignedRoom.status)}</div>
-                    </div>
-                  )}
-                  {assignedRoom.capacity && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Building2 className="h-4 w-4" />
-                        Capacity
-                      </div>
-                      <p className="text-base font-semibold text-foreground">{assignedRoom.capacity}</p>
                     </div>
                   )}
                 </div>
               </section>
             )}
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Calendar className="h-5 w-5" />
-                Timestamps
+            {/* Timestamps */}
+            <section className={modalStyles.section}>
+              <div className={modalStyles.sectionHeader}>
+                <div className={modalStyles.sectionIconContainer}>
+                  <Calendar className={modalStyles.sectionIcon} />
+                </div>
+                <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Created At</p>
-                  <p className="text-base font-semibold text-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.infoCardLabel}>Created At</div>
+                  <p className={modalStyles.infoCardValue}>
                     {machine.createdAt ? formatDate(machine.createdAt) : '—'}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Updated At</p>
-                  <p className="text-base font-semibold text-foreground">
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.infoCardLabel}>Updated At</div>
+                  <p className={modalStyles.infoCardValue}>
                     {machine.updatedAt ? formatDate(machine.updatedAt) : '—'}
                   </p>
                 </div>
@@ -226,12 +199,12 @@ export function ModalityMachineViewModal({
           )}
         </ScrollArea>
 
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {onEdit && machine && (
-            <Button variant="default" onClick={() => onEdit(machine.id)}>
+            <Button onClick={() => onEdit(machine.id)} className={modalStyles.primaryButton}>
               Edit Machine
             </Button>
           )}

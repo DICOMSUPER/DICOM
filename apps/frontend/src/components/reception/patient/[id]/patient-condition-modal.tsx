@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Calendar,
   AlertCircle,
@@ -26,6 +27,7 @@ import {
   ClinicalStatus,
   ConditionVerificationStatus,
 } from "@/enums/patient-workflow.enum";
+import { modalStyles } from "@/utils/format-status";
 
 export default function PatientConditionModal({
   condition,
@@ -120,11 +122,11 @@ export default function PatientConditionModal({
 
   return (
     <Dialog open={!!condition} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
+        <DialogHeader className={modalStyles.dialogHeader}>
           <div>
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className={modalStyles.dialogTitle}>
               Condition Details
             </DialogTitle>
             <p className="text-sm text-foreground mt-1">
@@ -135,7 +137,14 @@ export default function PatientConditionModal({
         </DialogHeader>
 
         {/* Scrollable Content */}
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
+          {!condition ? (
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
+            </div>
+          ) : (
           <div className="space-y-8 pr-4 pb-2">
             {/* Hero Section */}
             <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
@@ -395,11 +404,12 @@ export default function PatientConditionModal({
               </div>
             </div>
           </div>
+        )}
         </ScrollArea>
 
         {/* Fixed Footer */}
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={`${modalStyles.dialogFooter} bg-white`}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
         </DialogFooter>

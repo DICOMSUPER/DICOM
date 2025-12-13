@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Monitor } from 'lucide-react';
 import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/utils/format-status';
 import { getMachineStatusBadgeSimple } from '@/utils/status-badge';
 import { SortConfig } from '@/components/ui/data-table';
 
@@ -90,7 +90,15 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
       sortable: true,
       sortField: 'createdAt',
       cell: (machine: ModalityMachine) => (
-        <div className="text-foreground">{formatDate(machine.createdAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(machine.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated At',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (machine: ModalityMachine) => (
+        <div className="text-foreground text-sm">{formatDateTime(machine.updatedAt)}</div>
       ),
     },
     {

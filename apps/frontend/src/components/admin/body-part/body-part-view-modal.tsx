@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BodyPart } from "@/interfaces/imaging/body-part.interface";
 import { Activity, Calendar } from "lucide-react";
+import { modalStyles } from "@/utils/format-status";
 
 interface BodyPartViewModalProps {
   bodyPart: BodyPart | null;
@@ -44,32 +45,33 @@ export function BodyPartViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[50vw] max-w-[800px] sm:max-w-[50vw] h-[75vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[50vw] max-w-[800px] sm:max-w-[50vw] h-[75vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             Body Part Details
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 overflow-auto px-6">
+        <ScrollArea className="flex-1 overflow-auto px-6 py-4">
           {!bodyPart ? (
-            <div className="space-y-8 pr-4 pb-6">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-64 w-full" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : (
-            <div className="space-y-8 pr-4 pb-6">
-              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+            <div className="space-y-6">
+              {/* Hero Section */}
+              <section className={modalStyles.heroSection}>
                 <div className="flex flex-wrap items-start justify-between gap-6">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                      <Activity className="h-3.5 w-3.5 text-foreground" />
+                  <div className="space-y-3">
+                    <div className={modalStyles.heroLabel}>
+                      <Activity className="h-3.5 w-3.5 inline mr-1" />
                       Body Part
                     </div>
                     <div>
-                      <p className="text-3xl font-semibold text-foreground leading-tight">
+                      <p className={modalStyles.heroTitle}>
                         {bodyPart.name}
                       </p>
                     </div>
@@ -77,76 +79,84 @@ export function BodyPartViewModal({
                 </div>
               </section>
 
-              {/* Overview Section */}
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Activity className="h-5 w-5 text-foreground" />
-                  Body Part Overview
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Activity className={modalStyles.gridCardIcon} />
+                    Name
+                  </div>
+                  <p className={modalStyles.gridCardValue}>
+                    {bodyPart.name}
+                  </p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-1">
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Activity className="h-4 w-4 text-foreground" />
-                      Name
+
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Calendar className={modalStyles.gridCardIcon} />
+                    Created
+                  </div>
+                  <p className={modalStyles.gridCardValue}>
+                    {formatDateTime(bodyPart.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Description */}
+              {bodyPart.description && (
+                <section className={modalStyles.section}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Activity className={modalStyles.sectionIcon} />
                     </div>
-                    <p className="text-base font-semibold text-foreground">
-                      {bodyPart.name}
+                    <h3 className={modalStyles.sectionTitle}>Description</h3>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <p className={modalStyles.infoCardValue}>{bodyPart.description}</p>
+                  </div>
+                </section>
+              )}
+
+              {/* Timestamps */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Calendar className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Created At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(bodyPart.createdAt)}
+                    </p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>
+                      <Calendar className="w-3 h-3 inline mr-1" />
+                      Updated At
+                    </div>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(bodyPart.updatedAt)}
                     </p>
                   </div>
                 </div>
               </section>
-
-              <div className="grid gap-6 xl:grid-cols-3">
-                <div className="xl:col-span-2 space-y-6">
-                  {/* Description */}
-                  {bodyPart.description && (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-3">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <Activity className="h-5 w-5 text-foreground" />
-                        Description
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
-                        {bodyPart.description}
-                      </p>
-                    </section>
-                  )}
-                </div>
-
-                <div className="space-y-6">
-                  {/* Timestamps */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Calendar className="h-5 w-5 text-foreground" />
-                      Timestamps
-                    </div>
-                    <div className="space-y-3">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Created At</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {formatDateTime(bodyPart.createdAt)}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Updated At</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {formatDateTime(bodyPart.updatedAt)}
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-                </div>
-              </div>
             </div>
           )}
         </ScrollArea>
 
         {/* Fixed Footer */}
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {onEdit && bodyPart && (
-            <Button variant="default" onClick={() => onEdit(bodyPart)}>
+            <Button onClick={() => onEdit(bodyPart)} className={modalStyles.primaryButton}>
               Edit Body Part
             </Button>
           )}

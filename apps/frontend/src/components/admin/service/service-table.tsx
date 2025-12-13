@@ -6,7 +6,7 @@ import { Eye, Edit, Trash2, Stethoscope } from 'lucide-react';
 import { Services } from '@/interfaces/user/service.interface';
 import { DataTable, SortConfig } from '@/components/ui/data-table';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/utils/format-status';
 
 interface ServiceTableProps {
   serviceItems: Services[];
@@ -73,7 +73,15 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
       sortable: true,
       sortField: 'createdAt',
       cell: (service: Services) => (
-        <div className="text-foreground">{formatDate(service.createdAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(service.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated At',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (service: Services) => (
+        <div className="text-foreground text-sm">{formatDateTime(service.updatedAt)}</div>
       ),
     },
     {

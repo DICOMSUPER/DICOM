@@ -6,6 +6,7 @@ import { Eye, Edit, Trash2, Building2, Check, X } from 'lucide-react';
 import { Room } from '@/interfaces/user/room.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
+import { formatDateTime } from '@/utils/format-status';
 
 interface RoomTableProps {
   rooms: Room[];
@@ -185,6 +186,22 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       header: 'Notes',
       cell: (room: Room) => (
         <div className="max-w-[250px] truncate text-foreground">{room.notes}</div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (room: Room) => (
+        <div className="text-foreground text-sm">{formatDateTime(room.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (room: Room) => (
+        <div className="text-foreground text-sm">{formatDateTime(room.updatedAt)}</div>
       ),
     },
     {

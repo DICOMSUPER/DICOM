@@ -146,39 +146,40 @@ export function ModalServiceDetail({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">Service Details</DialogTitle>
+      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>Service Details</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           {isLoading ? (
-            <div className="space-y-8 pr-4 pb-2">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-64 w-full" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           ) : service ? (
-            <div className="space-y-8 pr-4 pb-2">
-              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+            <div className="space-y-6">
+              {/* Hero Section */}
+              <section className={modalStyles.heroSection}>
                 <div className="flex flex-wrap items-start justify-between gap-6">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                      <Cog className="h-3.5 w-3.5" />
+                  <div className="space-y-3">
+                    <div className={modalStyles.heroLabel}>
+                      <Cog className="h-3.5 w-3.5 inline mr-1" />
                       {service.serviceCode || "N/A"}
                     </div>
                     <div>
-                      <p className="text-3xl font-semibold text-foreground leading-tight">
+                      <p className={modalStyles.heroTitle}>
                         {service.serviceName || "Unnamed Service"}
                       </p>
-                      <div className="mt-3 grid gap-2 text-sm text-foreground">
+                      <div className="mt-3 space-y-2">
                         {service.description ? (
-                          <p className="flex items-center gap-2">
-                            <Stethoscope className="h-4 w-4" />
+                          <p className={modalStyles.heroSubtitle}>
+                            <Stethoscope className="h-4 w-4 text-teal-600" />
                             {service.description}
                           </p>
                         ) : (
-                          <p className="flex items-center gap-2 text-foreground/60 italic">
+                          <p className="text-sm text-slate-500 italic flex items-center gap-2">
                             <Stethoscope className="h-4 w-4" />
                             No description provided
                           </p>
@@ -187,86 +188,79 @@ export function ModalServiceDetail({
                     </div>
                   </div>
                 </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Cog className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">Service Code</p>
-                      <p className="text-lg font-semibold text-foreground">{service.serviceCode || "N/A"}</p>
-                      <p className="text-xs text-foreground">Identifier</p>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Stethoscope className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">Status</p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {service.isActive ? "Active" : "Inactive"}
-                      </p>
-                      <p className="text-xs text-foreground">Current state</p>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">Assigned Rooms</p>
-                      <p className="text-lg font-semibold text-foreground">{totalRooms || "—"}</p>
-                      <p className="text-xs text-foreground">Total assignments</p>
-                    </div>
-                  </div>
-                </div>
               </section>
 
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Cog className="h-5 w-5" />
-                  Service Information
+              {/* Quick Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Cog className={modalStyles.gridCardIcon} />
+                    Service Code
+                  </div>
+                  <p className={modalStyles.gridCardValue}>
+                    {service.serviceCode || "N/A"}
+                  </p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Cog className="h-4 w-4" />
-                      Service Code
-                    </div>
-                    <p className="text-base font-semibold text-foreground">{service.serviceCode || "—"}</p>
+
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Stethoscope className={modalStyles.gridCardIcon} />
+                    Status
                   </div>
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Stethoscope className="h-4 w-4" />
-                      Service Name
-                    </div>
-                    <p className="text-base font-semibold text-foreground">{service.serviceName || "—"}</p>
+                  <p className={modalStyles.gridCardValue}>
+                    {service.isActive ? "Active" : "Inactive"}
+                  </p>
+                </div>
+
+                <div className={modalStyles.gridCard}>
+                  <div className={modalStyles.gridCardLabel}>
+                    <Building2 className={modalStyles.gridCardIcon} />
+                    Assigned Rooms
+                  </div>
+                  <p className={modalStyles.gridCardValue}>
+                    {totalRooms || "—"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Service Information */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Cog className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Service Information</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Service Code</div>
+                    <p className={modalStyles.infoCardLarge}>{service.serviceCode || "—"}</p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Service Name</div>
+                    <p className={modalStyles.infoCardValue}>{service.serviceName || "—"}</p>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Stethoscope className="h-4 w-4" />
-                    Description
-                  </div>
-                  <p className="text-base font-semibold text-foreground">
+                <div className={`${modalStyles.infoCard} mt-4`}>
+                  <div className={modalStyles.infoCardLabel}>Description</div>
+                  <p className={modalStyles.infoCardValue}>
                     {service.description || (
-                      <span className="text-foreground/60 italic">No description provided</span>
+                      <span className="text-slate-400 italic">No description provided</span>
                     )}
                   </p>
                 </div>
               </section>
 
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Building2 className="h-5 w-5 text-foreground" />
+              {/* Assigned Rooms */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Building2 className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>
                     Assigned Rooms
-                  </div>
-                  <div className="text-sm text-foreground">
-                    Total: <span className="font-semibold">{totalRooms || "—"}</span>
-                  </div>
+                    {totalRooms ? <span className="ml-2 text-sm font-normal text-slate-500">({totalRooms})</span> : null}
+                  </h3>
                 </div>
 
                 {roomServicesError ? (
@@ -300,24 +294,27 @@ export function ModalServiceDetail({
                 )}
               </section>
 
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Calendar className="h-5 w-5" />
-                  Timestamps
+              {/* Timestamps */}
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Calendar className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
                 </div>
-                <div className="space-y-3">
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <p className="text-sm text-foreground">Created At</p>
-                      <p className="text-base font-semibold text-foreground">
-                        {service.createdAt ? formatDateTime(service.createdAt) : "—"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <p className="text-sm text-foreground">Updated At</p>
-                      <p className="text-base font-semibold text-foreground">
-                        {service.updatedAt ? formatDateTime(service.updatedAt) : "—"}
-                      </p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Created At</div>
+                    <p className={modalStyles.infoCardValue}>
+                      {service.createdAt ? formatDateTime(service.createdAt) : "—"}
+                    </p>
+                  </div>
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.infoCardLabel}>Updated At</div>
+                    <p className={modalStyles.infoCardValue}>
+                      {service.updatedAt ? formatDateTime(service.updatedAt) : "—"}
+                    </p>
+                  </div>
                 </div>
               </section>
             </div>
@@ -328,8 +325,8 @@ export function ModalServiceDetail({
           )}
         </ScrollArea>
 
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
         </DialogFooter>
