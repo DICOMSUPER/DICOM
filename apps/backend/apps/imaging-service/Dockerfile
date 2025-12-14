@@ -6,6 +6,7 @@ WORKDIR /workspace
 COPY package*.json nx.json tsconfig*.json eslint.config.mjs ./
 COPY apps ./apps
 COPY libs ./libs
+
 RUN npm ci
 RUN npx nx build imaging-service
 
