@@ -159,7 +159,12 @@ export default function MachinePageWrapper() {
   }, []);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([refetchMachines(), refetchStats()]);
+    try {
+      await Promise.all([refetchMachines(), refetchStats()]);
+      toast.success("Data refreshed successfully");
+    } catch (error) {
+      toast.error("Failed to refresh data");
+    }
   }, [refetchMachines, refetchStats]);
 
   return (

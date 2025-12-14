@@ -6,7 +6,7 @@ import { Eye, Edit, Stethoscope } from 'lucide-react';
 import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { getEncounterStatusBadge, getEncounterTypeBadge, getEncounterPriorityBadge } from '@/utils/status-badge';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface EncounterTableProps {
@@ -36,7 +36,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
   onSort,
   initialSort,
 }) => {
-  const formatDateTime = (date: string | Date | undefined) => {
+  const formatDateTimeLocal = (date: string | Date | undefined) => {
     if (!date) return { date: "N/A", time: "" };
     const d = new Date(date);
     return {
@@ -128,7 +128,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
       sortable: true,
       sortField: 'encounterDate',
       cell: (encounter: PatientEncounter) => {
-        const dateTime = formatDateTime(encounter?.encounterDate);
+        const dateTime = formatDateTimeLocal(encounter?.encounterDate);
         return (
           <div className="flex flex-col gap-0.5">
             <div className="text-sm font-medium text-foreground">
@@ -167,6 +167,22 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
         <div className="text-sm font-mono text-foreground text-center">
           {encounter.orderNumber}
         </div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (encounter: PatientEncounter) => (
+        <div className="text-foreground text-sm">{formatDateTime(encounter.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (encounter: PatientEncounter) => (
+        <div className="text-foreground text-sm">{formatDateTime(encounter.updatedAt)}</div>
       ),
     },
     {

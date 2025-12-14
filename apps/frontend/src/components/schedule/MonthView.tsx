@@ -1,6 +1,7 @@
 "use client";
 
 import { format, isSameDay } from "date-fns";
+import { CalendarOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
 

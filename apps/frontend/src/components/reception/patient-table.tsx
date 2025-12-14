@@ -7,7 +7,7 @@ import { PriorityBadge } from "@/components/ui/priority-badge";
 import { getBooleanStatusBadge } from "@/utils/status-badge";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { Patient } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate, formatDateTime } from "@/lib/formatTimeDate";
+import { formatDateTime } from '@/utils/format-status';
 import { SortConfig } from "@/components/ui/data-table";
 
 interface PatientTableProps {
@@ -148,6 +148,26 @@ export function PatientTable({
                 : String(encounter.encounterDate);
             return formatDateTime(encounterDate);
           },
+        },
+        {
+          header: "Created",
+          sortable: true,
+          sortField: "createdAt",
+          cell: (patient) => (
+            <div className="text-foreground text-sm">
+              {formatDateTime(patient.createdAt)}
+            </div>
+          ),
+        },
+        {
+          header: "Updated",
+          sortable: true,
+          sortField: "updatedAt",
+          cell: (patient) => (
+            <div className="text-foreground text-sm">
+              {formatDateTime(patient.updatedAt)}
+            </div>
+          ),
         },
         {
           header: "Actions",

@@ -16,6 +16,7 @@ import ModalCancel from "./modal-cancel";
 import { useState } from "react";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
 import { toast } from "sonner";
+import { FileX } from "lucide-react";
 
 interface ImagingOrderItemProps {
   order: ImagingOrder;
@@ -117,17 +118,35 @@ const onCancel = async () => {
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
           Clinical Indication
         </p>
-        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-          {order.clinicalIndication || "No clinical indication provided."}
-        </p>
+        {order.clinicalIndication ? (
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {order.clinicalIndication}
+          </p>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <FileX className="w-4 h-4 text-slate-400" />
+            </div>
+            <p className="text-sm text-slate-400 italic">No clinical indication provided</p>
+          </div>
+        )}
       </div>
       <div className="mb-4 pb-4">
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
           Special Instructions
         </p>
-        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-          {order.specialInstructions || "No special instructions provided."}
-        </p>
+        {order.specialInstructions ? (
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {order.specialInstructions}
+          </p>
+        ) : (
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <FileX className="w-4 h-4 text-slate-400" />
+            </div>
+            <p className="text-sm text-slate-400 italic">No special instructions provided</p>
+          </div>
+        )}
       </div>
 
       {/* <div className="bg-indigo-50 rounded-lg p-4 mb-4 border border-indigo-100">

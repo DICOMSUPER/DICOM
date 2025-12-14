@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
 import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { formatDate } from "@/lib/formatTimeDate";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus, formatDateTime } from "@/utils/format-status";
 
 interface DicomStudyTableProps {
   dicomStudies: DicomStudy[];
@@ -164,13 +163,29 @@ export function DicomStudyTable({
       cell: (study: DicomStudy) => (
         <div className="space-y-2 ml-6">
           <span className="font-semibold text-foreground text-sm">
-            {formatDate(study.studyDate)}
+            {formatDateTime(study.studyDate, { showTime: false })}
           </span>
           <div className="flex items-center gap-2 text-xs text-foreground">
             <Clock className="w-3.5 h-3.5" />
             <span>{study.studyTime}</span>
           </div>
         </div>
+      ),
+    },
+    {
+      header: "Created",
+      sortable: true,
+      sortField: "createdAt",
+      cell: (study: DicomStudy) => (
+        <div className="text-foreground text-sm">{formatDateTime(study.createdAt)}</div>
+      ),
+    },
+    {
+      header: "Updated",
+      sortable: true,
+      sortField: "updatedAt",
+      cell: (study: DicomStudy) => (
+        <div className="text-foreground text-sm">{formatDateTime(study.updatedAt)}</div>
       ),
     },
     {

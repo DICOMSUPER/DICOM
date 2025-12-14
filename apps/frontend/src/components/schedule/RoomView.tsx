@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Clock, MapPin, X, Users, Building2, Info, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell } from "lucide-react";
+import { Clock, MapPin, X, Users, Building2, Info, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, CalendarOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -668,13 +668,20 @@ export function RoomView({
                         )
                       ) : (
                         <div
-                          className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 ${
+                          className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 flex flex-col items-center justify-center gap-2 ${
                             segment.type === "break"
                               ? "border-border bg-amber-50/70 text-amber-800"
                               : "border-dashed border-border text-gray-500"
                           }`}
                         >
-                          {segment.type === "break" ? "Break window" : "No schedules"}
+                          {segment.type === "break" ? (
+                            "Break window"
+                          ) : (
+                            <>
+                              <CalendarOff className="h-4 w-4 text-gray-400" />
+                              <span>No schedules</span>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
