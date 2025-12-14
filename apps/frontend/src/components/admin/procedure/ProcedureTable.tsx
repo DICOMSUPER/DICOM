@@ -4,7 +4,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2 } from 'lucide-react';
 import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, SortConfig } from '@/components/ui/data-table';
+import { formatDateTime } from '@/utils/format-status';
 
 interface RequestProcedureTableProps {
   procedures: RequestProcedure[];
@@ -16,6 +17,8 @@ interface RequestProcedureTableProps {
   onViewDetails?: (procedure: RequestProcedure) => void;
   onEditProcedure?: (procedure: RequestProcedure) => void;
   onDeleteProcedure?: (procedure: RequestProcedure) => void;
+  onSort?: (sortConfig: SortConfig) => void;
+  initialSort?: SortConfig;
 }
 
 export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
@@ -28,6 +31,8 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
   onViewDetails,
   onEditProcedure,
   onDeleteProcedure,
+  onSort,
+  initialSort,
 }) => {
   const columns = [
     {
@@ -63,6 +68,22 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
         <div className="flex justify-center">
           {getStatusBadge(procedure.isActive as boolean)}
         </div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (procedure: RequestProcedure) => (
+        <div className="text-foreground text-sm">{formatDateTime(procedure.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (procedure: RequestProcedure) => (
+        <div className="text-foreground text-sm">{formatDateTime(procedure.updatedAt)}</div>
       ),
     },
     {
@@ -114,6 +135,8 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(procedure) => procedure.id}
+      onSort={onSort}
+      initialSort={initialSort}
     />
   );
 };

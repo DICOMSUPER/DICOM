@@ -299,7 +299,10 @@ export function RoomView({
         <div className="flex flex-wrap gap-2 items-center">
                           <Select value={selectValue} onValueChange={handleAddRoom}>
             <SelectTrigger className="w-[200px] h-8 text-sm bg-primary text-white border-border hover:bg-primary/90">
-              <SelectValue placeholder="Add room to view..." />
+              <SelectValue 
+                placeholder="Add room to view..." 
+                className="data-[placeholder-shown]:text-white"
+              />
             </SelectTrigger>
             <SelectContent>
               {availableRooms

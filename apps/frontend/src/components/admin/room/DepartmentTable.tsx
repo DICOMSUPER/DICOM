@@ -7,6 +7,7 @@ import { Department } from '@/interfaces/user/department.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
 import { formatRole } from '@/utils/role-formatter';
+import { formatDateTime } from '@/utils/format-status';
 
 interface DepartmentTableProps {
   departments: Department[];
@@ -119,6 +120,22 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       header: 'Room Count',
       cell: (department: Department) => (
         <div className="text-foreground">{department.rooms?.length || 0}</div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (department: Department) => (
+        <div className="text-foreground text-sm">{formatDateTime(department.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (department: Department) => (
+        <div className="text-foreground text-sm">{formatDateTime(department.updatedAt)}</div>
       ),
     },
     {

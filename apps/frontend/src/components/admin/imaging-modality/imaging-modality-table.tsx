@@ -6,7 +6,7 @@ import { Eye, Edit, Trash2, Scan } from 'lucide-react';
 import { ImagingModality } from '@/interfaces/image-dicom/imaging_modality.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface ImagingModalityTableProps {
@@ -74,7 +74,15 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
       sortable: true,
       sortField: 'createdAt',
       cell: (modality: ImagingModality) => (
-        <div className="text-foreground">{formatDate(modality.createdAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(modality.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated At',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (modality: ImagingModality) => (
+        <div className="text-foreground text-sm">{formatDateTime(modality.updatedAt)}</div>
       ),
     },
     {

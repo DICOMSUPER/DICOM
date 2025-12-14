@@ -195,15 +195,15 @@ export default function EncounterModal({
           ) : (
             <div className="space-y-8 pr-4 pb-2">
               {/* Hero Section */}
-              <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+              <section className={modalStyles.heroSection}>
                 <div className="flex flex-wrap items-start justify-between gap-6">
                   <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
+                    <div className={modalStyles.heroLabel}>
                       <FileText className="h-3.5 w-3.5" />
                       {encounter.orderNumber || encounter.id.slice(0, 8)}
                     </div>
                     <div>
-                      <p className="text-3xl font-semibold text-foreground leading-tight">
+                      <p className={modalStyles.heroTitle}>
                         {getEncounterTypeLabel(encounter.encounterType)}
                       </p>
                       <div className="mt-3 grid gap-2 text-sm text-foreground">
@@ -286,14 +286,14 @@ export default function EncounterModal({
               <div className="grid gap-6 xl:grid-cols-3">
                 <div className="xl:col-span-2 space-y-6">
                   {/* Encounter Information */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <section className={modalStyles.section}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Calendar className="h-5 w-5" />
                       Encounter Overview
                     </div>
                     <div className="grid gap-4 md:grid-cols-3">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
                           <FileText className="h-4 w-4" />
                           Encounter ID
                         </div>
@@ -301,21 +301,21 @@ export default function EncounterModal({
                           {encounter.id}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
                           <FileText className="h-4 w-4" />
                           Order Number
                         </div>
-                        <p className="text-base font-semibold text-foreground">
+                        <p className={modalStyles.infoCardValue}>
                           {encounter.orderNumber || "N/A"}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
                           <User className="h-4 w-4" />
                           Created By
                         </div>
-                        <p className="text-base font-semibold text-foreground">
+                        <p className={modalStyles.infoCardValue}>
                           {reception
                             ? `${reception.firstName} ${reception.lastName}`
                             : encounter.createdBy || "N/A"}
@@ -326,39 +326,39 @@ export default function EncounterModal({
 
                   {/* Clinical Details */}
                   {(encounter.chiefComplaint || encounter.symptoms || encounter.vitalSigns) && (
-                    <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                    <section className={modalStyles.section}>
                       <div className="flex items-center gap-2 text-lg font-semibold">
                         <Stethoscope className="h-5 w-5" />
                         Clinical Details
                       </div>
                       <div className="space-y-4">
                         {encounter.chiefComplaint && (
-                          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                            <div className="flex items-center gap-2 text-sm text-foreground">
+                          <div className={modalStyles.infoCard}>
+                            <div className={modalStyles.infoCardLabel}>
                               <AlertCircle className="h-4 w-4" />
                               Chief Complaint
                             </div>
-                            <p className="text-base font-semibold text-foreground">
+                            <p className={modalStyles.infoCardValue}>
                               {encounter.chiefComplaint}
                             </p>
                           </div>
                         )}
 
                         {encounter.symptoms && (
-                          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                            <div className="flex items-center gap-2 text-sm text-foreground">
+                          <div className={modalStyles.infoCard}>
+                            <div className={modalStyles.infoCardLabel}>
                               <ClipboardList className="h-4 w-4" />
                               Symptoms
                             </div>
-                            <p className="text-base font-semibold text-foreground">
+                            <p className={modalStyles.infoCardValue}>
                               {encounter.symptoms}
                             </p>
                           </div>
                         )}
 
                         {encounter.vitalSigns && (
-                          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                            <div className="flex items-center gap-2 text-sm text-foreground">
+                          <div className={modalStyles.infoCard}>
+                            <div className={modalStyles.infoCardLabel}>
                               <Activity className="h-4 w-4" />
                               Vital Signs
                             </div>
@@ -381,44 +381,44 @@ export default function EncounterModal({
                   )}
 
                   {/* Additional Information */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <section className={modalStyles.section}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <FileText className="h-5 w-5" />
                       Additional Information
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Assigned Physician</p>
-                        <p className="text-base font-semibold text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Assigned Physician</p>
+                        <p className={modalStyles.infoCardValue}>
                           {physician
                             ? `Dr. ${physician.firstName} ${physician.lastName}`
                             : encounter.assignedPhysicianId || "Not assigned"}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
                           <MapPin className="h-4 w-4" />
                           Service
                         </div>
-                        <p className="text-base font-semibold text-foreground">
+                        <p className={modalStyles.infoCardValue}>
                           {serviceRoom?.service?.serviceName || "Not assigned"}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
                           <MapPin className="h-4 w-4" />
                           Room
                         </div>
-                        <p className="text-base font-semibold text-foreground">
+                        <p className={modalStyles.infoCardValue}>
                           {serviceRoom?.room?.roomCode || "Not assigned"}
                         </p>
                       </div>
                     </div>
 
                     {encounter.notes && (
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Notes</p>
-                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Notes</p>
+                        <p className={`${modalStyles.infoCardValue} whitespace-pre-wrap`}>
                           {encounter.notes}
                         </p>
                       </div>
@@ -428,21 +428,21 @@ export default function EncounterModal({
 
                 <div className="space-y-6">
                   {/* Timestamps */}
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
+                  <section className={modalStyles.section}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Clock className="h-5 w-5" />
                       Timestamps
                     </div>
                     <div className="space-y-3">
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Created At</p>
-                        <p className="text-base font-semibold text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Created At</p>
+                        <p className={modalStyles.infoCardValue}>
                           {formatDateTime(encounter.createdAt)}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Updated At</p>
-                        <p className="text-base font-semibold text-foreground">
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Updated At</p>
+                        <p className={modalStyles.infoCardValue}>
                           {formatDateTime(encounter.updatedAt)}
                         </p>
                       </div>

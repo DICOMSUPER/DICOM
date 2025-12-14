@@ -133,6 +133,7 @@ export const {
   useGetAllUsersQuery,
   useGetUsersByRoomQuery,
   useGetUserByIdQuery,
+  useLazyGetUserByIdQuery,
   useCreateUserMutation,
   useCreateStaffAccountMutation,
   useUpdateUserMutation,

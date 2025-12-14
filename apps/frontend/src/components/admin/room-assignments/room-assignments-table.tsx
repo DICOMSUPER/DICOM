@@ -9,6 +9,7 @@ import { ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatRole } from '@/utils/role-formatter';
 import { SortConfig } from '@/components/ui/data-table';
+import { formatDateTime } from '@/utils/format-status';
 
 interface RoomAssignmentsTableProps {
   assignments: EmployeeRoomAssignment[];
@@ -93,6 +94,22 @@ export function RoomAssignmentsTable({
             <div className="flex justify-center">
               <StatusBadge status={assignment.isActive ? 'active' : 'inactive'} />
             </div>
+          ),
+        },
+        {
+          header: 'Created',
+          sortable: true,
+          sortField: 'createdAt',
+          cell: (assignment) => (
+            <div className="text-foreground text-sm">{formatDateTime(assignment.createdAt)}</div>
+          ),
+        },
+        {
+          header: 'Updated',
+          sortable: true,
+          sortField: 'updatedAt',
+          cell: (assignment) => (
+            <div className="text-foreground text-sm">{formatDateTime(assignment.updatedAt)}</div>
           ),
         },
         {

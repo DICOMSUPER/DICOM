@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Edit, Trash2, Activity } from "lucide-react";
 import { AiAnalysis } from "@/interfaces/system/ai-analysis.interface";
 import { DataTable } from "@/components/ui/data-table";
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDateTime } from "@/utils/format-status";
 import { SortConfig } from "@/components/ui/data-table";
 import { AnalysisStatus } from "@/enums/image-dicom.enum";
 
@@ -147,8 +147,18 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
       sortable: true,
       sortField: "createdAt",
       cell: (aiAnalysis: AiAnalysis) => (
-        <div className="text-foreground">
-          {formatDate(aiAnalysis.createdAt)}
+        <div className="text-foreground text-sm">
+          {formatDateTime(aiAnalysis.createdAt)}
+        </div>
+      ),
+    },
+    {
+      header: "Updated At",
+      sortable: true,
+      sortField: "updatedAt",
+      cell: (aiAnalysis: AiAnalysis) => (
+        <div className="text-foreground text-sm">
+          {formatDateTime(aiAnalysis.updatedAt)}
         </div>
       ),
     },
