@@ -31,6 +31,58 @@ export const formatRole = (role: string | null | undefined): string => {
 };
 
 /**
+ * Formats a date/datetime string for display with both date and time
+ * @param date - The date string, Date object, or undefined
+ * @param options - Optional configuration
+ * @returns Formatted datetime string (e.g., "Dec 14, 2025 12:30 AM")
+ */
+export const formatDateTime = (
+  date: string | Date | null | undefined,
+  options?: {
+    showTime?: boolean;
+    showSeconds?: boolean;
+  }
+): string => {
+  if (!date) return '—';
+  
+  const { showTime = true, showSeconds = false } = options || {};
+  
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    if (isNaN(dateObj.getTime())) return '—';
+    
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    };
+    
+    if (showTime) {
+      dateOptions.hour = 'numeric';
+      dateOptions.minute = '2-digit';
+      dateOptions.hour12 = true;
+      if (showSeconds) {
+        dateOptions.second = '2-digit';
+      }
+    }
+    
+    return dateObj.toLocaleDateString('en-US', dateOptions);
+  } catch {
+    return '—';
+  }
+};
+
+/**
+ * Formats a date string for display (date only, no time)
+ * @param date - The date string, Date object, or undefined
+ * @returns Formatted date string (e.g., "Dec 14, 2025")
+ */
+export const formatDate = (date: string | Date | null | undefined): string => {
+  return formatDateTime(date, { showTime: false });
+};
+
+/**
  * Modal styling constants following the physician patient-study design pattern
  */
 export const modalStyles = {

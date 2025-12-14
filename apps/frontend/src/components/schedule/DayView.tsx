@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { Clock, CalendarOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
@@ -279,13 +279,20 @@ export function DayView({
                 )
               ) : (
                 <div
-                  className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 ${
+                  className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 flex flex-col items-center justify-center gap-2 ${
                     segment.type === "break"
                       ? "border-amber-200 bg-amber-50/70 text-amber-800"
                       : "border-dashed border-gray-200 text-gray-500"
                   }`}
                 >
-                  {segment.type === "break" ? "Scheduled break window" : "No schedules"}
+                  {segment.type === "break" ? (
+                    "Scheduled break window"
+                  ) : (
+                    <>
+                      <CalendarOff className="h-4 w-4 text-gray-400" />
+                      <span>No schedules</span>
+                    </>
+                  )}
                 </div>
               )}
             </div>

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { format, isSameDay } from "date-fns";
+import { CalendarOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
 import {
@@ -227,8 +228,9 @@ export function WeekView({
                           </div>
                         ))}
                         {daySchedules.length === 0 && segment.type !== "break" && (
-                          <div className="h-full flex items-center justify-center">
-                            <div className="text-gray-400 text-xs">—</div>
+                          <div className="h-full flex flex-col items-center justify-center gap-1 text-gray-400">
+                            <CalendarOff className="h-3 w-3" />
+                            <span className="text-[10px]">—</span>
                           </div>
                         )}
                         {daySchedules.length > 1 && (

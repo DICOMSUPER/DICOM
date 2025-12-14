@@ -1,302 +1,403 @@
-# DICOM Medical Imaging System
+<p align="center">
+  <img src="docs/images/logo.png" alt="DICOM Medical Imaging System" width="120" />
+</p>
 
-A comprehensive Digital Imaging and Communications in Medicine (DICOM) system designed for medical imaging management, radiology workflows, and patient care coordination.
+<h1 align="center">DICOM Medical Imaging System</h1>
 
-## 📋 Table of Contents
+<p align="center">
+  <strong>A comprehensive Digital Imaging and Communications in Medicine (DICOM) platform for medical imaging management, radiology workflows, and patient care coordination.</strong>
+</p>
 
-- [Introduction](#introduction)
-- [System Overview](#system-overview)
-- [Key Features](#key-features)
-- [Technology Stack](#technology-stack)
-- [System Components](#system-components)
-- [User Roles & Access](#user-roles--access)
-- [Core Functionality](#core-functionality)
-- [API Overview](#api-overview)
-- [Deployment](#deployment)
-- [Security & Compliance](#security--compliance)
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-key-features">Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-documentation">Docs</a> •
+  <a href="#-deployment">Deploy</a>
+</p>
 
-## 🎯 Introduction
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js 15" />
+  <img src="https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs" alt="NestJS 11" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/PostgreSQL-14+-4169E1?logo=postgresql" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-6+-DC382D?logo=redis" alt="Redis" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker" />
+</p>
 
-The DICOM Medical Imaging System is a modern, web-based platform that provides comprehensive solutions for managing medical imaging workflows. Built with a microservices architecture, the system enables healthcare facilities to efficiently handle DICOM studies, patient records, diagnostic reports, and radiology workflows.
+---
 
-The system is designed to support various healthcare professionals including radiologists, administrators, imaging technicians, and reception staff, each with role-specific interfaces and capabilities.
+## 📸 Screenshots
 
-### Login Interface
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/login-page.png" alt="Login Page" />
+      <p align="center"><em>Secure Authentication</em></p>
+    </td>
+    <td width="50%">
+      <img src="docs/images/dicom-viewer.png" alt="DICOM Viewer" />
+      <p align="center"><em>Advanced DICOM Viewer</em></p>
+    </td>
+  </tr>
+</table>
 
-![Login Page](docs/images/login-page.png)
+---
 
-*Secure authentication interface for system access*
+## 🚀 Quick Start
 
-### DICOM Viewer
+### Prerequisites
 
-![DICOM Viewer](docs/images/dicom-viewer.png)
+| Requirement | Version |
+|-------------|---------|
+| Node.js | 18+ |
+| PostgreSQL | 14+ |
+| Redis | 6+ |
+| npm | 9+ |
 
-*Advanced web-based DICOM image viewer with multi-planar reconstruction capabilities*
+### Installation & Setup
 
-## 🏥 System Overview
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd DICOM
 
-This system provides a complete end-to-end solution for medical imaging management:
+# 2. Start Backend Services
+cd apps/backend
+npm install
+cp .env.example .env          # Configure environment variables
+npm run dev                    # Starts all microservices
 
-- **DICOM Image Viewing**: Advanced web-based DICOM viewer with multi-planar reconstruction, window/level adjustments, and measurement tools
-- **Patient Management**: Comprehensive patient records, medical history, and encounter tracking
-- **Radiology Workflow**: Streamlined workflow for radiologists to manage studies, create reports, and track diagnoses
-- **Imaging Orders**: Management of imaging orders, modality scheduling, and procedure tracking
-- **Report Management**: Template-based diagnostic report creation with digital signatures
-- **User & Access Management**: Role-based access control with department and room assignments
-- **Real-time Communication**: WebSocket-based notifications and real-time updates
-- **AI Integration**: AI-powered analysis capabilities for medical imaging
+# 3. Start Frontend (new terminal)
+cd apps/frontend
+npm install
+cp .env.example .env          # Configure environment variables
+npm run dev                    # Starts Next.js dev server
+```
+
+### Access Points
+
+| Application | URL | Description |
+|-------------|-----|-------------|
+| 🌐 **Frontend** | [localhost:3000](http://localhost:3000) | Web application |
+| 🔌 **API Gateway** | [localhost:5000](http://localhost:5000) | REST API endpoint |
+| 📖 **API Docs** | [localhost:5000/api](http://localhost:5000/api) | Swagger documentation |
+| 🔄 **WebSocket** | [localhost:5006](http://localhost:5006) | Real-time notifications |
+
+> 📚 **Detailed Documentation**
+> - [Frontend Setup Guide](apps/frontend/README.md)
+> - [Backend Setup Guide](apps/backend/README.md)
+
+---
 
 ## ✨ Key Features
 
-### 1. DICOM Image Viewer
+### 🖼️ DICOM Image Viewer
+Advanced web-based medical image viewer powered by **Cornerstone.js**
 
-![DICOM Viewer Interface](docs/images/dicom-viewer.png)
+| Feature | Description |
+|---------|-------------|
+| **Multi-planar Reconstruction** | View in axial, coronal, and sagittal planes |
+| **Window/Level Controls** | Optimize contrast and brightness |
+| **Measurement Tools** | Distance, angle, and ROI measurements |
+| **Annotations** | Add text, arrows, and shapes |
+| **Series Navigation** | Easy navigation between series and studies |
+| **Image Manipulation** | Zoom, pan, rotate, and flip operations |
 
-*Advanced DICOM viewer with comprehensive imaging tools*
+### 👥 Role-Based Dashboards
 
-- **Multi-planar Reconstruction (MPR)**: View images in axial, coronal, and sagittal planes
-- **Window/Level Adjustment**: Optimize image contrast and brightness
-- **Measurement Tools**: Distance, angle, and ROI measurements
-- **Annotations**: Add text, arrows, and shapes to images
-- **Series Navigation**: Easy navigation between series and studies
-- **Image Manipulation**: Zoom, pan, rotate, and flip operations
-- **Cornerstone.js Integration**: Industry-standard DICOM viewing library
+```
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│   👔 Admin      │   │  🩺 Radiologist │   │  👨‍💼 Reception   │
+├─────────────────┤   ├─────────────────┤   ├─────────────────┤
+│ • User Mgmt     │   │ • Study Review  │   │ • Patient Reg   │
+│ • System Config │   │ • Report Create │   │ • Scheduling    │
+│ • Analytics     │   │ • Work Queue    │   │ • Appointments  │
+│ • Departments   │   │ • Templates     │   │ • Orders        │
+└─────────────────┘   └─────────────────┘   └─────────────────┘
 
-### 2. Patient Management
+┌─────────────────┐   ┌─────────────────┐
+│ 🔬 Technician   │   │  👨‍⚕️ Physician   │
+├─────────────────┤   ├─────────────────┤
+│ • Study Upload  │   │ • Order Create  │
+│ • Quality Ctrl  │   │ • Report View   │
+│ • Modality Ops  │   │ • Patient Hist  │
+└─────────────────┘   └─────────────────┘
+```
 
-- **Patient Registration**: Complete patient demographics and medical history
-- **Encounter Tracking**: Track patient visits and encounters
-- **Medical Records**: Comprehensive medical record management
-- **Diagnosis History**: Track diagnoses and treatment plans
-- **Report Templates**: Customizable diagnostic report templates
+### 📋 Patient Management
+- Complete demographics and medical history
+- Encounter tracking and visit management
+- Diagnosis history and treatment plans
 
-### 3. Radiology Workflow
+### 📝 Radiology Workflow
+- Study assignment and work queue management
+- Template-based diagnostic report creation
+- Digital signature for report verification
+- Multi-tab interface for simultaneous patient work
 
-- **Study Assignment**: Assign DICOM studies to radiologists
-- **Work Queue**: Manage pending and completed studies
-- **Report Creation**: Create diagnostic reports with templates
-- **Digital Signatures**: Secure digital signature for reports
-- **Report Templates**: Standard and custom report templates
-- **Multi-tab Interface**: Work with multiple patients simultaneously
+### 🔔 Real-time Notifications
+- WebSocket-based live updates
+- Cross-role communication
+- System alerts and status updates
 
-### 4. Imaging Management
+---
 
-- **DICOM Studies**: Upload, store, and manage DICOM studies
-- **Series Management**: Organize DICOM series and instances
-- **Imaging Orders**: Create and track imaging orders
-- **Modality Integration**: Support for various imaging modalities (CT, MRI, X-Ray, etc.)
-- **Body Part Classification**: Organize studies by anatomical regions
-- **Storage Management**: Efficient DICOM file storage and retrieval
+## 🏗️ Architecture
 
-### 5. User & Access Management
+### System Overview
 
-- **Role-Based Access Control (RBAC)**: Granular permission system
-- **Department Management**: Organize users by departments
-- **Room Assignments**: Assign staff to specific rooms
-- **Shift Templates**: Manage work schedules and shifts
-- **User Profiles**: Comprehensive user profile management
+```
+                                    ┌─────────────────────────────────┐
+                                    │         Frontend (Next.js)      │
+                                    │      http://localhost:3000      │
+                                    └────────────────┬────────────────┘
+                                                     │
+                                                     ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                          API Gateway (Port 5000)                            │
+│                    Authentication • Routing • Aggregation                   │
+└─────────┬──────────────────┬──────────────────┬──────────────────┬─────────┘
+          │                  │                  │                  │
+          ▼                  ▼                  ▼                  ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│  User Service   │ │ Patient Service │ │ Imaging Service │ │ System Service  │
+│   Port 5002     │ │   Port 5004     │ │   Port 5003     │ │   Port 5005     │
+├─────────────────┤ ├─────────────────┤ ├─────────────────┤ ├─────────────────┤
+│ • Authentication│ │ • Patients      │ │ • DICOM Studies │ │ • Configuration │
+│ • Users & Roles │ │ • Encounters    │ │ • Series/Inst.  │ │ • Notifications │
+│ • Departments   │ │ • Medical Hist  │ │ • Imaging Orders│ │ • AI Analysis   │
+│ • Permissions   │ │ • Diagnoses     │ │ • Reports       │ │ • Audit Logs    │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                   │                   │
+         └───────────────────┴───────────────────┴───────────────────┘
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    ▼                    ▼                    ▼
+           ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+           │   PostgreSQL    │  │      Redis      │  │   Cloudinary    │
+           │    Database     │  │      Cache      │  │  File Storage   │
+           └─────────────────┘  └─────────────────┘  └─────────────────┘
 
-### 6. System Administration
-
-- **System Configuration**: Centralized system settings
-- **Notifications**: Real-time notification system
-- **Analytics**: System usage and performance analytics
-- **Audit Logs**: Track system activities and changes
-- **AI Analysis**: Integration with AI analysis services
-
-## 🛠️ Technology Stack
-
-### Backend
-
-- **Framework**: NestJS (Node.js, TypeScript)
-- **Database**: PostgreSQL with TypeORM
-- **Caching**: Redis
-- **Communication**: NestJS Microservices (TCP), Socket.IO (WebSockets)
-- **Authentication**: JWT (JSON Web Tokens)
-- **API Documentation**: Swagger/OpenAPI
-- **Architecture**: Microservices with Nx Monorepo
-
-### Frontend
-
-- **Framework**: Next.js 15 with React 18
-- **State Management**: Redux Toolkit
-- **UI Framework**: Radix UI components with Tailwind CSS
-- **DICOM Viewer**: Cornerstone.js
-- **Forms**: React Hook Form with Zod validation
-- **Real-time**: Socket.IO Client
-- **Charts**: Recharts for data visualization
-
-## 🔧 System Components
+                    ┌─────────────────────────────────────────┐
+                    │        WebSocket Gateway (Port 5006)     │
+                    │         Real-time Communication          │
+                    └─────────────────────────────────────────┘
+```
 
 ### Backend Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| **API Gateway** | 5000 | Main entry point, routes requests, aggregates responses |
-| **User Service** | 5002 | User authentication, authorization, user management |
-| **Patient Service** | 5004 | Patient records, encounters, medical history |
-| **Imaging Service** | 5003 | DICOM studies, series, instances, imaging orders |
-| **System Service** | 5005 | System configuration, notifications, AI analysis |
-| **WebSocket Gateway** | 5006 | Real-time communication and notifications |
+| Service | Port | Responsibilities |
+|---------|------|------------------|
+| **API Gateway** | 5000 | Request routing, JWT validation, response aggregation |
+| **User Service** | 5002 | Authentication, authorization, user/role/department management |
+| **Imaging Service** | 5003 | DICOM studies, series, instances, imaging orders, reports |
+| **Patient Service** | 5004 | Patient records, encounters, medical history, diagnoses |
+| **System Service** | 5005 | System configuration, notifications, AI analysis, audit logs |
+| **WebSocket Gateway** | 5006 | Real-time communication, live notifications, event broadcasting |
 
-### Frontend Applications
+### Technology Stack
 
-- **Web Application**: Main Next.js application accessible via web browser
-- **Admin Dashboard**: Administrative interface for system management
-- **Radiologist Interface**: Specialized workflow interface for radiologists
-- **Reception Interface**: Patient registration and appointment management
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## 👥 User Roles & Access
+#### 🔧 Backend
+| Tech | Purpose |
+|------|---------|
+| NestJS 11 | Framework |
+| TypeScript 5.8 | Language |
+| PostgreSQL | Database |
+| TypeORM | ORM |
+| Redis | Caching |
+| Socket.IO | WebSockets |
+| JWT | Authentication |
+| Swagger | API Docs |
+| Nx | Monorepo |
 
-The system supports multiple user roles with specific permissions:
+</td>
+<td width="50%" valign="top">
 
-### Administrator
-- Full system access
-- User and role management
-- System configuration
-- Analytics and reporting
+#### 🎨 Frontend
+| Tech | Purpose |
+|------|---------|
+| Next.js 15 | Framework |
+| React 18 | UI Library |
+| Redux Toolkit | State Mgmt |
+| Tailwind CSS 4 | Styling |
+| Radix UI | Components |
+| Cornerstone.js | DICOM Viewer |
+| React Hook Form | Forms |
+| Zod | Validation |
+| Socket.IO | Real-time |
 
-### Radiologist
-- DICOM study viewing and analysis
-- Diagnostic report creation and editing
-- Patient record access
-- Work queue management
+</td>
+</tr>
+</table>
 
-### Imaging Technician
-- DICOM study upload and management
-- Modality machine configuration
-- Study quality control
+---
 
-### Reception Staff
-- Patient registration
-- Appointment scheduling
-- Basic patient information access
+## 📁 Project Structure
 
-### Department Head
-- Department-specific management
-- Staff assignment and scheduling
-- Department analytics
+```
+DICOM/
+├── 📁 apps/
+│   ├── 📁 frontend/                 # Next.js web application
+│   │   ├── src/
+│   │   │   ├── app/                 # App Router pages
+│   │   │   ├── components/          # React components
+│   │   │   ├── store/               # Redux state management
+│   │   │   └── ...
+│   │   └── README.md
+│   │
+│   └── 📁 backend/                  # NestJS microservices
+│       ├── apps/
+│       │   ├── api-gateway/         # API Gateway service
+│       │   ├── user-service/        # User management service
+│       │   ├── patient-service/     # Patient management service
+│       │   ├── imaging-service/     # DICOM imaging service
+│       │   ├── system-service/      # System configuration service
+│       │   └── ws-gateway/          # WebSocket service
+│       ├── libs/                    # Shared libraries
+│       │   ├── database/            # Database configuration
+│       │   ├── redis/               # Redis client
+│       │   ├── shared-domain/       # Entities and DTOs
+│       │   └── ...
+│       └── README.md
+│
+├── 📁 docs/                         # Documentation & images
+└── 📄 README.md                     # This file
+```
 
-## 📊 Core Functionality
+---
 
-### DICOM Workflow
+## 📊 Core Workflows
 
-1. **Study Upload**: Imaging technicians upload DICOM studies
-2. **Study Assignment**: Studies are assigned to radiologists
-3. **Image Review**: Radiologists review images using the DICOM viewer
-4. **Report Creation**: Diagnostic reports are created using templates
-5. **Report Review**: Reports are reviewed and digitally signed
-6. **Report Distribution**: Reports are distributed to referring physicians
+### DICOM Study Workflow
+
+```mermaid
+flowchart LR
+    A[📤 Study Upload] --> B[📋 Study Assignment]
+    B --> C[🔍 Image Review]
+    C --> D[📝 Report Creation]
+    D --> E[✍️ Digital Signature]
+    E --> F[📨 Report Distribution]
+```
 
 ### Patient Workflow
 
-1. **Registration**: Patients are registered in the system
-2. **Imaging Order**: Imaging orders are created by physicians
-3. **Study Acquisition**: Studies are acquired and uploaded
-4. **Diagnosis**: Radiologists create diagnostic reports
-5. **Report Delivery**: Reports are delivered to referring physicians
-6. **Follow-up**: Patient follow-up and history tracking
+```mermaid
+flowchart LR
+    A[📋 Registration] --> B[📄 Imaging Order]
+    B --> C[📸 Study Acquisition]
+    C --> D[🩺 Diagnosis]
+    D --> E[📨 Report Delivery]
+    E --> F[🔄 Follow-up]
+```
 
-### Report Template System
+---
 
-- **Standard Templates**: Pre-defined templates for common procedures
-- **Custom Templates**: User-created templates for specific needs
-- **Template Sharing**: Public templates available to all users
-- **Template Categories**: Organized by modality and body part
+## 🐳 Deployment
 
-## 🔌 API Overview
+### Docker Compose (Recommended)
 
-The system provides RESTful APIs through the API Gateway:
+```bash
+cd apps/backend
 
-### Authentication
-- User login and authentication
-- JWT token management
-- Role-based authorization
+# Build and start all services
+npm run docker:up:local:build
 
-### Patient Management
-- Patient CRUD operations
-- Encounter management
-- Medical history tracking
+# View logs
+npm run docker:logs
 
-### Imaging
-- DICOM study management
-- Series and instance operations
-- Imaging order management
+# Stop services
+npm run docker:down
+```
 
-### Reports
-- Report creation and editing
-- Template management
-- Digital signature processing
+### Docker Commands
 
-### System
-- User management
-- Department and room management
-- System configuration
-
-**API Documentation**: Available via Swagger UI at `/api` endpoint when services are running.
-
-## 🚀 Deployment
-
-The system is designed for containerized deployment:
-
-### Docker Deployment
-- All services include Dockerfiles
-- Docker Compose configuration for local development
-- Production-ready container images
-
-### Cloud Deployment
-- Fly.io configuration files included
-- Scalable microservices architecture
-- Load balancing and service discovery ready
+| Command | Description |
+|---------|-------------|
+| `docker:build:local` | Build all images with local tag |
+| `docker:up:local` | Start all containers |
+| `docker:up:local:build` | Build and start containers |
+| `docker:down` | Stop all containers |
+| `docker:logs` | View all container logs |
+| `docker:ps` | List running containers |
 
 ### Infrastructure Requirements
-- PostgreSQL database
-- Redis cache
-- Network connectivity between services
-- Sufficient storage for DICOM files
+
+| Component | Requirement |
+|-----------|-------------|
+| PostgreSQL | Database for persistent storage |
+| Redis | Session cache and pub/sub |
+| Storage | Sufficient space for DICOM files |
+| Network | Connectivity between services |
+
+---
 
 ## 🔒 Security & Compliance
 
 ### Security Features
 
-- **Authentication**: JWT-based authentication
-- **Authorization**: Role-based access control (RBAC)
-- **Data Encryption**: Encrypted data transmission (HTTPS/WSS)
-- **Digital Signatures**: Secure report signing
-- **Audit Logging**: Comprehensive activity logging
+| Feature | Implementation |
+|---------|----------------|
+| **Authentication** | JWT-based token authentication |
+| **Authorization** | Role-based access control (RBAC) |
+| **Encryption** | HTTPS/WSS encrypted transmission |
+| **Digital Signatures** | Secure report signing |
+| **Audit Logging** | Comprehensive activity tracking |
 
 ### Compliance Considerations
 
-- **HIPAA**: Healthcare data privacy and security
-- **GDPR**: Data protection and privacy
-- **DICOM Standards**: Compliance with DICOM protocols
-- **Medical Device Regulations**: As applicable in deployment region
+| Standard | Description |
+|----------|-------------|
+| **HIPAA** | Healthcare data privacy and security |
+| **GDPR** | Data protection and privacy |
+| **DICOM** | Standards compliance |
+| **IHE** | Integration profiles |
 
-**Important**: Ensure proper security configuration and compliance measures are in place before deploying in production healthcare environments.
-
-## 📈 System Capabilities
-
-- **Scalability**: Microservices architecture allows independent scaling
-- **Reliability**: Service isolation prevents cascading failures
-- **Maintainability**: Modular design with shared libraries
-- **Extensibility**: Easy to add new services and features
-- **Performance**: Optimized for medical imaging workflows
-- **Integration**: Ready for integration with PACS, HIS, and RIS systems
-
-## 🌟 Use Cases
-
-- **Hospital Radiology Departments**: Complete radiology workflow management
-- **Imaging Centers**: DICOM study management and reporting
-- **Telemedicine**: Remote image viewing and consultation
-- **Medical Education**: Training and educational purposes
-- **Research**: Medical imaging research and analysis
-
-## 📞 Support & Documentation
-
-- **API Documentation**: Swagger UI available at service endpoints
-- **Service Documentation**: Individual service READMEs
-- **Code Documentation**: Inline code documentation
+> ⚠️ **Important**: Ensure proper security configuration and compliance measures are in place before deploying in production healthcare environments.
 
 ---
 
-**Note**: This system is designed for medical imaging management. Proper security, compliance, and regulatory measures must be implemented before production deployment in healthcare environments.
+## 🌟 Use Cases
+
+- 🏥 **Hospital Radiology Departments** - Complete radiology workflow management
+- 🏢 **Imaging Centers** - DICOM study management and reporting
+- 💻 **Telemedicine** - Remote image viewing and consultation
+- 📚 **Medical Education** - Training and educational purposes
+- 🔬 **Research** - Medical imaging research and analysis
+
+---
+
+## 📚 Documentation
+
+| Resource | Description |
+|----------|-------------|
+| [Frontend README](apps/frontend/README.md) | Frontend setup and development |
+| [Backend README](apps/backend/README.md) | Backend services and configuration |
+| [API Documentation](http://localhost:5000/api) | Swagger API reference |
+
+---
+
+## 📈 System Capabilities
+
+| Capability | Description |
+|------------|-------------|
+| **Scalability** | Microservices allow independent scaling |
+| **Reliability** | Service isolation prevents cascading failures |
+| **Maintainability** | Modular design with shared libraries |
+| **Extensibility** | Easy to add new services and features |
+| **Performance** | Optimized for medical imaging workflows |
+| **Integration** | Ready for PACS, HIS, and RIS integration |
+
+---
+
+<p align="center">
+  <strong>Built for Healthcare. Designed for Excellence.</strong>
+</p>
+
+<p align="center">
+  <sub>⚕️ This system is designed for medical imaging management. Proper security, compliance, and regulatory measures must be implemented before production deployment in healthcare environments.</sub>
+</p>

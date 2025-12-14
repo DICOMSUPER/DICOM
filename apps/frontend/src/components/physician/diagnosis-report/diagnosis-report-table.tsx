@@ -10,7 +10,7 @@ import {
 import {
   DiagnosisReport
 } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDateTime } from "@/utils/format-status";
 import {
   CheckCircle2,
   Eye,
@@ -144,7 +144,7 @@ export function DiagnosisReportTable({
       cell: (report: DiagnosisReport) => (
         <div className="space-y-1">
           <span className="font-semibold text-foreground text-sm">
-            {formatDate(report.diagnosisDate)}
+            {formatDateTime(report.diagnosisDate)}
           </span>
         </div>
       ),
@@ -165,6 +165,22 @@ export function DiagnosisReportTable({
       header: "Status",
       sortable: false,
       cell: (report: DiagnosisReport) => getStatusBadge(report.diagnosisStatus),
+    },
+    {
+      header: "Created",
+      sortable: true,
+      sortField: "createdAt",
+      cell: (report: DiagnosisReport) => (
+        <div className="text-foreground text-sm">{formatDateTime(report.createdAt)}</div>
+      ),
+    },
+    {
+      header: "Updated",
+      sortable: true,
+      sortField: "updatedAt",
+      cell: (report: DiagnosisReport) => (
+        <div className="text-foreground text-sm">{formatDateTime(report.updatedAt)}</div>
+      ),
     },
     {
       header: "Actions",

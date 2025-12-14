@@ -31,7 +31,7 @@ import {
   getPriorityColor,
 } from "@/utils/patient/[id]/color";
 import { getEncounterStatusBadge } from "@/utils/status-badge";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus, modalStyles } from "@/utils/format-status";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 
@@ -175,11 +175,11 @@ export default function EncounterModal({
 
   return (
     <Dialog open={!!encounter} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
+        <DialogHeader className={modalStyles.dialogHeader}>
           <div>
-            <DialogTitle className="text-xl font-semibold">Encounter Details</DialogTitle>
+            <DialogTitle className={modalStyles.dialogTitle}>Encounter Details</DialogTitle>
             <p className="text-sm text-foreground mt-1">
               {encounter.orderNumber && `Order #${encounter.orderNumber}`}
               {encounter.orderNumber && encounter.encounterDate && " • "}
@@ -189,7 +189,7 @@ export default function EncounterModal({
         </DialogHeader>
 
         {/* Scrollable Content */}
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           {isLoading ? (
             <EncounterModalSkeleton />
           ) : (
@@ -455,8 +455,8 @@ export default function EncounterModal({
         </ScrollArea>
 
         {/* Fixed Footer */}
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
         </DialogFooter>

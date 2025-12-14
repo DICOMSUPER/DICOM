@@ -68,7 +68,7 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     useGetImagingOrderByIdQuery(order_id);
 
   //get studies related to this order
-  const { data: studyData, refetch: refetchStudy } =
+  const { data: studyData, refetch: refetchStudy, isLoading: isLoadingStudy, isError: isStudyError } =
     useUseGetDicomStudyByReferenceIdQuery(
       { id: orderData?.data?.id ?? "", type: "order" },
       { skip: !orderData?.data?.id }
@@ -219,6 +219,8 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
             refetchStudy={refetchStudy}
             forwardingStudyId={forwardingStudyId}
             setForwardingStudyId={setForwardingStudyId}
+            isLoading={isLoadingStudy}
+            isError={isStudyError}
           />
         )}
       </div>

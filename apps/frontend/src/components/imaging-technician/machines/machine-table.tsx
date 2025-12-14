@@ -2,11 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { DataTable, SortConfig } from "@/components/ui/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Monitor } from "lucide-react";
 import React, { useState } from "react";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { MachineStatus } from "@/enums/machine-status.enum";
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDateTime } from "@/utils/format-status";
 
 interface MachineTableProps {
   machines: ModalityMachine[];
@@ -95,33 +102,55 @@ export function MachineTable({
         const currentStatus =
           pendingStatus[machine.id] ?? (machine.status as MachineStatus);
         const hasPendingChange = currentStatus !== machine.status;
+        
+        const getStatusColor = (status: MachineStatus) => {
+          switch (status) {
+            case MachineStatus.ACTIVE:
+              return "text-green-600";
+            case MachineStatus.INACTIVE:
+              return "text-gray-500";
+            case MachineStatus.MAINTENANCE:
+              return "text-amber-600";
+            case MachineStatus.OUT_OF_SERVICE:
+              return "text-red-600";
+            default:
+              return "text-foreground";
+          }
+        };
+        
         return (
           <div className="flex items-center gap-2">
-            <select
-              name="status"
+            <Select
               value={currentStatus}
-              onChange={(e) => {
-                const nextStatus = e.target.value as MachineStatus;
+              onValueChange={(value: MachineStatus) => {
                 setPendingStatus((prev) => {
-                  if (nextStatus === machine.status) {
+                  if (value === machine.status) {
                     const updated = { ...prev };
                     delete updated[machine.id];
                     return updated;
                   }
                   return {
                     ...prev,
-                    [machine.id]: nextStatus,
+                    [machine.id]: value,
                   };
                 });
               }}
-              className="px-2 py-1 border rounded text-sm"
             >
-              {machineStatusArray.map((status) => (
-                <option value={status} key={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className={`w-[140px] h-8 text-sm ${getStatusColor(currentStatus)}`}>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {machineStatusArray.map((status) => (
+                  <SelectItem 
+                    key={status} 
+                    value={status}
+                    className={getStatusColor(status)}
+                  >
+                    {status.replace(/_/g, " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {hasPendingChange && (
               <Button
                 size="sm"
@@ -150,7 +179,7 @@ export function MachineTable({
       sortField: "createdAt",
       cell: (machine: ModalityMachine) => (
         <div className="text-foreground text-sm">
-          {formatDate(machine.createdAt)}
+          {formatDateTime(machine.createdAt)}
         </div>
       ),
     },
@@ -160,7 +189,7 @@ export function MachineTable({
       sortField: "updatedAt",
       cell: (machine: ModalityMachine) => (
         <div className="text-foreground text-sm">
-          {formatDate(machine.updatedAt)}
+          {formatDateTime(machine.updatedAt)}
         </div>
       ),
     },

@@ -1,6 +1,24 @@
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Eye, XCircle, CheckCircle } from "lucide-react";
+import React, { useState } from "react";
+import { ChevronDown, Eye, XCircle, CheckCircle, MoreHorizontal, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StatusButtonProps {
   status: ImagingOrderStatus;
@@ -11,6 +29,8 @@ interface StatusButtonProps {
   onMarkCancelled?: (orderId: string) => void;
 }
 
+type ConfirmationType = "completed" | "cancelled" | null;
+
 export default function StatusButton({
   status,
   orderId,
@@ -19,95 +39,136 @@ export default function StatusButton({
   onMarkCompleted,
   onMarkCancelled,
 }: StatusButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [confirmationType, setConfirmationType] = useState<ConfirmationType>(null);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+  const handleConfirmAction = () => {
+    if (confirmationType === "completed") {
+      onMarkCompleted?.(orderId);
+    } else if (confirmationType === "cancelled") {
+      onMarkCancelled?.(orderId);
+    }
+    setConfirmationType(null);
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Pending status - simple button
+  // Pending status - Call In button
   if (status === ImagingOrderStatus.PENDING) {
     return (
-      <button
-        className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-300 transition-colors"
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300"
         onClick={() => onCallIn?.(orderId)}
       >
         Call In
-      </button>
+      </Button>
     );
   }
 
   // In Progress status - dropdown with options
   if (status === ImagingOrderStatus.IN_PROGRESS) {
     return (
-      <div className="relative inline-block" ref={dropdownRef}>
-        <button
-          className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded border border-gray-300 transition-colors flex items-center gap-1"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          Actions
-          <ChevronDown className="w-3.5 h-3.5" />
-        </button>
-
-        {isOpen && (
-          <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-300 rounded shadow-lg z-10">
-            <button
-              className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-200"
-              onClick={() => {
-                onViewDetail?.(orderId);
-                setIsOpen(false);
-              }}
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-gray-700 hover:bg-gray-100 border-gray-300"
             >
-              <Eye className="w-4 h-4 text-gray-600" />
+              Actions
+              <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() => onViewDetail?.(orderId)}
+              className="cursor-pointer"
+            >
+              <Eye className="h-4 w-4 text-gray-600" />
               View Detail
-            </button>
-
-            <button
-              className="w-full px-4 py-2 text-sm text-left text-green-700 hover:bg-green-50 flex items-center gap-2 border-b border-gray-200"
-              onClick={() => {
-                onMarkCompleted?.(orderId);
-                setIsOpen(false);
-              }}
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuItem
+              onClick={() => setConfirmationType("completed")}
+              className="cursor-pointer text-green-700 focus:text-green-700 focus:bg-green-50"
             >
-              <CheckCircle className="w-4 h-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-green-600" />
               Mark as Completed
-            </button>
-
-            <button
-              className="w-full px-4 py-2 text-sm text-left text-red-700 hover:bg-red-50 flex items-center gap-2"
-              onClick={() => {
-                onMarkCancelled?.(orderId);
-                setIsOpen(false);
-              }}
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem
+              onClick={() => setConfirmationType("cancelled")}
+              className="cursor-pointer text-red-700 focus:text-red-700 focus:bg-red-50"
+              variant="destructive"
             >
-              <XCircle className="w-4 h-4 text-red-600" />
+              <XCircle className="h-4 w-4 text-red-600" />
               Mark as Cancelled
-            </button>
-          </div>
-        )}
-      </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Confirmation Dialog */}
+        <AlertDialog open={confirmationType !== null} onOpenChange={(open) => !open && setConfirmationType(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`p-2 rounded-full ${confirmationType === "cancelled" ? "bg-red-100" : "bg-green-100"}`}>
+                  {confirmationType === "cancelled" ? (
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  )}
+                </div>
+                <AlertDialogTitle>
+                  {confirmationType === "completed" 
+                    ? "Mark Order as Completed?" 
+                    : "Cancel this Order?"}
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className="text-left">
+                {confirmationType === "completed" ? (
+                  <>
+                    This will mark the imaging order as <strong>completed</strong>. 
+                    Make sure all required scans and studies have been uploaded before proceeding.
+                  </>
+                ) : (
+                  <>
+                    This will mark the imaging order as <strong>cancelled</strong>. 
+                    This action may not be reversible. Are you sure you want to cancel this order?
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Go Back</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmAction}
+                className={confirmationType === "cancelled" 
+                  ? "bg-red-600 hover:bg-red-700 text-white" 
+                  : "bg-green-600 hover:bg-green-700 text-white"}
+              >
+                {confirmationType === "completed" 
+                  ? "Yes, Mark Completed" 
+                  : "Yes, Cancel Order"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   }
 
-  // Completed or Cancelled status - no actions
+  // Completed or Cancelled status - no actions available
   if (
     status === ImagingOrderStatus.COMPLETED ||
     status === ImagingOrderStatus.CANCELLED
   ) {
     return (
-      <span className="text-xs text-gray-500 italic">No action available</span>
+      <span className="text-xs text-gray-500 italic px-2 py-1 bg-gray-50 rounded">
+        No action available
+      </span>
     );
   }
 

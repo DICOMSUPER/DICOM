@@ -7,7 +7,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -391,24 +393,26 @@ export function ModalDiagnosisReportDetail({
     <div>
       <Dialog open={open} onOpenChange={onCloseModal}>
         <DialogContent
-          className="!max-w-7xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-0"
+          className="w-[80vw] max-w-[1400px] sm:max-w-[80vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50"
           onInteractOutside={(e) => {
             e.preventDefault();
           }}
         >
-          <DialogHeader className="sticky top-0 z-10 bg-gradient-to-r from-slate-50 via-slate-50 to-teal-50 border-b border-slate-200 px-8 py-6 rounded-t-2xl">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                <div className="p-2 bg-teal-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-teal-600" />
-                </div>
+          <DialogHeader className={modalStyles.dialogHeader}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <FileText className="w-6 h-6 text-teal-600" />
+              </div>
+              <DialogTitle className={modalStyles.dialogTitle}>
                 Diagnosis Report Detail
               </DialogTitle>
             </div>
           </DialogHeader>
 
+          <ScrollArea className="flex-1 min-h-0 h-full">
+
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-16 px-8">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-teal-600 mb-4"></div>
               <p className="text-slate-500 font-medium">
                 Loading report details...
@@ -1089,21 +1093,32 @@ export function ModalDiagnosisReportDetail({
                   </div>
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-slate-500 px-8">
+              <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p className="font-medium">No report found</p>
+            </div>
+          )}
+          </ScrollArea>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50">
-                <Button
-                  variant="outline"
-                  onClick={onCloseModal}
-                  disabled={isUpdating}
-                  className="rounded-lg border-slate-300 text-slate-700 hover:bg-slate-100 transition-colors font-medium bg-transparent"
-                >
-                  Close
-                </Button>
+          {/* Fixed Footer */}
+          <DialogFooter className={modalStyles.dialogFooter}>
+            <Button
+              variant="outline"
+              onClick={onCloseModal}
+              disabled={isUpdating}
+              className={modalStyles.secondaryButton}
+            >
+              Close
+            </Button>
 
+            {report && (
+              <>
                 <Button
                   onClick={handleViewImage}
                   disabled={isUpdating || isHasSignatureLoading}
-                  className="bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                 >
                   <Image className="w-4 h-4" />
                   View Image
@@ -1111,29 +1126,16 @@ export function ModalDiagnosisReportDetail({
                 {physicianSignatureData?.data && (
                   <Button
                     onClick={handleDownloadReport}
-                    // onClick={handleGeneratePDF}
                     disabled={isUpdating || isUpdatingDicomStudy}
-                    className="bg-linear-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                    className={modalStyles.primaryButton}
                   >
                     <Printer className="w-4 h-4" />
                     Print Report
                   </Button>
                 )}
-              </div>
-              {/* {pdfUrl && (
-                <iframe
-                  src={pdfUrl}
-                  className="w-full h-full border-0"
-                  title="Diagnosis Report PDF"
-                />
-              )} */}
-            </div>
-          ) : (
-            <div className="text-center py-16 text-slate-500">
-              <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-40" />
-              <p className="font-medium">No report found</p>
-            </div>
-          )}
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <ModalSetUpSignature

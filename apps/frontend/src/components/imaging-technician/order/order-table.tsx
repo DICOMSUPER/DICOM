@@ -6,7 +6,7 @@ import { Monitor } from "lucide-react";
 import React from "react";
 import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
 import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDateTime } from "@/utils/format-status";
 import OrderStatus from "../order-status";
 import StatusButton from "../status-button";
 
@@ -57,7 +57,7 @@ export function OrderTable({
             {formatOrderNumber(order.orderNumber)}
           </div>
           <div className="text-xs text-foreground">
-            {formatDate(order.createdAt)}
+            {formatDateTime(order.createdAt)}
           </div>
         </div>
       ),
@@ -165,18 +165,21 @@ export function OrderTable({
       cell: (order: ImagingOrder) => (
         <div className="space-y-1">
           {order.completedDate ? (
-            <>
-              <div className="font-semibold text-foreground text-sm">
-                {formatDate(order.completedDate)}
-              </div>
-              <div className="text-xs text-foreground">
-                {formatTime(order.completedDate)}
-              </div>
-            </>
+            <div className="font-semibold text-foreground text-sm">
+              {formatDateTime(order.completedDate)}
+            </div>
           ) : (
             <div className="text-foreground">—</div>
           )}
         </div>
+      ),
+    },
+    {
+      header: "Updated",
+      sortable: true,
+      sortField: "updatedAt",
+      cell: (order: ImagingOrder) => (
+        <div className="text-foreground text-sm">{formatDateTime(order.updatedAt)}</div>
       ),
     },
     {
