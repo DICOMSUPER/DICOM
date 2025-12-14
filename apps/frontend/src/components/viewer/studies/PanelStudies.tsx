@@ -1,11 +1,11 @@
-import { useImageViewer } from "@/contexts/ImageViewerProvider";
+import { useImageViewer } from "@/common/contexts/ImageViewerProvider";
 import React, { useState, useEffect, useRef } from "react";
 import { defaultActionIcons, defaultViewPresets } from "./constants";
 import { actionIcon, viewPreset } from "./types";
 import StudyBrowser, {
   ViewPreset,
 } from "@/components/ui-next/StudyBrowser/StudyBrowser";
-import { useViewportGrid } from "@/contexts/ViewportGridProvider";
+import { useViewportGrid } from "@/common/contexts/ViewportGridProvider";
 import { PanelStudyBrowserHeader } from "./PanelStudiesHeader";
 import { Separator } from "@/components/ui-next/Separator";
 

@@ -5,12 +5,12 @@ import { format } from "date-fns";
 import { Clock, CalendarOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
 import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "@/utils/time-segment-utils";
+} from "@/common/utils/time-segment-utils";
 
 // Helper function to get employee names from room assignments
 const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 3): string => {

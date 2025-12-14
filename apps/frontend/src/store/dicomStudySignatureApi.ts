@@ -1,8 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { SignatureType } from "@/enums/signature-type";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { SignatureType } from "@/common/enums/signature-type";
 import {
   DicomStudySignature,
   SignatureDetails,
@@ -10,7 +10,7 @@ import {
   SignStudyResponse,
   VerifySignatureResponse,
   VerifyStudySignatureDto,
-} from "@/interfaces/user/dicom-study-signature.interface";
+} from "@/common/interfaces/user/dicom-study-signature.interface";
 
 export const dicomStudySignatureApi = createApi({
   reducerPath: "dicomStudySignatureApi",

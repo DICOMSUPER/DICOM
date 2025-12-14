@@ -1,13 +1,13 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
-import { mapApiResponse } from "@/utils/adpater";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
+import { mapApiResponse } from "@/common/utils/adpater";
+import { PaginatedResponse, QueryParams } from "@/common/interfaces/pagination/pagination.interface";
 import {
     ReportTemplate,
     CreateReportTemplateDto,
     UpdateReportTemplateDto,
-} from "@/interfaces/patient/diagnosis-report-template.interface";
+} from "@/common/interfaces/patient/diagnosis-report-template.interface";
 
 export const reportTemplateApi = createApi({
     reducerPath: "reportTemplateApi",

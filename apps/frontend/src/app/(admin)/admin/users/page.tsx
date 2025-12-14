@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
 import { useGetAllUsersQuery, useGetUserStatsQuery, useUpdateUserMutation, UserFilters } from '@/store/userApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
 import { UserTable } from '@/components/admin/user/UserTable';
@@ -16,13 +16,13 @@ import { UserToggleStatusModal } from '@/components/admin/user/user-toggle-statu
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import { User } from '@/interfaces/user/user.interface';
-import { Department } from '@/interfaces/user/department.interface';
+import { User } from '@/common/interfaces/user/user.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { extractApiData } from '@/utils/api';
-import { Roles } from '@/enums/user.enum';
+import { extractApiData } from '@/common/utils/api';
+import { Roles } from '@/common/enums/user.enum';
 import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 interface ApiError {
   data?: {

@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 interface ViewerHeaderProps {
   isCollapsed?: boolean;

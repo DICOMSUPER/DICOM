@@ -11,9 +11,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Department } from '@/interfaces/user/department.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 import { Building, Mail, Phone, User, Calendar, Users } from 'lucide-react';
-import { formatStatus, formatRole, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
+import { formatStatus, formatRole, modalStyles, getStatusBadgeColor } from '@/common/utils/format-status';
 
 interface DepartmentViewModalProps {
   department: Department | null;

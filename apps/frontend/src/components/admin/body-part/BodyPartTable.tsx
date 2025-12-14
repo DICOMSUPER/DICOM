@@ -3,9 +3,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Activity } from 'lucide-react';
-import { BodyPart } from '@/interfaces/imaging/body-part.interface';
+import { BodyPart } from '@/common/interfaces/imaging/body-part.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/common/utils/format-status';
 
 import { SortConfig } from '@/components/ui/data-table';
 
@@ -59,7 +59,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
       sortable: true,
       sortField: 'createdAt',
       cell: (bodyPart: BodyPart) => (
-        <div className="text-foreground">{formatDate(bodyPart.createdAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(bodyPart.createdAt)}</div>
       ),
     },
     {
@@ -67,7 +67,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
       sortable: true,
       sortField: 'updatedAt',
       cell: (bodyPart: BodyPart) => (
-        <div className="text-foreground">{formatDate(bodyPart.updatedAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(bodyPart.updatedAt)}</div>
       ),
     },
     {

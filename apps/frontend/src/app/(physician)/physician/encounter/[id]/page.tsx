@@ -33,10 +33,10 @@ import {
   getEncounterTypeBadgeClass,
   getPriorityColor,
   formatDate,
-} from "@/utils/patient/[id]/color";
+} from "@/common/utils/patient/[id]/color";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
-import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
+import { EncounterPriorityLevel } from "@/common/enums/patient-workflow.enum";
 
 // Format status for display
 const capitalizeFirst = (str: string) => {

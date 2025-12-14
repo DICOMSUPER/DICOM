@@ -19,7 +19,7 @@ import {
 } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
-import { useViewer, ToolType } from "@/contexts/ViewerContext";
+import { useViewer, ToolType } from "@/common/contexts/ViewerContext";
 
 // Global state management
 declare global {

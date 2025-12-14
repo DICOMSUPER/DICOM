@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { Department } from '@/interfaces/user/department.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 
 interface DepartmentDeleteModalProps {
   department: Department | null;

@@ -19,15 +19,15 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
-import { TemplateType } from "@/enums/report-template.enum";
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
+import { TemplateType } from "@/common/enums/report-template.enum";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 import {
   FilterReportTemplate,
   ReportTemplate,
-} from "@/interfaces/patient/report-template.interface";
-import { formatDate } from "@/lib/formatTimeDate";
+} from "@/common/interfaces/patient/report-template.interface";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import {
   useGetDiagnosisByIdQuery,
@@ -51,7 +51,7 @@ import {
   useGetReportTemplateByIdQuery,
 } from "@/store/reportTemplateApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
-import { formatDateVN } from "@/utils/FormatDate";
+import { formatDateVN } from "@/common/utils/FormatDate";
 import {
   AlertCircle,
   Calendar,
@@ -67,9 +67,9 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ModalApproveStudy } from "./modal-approve-study";
 import { ModalSetUpSignature } from "./modal-setup";
-import { BodyPart } from "@/interfaces/imaging/body-part.interface";
-import { SignatureType } from "@/enums/signature-type";
-import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
+import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
+import { SignatureType } from "@/common/enums/signature-type";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;

@@ -12,10 +12,10 @@ import {
   useSearchPatientsByNameQuery,
   useGetPatientStatsQuery
 } from "@/store/patientApi";
-import { PatientSearchFilters } from "@/interfaces/patient/patient-workflow.interface";
-import { Gender, BloodType } from "@/enums/patient-workflow.enum";
-import { PriorityLevel, HIGH_PRIORITY_LEVELS } from "@/enums/priority.enum";
-import { formatDate } from "@/lib/formatTimeDate";
+import { PatientSearchFilters } from "@/common/interfaces/patient/patient-workflow.interface";
+import { Gender, BloodType } from "@/common/enums/patient-workflow.enum";
+import { PriorityLevel, HIGH_PRIORITY_LEVELS } from "@/common/enums/priority.enum";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import { 
   Search, 
   Filter, 

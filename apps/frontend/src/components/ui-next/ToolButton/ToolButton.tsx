@@ -1,9 +1,9 @@
 import React from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../Tooltip';
-import { cn } from '@/lib/utils';
-import { useIconPresentation } from '../../../contexts/IconPresentationProvider';
+import { cn } from '@/common/lib/utils';
+import { useIconPresentation } from '../../../common/contexts/IconPresentationProvider';
 import { Button } from '@/components/ui/button';
-import { getLucideIcon } from '@/utils/get-lucide-icon';
+import { getLucideIcon } from '@/common/utils/get-lucide-icon';
 
 const baseClasses = '!rounded-lg inline-flex items-center justify-center';
 const defaultClasses = 'bg-transparent text-foreground/80 hover:bg-background hover:text-highlight';

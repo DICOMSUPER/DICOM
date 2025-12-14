@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Monitor } from 'lucide-react';
-import { ModalityMachine } from '@/interfaces/image-dicom/modality-machine.interface';
+import { ModalityMachine } from '@/common/interfaces/image-dicom/modality-machine.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
-import { getMachineStatusBadgeSimple } from '@/utils/status-badge';
+import { formatDateTime } from '@/common/utils/format-status';
+import { getMachineStatusBadgeSimple } from '@/common/utils/status-badge';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface ModalityMachineTableProps {

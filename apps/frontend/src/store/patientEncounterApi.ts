@@ -8,16 +8,16 @@ import {
   EncounterStats,
   ApiResponse,
   EncounterStatsInDateRange,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import {
   FilterEncounterWithPaginationParams,
   PatientEncounterFilters,
-} from "@/interfaces/patient/patient-visit.interface";
+} from "@/common/interfaces/patient/patient-visit.interface";
 import {
   PaginatedQuery,
   PaginatedResponse as PaginationResponse,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 import { tr } from "date-fns/locale";
 
 export const patientEncounterApi = createApi({

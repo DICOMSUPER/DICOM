@@ -5,7 +5,7 @@ import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/radiologist/side-bar";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationProvider } from "@/common/contexts/NotificationContext";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;

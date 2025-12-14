@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
 import { AlertTriangle, Save, FileText, CheckCircle2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 

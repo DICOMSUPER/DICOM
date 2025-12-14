@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState, CSSProperties } from 'react';
 import { TooltipTrigger, TooltipContent, Tooltip } from '../Tooltip';
 import { Separator } from '../Separator';
 import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
-import { getLucideIcon } from '@/utils/get-lucide-icon';
+import { getLucideIcon } from '@/common/utils/get-lucide-icon';
 
 type SidePanelProps = {
   side: 'left' | 'right';

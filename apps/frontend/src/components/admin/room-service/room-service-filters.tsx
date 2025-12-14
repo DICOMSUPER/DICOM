@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
-import { Room } from "@/interfaces/user/room.interface";
-import { Services } from "@/interfaces/user/service.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
 
 interface RoomServiceFiltersProps {
   searchTerm: string;

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RotateCcw, Search } from "lucide-react";
 import { useState } from "react";
-import { ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
+import { ImagingOrderFormFilters } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
 
 interface ImagingOrderFormFiltersSectionProps {
   filters: ImagingOrderFormFilters;

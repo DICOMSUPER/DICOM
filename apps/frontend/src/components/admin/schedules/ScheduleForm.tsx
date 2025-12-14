@@ -19,13 +19,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 import { 
   useCreateRoomScheduleMutation, 
   useUpdateRoomScheduleMutation 
 } from "@/store/scheduleApi";
 import { toast } from "sonner";
-import { ROLE_OPTIONS } from "@/enums/role.enum";
+import { ROLE_OPTIONS } from "@/common/enums/role.enum";
 
 // Schema validation
 const scheduleSchema = z.object({

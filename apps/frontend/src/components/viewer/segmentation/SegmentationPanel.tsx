@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import SegmentationControls from '../toolbar/SegmentationControls';
-import { useViewer } from '@/contexts/ViewerContext';
+import { useViewer } from '@/common/contexts/ViewerContext';
 
 interface SegmentationsPanelProps {
   isCollapsed: boolean;

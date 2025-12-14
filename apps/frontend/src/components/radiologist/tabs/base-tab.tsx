@@ -4,7 +4,7 @@ import FilterBar from "../filter-bar";
 import DataTable from "../data-table";
 import { useSearchParams } from "next/navigation";
 import { useGetDicomStudiesFilteredQuery } from "@/store/dicomStudyApi";
-import { DicomStudyFilterQuery } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyFilterQuery } from "@/common/interfaces/image-dicom/dicom-study.interface";
 
 export default function BaseTab() {
   const searchParams = useSearchParams();

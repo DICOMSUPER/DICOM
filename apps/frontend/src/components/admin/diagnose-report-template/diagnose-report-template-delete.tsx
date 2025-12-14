@@ -11,10 +11,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/common/hooks/use-toast";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useDeleteReportTemplateMutation } from "@/store/diagnosisReportTemplateApi";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
+import { ReportTemplate } from "@/common/interfaces/patient/diagnosis-report-template.interface";
 
 interface ReportTemplateDeleteModalProps {
   isOpen: boolean;

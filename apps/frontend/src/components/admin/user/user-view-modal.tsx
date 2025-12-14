@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User } from '@/interfaces/user/user.interface';
+import { User } from '@/common/interfaces/user/user.interface';
 import {
   User as UserIcon,
   Mail,
@@ -22,7 +22,7 @@ import {
   BadgeCheck,
   Clock,
 } from 'lucide-react';
-import { formatStatus, formatRole, modalStyles, getStatusBadgeColor, shouldAnimateDot } from '@/utils/format-status';
+import { formatStatus, formatRole, modalStyles, getStatusBadgeColor, shouldAnimateDot } from '@/common/utils/format-status';
 
 interface UserViewModalProps {
   user: User | null;

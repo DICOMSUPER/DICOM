@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,17 +31,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { EditScheduleModal } from "@/components/admin/room-assignments/EditScheduleModal";
 import { DeleteScheduleModal } from "@/components/admin/room-assignments/DeleteScheduleModal";
 import { DeleteAssignmentModal } from "@/components/admin/room-assignments/DeleteAssignmentModal";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import { extractApiData } from "@/utils/api";
-import { formatTimeRange } from "@/utils/schedule-helpers";
+import { extractApiData } from "@/common/utils/api";
+import { formatTimeRange } from "@/common/utils/schedule-helpers";
 import { Monitor, Stethoscope, Loader2 } from "lucide-react";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
-import { formatStatus, modalStyles } from '@/utils/format-status';
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
+import { formatStatus, modalStyles } from '@/common/utils/format-status';
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;
@@ -323,15 +323,15 @@ export function ScheduleDetailModal({
               </section>
             )}
 
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+            <section className={modalStyles.heroSection}>
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
+                  <div className={modalStyles.heroLabel}>
                     <DoorOpen className="h-3.5 w-3.5" />
                     {schedule.room?.roomCode ?? "Room schedule"}
                   </div>
                   <div>
-                    <p className="text-3xl font-semibold text-foreground leading-tight">
+                    <p className={modalStyles.heroTitle}>
                       {schedule.shift_template?.shift_name ?? "Room assignment"}
                     </p>
                     <div className="mt-3 grid gap-2 text-sm text-foreground">
@@ -390,7 +390,7 @@ export function ScheduleDetailModal({
 
             <div className="grid gap-6 xl:grid-cols-2">
               
-                <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
+                <section className={`xl:col-span-1 ${modalStyles.section}`}>
                   <div className="flex items-center gap-2 text-lg font-semibold">
                     <Calendar className="h-5 w-5" />
                     Schedule Overview
@@ -399,18 +399,18 @@ export function ScheduleDetailModal({
                     {overviewItems.map((item) => {
                       const Icon = item.icon;
                       return (
-                    <div key={item.label} className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                          <div className="flex items-center gap-2 text-sm text-foreground">
+                    <div key={item.label} className={modalStyles.infoCard}>
+                          <div className={modalStyles.infoCardLabel}>
                             <Icon className="h-4 w-4" />
                             {item.label}
                           </div>
-                          <p className="text-base font-semibold text-foreground">{item.value}</p>
+                          <p className={modalStyles.infoCardValue}>{item.value}</p>
                         </div>
                       );
                     })}
                   </div>
                 </section>
-                <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
+                <section className={`xl:col-span-1 ${modalStyles.section}`}>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Users className="h-5 w-5" />
@@ -429,7 +429,7 @@ export function ScheduleDetailModal({
                       {assignments.map((assignment) => (
                         <div
                           key={assignment.id}
-                          className="flex items-center justify-between gap-3 rounded-2xl bg-primary/10 px-3 py-3 shadow-sm ring-1 ring-border/10"
+                          className={`flex items-center justify-between gap-3 ${modalStyles.infoCard}`}
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
@@ -482,29 +482,29 @@ export function ScheduleDetailModal({
                   )}
                 </section>
                 {schedule.room && (
-                  <section className="xl:col-span-2 rounded-2xl p-6 shadow border-border border space-y-4">
+                  <section className={`xl:col-span-2 ${modalStyles.section}`}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <MapPin className="h-5 w-5" />
                       Room Details
                     </div>
                       <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Room code</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.room.roomCode}</p>
+                        <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Room code</p>
+                        <p className={modalStyles.infoCardValue}>{schedule.room.roomCode}</p>
                       </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Room type</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.room.roomType}</p>
+                        <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Room type</p>
+                        <p className={modalStyles.infoCardValue}>{schedule.room.roomType}</p>
                       </div>
                         {schedule.room.capacity && (
-                          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                            <p className="text-sm text-foreground">Capacity</p>
-                            <p className="text-base font-semibold text-foreground">{schedule.room.capacity}</p>
+                          <div className={modalStyles.infoCard}>
+                            <p className={modalStyles.infoCardLabel}>Capacity</p>
+                            <p className={modalStyles.infoCardValue}>{schedule.room.capacity}</p>
                           </div>
                         )}
-                        <div className="md:col-span-3 rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Description</p>
-                        <p className="text-base text-foreground">
+                        <div className={`md:col-span-3 ${modalStyles.infoCard}`}>
+                        <p className={modalStyles.infoCardLabel}>Description</p>
+                        <p className={modalStyles.infoCardValue}>
                           {schedule.room.description || "No description provided"}
                         </p>
                       </div>
@@ -537,7 +537,7 @@ export function ScheduleDetailModal({
                             return (
                               <div
                                 key={machine.id}
-                                className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                                className={modalStyles.infoCard}
                               >
                                 <p className="text-sm font-semibold text-foreground">
                                   {displayName}
@@ -585,7 +585,7 @@ export function ScheduleDetailModal({
                             .map((sr: ServiceRoom) => (
                               <div
                                 key={sr.id}
-                                className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                                className={modalStyles.infoCard}
                               >
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1">
@@ -622,23 +622,23 @@ export function ScheduleDetailModal({
                 )}
 
                 {schedule.shift_template && (
-                  <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-4">
+                  <section className={`xl:col-span-1 ${modalStyles.section}`}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <Clock className="h-5 w-5" />
                       Shift Template
                     </div>
                       <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Shift name</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_name}</p>
+                        <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Shift name</p>
+                        <p className={modalStyles.infoCardValue}>{schedule.shift_template.shift_name}</p>
                       </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Shift type</p>
-                        <p className="text-base font-semibold text-foreground">{schedule.shift_template.shift_type?.charAt(0).toUpperCase() + schedule.shift_template.shift_type?.slice(1)}</p>
+                        <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Shift type</p>
+                        <p className={modalStyles.infoCardValue}>{schedule.shift_template.shift_type?.charAt(0).toUpperCase() + schedule.shift_template.shift_type?.slice(1)}</p>
                       </div>
-                        <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Scheduled time</p>
-                        <p className="text-base font-semibold text-foreground">
+                        <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Scheduled time</p>
+                        <p className={modalStyles.infoCardValue}>
                           {schedule.shift_template.start_time} – {schedule.shift_template.end_time}
                         </p>
                       </div>
@@ -662,12 +662,12 @@ export function ScheduleDetailModal({
                 
 
                 
-                  <section className="xl:col-span-1 rounded-2xl p-6 shadow border-border border space-y-3">
+                  <section className={`xl:col-span-1 ${modalStyles.section}`}>
                     <div className="flex items-center gap-2 text-lg font-semibold">
                       <FileText className="h-5 w-5" />
                       Notes
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-primary/10 p-4 rounded-2xl shadow-sm">
+                    <p className={`${modalStyles.infoCardValue} whitespace-pre-wrap`}>
                       {notes || "No notes provided"}
                     </p>
                   </section>

@@ -40,14 +40,14 @@ import { useGetRoomsQuery } from "@/store/roomsApi";
 import {
   RoomSchedule,
   ViewMode,
-} from "@/interfaces/schedule/schedule.interface";
-import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
-import { filterAndSortSchedules } from "@/utils/schedule-filter-utils";
+} from "@/common/interfaces/schedule/schedule.interface";
+import { useShiftTemplatesDictionary } from "@/common/hooks/useShiftTemplatesDictionary";
+import { filterAndSortSchedules } from "@/common/utils/schedule-filter-utils";
 import {
   useGetEmployeeRoomAssignmentStatsOverTimeQuery,
   useGetEmployeeRoomAssignmentStatsQuery,
 } from "@/store/employeeRoomAssignmentApi";
-import { formatDateLocal } from "@/utils/schedule/utils";
+import { formatDateLocal } from "@/common/utils/schedule/utils";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 

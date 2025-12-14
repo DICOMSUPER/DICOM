@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
+import { EncounterPriorityLevel } from "@/common/enums/patient-workflow.enum";
 import { CheckCircle } from "lucide-react";
 import React from "react";
 

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getSystemStatusBadge } from "@/utils/status-badge";
+import { getSystemStatusBadge } from "@/common/utils/status-badge";
 
 interface SystemService {
   name: string;

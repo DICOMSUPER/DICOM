@@ -1,5 +1,5 @@
 import React from "react";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
 import { UserRoundPen } from "lucide-react";
 
 export default function PatientInfo({

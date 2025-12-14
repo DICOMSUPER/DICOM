@@ -4,8 +4,8 @@ import { Upload, X, File, CheckCircle, Loader2 } from "lucide-react";
 import type React from "react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import type { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import type { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 
 export default function FileUpload({
   fileInputRef,

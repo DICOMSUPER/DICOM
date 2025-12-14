@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { EncounterType } from "@/enums/patient-workflow.enum";
+import { EncounterType } from "@/common/enums/patient-workflow.enum";
 
 import React from "react";
 

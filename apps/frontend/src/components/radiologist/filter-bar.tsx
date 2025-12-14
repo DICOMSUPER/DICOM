@@ -3,8 +3,8 @@
 import { Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DatePickerDropdown from "./date-picker";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";

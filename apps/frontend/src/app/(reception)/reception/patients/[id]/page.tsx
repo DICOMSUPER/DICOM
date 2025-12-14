@@ -43,15 +43,15 @@ import {
   useUpdatePatientEncounterMutation,
 } from "@/store/patientEncounterApi";
 import PatientInfo from "@/components/reception/patient/[id]/patient-info";
-import { PaginationParams } from "@/interfaces/pagination/pagination.interface";
+import { PaginationParams } from "@/common/interfaces/pagination/pagination.interface";
 import {
   PatientEncounter,
   CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 import EncounterModal from "@/components/reception/patient/[id]/encounter-modal";
 import PatientConditionModal from "@/components/reception/patient/[id]/patient-condition-modal";
-import { PatientCondition } from "@/interfaces/patient/patient-condition.interface";
+import { PatientCondition } from "@/common/interfaces/patient/patient-condition.interface";
 
 // Skeleton component for PatientInfo
 function PatientInfoSkeleton() {

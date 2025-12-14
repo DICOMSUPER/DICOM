@@ -1,8 +1,8 @@
 import { jsPDF } from "jspdf";
 
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { DiagnosisReport } from "@/interfaces/patient/patient-workflow.interface";
-import { calculateAge } from "@/lib/formatTimeDate";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DiagnosisReport } from "@/common/interfaces/patient/patient-workflow.interface";
+import { calculateAge } from "@/common/lib/formatTimeDate";
 import { addPDFHeader } from "./addHeaderPDF";
 import { format } from "date-fns";
 import { font } from "./font";

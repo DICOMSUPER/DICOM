@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { useGetPatientsQuery } from "@/store/patientApi";
-import useDebounce from "@/hooks/useDebounce";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import useDebounce from "@/common/hooks/useDebounce";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
 import { formatDate } from "date-fns";
 
 

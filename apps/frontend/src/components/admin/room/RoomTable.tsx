@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2, Check, X } from 'lucide-react';
-import { Room } from '@/interfaces/user/room.interface';
+import { Room } from '@/common/interfaces/user/room.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface RoomTableProps {
   rooms: Room[];

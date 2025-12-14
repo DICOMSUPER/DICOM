@@ -20,8 +20,8 @@ import {
   User,
   Droplets
 } from 'lucide-react';
-import { PatientFiltersProps, PatientSearchFilters } from '@/interfaces/patient/patient-workflow.interface';
-import { Gender, BloodType } from '@/enums/patient-workflow.enum';
+import { PatientFiltersProps, PatientSearchFilters } from '@/common/interfaces/patient/patient-workflow.interface';
+import { Gender, BloodType } from '@/common/enums/patient-workflow.enum';
 
 const PatientFilters: React.FC<PatientFiltersProps> = ({
   filters,

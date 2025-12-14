@@ -26,20 +26,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { extractApiData } from "@/utils/api";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { extractApiData } from "@/common/utils/api";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
 import {
   useLazyGetAnnotationsBySeriesIdQuery,
   useUpdateAnnotationMutation,
 } from "@/store/annotationApi";
 import type { Annotation } from "@cornerstonejs/tools/types";
-import { useViewer } from "@/contexts/ViewerContext";
+import { useViewer } from "@/common/contexts/ViewerContext";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 type SeriesAnnotationEntry = {
   annotation: ImageAnnotation;

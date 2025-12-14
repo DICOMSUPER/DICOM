@@ -7,7 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import dynamic from "next/dynamic";
 
 const DicomThumbnail = dynamic(() => import("./DicomThumbnail"), {

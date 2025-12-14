@@ -20,8 +20,8 @@ import {
   Edit3,
   Info,
 } from "lucide-react";
-import { useViewer } from "@/contexts/ViewerContext";
-import type { SegmentationLayerData } from "@/contexts/ViewerContext";
+import { useViewer } from "@/common/contexts/ViewerContext";
+import type { SegmentationLayerData } from "@/common/contexts/ViewerContext";
 import {
   AlertDialog,
   AlertDialogAction,

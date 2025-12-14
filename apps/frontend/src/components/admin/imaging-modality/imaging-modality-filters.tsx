@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
+import { PaginatedQuery } from "@/common/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 

@@ -1,11 +1,11 @@
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
   CreateImageSegmentationLayerDto,
   ImageSegmentationLayer,
   UpdateImageSegmentationLayerDto,
-} from "@/interfaces/image-dicom/image-segmentation-layer.interface";
-import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/image-dicom/image-segmentation-layer.interface";
+import { PaginatedQuery } from "@/common/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { create } from "domain";
 

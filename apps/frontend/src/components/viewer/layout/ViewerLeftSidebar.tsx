@@ -32,13 +32,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useViewer } from "@/contexts/ViewerContext";
+import { useViewer } from "@/common/contexts/ViewerContext";
 import AIDiagnosisButton from "@/components/viewer/toolbar/AIDiagnosisButton";
 import SegmentationControlPanelModal from "../modals/segmentation-control-panel-modal";
 import {
   compressSnapshots,
   type SegmentationSnapshot,
-} from "@/contexts/viewer-context/segmentation-helper";
+} from "@/common/contexts/viewer-context/segmentation-helper";
 import {
   useCreateImageSegmentationLayerMutation,
   useDeleteImageSegmentationLayerMutation,

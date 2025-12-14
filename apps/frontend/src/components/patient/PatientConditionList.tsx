@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PatientCondition } from "@/interfaces/patient/patient-condition.interface";
+import { PatientCondition } from "@/common/interfaces/patient/patient-condition.interface";
 import {
   ClinicalStatus,
   ConditionVerificationStatus,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import {
   Edit,
   Calendar,

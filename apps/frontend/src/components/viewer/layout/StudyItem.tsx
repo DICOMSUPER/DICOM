@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight, FolderOpen } from "lucide-react";
 import SeriesCard from "../sidebar/SeriesCard";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { resolveDicomImageUrl } from "@/common/utils/dicom/resolveDicomImageUrl";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
-import { extractApiData } from "@/utils/api";
+import { extractApiData } from "@/common/utils/api";
 
 export const StudyItem = ({
   study,

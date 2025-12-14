@@ -1,11 +1,11 @@
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   PaginatedQuery,
   PaginatedResponse,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 export interface CreateImagingModalityDto {
   modalityCode?: string;

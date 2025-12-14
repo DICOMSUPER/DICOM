@@ -3,7 +3,7 @@
 import { format, isSameDay } from "date-fns";
 import { CalendarOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 
 // Helper function to get employee names from room assignments
 const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 1): string => {

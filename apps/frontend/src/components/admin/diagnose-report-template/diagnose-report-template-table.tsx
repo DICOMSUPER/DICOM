@@ -29,8 +29,8 @@ import {
   Lock,
   Loader2,
 } from "lucide-react";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
-import { format } from "date-fns";
+import { ReportTemplate } from "@/common/interfaces/patient/diagnosis-report-template.interface";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface ReportTemplateTableProps {
   data: ReportTemplate[];
@@ -94,6 +94,7 @@ const ReportTemplateTable = ({
               <TableHead className="font-semibold">Body Part</TableHead>
               <TableHead className="font-semibold">Visibility</TableHead>
               <TableHead className="font-semibold">Created</TableHead>
+              <TableHead className="font-semibold">Updated</TableHead>
               <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -158,7 +159,10 @@ const ReportTemplateTable = ({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-slate-600">
-                  {format(new Date(template.createdAt), "MMM dd, yyyy")}
+                  {formatDateTime(template.createdAt)}
+                </TableCell>
+                <TableCell className="text-sm text-slate-600">
+                  {formatDateTime(template.updatedAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>

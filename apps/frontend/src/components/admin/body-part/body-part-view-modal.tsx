@@ -10,9 +10,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BodyPart } from "@/interfaces/imaging/body-part.interface";
+import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
 import { Activity, Calendar } from "lucide-react";
-import { modalStyles } from "@/utils/format-status";
+import { modalStyles } from "@/common/utils/format-status";
 
 interface BodyPartViewModalProps {
   bodyPart: BodyPart | null;

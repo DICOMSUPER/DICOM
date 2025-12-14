@@ -11,17 +11,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
-import { calculateAge, formatDate } from "@/lib/formatTimeDate";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
+import { calculateAge, formatDate } from "@/common/lib/formatTimeDate";
 import { Calendar, MapPin, Phone, Shield, Clock, Edit } from "lucide-react";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 import type { RootState } from "@/store";
 import PatientForm from "@/components/patient/PatientForm";
 import { useUpdatePatientMutation } from "@/store/patientApi";
 import {
   CreatePatientDto,
   UpdatePatientDto,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 import { toast } from "sonner";
 
 interface PatientProfileCardProps {

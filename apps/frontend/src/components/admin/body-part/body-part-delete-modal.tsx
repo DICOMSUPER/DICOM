@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { BodyPart } from '@/interfaces/imaging/body-part.interface';
+import { BodyPart } from '@/common/interfaces/imaging/body-part.interface';
 
 interface BodyPartDeleteModalProps {
   bodyPart: BodyPart | null;

@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/select";
 import { Monitor } from "lucide-react";
 import React, { useState } from "react";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { MachineStatus } from "@/enums/machine-status.enum";
-import { formatDateTime } from "@/utils/format-status";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface MachineTableProps {
   machines: ModalityMachine[];

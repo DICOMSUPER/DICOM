@@ -1,4 +1,4 @@
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import { ChevronDown } from "lucide-react";
 import React from "react";
 

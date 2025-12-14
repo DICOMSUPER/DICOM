@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationProvider } from "@/common/contexts/NotificationContext";
 
 interface ReceptionLayoutProps {
   children: React.ReactNode;

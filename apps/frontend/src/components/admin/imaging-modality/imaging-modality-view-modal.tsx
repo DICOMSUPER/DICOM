@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetImagingModalityByIdQuery } from "@/store/imagingModalityApi";
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import { Scan, Calendar, Activity } from "lucide-react";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
 
 interface ImagingModalityViewModalProps {
   open: boolean;

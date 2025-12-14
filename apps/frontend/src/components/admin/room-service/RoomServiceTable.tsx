@@ -3,10 +3,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Link2, Check, X } from 'lucide-react';
-import { ServiceRoom } from '@/interfaces/user/service-room.interface';
+import { ServiceRoom } from '@/common/interfaces/user/service-room.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { SortConfig } from '@/components/ui/data-table';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface RoomServiceTableProps {
   roomServices: ServiceRoom[];
@@ -84,6 +85,22 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
       header: 'Notes',
       cell: (roomService: ServiceRoom) => (
         <div className="max-w-[250px] truncate text-foreground">{roomService.notes || '—'}</div>
+      ),
+    },
+    {
+      header: 'Created',
+      sortable: true,
+      sortField: 'createdAt',
+      cell: (roomService: ServiceRoom) => (
+        <div className="text-foreground text-sm">{formatDateTime(roomService.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (roomService: ServiceRoom) => (
+        <div className="text-foreground text-sm">{formatDateTime(roomService.updatedAt)}</div>
       ),
     },
     {

@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
-import { Department } from "@/interfaces/user/department.interface";
-import { Roles } from "@/enums/user.enum";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Roles } from "@/common/enums/user.enum";
 
 interface UserFiltersProps {
   searchTerm: string;

@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, SortConfig } from "@/components/ui/data-table";
 import { Monitor } from "lucide-react";
 import React from "react";
-import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import { formatDateTime } from "@/utils/format-status";
+import { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
+import { formatDateTime } from "@/common/utils/format-status";
 import OrderStatus from "../order-status";
 import StatusButton from "../status-button";
 

@@ -12,8 +12,8 @@ import { useState } from "react";
 import {
   DiagnosisStatus,
   DiagnosisType,
-} from "@/enums/patient-workflow.enum";
-import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
+} from "@/common/enums/patient-workflow.enum";
+import { FilterDiagnosesReport } from "@/common/interfaces/patient/diagnosis-report.interface";
 
 interface DiagnosisReportFiltersSectionProps {
   filters: FilterDiagnosesReport;

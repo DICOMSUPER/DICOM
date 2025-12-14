@@ -26,10 +26,10 @@ import {
   type Types,
 } from "@cornerstonejs/core";
 
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { AnnotationStatus, AnnotationType } from "@/enums/image-dicom.enum";
-import { useViewer } from "@/contexts/ViewerContext";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { AnnotationStatus, AnnotationType } from "@/common/enums/image-dicom.enum";
+import { useViewer } from "@/common/contexts/ViewerContext";
 import type { Annotation } from "@cornerstonejs/tools/types";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,10 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { useCreateAnnotationMutation } from "@/store/annotationApi";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
-import { extractApiData } from "@/utils/api";
+import { extractApiData } from "@/common/utils/api";
 import { toast } from "sonner";
-import { Roles } from "@/enums/user.enum";
-import { deduplicateAnnotations, getAnnotationUniqueKey } from "@/utils/annotationDeduplication";
+import { Roles } from "@/common/enums/user.enum";
+import { deduplicateAnnotations, getAnnotationUniqueKey } from "@/common/utils/annotationDeduplication";
 
 type DraftAnnotationEntry = {
   id: string;

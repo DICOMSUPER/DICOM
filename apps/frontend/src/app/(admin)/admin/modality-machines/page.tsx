@@ -17,12 +17,12 @@ import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import {
   PaginatedQuery,
   PaginationMeta,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 import {
   CreateModalityMachineDto,
   UpdateModalityMachineDto,
-} from "@/interfaces/image-dicom/modality-machine.interface";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+} from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import {
   useCreateModalityMachineMutation,
   useDeleteModalityMachineMutation,
@@ -31,9 +31,9 @@ import {
   useUpdateModalityMachineMutation,
 } from "@/store/modalityMachineApi";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { Room } from "@/interfaces/user/room.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 
 interface ApiError {
   data?: {

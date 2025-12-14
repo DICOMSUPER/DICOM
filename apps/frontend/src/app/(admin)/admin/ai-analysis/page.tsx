@@ -17,11 +17,11 @@ import { AiAnalysisDeleteModal } from "@/components/admin/ai-analysis/ai-analysi
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Pagination } from "@/components/common/PaginationV1";
-import { AiAnalysis } from "@/interfaces/system/ai-analysis.interface";
+import { AiAnalysis } from "@/common/interfaces/system/ai-analysis.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
-import { AnalysisStatus } from "@/enums/image-dicom.enum";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
+import { AnalysisStatus } from "@/common/enums/image-dicom.enum";
 
 interface ApiError {
   data?: {

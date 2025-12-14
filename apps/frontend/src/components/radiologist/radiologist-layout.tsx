@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { useBreadcrumb } from "@/hooks/use-breadcrumb";
-import { cn } from "@/lib/utils";
+import { useBreadcrumb } from "@/common/hooks/use-breadcrumb";
+import { cn } from "@/common/lib/utils";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, User } from "lucide-react";
 import type { RootState } from "@/store";
-import { useLogout } from "@/hooks/use-logout";
+import { useLogout } from "@/common/hooks/use-logout";
 import { SidebarNav } from "@/components/sidebar-nav";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface RadiologistLayoutProps {
   children: React.ReactNode;
