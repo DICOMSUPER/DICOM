@@ -1,8 +1,8 @@
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { ICreateImagingOrderForm, IImagingOrderForm, ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { mapApiResponse } from "@/utils/adpater";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { ICreateImagingOrderForm, IImagingOrderForm, ImagingOrderFormFilters } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
+import { PaginatedResponse, QueryParams } from "@/common/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { mapApiResponse } from "@/common/utils/adpater";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export const imagingOrderFormApi = createApi({

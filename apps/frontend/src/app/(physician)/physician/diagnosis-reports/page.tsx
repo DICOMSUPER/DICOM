@@ -3,13 +3,13 @@ import { DiagnosisReportFiltersSection } from "@/components/physician/diagnosis-
 import { DiagnosisReportTable } from "@/components/physician/diagnosis-report/diagnosis-report-table";
 import { ModalDiagnosisReportDetail } from "@/components/physician/diagnosis-report/modal-diagnosis-report-detail";
 import Pagination from "@/components/common/PaginationV1";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { FilterDiagnosesReport } from "@/common/interfaces/patient/diagnosis-report.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
 import { useGetDiagnosisReportWithFilterQuery, useGetDiagnosisStatsQuery } from "@/store/diagnosisApi";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
-import { prepareApiFilters } from "@/utils/filter-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { DiagnosisReportStatsCards } from "@/components/physician/diagnosis-report/diagnosis-report-stats";

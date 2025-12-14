@@ -1,7 +1,7 @@
 import {
   EncounterPriorityLevel,
   EncounterStatus,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import {
   ApiResponse,
   CreatePatientDto,
@@ -11,8 +11,8 @@ import {
   PatientSearchFilters,
   PatientStats,
   UpdatePatientDto,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export interface IRepositoryPagination {

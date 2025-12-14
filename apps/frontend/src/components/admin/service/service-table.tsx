@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Stethoscope } from 'lucide-react';
-import { Services } from '@/interfaces/user/service.interface';
+import { Services } from '@/common/interfaces/user/service.interface';
 import { DataTable, SortConfig } from '@/components/ui/data-table';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { formatDateTime } from '@/utils/format-status';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface ServiceTableProps {
   serviceItems: Services[];

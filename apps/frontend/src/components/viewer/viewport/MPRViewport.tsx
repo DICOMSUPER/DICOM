@@ -11,10 +11,10 @@ import { init as csRenderInit } from "@cornerstonejs/core";
 import { init as csToolsInit } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { viewportSyncService } from "@/services/ViewportSyncService";
-import type { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { smartSort, extractSortingMetadata } from "@/utils/dicom/sortInstances";
+import type { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { smartSort, extractSortingMetadata } from "@/common/utils/dicom/sortInstances";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
-import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
+import { resolveDicomImageUrl } from "@/common/utils/dicom/resolveDicomImageUrl";
 
 interface MPRViewportProps {
   selectedSeries?: any;

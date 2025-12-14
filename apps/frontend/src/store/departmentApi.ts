@@ -1,9 +1,9 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { Department } from "@/interfaces/user/department.interface";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
-import { mapApiResponse } from "@/utils/adpater";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
+import { mapApiResponse } from "@/common/utils/adpater";
+import { PaginatedResponse, QueryParams } from "@/common/interfaces/pagination/pagination.interface";
 
 export interface DepartmentQueryParams extends QueryParams {
   includeInactive?: boolean;

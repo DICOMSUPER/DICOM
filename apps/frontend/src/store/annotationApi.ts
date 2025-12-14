@@ -1,8 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
 
 type CreateAnnotationPayload = {
   instanceId: string;

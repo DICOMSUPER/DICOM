@@ -11,8 +11,8 @@ import {
   Activity,
   Droplets
 } from 'lucide-react';
-import { VitalSignsCollection } from '@/interfaces/patient/patient-workflow.interface';
-import { formatStatus } from '@/utils/format-status';
+import { VitalSignsCollection } from '@/common/interfaces/patient/patient-workflow.interface';
+import { formatStatus } from '@/common/utils/format-status';
 
 interface VitalSignsDisplayProps {
   vitalSigns: VitalSignsCollection;

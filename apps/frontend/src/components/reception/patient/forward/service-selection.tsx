@@ -2,9 +2,9 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import React from "react";
 import Select from "react-select";
-import { Services } from "@/interfaces/user/service.interface";
-import { Department } from "@/interfaces/user/department.interface";
-import { Room } from "@/interfaces/user/room.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 
 export default function ServiceSelection({
   selectedDepartment,

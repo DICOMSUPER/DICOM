@@ -1,20 +1,20 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { Room } from "@/interfaces/user/room.interface";
-import { CreateRoomDto } from "@/interfaces/user/room.interface";
-import { UpdateRoomDto } from "@/interfaces/user/room.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { CreateRoomDto } from "@/common/interfaces/user/room.interface";
+import { UpdateRoomDto } from "@/common/interfaces/user/room.interface";
 import {
   PaginatedResponse,
   QueryParams,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 export interface RoomQueryParams extends QueryParams {
   includeInactive?: boolean;
   includeDeleted?: boolean;
 }
-import { mapApiResponse } from "@/utils/adpater";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { Roles } from "@/enums/user.enum";
+import { mapApiResponse } from "@/common/utils/adpater";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { Roles } from "@/common/enums/user.enum";
 
 export interface RoomSearchFilters {
   type?: string;

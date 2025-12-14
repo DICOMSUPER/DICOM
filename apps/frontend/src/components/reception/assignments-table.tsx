@@ -6,8 +6,8 @@ import { PriorityBadge } from "@/components/ui/priority-badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
-import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/enums/priority.enum";
-import { getEncounterStatusBadge } from "@/utils/status-badge";
+import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/common/enums/priority.enum";
+import { getEncounterStatusBadge } from "@/common/utils/status-badge";
 
 interface Assignment {
   id: string;

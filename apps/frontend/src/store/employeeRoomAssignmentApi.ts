@@ -1,11 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
   FilterEmployeeRoomAssignment,
   EmployeeRoomAssignment,
   EmployeeRoomAssignmentStats,
-} from "@/interfaces/user/employee-room-assignment.interface";
+} from "@/common/interfaces/user/employee-room-assignment.interface";
 
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",

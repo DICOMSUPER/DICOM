@@ -20,16 +20,16 @@ import {
   Loader2,
   Inbox,
 } from "lucide-react";
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import { useGetAllServiceRoomsQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
-import { EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
+import { EncounterPriorityLevel } from "@/common/enums/patient-workflow.enum";
 import {
   getPriorityColor,
   getStatusBadgeClass,
   getEncounterTypeBadgeClass,
-} from "@/utils/patient/[id]/color";
-import { cn } from "@/lib/utils";
+} from "@/common/utils/patient/[id]/color";
+import { cn } from "@/common/lib/utils";
 
 interface EncounterListProps {
   encounters: PatientEncounter[];

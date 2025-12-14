@@ -10,12 +10,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, FileText, Image, ArrowRight, Inbox } from "lucide-react";
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
-import { EncounterStatus } from "@/enums/patient-workflow.enum";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
+import { EncounterStatus } from "@/common/enums/patient-workflow.enum";
 import { useRouter } from "next/navigation";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface PhysicianDashboardPreviewProps {
   encounters: PatientEncounter[];

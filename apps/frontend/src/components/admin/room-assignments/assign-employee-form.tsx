@@ -23,10 +23,10 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { RoomSchedule, Employee, Room, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { cn } from "@/lib/utils";
-import { formatRole } from "@/utils/role-formatter";
+import { RoomSchedule, Employee, Room, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { cn } from "@/common/lib/utils";
+import { formatRole } from "@/common/utils/role-formatter";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { StepIndicator } from "@/components/ui/step-indicator";
 
@@ -36,9 +36,9 @@ import { useGetRoomsQuery } from "@/store/roomsApi";
 import { useGetShiftTemplatesQuery, useCreateRoomScheduleMutation } from "@/store/scheduleApi";
 import { useCreateEmployeeRoomAssignmentMutation, useBulkCreateEmployeeRoomAssignmentsMutation } from "@/store/employeeRoomAssignmentApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import { extractApiData } from "@/utils/api";
-import { formatTimeRange } from "@/utils/schedule-helpers";
-import { formatStatus } from "@/utils/format-status";
+import { extractApiData } from "@/common/utils/api";
+import { formatTimeRange } from "@/common/utils/schedule-helpers";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface AssignEmployeeFormProps {
   initialScheduleId?: string;

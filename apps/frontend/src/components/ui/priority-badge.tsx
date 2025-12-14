@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 interface PriorityBadgeProps {
   priority: string;

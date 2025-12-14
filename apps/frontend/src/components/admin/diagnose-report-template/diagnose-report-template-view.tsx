@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Edit, Globe, Lock, FileText } from "lucide-react";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
+import { ReportTemplate } from "@/common/interfaces/patient/diagnosis-report-template.interface";
 import { format } from "date-fns";
 
 interface ReportTemplateViewModalProps {

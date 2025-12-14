@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 export interface Step {
   completed: boolean;

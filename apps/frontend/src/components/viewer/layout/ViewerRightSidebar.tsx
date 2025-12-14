@@ -4,14 +4,14 @@ import { FolderOpen, Loader2, Grid3X3, List, FileText, FolderTree, RefreshCw, Al
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
-import { useViewer } from '@/contexts/ViewerContext';
+import { DicomSeries } from '@/common/interfaces/image-dicom/dicom-series.interface';
+import { useViewer } from '@/common/contexts/ViewerContext';
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
 import { useCreateImageSegmentationLayerMutation, useDeleteImageSegmentationLayerMutation } from '@/store/imageSegmentationLayerApi';
 import { FolderItem } from './FolderItems';
 import AnnotationAccordion from '../sidebar/AnnotationAccordion';
 import SegmentationAccordion from '../sidebar/SegmentationAccordion';
-import { extractApiData } from '@/utils/api';
+import { extractApiData } from '@/common/utils/api';
 import { toast } from 'sonner';
 
 interface ViewerRightSidebarProps {

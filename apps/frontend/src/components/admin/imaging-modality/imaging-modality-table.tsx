@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Scan } from 'lucide-react';
-import { ImagingModality } from '@/interfaces/image-dicom/imaging_modality.interface';
+import { ImagingModality } from '@/common/interfaces/image-dicom/imaging_modality.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { formatDateTime } from '@/utils/format-status';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
+import { formatDateTime } from '@/common/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface ImagingModalityTableProps {

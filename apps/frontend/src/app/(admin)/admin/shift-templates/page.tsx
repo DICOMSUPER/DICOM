@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
 import {
   useGetShiftTemplatesQuery,
   useGetShiftTemplateStatsQuery,
@@ -20,10 +20,10 @@ import { ShiftTemplateDeleteModal } from '@/components/admin/shift-template/shif
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
+import { ShiftTemplate } from '@/common/interfaces/user/shift-template.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 interface ApiError {
   data?: {

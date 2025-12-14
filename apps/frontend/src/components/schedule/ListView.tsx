@@ -4,10 +4,10 @@ import { Clock, CalendarOff, MapPin, DoorOpen, CalendarClock, User } from "lucid
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { format } from "date-fns";
-import { formatRole } from "@/utils/role-formatter";
-import { formatStatus } from "@/utils/format-status";
+import { formatRole } from "@/common/utils/role-formatter";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface ListViewProps {
   schedules: RoomSchedule[];

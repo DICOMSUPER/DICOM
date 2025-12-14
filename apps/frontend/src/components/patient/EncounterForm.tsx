@@ -21,9 +21,9 @@ import {
   CreatePatientEncounterDto,
   UpdatePatientEncounterDto,
   VitalSignsCollection,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { EncounterType } from "@/enums/patient-workflow.enum";
-import { Roles } from "@/enums/user.enum";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { EncounterType } from "@/common/enums/patient-workflow.enum";
+import { Roles } from "@/common/enums/user.enum";
 import { VitalSignsForm } from "./VitalSignsForm";
 import type { RootState } from "@/store";
 import { useGetUserByIdQuery } from "@/store/userApi";

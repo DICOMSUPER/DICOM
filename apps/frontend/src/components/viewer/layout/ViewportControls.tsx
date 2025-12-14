@@ -1,5 +1,5 @@
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 
 interface ViewportControlsProps {
   isPlaying: boolean;

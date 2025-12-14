@@ -3,13 +3,13 @@
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Building2, CalendarClock } from 'lucide-react';
-import { EmployeeRoomAssignment } from '@/interfaces/user/employee-room-assignment.interface';
+import { EmployeeRoomAssignment } from '@/common/interfaces/user/employee-room-assignment.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { ClipboardList } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatRole } from '@/utils/role-formatter';
+import { formatRole } from '@/common/utils/role-formatter';
 import { SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface RoomAssignmentsTableProps {
   assignments: EmployeeRoomAssignment[];

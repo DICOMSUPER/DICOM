@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetUserByIdQuery } from '@/store/userApi';
-import { formatRole } from '@/utils/role-formatter';
-import { cn } from '@/lib/utils';
+import { formatRole } from '@/common/utils/role-formatter';
+import { cn } from '@/common/lib/utils';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { format } from 'date-fns';
 

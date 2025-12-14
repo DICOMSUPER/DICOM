@@ -1,14 +1,14 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
 import {
   CreateImagingOrderDto,
   ImagingOrder,
   QueueInfo,
   UpdateImagingOrderDto,
-} from "@/interfaces/image-dicom/imaging-order.interface";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+} from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 
 export interface RoomFilter {
   id: string;

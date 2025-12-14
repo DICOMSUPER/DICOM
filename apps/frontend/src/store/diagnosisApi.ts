@@ -4,11 +4,11 @@ import {
   CreateDiagnosisReportDto,
   UpdateDiagnosisReportDto,
   DiagnosisSearchFilters,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
-import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
+import { FilterDiagnosesReport } from "@/common/interfaces/patient/diagnosis-report.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 
 export const diagnosisApi = createApi({
   reducerPath: "diagnosisApi",

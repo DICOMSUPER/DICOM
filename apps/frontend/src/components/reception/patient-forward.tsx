@@ -9,22 +9,22 @@ import {
 import {
   EncounterType,
   EncounterPriorityLevel,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import { useCreatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
 import { Stethoscope } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import { Department } from "@/interfaces/user/department.interface";
+import { Department } from "@/common/interfaces/user/department.interface";
 import { useGetRoomsByDepartmentAndServiceQuery } from "@/store/roomsApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 import { useGetActiveServicesByDepartmentIdQuery } from "@/store/serviceApi";
-import { Services } from "@/interfaces/user/service.interface";
-import { Room } from "@/interfaces/user/room.interface";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
 import { StepIndicator } from "@/components/ui/step-indicator";
 import ServiceSelection from "./patient/forward/service-selection";
 import RoomSelection from "./patient/forward/room-selection";

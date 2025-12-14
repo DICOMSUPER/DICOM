@@ -14,14 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
 import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "@/utils/time-segment-utils";
+} from "@/common/utils/time-segment-utils";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface RoomViewProps {
   selectedDate: Date;

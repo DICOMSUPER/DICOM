@@ -1,4 +1,4 @@
-import { BreadcrumbItem } from "@/types/BreadcrumbItem.type";
+import { BreadcrumbItem } from "@/common/types/BreadcrumbItem.type";
 import React from "react";
 
 export default function SmallBreadCrumb({ list }: { list: BreadcrumbItem[] }) {

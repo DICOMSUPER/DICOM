@@ -32,7 +32,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PatientListProps, Patient, PatientViewMode, PatientSortBy } from '@/interfaces/patient/patient-workflow.interface';
+import { PatientListProps, Patient, PatientViewMode, PatientSortBy } from '@/common/interfaces/patient/patient-workflow.interface';
 import { format } from 'date-fns';
 import PatientCard from './PatientCard';
 

@@ -33,13 +33,13 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Room } from '@/interfaces/user/room.interface';
-import { RoomStatus, RoomType } from '@/enums/room.enum';
+import { Room } from '@/common/interfaces/user/room.interface';
+import { RoomStatus, RoomType } from '@/common/enums/room.enum';
 import { useCreateRoomMutation, useUpdateRoomMutation } from '@/store/roomsApi';
 import { useGetDepartmentsQuery } from '@/store/departmentApi';
-import { Department } from '@/interfaces/user/department.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 import { Building2, MapPin, FileText, Settings, Tv, Wind, Wifi, Phone, DoorOpen, Accessibility, Heart, Bell } from 'lucide-react';
-import { formatStatus, modalStyles } from '@/utils/format-status';
+import { formatStatus, modalStyles } from '@/common/utils/format-status';
 
 interface RoomFormModalProps {
   room: Room | null;

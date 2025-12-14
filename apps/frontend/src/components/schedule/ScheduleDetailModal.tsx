@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,17 +31,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { EditScheduleModal } from "@/components/admin/room-assignments/EditScheduleModal";
 import { DeleteScheduleModal } from "@/components/admin/room-assignments/DeleteScheduleModal";
 import { DeleteAssignmentModal } from "@/components/admin/room-assignments/DeleteAssignmentModal";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import { extractApiData } from "@/utils/api";
-import { formatTimeRange } from "@/utils/schedule-helpers";
+import { extractApiData } from "@/common/utils/api";
+import { formatTimeRange } from "@/common/utils/schedule-helpers";
 import { Monitor, Stethoscope, Loader2 } from "lucide-react";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
-import { formatStatus, modalStyles } from '@/utils/format-status';
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
+import { formatStatus, modalStyles } from '@/common/utils/format-status';
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;

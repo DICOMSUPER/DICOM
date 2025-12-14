@@ -9,13 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 import { Users, Clock, CalendarDays, DoorOpen, User, Building2, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { AssignmentWithMeta } from "./types";
-import { formatRole } from "@/utils/role-formatter";
+import { formatRole } from "@/common/utils/role-formatter";
 
 interface ScheduleAssignmentListProps {
   schedules: RoomSchedule[];

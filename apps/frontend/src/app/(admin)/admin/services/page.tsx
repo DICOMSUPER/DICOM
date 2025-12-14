@@ -12,12 +12,12 @@ import { Pagination } from "@/components/common/PaginationV1";
 import {
   PaginatedQuery,
   PaginationMeta,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 import {
   CreateServiceDto,
   UpdateServiceDto,
   Services,
-} from "@/interfaces/user/service.interface";
+} from "@/common/interfaces/user/service.interface";
 import {
   useCreateServiceMutation,
   useDeleteServiceMutation,
@@ -29,9 +29,9 @@ import { Plus } from "lucide-react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import { getBooleanStatusBadge } from "@/utils/status-badge";
+import { getBooleanStatusBadge } from "@/common/utils/status-badge";
 import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 export default function ServicePage() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ 

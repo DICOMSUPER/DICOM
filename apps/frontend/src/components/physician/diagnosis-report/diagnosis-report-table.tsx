@@ -6,11 +6,11 @@ import { DataTable, SortConfig } from "@/components/ui/data-table";
 import {
   DiagnosisStatus,
   EncounterPriorityLevel
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import {
   DiagnosisReport
-} from "@/interfaces/patient/patient-workflow.interface";
-import { formatDateTime } from "@/utils/format-status";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { formatDateTime } from "@/common/utils/format-status";
 import {
   CheckCircle2,
   Eye,

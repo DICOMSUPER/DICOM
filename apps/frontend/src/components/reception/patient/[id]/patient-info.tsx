@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
 import { Calendar, FileText, Heart, MapPin, Phone, User } from "lucide-react";
 import React from "react";
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDate } from "@/common/lib/formatTimeDate";
 
 // Format gender for display
 const formatGender = (gender: string | null | undefined): string => {

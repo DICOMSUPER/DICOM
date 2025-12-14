@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Power, Users, Mail, Phone } from 'lucide-react';
-import { User } from '@/interfaces/user/user.interface';
+import { User } from '@/common/interfaces/user/user.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface UserTableProps {
   users: User[];

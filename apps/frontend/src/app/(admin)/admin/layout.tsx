@@ -2,7 +2,7 @@
 
 import { SidebarNav } from "@/components/sidebar-nav";
 import { WorkspaceLayout } from "@/components/workspace-layout";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationProvider } from "@/common/contexts/NotificationContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode;

@@ -14,9 +14,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { formatStatus, formatDateTime } from "@/utils/format-status";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { formatStatus, formatDateTime } from "@/common/utils/format-status";
 
 interface DicomStudyTableProps {
   dicomStudies: DicomStudy[];

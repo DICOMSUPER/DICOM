@@ -1,6 +1,6 @@
 "use client";
 
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,9 +29,9 @@ import {
   getEncounterTypeColor,
   getEncounterTypeLabel,
   getPriorityColor,
-} from "@/utils/patient/[id]/color";
-import { getEncounterStatusBadge } from "@/utils/status-badge";
-import { formatStatus, modalStyles } from "@/utils/format-status";
+} from "@/common/utils/patient/[id]/color";
+import { getEncounterStatusBadge } from "@/common/utils/status-badge";
+import { formatStatus, modalStyles } from "@/common/utils/format-status";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 

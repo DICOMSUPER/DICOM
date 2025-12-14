@@ -4,11 +4,11 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Edit, Trash2, Activity } from "lucide-react";
-import { AiAnalysis } from "@/interfaces/system/ai-analysis.interface";
+import { AiAnalysis } from "@/common/interfaces/system/ai-analysis.interface";
 import { DataTable } from "@/components/ui/data-table";
-import { formatDateTime } from "@/utils/format-status";
+import { formatDateTime } from "@/common/utils/format-status";
 import { SortConfig } from "@/components/ui/data-table";
-import { AnalysisStatus } from "@/enums/image-dicom.enum";
+import { AnalysisStatus } from "@/common/enums/image-dicom.enum";
 
 interface AiAnalysisTableProps {
   aiAnalyses: AiAnalysis[];

@@ -2,8 +2,8 @@ import { CheckCircle, AlertCircle, Users } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import React from "react";
-import { Services } from "@/interfaces/user/service.interface";
-import { Room } from "@/interfaces/user/room.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 
 export default function RoomSelection({
   selectedService,

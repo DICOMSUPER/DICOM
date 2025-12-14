@@ -14,9 +14,9 @@ import {
   EncounterPriorityLevel,
   EncounterStatus,
   EncounterType,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import DatePickerDropdown from "../radiologist/date-picker";
-import { Services } from "@/interfaces/user/service.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
 
 const defaultPriorityOptions: EncounterPriorityLevel[] = [
   ...Object.values(EncounterPriorityLevel),

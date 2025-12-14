@@ -1,11 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import {
   FilterNotificationDto,
   Notification,
-} from "@/interfaces/system/notification.interface";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/system/notification.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
 
 export const notificationApi = createApi({
   reducerPath: "notificationApi",

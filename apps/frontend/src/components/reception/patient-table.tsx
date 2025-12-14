@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
-import { getBooleanStatusBadge } from "@/utils/status-badge";
+import { getBooleanStatusBadge } from "@/common/utils/status-badge";
 import { Eye, Edit, Trash2 } from "lucide-react";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDateTime } from '@/utils/format-status';
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
+import { formatDateTime } from '@/common/utils/format-status';
 import { SortConfig } from "@/components/ui/data-table";
 
 interface PatientTableProps {

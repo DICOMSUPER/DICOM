@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Department } from '@/interfaces/user/department.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 import { useCreateDepartmentMutation, useUpdateDepartmentMutation } from '@/store/departmentApi';
 import { useGetRoomsQuery, useUpdateRoomMutation } from '@/store/roomsApi';
 import { Building } from 'lucide-react';

@@ -20,10 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
 import { useUpdateRoomScheduleMutation, useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { useGetShiftTemplatesQuery } from "@/store/scheduleApi";
-import { extractApiData } from "@/utils/api";
+import { extractApiData } from "@/common/utils/api";
 
 interface EditScheduleModalProps {
   schedule: RoomSchedule | null;

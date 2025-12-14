@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/common/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import {
   useCreateReportTemplateMutation,
@@ -33,7 +33,7 @@ import { useGetBodyPartsPaginatedQuery } from "@/store/bodyPartApi";
 import {
   ReportTemplate,
   CreateReportTemplateDto,
-} from "@/interfaces/patient/diagnosis-report-template.interface";
+} from "@/common/interfaces/patient/diagnosis-report-template.interface";
 
 interface ReportTemplateFormModalProps {
   isOpen: boolean;

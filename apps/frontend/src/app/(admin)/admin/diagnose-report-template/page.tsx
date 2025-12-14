@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/common/hooks/use-toast";
 import { useGetReportTemplatesQuery } from "@/store/diagnosisReportTemplateApi";
 import ReportTemplateTable from "@/components/admin/diagnose-report-template/diagnose-report-template-table";
 import ReportTemplateFormModal from "@/components/admin/diagnose-report-template/diagnose-report-template-form-modal";
@@ -15,7 +15,7 @@ import ReportTemplateViewModal from "@/components/admin/diagnose-report-template
 import ReportTemplateDeleteModal from "@/components/admin/diagnose-report-template/diagnose-report-template-delete";
 import ReportTemplateFilters from "@/components/admin/diagnose-report-template/diagnose-report-template-filters";
 import ReportTemplateStatsCards from "@/components/admin/diagnose-report-template/diagnose-report-template-stats-cards";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
+import { ReportTemplate } from "@/common/interfaces/patient/diagnosis-report-template.interface";
 
 export default function DiagnosisReportTemplatesPage() {
   const { toast } = useToast();

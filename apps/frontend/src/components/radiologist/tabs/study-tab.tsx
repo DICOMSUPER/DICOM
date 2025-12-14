@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import SidebarTab from "@/components/radiologist/patientDetailTab/SideBarTab";
 import MedicalRecordMain from "@/components/radiologist/patientDetailTab/MainDetail";
-import { usePatientService } from "@/hooks/usePatientService";
+import { usePatientService } from "@/common/hooks/usePatientService";
 import { useGetImagingOrdersByPatientIdQuery } from "@/store/imagingOrderApi";
 import { useGetDiagnoseByStudyIdQuery } from "@/store/diagnosisApi";
 

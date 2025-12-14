@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { useNotifications } from "@/common/contexts/NotificationContext";
 import { NotificationItem } from "./NotificationItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,10 @@ import {
 import { CheckCheck, Search, Bell } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { NotificationType, NotificationPriority } from "@/enums/notification.enum";
-import { getNotificationTypeConfig, getNotificationPriorityConfig } from "@/utils/notification-utils";
+import { NotificationType, NotificationPriority } from "@/common/enums/notification.enum";
+import { getNotificationTypeConfig, getNotificationPriorityConfig } from "@/common/utils/notification-utils";
 import { useGetNotificationsByUserQuery } from "@/store/notificationApi";
-import { FilterNotificationDto } from "@/interfaces/system/notification.interface";
+import { FilterNotificationDto } from "@/common/interfaces/system/notification.interface";
 
 export function NotificationsPage() {
   const { unreadCount, markAsRead, markAllAsRead } = useNotifications();

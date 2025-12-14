@@ -20,15 +20,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { Notification } from "@/interfaces/system/notification.interface";
-import { RelatedEntityType } from "@/enums/notification.enum";
+import { cn } from "@/common/lib/utils";
+import { Notification } from "@/common/interfaces/system/notification.interface";
+import { RelatedEntityType } from "@/common/enums/notification.enum";
 import { useRouter } from "next/navigation";
 import {
   getNotificationIcon,
   getNotificationTypeBadge,
   getNotificationPriorityBadge,
-} from "@/utils/notification-utils";
+} from "@/common/utils/notification-utils";
 
 interface NotificationDetailModalProps {
   notification: Notification | null;

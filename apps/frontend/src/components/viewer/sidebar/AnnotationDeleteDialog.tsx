@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
 import { Tag } from "lucide-react";
 
 interface AnnotationDeleteDialogProps {

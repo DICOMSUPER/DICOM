@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 // ====================== ROLE MAPPING ======================
 const ROLE_ROUTES: Record<Roles, RegExp[]> = {

@@ -1,12 +1,12 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { BodyPart } from "@/interfaces/imaging/body-part.interface";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
-import { mapApiResponse } from "@/utils/adpater";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
+import { mapApiResponse } from "@/common/utils/adpater";
 import {
   PaginatedResponse,
   QueryParams,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 export interface CreateBodyPartDto {
   name: string;

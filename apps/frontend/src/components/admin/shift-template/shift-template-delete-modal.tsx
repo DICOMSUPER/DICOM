@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
+import { ShiftTemplate } from '@/common/interfaces/user/shift-template.interface';
 
 interface ShiftTemplateDeleteModalProps {
   template: ShiftTemplate | null;

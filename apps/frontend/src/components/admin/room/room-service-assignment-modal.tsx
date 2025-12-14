@@ -16,12 +16,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Room } from '@/interfaces/user/room.interface';
+import { Room } from '@/common/interfaces/user/room.interface';
 import { useCreateServiceRoomMutation, useDeleteServiceRoomMutation } from '@/store/serviceRoomApi';
 import { useGetServicesQuery } from '@/store/serviceApi';
 import { useGetServicesByRoomQuery } from '@/store/serviceRoomApi';
-import { Services } from '@/interfaces/user/service.interface';
-import { ServiceRoom } from '@/interfaces/user/service-room.interface';
+import { Services } from '@/common/interfaces/user/service.interface';
+import { ServiceRoom } from '@/common/interfaces/user/service-room.interface';
 import { Stethoscope, X } from 'lucide-react';
 
 interface RoomServiceAssignmentModalProps {

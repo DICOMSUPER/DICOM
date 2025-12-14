@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
-import { ShiftType } from "@/enums/schedule.enum";
+import { ShiftType } from "@/common/enums/schedule.enum";
 
 interface ShiftTemplateFiltersProps {
   searchTerm: string;

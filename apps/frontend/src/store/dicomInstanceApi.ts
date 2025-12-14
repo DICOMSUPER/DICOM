@@ -1,9 +1,9 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
-import { CommonQueryParams } from "@/utils/queryString";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
+import { CommonQueryParams } from "@/common/utils/queryString";
 
 export type InstanceReferenceType = "sopInstanceUid" | "series";
 

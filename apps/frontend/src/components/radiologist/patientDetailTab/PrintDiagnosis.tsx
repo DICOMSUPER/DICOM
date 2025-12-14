@@ -1,7 +1,7 @@
 "use client";
 
 import React, { forwardRef } from "react";
-import { DiagnosisType, Severity } from "@/interfaces/patient/patient-workflow.interface";
+import { DiagnosisType, Severity } from "@/common/interfaces/patient/patient-workflow.interface";
 
 interface PrintDiagnosisProps {
     diagnosis: {

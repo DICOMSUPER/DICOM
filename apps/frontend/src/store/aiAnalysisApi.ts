@@ -1,15 +1,15 @@
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
     PaginatedResponse
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 import {
     AiAnalysis,
     CreateAiAnalysisDto,
     FilterAiAnalysisDto,
     SubmitFeedbackDto,
-} from "@/interfaces/system/ai-analysis.interface";
-import { AiResultDiagnosis } from "@/interfaces/system/ai-result.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/system/ai-analysis.interface";
+import { AiResultDiagnosis } from "@/common/interfaces/system/ai-result.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export const aiAnalysisApi = createApi({

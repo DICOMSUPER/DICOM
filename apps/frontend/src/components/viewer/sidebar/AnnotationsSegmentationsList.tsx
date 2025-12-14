@@ -11,9 +11,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { SegmentationSnapshot } from "@/contexts/viewer-context/segmentation-helper";
-import { AnnotationStatus, AnnotationType } from "@/enums/image-dicom.enum";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { SegmentationSnapshot } from "@/common/contexts/viewer-context/segmentation-helper";
+import { AnnotationStatus, AnnotationType } from "@/common/enums/image-dicom.enum";
 import { FileText, Layers, Calendar, Tag, Palette, Circle, Lock } from "lucide-react";
 
 interface AnnotationsSegmentationsListProps {

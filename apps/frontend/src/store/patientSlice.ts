@@ -10,7 +10,7 @@ import {
   PatientViewMode,
   PatientSortBy,
   PatientWorkflowStep
-} from '@/interfaces/patient/patient-workflow.interface';
+} from '@/common/interfaces/patient/patient-workflow.interface';
 
 interface PatientState {
   list: PatientListState;

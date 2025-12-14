@@ -1,6 +1,6 @@
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
 import { useRouter } from "next/navigation";
 import React from "react";
 

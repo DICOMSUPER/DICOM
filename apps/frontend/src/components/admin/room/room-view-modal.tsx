@@ -12,8 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Room } from "@/interfaces/user/room.interface";
-import { RoomStatus } from "@/enums/room.enum";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { RoomStatus } from "@/common/enums/room.enum";
 import {
   Check,
   X,
@@ -36,10 +36,10 @@ import {
   Bell,
 } from "lucide-react";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import { extractApiData } from "@/utils/api";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
-import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
+import { extractApiData } from "@/common/utils/api";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
 
 interface RoomViewModalProps {
   room: (Room & {

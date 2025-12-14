@@ -5,7 +5,7 @@ import { WorkspaceLayout } from "@/components/workspace-layout";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { useState } from "react";
 import { useCreatePatientMutation } from "@/store/patientApi";
-import { CreatePatientDto } from "@/interfaces/patient/patient-workflow.interface";
+import { CreatePatientDto } from "@/common/interfaces/patient/patient-workflow.interface";
 // no need to import enums here; the form provides values
 import { useRouter } from "next/navigation";
 import PatientForm from "@/components/patient/PatientForm";

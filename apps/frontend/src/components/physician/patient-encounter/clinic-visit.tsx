@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/formatTimeDate";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import {
   EyeClosed,
   Plus,
@@ -26,15 +26,15 @@ import { useRouter } from "next/navigation";
 import {
   PatientEncounter,
   VitalSignsSimplified,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
 import { VisitInformationForm } from "./visit-information-form";
-import { VisitInformationFormValues } from "@/lib/validation/visit-information-form";
+import { VisitInformationFormValues } from "@/common/lib/validation/visit-information-form";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface ClinicVisitProps {
   detail: PatientEncounter;

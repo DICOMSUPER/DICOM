@@ -3,10 +3,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Stethoscope } from 'lucide-react';
-import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interface';
+import { PatientEncounter } from '@/common/interfaces/patient/patient-workflow.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { getEncounterStatusBadge, getEncounterTypeBadge, getEncounterPriorityBadge } from '@/utils/status-badge';
-import { formatDateTime } from '@/utils/format-status';
+import { getEncounterStatusBadge, getEncounterTypeBadge, getEncounterPriorityBadge } from '@/common/utils/status-badge';
+import { formatDateTime } from '@/common/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface EncounterTableProps {

@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import type { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
+import type { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 import {
   Beaker,
   Calendar,

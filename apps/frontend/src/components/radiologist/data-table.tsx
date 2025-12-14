@@ -4,12 +4,12 @@ import StudyTab from "./tabs/study-tab";
 import { useTabs } from "./tabs/tab-context";
 import {
   DicomStudy,
-} from "@/interfaces/image-dicom/dicom-study.interface";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { DiagnosisStatus } from "@/enums/patient-workflow.enum";
+} from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
 import { Suspense } from "react";
 import { AlertCircle } from "lucide-react";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth: string): number => {

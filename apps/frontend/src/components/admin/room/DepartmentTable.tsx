@@ -3,11 +3,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2, Phone, Mail } from 'lucide-react';
-import { Department } from '@/interfaces/user/department.interface';
+import { Department } from '@/common/interfaces/user/department.interface';
 import { DataTable } from '@/components/ui/data-table';
 import { SortConfig } from '@/components/ui/data-table';
-import { formatRole } from '@/utils/role-formatter';
-import { formatDateTime } from '@/utils/format-status';
+import { formatRole } from '@/common/utils/role-formatter';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface DepartmentTableProps {
   departments: Department[];

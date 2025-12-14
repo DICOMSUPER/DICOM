@@ -6,14 +6,14 @@ import OrderInfo from "./order-info";
 import Loading from "@/components/common/Loading";
 import UploadedStudies from "./upload-studies";
 import FileUpload from "./file-upload";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import { useGetImagingOrderByIdQuery } from "@/store/imagingOrderApi";
 import {
   useUpdateDicomStudyMutation,
   useUseGetDicomStudyByReferenceIdQuery,
 } from "@/store/dicomStudyApi";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import { useGetDicomSeriesByReferenceQuery } from "@/store/dicomSeriesApi";
 import { useGetCurrentEmployeeRoomAssignmentQuery } from "@/store/employeeRoomAssignmentApi";
 import { useSelector } from "react-redux";
@@ -29,7 +29,7 @@ import { useGetUserByIdQuery } from "@/store/userApi";
 import PatientInfo from "./patient-info";
 import PhysicianInfo from "./physician-info";
 import ProcedureInfo from "./procedure-info";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 import SignatureModal from "./signature-modal";
 import SetupSignatureModal from "./setup-signature-modal";
 import { useTechnicianVerifyStudyMutation } from "@/store/dicomStudySignatureApi";

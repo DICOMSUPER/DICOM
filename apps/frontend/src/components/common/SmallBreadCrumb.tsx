@@ -1,4 +1,4 @@
-import { BreadcrumbItem } from "@/types/BreadcrumbItem.type";
+import { BreadcrumbItem } from "@/common/types/BreadcrumbItem.type";
 import { Link } from "lucide-react";
 import React from "react";
 

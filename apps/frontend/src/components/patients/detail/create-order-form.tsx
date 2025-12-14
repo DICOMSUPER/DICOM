@@ -12,9 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Department } from "@/interfaces/user/department.interface";
-import { Room } from "@/interfaces/user/room.interface";
-import { calculateAge } from "@/lib/formatTimeDate";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { calculateAge } from "@/common/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import {
@@ -33,9 +33,9 @@ import { useEffect, useState } from "react";
 
 import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
 import { ProcedureForm } from "@/components/physician/imaging/procedure-form";
-import { ICreateImagingOrderForm } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { CreateImagingOrderDto } from "@/interfaces/image-dicom/imaging-order.interface";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
+import { ICreateImagingOrderForm } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
+import { CreateImagingOrderDto } from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
 import { useCreateImagingOrderFormMutation } from "@/store/imagingOrderFormApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import {
@@ -43,7 +43,7 @@ import {
   useGetUserByIdQuery,
 } from "@/store/userApi";
 import { toast } from "sonner";
-import { handleEncrypt } from "@/utils/encryption";
+import { handleEncrypt } from "@/common/utils/encryption";
 import { useRouter } from "next/navigation";
 export interface ImagingProcedure {
   id: string;

@@ -20,7 +20,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useTransferPatientEncounterMutation, useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
-import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { EmployeeRoomAssignment } from "@/common/interfaces/user/employee-room-assignment.interface";
 
 interface ModalTransferPhysicianProps {
   open: boolean;

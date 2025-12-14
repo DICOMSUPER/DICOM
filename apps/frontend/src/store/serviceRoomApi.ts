@@ -1,12 +1,12 @@
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   CreateServiceRoomDto,
   FilterServiceRoomDto,
   ServiceRoom,
   UpdateServiceRoomDto,
-} from "@/interfaces/user/service-room.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/user/service-room.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 export interface ServiceRoomStats {

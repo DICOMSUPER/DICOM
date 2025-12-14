@@ -5,15 +5,15 @@ import { StudyStatsCards } from "@/components/physician/study/study-stats-cards"
 import { DicomStudyTable } from "@/components/physician/study/study-table";
 import { SortConfig } from "@/components/ui/data-table";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { DicomStudyFilters } from "@/interfaces/image-dicom/dicom-study.interface";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { DicomStudyFilters } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   useGetDicomStudiesFilteredWithPaginationQuery,
   useGetStatsInDateRangeQuery,
 } from "@/store/dicomStudyApi";
-import { prepareApiFilters } from "@/utils/filter-utils";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 

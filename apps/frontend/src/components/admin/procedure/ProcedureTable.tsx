@@ -3,9 +3,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Building2 } from 'lucide-react';
-import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
+import { RequestProcedure } from '@/common/interfaces/image-dicom/request-procedure.interface';
 import { DataTable, SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
+import { formatDateTime } from '@/common/utils/format-status';
 
 interface RequestProcedureTableProps {
   procedures: RequestProcedure[];

@@ -19,12 +19,12 @@ import {
   PatientFormProps,
   CreatePatientDto,
   UpdatePatientDto,
-} from "@/interfaces/patient/patient-workflow.interface";
-import { Gender, BloodType } from "@/enums/patient-workflow.enum";
+} from "@/common/interfaces/patient/patient-workflow.interface";
+import { Gender, BloodType } from "@/common/enums/patient-workflow.enum";
 import {
   formatInsuranceNumber,
   validateInsuranceNumber,
-} from "@/lib/validation/patient-form";
+} from "@/common/lib/validation/patient-form";
 
 const PatientForm: React.FC<PatientFormProps> = ({
   patient,

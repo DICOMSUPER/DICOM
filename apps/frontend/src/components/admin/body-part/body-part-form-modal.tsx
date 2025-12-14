@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { BodyPart } from '@/interfaces/imaging/body-part.interface';
+import { BodyPart } from '@/common/interfaces/imaging/body-part.interface';
 import { useCreateBodyPartMutation, useUpdateBodyPartMutation } from '@/store/bodyPartApi';
 import { Activity } from 'lucide-react';
 

@@ -1,15 +1,15 @@
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 import {
   CreateModalityMachineDto,
   ModalityMachine,
   UpdateModalityMachineDto,
-} from "@/interfaces/image-dicom/modality-machine.interface";
+} from "@/common/interfaces/image-dicom/modality-machine.interface";
 import {
   PaginatedQuery,
   PaginatedResponse,
-} from "@/interfaces/pagination/pagination.interface";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 
 import { createApi } from "@reduxjs/toolkit/query/react";
 

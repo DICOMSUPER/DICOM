@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
-import { Roles } from "@/enums/user.enum";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
+import { Roles } from "@/common/enums/user.enum";
 import {
   Calendar,
   Tag,

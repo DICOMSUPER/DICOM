@@ -1,5 +1,5 @@
-import { MachineStatus } from "@/enums/machine-status.enum";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { useEffect, useState } from "react";
 // Helper function to format date
 const formatDateShort = (iso?: string | Date): string => {

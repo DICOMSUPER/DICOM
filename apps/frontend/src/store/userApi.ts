@@ -1,7 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { User } from "@/interfaces/user/user.interface";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { User } from "@/common/interfaces/user/user.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 
 export interface PaginatedResponse<T> {
   data: T[];

@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getPatientStatusBadge } from "@/utils/status-badge";
+import { getPatientStatusBadge } from "@/common/utils/status-badge";
 
 const patients = [
   {

@@ -3,7 +3,7 @@ import { CalendarX, RefreshCw, HelpCircle } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 export default function UserDontHaveRoomAssignment() {
   const router = useRouter();
 

@@ -3,7 +3,7 @@ import DicomImageLoader from "./DicomImageLoader";
 import Link from "next/link";
 import DicomThumbnail from "./DicomThumbnail";
 import { RenderingEngine } from "@cornerstonejs/core";
-import { resolveDicomImageUrl } from "@/utils/dicom/resolveDicomImageUrl";
+import { resolveDicomImageUrl } from "@/common/utils/dicom/resolveDicomImageUrl";
 
 export default function ViewerSideBar({
   isOpen,

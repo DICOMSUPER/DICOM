@@ -29,8 +29,8 @@ import {
   Lock,
   Loader2,
 } from "lucide-react";
-import { ReportTemplate } from "@/interfaces/patient/diagnosis-report-template.interface";
-import { formatDateTime } from "@/utils/format-status";
+import { ReportTemplate } from "@/common/interfaces/patient/diagnosis-report-template.interface";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface ReportTemplateTableProps {
   data: ReportTemplate[];

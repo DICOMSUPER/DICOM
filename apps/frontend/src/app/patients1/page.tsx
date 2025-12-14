@@ -6,8 +6,8 @@ import { PatientList } from "@/components/patients/patient-list";
 import { PatientFilters } from "@/components/patients/patient-filters";
 import { AppHeader } from "@/components/app-header";
 import { useState } from "react";
-import { useLogout } from "@/hooks/use-logout";
-import { NotificationProvider } from "@/contexts/NotificationContext";
+import { useLogout } from "@/common/hooks/use-logout";
+import { NotificationProvider } from "@/common/contexts/NotificationContext";
 
 export default function PatientsPage() {
   const [notificationCount] = useState(3);

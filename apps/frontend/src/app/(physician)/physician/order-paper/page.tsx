@@ -2,10 +2,10 @@
 import React, { Suspense, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import SignatureDisplay from "@/components/common/signature-display";
-import { decryptPayload } from "@/utils/encryption";
+import { decryptPayload } from "@/common/utils/encryption";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
-import { formatDateLocal } from "@/utils/schedule/utils";
-import { formatDateTime } from "@/lib/formatTimeDate";
+import { formatDateLocal } from "@/common/utils/schedule/utils";
+import { formatDateTime } from "@/common/lib/formatTimeDate";
 
 function OrderPaperContent() {
   const searchParams = useSearchParams();

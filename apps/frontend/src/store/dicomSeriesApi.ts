@@ -1,11 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import {
   PaginatedQuery,
   PaginatedResponse,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 export type SeriesReferenceType =
   | "study"

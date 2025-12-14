@@ -19,22 +19,22 @@ import {
   type Types,
   Enums as CoreEnums,
 } from "@cornerstonejs/core";
-import { AnnotationType } from "@/enums/image-dicom.enum";
-import viewportStateManager from "@/utils/viewportStateManager";
-import { ViewportStatus } from "@/types/viewport-state";
+import { AnnotationType } from "@/common/enums/image-dicom.enum";
+import viewportStateManager from "@/common/utils/viewportStateManager";
+import { ViewportStatus } from "@/common/types/viewport-state";
 import {
   useViewer,
   type AnnotationHistoryEntry,
-} from "@/contexts/ViewerContext";
+} from "@/common/contexts/ViewerContext";
 import {
   restoreSegmentationSnapshot,
   clearSegmentationData,
   type SegmentationHistoryEntry,
   type SegmentationSnapshot,
-} from "@/contexts/viewer-context/segmentation-helper";
+} from "@/common/contexts/viewer-context/segmentation-helper";
 import type { Annotation } from "@cornerstonejs/tools/types";
-import { batchedRender } from "@/utils/renderBatcher";
-import { extractMeasurementFromAnnotation, formatMeasurement } from "@/utils/dicom/extractCornerstoneMeasurement";
+import { batchedRender } from "@/common/utils/renderBatcher";
+import { extractMeasurementFromAnnotation, formatMeasurement } from "@/common/utils/dicom/extractCornerstoneMeasurement";
 // Import tool constants from separate file for better tree-shaking
 import {
   TOOL_MAPPINGS,
@@ -45,7 +45,7 @@ import {
   getNonCustomMappings,
   type ToolType,
 } from "./tool-constants";
-import { segmentationIdForViewport } from "@/contexts/viewer-context/segmentation-helper";
+import { segmentationIdForViewport } from "@/common/contexts/viewer-context/segmentation-helper";
 
 // Tool mappings and constants imported from separate file for better code splitting
 

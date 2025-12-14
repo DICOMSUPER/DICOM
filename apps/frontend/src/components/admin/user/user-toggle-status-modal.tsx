@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { User } from '@/interfaces/user/user.interface';
+import { User } from '@/common/interfaces/user/user.interface';
 
 interface UserToggleStatusModalProps {
   user: User | null;

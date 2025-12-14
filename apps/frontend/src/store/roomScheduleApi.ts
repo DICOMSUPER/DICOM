@@ -9,9 +9,9 @@ import {
   Employee,
   Room,
   ShiftTemplate,
-} from "@/interfaces/schedule/schedule.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+} from "@/common/interfaces/schedule/schedule.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 
 export const RoomScheduleApi = createApi({
   reducerPath: "RoomScheduleApi",

@@ -8,9 +8,9 @@ import {
   AccordionItem, 
   AccordionTrigger,
 } from "@/components/ui-next/Accordion";
-import { ImageAnnotation } from "@/interfaces/image-dicom/image-annotation.interface";
-import { AnnotationStatus } from "@/enums/image-dicom.enum";
-import { Roles } from "@/enums/user.enum";
+import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
+import { Roles } from "@/common/enums/user.enum";
 import { Database, FileEdit, Layers, RefreshCw } from "lucide-react";
 import {
   useLazyGetAnnotationsBySeriesIdQuery,
@@ -19,13 +19,13 @@ import {
   useDeleteAnnotationMutation,
 } from "@/store/annotationApi";
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
-import { extractApiData } from "@/utils/api";
-import type { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { useViewerEvents, ViewerEvents } from "@/contexts/ViewerEventContext";
+import { extractApiData } from "@/common/utils/api";
+import type { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { useViewerEvents, ViewerEvents } from "@/common/contexts/ViewerEventContext";
 import { annotation, Enums as ToolEnums } from "@cornerstonejs/tools";
 import { eventTarget, getRenderingEngine } from "@cornerstonejs/core";
 import type { Annotation } from "@cornerstonejs/tools/types";
-import { useViewer } from "@/contexts/ViewerContext";
+import { useViewer } from "@/common/contexts/ViewerContext";
 import { AnnotationCard } from "./AnnotationCard";
 import { AnnotationDeleteDialog } from "./AnnotationDeleteDialog";
 import { AnnotationStatusModal } from "../modals/AnnotationStatusModal";
@@ -35,7 +35,7 @@ import {
   parseColorCode,
   formatAnnotationType,
   formatDate,
-} from "@/utils/annotationUtils";
+} from "@/common/utils/annotationUtils";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { toast } from "sonner";

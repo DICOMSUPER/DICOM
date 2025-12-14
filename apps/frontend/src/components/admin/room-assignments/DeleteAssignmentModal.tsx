@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { useDeleteEmployeeRoomAssignmentMutation } from "@/store/employeeRoomAssignmentApi";
 
 interface DeleteAssignmentModalProps {

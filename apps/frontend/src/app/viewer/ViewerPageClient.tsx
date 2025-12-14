@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { ViewerProvider, useViewer } from "@/contexts/ViewerContext";
-import { ViewerEventProvider } from "@/contexts/ViewerEventContext";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { ViewerProvider, useViewer } from "@/common/contexts/ViewerContext";
+import { ViewerEventProvider } from "@/common/contexts/ViewerEventContext";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import ViewerHeader from "@/components/viewer/layout/ViewerHeader";
 import ViewerLeftSidebar from "@/components/viewer/layout/ViewerLeftSidebar";
 import ViewerRightSidebar from "@/components/viewer/layout/ViewerRightSidebar";
@@ -14,7 +14,7 @@ import ResizablePanel from "@/components/viewer/layout/ResizablePanel";
 import { DraftAnnotationsModal } from "@/components/viewer/modals/DraftAnnotationsModal";
 import { SeriesAnnotationsModal } from "@/components/viewer/modals/SeriesAnnotationsModal";
 import { useGetOneDicomStudyQuery } from "@/store/dicomStudyApi";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
 import { toast } from "sonner";
 
 function ViewerLoading() {
