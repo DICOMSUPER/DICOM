@@ -41,7 +41,7 @@ import { formatTimeRange } from "@/utils/schedule-helpers";
 import { Monitor, Stethoscope, Loader2 } from "lucide-react";
 import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/interfaces/user/service-room.interface";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus, modalStyles } from '@/utils/format-status';
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;
@@ -265,14 +265,14 @@ export function ScheduleDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
+      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">Schedule Details</DialogTitle>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>Schedule Details</DialogTitle>
         </DialogHeader>
 
         {/* Scrollable Content */}
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
           <div className="space-y-8 pr-4 pb-2">
             {hasMultipleSchedules && (
               <section className="rounded-2xl border border-dashed border-primary/30 bg-card/70 p-4 shadow-sm space-y-3">
@@ -677,14 +677,14 @@ export function ScheduleDetailModal({
         </ScrollArea>
 
         {/* Fixed Footer */}
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {isAdmin && (
             <>
               <Button
-                variant="destructive"
+                className={modalStyles.dangerButton}
                 onClick={() => setIsDeleteModalOpen(true)}
                 disabled={!isDateInAdvance}
                 title={!isDateInAdvance ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted." : undefined}

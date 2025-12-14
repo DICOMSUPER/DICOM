@@ -65,17 +65,17 @@ export function ImagingModalityViewModal({
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
+        <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
+          <DialogHeader className={modalStyles.dialogHeader}>
             <DialogTitle>
-              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-6 w-48 rounded-xl" />
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="flex-1 px-6">
-            <div className="space-y-4 py-6">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-6">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-64 w-full rounded-xl" />
             </div>
           </ScrollArea>
         </DialogContent>
@@ -89,103 +89,113 @@ export function ImagingModalityViewModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className="w-[70vw] max-w-[900px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             Imaging Modality Details
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 h-full px-6">
-          <div className="space-y-4 pr-4 pb-2">
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+        <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
+          <div className="space-y-6">
+            {/* Hero Section */}
+            <section className={modalStyles.heroSection}>
               <div className="flex flex-wrap items-start justify-between gap-6">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
-                    <Scan className="h-3.5 w-3.5" />
+                <div className="space-y-3">
+                  <div className={modalStyles.heroLabel}>
+                    <Scan className="h-3.5 w-3.5 inline mr-1" />
                     {modality.modalityCode || "N/A"}
                   </div>
                   <div>
-                    <p className="text-3xl font-semibold text-foreground leading-tight">
+                    <p className={modalStyles.heroTitle}>
                       {modality.modalityName || "—"}
                     </p>
                     {modality.description && (
-                      <p className="mt-3 text-sm text-foreground">
+                      <p className={modalStyles.heroSubtitle}>
                         {modality.description}
                       </p>
                     )}
                   </div>
                 </div>
-                <div className="space-y-4 text-right">
+                <div className="flex flex-col gap-2 items-end">
                   {getStatusBadge(modality.isActive)}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Scan className="h-5 w-5" />
-                Basic Information
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Scan className="h-4 w-4" />
-                    Modality Code
-                  </div>
-                  <p className="text-base font-semibold text-blue-600">
-                    {modality.modalityCode || "—"}
-                  </p>
+            {/* Quick Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={modalStyles.gridCard}>
+                <div className={modalStyles.gridCardLabel}>
+                  <Scan className={modalStyles.gridCardIcon} />
+                  Modality Code
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Scan className="h-4 w-4" />
-                    Modality Name
-                  </div>
-                  <p className="text-base font-semibold text-foreground">
-                    {modality.modalityName || "—"}
-                  </p>
-                </div>
-                {modality.description && (
-                  <div className="md:col-span-2 rounded-2xl bg-primary/10 p-4 shadow-sm ring-1 ring-border/10">
-                    <p className="text-sm font-medium text-foreground mb-2">
-                      Description
-                    </p>
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {modality.description}
-                    </p>
-                  </div>
-                )}
+                <p className={modalStyles.gridCardValue}>
+                  {modality.modalityCode || "—"}
+                </p>
               </div>
-            </section>
 
-            <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Calendar className="h-5 w-5" />
-                Timestamps
+              <div className={modalStyles.gridCard}>
+                <div className={modalStyles.gridCardLabel}>
+                  <Scan className={modalStyles.gridCardIcon} />
+                  Modality Name
+                </div>
+                <p className={modalStyles.gridCardValue}>
+                  {modality.modalityName || "—"}
+                </p>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Created At</p>
-                  <p className="text-base font-semibold text-foreground">
+            </div>
+
+            {/* Description Section */}
+            {modality.description && (
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Scan className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Description</h3>
+                </div>
+                <div className={modalStyles.infoCard}>
+                  <p className={modalStyles.infoCardValue}>{modality.description}</p>
+                </div>
+              </section>
+            )}
+
+            {/* Timestamps */}
+            <section className={modalStyles.section}>
+              <div className={modalStyles.sectionHeader}>
+                <div className={modalStyles.sectionIconContainer}>
+                  <Calendar className={modalStyles.sectionIcon} />
+                </div>
+                <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.infoCardLabel}>Created At</div>
+                  <p className={modalStyles.infoCardValue}>
                     {modality.createdAt ? formatDate(modality.createdAt) : "—"}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                  <p className="text-sm text-foreground">Updated At</p>
-                  <p className="text-base font-semibold text-foreground">
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.infoCardLabel}>Updated At</div>
+                  <p className={modalStyles.infoCardValue}>
                     {modality.updatedAt ? formatDate(modality.updatedAt) : "—"}
                   </p>
                 </div>
               </div>
             </section>
 
-            {modalityMachines.length > 0 ? (
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Activity className="h-5 w-5" />
-                  Modality Machines ({modalityMachines.length})
+            {/* Modality Machines */}
+            <section className={modalStyles.section}>
+              <div className={modalStyles.sectionHeader}>
+                <div className={modalStyles.sectionIconContainer}>
+                  <Activity className={modalStyles.sectionIcon} />
                 </div>
+                <h3 className={modalStyles.sectionTitle}>
+                  Modality Machines {modalityMachines.length > 0 && `(${modalityMachines.length})`}
+                </h3>
+              </div>
+              {modalityMachines.length > 0 ? (
                 <div className="grid gap-3 md:grid-cols-2">
                   {modalityMachines.map((machine: ModalityMachine) => {
                     const displayName =
@@ -198,29 +208,24 @@ export function ImagingModalityViewModal({
                     return (
                       <div
                         key={machine.id}
-                        className="rounded-xl bg-background/80 p-3 shadow-sm ring-1 ring-border/20 space-y-1"
+                        className={modalStyles.infoCard}
                       >
-                        <p className="text-sm font-semibold text-foreground">
+                        <p className={modalStyles.infoCardLarge}>
                           {displayName}
                         </p>
                         {machine.model && (
-                          <p className="text-xs text-foreground">
+                          <p className={modalStyles.infoCardValue}>
                             Model: {machine.model}
                           </p>
                         )}
                         {machine.manufacturer && (
-                          <p className="text-xs text-foreground">
+                          <p className={modalStyles.infoCardValue}>
                             Manufacturer: {machine.manufacturer}
                           </p>
                         )}
                         {machine.serialNumber && (
-                          <p className="text-xs text-foreground">
+                          <p className={modalStyles.infoCardValue}>
                             Serial: {machine.serialNumber}
-                          </p>
-                        )}
-                        {machine.roomId && (
-                          <p className="text-xs text-foreground">
-                            Room ID: {machine.roomId}
                           </p>
                         )}
                         {machine.status && getMachineStatusBadge(machine.status)}
@@ -228,27 +233,21 @@ export function ImagingModalityViewModal({
                     );
                   })}
                 </div>
-              </section>
-            ) : (
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <Activity className="h-5 w-5" />
-                  Modality Machines
-                </div>
-                <p className="text-sm text-foreground/70 italic">
+              ) : (
+                <p className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-4">
                   No modality machines assigned to this imaging modality
                 </p>
-              </section>
-            )}
+              )}
+            </section>
           </div>
         </ScrollArea>
 
-        <DialogFooter className="flex justify-end space-x-2 px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {onEdit && (
-            <Button variant="default" onClick={() => onEdit(modalityId)}>
+            <Button onClick={() => onEdit(modalityId)} className={modalStyles.primaryButton}>
               Edit Modality
             </Button>
           )}

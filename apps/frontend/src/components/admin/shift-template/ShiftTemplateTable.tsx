@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Clock } from 'lucide-react';
 import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { formatDate } from '@/lib/formatTimeDate';
+import { formatDateTime } from '@/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface ShiftTemplateTableProps {
@@ -120,7 +120,15 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
       sortable: true,
       sortField: 'createdAt',
       cell: (template: ShiftTemplate) => (
-        <div className="text-foreground">{formatDate(template.createdAt)}</div>
+        <div className="text-foreground text-sm">{formatDateTime(template.createdAt)}</div>
+      ),
+    },
+    {
+      header: 'Updated At',
+      sortable: true,
+      sortField: 'updatedAt',
+      cell: (template: ShiftTemplate) => (
+        <div className="text-foreground text-sm">{formatDateTime(template.updatedAt)}</div>
       ),
     },
     {

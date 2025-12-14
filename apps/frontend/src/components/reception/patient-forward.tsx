@@ -84,6 +84,7 @@ export function PatientForward({
   const {
     data: departmentsData,
     isLoading: isLoadingDepartment,
+    isError: isDepartmentError,
     refetch: refetchDepartment,
   } = useGetDepartmentsQuery({
     name: departmentSearch || undefined,
@@ -203,6 +204,7 @@ export function PatientForward({
             departmentSearch={departmentSearch}
             setDepartmentSearch={setDepartmentSearch}
             isLoadingDepartment={isLoadingDepartment}
+            isError={isDepartmentError}
             setSelectedDepartment={setSelectedDepartment}
             setSelectedService={setSelectedService}
             setSelectedRoom={setSelectedRoom}
