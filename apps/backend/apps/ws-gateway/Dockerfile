@@ -6,7 +6,6 @@ WORKDIR /workspace
 COPY package*.json nx.json tsconfig*.json eslint.config.mjs ./
 COPY apps ./apps
 COPY libs ./libs
-COPY entities ./entities
 
 RUN npm ci
 RUN npx nx build ws-gateway  --configuration=production
