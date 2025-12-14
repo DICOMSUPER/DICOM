@@ -4,4 +4,5 @@ export interface BodyPart extends BaseEntity {
   id: string;
   name: string;
   description?: string;
+  isActive?: boolean;
 }

@@ -9,12 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
 import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { Trash2 } from "lucide-react";
+import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
 
 export function ProcedureForm({
   procedure,
