@@ -59,25 +59,33 @@ export class AiAnalysesService {
     modelName: string,
     versionName: string,
     userId: string,
-    folder: string,
+    // folder: string,
     selectedStudyId?: string
   ): Promise<AiResultDiagnosis> {
     try {
+      if (!base64Image) {
+        throw new BadRequestException('Base64 image data is required');
+      }
       const result = await axios<AiResultDiagnosis>({
         method: 'POST',
         url: `https://serverless.roboflow.com/${aiModelId}`,
         params: {
-          api_key: '31I5NP2qoFDBvXy8ybXD',
+          api_key: 'V4g8kiNFVYuqGTcVDwhl',
         },
         data: base64Image,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      const image = await this.cloudinaryService.uploadBase64ToCloudinary(base64Image, {
-        folder: folder,
-        resource_type: 'auto',
-      });
+      console.log("AI result", result);
+      
+      // const image = await this.cloudinaryService.uploadBase64ToCloudinary(
+      //   base64Image,
+      //   {
+      //     folder: folder,
+      //     resource_type: 'auto',
+      //   }
+      // );
       await this.aiAnalysisRepository.save({
         analysisResults: result.data,
         analysisStatus: AnalysisStatus.COMPLETED,
@@ -86,8 +94,8 @@ export class AiAnalysesService {
         versionName: versionName,
         userId: userId,
         studyId: selectedStudyId || '',
-        originalImageUrl: image.secure_url,
-        originalImageName: image.public_id,
+        // originalImageUrl: image.secure_url,
+        // originalImageName: image.public_id,
       });
 
       return result.data;

@@ -1,6 +1,5 @@
 export * from './user.entity';
 export * from './department.entity';
-export * from './qualification.entity';
 export * from './room.entity';
 export * from './shift-templates.entity';
 export * from './room-schedules.entity';

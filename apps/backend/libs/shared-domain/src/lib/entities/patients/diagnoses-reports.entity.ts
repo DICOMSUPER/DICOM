@@ -53,8 +53,8 @@ export class DiagnosesReport extends BaseEntity {
   })
   diagnosisStatus!: DiagnosisStatus;
 
-  @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
-  severity!: Severity;
+  // @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
+  // severity!: Severity;
 
   @Column({ name: 'diagnosis_date', type: 'date', nullable: true })
   diagnosisDate!: Date;

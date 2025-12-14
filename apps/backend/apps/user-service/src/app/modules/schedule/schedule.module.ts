@@ -4,11 +4,11 @@ import { RoomScheduleController } from './room-schedule.controller';
 import { RoomScheduleService } from './room-schedule.service';
 import { RoomScheduleCronService } from './room-schedule.cron';
 import { RoomScheduleRepository } from '@backend/shared-domain';
-import { RoomSchedule, Room, User, Department, Qualification } from '@backend/shared-domain';
+import { RoomSchedule, Room, User, Department } from '@backend/shared-domain';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RoomSchedule, Room, User, Department, Qualification]),
+    TypeOrmModule.forFeature([RoomSchedule, Room, User, Department]),
   ],
   controllers: [
     RoomScheduleController

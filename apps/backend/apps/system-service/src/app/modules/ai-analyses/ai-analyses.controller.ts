@@ -34,7 +34,7 @@ export class AiAnalysesController {
         selectedStudyId?: string;
       };
       userId: string;
-      folder: string;
+      // folder: string;
     }
   ) {
     return await this.aiAnalysesService.diagnosisImageByAI(
@@ -43,7 +43,7 @@ export class AiAnalysesController {
       data.body.modelName,
       data.body.versionName,
       data.userId,
-      data.folder,
+      // data.folder,
       data.body.selectedStudyId
     );
   }
