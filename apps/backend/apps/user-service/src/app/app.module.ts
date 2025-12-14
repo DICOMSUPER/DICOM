@@ -3,7 +3,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { UsersModule } from './modules/users/users.module';
-import { QualificationsModule } from './modules/qualifications/qualifications.module';
 import { DatabaseModule } from '@backend/database';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule';
@@ -30,7 +29,7 @@ import { ServicesModule } from './modules/services/services.module';
     }),
     DepartmentsModule,
     UsersModule,
-    QualificationsModule,
+
     ScheduleModule,
     RoomsModule,
     ShiftTemplatesModule,
