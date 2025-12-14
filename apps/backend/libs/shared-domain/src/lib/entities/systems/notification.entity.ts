@@ -33,6 +33,7 @@ export class Notification extends BaseEntity {
 
   @Column({ name: 'is_read', default: false })
   isRead!: boolean;
+  
 
   @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt?: Date;
