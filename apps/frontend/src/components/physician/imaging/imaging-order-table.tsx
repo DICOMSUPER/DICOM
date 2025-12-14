@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import {
   IImagingOrderForm,
-} from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+} from "@/common/interfaces/image-dicom/imaging-order-form.interface";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 
 interface ImagingOrderFormTableProps {
   imagingOrderForm: IImagingOrderForm[];

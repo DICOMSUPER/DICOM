@@ -33,8 +33,8 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
-import { ShiftType } from '@/enums/schedule.enum';
+import { ShiftTemplate } from '@/common/interfaces/user/shift-template.interface';
+import { ShiftType } from '@/common/enums/schedule.enum';
 import { useCreateShiftTemplateMutation, useUpdateShiftTemplateMutation } from '@/store/scheduleApi';
 import { Clock } from 'lucide-react';
 

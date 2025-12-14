@@ -6,10 +6,10 @@ import { PatientEncounterFiltersSection } from "@/components/physician/patient-e
 import { PatientEncounterTable } from "@/components/physician/patient-encounter/patient-encounter-table";
 import { SortConfig } from "@/components/ui/data-table";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { EncounterStatus } from "@/enums/patient-workflow.enum";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { EncounterStatus } from "@/common/enums/patient-workflow.enum";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { PatientEncounterFilters } from "@/common/interfaces/patient/patient-visit.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
 import { RootState } from "@/store";
 import {
   useGetCurrentEmployeeRoomAssignmentQuery,
@@ -20,8 +20,8 @@ import {
   useGetStatsInDateRangeQuery,
   useUpdatePatientEncounterMutation
 } from "@/store/patientEncounterApi";
-import { prepareApiFilters } from "@/utils/filter-utils";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -71,11 +71,8 @@ export default function QueuePage() {
   //   useGetEmployeeRoomAssignmentsInCurrentSessionQuery();
   // const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
 
-  const userId = useSelector((state: RootState) => state.auth.user?.id) || null;
-  console.log("User :", userId);
-
-  // const user = Cookies.get("user")
-  //current employee room assignment
+  const userId = useSelector((state: RootState) => state.auth.user?.id) || null
+  
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
@@ -83,8 +80,6 @@ export default function QueuePage() {
   } = useGetCurrentEmployeeRoomAssignmentQuery(userId!,{
     skip: !userId,
   });
-
-  console.log("Current Employee Schedule:", currentEmployeeSchedule);
 
   const currentRoomId =
     currentEmployeeSchedule?.data?.roomSchedule?.room_id || null;

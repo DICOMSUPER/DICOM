@@ -15,9 +15,9 @@ import { DayView } from "@/components/schedule/DayView";
 import { WeekView } from "@/components/schedule/WeekView";
 import { MonthView } from "@/components/schedule/MonthView";
 import { RoomView } from "@/components/schedule/RoomView";
-import type { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
-import { cn } from "@/lib/utils";
-import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
+import type { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
+import { cn } from "@/common/lib/utils";
+import { useShiftTemplatesDictionary } from "@/common/hooks/useShiftTemplatesDictionary";
 
 interface RoomAssignmentCalendarProps {
   schedules: RoomSchedule[];

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 
 export default function MachineFilterBar({
   onRefetch,

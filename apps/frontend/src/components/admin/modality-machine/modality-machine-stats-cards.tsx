@@ -2,7 +2,7 @@
 
 import { StatsCards } from "@/components/ui/stats-cards";
 import { Monitor, CheckCircle, XCircle, Wrench } from "lucide-react";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 
 interface ModalityMachineStatsCardsProps {
   totalCount: number;

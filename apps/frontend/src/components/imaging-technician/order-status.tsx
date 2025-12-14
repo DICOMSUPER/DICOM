@@ -1,6 +1,6 @@
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import React from "react";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 export default function OrderStatus({
   status,

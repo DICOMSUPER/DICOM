@@ -21,10 +21,10 @@ import { AppHeader } from "@/components/app-header";
 import {
   Patient,
   PatientSearchFilters,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 interface ApiError {
   data?: {

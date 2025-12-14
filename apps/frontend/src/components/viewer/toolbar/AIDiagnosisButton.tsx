@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Brain, Loader2, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
-import { useViewer } from '@/contexts/ViewerContext';
+import { useViewer } from '@/common/contexts/ViewerContext';
 
 // Types
 interface RoboflowProject {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Thumbnail } from '../Thumbnail';
-import useDynamicMaxHeight from '@/hooks/useDymaicMaxHeight';
+import useDynamicMaxHeight from '@/common/hooks/useDymaicMaxHeight';
 ;
 
 type DragData = {

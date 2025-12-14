@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getRoomStatusBadge } from "@/utils/status-badge";
+import { getRoomStatusBadge } from "@/common/utils/status-badge";
 import {
   useGetRoomsQuery,
   useGetRoomStatsQuery,
@@ -21,11 +21,11 @@ import { RoomServiceAssignmentModal } from "@/components/admin/room/room-service
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Pagination } from "@/components/common/PaginationV1";
-import { Room } from "@/interfaces/user/room.interface";
-import { Department } from "@/interfaces/user/department.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { Department } from "@/common/interfaces/user/department.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 
 interface ApiError {
   data?: {

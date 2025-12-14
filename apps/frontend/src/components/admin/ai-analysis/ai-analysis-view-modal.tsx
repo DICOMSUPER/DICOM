@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AiAnalysis } from "@/interfaces/system/ai-analysis.interface";
+import { AiAnalysis } from "@/common/interfaces/system/ai-analysis.interface";
 import {
   Activity,
   Brain,

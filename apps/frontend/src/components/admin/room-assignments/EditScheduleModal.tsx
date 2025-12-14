@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, Clock, Calendar, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TimePicker } from "@/components/ui/time-picker";
 import {
   Select,
   SelectContent,
@@ -23,11 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
 import { useUpdateRoomScheduleMutation, useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { useGetShiftTemplatesQuery } from "@/store/scheduleApi";
-import { cn } from "@/lib/utils";
-import { extractApiData } from "@/utils/api";
+import { extractApiData } from "@/common/utils/api";
 
 interface EditScheduleModalProps {
   schedule: RoomSchedule | null;
@@ -45,7 +41,6 @@ export function EditScheduleModal({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [shiftTemplateId, setShiftTemplateId] = useState<string>("");
-  const [useTemplate, setUseTemplate] = useState(true);
   const [confirmEdit, setConfirmEdit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,14 +54,13 @@ export function EditScheduleModal({
       setStartTime(schedule.actual_start_time || "");
       setEndTime(schedule.actual_end_time || "");
       setShiftTemplateId(schedule.shift_template_id || "");
-      setUseTemplate(!!schedule.shift_template_id);
       setConfirmEdit(false);
       setIsSubmitting(false);
     }
   }, [schedule, isOpen]);
 
   useEffect(() => {
-    if (useTemplate && shiftTemplateId) {
+    if (shiftTemplateId) {
       const selectedTemplate = shiftTemplates.find(
         (t) => t.shift_template_id === shiftTemplateId
       );
@@ -75,7 +69,7 @@ export function EditScheduleModal({
         setEndTime(selectedTemplate.end_time);
       }
     }
-  }, [shiftTemplateId, useTemplate, shiftTemplates]);
+  }, [shiftTemplateId, shiftTemplates]);
 
   const isDateInAdvance = useMemo(() => {
     if (!schedule?.work_date) return false;
@@ -90,22 +84,13 @@ export function EditScheduleModal({
 
   const hasConflict = useMemo(() => {
     if (!schedule || !isDateInAdvance) return false;
-    if (useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__")) return false;
-    if (!useTemplate && (!startTime || !endTime)) return false;
+    if (!shiftTemplateId) return false;
 
-    let scheduleStart: string;
-    let scheduleEnd: string;
-
-    if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") {
-      const selectedTemplate = shiftTemplates.find((t) => t.shift_template_id === shiftTemplateId);
-      if (!selectedTemplate) return false;
-      scheduleStart = selectedTemplate.start_time;
-      scheduleEnd = selectedTemplate.end_time;
-    } else {
-      if (!startTime || !endTime) return false;
-      scheduleStart = startTime;
-      scheduleEnd = endTime;
-    }
+    const selectedTemplate = shiftTemplates.find((t) => t.shift_template_id === shiftTemplateId);
+    if (!selectedTemplate) return false;
+    
+    const scheduleStart = selectedTemplate.start_time;
+    const scheduleEnd = selectedTemplate.end_time;
 
     const otherSchedules = allSchedules.filter(
       (s) =>
@@ -130,39 +115,11 @@ export function EditScheduleModal({
     }
 
     return false;
-  }, [schedule, allSchedules, startTime, endTime, shiftTemplateId, useTemplate, shiftTemplates, isDateInAdvance]);
-
-  // Helper function to parse time string to minutes
-  const parseTime = (timeStr: string) => {
-    const parts = timeStr.split(':');
-    return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
-  };
+  }, [schedule, allSchedules, shiftTemplateId, shiftTemplates, isDateInAdvance]);
 
   const areTimesValid = useMemo(() => {
-    if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") return true;
-    if (!useTemplate && (!startTime || !endTime)) return false;
-    if (!useTemplate && startTime && endTime) {
-      const startMinutes = parseTime(startTime);
-      const endMinutes = parseTime(endTime);
-      // End time must be after start time
-      return endMinutes > startMinutes;
-    }
-    return false;
-  }, [useTemplate, shiftTemplateId, startTime, endTime]);
-
-  // Get time validation error message
-  const getTimeValidationError = useMemo(() => {
-    if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") return null;
-    if (!startTime || !endTime) return null;
-    
-    const startMinutes = parseTime(startTime);
-    const endMinutes = parseTime(endTime);
-    
-    if (endMinutes <= startMinutes) {
-      return 'End time must be after start time';
-    }
-    return null;
-  }, [useTemplate, shiftTemplateId, startTime, endTime]);
+    return !!shiftTemplateId;
+  }, [shiftTemplateId]);
 
   const handleSubmit = async () => {
     if (!schedule) return;
@@ -178,12 +135,7 @@ export function EditScheduleModal({
     }
 
     if (!areTimesValid) {
-      if (useTemplate && !shiftTemplateId) {
-        toast.error("Please select a shift template or switch to manual time entry");
-      } else {
-        const errorMsg = getTimeValidationError || "Start time and end time are required";
-        toast.error(errorMsg);
-      }
+      toast.error("Please select a shift template");
       return;
     }
 
@@ -195,26 +147,24 @@ export function EditScheduleModal({
     setIsSubmitting(true);
 
     try {
-      const updateData: {
-        shift_template_id?: string;
-        actual_start_time?: string;
-        actual_end_time?: string;
-      } = {};
-
-      if (useTemplate && shiftTemplateId && shiftTemplateId !== "__none__") {
-        const selectedTemplate = shiftTemplates.find(
-          (t) => t.shift_template_id === shiftTemplateId
-        );
-        if (selectedTemplate) {
-          updateData.shift_template_id = shiftTemplateId;
-          updateData.actual_start_time = selectedTemplate.start_time;
-          updateData.actual_end_time = selectedTemplate.end_time;
-        }
-      } else {
-        // Omit shift_template_id when not using template (undefined means don't update)
-        updateData.actual_start_time = startTime;
-        updateData.actual_end_time = endTime;
+      if (!shiftTemplateId) {
+        toast.error("Please select a shift template");
+        return;
       }
+
+      const selectedTemplate = shiftTemplates.find(
+        (t) => t.shift_template_id === shiftTemplateId
+      );
+      if (!selectedTemplate) {
+        toast.error("Selected shift template not found");
+        return;
+      }
+
+      const updateData = {
+        shift_template_id: shiftTemplateId,
+        actual_start_time: selectedTemplate.start_time,
+        actual_end_time: selectedTemplate.end_time,
+      };
 
       await updateSchedule({
         id: schedule.schedule_id,
@@ -256,91 +206,36 @@ export function EditScheduleModal({
 
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium">Use Shift Template</Label>
-              <div className="flex items-center space-x-2 mt-2">
-                <Checkbox
-                  id="use-template"
-                  checked={useTemplate}
-                  onCheckedChange={(checked) => {
-                    setUseTemplate(checked === true);
-                    if (checked === false) {
-                      setShiftTemplateId("");
-                    }
-                  }}
-                  disabled={!isDateInAdvance}
-                />
-                <label
-                  htmlFor="use-template"
-                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Use shift template
-                </label>
-              </div>
+              <Label htmlFor="shift-template" className="text-sm font-medium">
+                Shift Template
+              </Label>
+              <Select
+                value={shiftTemplateId || ""}
+                onValueChange={(value) => setShiftTemplateId(value)}
+                disabled={!isDateInAdvance}
+              >
+                <SelectTrigger id="shift-template" className="mt-2">
+                  <SelectValue placeholder="Select a shift template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {shiftTemplates.map((template) => (
+                    <SelectItem key={template.shift_template_id} value={template.shift_template_id}>
+                      {template.shift_name} ({template.start_time} - {template.end_time})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {shiftTemplateId && (
+                <p className="text-xs text-foreground mt-2">
+                  Times will be automatically set from the selected template
+                </p>
+              )}
             </div>
 
-            {useTemplate ? (
-              <div>
-                <Label htmlFor="shift-template" className="text-sm font-medium">
-                  Shift Template
-                </Label>
-                <Select
-                  value={shiftTemplateId || "__none__"}
-                  onValueChange={(value) => {
-                    if (value === "__none__") {
-                      setShiftTemplateId("");
-                      setUseTemplate(false);
-                    } else {
-                      setShiftTemplateId(value);
-                    }
-                  }}
-                  disabled={!isDateInAdvance}
-                >
-                  <SelectTrigger id="shift-template" className="mt-2">
-                    <SelectValue placeholder="Select a shift template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">None (set times manually)</SelectItem>
-                    {shiftTemplates.map((template) => (
-                      <SelectItem key={template.shift_template_id} value={template.shift_template_id}>
-                        {template.shift_name} ({template.start_time} - {template.end_time})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {shiftTemplateId && (
-                  <p className="text-xs text-foreground mt-2">
-                    Times will be automatically set from the template
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="start-time" className="text-sm font-medium">
-                    Start Time
-                  </Label>
-                  <TimePicker
-                    value={startTime}
-                    onChange={(value) => setStartTime(value)}
-                    placeholder="HH:MM"
-                    disabled={!isDateInAdvance}
-                    className="mt-2"
-                    error={(!areTimesValid || getTimeValidationError) && startTime ? true : false}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="end-time" className="text-sm font-medium">
-                    End Time
-                  </Label>
-                  <TimePicker
-                    value={endTime}
-                    onChange={(value) => setEndTime(value)}
-                    placeholder="HH:MM"
-                    disabled={!isDateInAdvance}
-                    className="mt-2"
-                    error={(!areTimesValid || getTimeValidationError) && endTime ? true : false}
-                  />
-                </div>
+            {!shiftTemplateId && isDateInAdvance && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 flex items-start gap-1.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Please select a shift template to proceed</span>
               </div>
             )}
 
@@ -348,17 +243,6 @@ export function EditScheduleModal({
               <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 flex items-start gap-1.5">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>This schedule conflicts with another schedule for the same room and date</span>
-              </div>
-            )}
-
-            {!areTimesValid && (startTime || endTime || (shiftTemplateId && shiftTemplateId !== "__none__")) && (
-              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-800 flex items-start gap-1.5">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>
-                  {(useTemplate && (!shiftTemplateId || shiftTemplateId === "__none__"))
-                    ? "Please select a shift template or switch to manual time entry"
-                    : (getTimeValidationError || "Start time and end time are required")}
-                </span>
               </div>
             )}
 

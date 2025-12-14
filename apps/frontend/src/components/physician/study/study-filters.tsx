@@ -7,8 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { DicomStudyFilters } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { DicomStudyFilters } from "@/common/interfaces/image-dicom/dicom-study.interface";
 import { RotateCcw, Search } from "lucide-react";
 import { useState } from "react";
 

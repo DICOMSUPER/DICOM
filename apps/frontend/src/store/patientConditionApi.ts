@@ -4,9 +4,9 @@ import {
   CreatePatientConditionDto,
   UpdatePatientConditionDto,
   PatientConditionSearchFilters,
-} from "@/interfaces/patient/patient-condition.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-condition.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
 
 export const patientConditionApi = createApi({
   reducerPath: "patientConditionApi",

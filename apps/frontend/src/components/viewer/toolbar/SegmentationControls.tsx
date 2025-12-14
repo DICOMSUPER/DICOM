@@ -25,7 +25,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 interface SegmentationControlsProps {
   onToolSelect: (toolName: string) => void;

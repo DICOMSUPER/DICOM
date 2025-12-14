@@ -1,5 +1,5 @@
-import debounce from "@/utils/debouce";
-import guid from "@/utils/guid";
+import debounce from "@/common/utils/debouce";
+import guid from "@/common/utils/guid";
 
 
 // Types

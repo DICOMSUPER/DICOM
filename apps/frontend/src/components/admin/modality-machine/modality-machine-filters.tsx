@@ -7,12 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PaginatedQuery } from "@/interfaces/pagination/pagination.interface";
+import { PaginatedQuery } from "@/common/interfaces/pagination/pagination.interface";
 import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
-import { extractApiData } from "@/utils/api";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { extractApiData } from "@/common/utils/api";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 
 interface ModalityMachineFiltersSectionProps {
   filters: PaginatedQuery & {

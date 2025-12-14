@@ -2,12 +2,12 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import {
   type IImagingOrderForm,
   OrderFormStatus,
-} from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+} from "@/common/interfaces/image-dicom/imaging-order-form.interface";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 import { useGetPatientByIdQuery } from "@/store/patientApi";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
 import {

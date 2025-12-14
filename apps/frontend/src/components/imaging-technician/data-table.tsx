@@ -1,5 +1,5 @@
-import { DicomStudyStatus, ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
+import { DicomStudyStatus, ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
+import { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
 import { useRouter } from "next/navigation";
 import StatusButton from "./status-button";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";

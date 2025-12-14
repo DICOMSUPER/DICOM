@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
+import { RequestProcedure } from '@/common/interfaces/image-dicom/request-procedure.interface';
 
 interface RequestProcedureDeleteModalProps {
   procedure: RequestProcedure | null;

@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { Button } from '@/components/ui/button';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
 import { ImagingModalityFiltersSection } from '@/components/admin/imaging-modality/imaging-modality-filters';
 import { ImagingModalityTable } from '@/components/admin/imaging-modality/imaging-modality-table';
 import { ImagingModalityStatsCards } from '@/components/admin/imaging-modality/imaging-modality-stats-cards';
@@ -18,12 +18,12 @@ import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import {
   PaginatedQuery,
   PaginationMeta,
-} from '@/interfaces/pagination/pagination.interface';
+} from '@/common/interfaces/pagination/pagination.interface';
 import {
   CreateImagingModalityDto,
   UpdateImagingModalityDto,
 } from '@/store/imagingModalityApi';
-import { ImagingModality } from '@/interfaces/image-dicom/imaging_modality.interface';
+import { ImagingModality } from '@/common/interfaces/image-dicom/imaging_modality.interface';
 import {
   useCreateImagingModalityMutation,
   useDeleteImagingModalityMutation,
@@ -32,7 +32,7 @@ import {
   useUpdateImagingModalityMutation,
 } from '@/store/imagingModalityApi';
 import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/utils/sort-utils';
+import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 interface ApiError {
   data?: {

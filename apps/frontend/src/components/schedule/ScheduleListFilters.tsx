@@ -14,10 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TimePicker } from "@/components/ui/time-picker";
-import { User as UserType } from "@/interfaces/user/user.interface";
-import { Room } from "@/interfaces/user/room.interface";
+import { User as UserType } from "@/common/interfaces/user/user.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 export interface ScheduleListFilters {
   employeeId?: string;

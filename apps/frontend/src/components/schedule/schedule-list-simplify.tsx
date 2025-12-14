@@ -1,4 +1,4 @@
-import type { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import type { EmployeeRoomAssignment } from "@/common/interfaces/user/employee-room-assignment.interface";
 import {
   Clock,
   MapPin,

@@ -1,14 +1,14 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { mapApiResponse } from "@/utils/adpater";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { mapApiResponse } from "@/common/utils/adpater";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
   PaginatedResponse,
   QueryParams,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 import {
   ImagingOrderForm,
-} from "@/interfaces/image-dicom/imaging-order-form.interface";
+} from "@/common/interfaces/image-dicom/imaging-order-form.interface";
 
 /**
  * ==============================

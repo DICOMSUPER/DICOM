@@ -25,12 +25,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { EncounterForm } from "@/components/patient/EncounterForm";
-import { formatDate } from "@/utils/patient/[id]/color";
+import { formatDate } from "@/common/utils/patient/[id]/color";
 import {
   getEncounterStatusBadge,
   getEncounterTypeBadge,
   getEncounterPriorityBadge,
-} from "@/utils/status-badge";
+} from "@/common/utils/status-badge";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 

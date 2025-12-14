@@ -1,8 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
-import { PaginatedResponse } from "@/interfaces/pagination/pagination.interface";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
+import { PaginatedResponse } from "@/common/interfaces/pagination/pagination.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 
 export const requestProcedureApi = createApi({
   reducerPath: "requestProcedureApi",

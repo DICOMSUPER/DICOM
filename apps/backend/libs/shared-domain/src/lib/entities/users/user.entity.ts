@@ -12,7 +12,6 @@ import type { EmployeeRoomAssignment } from './employee-room-assignments.entity'
 import type { Department } from './department.entity';
 import type { DiagnosesReport } from '../patients/diagnoses-reports.entity';
 import type { DigitalSignature } from './digital-signature.entity';
-import type { Qualification } from './qualification.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -63,9 +62,6 @@ export class User extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   creator!: User;
-
-  @OneToMany(() => require('./qualification.entity').Qualification, (qualification: Qualification) => qualification.employee)
-  qualifications!: Qualification[];
 
   // @OneToMany(() => RoomAssignment, (roomAssignment) => roomAssignment.employee)
   // roomAssignments!: RoomAssignment[];

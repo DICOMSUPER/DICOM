@@ -10,12 +10,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Image, Activity, ArrowRight, Camera, Inbox } from "lucide-react";
-import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import { useRouter } from "next/navigation";
-import { formatDate, formatTime } from "@/lib/formatTimeDate";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface ImagingTechnicianDashboardPreviewProps {
   orders: ImagingOrder[];

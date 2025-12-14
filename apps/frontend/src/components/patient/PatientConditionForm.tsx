@@ -23,11 +23,11 @@ import {
   CreatePatientConditionDto,
   UpdatePatientConditionDto,
   PatientCondition,
-} from "@/interfaces/patient/patient-condition.interface";
+} from "@/common/interfaces/patient/patient-condition.interface";
 import {
   ClinicalStatus,
   ConditionVerificationStatus,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import { Plus, X, Save, Edit } from "lucide-react";
 
 interface PatientConditionFormProps {

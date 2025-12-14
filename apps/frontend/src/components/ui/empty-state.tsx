@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Card, CardContent } from "./card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
 interface EmptyStateProps {
   icon?: ReactNode;

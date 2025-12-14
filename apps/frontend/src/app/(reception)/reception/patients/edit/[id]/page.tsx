@@ -9,7 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   CreatePatientDto,
   UpdatePatientDto,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 import { WorkspaceLayout } from "@/components/workspace-layout";
 import { AppHeader } from "@/components/app-header";
 import { SidebarNav } from "@/components/sidebar-nav";

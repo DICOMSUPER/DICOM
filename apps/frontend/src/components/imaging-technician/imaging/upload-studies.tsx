@@ -3,9 +3,9 @@
 import React, { useMemo, useState } from "react";
 import { RefreshCw, FolderOpen, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomInstance } from "@/interfaces/image-dicom/dicom-instances.interface";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomInstance } from "@/common/interfaces/image-dicom/dicom-instances.interface";
 import StudyLevel from "./study-level";
 import SeriesLevel from "./series-level";
 import InstancesLevel from "./instance-level";

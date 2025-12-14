@@ -1,82 +1,274 @@
-# Backend
+# DICOM Medical Imaging System - Backend
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A robust, scalable microservices backend for medical imaging management built with NestJS, TypeORM, and PostgreSQL.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## 📋 Table of Contents
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/node?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Microservices](#microservices)
+- [Shared Libraries](#shared-libraries)
+- [Environment Configuration](#environment-configuration)
+- [Available Scripts](#available-scripts)
+- [Docker Deployment](#docker-deployment)
+- [API Documentation](#api-documentation)
 
-## Finish your CI setup
+## 🎯 Overview
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/wvi1E7QNUs)
+This backend provides a comprehensive set of microservices for the DICOM Medical Imaging System, handling authentication, patient management, imaging workflows, and real-time communication.
 
+## 🛠️ Tech Stack
 
-## Run tasks
+| Category | Technology |
+|----------|------------|
+| **Framework** | NestJS 11 |
+| **Language** | TypeScript 5.8 |
+| **Database** | PostgreSQL + TypeORM |
+| **Caching** | Redis + ioredis |
+| **Authentication** | JWT |
+| **File Storage** | Cloudinary |
+| **Real-time** | Socket.IO |
+| **Build System** | Nx Monorepo |
+| **API Docs** | Swagger/OpenAPI |
+| **Testing** | Jest |
+| **DICOM Parsing** | dcmjs, dicom-parser |
 
-To run the dev server for your app, use:
+## 🏗️ Architecture
 
-```sh
-npx nx serve api-gateway
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      API Gateway (5000)                     │
+│              Route requests, aggregate responses            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  User Service   │  │ Patient Service │  │ Imaging Service │
+│     (5002)      │  │     (5004)      │  │     (5003)      │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+         │                    │                    │
+         └────────────────────┼────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │ System Service  │
+                    │     (5005)      │
+                    └─────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    WebSocket Gateway (5006)                  │
+│                Real-time notifications & events              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-To create a production bundle:
+## 🚀 Getting Started
 
-```sh
-npx nx build api-gateway
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- PostgreSQL 14+
+- Redis 6+
+- Docker (optional, for containerized deployment)
+
+### Installation
+
+```bash
+# Navigate to backend directory
+cd apps/backend
+
+# Install dependencies
+npm install
+
+# Set up environment files for each service
+cp apps/api-gateway/.env.example apps/api-gateway/.env
+cp apps/user-service/.env.example apps/user-service/.env
+cp apps/patient-service/.env.example apps/patient-service/.env
+cp apps/imaging-service/.env.example apps/imaging-service/.env
+cp apps/system-service/.env.example apps/system-service/.env
+cp apps/ws-gateway/.env.example apps/ws-gateway/.env
+
+# Start all services in development mode
+npm run dev
 ```
 
-To see all available targets to run for a project, run:
+## 🔧 Microservices
 
-```sh
-npx nx show project api-gateway
+| Service | Port | Description |
+|---------|------|-------------|
+| **api-gateway** | 5000 | Main entry point, routes requests, JWT validation |
+| **user-service** | 5002 | Authentication, user management, roles, departments |
+| **imaging-service** | 5003 | DICOM studies, series, instances, imaging orders |
+| **patient-service** | 5004 | Patient records, encounters, medical history |
+| **system-service** | 5005 | System config, notifications, AI analysis |
+| **ws-gateway** | 5006 | WebSocket server for real-time communication |
+
+### Service Communication
+
+Services communicate via NestJS Microservices (TCP transport):
+- API Gateway → All services (HTTP to TCP)
+- Services → WebSocket Gateway (event broadcasting)
+- All services use Redis for caching and session management
+
+## 📚 Shared Libraries
+
+Located in `libs/` directory:
+
+| Library | Description |
+|---------|-------------|
+| **database** | TypeORM configuration, database connection |
+| **redis** | Redis client configuration |
+| **shared-client** | Microservice client utilities |
+| **shared-decorators** | Custom NestJS decorators |
+| **shared-domain** | Entity definitions and DTOs |
+| **shared-enums** | Shared enumerations |
+| **shared-exception** | Custom exception classes and filters |
+| **shared-guards** | Authentication and authorization guards |
+| **shared-interceptor** | Request/response interceptors |
+| **shared-interfaces** | Shared TypeScript interfaces |
+| **shared-utils** | Utility functions and helpers |
+
+## ⚙️ Environment Configuration
+
+Each service requires its own `.env` file. Common variables:
+
+```env
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=your_password
+DATABASE_NAME=dicom_db
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=3600
+
+# Service Ports (varies by service)
+PORT=5000  # api-gateway
+PORT=5002  # user-service
+PORT=5003  # imaging-service
+PORT=5004  # patient-service
+PORT=5005  # system-service
+PORT=5006  # ws-gateway
+
+# Cloudinary (for file storage)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+## 📜 Available Scripts
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Development
 
-## Add new projects
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start all services in development mode |
+| `npm run start:dev` | Same as above |
+| `npx nx serve <service>` | Start a specific service |
+| `npx nx build <service>` | Build a specific service |
+| `npx nx graph` | Visualize project dependency graph |
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+### Docker Commands
 
-Use the plugin's generator to create new projects.
+| Command | Description |
+|---------|-------------|
+| `npm run docker:build:local` | Build all Docker images (local tag) |
+| `npm run docker:build:latest` | Build all Docker images (latest tag) |
+| `npm run docker:up:local` | Start all containers (local tag) |
+| `npm run docker:up:latest` | Start all containers (latest tag) |
+| `npm run docker:up:local:build` | Build and start containers |
+| `npm run docker:down` | Stop all containers |
+| `npm run docker:logs` | View all container logs |
+| `npm run docker:logs:api` | View API Gateway logs |
+| `npm run docker:logs:user` | View User Service logs |
+| `npm run docker:logs:patient` | View Patient Service logs |
+| `npm run docker:logs:imaging` | View Imaging Service logs |
+| `npm run docker:logs:system` | View System Service logs |
+| `npm run docker:ps` | List running containers |
+| `npm run docker:restart` | Restart all containers |
 
-To generate a new application, use:
+## 🐳 Docker Deployment
 
-```sh
-npx nx g @nx/node:app demo
+### Using Docker Compose (Recommended)
+
+```bash
+# Build and start all services
+npm run docker:up:local:build
+
+# View logs
+npm run docker:logs
+
+# Stop services
+npm run docker:down
 ```
 
-To generate a new library, use:
+### Individual Service Images
 
-```sh
-npx nx g @nx/node:lib mylib
+```bash
+# Build specific service
+npm run build-docker:local:api-gateway
+
+# Run specific service
+npm run run-docker:local:api-gateway
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+### Docker Compose Configuration
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+The `docker-compose.yml` includes:
+- All 6 microservices
+- PostgreSQL database
+- Redis cache
+- Network configuration
+- Volume mounts for persistence
 
+## 📖 API Documentation
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+When the API Gateway is running, access Swagger documentation at:
 
-## Install Nx Console
+**http://localhost:5000/api**
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+### Main API Endpoints
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+| Endpoint | Description |
+|----------|-------------|
+| `POST /auth/login` | User authentication |
+| `GET /users` | User management |
+| `GET /patients` | Patient records |
+| `GET /studies` | DICOM studies |
+| `GET /imaging-orders` | Imaging order management |
+| `GET /reports` | Diagnostic reports |
+| `GET /departments` | Department management |
+| `GET /modalities` | Imaging modality configuration |
 
-## Useful links
+## 🧪 Testing
 
-Learn more:
+```bash
+# Run all tests
+npx nx run-many -t test
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/node?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# Run tests for specific service
+npx nx test api-gateway
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# Run e2e tests
+npx nx e2e api-gateway-e2e
+```
+
+## 🔗 Related Documentation
+
+- [Root Project README](../../README.md) - System overview and architecture
+- [Frontend README](../frontend/README.md) - Frontend application documentation
+- [Nx Documentation](https://nx.dev) - Build system documentation
+
+---
+
+**Note**: Ensure PostgreSQL and Redis are running before starting the services.

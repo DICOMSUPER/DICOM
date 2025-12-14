@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Bell, CheckCircle } from "lucide-react";
-import { NotificationType } from "@/enums/notification.enum";
+import { NotificationType } from "@/common/enums/notification.enum";
 
 interface Notification {
   id: string;

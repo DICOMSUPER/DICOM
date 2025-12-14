@@ -4,7 +4,7 @@ import { Clock, MapPin, Calendar, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { EmployeeRoomAssignment } from "@/interfaces/user/employee-room-assignment.interface";
+import { EmployeeRoomAssignment } from "@/common/interfaces/user/employee-room-assignment.interface";
 
 export default function ScheduleCard({
   assignment,

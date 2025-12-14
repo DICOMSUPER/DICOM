@@ -1,15 +1,15 @@
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   CreateServiceDto,
   Services,
   UpdateServiceDto,
-} from "@/interfaces/user/service.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/user/service.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import {
   PaginatedQuery,
   PaginatedResponse,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 export interface ServicePaginatedQuery extends PaginatedQuery {
   includeInactive?: boolean;

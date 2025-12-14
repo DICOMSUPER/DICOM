@@ -2,10 +2,10 @@ import React, { useMemo } from "react";
 import { FolderOpen, Loader2, Calendar, Clock, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetDicomStudiesByOrderIdQuery } from "@/store/dicomStudyApi";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
 import { StudyItem } from "./StudyItem";
 import { format } from "date-fns";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface FolderItemProps {
   orderId: string;

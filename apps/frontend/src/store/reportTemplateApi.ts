@@ -1,7 +1,7 @@
-import { TemplateType } from "@/enums/report-template.enum";
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
-import { ReportTemplate } from "@/interfaces/patient/report-template.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { TemplateType } from "@/common/enums/report-template.enum";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
+import { ReportTemplate } from "@/common/interfaces/patient/report-template.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { PaginatedResponse } from "./scheduleApi";
 

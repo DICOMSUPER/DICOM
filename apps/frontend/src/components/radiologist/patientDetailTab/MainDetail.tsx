@@ -29,14 +29,14 @@ import {
   DiagnosisStatus,
   DiagnosisType,
   Severity,
-} from "@/interfaces/patient/patient-workflow.interface";
+} from "@/common/interfaces/patient/patient-workflow.interface";
 
 import PinDialog from "./PinDialog";
 import {
   useSignDataMutation,
   useGetDigitalSignatureByIdQuery,
 } from "@/store/digitalSignatureApi";
-import { SignDataDto } from "@/interfaces/user/digital-signature.interface";
+import { SignDataDto } from "@/common/interfaces/user/digital-signature.interface";
 import RichTextEditor from "@/components/radiologist/editor/RichTextEditor";
 import SelectTemplateDialog from "./SelectTemplateDialog";
 import { useRouter } from "next/navigation";
@@ -60,7 +60,7 @@ import {
 import { useGetUserByIdQuery } from "@/store/userApi";
 import SignatureDisplay from "@/components/common/signature-display";
 import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
-import { DicomStudyStatus, ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { DicomStudyStatus, ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 
 const AdvancedToolsTab = () => <div>Advanced Tools Content</div>;
 const VideoTab = () => <div>Video Content</div>;

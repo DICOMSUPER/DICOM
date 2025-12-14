@@ -2,7 +2,7 @@ import React from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui-next/ToggleGroup";
 import { actionIcon, viewPreset } from "./types";
-import { getLucideIcon } from "@/utils/get-lucide-icon";
+import { getLucideIcon } from "@/common/utils/get-lucide-icon";
 import { Button } from "@/components/ui/button";
 
 function PanelStudyBrowserHeader({

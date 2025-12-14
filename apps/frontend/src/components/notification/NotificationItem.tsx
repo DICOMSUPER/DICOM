@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Eye } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Notification } from "@/interfaces/system/notification.interface";
-import { RelatedEntityType } from "@/enums/notification.enum";
+import { cn } from "@/common/lib/utils";
+import { Notification } from "@/common/interfaces/system/notification.interface";
+import { RelatedEntityType } from "@/common/enums/notification.enum";
 import { Button } from "@/components/ui/button";
 import { NotificationDetailModal } from "./NotificationDetailModal";
 import {
   getNotificationIcon,
   getNotificationTypeBadge,
   getNotificationPriorityBadge,
-} from "@/utils/notification-utils";
+} from "@/common/utils/notification-utils";
 
 interface NotificationItemProps {
   notification: Notification;

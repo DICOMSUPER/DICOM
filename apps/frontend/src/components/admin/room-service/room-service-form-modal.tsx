@@ -26,15 +26,15 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
 import {
   useCreateServiceRoomMutation,
   useUpdateServiceRoomMutation,
 } from "@/store/serviceRoomApi";
 import { useGetRoomsQuery } from "@/store/roomsApi";
 import { useGetServicesQuery } from "@/store/serviceApi";
-import { Room } from "@/interfaces/user/room.interface";
-import { Services } from "@/interfaces/user/service.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
 import { Link2 } from "lucide-react";
 import {
   Select,

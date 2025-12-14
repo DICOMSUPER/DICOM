@@ -1,5 +1,5 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 
 // Interfaces
 import {
@@ -10,13 +10,13 @@ import {
   SignDataDto,
   VerifyResponse,
   VerifySignatureDto,
-} from "@/interfaces/user/digital-signature.interface";
+} from "@/common/interfaces/user/digital-signature.interface";
 
-import { ApiResponse } from "@/interfaces/api-response/api-response.interface";
+import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
   PaginatedResponse,
   QueryParams,
-} from "@/interfaces/pagination/pagination.interface";
+} from "@/common/interfaces/pagination/pagination.interface";
 
 // API
 export const digitalSignatureApi = createApi({

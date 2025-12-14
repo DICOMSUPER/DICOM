@@ -2,7 +2,7 @@
 
 import { StatsCards } from '@/components/ui/stats-cards';
 import { FileText, CheckCircle, Clock, UserCheck, Printer, Scan } from 'lucide-react';
-import { DicomStudyStatsInDateRange } from '@/interfaces/patient/patient-workflow.interface';
+import { DicomStudyStatsInDateRange } from '@/common/interfaces/patient/patient-workflow.interface';
 
 interface StudyStatsCardsProps {
   stats: DicomStudyStatsInDateRange | undefined;

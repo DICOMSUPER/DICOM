@@ -7,23 +7,23 @@ import {
   useFilterEncounterWithPaginationQuery,
   useGetPatientEncounterStatsQuery,
 } from "@/store/patientEncounterApi";
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   EncounterPriorityLevel,
   EncounterStatus,
   EncounterType,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import { Stethoscope } from "lucide-react";
 import { EncounterTable } from "@/components/reception/encounter-table";
 import { EncounterStatsCards } from "@/components/reception/encounter-stats-cards";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { EncounterFilter } from "@/components/reception/encounter-filter";
-import { FilterEncounterWithPaginationParams } from "@/interfaces/patient/patient-visit.interface";
+import { FilterEncounterWithPaginationParams } from "@/common/interfaces/patient/patient-visit.interface";
 import { Pagination } from "@/components/common/PaginationV1";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 
 interface ApiError {
   data?: {

@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
-import { RoomSchedule } from '@/interfaces/schedule/schedule.interface';
-import { User } from '@/interfaces/user/user.interface';
+import { RoomSchedule } from '@/common/interfaces/schedule/schedule.interface';
+import { User } from '@/common/interfaces/user/user.interface';
 
 export type RoomAssignmentFormState = {
   roomScheduleId: string;

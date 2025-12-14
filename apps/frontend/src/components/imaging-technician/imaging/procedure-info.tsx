@@ -1,4 +1,4 @@
-import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
+import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
 import React from "react";
 
 export default function ProcedureInfo({

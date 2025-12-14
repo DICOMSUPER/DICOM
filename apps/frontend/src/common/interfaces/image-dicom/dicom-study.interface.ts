@@ -1,0 +1,96 @@
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { BaseEntity } from "../base.interface";
+import { Room } from "../user/room.interface";
+
+import { DicomSeries } from "./dicom-series.interface";
+import { ImagingOrder } from "./imaging_order.interface";
+import {
+  DiagnosisReport,
+  DiagnosisStatus,
+  Patient,
+} from "../patient/patient-workflow.interface";
+import { ModalityMachine } from "./modality-machine.interface";
+import { ImagingModality } from "./imaging_modality.interface";
+import { PaginatedQuery } from "../pagination/pagination.interface";
+
+export interface DicomStudyFilterQuery {
+  studyStatus?: DicomStudyStatus;
+  reportStatus?: DiagnosisStatus;
+  modalityId?: string;
+  modalityMachineId?: string;
+  mrn?: string;
+  patientFirstName?: string;
+  patientLastName?: string;
+  bodyPart?: string;
+  startDate?: string;
+  endDate?: string;
+  studyUID?: string;
+  roomId?: string;
+}
+
+export interface CreateDiagnosisPayload {
+  encounterId: string;
+  studyId: string;
+  diagnosisName: string;
+  description: string;
+  diagnosisType: "primary" | "secondary" | "other";
+  severity: "mild" | "moderate" | "severe";
+  diagnosisDate: string;
+  diagnosedBy: string;
+  notes?: string;
+}
+
+export interface DicomStudy extends BaseEntity {
+  id: string;
+  studyInstanceUid: string;
+  patientId: string;
+  patientCode: string;
+  orderId?: string;
+  modalityMachineId: string;
+  studyDate: string;
+  studyTime: string;
+  studyDescription?: string;
+  referringPhysicianId?: string;
+  performingTechnicianId?: string;
+  verifyingRadiologistId?: string;
+  studyStatus?: DicomStudyStatus;
+  numberOfSeries?: number;
+  storagePath?: string;
+  reason?: string;
+
+  // Nested objects included for filter API
+  patient?: Patient; // Included for filter API
+  imagingOrder?: ImagingOrder; // Included for filter API
+  modalityMachine?: ModalityMachine;
+  series?: DicomSeries[]; // Included for filter API
+  report?: DiagnosisReport; // Included for filter API
+  room?: Room; // Included for filter API
+
+  modality?: string | ImagingModality; // Can be string (modalityCode) or full ImagingModality object when joined
+}
+export interface UpdateDicomStudyPayload {
+  studyId: string;
+  studyDescription?: string;
+  referringPhysicianId?: string;
+  performingTechnicianId?: string;
+  verifyingRadiologistId?: string;
+  patientId?: string;
+  patientCode?: string;
+  studyStatus?: DicomStudyStatus;
+  reason?: string;
+}
+
+export default interface DicomStudyReferenceQuery
+  extends Partial<PaginatedQuery> {
+  id: string;
+  type: string;
+}
+
+export interface DicomStudyFilters {
+  status?: DicomStudyStatus | "all";
+  patientName?: string;
+  modalityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  orderId?: string;
+}

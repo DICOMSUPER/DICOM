@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { QueueStats } from '@/interfaces/patient/patient-visit.interface';
+import { QueueStats } from '@/common/interfaces/patient/patient-visit.interface';
 import { Calendar, CheckCircle, Clock, Hash } from 'lucide-react';
 
 interface QueueStatsProps {

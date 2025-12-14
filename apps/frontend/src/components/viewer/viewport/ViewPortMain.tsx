@@ -4,26 +4,26 @@ import CornerstoneToolManager from "@/components/viewer/toolbar/CornerstoneToolM
 import {
   useViewer,
   type AnnotationHistoryEntry,
-} from "@/contexts/ViewerContext";
-import type { SegmentationHistoryEntry } from "@/contexts/viewer-context/segmentation-helper";
+} from "@/common/contexts/ViewerContext";
+import type { SegmentationHistoryEntry } from "@/common/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
 import {
   getCanvasAsBase64,
   drawAIPredictions,
   clearAIAnnotations as clearAIAnnotationsUtil,
-} from "@/utils/aiDiagnosis";
+} from "@/common/utils/aiDiagnosis";
 import { Types } from "@cornerstonejs/core";
-import { batchedRender } from "@/utils/renderBatcher";
+import { batchedRender } from "@/common/utils/renderBatcher";
 import { Loader2, ImageOff } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { AILabelOverlay } from "../overlay/AILabelOverlay";
-import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
+import { PredictionMetadata } from "@/common/interfaces/system/ai-result.interface";
 import { useSearchParams } from "next/navigation";
 import {
   useViewerEvent,
   useViewerEvents,
   ViewerEvents,
-} from "@/contexts/ViewerEventContext";
+} from "@/common/contexts/ViewerEventContext";
 
 // Compact frame slider (short, not full height)
 function FrameSlider({

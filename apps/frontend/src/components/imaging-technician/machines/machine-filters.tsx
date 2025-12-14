@@ -10,8 +10,8 @@ import {
 import { Search, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
-import { extractApiData } from "@/utils/api";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { extractApiData } from "@/common/utils/api";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 
 export interface MachineFilters {
   machineName?: string;

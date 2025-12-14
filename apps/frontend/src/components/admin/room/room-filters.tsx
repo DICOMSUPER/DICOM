@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
-import { Department } from "@/interfaces/user/department.interface";
-import { RoomType, RoomStatus } from "@/enums/room.enum";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { RoomType, RoomStatus } from "@/common/enums/room.enum";
 
 interface RoomFiltersProps {
   searchTerm: string;

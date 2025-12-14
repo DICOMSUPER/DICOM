@@ -10,14 +10,14 @@ import {
 } from "@/store/modalityMachineApi";
 import { MachineTable } from "./machine-table";
 import { MachineFiltersSection, MachineFilters } from "./machine-filters";
-import { MachineStatus } from "@/enums/machine-status.enum";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
 import { toast } from "sonner";
 import { Pagination } from "@/components/common/PaginationV1";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
-import { prepareApiFilters } from "@/utils/filter-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { MachineStatsCards } from "./machine-stats-cards";
 

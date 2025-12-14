@@ -4,8 +4,8 @@ import { Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, ChevronDown, ArrowLeft } from "lucide-react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { Button } from "@/components/ui/button";
 
 export default function Sidebar() {

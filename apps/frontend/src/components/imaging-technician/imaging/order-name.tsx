@@ -1,7 +1,7 @@
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
-import { ImagingOrder } from "@/interfaces/image-dicom/imaging-order.interface";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
+import { ImagingOrder } from "@/common/interfaces/image-dicom/imaging-order.interface";
 import React from "react";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 const getStatusBadgeColor = (status: ImagingOrderStatus) => {
   switch (status) {

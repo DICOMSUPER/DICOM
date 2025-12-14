@@ -3,13 +3,13 @@ import DicomStudyReferenceQuery, {
   DicomStudyFilterQuery,
   DicomStudyFilters,
   UpdateDicomStudyPayload,
-} from "@/interfaces/image-dicom/dicom-study.interface";
+} from "@/common/interfaces/image-dicom/dicom-study.interface";
 import {
   PaginatedQuery,
   PaginatedResponse,
-} from "@/interfaces/pagination/pagination.interface";
-import { ApiResponse, DicomStudyStatsInDateRange } from "@/interfaces/patient/patient-workflow.interface";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+} from "@/common/interfaces/pagination/pagination.interface";
+import { ApiResponse, DicomStudyStatsInDateRange } from "@/common/interfaces/patient/patient-workflow.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
 type StudyReferenceType =

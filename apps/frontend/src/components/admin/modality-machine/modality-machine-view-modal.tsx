@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetModalityMachineByIdQuery } from "@/store/modalityMachineApi";
-import { getRoomStatusBadge, getMachineStatusBadge } from "@/utils/status-badge";
-import { formatDate } from "@/lib/formatTimeDate";
+import { getRoomStatusBadge, getMachineStatusBadge } from "@/common/utils/status-badge";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import { Monitor, Calendar, Building2 } from "lucide-react";
-import { Room } from "@/interfaces/user/room.interface";
-import { modalStyles } from "@/utils/format-status";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { modalStyles } from "@/common/utils/format-status";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 
 interface ModalityMachineViewModalProps {
   isOpen: boolean;

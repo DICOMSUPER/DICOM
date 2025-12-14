@@ -1,6 +1,6 @@
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { ApiResponse } from "@/interfaces/patient/patient-workflow.interface";
+import { ApiResponse } from "@/common/interfaces/patient/patient-workflow.interface";
 
 export interface AnalyticsStats {
   totalUsers: number;

@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { getNavigationForRole } from "@/config/navigation";
-import { getNavigationRoleFromUserRole } from "@/utils/role-formatter";
+import { getNavigationRoleFromUserRole } from "@/common/utils/role-formatter";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";

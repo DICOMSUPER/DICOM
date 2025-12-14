@@ -11,14 +11,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ServiceRoom } from '@/interfaces/user/service-room.interface';
+import { ServiceRoom } from '@/common/interfaces/user/service-room.interface';
 import {
   Link2,
   Building2,
   Stethoscope,
   Calendar,
 } from 'lucide-react';
-import { formatStatus, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
+import { formatStatus, modalStyles, getStatusBadgeColor } from '@/common/utils/format-status';
 
 interface RoomServiceViewModalProps {
   roomService: ServiceRoom | null;

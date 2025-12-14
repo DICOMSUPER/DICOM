@@ -31,14 +31,14 @@ import {
 import {
   RoomSchedule,
   RoomScheduleSearchFilters,
-} from "@/interfaces/schedule/schedule.interface";
+} from "@/common/interfaces/schedule/schedule.interface";
 import { ScheduleDetailModal } from "@/components/schedule/ScheduleDetailModal";
 import { AssignmentWithMeta } from "@/components/admin/room-assignments/types";
-import { User } from "@/interfaces/user/user.interface";
-import { Roles } from "@/enums/user.enum";
-import { extractApiData } from "@/utils/api";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { EmployeeRoomAssignmentStats } from "@/interfaces/user/employee-room-assignment.interface";
+import { User } from "@/common/interfaces/user/user.interface";
+import { Roles } from "@/common/enums/user.enum";
+import { extractApiData } from "@/common/utils/api";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { EmployeeRoomAssignmentStats } from "@/common/interfaces/user/employee-room-assignment.interface";
 
 const statusBadgeClass = (status: string) => {
   switch (status.toLowerCase()) {

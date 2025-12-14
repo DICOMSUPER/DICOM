@@ -18,8 +18,8 @@ import { RequestProcedureDeleteModal } from '@/components/admin/procedure/proced
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ErrorAlert } from '@/components/ui/error-alert';
 import { Pagination } from '@/components/common/PaginationV1';
-import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
-import { QueryParams } from '@/interfaces/pagination/pagination.interface';
+import { RequestProcedure } from '@/common/interfaces/image-dicom/request-procedure.interface';
+import { QueryParams } from '@/common/interfaces/pagination/pagination.interface';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 
 interface ApiError {

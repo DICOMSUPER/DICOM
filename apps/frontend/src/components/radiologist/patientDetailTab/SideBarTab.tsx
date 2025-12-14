@@ -4,10 +4,10 @@ import React, { useState, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
-import { Patient } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDateYMD } from "@/utils/FormatDate";
+import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
+import { formatDateYMD } from "@/common/utils/FormatDate";
 import { ExamItemDetail } from "./ExamDetail";
-import { OrderStatus } from "@/enums/image-order.enum";
+import { OrderStatus } from "@/common/enums/image-order.enum";
 
 export interface ExamItem {
   id: string;

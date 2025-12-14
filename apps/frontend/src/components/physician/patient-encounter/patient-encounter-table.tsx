@@ -14,16 +14,16 @@ import {
   Zap,
   UserStar,
 } from "lucide-react";
-import { formatDate, formatTime, formatTimeVN } from "@/lib/formatTimeDate";
+import { formatDate, formatTime, formatTimeVN } from "@/common/lib/formatTimeDate";
 import Pagination, {
   type PaginationMeta,
 } from "@/components/common/PaginationV1";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   EncounterPriorityLevel,
   EncounterStatus,
-} from "@/enums/patient-workflow.enum";
+} from "@/common/enums/patient-workflow.enum";
 import { is } from "date-fns/locale";
 import { format } from "date-fns";
 import TransferDetailModal from "./transfer-detail-modal";
@@ -33,7 +33,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];

@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { useLogout } from "@/hooks/use-logout";
+import { useLogout } from "@/common/hooks/use-logout";
 import NotificationBell from "./notification/NotificationBell";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface AppHeaderProps {
   notificationCount?: number;

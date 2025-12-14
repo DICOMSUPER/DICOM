@@ -2,13 +2,13 @@
 import { ImagingOrderFormFiltersSection } from "@/components/physician/imaging/imaging-order-filters";
 import { ImagingOrderFormTable } from "@/components/physician/imaging/imaging-order-table";
 import Pagination from "@/components/common/PaginationV1";
-import { ImagingOrderFormFilters } from "@/interfaces/image-dicom/imaging-order-form.interface";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
+import { ImagingOrderFormFilters } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
 import { SortConfig } from "@/components/ui/data-table";
-import { sortConfigToQueryParams } from "@/utils/sort-utils";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 import { useGetImagingOrderFormPaginatedQuery } from "@/store/imagingOrderFormApi";
-import { prepareApiFilters } from "@/utils/filter-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshButton } from "@/components/ui/refresh-button";

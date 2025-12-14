@@ -11,9 +11,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { RequestProcedure } from '@/interfaces/image-dicom/request-procedure.interface';
+import { RequestProcedure } from '@/common/interfaces/image-dicom/request-procedure.interface';
 import { Building, Calendar, Users, Activity } from 'lucide-react';
-import { formatStatus, modalStyles, getStatusBadgeColor } from '@/utils/format-status';
+import { formatStatus, modalStyles, getStatusBadgeColor } from '@/common/utils/format-status';
 
 interface RequestProcedureViewModalProps {
   procedure: RequestProcedure | null;

@@ -1,7 +1,7 @@
 import {
   visitInformationFormSchema,
   VisitInformationFormValues,
-} from "@/lib/validation/visit-information-form";
+} from "@/common/lib/validation/visit-information-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";

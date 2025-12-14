@@ -3,7 +3,7 @@
 import React, { use } from "react";
 import { useGetPatientEncounterByIdQuery } from "@/store/patientEncounterApi";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 export default function Page({
   params,

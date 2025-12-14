@@ -14,14 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoomSchedule, ShiftTemplate } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
 import {
   TimelineSegment,
   buildTimelineSegments,
   scheduleFallsInSegment,
-} from "@/utils/time-segment-utils";
+} from "@/common/utils/time-segment-utils";
 import { useGetRoomsQuery } from "@/store/roomsApi";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface RoomViewProps {
   selectedDate: Date;
@@ -299,7 +299,10 @@ export function RoomView({
         <div className="flex flex-wrap gap-2 items-center">
                           <Select value={selectValue} onValueChange={handleAddRoom}>
             <SelectTrigger className="w-[200px] h-8 text-sm bg-primary text-white border-border hover:bg-primary/90">
-              <SelectValue placeholder="Add room to view..." />
+              <SelectValue 
+                placeholder="Add room to view..." 
+                className="data-[placeholder-shown]:text-white"
+              />
             </SelectTrigger>
             <SelectContent>
               {availableRooms

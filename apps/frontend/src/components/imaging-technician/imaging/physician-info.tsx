@@ -1,5 +1,5 @@
 import React from "react";
-import { User } from "@/interfaces/user/user.interface";
+import { User } from "@/common/interfaces/user/user.interface";
 import { Building2, Mail } from "lucide-react";
 
 export default function PhysicianInfo({ physician }: { physician: User }) {

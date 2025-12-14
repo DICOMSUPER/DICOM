@@ -11,13 +11,13 @@ import { Search, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
-import { extractApiData } from "@/utils/api";
-import { ImagingOrderStatus } from "@/enums/image-dicom.enum";
+import { extractApiData } from "@/common/utils/api";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import DatePickerDropdown from "@/components/radiologist/date-picker";
 import { Label } from "recharts";
 import { setFilters } from "@/store/patientSlice";
-import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
+import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 
 export interface ImagingOrderFilters {
   patientFirstName?: string;

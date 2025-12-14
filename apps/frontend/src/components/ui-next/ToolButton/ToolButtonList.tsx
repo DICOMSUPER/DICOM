@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../DropdownMenu';
-import { cn } from '../../../lib/utils';
+import { cn } from '../../../common/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '../Tooltip';
 
 /**

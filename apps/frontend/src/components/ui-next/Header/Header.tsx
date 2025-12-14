@@ -2,12 +2,12 @@ import React, { ReactNode } from 'react';
 import classNames from 'classnames';
 
 import NavBar from '../NavBar';
-import { IconPresentationProvider } from '../../../contexts/IconPresentationProvider';
+import { IconPresentationProvider } from '../../../common/contexts/IconPresentationProvider';
 import { ToolButton } from '../ToolButton';
 import { ArrowLeft, Settings } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { getLucideIcon } from '@/utils/get-lucide-icon';
+import { getLucideIcon } from '@/common/utils/get-lucide-icon';
 
 // Todo: we should move this component to composition and remove props base
 

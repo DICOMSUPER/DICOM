@@ -37,13 +37,13 @@ import {
   RoomSchedule,
   ViewMode,
   RoomScheduleSearchFilters,
-} from "@/interfaces/schedule/schedule.interface";
-import { useShiftTemplatesDictionary } from "@/hooks/useShiftTemplatesDictionary";
+} from "@/common/interfaces/schedule/schedule.interface";
+import { useShiftTemplatesDictionary } from "@/common/hooks/useShiftTemplatesDictionary";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { Roles } from "@/enums/user.enum";
-import { extractApiData } from "@/utils/api";
-import { User } from "@/interfaces/user/user.interface";
+import { Roles } from "@/common/enums/user.enum";
+import { extractApiData } from "@/common/utils/api";
+import { User } from "@/common/interfaces/user/user.interface";
 
 const timeSlots = [
   { time: "8:00 AM", hour: 8 },

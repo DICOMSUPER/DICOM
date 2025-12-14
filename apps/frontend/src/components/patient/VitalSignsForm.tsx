@@ -18,8 +18,8 @@ import {
   AlertTriangle,
   Check
 } from 'lucide-react';
-import { VitalSignsCollection, VitalSignCode, VitalSignUnit } from '@/interfaces/patient/patient-workflow.interface';
-import { Roles } from '@/enums/user.enum';
+import { VitalSignsCollection, VitalSignCode, VitalSignUnit } from '@/common/interfaces/patient/patient-workflow.interface';
+import { Roles } from '@/common/enums/user.enum';
 import type { RootState } from '@/store';
 
 interface VitalSignsFormProps {

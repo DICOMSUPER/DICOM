@@ -10,10 +10,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
+import { ShiftTemplate } from '@/common/interfaces/user/shift-template.interface';
 import { Clock, Edit } from 'lucide-react';
-import { getBooleanStatusBadge } from '@/utils/status-badge';
-import { formatDate } from '@/lib/formatTimeDate';
+import { getBooleanStatusBadge } from '@/common/utils/status-badge';
+import { formatDate } from '@/common/lib/formatTimeDate';
 
 interface ShiftTemplateViewModalProps {
   template: ShiftTemplate | null;

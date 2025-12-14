@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { AiAnalysis } from '@/interfaces/system/ai-analysis.interface';
+import { AiAnalysis } from '@/common/interfaces/system/ai-analysis.interface';
 
 interface AiAnalysisDeleteModalProps {
   aiAnalysis: AiAnalysis | null;

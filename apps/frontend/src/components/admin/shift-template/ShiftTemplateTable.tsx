@@ -3,9 +3,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2, Clock } from 'lucide-react';
-import { ShiftTemplate } from '@/interfaces/user/shift-template.interface';
+import { ShiftTemplate } from '@/common/interfaces/user/shift-template.interface';
 import { DataTable } from '@/components/ui/data-table';
-import { formatDateTime } from '@/utils/format-status';
+import { formatDateTime } from '@/common/utils/format-status';
 import { SortConfig } from '@/components/ui/data-table';
 
 interface ShiftTemplateTableProps {

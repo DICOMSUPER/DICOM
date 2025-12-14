@@ -4,13 +4,13 @@ import * as React from "react";
 import { useSelector } from "react-redux";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { AppHeader } from "@/components/app-header";
-import { useBreadcrumb } from "@/hooks/use-breadcrumb";
-import { cn } from "@/lib/utils";
+import { useBreadcrumb } from "@/common/hooks/use-breadcrumb";
+import { cn } from "@/common/lib/utils";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RootState } from "@/store";
-import { useLogout } from "@/hooks/use-logout";
-import { formatStatus } from "@/utils/format-status";
+import { useLogout } from "@/common/hooks/use-logout";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode;

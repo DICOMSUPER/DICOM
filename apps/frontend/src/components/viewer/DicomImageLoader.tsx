@@ -6,7 +6,7 @@ import { init as csToolsInit } from "@cornerstonejs/tools";
 import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
 import { metaData } from "@cornerstonejs/core";
 import { loadImage } from "@cornerstonejs/core/loaders/imageLoader";
-import { batchedRender } from "@/utils/renderBatcher";
+import { batchedRender } from "@/common/utils/renderBatcher";
 
 // Frame scrollbar component with draggable thumb
 function FrameScrollbarComponent({

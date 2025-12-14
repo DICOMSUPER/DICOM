@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Plus, Calendar, Download, Activity, Eye, ArrowUpDown } from 'lucide-react';
-import { PatientEncounter } from '@/interfaces/patient/patient-workflow.interface';
+import { PatientEncounter } from '@/common/interfaces/patient/patient-workflow.interface';
 import {
   createColumnHelper,
   flexRender,
@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatDate, formatTime } from '@/lib/formatTimeDate';
+import { formatDate, formatTime } from '@/common/lib/formatTimeDate';
 import { useRouter } from 'next/navigation';
 
 interface EncounterHistoryTabProps {

@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { VitalSignFormValues, vitalSignSchema } from "@/lib/validation/vital-sign-form";
+import { VitalSignFormValues, vitalSignSchema } from "@/common/lib/validation/vital-sign-form";
 
 interface VitalSignFormProps {
   open: boolean;

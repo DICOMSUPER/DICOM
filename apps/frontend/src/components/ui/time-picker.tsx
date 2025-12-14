@@ -5,7 +5,7 @@ import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TimePickerProps {

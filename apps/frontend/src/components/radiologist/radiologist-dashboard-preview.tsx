@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, FolderTree, ArrowRight, Image as ImageIcon, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatStatus } from "@/utils/format-status";
+import { formatStatus } from "@/common/utils/format-status";
 
 interface Study {
   id: string;

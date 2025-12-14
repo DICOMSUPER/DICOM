@@ -24,7 +24,7 @@ import {
   Visit, 
   Immunization 
 } from '@/types/patient-detail';
-import { formatStatus } from '@/utils/format-status';
+import { formatStatus } from '@/common/utils/format-status';
 
 interface MedicalHistoryTabProps {
   procedures: MedicalProcedure[];

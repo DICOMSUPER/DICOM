@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Annotation } from '@cornerstonejs/tools/types';
-import { ImageAnnotation } from '@/interfaces/image-dicom/image-annotation.interface';
+import { ImageAnnotation } from '@/common/interfaces/image-dicom/image-annotation.interface';
 import { Info } from 'lucide-react';
 
 interface AnnotationDetailModalProps {

@@ -1,5 +1,5 @@
-import { DicomStudyStatus } from "@/enums/image-dicom.enum";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
 import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
 import { ChevronDown } from "lucide-react";
 import React, { useState, useEffect } from "react";

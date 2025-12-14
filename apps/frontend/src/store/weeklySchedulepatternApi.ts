@@ -1,8 +1,8 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { axiosBaseQuery } from "@/lib/axiosBaseQuery";
-import { PaginatedResponse, QueryParams } from "@/interfaces/pagination/pagination.interface";
-import { mapApiResponse } from "@/utils/adpater";
-import { CreateWeeklySchedulePatternDto, UpdateWeeklySchedulePatternDto, WeeklySchedulePattern } from "@/interfaces/user/week-schedule-pattern.interface";
+import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
+import { PaginatedResponse, QueryParams } from "@/common/interfaces/pagination/pagination.interface";
+import { mapApiResponse } from "@/common/utils/adpater";
+import { CreateWeeklySchedulePatternDto, UpdateWeeklySchedulePatternDto, WeeklySchedulePattern } from "@/common/interfaces/user/week-schedule-pattern.interface";
 
 
 

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import dynamic from 'next/dynamic';
-import { useViewer } from '@/contexts/ViewerContext';
+import { useViewer } from '@/common/contexts/ViewerContext';
 
 const CornerstoneViewport = dynamic(
   () => import('./CornerstoneViewport'),

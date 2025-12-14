@@ -30,7 +30,7 @@ import {
   CreateModalityMachineDto,
   UpdateModalityMachineDto,
   ModalityMachine,
-} from "@/interfaces/image-dicom/modality-machine.interface";
+} from "@/common/interfaces/image-dicom/modality-machine.interface";
 import {
   useGetModalityMachineByIdQuery,
 } from "@/store/modalityMachineApi";
@@ -38,10 +38,10 @@ import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { MachineStatus } from "@/enums/machine-status.enum";
-import { extractApiData } from "@/utils/api";
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
-import { Room } from "@/interfaces/user/room.interface";
+import { MachineStatus } from "@/common/enums/machine-status.enum";
+import { extractApiData } from "@/common/utils/api";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 import { Cpu } from "lucide-react";
 
 const modalityMachineFormSchema = z.object({

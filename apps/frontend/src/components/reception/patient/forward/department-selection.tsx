@@ -4,9 +4,9 @@ import type { SingleValue } from "react-select";
 import { AlertCircle, Building2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { Department } from "@/interfaces/user/department.interface";
-import { Services } from "@/interfaces/user/service.interface";
-import { Room } from "@/interfaces/user/room.interface";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Services } from "@/common/interfaces/user/service.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
 
 type DepartmentOption = Department & { value: string; label: string };
 

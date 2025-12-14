@@ -6,7 +6,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
+import { PredictionMetadata } from "@/common/interfaces/system/ai-result.interface";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, CheckCircle2, AlertCircle } from "lucide-react";
 import Image from "next/image";

@@ -2,13 +2,13 @@
 import { DiagnosisReportFiltersSection } from "@/components/physician/diagnosis-report/diagnosis-report-filters";
 import { DiagnosisReportTable } from "@/components/physician/diagnosis-report/diagnosis-report-table";
 import { ModalDiagnosisReportDetail } from "@/components/physician/diagnosis-report/modal-diagnosis-report-detail";
-import { PaginationMeta } from "@/interfaces/pagination/pagination.interface";
-import { FilterDiagnosesReport } from "@/interfaces/patient/diagnosis-report.interface";
-import { PaginationParams } from "@/interfaces/patient/patient-workflow.interface";
-import { formatDate } from "@/lib/formatTimeDate";
+import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
+import { FilterDiagnosesReport } from "@/common/interfaces/patient/diagnosis-report.interface";
+import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
+import { formatDate } from "@/common/lib/formatTimeDate";
 import { useGetDiagnosisReportWithFilterQuery } from "@/store/diagnosisApi";
 
-import { prepareApiFilters } from "@/utils/filter-utils";
+import { prepareApiFilters } from "@/common/utils/filter-utils";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

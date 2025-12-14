@@ -20,9 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PatientCondition } from '@/interfaces/patient/patient-condition.interface';
-import { PatientOverview, VitalSignsSimplified } from '@/interfaces/patient/patient-workflow.interface';
-import { formatStatus } from '@/utils/format-status';
+import { PatientCondition } from '@/common/interfaces/patient/patient-condition.interface';
+import { PatientOverview, VitalSignsSimplified } from '@/common/interfaces/patient/patient-workflow.interface';
+import { formatStatus } from '@/common/utils/format-status';
 
 
 

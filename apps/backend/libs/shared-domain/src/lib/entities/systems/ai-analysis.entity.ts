@@ -33,7 +33,7 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId!: string;
 
-  @Column({ name: 'ai_model_id' })
+  @Column({ name: 'ai_model_id', nullable: true })
   aiModelId!: string;
 
   @Column({ name: 'model_name', length: 150, nullable: true })

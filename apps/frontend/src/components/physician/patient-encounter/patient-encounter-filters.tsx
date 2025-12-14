@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/select";
 import { Search, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { PatientEncounterFilters } from "@/interfaces/patient/patient-visit.interface";
-import { EncounterStatus, EncounterPriorityLevel } from "@/enums/patient-workflow.enum";
+import { PatientEncounterFilters } from "@/common/interfaces/patient/patient-visit.interface";
+import { EncounterStatus, EncounterPriorityLevel } from "@/common/enums/patient-workflow.enum";
 
 interface PatientEncounterFiltersSectionProps {
   filters: PatientEncounterFilters;

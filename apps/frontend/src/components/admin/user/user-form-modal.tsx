@@ -32,12 +32,12 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { User } from '@/interfaces/user/user.interface';
+import { User } from '@/common/interfaces/user/user.interface';
 import { useCreateUserMutation, useCreateStaffAccountMutation, useUpdateUserMutation, useGetCurrentProfileQuery } from '@/store/userApi';
-import { Department } from '@/interfaces/user/department.interface';
-import { Roles } from '@/enums/user.enum';
+import { Department } from '@/common/interfaces/user/department.interface';
+import { Roles } from '@/common/enums/user.enum';
 import { User as UserIcon, Shield, BadgeCheck, Building2 } from 'lucide-react';
-import { formatRole, modalStyles } from '@/utils/format-status';
+import { formatRole, modalStyles } from '@/common/utils/format-status';
 
 interface UserFormModalProps {
   user: User | null;

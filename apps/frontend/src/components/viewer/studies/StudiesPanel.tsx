@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DicomSeries } from '@/interfaces/image-dicom/dicom-series.interface';
-import { DicomStudy } from '@/interfaces/image-dicom/dicom-study.interface';
+import { DicomSeries } from '@/common/interfaces/image-dicom/dicom-series.interface';
+import { DicomStudy } from '@/common/interfaces/image-dicom/dicom-study.interface';
 
 interface StudiesPanelProps {
   onSeriesSelect?: (series: DicomSeries) => void;

@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/common/lib/utils";
 
-import { useNotifications } from "@/contexts/NotificationContext";
+import { useNotifications } from "@/common/contexts/NotificationContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { NotificationItem } from "./NotificationItem";
-import { getNavigationRoleFromUserRole } from "@/utils/role-formatter";
+import { getNavigationRoleFromUserRole } from "@/common/utils/role-formatter";
 
 const NotificationBell: React.FC = () => {
   const router = useRouter();

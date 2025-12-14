@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoomSchedule } from "@/interfaces/schedule/schedule.interface";
+import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 import { useDeleteRoomScheduleMutation } from "@/store/roomScheduleApi";
-import { formatTimeRange } from "@/utils/schedule-helpers";
+import { formatTimeRange } from "@/common/utils/schedule-helpers";
 
 interface DeleteScheduleModalProps {
   schedule: RoomSchedule | null;

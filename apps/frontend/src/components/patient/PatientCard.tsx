@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Patient, PatientCardProps, PatientViewMode, Gender, BloodType } from '@/interfaces/patient/patient-workflow.interface';
+import { Patient, PatientCardProps, PatientViewMode, Gender, BloodType } from '@/common/interfaces/patient/patient-workflow.interface';
 import { format } from 'date-fns';
 
 const PatientCard: React.FC<PatientCardProps> = ({

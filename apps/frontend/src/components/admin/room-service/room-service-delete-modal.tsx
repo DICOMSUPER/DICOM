@@ -1,7 +1,7 @@
 'use client';
 
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { ServiceRoom } from '@/interfaces/user/service-room.interface';
+import { ServiceRoom } from '@/common/interfaces/user/service-room.interface';
 
 interface RoomServiceDeleteModalProps {
   roomService: ServiceRoom | null;

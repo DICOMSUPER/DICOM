@@ -1,6 +1,6 @@
 "use client";
 
-import { PatientCondition } from "@/interfaces/patient/patient-condition.interface";
+import { PatientCondition } from "@/common/interfaces/patient/patient-condition.interface";
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,8 @@ import {
 import {
   ClinicalStatus,
   ConditionVerificationStatus,
-} from "@/enums/patient-workflow.enum";
-import { modalStyles } from "@/utils/format-status";
+} from "@/common/enums/patient-workflow.enum";
+import { modalStyles } from "@/common/utils/format-status";
 
 export default function PatientConditionModal({
   condition,

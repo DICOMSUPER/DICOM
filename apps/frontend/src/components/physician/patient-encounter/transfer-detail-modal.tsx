@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { PatientEncounter } from "@/interfaces/patient/patient-workflow.interface";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import { UserStar, Clock, User, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useGetUserByIdQuery } from "@/store/userApi";

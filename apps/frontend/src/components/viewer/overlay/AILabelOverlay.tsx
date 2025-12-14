@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { getRenderingEngine, Enums, type Types } from "@cornerstonejs/core";
-import { PredictionMetadata } from "@/interfaces/system/ai-result.interface";
+import { PredictionMetadata } from "@/common/interfaces/system/ai-result.interface";
 
 interface AILabelOverlayProps {
   viewportId: string;

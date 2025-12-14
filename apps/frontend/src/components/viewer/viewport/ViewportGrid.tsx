@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
-import { DicomSeries } from "@/interfaces/image-dicom/dicom-series.interface";
-import { DicomStudy } from "@/interfaces/image-dicom/dicom-study.interface";
-import { useViewer } from "@/contexts/ViewerContext";
+import { DicomSeries } from "@/common/interfaces/image-dicom/dicom-series.interface";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { useViewer } from "@/common/contexts/ViewerContext";
 import { useEffect, useRef, useState } from "react";
 
 const ViewPortMain = dynamic(

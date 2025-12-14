@@ -13,8 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetServiceByIdQuery } from "@/store/serviceApi";
 import { useGetRoomsByServiceQuery } from "@/store/serviceRoomApi";
-import { extractApiData } from "@/utils/api";
-import { ServiceRoom } from "@/interfaces/user/service-room.interface";
+import { extractApiData } from "@/common/utils/api";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
 import { DataTable } from "@/components/ui/data-table";
 import {
   Cog,
@@ -22,7 +22,7 @@ import {
   Building2,
   Stethoscope,
 } from "lucide-react";
-import { formatStatus, modalStyles, getStatusBadgeColor } from "@/utils/format-status";
+import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
 
 interface ModalServiceDetailProps {
   open: boolean;

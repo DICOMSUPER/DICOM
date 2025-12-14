@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar } from "@/components/ui/calendar";
-import { EmployeeRoomAssignmentStats } from "@/interfaces/user/employee-room-assignment.interface";
+import { EmployeeRoomAssignmentStats } from "@/common/interfaces/user/employee-room-assignment.interface";
 import { CalendarWithDots } from "../ui/calendar-with-dots";
 
 interface ScheduleSidebarProps {

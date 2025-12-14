@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { BodyPart } from "@/interfaces/image-dicom/body-part.interface";
-import { ImagingModality } from "@/interfaces/image-dicom/imaging_modality.interface";
-import { ModalityMachine } from "@/interfaces/image-dicom/modality-machine.interface";
-import { RequestProcedure } from "@/interfaces/image-dicom/request-procedure.interface";
+import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
+import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
+import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
 import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { Trash2 } from "lucide-react";
 
