@@ -67,7 +67,7 @@ export function runImagingOrdersE2ETests(port = 5003, host = 'localhost') {
       const findAllPattern = `${IMAGING_SERVICE}.ImagingOrderForm.${MESSAGE_PATTERNS.FIND_ALL}`;
       const existingOrderFormsData = await firstValueFrom(
         client.send<any>(findAllPattern, {
-          filter: { page: 1, limit: 100, status: OrderFormStatus.IN_PROGRESS },
+          filter: { page: 1, limit: 100 },
           userId: undefined,
         })
       );
@@ -100,7 +100,7 @@ export function runImagingOrdersE2ETests(port = 5003, host = 'localhost') {
       const dto: CreateImagingOrderDto = {
         request_procedure_id: randomProcedure.id,
         orderStatus: OrderStatus.PENDING,
-        imagingOrderFormId: uuidv4(),
+        imagingOrderFormId: randomOrderForm.id,
         clinicalIndication: `E2E Clinical Indication ${Date.now()}`,
         contrastRequired: false,
         specialInstructions: `E2E Special Instructions ${Date.now()}`,

@@ -4,7 +4,10 @@ import {
   ExecutionContext,
   CallHandler,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
@@ -92,14 +95,51 @@ export class TransformInterceptor<T>
             ? rpcPayload
             : (rpcPayload as any)?.message || (error as any)?.message;
 
+        const payloadLocation =
+          typeof (rpcPayload as any)?.location === 'string'
+            ? (rpcPayload as any)?.location
+            : undefined;
+
+        // Map common database error codes to HTTP status
+        const mapDbCodeToHttp = (code: unknown): number => {
+          switch (code) {
+            case '23505': // unique_violation
+              return HttpStatus.CONFLICT;
+            case '23503': // foreign_key_violation
+              return HttpStatus.BAD_REQUEST;
+            case '22P02': // invalid_text_representation
+              return HttpStatus.BAD_REQUEST;
+            default:
+              return HttpStatus.INTERNAL_SERVER_ERROR;
+          }
+        };
+
+        // If upstream already threw HttpException/RpcException, bubble it up
+        if (error instanceof HttpException || error instanceof RpcException) {
+          return throwError(() => error);
+        }
+
+        console.log('error  inthe transformer interceptor', error); //debug proper status
+        const rawStatus =
+          (error as any)?.code ||
+          (error as any)?.status ||
+          payloadCode ||
+          (error as any)?.statusCode;
+
+        const statusCode = (() => {
+          if (typeof rawStatus === 'number') return rawStatus;
+          if (typeof rawStatus === 'string') {
+            const numeric = Number(rawStatus);
+            if (!Number.isNaN(numeric)) return numeric;
+            return mapDbCodeToHttp(rawStatus);
+          }
+          return HttpStatus.INTERNAL_SERVER_ERROR;
+        })();
+
         const errResponse: StandardResponse<null> = {
           success: false,
           data: null,
-          statusCode:
-            (error as any)?.status ||
-            payloadCode ||
-            (error as any)?.statusCode ||
-            500,
+          statusCode,
           message: payloadMessage || 'Internal Server Error',
           timestamp: new Date().toISOString(),
           path,
@@ -112,7 +152,19 @@ export class TransformInterceptor<T>
           (error as any)?.stack
         );
 
-        return throwError(() => errResponse);
+        // Re-throw as HttpException so global filters can map status correctly
+        const httpError = new HttpException(
+          {
+            message: errResponse.message,
+            location: payloadLocation,
+            traceId,
+            path,
+            method,
+          },
+          statusCode
+        );
+
+        return throwError(() => httpError);
       })
     );
   }

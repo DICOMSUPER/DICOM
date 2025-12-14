@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateDicomSeriesDto {
@@ -21,6 +22,7 @@ export class CreateDicomSeriesDto {
   @IsOptional()
   bodyPartExamined?: string;
 
+  @Type(() => Date)
   @IsDate()
   @IsOptional()
   seriesDate?: Date;
