@@ -1,10 +1,4 @@
-import {
-  IsDecimal,
-  IsInt,
-  IsJSON,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateDicomInstanceDto {
   @IsString()
@@ -28,27 +22,24 @@ export class CreateDicomInstanceDto {
   @IsInt()
   numberOfFrame!: number;
 
-  @IsJSON()
   @IsOptional()
   imagePosition?: object;
 
-  @IsJSON()
   @IsOptional()
   imageOrientation?: object;
 
-  @IsJSON()
   @IsOptional()
   pixelSpacing?: object;
 
-  @IsDecimal()
+  @IsNumber()
   @IsOptional()
   sliceThickness?: number;
 
-  @IsDecimal()
+  @IsNumber()
   @IsOptional()
   windowCenter?: number;
 
-  @IsDecimal()
+  @IsNumber()
   @IsOptional()
   windowWidth?: number;
 

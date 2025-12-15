@@ -8,13 +8,24 @@ export const handleErrorFromMicroservices = (
 ): RpcException => {
   const logger = new Logger(location);
   logger.error(error);
+
+  //Debug log for error details
+  console.log(
+    'error handled in the microservice layer',
+    error,
+    typeof error,
+    error instanceof RpcException
+  );
   if (error instanceof RpcException) {
     throw error;
   } else {
     const exception = new RpcException({
-      code: 500,
-      message: `${message}: ${(error as Error).message || error}`,
-      location: location,
+      code:
+        (error as any)?.code > 99 && (error as any)?.code < 1000
+          ? (error as any)?.code
+          : 500,
+      message: `${message}: ${(error as any).message || error}`,
+      location: (error as any)?.location || location,
     });
     throw exception;
   }
@@ -137,5 +148,6 @@ export const ThrowMicroserviceException = (
   message: string,
   location: string
 ) => {
+  console.log('Throw microservices exception', { code, message, location }); //debug for error status
   throw new RpcException({ code, message, location });
 };

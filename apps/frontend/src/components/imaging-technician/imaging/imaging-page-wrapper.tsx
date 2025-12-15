@@ -68,11 +68,15 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
     useGetImagingOrderByIdQuery(order_id);
 
   //get studies related to this order
-  const { data: studyData, refetch: refetchStudy, isLoading: isLoadingStudy, isError: isStudyError } =
-    useUseGetDicomStudyByReferenceIdQuery(
-      { id: orderData?.data?.id ?? "", type: "order" },
-      { skip: !orderData?.data?.id }
-    );
+  const {
+    data: studyData,
+    refetch: refetchStudy,
+    isLoading: isLoadingStudy,
+    isError: isStudyError,
+  } = useUseGetDicomStudyByReferenceIdQuery(
+    { id: orderData?.data?.id ?? "", type: "order" },
+    { skip: !orderData?.data?.id }
+  );
 
   //get patient related to this order
   const { data: patientData, isLoading: isLoadingPatient } =
@@ -172,24 +176,21 @@ export default function ImagingPageWrapper({ order_id }: { order_id: string }) {
 
   const handleChangeMrn = async (id: string, mrn: string) => {
     try {
-      await updatePatient({ id, data: { patientCode: mrn } });
+      await updatePatient({ id, data: { patientCode: mrn } }).unwrap();
+
+      await Promise.all(
+        studies.map((s) =>
+          updateDicomStudy({ id: s.id, data: { patientCode: mrn } }).unwrap()
+        )
+      );
+
       setChangeMrnModal(null);
 
-      studies.forEach(async (s) => {
-        try {
-          updateDicomStudy({ id: s.id, data: { patientCode: mrn } });
-        } catch (error) {
-          console.log(
-            "Failed to update related studies for patient MRN",
-            error
-          );
-        }
-      });
       refetchStudy();
 
       toast.success("Patient MRN updated successfully");
     } catch (error) {
-      toast.error("Failed to update Patient MRN");
+      toast.error(error?.data?.message || "Failed to update Patient MRN");
     }
   };
 

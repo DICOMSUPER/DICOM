@@ -27,7 +27,8 @@ export class PatientService {
   constructor(
     @Inject(DiagnosisReportRepository)
     private readonly diagnosisReportRepository: DiagnosisReportRepository,
-    @Inject(PatientRepository) private readonly patientRepository: PatientRepository
+    @Inject(PatientRepository)
+    private readonly patientRepository: PatientRepository
   ) {}
 
   private checkPatient = async (id: string): Promise<Patient> => {
@@ -49,7 +50,7 @@ export class PatientService {
     if (patient && !patient.isDeleted) {
       throw ThrowMicroserviceException(
         HttpStatus.INTERNAL_SERVER_ERROR,
-        'Payment code generated has been taken, please try again',
+        'Patient code generated has been taken, please try again',
         PATIENT_SERVICE
       );
     }
@@ -176,6 +177,14 @@ export class PatientService {
     updatePatientDto: UpdatePatientDto
   ): Promise<Patient | null> => {
     const patient = await this.checkPatient(id);
+
+    if (
+      updatePatientDto.patientCode &&
+      updatePatientDto.patientCode !== patient.patientCode
+    ) {
+      await this.checkPatientCode(updatePatientDto.patientCode);
+    }
+
     return await this.patientRepository.update(id, updatePatientDto);
   };
 
@@ -243,7 +252,7 @@ export class PatientService {
             new Date(a.encounterDate).getTime()
         ),
       }; //sort encounter to show last visited
-    }) as any; 
+    }) as any;
 
     return { ...patientsData, data: patients };
   };

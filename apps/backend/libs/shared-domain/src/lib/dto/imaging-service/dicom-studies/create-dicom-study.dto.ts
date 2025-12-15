@@ -1,5 +1,13 @@
-import { IsDate, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { DicomStudyStatus } from '@backend/shared-enums';
+import { Type } from 'class-transformer';
 
 export class CreateDicomStudyDto {
   @IsString()
@@ -12,10 +20,13 @@ export class CreateDicomStudyDto {
   orderId!: string;
 
   @IsString()
-  modalityId!: string;
+  @IsOptional()
+  modalityId?: string;
 
+  @Type(() => Date)
   @IsDate()
-  studyDate!: Date;
+  @IsOptional()
+  studyDate?: Date = new Date();
 
   @IsUUID()
   modalityMachineId!: string;

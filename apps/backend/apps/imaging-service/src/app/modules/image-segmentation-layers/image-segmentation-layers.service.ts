@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ImageSegmentationLayersRepository } from './image-segmentation-layers.repository';
 import {
   CreateImageSegmentationLayerDto,
@@ -9,6 +9,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, FindManyOptions } from 'typeorm';
 import { PaginatedResponseDto, PaginationDto } from '@backend/database';
 import { DicomInstancesRepository } from '../dicom-instances/dicom-instances.repository';
+import { ThrowMicroserviceException } from '@backend/shared-utils';
 
 @Injectable()
 export class ImageSegmentationLayersService {
@@ -80,6 +81,21 @@ export class ImageSegmentationLayersService {
         await this.checkDicomInstanceExists(
           UpdateImageSegmentationLayerDto?.instanceId
         );
+
+      const checkLayer = await this.imageSegmentationLayersRepository.findOne(
+        { where: { id, isDeleted: false } },
+        [],
+
+        transactionalEntityManager
+      );
+
+      if (!checkLayer) {
+        throw ThrowMicroserviceException(
+          HttpStatus.NOT_FOUND,
+          `ImageSegmentationLayer with id ${id} does not exist.`,
+          'ImageSegmentationLayersService:update'
+        );
+      }
 
       const layer = await this.imageSegmentationLayersRepository.findOne(
         { where: { id, isDeleted: false } },
