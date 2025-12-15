@@ -29,6 +29,7 @@ import { ServicesModule } from './modules/services/services.module';
     }),
     DepartmentsModule,
     UsersModule,
+
     ScheduleModule,
     RoomsModule,
     ShiftTemplatesModule,
