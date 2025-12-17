@@ -4,6 +4,7 @@ import React, { use } from "react";
 import { useGetPatientEncounterByIdQuery } from "@/store/patientEncounterApi";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { formatStatus } from "@/common/utils/format-status";
+import AnotherHeaderPDF from "@/components/pdf-generator/another-header";
 
 export default function Page({
   params,
@@ -99,6 +100,20 @@ export default function Page({
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; background: white; }
+            img { max-width: 100%; height: auto; }
+            .w-24 { width: 6rem; }
+            .h-24 { height: 6rem; }
+            .object-contain { object-fit: contain; }
+            .flex-shrink-0 { flex-shrink: 0; }
+            .flex-1 { flex: 1 1 0%; }
+            .justify-between { justify-content: space-between; }
+            .items-start { align-items: flex-start; }
+            .text-right { text-align: right; }
+            .leading-relaxed { line-height: 1.625; }
+            .font-sans { font-family: Arial, sans-serif; }
+            .mb-6 { margin-bottom: 1.5rem; }
+            .flex { display: flex; }
+            .gap-4 { gap: 1rem; }
             .border-2 { border: 2px solid #000; }
             .border { border: 1px solid #ddd; }
             .border-b-2 { border-bottom: 2px solid #000; }
@@ -173,6 +188,7 @@ export default function Page({
         id="queue-assignment-print"
         className="max-w-4xl mx-auto bg-white border-2 border-black shadow-lg"
       >
+        <AnotherHeaderPDF></AnotherHeaderPDF>
         {/* Header */}
         <div className="border-b-2 border-black p-6 text-center">
           <h1 className="text-2xl font-bold uppercase mb-1">
@@ -426,9 +442,7 @@ export default function Page({
           <div className="flex flex-col gap-2">
             <div className="block font-semibold leading-snug">
               <span className="font-semibold">ID: </span>
-              <span className="font-mono break-all block">
-                {encounter?.id}
-              </span>
+              <span className="font-mono break-all block">{encounter?.id}</span>
             </div>
             <div className="block font-semibold leading-snug">
               <span className="font-semibold">Exported: </span>

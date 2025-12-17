@@ -39,18 +39,26 @@ import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { extractApiData } from "@/common/utils/api";
 import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
-import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
+import {
+  formatStatus,
+  modalStyles,
+  getStatusBadgeColor,
+} from "@/common/utils/format-status";
 
 interface RoomViewModalProps {
-  room: (Room & {
-    staffForDay?: {
-      id?: string;
-      name: string;
-      role?: string;
-      scheduleStatus?: string;
-    }[];
-    selectedDate?: string;
-  }) | null;
+  room:
+    | (Room & {
+        staffForDay?: {
+          id?: string;
+          name: string;
+          role?: string;
+          scheduleStatus?: string;
+          actualStartTime?: string;
+          actualEndTime?: string;
+        }[];
+        selectedDate?: string;
+      })
+    | null;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: (room: Room) => void;
@@ -104,32 +112,44 @@ export function RoomViewModal({
 
   const getStatusBadge = (status: string) => {
     const statusLower = status?.toUpperCase();
-    let color: keyof typeof modalStyles.badge = 'slate';
-    let dotColor: keyof typeof modalStyles.statusDot = 'slate';
+    let color: keyof typeof modalStyles.badge = "slate";
+    let dotColor: keyof typeof modalStyles.statusDot = "slate";
     let animate = false;
 
     switch (statusLower) {
       case RoomStatus.AVAILABLE:
-        color = 'green';
-        dotColor = 'green';
+        color = "green";
+        dotColor = "green";
         break;
       case RoomStatus.OCCUPIED:
-        color = 'red';
-        dotColor = 'red';
+        color = "red";
+        dotColor = "red";
         break;
       case RoomStatus.MAINTENANCE:
-        color = 'amber';
-        dotColor = 'amber';
+        color = "amber";
+        dotColor = "amber";
         animate = true;
         break;
       default:
-        color = 'slate';
-        dotColor = 'slate';
+        color = "slate";
+        dotColor = "slate";
     }
 
     return (
       <Badge className={modalStyles.badge[color]}>
-        <div className={animate ? modalStyles.statusDot.amber : `w-2 h-2 bg-${dotColor === 'green' ? 'green' : dotColor === 'red' ? 'red' : 'slate'}-500 rounded-full mr-2`} />
+        <div
+          className={
+            animate
+              ? modalStyles.statusDot.amber
+              : `w-2 h-2 bg-${
+                  dotColor === "green"
+                    ? "green"
+                    : dotColor === "red"
+                    ? "red"
+                    : "slate"
+                }-500 rounded-full mr-2`
+          }
+        />
         {formatStatus(status)}
       </Badge>
     );
@@ -148,8 +168,12 @@ export function RoomViewModal({
     const color = getStatusBadgeColor(isActive);
     return (
       <Badge className={modalStyles.badge[color]}>
-        <div className={isActive ? modalStyles.statusDot.green : modalStyles.statusDot.slate} />
-        {isActive ? 'Active' : 'Inactive'}
+        <div
+          className={
+            isActive ? modalStyles.statusDot.green : modalStyles.statusDot.slate
+          }
+        />
+        {isActive ? "Active" : "Inactive"}
       </Badge>
     );
   };
@@ -187,7 +211,10 @@ export function RoomViewModal({
                       <div className="mt-3 space-y-2">
                         <p className={modalStyles.heroSubtitle}>
                           <MapPin className="h-4 w-4 text-teal-600" />
-                          Floor {room.floor !== undefined ? room.floor : "N/A"} • {room.department?.departmentName || "No Department"}
+                          Floor {room.floor !== undefined
+                            ? room.floor
+                            : "N/A"}{" "}
+                          • {room.department?.departmentName || "No Department"}
                         </p>
                         {room.capacity !== undefined && (
                           <p className={modalStyles.heroSubtitle}>
@@ -200,17 +227,21 @@ export function RoomViewModal({
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     {getStatusBadge(room.status)}
-                    {room.pricePerDay !== undefined && room.pricePerDay !== null && (
-                      <div className="bg-white/80 backdrop-blur rounded-lg px-4 py-2 border border-teal-100">
-                        <p className="text-xs text-slate-500 uppercase tracking-wide">Price/Day</p>
-                        <p className="text-lg font-bold text-slate-900 flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-teal-600" />
-                          {typeof room.pricePerDay === "number"
-                            ? room.pricePerDay.toLocaleString()
-                            : Number(room.pricePerDay).toLocaleString()} ₫
-                        </p>
-                      </div>
-                    )}
+                    {room.pricePerDay !== undefined &&
+                      room.pricePerDay !== null && (
+                        <div className="bg-white/80 backdrop-blur rounded-lg px-4 py-2 border border-teal-100">
+                          <p className="text-xs text-slate-500 uppercase tracking-wide">
+                            Price/Day
+                          </p>
+                          <p className="text-lg font-bold text-slate-900 flex items-center gap-1">
+                            <DollarSign className="h-4 w-4 text-teal-600" />
+                            {typeof room.pricePerDay === "number"
+                              ? room.pricePerDay.toLocaleString()
+                              : Number(room.pricePerDay).toLocaleString()}{" "}
+                            ₫
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
               </section>
@@ -222,7 +253,9 @@ export function RoomViewModal({
                     <Building2 className={modalStyles.gridCardIcon} />
                     Room Type
                   </div>
-                  <p className={modalStyles.gridCardValue}>{room.roomType || "N/A"}</p>
+                  <p className={modalStyles.gridCardValue}>
+                    {room.roomType || "N/A"}
+                  </p>
                 </div>
 
                 <div className={modalStyles.gridCard}>
@@ -230,8 +263,12 @@ export function RoomViewModal({
                     <MapPin className={modalStyles.gridCardIcon} />
                     Location
                   </div>
-                  <p className={modalStyles.gridCardValue}>Floor {room.floor}</p>
-                  <p className="text-xs text-slate-500">{room.department?.departmentName || "Unassigned"}</p>
+                  <p className={modalStyles.gridCardValue}>
+                    Floor {room.floor}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {room.department?.departmentName || "Unassigned"}
+                  </p>
                 </div>
 
                 <div className={modalStyles.gridCard}>
@@ -239,7 +276,9 @@ export function RoomViewModal({
                     <Users className={modalStyles.gridCardIcon} />
                     Capacity
                   </div>
-                  <p className={modalStyles.gridCardValue}>{room.capacity} people</p>
+                  <p className={modalStyles.gridCardValue}>
+                    {room.capacity} people
+                  </p>
                 </div>
               </div>
 
@@ -249,17 +288,35 @@ export function RoomViewModal({
                   <div className={modalStyles.sectionIconContainer}>
                     <Users className={modalStyles.sectionIcon} />
                   </div>
-                  <h3 className={modalStyles.sectionTitle}>Staff for {room.selectedDate || "selected day"}</h3>
+                  <h3 className={modalStyles.sectionTitle}>
+                    Staff for {room.selectedDate || "selected day"}
+                  </h3>
                 </div>
                 {staffForDay.length > 0 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {staffForDay.map((staff) => (
-                      <div key={staff.id || staff.name} className={modalStyles.infoCard}>
+                      <div
+                        key={staff.id || staff.name}
+                        className={modalStyles.infoCard}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-sm font-semibold text-slate-900">{staff.name || "Unknown"}</p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {staff.name || "Unknown"}
+                            </p>
                             {staff.role && (
-                              <p className="text-xs text-slate-500 mt-0.5">{formatStatus(staff.role)}</p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {formatStatus(staff.role)}
+                              </p>
+                            )}
+                            {staff.actualStartTime && staff.actualEndTime && (
+                              <p className="text-sm font-gray-300 text-slate-900 leading-tight">
+                                {`Shift: ${
+                                  staff.actualStartTime +
+                                  " - " +
+                                  staff.actualEndTime
+                                }`}
+                              </p>
                             )}
                           </div>
                           {staff.scheduleStatus && (
@@ -300,7 +357,8 @@ export function RoomViewModal({
                     <Monitor className={modalStyles.sectionIcon} />
                   </div>
                   <h3 className={modalStyles.sectionTitle}>
-                    Modality Machines {modalities.length > 0 && `(${modalities.length})`}
+                    Modality Machines{" "}
+                    {modalities.length > 0 && `(${modalities.length})`}
                   </h3>
                 </div>
                 {isLoadingModalities ? (
@@ -311,21 +369,40 @@ export function RoomViewModal({
                 ) : modalities.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2">
                     {modalities.map((machine: ModalityMachine) => {
-                      const displayName = machine.name || machine.modality?.modalityName ||
-                        `${machine.manufacturer || ""} ${machine.model || ""}`.trim() || "Unnamed Machine";
+                      const displayName =
+                        machine.name ||
+                        machine.modality?.modalityName ||
+                        `${machine.manufacturer || ""} ${
+                          machine.model || ""
+                        }`.trim() ||
+                        "Unnamed Machine";
 
                       return (
                         <div key={machine.id} className={modalStyles.infoCard}>
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="text-sm font-semibold text-slate-900">{displayName}</p>
-                              {machine.modality?.modalityName && machine.name && (
-                                <p className="text-xs text-slate-500">Type: {machine.modality.modalityName}</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {displayName}
+                              </p>
+                              {machine.modality?.modalityName &&
+                                machine.name && (
+                                  <p className="text-xs text-slate-500">
+                                    Type: {machine.modality.modalityName}
+                                  </p>
+                                )}
+                              {machine.model && (
+                                <p className="text-xs text-slate-500">
+                                  Model: {machine.model}
+                                </p>
                               )}
-                              {machine.model && <p className="text-xs text-slate-500">Model: {machine.model}</p>}
-                              {machine.manufacturer && <p className="text-xs text-slate-500">Manufacturer: {machine.manufacturer}</p>}
+                              {machine.manufacturer && (
+                                <p className="text-xs text-slate-500">
+                                  Manufacturer: {machine.manufacturer}
+                                </p>
+                              )}
                             </div>
-                            {machine.status && getMachineStatusBadge(machine.status)}
+                            {machine.status &&
+                              getMachineStatusBadge(machine.status)}
                           </div>
                         </div>
                       );
@@ -345,34 +422,43 @@ export function RoomViewModal({
                     <Stethoscope className={modalStyles.sectionIcon} />
                   </div>
                   <h3 className={modalStyles.sectionTitle}>
-                    Room Services {roomServices.length > 0 && `(${roomServices.length})`}
+                    Room Services{" "}
+                    {roomServices.length > 0 && `(${roomServices.length})`}
                   </h3>
                 </div>
                 {roomServices.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2">
-                    {roomServices.filter((sr: ServiceRoom) => sr.isActive && sr.service).map((sr: ServiceRoom) => (
-                      <div key={sr.id} className={modalStyles.infoCard}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900">
-                              {sr.service?.serviceName || "Unknown Service"}
-                            </p>
-                            {sr.service?.serviceCode && (
-                              <p className="text-xs text-slate-500">Code: {sr.service.serviceCode}</p>
-                            )}
-                            {sr.service?.description && (
-                              <p className="text-xs text-slate-500 line-clamp-2 mt-1">{sr.service.description}</p>
-                            )}
+                    {roomServices
+                      .filter((sr: ServiceRoom) => sr.isActive && sr.service)
+                      .map((sr: ServiceRoom) => (
+                        <div key={sr.id} className={modalStyles.infoCard}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {sr.service?.serviceName || "Unknown Service"}
+                              </p>
+                              {sr.service?.serviceCode && (
+                                <p className="text-xs text-slate-500">
+                                  Code: {sr.service.serviceCode}
+                                </p>
+                              )}
+                              {sr.service?.description && (
+                                <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                                  {sr.service.description}
+                                </p>
+                              )}
+                            </div>
+                            {getActiveStatusBadge(sr.isActive)}
                           </div>
-                          {getActiveStatusBadge(sr.isActive)}
+                          {sr.notes && (
+                            <div className="mt-2 pt-2 border-t border-slate-100">
+                              <p className="text-xs text-slate-500">
+                                Notes: {sr.notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {sr.notes && (
-                          <div className="mt-2 pt-2 border-t border-slate-100">
-                            <p className="text-xs text-slate-500">Notes: {sr.notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500 italic bg-slate-50 rounded-lg p-4">
@@ -387,21 +473,65 @@ export function RoomViewModal({
                   <div className={modalStyles.sectionIconContainer}>
                     <Building2 className={modalStyles.sectionIcon} />
                   </div>
-                  <h3 className={modalStyles.sectionTitle}>Equipment & Amenities</h3>
+                  <h3 className={modalStyles.sectionTitle}>
+                    Equipment & Amenities
+                  </h3>
                 </div>
                 <div className="grid gap-3 md:grid-cols-4">
                   {[
                     { key: "hasTV", label: "TV", value: room.hasTV, icon: Tv },
-                    { key: "hasAirConditioning", label: "Air Conditioning", value: room.hasAirConditioning, icon: Wind },
-                    { key: "hasWiFi", label: "WiFi", value: room.hasWiFi, icon: Wifi },
-                    { key: "hasTelephone", label: "Telephone", value: room.hasTelephone, icon: Phone },
-                    { key: "hasAttachedBathroom", label: "Attached Bathroom", value: room.hasAttachedBathroom, icon: DoorOpen },
-                    { key: "isWheelchairAccessible", label: "Wheelchair Accessible", value: room.isWheelchairAccessible, icon: Accessibility },
-                    { key: "hasOxygenSupply", label: "Oxygen Supply", value: room.hasOxygenSupply, icon: Heart },
-                    { key: "hasNurseCallButton", label: "Nurse Call", value: room.hasNurseCallButton, icon: Bell },
+                    {
+                      key: "hasAirConditioning",
+                      label: "Air Conditioning",
+                      value: room.hasAirConditioning,
+                      icon: Wind,
+                    },
+                    {
+                      key: "hasWiFi",
+                      label: "WiFi",
+                      value: room.hasWiFi,
+                      icon: Wifi,
+                    },
+                    {
+                      key: "hasTelephone",
+                      label: "Telephone",
+                      value: room.hasTelephone,
+                      icon: Phone,
+                    },
+                    {
+                      key: "hasAttachedBathroom",
+                      label: "Attached Bathroom",
+                      value: room.hasAttachedBathroom,
+                      icon: DoorOpen,
+                    },
+                    {
+                      key: "isWheelchairAccessible",
+                      label: "Wheelchair Accessible",
+                      value: room.isWheelchairAccessible,
+                      icon: Accessibility,
+                    },
+                    {
+                      key: "hasOxygenSupply",
+                      label: "Oxygen Supply",
+                      value: room.hasOxygenSupply,
+                      icon: Heart,
+                    },
+                    {
+                      key: "hasNurseCallButton",
+                      label: "Nurse Call",
+                      value: room.hasNurseCallButton,
+                      icon: Bell,
+                    },
                   ].map(({ key, label, value }) => (
-                    <div key={key} className={`${modalStyles.infoCard} flex items-center gap-3`}>
-                      <div className={`p-2 rounded-lg ${value ? 'bg-green-100' : 'bg-slate-100'}`}>
+                    <div
+                      key={key}
+                      className={`${modalStyles.infoCard} flex items-center gap-3`}
+                    >
+                      <div
+                        className={`p-2 rounded-lg ${
+                          value ? "bg-green-100" : "bg-slate-100"
+                        }`}
+                      >
                         {value ? (
                           <Check className="h-4 w-4 text-green-600" />
                         ) : (
@@ -409,8 +539,14 @@ export function RoomViewModal({
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-900">{label}</p>
-                        <p className={`text-xs ${value ? 'text-green-600' : 'text-slate-400'}`}>
+                        <p className="text-sm font-medium text-slate-900">
+                          {label}
+                        </p>
+                        <p
+                          className={`text-xs ${
+                            value ? "text-green-600" : "text-slate-400"
+                          }`}
+                        >
                           {value ? "Available" : "Not Available"}
                         </p>
                       </div>
@@ -448,14 +584,18 @@ export function RoomViewModal({
                       <Calendar className="w-3 h-3 inline mr-1" />
                       Created At
                     </div>
-                    <p className={modalStyles.infoCardValue}>{formatDateTime(room.createdAt)}</p>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(room.createdAt)}
+                    </p>
                   </div>
                   <div className={modalStyles.infoCard}>
                     <div className={modalStyles.infoCardLabel}>
                       <Calendar className="w-3 h-3 inline mr-1" />
                       Updated At
                     </div>
-                    <p className={modalStyles.infoCardValue}>{formatDateTime(room.updatedAt)}</p>
+                    <p className={modalStyles.infoCardValue}>
+                      {formatDateTime(room.updatedAt)}
+                    </p>
                   </div>
                 </div>
               </section>
@@ -464,16 +604,26 @@ export function RoomViewModal({
         </ScrollArea>
 
         <DialogFooter className={modalStyles.dialogFooter}>
-          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className={modalStyles.secondaryButton}
+          >
             Close
           </Button>
           {onAssignService && room && (
-            <Button onClick={() => onAssignService(room)} className={`${modalStyles.primaryButton} bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800`}>
+            <Button
+              onClick={() => onAssignService(room)}
+              className={`${modalStyles.primaryButton} bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800`}
+            >
               Assign Service
             </Button>
           )}
           {onEdit && room && (
-            <Button onClick={() => onEdit(room)} className={modalStyles.primaryButton}>
+            <Button
+              onClick={() => onEdit(room)}
+              className={modalStyles.primaryButton}
+            >
               Edit Room
             </Button>
           )}

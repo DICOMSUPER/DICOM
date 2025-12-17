@@ -1,6 +1,15 @@
 import React, { memo } from "react";
 import SignatureAnimation from "signature-animation";
 
+// Remove diacritics/accents from text
+const unaccent = (str: string) => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+};
+
 // Memoized component that won't re-render unless props change
 const SignatureDisplay = memo(
   ({
@@ -16,13 +25,16 @@ const SignatureDisplay = memo(
     delay?: number;
     role?: string;
   }) => {
+    const unaccentedFirstName = unaccent(firstName);
+    const unaccentedLastName = unaccent(lastName);
+
     return (
       <>
         <SignatureAnimation duration={duration} delay={delay}>
-          {`${lastName} ${firstName}`}
+          {`${unaccentedLastName} ${unaccentedFirstName}`}
         </SignatureAnimation>
         <p className="italic text-sm text-gray-600 mt-2">
-          {`${role} ${lastName} ${firstName}`}
+          {`${role} ${unaccentedLastName} ${unaccentedFirstName}`}
         </p>
       </>
     );

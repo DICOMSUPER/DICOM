@@ -69,6 +69,7 @@ import { ModalRejectReport } from "./modal-reject-report";
 import { EmptyReportState } from "./empty-report";
 import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
 import { formatStatus } from "@/common/utils/format-status";
+import { handleEncrypt } from "@/common/utils/encryption";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -399,7 +400,9 @@ export function DiagnosisReportDetail({
   };
 
   const handleViewImage = () => {
-    router.push(`/viewer?study=${report?.data.studyId}&patient=${report?.data.encounter?.patientId}`);
+    router.push(
+      `/viewer?study=${report?.data.studyId}&patient=${report?.data.encounter?.patientId}`
+    );
   };
 
   // const handleRefresh = async () => {
@@ -419,12 +422,21 @@ export function DiagnosisReportDetail({
       }).unwrap();
 
       if (result.success) {
-        DiagnosisReportPDF({
+        const reportData = {
           diagnosisReportPDF: { report: report?.data! },
           dicomStudy: dicomStudyData?.data,
           orderingPhysicianName: `${orderingPhysicianData?.data?.firstName} ${orderingPhysicianData?.data?.lastName}`,
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
-        });
+        };
+        // DiagnosisReportPDF(reportData);
+
+        console.log("reportData:", reportData);
+        const encrypted = handleEncrypt(reportData);
+
+        router.push(
+          "/physician/report-paper?data=" + encodeURIComponent(encrypted)
+        );
+
         toast.success("Report created successfully!");
       }
     } catch (error: any) {
@@ -718,7 +730,9 @@ export function DiagnosisReportDetail({
                           }
                         `}
                       >
-                        {formatStatus(dicomStudyData.data.imagingOrder.orderStatus)}
+                        {formatStatus(
+                          dicomStudyData.data.imagingOrder.orderStatus
+                        )}
                       </Badge>
                     </div>
                     <div>
@@ -917,7 +931,6 @@ export function DiagnosisReportDetail({
                         day: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
-                       
                       })}
                     </div>
                   </div>

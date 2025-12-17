@@ -444,7 +444,7 @@ export function CalendarLegend() {
         <div className="flex gap-0.5">
           <div className="w-1 h-1 rounded-full bg-blue-500" />
         </div>
-        <span>= Activity indicator (max 4 dots shown)</span>
+        <span>Schedules In Date</span>
       </div>
     </div>
   );
@@ -536,7 +536,12 @@ export function CalendarWithDots({
   };
 
   return (
-    <div className={cn("bg-white rounded-lg p-3 w-full", className)}>
+    <div
+      className={cn(
+        "bg-white rounded-lg p-3 w-full max-w-md mx-auto",
+        className
+      )}
+    >
       <CalendarHeader
         currentMonth={currentMonth}
         onPrevMonth={handlePrevMonth}

@@ -6,6 +6,7 @@ import { decryptPayload } from "@/common/utils/encryption";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
 import { formatDateLocal } from "@/common/utils/schedule/utils";
 import { formatDateTime } from "@/common/lib/formatTimeDate";
+import AnotherHeaderPDF from "@/components/pdf-generator/another-header";
 
 function OrderPaperContent() {
   const searchParams = useSearchParams();
@@ -68,6 +69,17 @@ function OrderPaperContent() {
             color: #000;
             line-height: 1.5;
           }
+          img { max-width: 100%; height: auto; }
+          .w-24 { width: 6rem; }
+          .h-24 { height: 6rem; }
+          .object-contain { object-fit: contain; }
+          .flex-shrink-0 { flex-shrink: 0; }
+          .flex-1 { flex: 1 1 0%; }
+          .justify-between { justify-content: space-between; }
+          .items-start { align-items: flex-start; }
+          .text-right { text-align: right; }
+          .leading-relaxed { line-height: 1.625; }
+          .font-sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
           .max-w-4xl { max-width: 56rem; margin: 0 auto; }
           .mx-auto { margin-left: auto; margin-right: auto; }
           .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
@@ -94,6 +106,7 @@ function OrderPaperContent() {
           .mb-3 { margin-bottom: 0.75rem; }
           .mb-4 { margin-bottom: 1rem; }
           .mb-5 { margin-bottom: 1.25rem; }
+          .mb-6 { margin-bottom: 1.5rem; }
           .mt-1 { margin-top: 0.25rem; }
           .mt-2 { margin-top: 0.5rem; }
           .ml-4 { margin-left: 1rem; }
@@ -116,6 +129,7 @@ function OrderPaperContent() {
           .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
           .col-span-2 { grid-column: span 2 / span 2; }
+          .col-span-3 { grid-column: span 3 / span 3; }
           .col-span-4 { grid-column: span 4 / span 4; }
           .gap-3 { gap: 0.75rem; }
           .gap-4 { gap: 1rem; }
@@ -194,6 +208,7 @@ function OrderPaperContent() {
         id="radiology-order-print"
         className="max-w-4xl mx-auto bg-white border-2 border-black shadow-lg"
       >
+        <AnotherHeaderPDF></AnotherHeaderPDF>
         {/* Header */}
         <div className="border-b-2 border-black p-6 text-center">
           <h1 className="text-2xl font-bold uppercase mb-1">Radiology Order</h1>

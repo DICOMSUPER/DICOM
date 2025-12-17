@@ -2,7 +2,22 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Clock, MapPin, X, Users, Building2, Info, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, CalendarOff } from "lucide-react";
+import {
+  Clock,
+  MapPin,
+  X,
+  Users,
+  Building2,
+  Info,
+  Wifi,
+  Tv,
+  Droplets,
+  Phone,
+  Stethoscope,
+  Thermometer,
+  Bell,
+  CalendarOff,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
+import {
+  RoomSchedule,
+  ShiftTemplate,
+} from "@/common/interfaces/schedule/schedule.interface";
 import {
   TimelineSegment,
   buildTimelineSegments,
@@ -62,7 +80,11 @@ const renderSegmentLabel = (segment: TimelineSegment) => {
     >
       <p className="text-sm font-semibold">{segment.label}</p>
       <p className="text-xs opacity-80">
-        {isBreak ? "Break period" : isGap ? "Flexible slot" : formatDuration(segment)}
+        {isBreak
+          ? "Break period"
+          : isGap
+          ? "Flexible slot"
+          : formatDuration(segment)}
       </p>
     </div>
   );
@@ -77,9 +99,12 @@ export function RoomView({
   onScheduleClick,
   shiftTemplateMap,
 }: RoomViewProps) {
-  const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(new Set());
+  const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(
+    new Set()
+  );
   const [selectValue, setSelectValue] = useState<string>("");
-  const [selectedRoomForDetails, setSelectedRoomForDetails] = useState<any>(null);
+  const [selectedRoomForDetails, setSelectedRoomForDetails] =
+    useState<any>(null);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
 
   const { data: roomsData, isLoading: roomsLoading } = useGetRoomsQuery({
@@ -91,7 +116,8 @@ export function RoomView({
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
   const schedulesForDate = useMemo(
-    () => schedules.filter((schedule) => schedule.work_date === selectedDateStr),
+    () =>
+      schedules.filter((schedule) => schedule.work_date === selectedDateStr),
     [schedules, selectedDateStr]
   );
 
@@ -121,7 +147,12 @@ export function RoomView({
   }, [schedulesWithTemplates, shiftTemplateMap]);
 
   const timelineSegments = useMemo(
-    () => buildTimelineSegments(timeSlots, schedulesWithTemplates, referencedTemplates),
+    () =>
+      buildTimelineSegments(
+        timeSlots,
+        schedulesWithTemplates,
+        referencedTemplates
+      ),
     [timeSlots, schedulesWithTemplates, referencedTemplates]
   );
 
@@ -129,7 +160,8 @@ export function RoomView({
     const grouped: Record<string, RoomSchedule[]> = {};
 
     schedulesWithTemplates.forEach((schedule) => {
-      const roomKey = schedule.room?.roomCode || schedule.room_id || "Unassigned";
+      const roomKey =
+        schedule.room?.roomCode || schedule.room_id || "Unassigned";
       if (!grouped[roomKey]) {
         grouped[roomKey] = [];
       }
@@ -147,7 +179,8 @@ export function RoomView({
   const roomOccupancyMap = useMemo(() => {
     const occupancy: Record<string, number> = {};
     schedulesWithTemplates.forEach((schedule) => {
-      const roomKey = schedule.room?.roomCode || schedule.room_id || "Unassigned";
+      const roomKey =
+        schedule.room?.roomCode || schedule.room_id || "Unassigned";
       if (!occupancy[roomKey]) {
         occupancy[roomKey] = 0;
       }
@@ -158,11 +191,16 @@ export function RoomView({
 
   // Get available rooms from schedules and rooms API
   const availableRooms = useMemo(() => {
-    const roomMap = new Map<string, { roomCode: string; roomType?: string; roomId?: string }>();
-    
+    const roomMap = new Map<
+      string,
+      { roomCode: string; roomType?: string; roomId?: string }
+    >();
+
     // Add rooms from schedules
     schedulesByRoom.forEach(([roomCode]) => {
-      const schedule = schedulesByRoom.find(([code]) => code === roomCode)?.[1]?.[0];
+      const schedule = schedulesByRoom.find(
+        ([code]) => code === roomCode
+      )?.[1]?.[0];
       if (schedule?.room) {
         roomMap.set(roomCode, {
           roomCode: schedule.room.roomCode,
@@ -187,9 +225,10 @@ export function RoomView({
       });
     }
 
-    return Array.from(roomMap.values()).sort((a, b) => a.roomCode.localeCompare(b.roomCode));
+    return Array.from(roomMap.values()).sort((a, b) =>
+      a.roomCode.localeCompare(b.roomCode)
+    );
   }, [schedulesByRoom, roomsData]);
-
 
   const handleAddRoom = (roomCode: string) => {
     if (!roomCode) return;
@@ -208,11 +247,18 @@ export function RoomView({
   // Filter schedules by selected rooms
   const filteredSchedulesByRoom = useMemo(() => {
     if (selectedRoomIds.size === 0) return schedulesByRoom;
-    return schedulesByRoom.filter(([roomCode]) => selectedRoomIds.has(roomCode));
+    return schedulesByRoom.filter(([roomCode]) =>
+      selectedRoomIds.has(roomCode)
+    );
   }, [schedulesByRoom, selectedRoomIds]);
 
-  const getSchedulesForSegment = (roomSchedules: RoomSchedule[], segment: TimelineSegment) =>
-    roomSchedules.filter((schedule) => scheduleFallsInSegment(schedule, segment));
+  const getSchedulesForSegment = (
+    roomSchedules: RoomSchedule[],
+    segment: TimelineSegment
+  ) =>
+    roomSchedules.filter((schedule) =>
+      scheduleFallsInSegment(schedule, segment)
+    );
 
   const loadingSegments =
     timelineSegments.length > 0
@@ -235,14 +281,20 @@ export function RoomView({
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-2 space-y-2">
                 {loadingSegments.map((segment) => (
-                  <div key={segment.id} className="flex flex-col justify-center min-h-20">
+                  <div
+                    key={segment.id}
+                    className="flex flex-col justify-center min-h-20"
+                  >
                     {renderSegmentLabel(segment)}
                   </div>
                 ))}
               </div>
               <div className="col-span-10 space-y-2">
                 {loadingSegments.map((segment) => (
-                  <div key={segment.id} className="min-h-20 border-t border-border flex items-center p-2">
+                  <div
+                    key={segment.id}
+                    className="min-h-20 border-t border-border flex items-center p-2"
+                  >
                     <div className="bg-gray-50 border border-border rounded-lg p-3 shadow-sm relative w-full">
                       <Skeleton className="h-4 w-32 mb-2" />
                       <Skeleton className="h-3 w-20" />
@@ -262,9 +314,12 @@ export function RoomView({
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No room assignments</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No room assignments
+          </h3>
           <p className="text-sm text-gray-600">
-            No schedules assigned to rooms for {format(selectedDate, "MMMM d, yyyy")}
+            No schedules assigned to rooms for{" "}
+            {format(selectedDate, "MMMM d, yyyy")}
           </p>
         </div>
       </div>
@@ -278,7 +333,9 @@ export function RoomView({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-gray-600" />
-            <h3 className="text-sm font-semibold text-gray-900">Filter by Room</h3>
+            <h3 className="text-sm font-semibold text-gray-900">
+              Filter by Room
+            </h3>
           </div>
           {selectedRoomIds.size > 0 && (
             <Button
@@ -286,7 +343,9 @@ export function RoomView({
               size="sm"
               className="text-xs h-7"
               onClick={() => {
-                const allRoomCodes = new Set(availableRooms.map((r) => r.roomCode));
+                const allRoomCodes = new Set(
+                  availableRooms.map((r) => r.roomCode)
+                );
                 allRoomCodes.add("Unassigned");
                 setSelectedRoomIds(allRoomCodes);
               }}
@@ -295,12 +354,12 @@ export function RoomView({
             </Button>
           )}
         </div>
-        
+
         <div className="flex flex-wrap gap-2 items-center">
-                          <Select value={selectValue} onValueChange={handleAddRoom}>
+          <Select value={selectValue} onValueChange={handleAddRoom}>
             <SelectTrigger className="w-[200px] h-8 text-sm bg-primary text-white border-border hover:bg-primary/90">
-              <SelectValue 
-                placeholder="Add room to view..." 
+              <SelectValue
+                placeholder="Add room to view..."
                 className="data-[placeholder-shown]:text-white"
               />
             </SelectTrigger>
@@ -355,9 +414,12 @@ export function RoomView({
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No schedules found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No schedules found
+            </h3>
             <p className="text-sm text-gray-600">
-              No schedules match the selected rooms for {format(selectedDate, "MMMM d, yyyy")}
+              No schedules match the selected rooms for{" "}
+              {format(selectedDate, "MMMM d, yyyy")}
             </p>
           </div>
         </div>
@@ -371,330 +433,459 @@ export function RoomView({
           </div>
 
           {filteredSchedulesByRoom.map(([roomCode, roomSchedules]) => {
-        const room = roomSchedules[0]?.room;
-        const roomName = room?.roomCode || roomCode;
-        const currentOccupancy = roomOccupancyMap[roomCode] || 0;
-        const roomFromApi = roomsData?.data?.find(r => r.roomCode === roomCode || r.id === room?.id);
-        const fullRoomData = room || roomFromApi;
+            const room = roomSchedules[0]?.room;
+            const roomName = room?.roomCode || roomCode;
+            const currentOccupancy = roomOccupancyMap[roomCode] || 0;
+            const roomFromApi = roomsData?.data?.find(
+              (r) => r.roomCode === roomCode || r.id === room?.id
+            );
+            const fullRoomData = room || roomFromApi;
 
-        // Get room equipment
-        const roomEquipment = fullRoomData ? [
-          fullRoomData.hasTV && { name: 'TV', icon: <Tv className="h-3 w-3" /> },
-          fullRoomData.hasAirConditioning && { name: 'AC', icon: <Thermometer className="h-3 w-3" /> },
-          fullRoomData.hasWiFi && { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> },
-          fullRoomData.hasTelephone && { name: 'Phone', icon: <Phone className="h-3 w-3" /> },
-          fullRoomData.hasAttachedBathroom && { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> },
-          fullRoomData.isWheelchairAccessible && { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> },
-          fullRoomData.hasOxygenSupply && { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> },
-          fullRoomData.hasNurseCallButton && { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> },
-        ].filter(Boolean) : [];
+            // Get room equipment
+            const roomEquipment = fullRoomData
+              ? [
+                  fullRoomData.hasTV && {
+                    name: "TV",
+                    icon: <Tv className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasAirConditioning && {
+                    name: "AC",
+                    icon: <Thermometer className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasWiFi && {
+                    name: "WiFi",
+                    icon: <Wifi className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasTelephone && {
+                    name: "Phone",
+                    icon: <Phone className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasAttachedBathroom && {
+                    name: "Bathroom",
+                    icon: <Droplets className="h-3 w-3" />,
+                  },
+                  fullRoomData.isWheelchairAccessible && {
+                    name: "Wheelchair",
+                    icon: <Users className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasOxygenSupply && {
+                    name: "Oxygen",
+                    icon: <Stethoscope className="h-3 w-3" />,
+                  },
+                  fullRoomData.hasNurseCallButton && {
+                    name: "Nurse Call",
+                    icon: <Bell className="h-3 w-3" />,
+                  },
+                ].filter(Boolean)
+              : [];
 
-        // Get room services
-        const roomServices = fullRoomData?.serviceRooms?.filter(sr => sr.isActive && sr.service).map(sr => 
-          sr.service?.serviceName || sr.service?.serviceCode || 'Unknown'
-        ) || [];
+            // Get room services
+            const roomServices =
+              fullRoomData?.serviceRooms
+                ?.filter((sr) => sr.isActive && sr.service)
+                .map(
+                  (sr) =>
+                    sr.service?.serviceName ||
+                    sr.service?.serviceCode ||
+                    "Unknown"
+                ) || [];
 
-        return (
-          <div key={roomCode} className="space-y-2 border-b border-border pb-6 last:border-b-0">
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <MapPin className="h-5 w-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-900">{roomName}</h3>
-                {fullRoomData?.roomType && (
-                  <Badge variant="outline" className="text-xs">
-                    {fullRoomData.roomType}
-                  </Badge>
-                )}
-                <span className="text-sm text-gray-500">
-                  ({roomSchedules.length} schedule{roomSchedules.length !== 1 ? "s" : ""})
-                </span>
-              </div>
-              
-              {/* Room Info Badge */}
-              {fullRoomData && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Capacity & Occupancy */}
-                  {fullRoomData.capacity && (
-                    <Badge variant="secondary" className="text-xs text-white flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {currentOccupancy}/{fullRoomData.capacity}
-                    </Badge>
-                  )}
-                  
-                  {/* Services count */}
-                  {roomServices.length > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {roomServices.length} service{roomServices.length !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                  
-                  {/* Equipment count */}
-                  {roomEquipment.length > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {roomEquipment.length} {roomEquipment.length > 0 ? "Equipments" : 'No equipment'} 
-                    </Badge>
-                  )}
-                  
-                  {/* Details Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-sm h-7 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-md border border-primary/20"
-                    onClick={() => {
-                      // Add current occupancy to room data for modal
-                      const matchedSchedules = schedulesWithTemplates.filter(
-                        (schedule) =>
-                          (schedule.room?.id && schedule.room.id === fullRoomData.id) ||
-                          (schedule.room_id && schedule.room_id === fullRoomData.id) ||
-                          (schedule.room?.roomCode && schedule.room.roomCode === fullRoomData.roomCode)
-                      );
-
-                      const staffForDay = Array.from(
-                        new Map(
-                          matchedSchedules
-                            .flatMap((schedule) =>
-                              (schedule.employeeRoomAssignments || [])
-                                .filter((a) => a.isActive && a.employee)
-                                .map((a) => ({
-                                  id: a.employee?.id || `${a.employee?.firstName}-${a.employee?.lastName}`,
-                                  name: `${a.employee?.firstName || ""} ${a.employee?.lastName || ""}`.trim() || "Unknown",
-                                  role: a.employee?.role || undefined,
-                                  scheduleStatus: schedule.schedule_status,
-                                }))
-                            )
-                            .map((staff) => [staff.id, staff])
-                        ).values()
-                      );
-
-                      const roomWithOccupancy = {
-                        ...fullRoomData,
-                        roomStats: {
-                          currentInProgress: currentOccupancy,
-                          maxWaiting: fullRoomData.capacity,
-                        },
-                        staffForDay,
-                        selectedDate: selectedDateStr,
-                      };
-                      setSelectedRoomForDetails(roomWithOccupancy);
-                      setIsRoomModalOpen(true);
-                    }}
-                  >
-                    <Info className="h-4 w-4 mr-1" />
-                    Details
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            {/* Room Quick Info */}
-            {fullRoomData && (
-              <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                  {/* Capacity */}
-                  {fullRoomData.capacity && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-3 w-3 text-gray-500" />
-                      <span className="text-gray-700">
-                        <span className="font-semibold">{currentOccupancy}</span> / {fullRoomData.capacity} assigned
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Department */}
-                  {fullRoomData.department && (
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-3 w-3 text-gray-500" />
-                      <span className="text-gray-700">
-                        {typeof fullRoomData.department === 'string' 
-                          ? fullRoomData.department 
-                          : (fullRoomData.department.departmentName || fullRoomData.department.departmentCode || 'N/A')}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Floor */}
-                  {fullRoomData.floor !== undefined && fullRoomData.floor !== null && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3 w-3 text-gray-500" />
-                      <span className="text-gray-700">Floor {fullRoomData.floor}</span>
-                    </div>
-                  )}
-                  
-                  {/* Status */}
-                  {fullRoomData.status && (
-                    <div>
+            return (
+              <div
+                key={roomCode}
+                className="space-y-2 border-b border-border pb-6 last:border-b-0"
+              >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <MapPin className="h-5 w-5 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {roomName}
+                    </h3>
+                    {fullRoomData?.roomType && (
                       <Badge variant="outline" className="text-xs">
-                        {formatStatus(fullRoomData.status)}
+                        {fullRoomData.roomType}
                       </Badge>
+                    )}
+                    <span className="text-sm text-gray-500">
+                      ({roomSchedules.length} schedule
+                      {roomSchedules.length !== 1 ? "s" : ""})
+                    </span>
+                  </div>
+
+                  {/* Room Info Badge */}
+                  {fullRoomData && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Capacity & Occupancy */}
+                      {fullRoomData.capacity && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs text-white flex items-center gap-1"
+                        >
+                          <Users className="h-3 w-3" />
+                          {currentOccupancy}/{fullRoomData.capacity}
+                        </Badge>
+                      )}
+
+                      {/* Services count */}
+                      {roomServices.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {roomServices.length} service
+                          {roomServices.length !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
+
+                      {/* Equipment count */}
+                      {roomEquipment.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {roomEquipment.length}{" "}
+                          {roomEquipment.length > 0
+                            ? "Equipments"
+                            : "No equipment"}
+                        </Badge>
+                      )}
+
+                      {/* Details Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-sm h-7 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-md border border-primary/20"
+                        onClick={() => {
+                          // Add current occupancy to room data for modal
+                          const matchedSchedules =
+                            schedulesWithTemplates.filter(
+                              (schedule) =>
+                                (schedule.room?.id &&
+                                  schedule.room.id === fullRoomData.id) ||
+                                (schedule.room_id &&
+                                  schedule.room_id === fullRoomData.id) ||
+                                (schedule.room?.roomCode &&
+                                  schedule.room.roomCode ===
+                                    fullRoomData.roomCode)
+                            );
+
+                          const staffForDay = Array.from(
+                            new Map(
+                              matchedSchedules
+                                .flatMap((schedule) =>
+                                  (schedule.employeeRoomAssignments || [])
+                                    .filter((a) => a.isActive && a.employee)
+                                    .map((a) => ({
+                                      id:
+                                        a.employee?.id ||
+                                        `${a.employee?.firstName}-${a.employee?.lastName}`,
+                                      name:
+                                        `${a.employee?.firstName || ""} ${
+                                          a.employee?.lastName || ""
+                                        }`.trim() || "Unknown",
+                                      role: a.employee?.role || undefined,
+                                      scheduleStatus: schedule.schedule_status,
+                                      actualStartTime:
+                                        schedule.actual_start_time || null,
+                                      actualEndTime:
+                                        schedule.actual_end_time || null,
+                                    }))
+                                )
+                                .map((staff) => [staff.id, staff])
+                            ).values()
+                          );
+
+                          const roomWithOccupancy = {
+                            ...fullRoomData,
+                            roomStats: {
+                              currentInProgress: currentOccupancy,
+                              maxWaiting: fullRoomData.capacity,
+                            },
+                            staffForDay,
+                            selectedDate: selectedDateStr,
+                          };
+                          setSelectedRoomForDetails(roomWithOccupancy);
+                          setIsRoomModalOpen(true);
+                        }}
+                      >
+                        <Info className="h-4 w-4 mr-1" />
+                        Details
+                      </Button>
                     </div>
                   )}
                 </div>
-                
-                {/* Services & Equipment Preview */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {roomServices.slice(0, 3).map((service, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
-                      {service}
-                    </Badge>
-                  ))}
-                  {roomServices.length > 3 && (
-                    <Badge variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
-                      +{roomServices.length - 3} more
-                    </Badge>
-                  )}
-                  
-                  {roomEquipment.slice(0, roomEquipment.length).map((eq: any, idx: number) => (
-                    <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                      {eq.icon}
-                      {eq.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-2 space-y-0">
-                {timelineSegments.map((segment) => (
-                  <div key={segment.id} className="flex flex-col justify-center min-h-20 border-t border-border">
-                    {renderSegmentLabel(segment)}
-                  </div>
-                ))}
-              </div>
+                {/* Room Quick Info */}
+                {fullRoomData && (
+                  <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                      {/* Capacity */}
+                      {fullRoomData.capacity && (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3 w-3 text-gray-500" />
+                          <span className="text-gray-700">
+                            <span className="font-semibold">
+                              {currentOccupancy}
+                            </span>{" "}
+                            / {fullRoomData.capacity} assigned
+                          </span>
+                        </div>
+                      )}
 
-              <div className="col-span-10 space-y-0">
-                {timelineSegments.map((segment) => {
-                  const segmentSchedules = getSchedulesForSegment(roomSchedules, segment);
+                      {/* Department */}
+                      {fullRoomData.department && (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3 w-3 text-gray-500" />
+                          <span className="text-gray-700">
+                            {typeof fullRoomData.department === "string"
+                              ? fullRoomData.department
+                              : fullRoomData.department.departmentName ||
+                                fullRoomData.department.departmentCode ||
+                                "N/A"}
+                          </span>
+                        </div>
+                      )}
 
-                  return (
-                    <div
-                      key={segment.id}
-                      className="min-h-20 border-t border-border flex items-center p-2"
-                    >
-                      {segmentSchedules.length > 0 ? (
-                        segmentSchedules.length === 1 ? (
-                          <div
-                            className="bg-blue-50 border border-border rounded-lg p-3 shadow-sm relative w-full cursor-pointer hover:bg-blue-100 transition-colors"
-                            onClick={() => onScheduleClick?.(segmentSchedules[0])}
-                          >
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
-                            <div className="ml-2 flex items-center justify-between gap-4">
-                              <div>
-                                <h4 className="font-semibold text-gray-900 text-base">
-                                  {segmentSchedules[0].employeeRoomAssignments && segmentSchedules[0].employeeRoomAssignments.length > 0
-                                    ? segmentSchedules[0].employeeRoomAssignments
-                                        .filter(a => a.isActive && a.employee)
-                                        .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`)
-                                        .join(', ')
-                                    : 'No employees assigned'}
-                                </h4>
-                                <div className="flex items-center space-x-1 text-xs text-gray-600">
-                                  <Clock className="h-3 w-3" />
-                                  <span>
-                                    {segmentSchedules[0].actual_start_time} -{" "}
-                                    {segmentSchedules[0].actual_end_time}
-                                  </span>
-                                  {segmentSchedules[0].shift_template?.shift_name && (
-                                    <>
-                                      <span className="text-gray-500">•</span>
-                                      <span className="text-gray-500">
-                                        {segmentSchedules[0].shift_template.shift_name}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <Badge
-                                className={`${getStatusColor(
-                                  segmentSchedules[0].schedule_status
-                                )} border border-border text-xs ml-auto`}
-                              >
-                                {segmentSchedules[0].schedule_status
-                                  .charAt(0)
-                                  .toUpperCase() +
-                                  segmentSchedules[0].schedule_status.slice(1)}
-                              </Badge>
-                            </div>
+                      {/* Floor */}
+                      {fullRoomData.floor !== undefined &&
+                        fullRoomData.floor !== null && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3 w-3 text-gray-500" />
+                            <span className="text-gray-700">
+                              Floor {fullRoomData.floor}
+                            </span>
                           </div>
-                        ) : (
-                          <div
-                            className="bg-blue-50 border border-border rounded-lg p-4 shadow-sm relative w-full cursor-pointer hover:bg-blue-100 transition-colors"
-                            onClick={() => onScheduleClick?.(segmentSchedules)}
-                          >
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
-                            <div className="ml-2">
-                              <div className="flex items-center justify-between gap-4">
-                                <div>
-                                  <h4 className="font-semibold text-gray-900 text-base">
-                                    {segmentSchedules.length} schedules
-                                  </h4>
-                                  <p className="text-xs text-gray-600">
-                                    {segment.label} • {segmentSchedules[0].actual_start_time}
-                                  </p>
-                                </div>
-                                <Badge className="text-xs border border-border bg-blue-100 text-blue-800">
-                                  View details
-                                </Badge>
-                              </div>
-                              <div className="mt-3 space-y-2">
-                                {segmentSchedules.slice(0, 2).map((schedule) => (
-                                  <div
-                                    key={schedule.schedule_id}
-                                    className="flex items-center justify-between text-xs text-gray-700"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">
-                                        {schedule.employeeRoomAssignments && schedule.employeeRoomAssignments.length > 0
-                                          ? schedule.employeeRoomAssignments
-                                              .filter(a => a.isActive && a.employee)
-                                              .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`)
-                                              .join(', ')
-                                          : 'No employees assigned'}
-                                      </span>
-                                      <span className="text-gray-500">
-                                        ({schedule.schedule_status})
-                                      </span>
-                                    </div>
-                                    <span className="text-gray-500">
-                                      {schedule.actual_start_time} - {schedule.actual_end_time}
-                                    </span>
-                                  </div>
-                                ))}
-                                {segmentSchedules.length > 2 && (
-                                  <p className="text-xs text-gray-500">
-                                    +{segmentSchedules.length - 2} more schedules
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      ) : (
-                        <div
-                          className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 flex flex-col items-center justify-center gap-2 ${
-                            segment.type === "break"
-                              ? "border-border bg-amber-50/70 text-amber-800"
-                              : "border-dashed border-border text-gray-500"
-                          }`}
-                        >
-                          {segment.type === "break" ? (
-                            "Break window"
-                          ) : (
-                            <>
-                              <CalendarOff className="h-4 w-4 text-gray-400" />
-                              <span>No schedules</span>
-                            </>
-                          )}
+                        )}
+
+                      {/* Status */}
+                      {fullRoomData.status && (
+                        <div>
+                          <Badge variant="outline" className="text-xs">
+                            {formatStatus(fullRoomData.status)}
+                          </Badge>
                         </div>
                       )}
                     </div>
-                  );
-                })}
+
+                    {/* Services & Equipment Preview */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {roomServices.slice(0, 3).map((service, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="text-[10px] text-white px-1.5 py-0.5"
+                        >
+                          {service}
+                        </Badge>
+                      ))}
+                      {roomServices.length > 3 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] text-white px-1.5 py-0.5"
+                        >
+                          +{roomServices.length - 3} more
+                        </Badge>
+                      )}
+
+                      {roomEquipment
+                        .slice(0, roomEquipment.length)
+                        .map((eq: any, idx: number) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0.5 flex items-center gap-1"
+                          >
+                            {eq.icon}
+                            {eq.name}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-2 space-y-0">
+                    {timelineSegments.map((segment) => (
+                      <div
+                        key={segment.id}
+                        className="flex flex-col justify-center min-h-20 border-t border-border"
+                      >
+                        {renderSegmentLabel(segment)}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="col-span-10 space-y-0">
+                    {timelineSegments.map((segment) => {
+                      const segmentSchedules = getSchedulesForSegment(
+                        roomSchedules,
+                        segment
+                      );
+
+                      return (
+                        <div
+                          key={segment.id}
+                          className="min-h-20 border-t border-border flex items-center p-2"
+                        >
+                          {segmentSchedules.length > 0 ? (
+                            segmentSchedules.length === 1 ? (
+                              <div
+                                className="bg-blue-50 border border-border rounded-lg p-3 shadow-sm relative w-full cursor-pointer hover:bg-blue-100 transition-colors"
+                                onClick={() =>
+                                  onScheduleClick?.(segmentSchedules[0])
+                                }
+                              >
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
+                                <div className="ml-2 flex items-center justify-between gap-4">
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900 text-base">
+                                      {segmentSchedules[0]
+                                        .employeeRoomAssignments &&
+                                      segmentSchedules[0]
+                                        .employeeRoomAssignments.length > 0
+                                        ? segmentSchedules[0].employeeRoomAssignments
+                                            .filter(
+                                              (a) => a.isActive && a.employee
+                                            )
+                                            .map(
+                                              (a) =>
+                                                `${
+                                                  a.employee?.firstName || ""
+                                                } ${a.employee?.lastName || ""}`
+                                            )
+                                            .join(", ")
+                                        : "No employees assigned"}
+                                    </h4>
+                                    <div className="flex items-center space-x-1 text-xs text-gray-600">
+                                      <Clock className="h-3 w-3" />
+                                      <span>
+                                        {segmentSchedules[0].actual_start_time}{" "}
+                                        - {segmentSchedules[0].actual_end_time}
+                                      </span>
+                                      {segmentSchedules[0].shift_template
+                                        ?.shift_name && (
+                                        <>
+                                          <span className="text-gray-500">
+                                            •
+                                          </span>
+                                          <span className="text-gray-500">
+                                            {
+                                              segmentSchedules[0].shift_template
+                                                .shift_name
+                                            }
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    className={`${getStatusColor(
+                                      segmentSchedules[0].schedule_status
+                                    )} border border-border text-xs ml-auto`}
+                                  >
+                                    {segmentSchedules[0].schedule_status
+                                      .charAt(0)
+                                      .toUpperCase() +
+                                      segmentSchedules[0].schedule_status.slice(
+                                        1
+                                      )}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className="bg-blue-50 border border-border rounded-lg p-4 shadow-sm relative w-full cursor-pointer hover:bg-blue-100 transition-colors"
+                                onClick={() =>
+                                  onScheduleClick?.(segmentSchedules)
+                                }
+                              >
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
+                                <div className="ml-2">
+                                  <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900 text-base">
+                                        {segmentSchedules.length} schedules
+                                      </h4>
+                                      <p className="text-xs text-gray-600">
+                                        {segment.label} •{" "}
+                                        {segmentSchedules[0].actual_start_time}
+                                      </p>
+                                    </div>
+                                    <Badge className="text-xs border border-border bg-blue-100 text-blue-800">
+                                      View details
+                                    </Badge>
+                                  </div>
+                                  <div className="mt-3 space-y-2">
+                                    {segmentSchedules
+                                      .slice(0, 2)
+                                      .map((schedule) => (
+                                        <div
+                                          key={schedule.schedule_id}
+                                          className="flex items-center justify-between text-xs text-gray-700"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium">
+                                              {schedule.employeeRoomAssignments &&
+                                              schedule.employeeRoomAssignments
+                                                .length > 0
+                                                ? schedule.employeeRoomAssignments
+                                                    .filter(
+                                                      (a) =>
+                                                        a.isActive && a.employee
+                                                    )
+                                                    .map(
+                                                      (a) =>
+                                                        `${
+                                                          a.employee
+                                                            ?.firstName || ""
+                                                        } ${
+                                                          a.employee
+                                                            ?.lastName || ""
+                                                        }`
+                                                    )
+                                                    .join(", ")
+                                                : "No employees assigned"}
+                                            </span>
+                                            <span className="text-gray-500">
+                                              ({schedule.schedule_status})
+                                            </span>
+                                          </div>
+                                          <span className="text-gray-500">
+                                            {schedule.actual_start_time} -{" "}
+                                            {schedule.actual_end_time}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    {segmentSchedules.length > 2 && (
+                                      <p className="text-xs text-gray-500">
+                                        +{segmentSchedules.length - 2} more
+                                        schedules
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <div
+                              className={`text-sm text-center italic m-2 w-full rounded-lg border px-4 py-3 flex flex-col items-center justify-center gap-2 ${
+                                segment.type === "break"
+                                  ? "border-border bg-amber-50/70 text-amber-800"
+                                  : "border-dashed border-border text-gray-500"
+                              }`}
+                            >
+                              {segment.type === "break" ? (
+                                "Break window"
+                              ) : (
+                                <>
+                                  <CalendarOff className="h-4 w-4 text-gray-400" />
+                                  <span>No schedules</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        );
-      })}
+            );
+          })}
         </>
       )}
 
@@ -712,4 +903,3 @@ export function RoomView({
     </div>
   );
 }
-

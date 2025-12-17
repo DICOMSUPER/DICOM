@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Edit,
   Trash2,
+  Coffee,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
@@ -41,7 +42,7 @@ import { formatTimeRange } from "@/common/utils/schedule-helpers";
 import { Monitor, Stethoscope, Loader2 } from "lucide-react";
 import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
-import { formatStatus, modalStyles } from '@/common/utils/format-status';
+import { formatStatus, modalStyles } from "@/common/utils/format-status";
 
 interface ScheduleDetailModalProps {
   schedule: RoomSchedule | RoomSchedule[] | null;
@@ -60,7 +61,7 @@ export function ScheduleDetailModal({
 }: ScheduleDetailModalProps) {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAdmin = user?.role === Roles.SYSTEM_ADMIN;
-  
+
   const scheduleList = useMemo(
     () =>
       Array.isArray(schedulePayload)
@@ -73,8 +74,11 @@ export function ScheduleDetailModal({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeleteAssignmentModalOpen, setIsDeleteAssignmentModalOpen] = useState(false);
-  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
+  const [isDeleteAssignmentModalOpen, setIsDeleteAssignmentModalOpen] =
+    useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setActiveIndex(0);
@@ -89,13 +93,11 @@ export function ScheduleDetailModal({
   const activeSchedule = scheduleList[activeIndex];
   const roomId = activeSchedule?.room?.id ?? "";
 
-  const { data: modalitiesData, isLoading: isLoadingModalities } = useGetModalitiesInRoomQuery(
-    roomId,
-    { 
+  const { data: modalitiesData, isLoading: isLoadingModalities } =
+    useGetModalitiesInRoomQuery(roomId, {
       skip: !roomId || !isOpen,
-      refetchOnMountOrArgChange: false 
-    }
-  );
+      refetchOnMountOrArgChange: false,
+    });
   const modalities = useMemo(() => {
     if (!modalitiesData) return [];
     return extractApiData<ModalityMachine>(modalitiesData);
@@ -103,14 +105,21 @@ export function ScheduleDetailModal({
 
   const roomServices = useMemo(() => {
     if (!activeSchedule?.room?.serviceRooms) return [];
-    return activeSchedule.room.serviceRooms.filter((sr) => sr.isActive && sr.service);
+    return activeSchedule.room.serviceRooms.filter(
+      (sr) => sr.isActive && sr.service
+    );
   }, [activeSchedule]);
 
-  const assignments = useMemo(() => activeSchedule?.employeeRoomAssignments ?? [], [activeSchedule]);
+  const assignments = useMemo(
+    () => activeSchedule?.employeeRoomAssignments ?? [],
+    [activeSchedule]
+  );
   const primaryEmployee = useMemo(() => {
     const assignmentList = activeSchedule?.employeeRoomAssignments ?? [];
     return (
-      assignmentList.find((assignment) => assignment.isActive && assignment.employee)?.employee ??
+      assignmentList.find(
+        (assignment) => assignment.isActive && assignment.employee
+      )?.employee ??
       assignmentList.find((assignment) => assignment.employee)?.employee ??
       null
     );
@@ -151,13 +160,12 @@ export function ScheduleDetailModal({
     return `${dateLabel} • ${item.actual_start_time ?? "--:--"}`;
   };
 
-
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -183,43 +191,52 @@ export function ScheduleDetailModal({
     return (firstInitial + lastInitial || "N/A").toUpperCase();
   };
 
-  const getStatusBadgeClass = (status: string | boolean | undefined, type: 'schedule' | 'machine' | 'service' | 'assignment' = 'schedule'): string => {
-    if (type === 'assignment') {
-      const isActive = status === true || status === 'true' || status === 'ACTIVE';
-      return isActive 
-        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-        : 'bg-gray-100 text-gray-700 border-gray-200';
+  const getStatusBadgeClass = (
+    status: string | boolean | undefined,
+    type: "schedule" | "machine" | "service" | "assignment" = "schedule"
+  ): string => {
+    if (type === "assignment") {
+      const isActive =
+        status === true || status === "true" || status === "ACTIVE";
+      return isActive
+        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+        : "bg-gray-100 text-gray-700 border-gray-200";
     }
 
-    if (type === 'service') {
-      const isActive = status === true || status === 'true' || status === 'ACTIVE';
-      return isActive 
-        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-        : 'bg-gray-100 text-gray-700 border-gray-200';
+    if (type === "service") {
+      const isActive =
+        status === true || status === "true" || status === "ACTIVE";
+      return isActive
+        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+        : "bg-gray-100 text-gray-700 border-gray-200";
     }
 
-    if (type === 'machine') {
-      const statusStr = String(status || '').toUpperCase();
-      if (statusStr === 'ACTIVE' || statusStr === 'AVAILABLE') {
-        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      } else if (statusStr === 'INACTIVE' || statusStr === 'UNAVAILABLE') {
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-      } else if (statusStr === 'MAINTENANCE') {
-        return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (type === "machine") {
+      const statusStr = String(status || "").toUpperCase();
+      if (statusStr === "ACTIVE" || statusStr === "AVAILABLE") {
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      } else if (statusStr === "INACTIVE" || statusStr === "UNAVAILABLE") {
+        return "bg-gray-100 text-gray-700 border-gray-200";
+      } else if (statusStr === "MAINTENANCE") {
+        return "bg-amber-100 text-amber-700 border-amber-200";
       }
-      return 'bg-gray-100 text-gray-700 border-gray-200';
+      return "bg-gray-100 text-gray-700 border-gray-200";
     }
 
-    return getStatusColor(String(status || ''));
+    return getStatusColor(String(status || ""));
   };
 
-  const getStatusLabel = (status: string | boolean | undefined, type: 'schedule' | 'machine' | 'service' | 'assignment' = 'schedule'): string => {
-    if (type === 'assignment' || type === 'service') {
-      const isActive = status === true || status === 'true' || status === 'ACTIVE';
-      return isActive ? 'Active' : 'Inactive';
+  const getStatusLabel = (
+    status: string | boolean | undefined,
+    type: "schedule" | "machine" | "service" | "assignment" = "schedule"
+  ): string => {
+    if (type === "assignment" || type === "service") {
+      const isActive =
+        status === true || status === "true" || status === "ACTIVE";
+      return isActive ? "Active" : "Inactive";
     }
 
-    return formatStatus(String(status || 'Unknown'));
+    return formatStatus(String(status || "Unknown"));
   };
 
   const notes = schedule.notes?.trim();
@@ -233,13 +250,19 @@ export function ScheduleDetailModal({
     },
     {
       label: "Assigned Staff",
-      value: assignments.length > 0 ? `${assignments.length} member${assignments.length === 1 ? "" : "s"}` : "No team yet",
+      value:
+        assignments.length > 0
+          ? `${assignments.length} member${assignments.length === 1 ? "" : "s"}`
+          : "No team yet",
       caption: assignments.length > 0 ? "Active coverage" : "Add coverage",
       icon: Users,
     },
     {
       label: "Shift Window",
-      value: formatTimeRange(schedule.actual_start_time, schedule.actual_end_time),
+      value: formatTimeRange(
+        schedule.actual_start_time,
+        schedule.actual_end_time
+      ),
       caption: schedule.shift_template?.shift_name ?? "Custom shift",
       icon: CalendarClock,
     },
@@ -253,13 +276,25 @@ export function ScheduleDetailModal({
     },
     {
       label: "Actual Time",
-      value: formatTimeRange(schedule.actual_start_time, schedule.actual_end_time),
+      value: formatTimeRange(
+        schedule.actual_start_time,
+        schedule.actual_end_time
+      ),
       icon: Clock,
     },
     {
       label: "Overtime Hours",
       value: `${schedule.overtime_hours ?? 0} hrs`,
       icon: CalendarClock,
+    },
+    {
+      label: "Break Time",
+      value:
+        schedule.shift_template?.break_start_time &&
+        schedule.shift_template?.break_end_time
+          ? `${schedule.shift_template.break_start_time} → ${schedule.shift_template.break_end_time}`
+          : "No Break",
+      icon: Coffee,
     },
   ];
 
@@ -268,7 +303,9 @@ export function ScheduleDetailModal({
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
         <DialogHeader className={modalStyles.dialogHeader}>
-          <DialogTitle className={modalStyles.dialogTitle}>Schedule Details</DialogTitle>
+          <DialogTitle className={modalStyles.dialogTitle}>
+            Schedule Details
+          </DialogTitle>
         </DialogHeader>
 
         {/* Scrollable Content */}
@@ -278,7 +315,9 @@ export function ScheduleDetailModal({
               <section className="rounded-2xl border border-dashed border-primary/30 bg-card/70 p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-primary">Multiple schedules selected</p>
+                    <p className="text-xs uppercase tracking-wide text-primary">
+                      Multiple schedules selected
+                    </p>
                     <p className="text-sm text-foreground">
                       Showing schedule {activeIndex + 1} of {totalSchedules}
                     </p>
@@ -341,23 +380,33 @@ export function ScheduleDetailModal({
                       </p>
                       <p className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        {formatTimeRange(schedule.actual_start_time, schedule.actual_end_time)}
+                        {formatTimeRange(
+                          schedule.actual_start_time,
+                          schedule.actual_end_time
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
-                  <Badge className={`${getStatusBadgeClass(schedule.schedule_status, 'schedule')} px-4 py-1 text-xs font-medium shadow-sm border`}>
-                    {getStatusLabel(schedule.schedule_status, 'schedule')}
+                  <Badge
+                    className={`${getStatusBadgeClass(
+                      schedule.schedule_status,
+                      "schedule"
+                    )} px-4 py-1 text-xs font-medium shadow-sm border`}
+                  >
+                    {getStatusLabel(schedule.schedule_status, "schedule")}
                   </Badge>
                   {primaryEmployee && (
                     <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
-                      <p className="uppercase text-xs tracking-wide">Lead contact</p>
+                      <p className="uppercase text-xs tracking-wide">
+                        Lead contact
+                      </p>
                       <p className="text-base font-semibold text-foreground">
                         {primaryEmployee.firstName} {primaryEmployee.lastName}
                       </p>
                       <p className="capitalize">
-                        {primaryEmployee.role?.replace('_', ' ') ?? "Staff"}
+                        {primaryEmployee.role?.replace("_", " ") ?? "Staff"}
                       </p>
                     </div>
                   )}
@@ -379,8 +428,12 @@ export function ScheduleDetailModal({
                         <p className="text-xs uppercase tracking-wide text-foreground">
                           {stat.label}
                         </p>
-                        <p className="text-lg font-semibold text-foreground">{stat.value}</p>
-                        <p className="text-xs text-foreground">{stat.caption}</p>
+                        <p className="text-lg font-semibold text-foreground">
+                          {stat.value}
+                        </p>
+                        <p className="text-xs text-foreground">
+                          {stat.caption}
+                        </p>
                       </div>
                     </div>
                   );
@@ -389,264 +442,343 @@ export function ScheduleDetailModal({
             </section>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              
-                <section className={`xl:col-span-1 ${modalStyles.section}`}>
+              <section className={`xl:col-span-1 ${modalStyles.section}`}>
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Calendar className="h-5 w-5" />
+                  Schedule Overview
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {overviewItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label} className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </div>
+                        <p className={modalStyles.infoCardValue}>
+                          {item.value}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+              <section className={`xl:col-span-1 ${modalStyles.section}`}>
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Calendar className="h-5 w-5" />
-                    Schedule Overview
+                    <Users className="h-5 w-5" />
+                    Assignment Team
                   </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {overviewItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                    <div key={item.label} className={modalStyles.infoCard}>
-                          <div className={modalStyles.infoCardLabel}>
-                            <Icon className="h-4 w-4" />
-                            {item.label}
+                  <Badge variant="outline" className="text-xs">
+                    {assignments.length} member
+                    {assignments.length === 1 ? "" : "s"}
+                  </Badge>
+                </div>
+                {assignments.length === 0 ? (
+                  <p className="text-sm text-foreground">
+                    No employees assigned to this schedule yet. Use the
+                    assignment panel to add staff.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {assignments.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className={`flex items-center justify-between gap-3 ${modalStyles.infoCard}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>
+                              {getInitials(
+                                assignment.employee?.firstName,
+                                assignment.employee?.lastName
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground leading-tight">
+                              {assignment.employee
+                                ? `${assignment.employee.firstName} ${assignment.employee.lastName}`
+                                : assignment.employeeId}
+                            </p>
+                            <p className="text-xs text-foreground capitalize">
+                              {assignment.employee?.role?.replace("_", " ") ??
+                                "Staff member"}
+                            </p>
+                            <p className="text-sm font-semibold text-foreground leading-tight">
+                              {assignment.roomSchedule?.actual_start_time &&
+                                assignment.roomSchedule?.actual_end_time &&
+                                `Shift: ${formatTimeRange(
+                                  assignment.roomSchedule.actual_start_time,
+                                  assignment.roomSchedule.actual_end_time
+                                )}`}
+                            </p>
                           </div>
-                          <p className={modalStyles.infoCardValue}>{item.value}</p>
                         </div>
-                      );
-                    })}
+                        <div className="flex items-center gap-2">
+                          <div className="text-right space-y-1">
+                            <Badge
+                              className={`${getStatusBadgeClass(
+                                assignment.isActive,
+                                "assignment"
+                              )} text-xs font-medium border`}
+                            >
+                              {getStatusLabel(
+                                assignment.isActive,
+                                "assignment"
+                              )}
+                            </Badge>
+                            <p className="text-[10px] text-foreground">
+                              Added{" "}
+                              {formatDateTime((assignment as any)?.createdAt)}
+                            </p>
+                          </div>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                setAssignmentToDelete(assignment.id);
+                                setIsDeleteAssignmentModalOpen(true);
+                              }}
+                              disabled={!isDateInAdvance}
+                              title={
+                                !isDateInAdvance
+                                  ? "Cannot delete assignments for today or in the past. Only future assignments can be deleted."
+                                  : undefined
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </section>
-                <section className={`xl:col-span-1 ${modalStyles.section}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Users className="h-5 w-5" />
-                      Assignment Team
+                )}
+              </section>
+              {schedule.room && (
+                <section className={`xl:col-span-2 ${modalStyles.section}`}>
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <MapPin className="h-5 w-5" />
+                    Room Details
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <div className={modalStyles.infoCard}>
+                      <p className={modalStyles.infoCardLabel}>Room code</p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.room.roomCode}
+                      </p>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {assignments.length} member{assignments.length === 1 ? "" : "s"}
-                    </Badge>
+                    <div className={modalStyles.infoCard}>
+                      <p className={modalStyles.infoCardLabel}>Room type</p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.room.roomType}
+                      </p>
+                    </div>
+                    {schedule.room.capacity && (
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Capacity</p>
+                        <p className={modalStyles.infoCardValue}>
+                          {schedule.room.capacity}
+                        </p>
+                      </div>
+                    )}
+                    {schedule.room.floor && (
+                      <div className={modalStyles.infoCard}>
+                        <p className={modalStyles.infoCardLabel}>Floor</p>
+                        <p className={modalStyles.infoCardValue}>
+                          {schedule.room.floor}
+                        </p>
+                      </div>
+                    )}
+                    <div className={`md:col-span-3 ${modalStyles.infoCard}`}>
+                      <p className={modalStyles.infoCardLabel}>Description</p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.room.description || "No description provided"}
+                      </p>
+                    </div>
                   </div>
-                  {assignments.length === 0 ? (
-                    <p className="text-sm text-foreground">
-                      No employees assigned to this schedule yet. Use the assignment panel to add staff.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {assignments.map((assignment) => (
-                        <div
-                          key={assignment.id}
-                          className={`flex items-center justify-between gap-3 ${modalStyles.infoCard}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback>
-                                {getInitials(
-                                  assignment.employee?.firstName,
-                                  assignment.employee?.lastName
+
+                  {isLoadingModalities ? (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-base font-semibold">
+                        <Monitor className="h-4 w-4" />
+                        Modality Machines
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-foreground" />
+                        <span className="text-sm text-foreground">
+                          Loading modalities...
+                        </span>
+                      </div>
+                    </div>
+                  ) : modalities.length > 0 ? (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-base font-semibold">
+                        <Monitor className="h-4 w-4" />
+                        Modality Machines ({modalities.length})
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {modalities.map((machine: ModalityMachine) => {
+                          const displayName =
+                            machine.name ||
+                            machine.modality?.modalityName ||
+                            `${machine.manufacturer || ""} ${
+                              machine.model || ""
+                            }`.trim() ||
+                            "Unnamed Machine";
+
+                          return (
+                            <div
+                              key={machine.id}
+                              className={modalStyles.infoCard}
+                            >
+                              <p className="text-sm font-semibold text-foreground">
+                                {displayName}
+                              </p>
+                              {machine.modality?.modalityName &&
+                                machine.name && (
+                                  <p className="text-xs text-foreground">
+                                    Type: {machine.modality.modalityName}
+                                  </p>
                                 )}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-semibold text-foreground leading-tight">
-                                {assignment.employee
-                                  ? `${assignment.employee.firstName} ${assignment.employee.lastName}`
-                                  : assignment.employeeId}
-                              </p>
-                              <p className="text-xs text-foreground capitalize">
-                                {assignment.employee?.role?.replace('_', ' ') ?? "Staff member"}
-                              </p>
+                              {machine.model && (
+                                <p className="text-xs text-foreground">
+                                  Model: {machine.model}
+                                </p>
+                              )}
+                              {machine.manufacturer && (
+                                <p className="text-xs text-foreground">
+                                  Manufacturer: {machine.manufacturer}
+                                </p>
+                              )}
+                              {machine.status && (
+                                <Badge
+                                  className={`${getStatusBadgeClass(
+                                    machine.status,
+                                    "machine"
+                                  )} text-xs font-medium mt-1 border`}
+                                >
+                                  {getStatusLabel(machine.status, "machine")}
+                                </Badge>
+                              )}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right space-y-1">
-                              <Badge className={`${getStatusBadgeClass(assignment.isActive, 'assignment')} text-xs font-medium border`}>
-                                {getStatusLabel(assignment.isActive, 'assignment')}
-                              </Badge>
-                              <p className="text-[10px] text-foreground">
-                                Added {formatDateTime((assignment as any)?.createdAt)}
-                              </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-base font-semibold">
+                        <Monitor className="h-4 w-4" />
+                        Modality Machines
+                      </div>
+                      <p className="text-sm text-foreground/70 italic">
+                        No modality machines available in this room
+                      </p>
+                    </div>
+                  )}
+
+                  {roomServices.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-base font-semibold">
+                        <Stethoscope className="h-4 w-4" />
+                        Room Services ({roomServices.length})
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {roomServices
+                          .filter(
+                            (sr: ServiceRoom) => sr.isActive && sr.service
+                          )
+                          .map((sr: ServiceRoom) => (
+                            <div key={sr.id} className={modalStyles.infoCard}>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {sr.service?.serviceName ||
+                                      "Unknown Service"}
+                                  </p>
+                                  {sr.service?.serviceCode && (
+                                    <p className="text-xs text-foreground/70 mt-0.5">
+                                      Code: {sr.service.serviceCode}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge
+                                  className={`${getStatusBadgeClass(
+                                    sr.isActive,
+                                    "service"
+                                  )} text-xs font-medium shrink-0 border`}
+                                >
+                                  {getStatusLabel(sr.isActive, "service")}
+                                </Badge>
+                              </div>
+                              {sr.service?.description && (
+                                <p className="text-xs text-foreground/80 line-clamp-2 mt-1">
+                                  {sr.service.description}
+                                </p>
+                              )}
+                              {sr.notes && (
+                                <div className="mt-2 pt-2 border-t border-border/20">
+                                  <p className="text-xs font-medium text-foreground/70">
+                                    Notes:
+                                  </p>
+                                  <p className="text-xs text-foreground/80 mt-0.5">
+                                    {sr.notes}
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  setAssignmentToDelete(assignment.id);
-                                  setIsDeleteAssignmentModalOpen(true);
-                                }}
-                                disabled={!isDateInAdvance}
-                                title={!isDateInAdvance ? "Cannot delete assignments for today or in the past. Only future assignments can be deleted." : undefined}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                          ))}
+                      </div>
                     </div>
                   )}
                 </section>
-                {schedule.room && (
-                  <section className={`xl:col-span-2 ${modalStyles.section}`}>
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <MapPin className="h-5 w-5" />
-                      Room Details
-                    </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className={modalStyles.infoCard}>
-                        <p className={modalStyles.infoCardLabel}>Room code</p>
-                        <p className={modalStyles.infoCardValue}>{schedule.room.roomCode}</p>
-                      </div>
-                        <div className={modalStyles.infoCard}>
-                        <p className={modalStyles.infoCardLabel}>Room type</p>
-                        <p className={modalStyles.infoCardValue}>{schedule.room.roomType}</p>
-                      </div>
-                        {schedule.room.capacity && (
-                          <div className={modalStyles.infoCard}>
-                            <p className={modalStyles.infoCardLabel}>Capacity</p>
-                            <p className={modalStyles.infoCardValue}>{schedule.room.capacity}</p>
-                          </div>
-                        )}
-                        <div className={`md:col-span-3 ${modalStyles.infoCard}`}>
-                        <p className={modalStyles.infoCardLabel}>Description</p>
-                        <p className={modalStyles.infoCardValue}>
-                          {schedule.room.description || "No description provided"}
-                        </p>
-                      </div>
-                    </div>
+              )}
 
-                    {isLoadingModalities ? (
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2 text-base font-semibold">
-                          <Monitor className="h-4 w-4" />
-                          Modality Machines
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin text-foreground" />
-                          <span className="text-sm text-foreground">Loading modalities...</span>
-                        </div>
-                      </div>
-                    ) : modalities.length > 0 ? (
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2 text-base font-semibold">
-                          <Monitor className="h-4 w-4" />
-                          Modality Machines ({modalities.length})
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {modalities.map((machine: ModalityMachine) => {
-                            const displayName = machine.name || 
-                              machine.modality?.modalityName || 
-                              `${machine.manufacturer || ''} ${machine.model || ''}`.trim() ||
-                              "Unnamed Machine";
-                            
-                            return (
-                              <div
-                                key={machine.id}
-                                className={modalStyles.infoCard}
-                              >
-                                <p className="text-sm font-semibold text-foreground">
-                                  {displayName}
-                                </p>
-                                {machine.modality?.modalityName && machine.name && (
-                                  <p className="text-xs text-foreground">Type: {machine.modality.modalityName}</p>
-                                )}
-                                {machine.model && (
-                                  <p className="text-xs text-foreground">Model: {machine.model}</p>
-                                )}
-                                {machine.manufacturer && (
-                                  <p className="text-xs text-foreground">Manufacturer: {machine.manufacturer}</p>
-                                )}
-                                {machine.status && (
-                                  <Badge
-                                    className={`${getStatusBadgeClass(machine.status, 'machine')} text-xs font-medium mt-1 border`}
-                                  >
-                                    {getStatusLabel(machine.status, 'machine')}
-                                  </Badge>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2 text-base font-semibold">
-                          <Monitor className="h-4 w-4" />
-                          Modality Machines
-                        </div>
-                        <p className="text-sm text-foreground/70 italic">No modality machines available in this room</p>
-                      </div>
-                    )}
-
-                    {roomServices.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        <div className="flex items-center gap-2 text-base font-semibold">
-                          <Stethoscope className="h-4 w-4" />
-                          Room Services ({roomServices.length})
-                        </div>
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {roomServices
-                            .filter((sr: ServiceRoom) => sr.isActive && sr.service)
-                            .map((sr: ServiceRoom) => (
-                              <div
-                                key={sr.id}
-                                className={modalStyles.infoCard}
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1">
-                                    <p className="text-sm font-semibold text-foreground">
-                                      {sr.service?.serviceName || "Unknown Service"}
-                                    </p>
-                                    {sr.service?.serviceCode && (
-                                      <p className="text-xs text-foreground/70 mt-0.5">
-                                        Code: {sr.service.serviceCode}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <Badge className={`${getStatusBadgeClass(sr.isActive, 'service')} text-xs font-medium shrink-0 border`}>
-                                    {getStatusLabel(sr.isActive, 'service')}
-                                  </Badge>
-                                </div>
-                                {sr.service?.description && (
-                                  <p className="text-xs text-foreground/80 line-clamp-2 mt-1">
-                                    {sr.service.description}
-                                  </p>
-                                )}
-                                {sr.notes && (
-                                  <div className="mt-2 pt-2 border-t border-border/20">
-                                    <p className="text-xs font-medium text-foreground/70">Notes:</p>
-                                    <p className="text-xs text-foreground/80 mt-0.5">{sr.notes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {schedule.shift_template && (
-                  <section className={`xl:col-span-1 ${modalStyles.section}`}>
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Clock className="h-5 w-5" />
-                      Shift Template
+              {schedule.shift_template && (
+                <section className={`xl:col-span-1 ${modalStyles.section}`}>
+                  <div className="flex items-center gap-2 text-lg font-semibold">
+                    <Clock className="h-5 w-5" />
+                    Shift Template
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className={modalStyles.infoCard}>
+                      <p className={modalStyles.infoCardLabel}>Shift name</p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.shift_template.shift_name}
+                      </p>
                     </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <div className={modalStyles.infoCard}>
-                        <p className={modalStyles.infoCardLabel}>Shift name</p>
-                        <p className={modalStyles.infoCardValue}>{schedule.shift_template.shift_name}</p>
-                      </div>
-                        <div className={modalStyles.infoCard}>
-                        <p className={modalStyles.infoCardLabel}>Shift type</p>
-                        <p className={modalStyles.infoCardValue}>{schedule.shift_template.shift_type?.charAt(0).toUpperCase() + schedule.shift_template.shift_type?.slice(1)}</p>
-                      </div>
-                        <div className={modalStyles.infoCard}>
-                        <p className={modalStyles.infoCardLabel}>Scheduled time</p>
-                        <p className={modalStyles.infoCardValue}>
-                          {schedule.shift_template.start_time} – {schedule.shift_template.end_time}
-                        </p>
-                      </div>
-                      {schedule.shift_template.break_start_time && schedule.shift_template.break_end_time && (
+                    <div className={modalStyles.infoCard}>
+                      <p className={modalStyles.infoCardLabel}>Shift type</p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.shift_template.shift_type
+                          ?.charAt(0)
+                          .toUpperCase() +
+                          schedule.shift_template.shift_type?.slice(1)}
+                      </p>
+                    </div>
+                    <div className={modalStyles.infoCard}>
+                      <p className={modalStyles.infoCardLabel}>
+                        Scheduled time
+                      </p>
+                      <p className={modalStyles.infoCardValue}>
+                        {schedule.shift_template.start_time} –{" "}
+                        {schedule.shift_template.end_time}
+                      </p>
+                    </div>
+                    {schedule.shift_template.break_start_time &&
+                      schedule.shift_template.break_end_time && (
                         <div className="md:col-span-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-amber-200/30">
-                          <p className="text-sm font-semibold text-amber-900">Break Period</p>
+                          <p className="text-sm font-semibold text-amber-900">
+                            Break Period
+                          </p>
                           <p className="text-base font-semibold text-amber-800">
-                            {schedule.shift_template.break_start_time} – {schedule.shift_template.break_end_time}
+                            {schedule.shift_template.break_start_time} –{" "}
+                            {schedule.shift_template.break_end_time}
                           </p>
                           {schedule.shift_template.description && (
                             <p className="text-xs text-amber-700 mt-2">
@@ -655,30 +787,32 @@ export function ScheduleDetailModal({
                           )}
                         </div>
                       )}
-                    </div>
-                  </section>
-                )}
-                        
-                
+                  </div>
+                </section>
+              )}
 
-                
-                  <section className={`xl:col-span-1 ${modalStyles.section}`}>
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <FileText className="h-5 w-5" />
-                      Notes
-                    </div>
-                    <p className={`${modalStyles.infoCardValue} whitespace-pre-wrap`}>
-                      {notes || "No notes provided"}
-                    </p>
-                  </section>
-                
-              </div>
+              <section className={`xl:col-span-1 ${modalStyles.section}`}>
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <FileText className="h-5 w-5" />
+                  Notes
+                </div>
+                <p
+                  className={`${modalStyles.infoCardValue} whitespace-pre-wrap`}
+                >
+                  {notes || "No notes provided"}
+                </p>
+              </section>
+            </div>
           </div>
         </ScrollArea>
 
         {/* Fixed Footer */}
         <DialogFooter className={modalStyles.dialogFooter}>
-          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className={modalStyles.secondaryButton}
+          >
             Close
           </Button>
           {isAdmin && (
@@ -687,7 +821,11 @@ export function ScheduleDetailModal({
                 className={modalStyles.dangerButton}
                 onClick={() => setIsDeleteModalOpen(true)}
                 disabled={!isDateInAdvance}
-                title={!isDateInAdvance ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted." : undefined}
+                title={
+                  !isDateInAdvance
+                    ? "Cannot delete schedules for today or in the past. Only future schedules can be deleted."
+                    : undefined
+                }
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Schedule
@@ -696,7 +834,11 @@ export function ScheduleDetailModal({
                 variant="default"
                 onClick={() => setIsEditModalOpen(true)}
                 disabled={!isDateInAdvance}
-                title={!isDateInAdvance ? "Cannot edit schedules for today or in the past. Only future schedules can be edited." : undefined}
+                title={
+                  !isDateInAdvance
+                    ? "Cannot edit schedules for today or in the past. Only future schedules can be edited."
+                    : undefined
+                }
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Schedule
