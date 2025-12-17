@@ -89,8 +89,6 @@ export const LucideIconMapping: Record<string, LucideIcon> = {
   'Reset': RotateCcw,
   'Invert': FlipVertical,
   'Rotate': RotateCw,
-  'FlipH': FlipHorizontal,
-  'FlipV': FlipVertical,
   
   // Studies/Series
   'Studies': Layers,

@@ -100,7 +100,7 @@ export const modalStyles = {
   heroSection: "rounded-xl bg-gradient-to-br from-teal-50 to-slate-50 p-6 border border-teal-200/50 shadow-sm",
   heroTitle: "text-2xl font-bold text-slate-900",
   heroSubtitle: "text-sm text-slate-600 flex items-center gap-2",
-  heroLabel: "text-xs font-semibold text-teal-600 uppercase tracking-wide",
+  heroLabel: "text-xs font-semibold text-teal-600 uppercase tracking-wide flex items-center gap-2",
   
   // Content sections
   section: "bg-white border border-slate-200/60 rounded-xl p-6 shadow-sm",
@@ -111,7 +111,7 @@ export const modalStyles = {
   sectionLabel: "text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3 flex items-center gap-2",
   
   // Info cards
-  infoCard: "bg-white/80 backdrop-blur rounded-lg p-4 border border-slate-100 transition-all hover:shadow-md hover:border-teal-200/50",
+  infoCard: "bg-white/80 backdrop-blur rounded-lg p-4 border border-slate-100 transition-all hover:shadow-md hover:border-teal-200/50 flex items-start gap-3",
   infoCardLabel: "text-xs font-semibold text-teal-600 uppercase tracking-wide mb-1",
   infoCardValue: "text-sm font-medium text-slate-900",
   infoCardLarge: "text-lg font-semibold text-slate-900",

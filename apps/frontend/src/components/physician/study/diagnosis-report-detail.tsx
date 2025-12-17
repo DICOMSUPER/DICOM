@@ -1003,16 +1003,35 @@ export function DiagnosisReportDetail({
                       onValueChange={(value) =>
                         handleSelectChange("bodyPartId", value)
                       }
+                      disabled={isBodyPartsLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All Body Parts" />
+                        <SelectValue 
+                          placeholder={
+                            isBodyPartsLoading 
+                              ? "Loading body parts..." 
+                              : "Select Body Part"
+                          } 
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {bodyPartsData?.data.map((bodyPart: BodyPart) => (
-                          <SelectItem key={bodyPart.id} value={bodyPart.id}>
-                            {bodyPart.name}
-                          </SelectItem>
-                        ))}
+                        {isBodyPartsLoading ? (
+                          <div className="flex items-center justify-center py-4 text-sm text-slate-500">
+                            <span className="animate-spin mr-2">⏳</span>
+                            Loading body parts...
+                          </div>
+                        ) : bodyPartsData?.data?.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
+                            <AlertCircle className="w-5 h-5 mb-2 text-slate-400" />
+                            No body parts available
+                          </div>
+                        ) : (
+                          bodyPartsData?.data.map((bodyPart: BodyPart) => (
+                            <SelectItem key={bodyPart.id} value={bodyPart.id}>
+                              {bodyPart.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
 
@@ -1021,16 +1040,35 @@ export function DiagnosisReportDetail({
                       onValueChange={(value) =>
                         handleSelectChange("modalityId", value)
                       }
+                      disabled={isImagingModalitiesLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="All Modalities" />
+                        <SelectValue 
+                          placeholder={
+                            isImagingModalitiesLoading 
+                              ? "Loading modalities..." 
+                              : "Select Modality"
+                          } 
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {imagingModalitiesData?.data.map(
-                          (modality: ImagingModality) => (
-                            <SelectItem key={modality.id} value={modality.id}>
-                              {modality.modalityName}
-                            </SelectItem>
+                        {isImagingModalitiesLoading ? (
+                          <div className="flex items-center justify-center py-4 text-sm text-slate-500">
+                            <span className="animate-spin mr-2">⏳</span>
+                            Loading modalities...
+                          </div>
+                        ) : imagingModalitiesData?.data?.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
+                            <AlertCircle className="w-5 h-5 mb-2 text-slate-400" />
+                            No modalities available
+                          </div>
+                        ) : (
+                          imagingModalitiesData?.data.map(
+                            (modality: ImagingModality) => (
+                              <SelectItem key={modality.id} value={modality.id}>
+                                {modality.modalityName}
+                              </SelectItem>
+                            )
                           )
                         )}
                       </SelectContent>
@@ -1039,25 +1077,45 @@ export function DiagnosisReportDetail({
                     <Select
                       value={selectedReportTemplateId}
                       onValueChange={handleSelectTemplate}
+                      disabled={isReportTemplatesLoading || !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
                           placeholder={
-                            isReportTemplatesLoading
-                              ? "Loading..."
-                              : "Select report template"
+                            !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId
+                              ? "Select body part & modality first"
+                              : isReportTemplatesLoading
+                              ? "Loading templates..."
+                              : "Select Report Template"
                           }
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {reportTemplatesData?.data.map(
-                          (report: ReportTemplate) => (
-                            <SelectItem
-                              key={report.reportTemplatesId}
-                              value={report.reportTemplatesId}
-                            >
-                              {report.templateName}
-                            </SelectItem>
+                        {isReportTemplatesLoading ? (
+                          <div className="flex items-center justify-center py-4 text-sm text-slate-500">
+                            <span className="animate-spin mr-2">⏳</span>
+                            Loading templates...
+                          </div>
+                        ) : !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId ? (
+                          <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
+                            <AlertCircle className="w-5 h-5 mb-2 text-slate-400" />
+                            Please select body part and modality first
+                          </div>
+                        ) : reportTemplatesData?.data?.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
+                            <FileText className="w-5 h-5 mb-2 text-slate-400" />
+                            No templates found for selected filters
+                          </div>
+                        ) : (
+                          reportTemplatesData?.data.map(
+                            (report: ReportTemplate) => (
+                              <SelectItem
+                                key={report.reportTemplatesId}
+                                value={report.reportTemplatesId}
+                              >
+                                {report.templateName}
+                              </SelectItem>
+                            )
                           )
                         )}
                       </SelectContent>

@@ -33,6 +33,7 @@ import {
 } from "@/common/utils/status-badge";
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { modalStyles } from "@/common/utils/format-status";
 
 // Format status for display
 const capitalizeFirst = (str: string) => {
@@ -362,33 +363,19 @@ export default function EncounterDetailPage() {
         ) : (
           <div className="space-y-8 pr-4 pb-2">
             {/* Hero Section */}
-            <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+            <section className={modalStyles.heroSection}>
               <div className="flex flex-wrap items-start justify-between gap-6">
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
+                  <div className={modalStyles.heroLabel}>
                     <FileText className="h-3.5 w-3.5" />
                     {encounter.orderNumber
                       ? `Order #${encounter.orderNumber}`
                       : encounter.id.slice(0, 8)}
                   </div>
                   <div>
-                    <p className="text-3xl font-semibold text-foreground leading-tight">
+                    <p className={modalStyles.heroTitle}>
                       {formatEncounterType(encounter.encounterType)}
                     </p>
-                    <div className="mt-3 grid gap-2 text-sm text-foreground">
-                      <p className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {encounter.encounterDate
-                          ? formatDate(encounter.encounterDate)
-                          : "No date set"}
-                      </p>
-                      {physician && (
-                        <p className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Dr. {physician.firstName} {physician.lastName}
-                        </p>
-                      )}
-                    </div>
                   </div>
                 </div>
                 <div className="space-y-4 text-right">
@@ -402,50 +389,50 @@ export default function EncounterDetailPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                  <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                    <Calendar className="h-5 w-5" />
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <Calendar className={modalStyles.sectionIcon} />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">
+                    <div className={modalStyles.infoCardLabel}>
                       Encounter Date
-                    </p>
-                    <p className="text-lg font-semibold text-foreground">
+                    </div>
+                    <p className={modalStyles.infoCardLarge}>
                       {encounter.encounterDate
                         ? new Date(encounter.encounterDate).toLocaleDateString()
                         : "Not set"}
                     </p>
-                    <p className="text-xs text-foreground">Visit date</p>
+                    <p className="text-xs text-slate-500">Visit date</p>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                  <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                    <User className="h-5 w-5" />
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <User className={modalStyles.sectionIcon} />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">
+                    <div className={modalStyles.infoCardLabel}>
                       Physician
-                    </p>
-                    <p className="text-lg font-semibold text-foreground">
+                    </div>
+                    <p className={modalStyles.infoCardLarge}>
                       {physician
                         ? `Dr. ${physician.firstName} ${physician.lastName}`
                         : "Not assigned"}
                     </p>
-                    <p className="text-xs text-foreground">Assigned doctor</p>
+                    <p className="text-xs text-slate-500">Assigned doctor</p>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                  <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                    <MapPin className="h-5 w-5" />
+                <div className={modalStyles.infoCard}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <MapPin className={modalStyles.sectionIcon} />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-foreground">
+                    <div className={modalStyles.infoCardLabel}>
                       Service Room
-                    </p>
-                    <p className="text-lg font-semibold text-foreground">
+                    </div>
+                    <p className={modalStyles.infoCardLarge}>
                       {serviceRoom?.room?.roomCode || "Not assigned"}
                     </p>
-                    <p className="text-xs text-foreground">
+                    <p className="text-xs text-slate-500">
                       {serviceRoom?.service?.serviceName || "No service"}
                     </p>
                   </div>
@@ -453,80 +440,117 @@ export default function EncounterDetailPage() {
               </div>
             </section>
 
-            {/* Patient Information - Full Width (Important Section) */}
+            {/* Patient Information - Full Width (Most Important Section) */}
             {encounter.patient && (
-              <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  <User className="h-5 w-5" />
-                  Patient Information
+              <section className={modalStyles.section}>
+                <div className={modalStyles.sectionHeader}>
+                  <div className={modalStyles.sectionIconContainer}>
+                    <User className={modalStyles.sectionIcon} />
+                  </div>
+                  <h3 className={modalStyles.sectionTitle}>Patient Information</h3>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                    <p className="text-xs text-foreground mb-1">Full Name</p>
-                    <p className="text-sm font-semibold text-foreground break-words">
-                      {encounter.patient.firstName} {encounter.patient.lastName}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                    <p className="text-xs text-foreground mb-1">Patient ID</p>
-                    <p className="text-sm font-semibold text-foreground font-mono">
-                      {encounter.patient.patientCode}
-                    </p>
-                  </div>
-                  {encounter.patient.gender && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">Gender</p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {formatGender(encounter.patient.gender)}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {/* Name - Full width on mobile, spans 1 col on larger */}
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <User className={modalStyles.sectionIcon} />
+                    </div>
+                    <div>
+                      <div className={modalStyles.infoCardLabel}>Name</div>
+                      <p className={modalStyles.infoCardValue}>
+                        {encounter.patient.firstName} {encounter.patient.lastName}
                       </p>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Patient ID */}
+                  <div className={modalStyles.infoCard}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <User className={modalStyles.sectionIcon} />
+                    </div>
+                    <div>
+                      <div className={modalStyles.infoCardLabel}>Patient ID</div>
+                      <p className={modalStyles.infoCardValue}>{encounter.patient.patientCode}</p>
+                    </div>
+                  </div>
+
+                  {/* Date of Birth */}
                   {encounter.patient.dateOfBirth && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">
-                        Date of Birth
-                      </p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {new Date(
-                          encounter.patient.dateOfBirth
-                        ).toLocaleDateString()}
-                      </p>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <Calendar className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Date of Birth</div>
+                        <p className={modalStyles.infoCardValue}>
+                          {new Date(encounter.patient.dateOfBirth).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Gender */}
+                  {encounter.patient.gender && (
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <User className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Gender</div>
+                        <p className={modalStyles.infoCardValue}>{formatGender(encounter.patient.gender)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Phone Number */}
                   {encounter.patient.phoneNumber && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">
-                        Phone Number
-                      </p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {encounter.patient.phoneNumber}
-                      </p>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <Phone className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Phone</div>
+                        <p className={modalStyles.infoCardValue}>{encounter.patient.phoneNumber}</p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Blood Type */}
                   {encounter.patient.bloodType && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">Blood Type</p>
-                      <p className="text-sm font-semibold text-foreground">
-                        {encounter.patient.bloodType}
-                      </p>
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <Activity className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Blood Type</div>
+                        <p className={modalStyles.infoCardValue}>{encounter.patient.bloodType}</p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Insurance Number - Can span 2 cols if needed */}
                   {encounter.patient.insuranceNumber && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">
-                        Insurance Number
-                      </p>
-                      <p className="text-sm font-semibold text-foreground font-mono">
-                        {encounter.patient.insuranceNumber}
-                      </p>
+                    <div className={`${modalStyles.infoCard} ${!encounter.patient.address ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <FileText className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Insurance Number</div>
+                        <p className={modalStyles.infoCardValue}>{encounter.patient.insuranceNumber}</p>
+                      </div>
                     </div>
                   )}
+
+                  {/* Address - Always full width */}
                   {encounter.patient.address && (
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm ring-1 ring-border/10 sm:col-span-2 lg:col-span-4">
-                      <p className="text-xs text-foreground mb-1">Address</p>
-                      <p className="text-sm font-semibold text-foreground break-words">
-                        {encounter.patient.address}
-                      </p>
+                    <div className={`${modalStyles.infoCard} sm:col-span-2 lg:col-span-3`}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <MapPin className={modalStyles.sectionIcon} />
+                      </div>
+                      <div>
+                        <div className={modalStyles.infoCardLabel}>Address</div>
+                        <p className={modalStyles.infoCardValue}>{encounter.patient.address}</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -537,36 +561,38 @@ export default function EncounterDetailPage() {
               {/* Main Content - Left Side */}
               <div className="lg:col-span-7 space-y-6">
                 {/* Encounter Overview */}
-                <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                  <div className="flex items-center gap-2 text-lg font-semibold">
-                    <Stethoscope className="h-5 w-5" />
-                    Encounter Overview
+                <section className={modalStyles.section}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Stethoscope className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Encounter Overview</h3>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">Encounter ID</span>
+                    <div className={modalStyles.gridCard}>
+                      <div className={modalStyles.gridCardLabel}>
+                        <FileText className={modalStyles.gridCardIcon} />
+                        Encounter ID
                       </div>
-                      <p className="text-xs font-semibold text-foreground font-mono break-all line-clamp-2">
+                      <p className="text-xs font-semibold text-slate-900 font-mono break-all line-clamp-2">
                         {encounter.id}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <FileText className="h-4 w-4 shrink-0" />
+                    <div className={modalStyles.gridCard}>
+                      <div className={modalStyles.gridCardLabel}>
+                        <FileText className={modalStyles.gridCardIcon} />
                         Order Number
                       </div>
-                      <p className="text-base font-semibold text-foreground truncate">
+                      <p className={modalStyles.gridCardValue}>
                         {encounter.orderNumber || "N/A"}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10 sm:col-span-2 lg:col-span-1">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <User className="h-4 w-4 shrink-0" />
+                    <div className={`${modalStyles.gridCard} sm:col-span-2 lg:col-span-1`}>
+                      <div className={modalStyles.gridCardLabel}>
+                        <User className={modalStyles.gridCardIcon} />
                         Created By
                       </div>
-                      <p className="text-base font-semibold text-foreground truncate">
+                      <p className={modalStyles.gridCardValue}>
                         {createdBy
                           ? `${createdBy.firstName} ${createdBy.lastName}`
                           : encounter.createdBy || "N/A"}
@@ -577,17 +603,19 @@ export default function EncounterDetailPage() {
 
                 {/* Clinical Details */}
                 {encounter.chiefComplaint ||
-                encounter.symptoms ||
-                encounter.notes ? (
-                  <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Stethoscope className="h-5 w-5" />
-                      Clinical Details
+                  encounter.symptoms ||
+                  encounter.notes ? (
+                  <section className={modalStyles.section}>
+                    <div className={modalStyles.sectionHeader}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <Stethoscope className={modalStyles.sectionIcon} />
+                      </div>
+                      <h3 className={modalStyles.sectionTitle}>Clinical Details</h3>
                     </div>
                     <div className="space-y-4">
                       {encounter.chiefComplaint && (
-                        <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 shadow-sm space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-amber-900 uppercase tracking-wide">
+                        <div className={`${modalStyles.infoCard} !bg-amber-50 !border-amber-200`}>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
                             <AlertCircle className="h-4 w-4 shrink-0" />
                             Chief Complaint
                           </div>
@@ -597,8 +625,8 @@ export default function EncounterDetailPage() {
                         </div>
                       )}
                       {encounter.symptoms && (
-                        <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4 shadow-sm space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-blue-900 uppercase tracking-wide">
+                        <div className={`${modalStyles.infoCard} !bg-blue-50 !border-blue-200`}>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
                             <Activity className="h-4 w-4 shrink-0" />
                             Symptoms
                           </div>
@@ -608,12 +636,12 @@ export default function EncounterDetailPage() {
                         </div>
                       )}
                       {encounter.notes && (
-                        <div className="rounded-2xl bg-primary/10 border border-primary/20 p-4 shadow-sm space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-semibold text-foreground uppercase tracking-wide">
+                        <div className={modalStyles.infoCard}>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-teal-600 uppercase tracking-wide mb-2">
                             <FileText className="h-4 w-4 shrink-0" />
                             Notes
                           </div>
-                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
+                          <p className={modalStyles.infoCardValue}>
                             {encounter.notes}
                           </p>
                         </div>
@@ -621,13 +649,13 @@ export default function EncounterDetailPage() {
                     </div>
                   </section>
                 ) : (
-                  <section className="rounded-2xl p-6 shadow border-border border">
+                  <section className={modalStyles.section}>
                     <div className="flex flex-col items-center justify-center py-12">
-                      <Stethoscope className="h-16 w-16 text-foreground/40 mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                      <Stethoscope className="h-16 w-16 text-slate-300 mb-4" />
+                      <h3 className="text-lg font-semibold text-slate-700 mb-2">
                         No Clinical Details
                       </h3>
-                      <p className="text-sm text-foreground text-center max-w-md">
+                      <p className="text-sm text-slate-500 text-center max-w-md">
                         No clinical details have been recorded for this
                         encounter yet.
                       </p>
@@ -640,34 +668,36 @@ export default function EncounterDetailPage() {
               <div className="lg:col-span-5 space-y-4">
                 {/* Location Information */}
                 {serviceRoom ? (
-                  <section className="rounded-2xl p-4 shadow border-border border space-y-3">
-                    <div className="flex items-center gap-2 text-base font-semibold">
-                      <DoorOpen className="h-4 w-4" />
-                      Location
+                  <section className={modalStyles.section}>
+                    <div className={modalStyles.sectionHeader}>
+                      <div className={modalStyles.sectionIconContainer}>
+                        <DoorOpen className={modalStyles.sectionIcon} />
+                      </div>
+                      <h3 className={modalStyles.sectionTitle}>Location</h3>
                     </div>
-                    <div className="grid gap-2.5">
-                      <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                        <p className="text-xs text-foreground mb-1">Room</p>
-                        <p className="text-sm font-semibold text-foreground truncate">
+                    <div className="grid gap-3">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>Room</div>
+                        <p className={modalStyles.infoCardValue}>
                           {serviceRoom.room?.roomCode || "N/A"}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                        <p className="text-xs text-foreground mb-1">Service</p>
-                        <p className="text-sm font-semibold text-foreground break-words">
+                      <div className={modalStyles.infoCard}>
+                        <div className={modalStyles.infoCardLabel}>Service</div>
+                        <p className={modalStyles.infoCardValue}>
                           {serviceRoom.service?.serviceName || "N/A"}
                         </p>
                       </div>
                     </div>
                   </section>
                 ) : (
-                  <section className="rounded-2xl p-4 shadow border-border border">
+                  <section className={modalStyles.section}>
                     <div className="flex flex-col items-center justify-center py-8">
-                      <MapPin className="h-12 w-12 text-foreground/40 mb-3" />
-                      <h3 className="text-base font-semibold text-foreground mb-1">
+                      <MapPin className="h-12 w-12 text-slate-300 mb-3" />
+                      <h3 className="text-base font-semibold text-slate-700 mb-1">
                         No Location Assigned
                       </h3>
-                      <p className="text-xs text-foreground text-center">
+                      <p className="text-xs text-slate-500 text-center">
                         No service room assigned yet.
                       </p>
                     </div>
@@ -675,21 +705,23 @@ export default function EncounterDetailPage() {
                 )}
 
                 {/* Timestamps */}
-                <section className="rounded-2xl p-4 shadow border-border border space-y-3">
-                  <div className="flex items-center gap-2 text-base font-semibold">
-                    <Clock className="h-4 w-4" />
-                    Timestamps
+                <section className={modalStyles.section}>
+                  <div className={modalStyles.sectionHeader}>
+                    <div className={modalStyles.sectionIconContainer}>
+                      <Clock className={modalStyles.sectionIcon} />
+                    </div>
+                    <h3 className={modalStyles.sectionTitle}>Timestamps</h3>
                   </div>
-                  <div className="grid gap-2.5">
-                    <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">Created At</p>
-                      <p className="text-xs font-semibold text-foreground break-words">
+                  <div className="grid gap-3">
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Created At</div>
+                      <p className={modalStyles.infoCardValue}>
                         {formatDateTime(encounter.createdAt)}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-primary/10 text-foreground p-3 shadow-sm ring-1 ring-border/10">
-                      <p className="text-xs text-foreground mb-1">Updated At</p>
-                      <p className="text-xs font-semibold text-foreground break-words">
+                    <div className={modalStyles.infoCard}>
+                      <div className={modalStyles.infoCardLabel}>Updated At</div>
+                      <p className={modalStyles.infoCardValue}>
                         {formatDateTime(encounter.updatedAt)}
                       </p>
                     </div>

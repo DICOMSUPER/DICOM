@@ -192,22 +192,24 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
         <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewDetails(encounter)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
             >
-              <Eye className="h-4 w-4 text-green-600" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
             </Button>
           )}
           {onEditEncounter && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onEditEncounter(encounter)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-blue-200 text-blue-700 hover:bg-blue-50"
             >
-              <Edit className="h-4 w-4 text-blue-600" />
+              <Edit className="h-3.5 w-3.5 mr-1.5" />
+              Edit
             </Button>
           )}
         </div>

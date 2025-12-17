@@ -83,12 +83,12 @@ export function SaveAnnotationModal({
           {/* Status Selection */}
           <div className="space-y-3">
             <Label className="text-sm font-medium text-white">Save as:</Label>
-            
+
             <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
               <div className="flex items-center gap-2">
                 {saveAsFinal ? (
                   <>
-                    <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                     <span className="text-sm text-white">Final</span>
                   </>
                 ) : (
@@ -101,7 +101,7 @@ export function SaveAnnotationModal({
               <Switch
                 checked={saveAsFinal}
                 onCheckedChange={setSaveAsFinal}
-                className="data-[state=checked]:bg-blue-600"
+                className="data-[state=checked]:bg-emerald-600"
               />
             </div>
 

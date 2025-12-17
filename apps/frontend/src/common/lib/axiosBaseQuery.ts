@@ -29,14 +29,14 @@ export const axiosBaseQuery =
       const resData = result.data;
 
       // Debug API response structure
-      console.log("API Response Debug:", {
-        url: basePath + url,
-        fullResponse: resData,
-        dataField: resData?.data,
-        nestedData: resData?.data?.data,
-        hasTotalInRoot: "total" in (resData || {}),
-        hasTotalInData: "total" in (resData?.data || {}),
-      });
+      // console.log("API Response Debug:", {
+      //   url: basePath + url,
+      //   fullResponse: resData,
+      //   dataField: resData?.data,
+      //   nestedData: resData?.data?.data,
+      //   hasTotalInRoot: "total" in (resData || {}),
+      //   hasTotalInData: "total" in (resData?.data || {}),
+      // });
 
       // Check if response has wrapper structure: { success: true, data: { data: [], total: ... } }
       if (
@@ -44,7 +44,7 @@ export const axiosBaseQuery =
         typeof resData.data === "object" &&
         ("total" in resData.data || "page" in resData.data)
       ) {
-        console.log("Returning nested paginated response:", resData.data);
+        // console.log("Returning nested paginated response:", resData.data);
         return { data: resData.data };
       }
 
@@ -54,7 +54,7 @@ export const axiosBaseQuery =
         typeof resData === "object" &&
         ("total" in resData || "page" in resData)
       ) {
-        console.log("Returning direct paginated response:", resData);
+        // console.log("Returning direct paginated response:", resData);
         return { data: resData };
       }
 

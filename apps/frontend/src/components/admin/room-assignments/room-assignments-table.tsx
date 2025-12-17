@@ -117,17 +117,24 @@ export function RoomAssignmentsTable({
           headerClassName: 'text-center',
           cell: (assignment) => (
             <div className="flex justify-center gap-2 text-center">
-              <Button variant="ghost" size="sm" onClick={() => onEdit(assignment)}>
-                <Edit className="h-4 w-4 text-teal-600" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(assignment)}
+                className="h-8 text-xs font-medium border-blue-200 text-blue-700 hover:bg-blue-50"
+              >
+                <Edit className="h-3.5 w-3.5 mr-1.5" />
+                Edit
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => onDelete(assignment.id)}
                 disabled={isDeleting}
-                className="text-red-600 hover:text-red-700"
+                className="h-8 text-xs font-medium border-red-200 text-red-700 hover:bg-red-50"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Delete
               </Button>
             </div>
           ),

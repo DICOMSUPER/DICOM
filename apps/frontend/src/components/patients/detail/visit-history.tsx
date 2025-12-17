@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { formatDate, formatTime } from '@/common/lib/formatTimeDate';
 import { useRouter } from 'next/navigation';
+import { modalStyles, formatStatus } from '@/common/utils/format-status';
 
 interface EncounterHistoryTabProps {
   encounterHistory: PatientEncounter[];
@@ -82,7 +83,7 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
           variant="outline"
           className={getEncounterTypeBadge(row.original.encounterType)}
         >
-          {row.original.encounterType.replace('_', ' ')}
+          {formatStatus(row.original.encounterType)}
         </Badge>
       ),
     }),
@@ -143,55 +144,49 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
   // Empty state
   if (!encounterHistory || encounterHistory.length === 0) {
     return (
-      <div className="space-y-6 border border-gray-200 rounded-lg p-6 bg-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Encounter History</h2>
-            <p className="text-gray-600 text-sm mt-1">Patient visit history and encounters.</p>
+      <div className={modalStyles.section}>
+        <div className={modalStyles.sectionHeader}>
+          <div className={modalStyles.sectionIconContainer}>
+            <Activity className={modalStyles.sectionIcon} />
           </div>
+          <h3 className={modalStyles.sectionTitle}>Encounter History</h3>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <div className="flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 text-lg font-medium">No encounters found</p>
-            <p className="text-gray-400 text-sm mt-2">
-              This patient has no recorded encounters yet.
-            </p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+            <FileText className="w-8 h-8 text-teal-300" />
           </div>
+          <p className="text-gray-500 text-lg font-medium">No encounters found</p>
+          <p className="text-gray-400 text-sm mt-2">
+            This patient has no recorded encounters yet.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 border border-gray-200 rounded-lg p-6 bg-white">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Encounter History</h2>
-          <p className="text-gray-600 text-sm mt-1">Patient visit history and encounters.</p>
+    <div className={modalStyles.section}>
+      <div className={modalStyles.sectionHeader}>
+        <div className={modalStyles.sectionIconContainer}>
+          <Activity className={modalStyles.sectionIcon} />
         </div>
-        {/* <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-          <Plus className="w-4 h-4" />
-          New Encounter
-        </Button> */}
+        <h3 className={modalStyles.sectionTitle}>Encounter History</h3>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto max-h-[500px]">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="bg-gray-50">
+                    <TableHead key={header.id} className="bg-slate-50">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -201,7 +196,7 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-slate-50 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-6 py-4">
@@ -219,54 +214,48 @@ export function EncounterHistoryTab({ encounterHistory }: EncounterHistoryTabPro
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {encounterHistory.filter(e => e.encounterType === 'outpatient').length}
-                </div>
-                <div className="text-sm text-gray-600">Outpatient Visits</div>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className={modalStyles.gridCard}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-4 h-4 text-blue-600" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className={modalStyles.gridCardValue}>
+                {encounterHistory.filter(e => e.encounterType === 'outpatient').length}
+              </div>
+              <div className="text-sm text-slate-600">Outpatient Visits</div>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {encounterHistory.filter(e => e.encounterType === 'inpatient').length}
-                </div>
-                <div className="text-sm text-gray-600">Inpatient Visits</div>
-              </div>
+        <div className={modalStyles.gridCard}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-4 h-4 text-purple-600" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className={modalStyles.gridCardValue}>
+                {encounterHistory.filter(e => e.encounterType === 'inpatient').length}
+              </div>
+              <div className="text-sm text-slate-600">Inpatient Visits</div>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {encounterHistory.length}
-                </div>
-                <div className="text-sm text-gray-600">Total Encounters</div>
-              </div>
+        <div className={modalStyles.gridCard}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-4 h-4 text-teal-600" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className={modalStyles.gridCardValue}>
+                {encounterHistory.length}
+              </div>
+              <div className="text-sm text-slate-600">Total Encounters</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

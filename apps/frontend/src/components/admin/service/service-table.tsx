@@ -96,32 +96,35 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
         <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewDetails(service)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
             >
-              <Eye className="h-4 w-4 text-green-600" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
             </Button>
           )}
           {onEdit && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onEdit(service)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-blue-200 text-blue-700 hover:bg-blue-50"
             >
-              <Edit className="h-4 w-4 text-blue-600" />
+              <Edit className="h-3.5 w-3.5 mr-1.5" />
+              Edit
             </Button>
           )}
           {onDelete && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onDelete(service)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-red-200 text-red-700 hover:bg-red-50"
             >
-              <Trash2 className="h-4 w-4 text-red-600" />
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete
             </Button>
           )}
         </div>

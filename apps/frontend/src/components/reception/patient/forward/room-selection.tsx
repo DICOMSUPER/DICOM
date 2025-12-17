@@ -61,26 +61,30 @@ export default function RoomSelection({
         rooms?.length > 0 && (
           <div className="grid grid-cols-1 gap-3 max-h-[20vh] overflow-y-auto">
             {rooms.map((room) => {
-              const maxQueue = room.roomStats?.maxWaiting ?? 1;
+              const maxQueue = room.roomStats?.maxWaiting ?? 0;
               const currentInProgress = room.roomStats?.currentInProgress ?? 0;
+              const isNotConfigured = maxQueue === 0;
 
-              // Fixed calculation: if current is 0 and max is 0, show 100%
-              const busyPercent =
-                maxQueue === 0
-                  ? 0
-                  : Math.max(
-                      Math.min((currentInProgress / maxQueue) * 100, 100),
-                      0
-                    );
+              // Calculate availability percentage (inverse of busy)
+              // If maxQueue is 0 (not configured), show as N/A
+              // Otherwise, availability = (maxQueue - currentInProgress) / maxQueue * 100
+              const availabilityPercent = isNotConfigured
+                ? 0
+                : Math.max(
+                    Math.min(((maxQueue - currentInProgress) / maxQueue) * 100, 100),
+                    0
+                  );
 
-              const getAvailabilityColor = (percent: number) => {
+              const getAvailabilityColor = (percent: number, notConfigured: boolean) => {
+                if (notConfigured) return "bg-slate-400";
                 if (percent >= 70) return "bg-green-500";
                 if (percent >= 40) return "bg-yellow-500";
                 if (percent >= 20) return "bg-orange-500";
                 return "bg-red-500";
               };
 
-              const getAvailabilityText = (percent: number) => {
+              const getAvailabilityText = (percent: number, notConfigured: boolean) => {
+                if (notConfigured) return "N/A";
                 if (percent >= 70) return "Available";
                 if (percent >= 40) return "Moderate wait";
                 if (percent >= 20) return "Busy";
@@ -122,27 +126,29 @@ export default function RoomSelection({
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
                         className={`h-full transition-all duration-300 ${getAvailabilityColor(
-                          busyPercent
+                          availabilityPercent, isNotConfigured
                         )}`}
-                        style={{ width: `${busyPercent}%` }}
+                        style={{ width: `${isNotConfigured ? 100 : availabilityPercent}%` }}
                       />
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-foreground font-medium">
-                        {busyPercent.toFixed(0)}% completed
+                        {isNotConfigured ? "N/A" : `${availabilityPercent.toFixed(0)}% available`}
                       </span>
                       <span
                         className={`font-medium ${
-                          busyPercent >= 70
+                          isNotConfigured
+                            ? "text-slate-500"
+                            : availabilityPercent >= 70
                             ? "text-green-600"
-                            : busyPercent >= 40
+                            : availabilityPercent >= 40
                             ? "text-yellow-600"
-                            : busyPercent >= 20
+                            : availabilityPercent >= 20
                             ? "text-orange-600"
                             : "text-red-600"
                         }`}
                       >
-                        {getAvailabilityText(busyPercent)}
+                        {getAvailabilityText(availabilityPercent, isNotConfigured)}
                       </span>
                     </div>
                   </div>

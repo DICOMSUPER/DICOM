@@ -13,9 +13,9 @@ interface RefreshButtonProps {
   showText?: boolean;
 }
 
-export function RefreshButton({ 
-  onRefresh, 
-  loading = false, 
+export function RefreshButton({
+  onRefresh,
+  loading = false,
   className = '',
   size = 'sm',
   variant = 'default',
@@ -30,16 +30,18 @@ export function RefreshButton({
   };
 
   return (
-    <Button
-      onClick={handleClick}
-      disabled={loading}
-      variant={variant}
-      size={size}
-      className={`flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground ${className}`}
-      type="button"
-    >
-      <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      {showText && (loading ? 'Refreshing...' : 'Refresh')}
-    </Button>
+    <div className="flex items-center flex-1 h-full justify-end">
+      <Button
+        onClick={handleClick}
+        disabled={loading}
+        variant={variant}
+        size={size}
+        className={`flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground ${className}`}
+        type="button"
+      >
+        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        {showText && (loading ? 'Refreshing...' : 'Refresh')}
+      </Button>
+    </div>
   );
 }

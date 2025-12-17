@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { EncounterHistoryTab } from "@/components/patients/detail/visit-history";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FileText, AlertTriangle, UserX } from "lucide-react";
 import {
   useGetPatientByCodeQuery,
   useGetPatientOverviewQuery,
@@ -147,8 +148,22 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 <TabsTrigger value="medical-history">Condition</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="space-y-6">
-                {patientOverview?.data && (
+                {isLoadingOverview ? (
+                  <Skeleton className="h-96 w-full" />
+                ) : patientOverview?.data ? (
                   <PatientSummaryTab overview={patientOverview?.data} />
+                ) : (
+                  <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+                        <FileText className="w-8 h-8 text-teal-300" />
+                      </div>
+                      <p className="text-slate-500 text-lg font-medium">No overview data available</p>
+                      <p className="text-slate-400 text-sm mt-2">
+                        Patient overview information will appear here once available.
+                      </p>
+                    </div>
+                  </div>
                 )}
               </TabsContent>
               <TabsContent value="results" className="space-y-6">
@@ -168,13 +183,17 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 />
               </TabsContent>
               <TabsContent value="medical-history" className="space-y-6">
-                {/* {isLoadingConditions ? (
-                  <Skeleton className="h-96 w-full" />
-                ) : (
-                  <MedicalHistoryTab
-                    conditions={conditionsData?.data.data || []}
-                  />
-                )} */}
+                <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                      <AlertTriangle className="w-8 h-8 text-amber-300" />
+                    </div>
+                    <p className="text-slate-500 text-lg font-medium">No conditions recorded</p>
+                    <p className="text-slate-400 text-sm mt-2">
+                      Medical conditions for this patient will appear here once recorded.
+                    </p>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

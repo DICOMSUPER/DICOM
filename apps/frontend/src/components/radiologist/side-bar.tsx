@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronDown, ArrowLeft } from "lucide-react";
+import { ChevronRight, ChevronDown, ArrowLeft, RefreshCw } from "lucide-react";
 import { useGetAllImagingModalityQuery } from "@/store/imagingModalityApi";
 import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
@@ -12,7 +12,7 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: modalityData, isLoading: isLoadingModality } =
+  const { data: modalityData, isLoading: isLoadingModality, isFetching, refetch } =
     useGetAllImagingModalityQuery();
 
   const modalities: ImagingModality[] = useMemo(
@@ -67,7 +67,17 @@ export default function Sidebar() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h2 className="text-lg font-semibold text-foreground">Work Tree</h2>
+            <h2 className="text-lg font-semibold text-foreground flex-1">Work Tree</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="h-8 w-8 p-0"
+              title="Refresh modalities"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
         <div className="py-2">

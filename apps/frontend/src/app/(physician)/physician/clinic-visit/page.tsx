@@ -72,12 +72,12 @@ export default function QueuePage() {
   // const roomId = currentRoom?.data?.[0]?.roomSchedule?.room_id;
 
   const userId = useSelector((state: RootState) => state.auth.user?.id) || null
-  
+
   const {
     data: currentEmployeeSchedule,
     isLoading: isLoadingCurrentEmployeeSchedule,
     error: roomAssignmentError,
-  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!,{
+  } = useGetCurrentEmployeeRoomAssignmentQuery(userId!, {
     skip: !userId,
   });
 
@@ -186,7 +186,7 @@ export default function QueuePage() {
         (item) =>
           item.status === EncounterStatus.ARRIVED &&
           item.assignedPhysicianId ===
-            currentEmployeeSchedule?.data?.employeeId &&
+          currentEmployeeSchedule?.data?.employeeId &&
           item.id !== id
       );
 
@@ -277,7 +277,7 @@ export default function QueuePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Clinic Visit</h1>
+          <h1 className="text-3xl font-bold text-foreground">Patient Encounters</h1>
           <p className="text-foreground">
             Search and manage patient encounters
           </p>

@@ -1,8 +1,8 @@
 import { AnnotationStatus, AnnotationType } from "@/common/enums/image-dicom.enum";
 import { BaseEntity } from "../base.interface";
 import { DicomInstance } from "./dicom-instances.interface";
-import type { Annotation, AnnotationData, Handles } from "@cornerstonejs/tools/types";
-
+import type { Annotation, Handles } from "@cornerstonejs/tools/types";
+import { User } from "../user/user.interface";
 export interface ImageAnnotation extends BaseEntity {
   id: string;
   annotationId?: string;
@@ -18,6 +18,8 @@ export interface ImageAnnotation extends BaseEntity {
   annotationStatus: AnnotationStatus;
   annotationDate?: string;
   reviewDate?: string;
+  reviewerId?: string;
+  reviewer?: User;
   notes?: string;
   instance?: DicomInstance;
 }

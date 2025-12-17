@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { PriorityBadge } from "@/components/ui/priority-badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, CheckCircle, Clock } from "lucide-react";
 import { HIGH_PRIORITY_LEVELS, PriorityLevel } from "@/common/enums/priority.enum";
 import { getEncounterStatusBadge } from "@/common/utils/status-badge";
 import { SortConfig } from "@/components/ui/data-table";
@@ -120,8 +120,8 @@ export function QueueTable({
           header: showWaitTime
             ? "Wait Time"
             : showCompletedTime
-            ? "Completed Time"
-            : "Status",
+              ? "Completed Time"
+              : "Status",
           cell: (assignment) => {
             if (showWaitTime) {
               return (
@@ -149,8 +149,14 @@ export function QueueTable({
           cell: (assignment) => (
             <div className="flex justify-end gap-2">
               {onViewDetails && (
-                <Button variant="ghost" size="sm" onClick={() => onViewDetails(assignment)}>
-                  <Eye className="w-4 h-4 text-teal-600" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onViewDetails(assignment)}
+                  className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View
                 </Button>
               )}
               {onEditAssignment && (

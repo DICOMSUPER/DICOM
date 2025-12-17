@@ -164,23 +164,21 @@ export default function ViewportGrid({
         <div
           key={`viewport-${viewport.index}-${seriesLayout}`}
           onClick={() => setActiveViewport(viewport.index)}
-          className={`bg-gradient-to-br from-slate-950 to-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-200 relative h-full cursor-pointer ${
-            viewport.isActive
-              ? "border-blue-400 shadow-2xl shadow-blue-500/50 ring-2 ring-blue-400/30"
-              : "border-slate-700 hover:border-slate-600"
-          }`}
+          className={`bg-gradient-to-br from-slate-950 to-slate-900 rounded-xl overflow-hidden border-2 transition-all duration-200 relative h-full cursor-pointer ${viewport.isActive
+            ? "border-blue-400 shadow-2xl shadow-blue-500/50 ring-2 ring-blue-400/30"
+            : "border-slate-700 hover:border-slate-600"
+            }`}
         >
-          {/* Footer Info Bar */}
-          <div className="absolute bottom-0 left-0 right-0 z-[5] bg-slate-900/95 backdrop-blur border-t border-slate-700 px-3 py-2">
+          {/* Header Info Bar */}
+          <div className="absolute top-0 left-0 right-0 z-[5] bg-slate-900/95 backdrop-blur border-t border-slate-700 px-3 py-2">
             <div className="flex items-center justify-between text-xs text-white">
               {/* Left: VP Badge + Body Part + Series Description */}
               <div className="flex items-center gap-2">
                 <div
-                  className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${
-                    viewport.isActive
-                      ? "bg-blue-600/90 text-white border-blue-400"
-                      : "bg-slate-700/90 text-slate-300 border-slate-600"
-                  }`}
+                  className={`px-2 py-1 rounded text-xs font-bold border transition-colors ${viewport.isActive
+                    ? "bg-blue-600/90 text-white border-blue-400"
+                    : "bg-slate-700/90 text-slate-300 border-slate-600"
+                    }`}
                 >
                   VP {viewport.index + 1}
                 </div>
@@ -191,7 +189,9 @@ export default function ViewportGrid({
                   className="text-teal-100 font-medium truncate max-w-[200px]"
                   title={viewport.series?.seriesDescription}
                 >
-                  {viewport.series?.seriesDescription || "No series loaded"}
+                  {viewport.series
+                    ? (viewport.series.seriesDescription || "No description")
+                    : "No series loaded"}
                 </span>
                 {viewport.isActive && viewport.series && (
                   <span className="ml-2 px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-semibold rounded border border-green-500/40">
@@ -215,8 +215,8 @@ export default function ViewportGrid({
           <ViewPortMain
             key={`viewport-main-${viewport.index}`}
             selectedSeries={
-              viewport.isActive && selectedSeries 
-                ? selectedSeries 
+              viewport.isActive && selectedSeries
+                ? selectedSeries
                 : viewport.series
             }
             selectedStudy={selectedStudy}

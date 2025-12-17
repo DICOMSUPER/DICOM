@@ -127,6 +127,91 @@ const deriveFrameForLayer = (snapshots: SegmentationSnapshot[]): number => {
     : 1;
 };
 
+// Tool display name mapping - constant, moved outside component
+const TOOL_DISPLAY_NAME_MAP = new Map<string, string>([
+  ["Rotate", "PlanarRotate"],
+  ["WindowLevel", "WindowLevel"],
+  ["Pan", "Pan"],
+  ["Zoom", "Zoom"],
+  ["Probe", "Probe"],
+  ["Length", "Length"],
+  ["Height", "Height"],
+  ["CircleROI", "CircleROI"],
+  ["EllipticalROI", "EllipticalROI"],
+  ["RectangleROI", "RectangleROI"],
+  ["Bidirectional", "Bidirectional"],
+  ["Angle", "Angle"],
+  ["ArrowAnnotate", "ArrowAnnotate"],
+  ["CobbAngle", "CobbAngle"],
+  ["SplineROI", "SplineROI"],
+  ["Magnify", "Magnify"],
+  ["TrackballRotate", "TrackballRotate"],
+  ["KeyImage", "KeyImage"],
+  ["Label", "Label"],
+  ["DragProbe", "DragProbe"],
+  ["PaintFill", "PaintFill"],
+  ["Eraser", "Eraser"],
+  ["Brush", "Brush"],
+  ["CircleScissors", "CircleScissors"],
+  ["RectangleScissors", "RectangleScissors"],
+  ["SphereScissors", "SphereScissors"],
+  ["PlanarFreehandROITool", "PlanarFreehandROITool"],
+]);
+
+const ToolButton = memo(({
+  tool,
+  isActive,
+  onClick,
+  disabled,
+  className
+}: {
+  tool: { id: string; icon: any; label: string; shortcut?: string; action?: string };
+  isActive: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onClick}
+        disabled={disabled}
+        className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${disabled
+          ? "bg-slate-900 text-slate-600 opacity-50 cursor-not-allowed pointer-events-none"
+          : isActive
+            ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+            : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+          } ${className || ""}`}
+        title={disabled ? "Add and select a segmentation layer to enable tools" : undefined}
+      >
+        <div className="flex items-center gap-1 w-full justify-center">
+          <tool.icon className="h-5 w-5 shrink-0" />
+          <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
+            {tool.label}
+          </span>
+        </div>
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent
+      side="right"
+      className="bg-slate-800 border-teal-700 text-white"
+    >
+      {tool.shortcut ? (
+        <div className="text-center">
+          <div>{tool.label}</div>
+          <div className="text-xs text-slate-400">{tool.shortcut}</div>
+        </div>
+      ) : (
+        tool.label
+      )}
+    </TooltipContent>
+  </Tooltip>
+));
+
+ToolButton.displayName = "ToolButton";
+
 export default function ViewerLeftSidebar({
   seriesLayout,
   onSeriesLayoutChange,
@@ -163,7 +248,7 @@ export default function ViewerLeftSidebar({
     isSegmentationControlPanelOpen,
     getSegmentationHistoryState,
     refetchSegmentationLayers,
-  setSegmentationBrushSize,
+    setSegmentationBrushSize,
   } = useViewer();
 
   const [createImageSegmentationLayers] =
@@ -213,37 +298,6 @@ export default function ViewerLeftSidebar({
     }
   }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);
 
-  // Tool display name mapping - constant, no need for useMemo
-  const TOOL_DISPLAY_NAME_MAP = new Map<string, string>([
-    ["Rotate", "PlanarRotate"],
-    ["WindowLevel", "WindowLevel"],
-    ["Pan", "Pan"],
-    ["Zoom", "Zoom"],
-    ["Probe", "Probe"],
-    ["Length", "Length"],
-    ["Height", "Height"],
-    ["CircleROI", "CircleROI"],
-    ["EllipticalROI", "EllipticalROI"],
-    ["RectangleROI", "RectangleROI"],
-    ["Bidirectional", "Bidirectional"],
-    ["Angle", "Angle"],
-    ["ArrowAnnotate", "ArrowAnnotate"],
-    ["CobbAngle", "CobbAngle"],
-    ["SplineROI", "SplineROI"],
-    ["Magnify", "Magnify"],
-    ["TrackballRotate", "TrackballRotate"],
-    ["KeyImage", "KeyImage"],
-    ["Label", "Label"],
-    ["DragProbe", "DragProbe"],
-    ["PaintFill", "PaintFill"],
-    ["Eraser", "Eraser"],
-    ["Brush", "Brush"],
-    ["CircleScissors", "CircleScissors"],
-    ["RectangleScissors", "RectangleScissors"],
-    ["SphereScissors", "SphereScissors"],
-    ["PlanarFreehandROITool", "PlanarFreehandROITool"],
-  ]);
-
   const getToolDisplayName = (toolId: string) => {
     return TOOL_DISPLAY_NAME_MAP.get(toolId) || toolId;
   };
@@ -252,7 +306,7 @@ export default function ViewerLeftSidebar({
     reset: resetView,
     clear: clearAnnotations,
     clearViewport: clearViewportAnnotations,
-    clearSegmentation: () => {},
+    clearSegmentation: () => { },
     viewAllAnnotations: () => onViewAllAnnotations?.(),
     viewDraftAnnotations: () => onViewDraftAnnotations?.(),
     undoAnnotation: undoAnnotation,
@@ -313,60 +367,7 @@ export default function ViewerLeftSidebar({
     [selectedTool]
   );
 
-  const ToolButton = memo(({ 
-    tool, 
-    isActive, 
-    onClick, 
-    disabled, 
-    className 
-  }: { 
-    tool: { id: string; icon: any; label: string; shortcut?: string; action?: string }; 
-    isActive: boolean; 
-    onClick: () => void; 
-    disabled?: boolean;
-    className?: string;
-  }) => (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClick}
-          disabled={disabled}
-          className={`h-10 px-3 transition-all duration-200 rounded-lg flex flex-wrap items-center justify-center text-center ${
-            disabled
-              ? "bg-slate-900 text-slate-600 opacity-50 cursor-not-allowed pointer-events-none"
-              : isActive
-              ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
-          } ${className || ""}`}
-          title={disabled ? "Add and select a segmentation layer to enable tools" : undefined}
-        >
-          <div className="flex items-center gap-1 w-full justify-center">
-            <tool.icon className="h-5 w-5 shrink-0" />
-            <span className="text-xs text-center whitespace-normal wrap-break-word leading-tight">
-              {tool.label}
-            </span>
-          </div>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent
-        side="right"
-        className="bg-slate-800 border-teal-700 text-white"
-      >
-        {tool.shortcut ? (
-          <div className="text-center">
-            <div>{tool.label}</div>
-            <div className="text-xs text-slate-400">{tool.shortcut}</div>
-          </div>
-        ) : (
-          tool.label
-        )}
-      </TooltipContent>
-    </Tooltip>
-  ));
 
-  ToolButton.displayName = "ToolButton";
 
   return (
     <TooltipProvider>
@@ -385,11 +386,10 @@ export default function ViewerLeftSidebar({
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => onSeriesLayoutChange(layout.id)}
-                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-semibold flex items-center justify-center gap-2 ${
-                        seriesLayout === layout.id
-                          ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
-                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
-                      }`}
+                      className={`px-3 py-2 rounded-lg transition-all duration-200 text-sm font-semibold flex items-center justify-center gap-2 ${seriesLayout === layout.id
+                        ? "bg-teal-600 text-white shadow-lg shadow-teal-500/30"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                        }`}
                     >
                       <layout.icon size={16} />
                       {layout.label}
@@ -420,13 +420,13 @@ export default function ViewerLeftSidebar({
                 const toolWithDynamicIcon = tool.id === "toggle-annotations"
                   ? { ...tool, icon: state.showAnnotations ? Eye : EyeOff }
                   : tool;
-                
+
                 // Disable annotation management if viewport not ready OR order is finalized
                 const isDisabled =
                   tool.id === "view-all-annotations"
                     ? false
                     : !viewportReady || isStudyLocked;
-                
+
                 return (
                   <ToolButton
                     key={tool.id}
@@ -553,7 +553,7 @@ export default function ViewerLeftSidebar({
               Segment and draw masks on images
             </p>
             <div className="grid grid-cols-1 gap-2">
-              <Button 
+              <Button
                 onClick={() => toggleSegmentationControlPanel()}
                 disabled={!viewportReady || isStudyLocked}
               >
