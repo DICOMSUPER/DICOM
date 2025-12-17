@@ -51,6 +51,7 @@ export class CreateDicomStudyDto {
   verifyingRadiologistId?: string;
 
   @IsEnum(DicomStudyStatus)
+  @IsOptional()
   studyStatus?: DicomStudyStatus = DicomStudyStatus.SCANNED;
 
   @IsString()

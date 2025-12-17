@@ -62,82 +62,90 @@ export function ImagingTechnicianDashboardPreview({
         </CardHeader>
         <CardContent className="flex flex-col h-full">
           <div className="space-y-2 flex-1">
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg"
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <Skeleton className="w-8 h-8 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-6 w-20 ml-2" />
-                </div>
-              ))
-            ) : (
-              orders?.slice(0, 5).map((order, index) => {
-              const orderDate = order?.createdAt
-                ? new Date(order.createdAt)
-                : null;
-              const formattedDate = orderDate
-                ? formatDate(orderDate)
-                : "Unknown date";
-              const formattedTime = orderDate
-                ? formatTime(orderDate)
-                : "Unknown time";
-
-              return (
-                <div
-                  onClick={() => {
-                    router.push(`/imaging-technician/order-details/${order.id}`);
-                  }}
-                  key={order.id}
-                  className="group flex items-center justify-between p-4 border border-border rounded-lg cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/30 hover:shadow-sm"
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 min-w-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                      <span className="text-sm font-semibold text-primary text-center leading-none">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground truncate">
-                        {order?.patient?.lastName && order?.patient?.firstName
-                          ? `${order.patient.lastName} ${order.patient.firstName}`
-                          : order?.patient?.lastName
-                          ? order.patient.lastName
-                          : order?.patient?.firstName
-                          ? order.patient.firstName
-                          : order?.patient?.patientCode || order?.patientId || "Unknown Patient"}
-                      </p>
-                      <p className="text-xs text-foreground">
-                        {order.orderNumber || order.id} • {formattedDate} • {formattedTime}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={`shrink-0 ml-2 font-medium ${getStatusColor(
-                      order.orderStatus
-                    )}`}
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg"
                   >
-                    {formatStatus(order.orderStatus)}
-                  </Badge>
-                </div>
-              );
-            })
-            )}
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <Skeleton className="w-8 h-8 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-6 w-20 ml-2" />
+                  </div>
+                ))
+              : orders?.slice(0, 5).map((order, index) => {
+                  const orderDate = order?.createdAt
+                    ? new Date(order.createdAt)
+                    : null;
+                  const formattedDate = orderDate
+                    ? formatDate(orderDate)
+                    : "Unknown date";
+                  const formattedTime = orderDate
+                    ? formatTime(orderDate)
+                    : "Unknown time";
+
+                  return (
+                    <div
+                      onClick={() => {
+                        router.push(
+                          `/imaging-technician/order-details/${order.id}`
+                        );
+                      }}
+                      key={order.id}
+                      className="group flex items-center justify-between p-4 border border-border rounded-lg cursor-pointer transition-all hover:border-primary/50 hover:bg-accent/30 hover:shadow-sm"
+                    >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="w-8 h-8 min-w-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                          <span className="text-sm font-semibold text-primary text-center leading-none">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground truncate">
+                            {order?.patient?.lastName &&
+                            order?.patient?.firstName
+                              ? `${order.patient.lastName} ${order.patient.firstName}`
+                              : order?.patient?.lastName
+                              ? order.patient.lastName
+                              : order?.patient?.firstName
+                              ? order.patient.firstName
+                              : order?.patient?.patientCode ||
+                                order?.patientId ||
+                                "Unknown Patient"}
+                          </p>
+                          <p className="text-xs text-foreground">
+                            {order.orderNumber || order.id} • {formattedDate} •{" "}
+                            {formattedTime}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`shrink-0 ml-2 font-medium ${getStatusColor(
+                          order.orderStatus
+                        )}`}
+                      >
+                        {formatStatus(order.orderStatus)}
+                      </Badge>
+                    </div>
+                  );
+                })}
             {!isLoading && (!orders || orders.length === 0) && (
               <div className="flex flex-col items-center justify-center flex-1 py-8">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
                   <Inbox className="w-6 h-6 text-slate-400" />
                 </div>
-                <p className="text-sm font-medium text-slate-600">No recent imaging orders</p>
-                <p className="text-xs text-slate-400 mt-1">No imaging orders found</p>
+                <p className="text-sm font-medium text-slate-600">
+                  No recent imaging orders
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  No imaging orders found
+                </p>
               </div>
             )}
           </div>
@@ -197,4 +205,3 @@ export function ImagingTechnicianDashboardPreview({
     </div>
   );
 }
-
