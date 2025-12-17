@@ -34,7 +34,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { PeriodValuePicker } from "@/components/ui/period-value-picker";
 import { ImagingTechnicianAnalyticsData } from "@/store/analyticsApi";
-import { formatPieLabel, formatPieTooltip } from "@/components/common/chart-utils";
+import {
+  formatPieLabel,
+  formatPieTooltip,
+} from "@/components/common/chart-utils";
 
 interface ImagingTechnicianChartsProps {
   data?: ImagingTechnicianAnalyticsData;
@@ -117,7 +120,11 @@ export function ImagingTechnicianCharts({
               <Select
                 value={period || "default"}
                 onValueChange={(val) =>
-                  onPeriodChange?.(val === "default" ? undefined : (val as "week" | "month" | "year"))
+                  onPeriodChange?.(
+                    val === "default"
+                      ? undefined
+                      : (val as "week" | "month" | "year")
+                  )
                 }
               >
                 <SelectTrigger id="period">
@@ -272,4 +279,3 @@ export function ImagingTechnicianCharts({
     </div>
   );
 }
-

@@ -4,6 +4,7 @@ import { useUpdateDicomStudyMutation } from "@/store/dicomStudyApi";
 import { ChevronDown } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import ReasonModal from "./reason-modal";
 
 export default function StudyLevel({
   study,
@@ -32,6 +33,7 @@ export default function StudyLevel({
   const [currentStatus, setCurrentStatus] = useState<DicomStudyStatus>(
     study.studyStatus as DicomStudyStatus
   );
+  const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
 
   // Update local status when study prop changes (after refetch)
   useEffect(() => {
@@ -119,6 +121,17 @@ export default function StudyLevel({
         </div>
       </div>
 
+      {study?.studyStatus === DicomStudyStatus.REJECTED && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsReasonModalOpen(true);
+          }}
+          className="text-xs px-2 py-1 rounded border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors mx-2"
+        >
+          Show reason
+        </button>
+      )}
       <div className="flex items-center gap-3">
         {getStatusBadge()}
 
@@ -141,6 +154,11 @@ export default function StudyLevel({
           {seriesCount} series
         </span>
       </div>
+      <ReasonModal
+        isOpen={isReasonModalOpen}
+        onClose={() => setIsReasonModalOpen(false)}
+        study={study}
+      />
     </button>
   );
 }

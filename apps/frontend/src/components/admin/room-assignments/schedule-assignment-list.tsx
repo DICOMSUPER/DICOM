@@ -25,6 +25,7 @@ import {
   Thermometer,
   Bell,
   Search,
+  Coffee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -178,7 +179,7 @@ export function ScheduleAssignmentList({
         </p>
       </div>
 
-      <ScrollArea className="p-4 rounded-lg border border-border shadow-sm">
+      <ScrollArea className="h-[calc(100vh-400px)] min-h-[400px] p-4 rounded-lg border border-border shadow-sm">
         <div className="space-y-3">
           {isLoading
             ? renderSkeletons()
@@ -193,16 +194,28 @@ export function ScheduleAssignmentList({
                   {
                     label: room?.roomCode ?? "Room TBD",
                     icon: DoorOpen,
+                    title: "Room Code",
                   },
                   {
                     label: formatDate(schedule.work_date),
                     icon: CalendarDays,
+                    title: "Work Date",
                   },
                   {
                     label: `${schedule.actual_start_time ?? "--:--"} → ${
                       schedule.actual_end_time ?? "--:--"
                     }`,
                     icon: Clock,
+                    title: "Working Hours",
+                  },
+                  {
+                    label:
+                      schedule?.shift_template?.break_start_time &&
+                      schedule?.shift_template?.break_end_time
+                        ? `${schedule.shift_template.break_start_time} → ${schedule.shift_template.break_end_time}`
+                        : "No Break",
+                    icon: Coffee,
+                    title: "Break Time",
                   },
                 ];
 
@@ -286,8 +299,9 @@ export function ScheduleAssignmentList({
                               {schedule.shift_template?.shift_name ?? "Shift"}
                             </h3>
                             <div className="flex flex-wrap gap-3">
-                              {meta.map(({ label, icon: Icon }) => (
+                              {meta?.map(({ label, icon: Icon, title }) => (
                                 <div
+                                  title={title}
                                   key={label}
                                   className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border"
                                 >

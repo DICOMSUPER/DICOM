@@ -114,6 +114,15 @@ export default function ImageTechnicianPageWrapper() {
 
   useEffect(() => {
     if (orderData) {
+      console.log(
+        "pagination:, ",
+        orderData.total,
+        orderData.page,
+        orderData.limit,
+        orderData.totalPages,
+        orderData.hasNextPage,
+        orderData.hasPreviousPage
+      );
       setPaginationMeta({
         total: orderData.total || 0,
         page: orderData.page || 1,

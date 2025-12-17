@@ -51,4 +51,3 @@ export function DepartmentStatsCards({
 
   return <StatsCards stats={stats} />;
 }
-

@@ -6,31 +6,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
 
 // Helper function to get employee names from room assignments
-const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 1): string => {
-  if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
-    return 'Unassigned';
+const getEmployeeNames = (
+  schedule: RoomSchedule,
+  maxNames: number = 1
+): string => {
+  if (
+    !schedule.employeeRoomAssignments ||
+    schedule.employeeRoomAssignments.length === 0
+  ) {
+    return "Unassigned";
   }
-  
+
   const activeAssignments = schedule.employeeRoomAssignments
-    .filter(a => a.isActive && a.employee)
+    .filter((a) => a.isActive && a.employee)
     .slice(0, maxNames);
-  
+
   if (activeAssignments.length === 0) {
-    return 'Unassigned';
+    return "Unassigned";
   }
-  
+
   const names = activeAssignments
-    .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+    .map((a) =>
+      `${a.employee?.firstName || ""} ${a.employee?.lastName || ""}`.trim()
+    )
     .filter(Boolean);
-  
-  const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
-  const displayNames = names.join(', ');
-  
+
+  const totalCount = schedule.employeeRoomAssignments.filter(
+    (a) => a.isActive && a.employee
+  ).length;
+  const displayNames = names.join(", ");
+
   // If there are more employees than we're showing, add a count
   if (totalCount > maxNames) {
     return `${displayNames} +${totalCount - maxNames}`;
   }
-  
+
   return displayNames;
 };
 
@@ -54,16 +64,40 @@ export function MonthView({
   if (isLoading) {
     return (
       <div className="grid grid-cols-7 gap-1">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-700 bg-gray-50">{day}</div>
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div
+            key={day}
+            className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-700 bg-gray-50"
+          >
+            {day}
+          </div>
         ))}
         {calendarDays.map((day, index) => {
           const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
           const isToday = isSameDay(day, new Date());
           const isSelected = isSameDay(day, selectedDate);
           return (
-            <div key={index} className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-200 ${isSelected ? 'bg-blue-50 border-blue-200' : isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}>
-              <div className={`text-xs md:text-sm font-medium ${isSelected ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>{format(day, 'd')}</div>
+            <div
+              key={index}
+              className={`min-h-[60px] md:min-h-[100px] p-1 md:p-2 border border-gray-200 ${
+                isSelected
+                  ? "bg-blue-50 border-blue-200"
+                  : isCurrentMonth
+                  ? "bg-white"
+                  : "bg-gray-50"
+              }`}
+            >
+              <div
+                className={`text-xs md:text-sm font-medium ${
+                  isSelected
+                    ? "text-blue-600"
+                    : isCurrentMonth
+                    ? "text-gray-900"
+                    : "text-gray-400"
+                }`}
+              >
+                {format(day, "d")}
+              </div>
               <div className="mt-1 space-y-1">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-3/4" />
@@ -77,28 +111,52 @@ export function MonthView({
 
   return (
     <div className="grid grid-cols-7 gap-1">
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-        <div key={day} className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-700 bg-gray-50">{day}</div>
+      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+        <div
+          key={day}
+          className="p-1 md:p-2 text-center text-xs md:text-sm font-medium text-gray-700 bg-gray-50"
+        >
+          {day}
+        </div>
       ))}
       {calendarDays.map((day, index) => {
-        const daySchedules = schedules.filter(s => s.work_date === format(day, "yyyy-MM-dd"));
+        const daySchedules = schedules.filter(
+          (s) => s.work_date === format(day, "yyyy-MM-dd")
+        );
         const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
         const isToday = isSameDay(day, new Date());
         const isSelected = isSameDay(day, selectedDate);
         return (
-          <div key={index} className={`min-h-[60px] md:min-h-[120px] p-1 md:p-2 border border-gray-200 ${isSelected ? 'bg-blue-50 border-blue-200' : isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}>
-            <div className={`text-xs md:text-sm font-medium ${isSelected ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}`}>{format(day, 'd')}</div>
+          <div
+            key={index}
+            className={`min-h-[60px] md:min-h-[120px] p-1 md:p-2 border border-gray-200 ${
+              isSelected
+                ? "bg-blue-50 border-blue-200"
+                : isCurrentMonth
+                ? "bg-white"
+                : "bg-gray-50"
+            }`}
+          >
+            <div
+              className={`text-xs md:text-sm font-medium ${
+                isSelected
+                  ? "text-blue-600"
+                  : isCurrentMonth
+                  ? "text-gray-900"
+                  : "text-gray-400"
+              }`}
+            >
+              {format(day, "d")}
+            </div>
             <div className="mt-1 space-y-1">
               {daySchedules.slice(0, 2).map((schedule) => (
-                <div 
-                  key={schedule.schedule_id} 
+                <div
+                  key={schedule.schedule_id}
                   className="text-xs bg-blue-50 text-gray-900 rounded px-1 py-0.5 truncate relative border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
                   onClick={() => onScheduleClick?.(schedule)}
                 >
                   <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 rounded-l"></div>
-                  <span className="ml-1">
-                    {getEmployeeNames(schedule, 1)}
-                  </span>
+                  <span className="ml-1">{getEmployeeNames(schedule, 1)}</span>
                 </div>
               ))}
               {daySchedules.length > 1 && (
@@ -117,5 +175,3 @@ export function MonthView({
     </div>
   );
 }
-
-

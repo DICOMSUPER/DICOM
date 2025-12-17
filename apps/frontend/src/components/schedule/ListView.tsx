@@ -1,6 +1,13 @@
 "use client";
 
-import { Clock, CalendarOff, MapPin, DoorOpen, CalendarClock, User } from "lucide-react";
+import {
+  Clock,
+  CalendarOff,
+  MapPin,
+  DoorOpen,
+  CalendarClock,
+  User,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,12 +23,20 @@ interface ListViewProps {
   onScheduleClick?: (schedule: RoomSchedule) => void;
 }
 
-export function ListView({ schedules, getStatusColor, isLoading = false, onScheduleClick }: ListViewProps) {
+export function ListView({
+  schedules,
+  getStatusColor,
+  isLoading = false,
+  onScheduleClick,
+}: ListViewProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="bg-white rounded-2xl border border-border p-5 lg:p-6 shadow-sm">
+          <div
+            key={index}
+            className="bg-white rounded-2xl border border-border p-5 lg:p-6 shadow-sm"
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-3">
                 <div className="flex items-center gap-3">
@@ -64,9 +79,12 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
         <div className="p-4 bg-gray-100 rounded-full mb-4">
           <CalendarOff className="h-12 w-12 text-gray-400" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Schedules Found</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          No Schedules Found
+        </h3>
         <p className="text-sm text-gray-600 text-center max-w-md">
-          There are no schedules available for the selected date. Check back later or select a different date.
+          There are no schedules available for the selected date. Check back
+          later or select a different date.
         </p>
       </div>
     );
@@ -74,32 +92,43 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
 
   // Helper function to get primary employee from room assignments
   const getPrimaryEmployee = (schedule: RoomSchedule) => {
-    if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
+    if (
+      !schedule.employeeRoomAssignments ||
+      schedule.employeeRoomAssignments.length === 0
+    ) {
       return null;
     }
     // Get the first active assignment with an employee
-    const activeAssignment = schedule.employeeRoomAssignments.find(a => a.isActive && a.employee);
+    const activeAssignment = schedule.employeeRoomAssignments.find(
+      (a) => a.isActive && a.employee
+    );
     return activeAssignment?.employee || null;
   };
 
   // Helper function to get all employee names
   const getEmployeeNames = (schedule: RoomSchedule): string => {
-    if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
-      return 'Unassigned';
+    if (
+      !schedule.employeeRoomAssignments ||
+      schedule.employeeRoomAssignments.length === 0
+    ) {
+      return "Unassigned";
     }
-    
-    const activeAssignments = schedule.employeeRoomAssignments
-      .filter(a => a.isActive && a.employee);
-    
+
+    const activeAssignments = schedule.employeeRoomAssignments.filter(
+      (a) => a.isActive && a.employee
+    );
+
     if (activeAssignments.length === 0) {
-      return 'Unassigned';
+      return "Unassigned";
     }
-    
+
     const names = activeAssignments
-      .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+      .map((a) =>
+        `${a.employee?.firstName || ""} ${a.employee?.lastName || ""}`.trim()
+      )
       .filter(Boolean);
-    
-    return names.join(', ');
+
+    return names.join(", ");
   };
 
   return (
@@ -108,13 +137,18 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
         const employee = getPrimaryEmployee(schedule);
         const room = schedule.room;
         const shiftTemplate = schedule.shift_template;
-        const workDate = schedule.work_date ? format(new Date(schedule.work_date), "EEEE, MMM d, yyyy") : "N/A";
+        const workDate = schedule.work_date
+          ? format(new Date(schedule.work_date), "EEEE, MMM d, yyyy")
+          : "N/A";
 
-        const assignedCount = schedule.employeeRoomAssignments?.filter(a => a.isActive && a.employee).length || 0;
+        const assignedCount =
+          schedule.employeeRoomAssignments?.filter(
+            (a) => a.isActive && a.employee
+          ).length || 0;
 
         return (
-          <div 
-            key={schedule.schedule_id} 
+          <div
+            key={schedule.schedule_id}
             className="bg-gray-50 rounded-2xl border border-border p-5 lg:p-6 shadow-sm hover:shadow-lg transition-all"
           >
             <div className="flex items-start justify-between gap-4">
@@ -124,7 +158,7 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
                   <h3 className="text-lg font-bold text-gray-900 mb-4">
                     {shiftTemplate?.shift_name || "Schedule"}
                   </h3>
-                  
+
                   {/* Schedule Details in Rounded Containers */}
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
@@ -133,18 +167,19 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
                         {room?.roomCode || schedule.room_id || "Unassigned"}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
                       <CalendarClock className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium text-gray-900">
                         {format(new Date(schedule.work_date), "MMM d, yyyy")}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border">
                       <Clock className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium text-gray-900">
-                        {schedule.actual_start_time || "--:--"} - {schedule.actual_end_time || "--:--"}
+                        {schedule.actual_start_time || "--:--"} -{" "}
+                        {schedule.actual_end_time || "--:--"}
                       </span>
                     </div>
                   </div>
@@ -153,7 +188,8 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
                 {/* Assigned Person Section */}
                 <div className="flex items-center gap-3 px-3 py-2 bg-gray-100 rounded-lg border border-border">
                   <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-sm">
-                    {employee?.firstName?.[0] || "U"}{employee?.lastName?.[0] || ""}
+                    {employee?.firstName?.[0] || "U"}
+                    {employee?.lastName?.[0] || ""}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 text-sm">
@@ -170,8 +206,10 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
 
               {/* Right Side: Badges and Button */}
               <div className="flex flex-col items-end gap-3">
-                <Badge 
-                  className={`${getStatusColor(schedule.schedule_status)} border-border text-xs font-semibold`}
+                <Badge
+                  className={`${getStatusColor(
+                    schedule.schedule_status
+                  )} border-border text-xs font-semibold`}
                 >
                   {formatStatus(schedule.schedule_status)}
                 </Badge>
@@ -198,5 +236,3 @@ export function ListView({ schedules, getStatusColor, isLoading = false, onSched
     </div>
   );
 }
-
-

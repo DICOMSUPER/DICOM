@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { Department } from '@/common/interfaces/user/department.interface';
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { Department } from "@/common/interfaces/user/department.interface";
 
 interface DepartmentDeleteModalProps {
   department: Department | null;
@@ -28,8 +28,9 @@ export function DepartmentDeleteModal({
       title="Delete Department"
       description={
         <>
-          Are you sure you want to delete department <strong>{department.departmentName}</strong>?
-          This action cannot be undone and will permanently remove this department from the system.
+          Are you sure you want to delete department{" "}
+          <strong>{department.departmentName}</strong>? This action cannot be
+          undone and will permanently remove this department from the system.
         </>
       }
       confirmText="Delete"
@@ -39,4 +40,3 @@ export function DepartmentDeleteModal({
     />
   );
 }
-

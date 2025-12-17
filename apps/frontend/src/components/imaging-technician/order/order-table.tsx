@@ -128,9 +128,7 @@ export function OrderTable({
       header: "Clinical Indication",
       sortable: false,
       cell: (order: ImagingOrder) => (
-        <div className="text-foreground">
-          {order.clinicalIndication || "—"}
-        </div>
+        <div className="text-foreground">{order.clinicalIndication || "—"}</div>
       ),
     },
     {
@@ -179,7 +177,9 @@ export function OrderTable({
       sortable: true,
       sortField: "updatedAt",
       cell: (order: ImagingOrder) => (
-        <div className="text-foreground text-sm">{formatDateTime(order.updatedAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(order.updatedAt)}
+        </div>
       ),
     },
     {
@@ -225,4 +225,3 @@ export function OrderTable({
     />
   );
 }
-

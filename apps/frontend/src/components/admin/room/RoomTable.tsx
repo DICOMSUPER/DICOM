@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Building2, Check, X } from 'lucide-react';
-import { Room } from '@/common/interfaces/user/room.interface';
-import { DataTable } from '@/components/ui/data-table';
-import { SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/common/utils/format-status';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Eye, Edit, Trash2, Building2, Check, X } from "lucide-react";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { DataTable } from "@/components/ui/data-table";
+import { SortConfig } from "@/components/ui/data-table";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface RoomTableProps {
   rooms: Room[];
@@ -35,71 +35,80 @@ export const RoomTable: React.FC<RoomTableProps> = ({
   onSort,
   initialSort,
 }) => {
-
   const columns = [
     {
-      header: 'Room Code',
+      header: "Room Code",
       sortable: true,
-      sortField: 'roomCode',
+      sortField: "roomCode",
       cell: (room: Room) => (
-        <div className="font-medium text-blue-600">
-          {room.roomCode}
-        </div>
+        <div className="font-medium text-blue-600">{room.roomCode}</div>
       ),
     },
     {
-      header: 'Room Type',
+      header: "Room Type",
       sortable: false,
       cell: (room: Room) => (
-        <div className="text-foreground">{room.roomType || '—'}</div>
+        <div className="text-foreground">{room.roomType || "—"}</div>
       ),
     },
     {
-      header: 'Status',
+      header: "Status",
       sortable: false,
       cell: (room: Room) => getStatusBadge(room.status),
     },
     {
-      header: 'Department',
+      header: "Department",
       sortable: false,
       cell: (room: Room) => (
-        <div className="text-foreground">{room.department?.departmentName || '—'}</div>
-      ),
-    },
-    {
-      header: 'Floor',
-      sortable: true,
-      sortField: 'floor',
-      cell: (room: Room) => (
-        <div className="text-foreground">{room.floor !== undefined ? room.floor : '—'}</div>
-      ),
-    },
-    {
-      header: 'Capacity',
-      sortable: true,
-      sortField: 'capacity',
-      cell: (room: Room) => (
-        <div className="text-foreground">{room.capacity !== undefined ? room.capacity : '—'}</div>
-      ),
-    },
-    {
-      header: 'Price/Day',
-      cell: (room: Room) => (
         <div className="text-foreground">
-          {room.pricePerDay !== undefined
-            ? `${typeof room.pricePerDay === 'number' ? room.pricePerDay.toLocaleString() : Number(room.pricePerDay).toLocaleString()} ₫`
-            : '—'}
+          {room.department?.departmentName || "—"}
         </div>
       ),
     },
     {
-      header: 'Description',
+      header: "Floor",
+      sortable: true,
+      sortField: "floor",
       cell: (room: Room) => (
-        <div className="max-w-[250px] truncate text-foreground">{room.description || '—'}</div>
+        <div className="text-foreground">
+          {room.floor !== undefined ? room.floor : "—"}
+        </div>
       ),
     },
     {
-      header: 'Has TV',
+      header: "Capacity",
+      sortable: true,
+      sortField: "capacity",
+      cell: (room: Room) => (
+        <div className="text-foreground">
+          {room.capacity !== undefined ? room.capacity : "—"}
+        </div>
+      ),
+    },
+    {
+      header: "Price/Day",
+      cell: (room: Room) => (
+        <div className="text-foreground">
+          {room.pricePerDay !== undefined
+            ? `${
+                typeof room.pricePerDay === "number"
+                  ? room.pricePerDay.toLocaleString()
+                  : Number(room.pricePerDay).toLocaleString()
+              } ₫`
+            : "—"}
+        </div>
+      ),
+    },
+    {
+      header: "Description",
+      cell: (room: Room) => (
+        <div className="max-w-[250px] truncate text-foreground">
+          {room.description || "—"}
+        </div>
+      ),
+    },
+    {
+      header: "Has TV",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasTV ? (
@@ -111,7 +120,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Has AC',
+      header: "Has AC",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasAirConditioning ? (
@@ -123,7 +132,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Has WiFi',
+      header: "Has WiFi",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasWiFi ? (
@@ -135,7 +144,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Telephone',
+      header: "Telephone",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasTelephone ? (
@@ -147,7 +156,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Bathroom',
+      header: "Bathroom",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasAttachedBathroom ? (
@@ -159,7 +168,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Oxygen',
+      header: "Oxygen",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasOxygenSupply ? (
@@ -171,7 +180,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Nurse Call',
+      header: "Nurse Call",
       cell: (room: Room) => (
         <div className="flex justify-center">
           {room.hasNurseCallButton ? (
@@ -183,30 +192,36 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       ),
     },
     {
-      header: 'Notes',
+      header: "Notes",
       cell: (room: Room) => (
-        <div className="max-w-[250px] truncate text-foreground">{room.notes}</div>
+        <div className="max-w-[250px] truncate text-foreground">
+          {room.notes}
+        </div>
       ),
     },
     {
-      header: 'Created',
+      header: "Created",
       sortable: true,
-      sortField: 'createdAt',
+      sortField: "createdAt",
       cell: (room: Room) => (
-        <div className="text-foreground text-sm">{formatDateTime(room.createdAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(room.createdAt)}
+        </div>
       ),
     },
     {
-      header: 'Updated',
+      header: "Updated",
       sortable: true,
-      sortField: 'updatedAt',
+      sortField: "updatedAt",
       cell: (room: Room) => (
-        <div className="text-foreground text-sm">{formatDateTime(room.updatedAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(room.updatedAt)}
+        </div>
       ),
     },
     {
-      header: 'Actions',
-      headerClassName: 'text-center',
+      header: "Actions",
+      headerClassName: "text-center",
       cell: (room: Room) => (
         <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (

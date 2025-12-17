@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, X, Clock, Calendar as CalendarIcon, MapPin, User, ArrowUpDown } from "lucide-react";
+import {
+  Filter,
+  X,
+  Clock,
+  Calendar as CalendarIcon,
+  MapPin,
+  User,
+  ArrowUpDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,7 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { TimePicker } from "@/components/ui/time-picker";
 import { User as UserType } from "@/common/interfaces/user/user.interface";
 import { Room } from "@/common/interfaces/user/room.interface";
@@ -48,16 +60,19 @@ export function ScheduleListFilters({
 }: ScheduleListFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const hasActiveFilters = 
-    filters.employeeId || 
-    filters.roomId || 
-    filters.startTime || 
-    filters.endTime || 
-    filters.dateFrom || 
+  const hasActiveFilters =
+    filters.employeeId ||
+    filters.roomId ||
+    filters.startTime ||
+    filters.endTime ||
+    filters.dateFrom ||
     filters.dateTo ||
     filters.sortBy !== "date_desc";
 
-  const updateFilter = (key: keyof ScheduleListFilters, value: string | undefined) => {
+  const updateFilter = (
+    key: keyof ScheduleListFilters,
+    value: string | undefined
+  ) => {
     onFiltersChange({
       ...filters,
       [key]: value || undefined,
@@ -79,8 +94,8 @@ export function ScheduleListFilters({
     filters.sortBy !== "date_desc" ? filters.sortBy : null,
   ].filter(Boolean).length;
 
-  const selectedEmployee = filters.employeeId 
-    ? employees.find(e => e.id === filters.employeeId)
+  const selectedEmployee = filters.employeeId
+    ? employees.find((e) => e.id === filters.employeeId)
     : undefined;
 
   return (
@@ -127,7 +142,12 @@ export function ScheduleListFilters({
               </label>
               <Select
                 value={filters.employeeId || "all"}
-                onValueChange={(value) => updateFilter("employeeId", value === "all" ? undefined : value)}
+                onValueChange={(value) =>
+                  updateFilter(
+                    "employeeId",
+                    value === "all" ? undefined : value
+                  )
+                }
               >
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="All employees" />
@@ -137,7 +157,8 @@ export function ScheduleListFilters({
                   {employees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.firstName} {employee.lastName}
-                      {employee.role && ` (${employee.role.replace(/_/g, ' ')})`}
+                      {employee.role &&
+                        ` (${employee.role.replace(/_/g, " ")})`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -153,7 +174,9 @@ export function ScheduleListFilters({
             </label>
             <Select
               value={filters.roomId || "all"}
-              onValueChange={(value) => updateFilter("roomId", value === "all" ? undefined : value)}
+              onValueChange={(value) =>
+                updateFilter("roomId", value === "all" ? undefined : value)
+              }
             >
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="All rooms" />
@@ -177,7 +200,9 @@ export function ScheduleListFilters({
             </label>
             <TimePicker
               value={filters.startTime || ""}
-              onChange={(value) => updateFilter("startTime", value || undefined)}
+              onChange={(value) =>
+                updateFilter("startTime", value || undefined)
+              }
               placeholder="HH:MM"
             />
           </div>
@@ -211,14 +236,23 @@ export function ScheduleListFilters({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.dateFrom ? format(new Date(filters.dateFrom), "PPP") : "Pick a date"}
+                  {filters.dateFrom
+                    ? format(new Date(filters.dateFrom), "PPP")
+                    : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   mode="single"
-                  selected={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
-                  onSelect={(date) => updateFilter("dateFrom", date ? format(date, "yyyy-MM-dd") : undefined)}
+                  selected={
+                    filters.dateFrom ? new Date(filters.dateFrom) : undefined
+                  }
+                  onSelect={(date) =>
+                    updateFilter(
+                      "dateFrom",
+                      date ? format(date, "yyyy-MM-dd") : undefined
+                    )
+                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -241,14 +275,23 @@ export function ScheduleListFilters({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.dateTo ? format(new Date(filters.dateTo), "PPP") : "Pick a date"}
+                  {filters.dateTo
+                    ? format(new Date(filters.dateTo), "PPP")
+                    : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 z-50" align="start">
                 <Calendar
                   mode="single"
-                  selected={filters.dateTo ? new Date(filters.dateTo) : undefined}
-                  onSelect={(date) => updateFilter("dateTo", date ? format(date, "yyyy-MM-dd") : undefined)}
+                  selected={
+                    filters.dateTo ? new Date(filters.dateTo) : undefined
+                  }
+                  onSelect={(date) =>
+                    updateFilter(
+                      "dateTo",
+                      date ? format(date, "yyyy-MM-dd") : undefined
+                    )
+                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -263,14 +306,20 @@ export function ScheduleListFilters({
             </label>
             <Select
               value={filters.sortBy || "date_desc"}
-              onValueChange={(value) => updateFilter("sortBy", value as "date_asc" | "date_desc")}
+              onValueChange={(value) =>
+                updateFilter("sortBy", value as "date_asc" | "date_desc")
+              }
             >
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="Sort by date" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="date_desc">Latest First (Descending)</SelectItem>
-                <SelectItem value="date_asc">Oldest First (Ascending)</SelectItem>
+                <SelectItem value="date_desc">
+                  Latest First (Descending)
+                </SelectItem>
+                <SelectItem value="date_asc">
+                  Oldest First (Ascending)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -293,7 +342,7 @@ export function ScheduleListFilters({
           )}
           {filters.roomId && (
             <Badge variant="secondary" className="text-xs">
-              Room: {rooms.find(r => r.id === filters.roomId)?.roomCode}
+              Room: {rooms.find((r) => r.id === filters.roomId)?.roomCode}
               <button
                 onClick={() => updateFilter("roomId", undefined)}
                 className="ml-1 hover:text-destructive"
@@ -348,7 +397,8 @@ export function ScheduleListFilters({
           )}
           {filters.sortBy && filters.sortBy !== "date_desc" && (
             <Badge variant="secondary" className="text-xs">
-              Sort: {filters.sortBy === "date_asc" ? "Oldest First" : "Latest First"}
+              Sort:{" "}
+              {filters.sortBy === "date_asc" ? "Oldest First" : "Latest First"}
               <button
                 onClick={() => updateFilter("sortBy", "date_desc")}
                 className="ml-1 hover:text-destructive"
@@ -362,4 +412,3 @@ export function ScheduleListFilters({
     </div>
   );
 }
-

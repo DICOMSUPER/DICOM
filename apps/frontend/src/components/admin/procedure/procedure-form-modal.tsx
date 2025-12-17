@@ -179,9 +179,11 @@ export function RequestProcedureFormModal({
                       onValueChange={(value) =>
                         setFormData({ ...formData, modalityId: value })
                       }
-                      
                     >
-                      <SelectTrigger id="modalityId" className="text-foreground">
+                      <SelectTrigger
+                        id="modalityId"
+                        className="text-foreground"
+                      >
                         <SelectValue placeholder="Select modality" />
                       </SelectTrigger>
                       <SelectContent className="w-full">
@@ -203,7 +205,10 @@ export function RequestProcedureFormModal({
                         setFormData({ ...formData, bodyPartId: value })
                       }
                     >
-                      <SelectTrigger id="bodyPartId" className="text-foreground">
+                      <SelectTrigger
+                        id="bodyPartId"
+                        className="text-foreground"
+                      >
                         <SelectValue placeholder="Select body part" />
                       </SelectTrigger>
                       <SelectContent>

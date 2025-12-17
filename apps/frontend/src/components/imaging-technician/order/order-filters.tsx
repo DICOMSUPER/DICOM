@@ -14,8 +14,7 @@ import { useGetAllRequestProceduresQuery } from "@/store/requestProcedureAPi";
 import { extractApiData } from "@/common/utils/api";
 import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import DatePickerDropdown from "@/components/radiologist/date-picker";
-import { Label } from "recharts";
-import { setFilters } from "@/store/patientSlice";
+import { Label } from "@/components/ui/label";
 import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
 import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 
@@ -144,63 +143,81 @@ export function OrderFiltersSection({
   const orderStatusArray = Object.values(ImagingOrderStatus);
 
   return (
-    <div className="border-border mb-6">
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex flex-wrap gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-6 space-y-4">
+      {/* Row 1: First Name, Last Name, MRN, Body Part, Modality */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">
+            First Name
+          </Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Patient First Name..."
+              placeholder="First Name"
               value={searchInputs.patientFirstName}
               onChange={(e) =>
                 handleInputChange("patientFirstName", e.target.value)
               }
               onKeyPress={handleKeyPress}
-              className="pl-10"
+              className="pl-9 h-9"
             />
           </div>
-          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Last Name</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Patient Last Name..."
+              placeholder="Last Name"
               value={searchInputs.patientLastName}
               onChange={(e) =>
                 handleInputChange("patientLastName", e.target.value)
               }
               onKeyPress={handleKeyPress}
-              className="pl-10"
-            />
-          </div>
-          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
-            <Input
-              placeholder="MRN..."
-              value={searchInputs.mrn}
-              onChange={(e) => handleInputChange("mrn", e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="pl-10"
-            />
-          </div>
-          <div className="relative flex-1 min-w-[120px] max-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
-            <Input
-              placeholder="Body Part..."
-              value={searchInputs.bodyPart}
-              onChange={(e) => handleInputChange("bodyPart", e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="pl-10"
+              className="pl-9 h-9"
             />
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 items-end">
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">MRN</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="MRN"
+              value={searchInputs.mrn}
+              onChange={(e) => handleInputChange("mrn", e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Body Part</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Body Part"
+              value={searchInputs.bodyPart}
+              onChange={(e) => handleInputChange("bodyPart", e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Modality</Label>
           <Select
             value={filters.modalityId || "all"}
             onValueChange={(value) => handleSelectChange("modalityId", value)}
           >
-            <SelectTrigger className="w-[200px] h-9">
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="All Modalities" />
             </SelectTrigger>
-            <SelectContent className="border-border">
+            <SelectContent>
               <SelectItem value="all">All Modalities</SelectItem>
               {modalities
                 .filter((m) => m.isActive)
@@ -211,14 +228,21 @@ export function OrderFiltersSection({
                 ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      {/* Row 2: Status, Procedure, Start Date, End Date, Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-end">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Status</Label>
           <Select
             value={filters.orderStatus || "all"}
             onValueChange={(value) => handleSelectChange("orderStatus", value)}
           >
-            <SelectTrigger className="w-[180px] h-9">
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
-            <SelectContent className="border-border">
+            <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               {orderStatusArray.map((status) => (
                 <SelectItem key={status} value={status}>
@@ -229,15 +253,19 @@ export function OrderFiltersSection({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">Procedure</Label>
           <Select
             value={filters.procedureId || "all"}
             onValueChange={(value) => handleSelectChange("procedureId", value)}
             disabled={isLoadingProcedures}
           >
-            <SelectTrigger className="w-[200px] h-9">
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="All Procedures" />
             </SelectTrigger>
-            <SelectContent className="border-border">
+            <SelectContent>
               <SelectItem value="all">All Procedures</SelectItem>
               {procedures.map((procedure) => (
                 <SelectItem key={procedure?.id} value={procedure?.id}>
@@ -246,46 +274,47 @@ export function OrderFiltersSection({
               ))}
             </SelectContent>
           </Select>
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs font-semibold text-gray-700">
-              Start Date
-            </Label>
-            <DatePickerDropdown
-              date={localStartDate}
-              onSelect={handleStartDateChange}
-              placeholder="Start date"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs font-semibold text-gray-700">
-              End Date
-            </Label>
-            <DatePickerDropdown
-              date={localEndDate}
-              onSelect={handleEndDateChange}
-              placeholder="End date"
-              disabled={(date) =>
-                localStartDate
-                  ? date.getTime() < localStartDate.getTime()
-                  : false
-              }
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">
+            Start Date
+          </Label>
+          <DatePickerDropdown
+            date={localStartDate}
+            onSelect={handleStartDateChange}
+            placeholder="Start date"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-gray-600">End Date</Label>
+          <DatePickerDropdown
+            date={localEndDate}
+            onSelect={handleEndDateChange}
+            placeholder="End date"
+            disabled={(date) =>
+              localStartDate ? date.getTime() < localStartDate.getTime() : false
+            }
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-end gap-2">
           <Button
             variant="outline"
             onClick={handleReset}
-            className="whitespace-nowrap h-9 px-4"
+            className="h-9 px-3 flex-1"
           >
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RotateCcw className="h-4 w-4 mr-1.5" />
             Reset
           </Button>
           <Button
             onClick={handleSearch}
             disabled={isSearching}
-            className="h-9 px-4"
+            className="h-9 px-3 flex-1"
           >
-            <Search className="h-4 w-4 mr-2" />
+            <Search className="h-4 w-4 mr-1.5" />
             Search
           </Button>
         </div>

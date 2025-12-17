@@ -18,14 +18,14 @@ export function ScheduleSidebar({
   onMonthChange,
 }: ScheduleSidebarProps) {
   return (
-    <div className="bg-gray-50 border-r-0 lg:border-r border-b lg:border-b-0 border-gray-200 p-4 lg:p-6">
+    <div className="bg-gray-50 border-r-0 lg:border-r border-b lg:border-b-0 border-gray-200 p-4 lg:p-6 overflow-auto">
       {/* Calendar Section */}
       <div className="sticky top-0 z-10">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Calendar</h3>
         <p className="text-sm text-gray-600 mb-4">
           Select a date to view schedules.
         </p>
-        <div className="bg-white rounded-lg border border-gray-200 p-2 lg:p-4">
+        <div className="mx-auto bg-white min-w-[280px] rounded-lg border border-gray-200 p-2 lg:p-4">
           <CalendarWithDots
             activityData={scheduleStats}
             selectedDate={selectedDate}
