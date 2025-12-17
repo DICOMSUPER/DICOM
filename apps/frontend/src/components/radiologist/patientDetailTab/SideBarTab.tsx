@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
 import { formatDateYMD } from "@/common/utils/FormatDate";
 import { ExamItemDetail } from "./ExamDetail";
@@ -23,10 +23,12 @@ export interface SidebarTabProps {
   setSelectedExam: (
     studyId: string | null,
     encounterId: string | null
-  ) => void; // ✅ SỬA CALLBACK ĐÚNG 2 THAM SỐ
+  ) => void;
   examHistory: ExamItem[];
   patient?: Patient;
   isLoading?: boolean;
+  onRefresh?: () => void;
+  isFetching?: boolean;
 }
 
 const SidebarTab: React.FC<SidebarTabProps> = ({
@@ -34,6 +36,8 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
   examHistory,
   patient,
   isLoading = false,
+  onRefresh,
+  isFetching = false,
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -58,7 +62,19 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
     <aside className="not-even:w-64 bg-white border-r border-gray-200 h-full overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b">
-        <h3 className="font-medium text-sm mb-2">Thông tin ca</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-medium text-sm">Thông tin ca</h3>
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isFetching}
+              className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
+              title="Refresh studies"
+            >
+              <RefreshCw className={`h-4 w-4 text-gray-500 ${isFetching ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+        </div>
         <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
           <span className="text-sm">◀</span> Back
         </button>

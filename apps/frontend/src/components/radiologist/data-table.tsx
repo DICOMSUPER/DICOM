@@ -8,8 +8,10 @@ import {
 import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
 import { Suspense } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw, FileSearch } from "lucide-react";
 import { formatStatus } from "@/common/utils/format-status";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth: string): number => {
@@ -70,34 +72,72 @@ export default function DataTable({
   studies,
   isLoading,
   error,
-  refetch: _refetch,
+  refetch,
 }: {
   studies: DicomStudy[] | [];
   isLoading: boolean;
   error: boolean | Error;
   refetch: () => void;
 }) {
-  void _refetch; // keep API surface while avoiding unused warnings
   const { openTab } = useTabs();
 
   console.log("check studies  ", studies);
 
   const tableData = studies || [];
 
+  // Loading state with skeleton rows
   if (isLoading) {
     return (
-      <div className="flex-1 flex justify-center items-center h-full bg-white p-4 text-slate-500 gap-2">
-        <span className="inline-flex h-5 w-5 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
-        Đang tải danh sách ca...
+      <div className="flex-1 bg-white overflow-hidden flex flex-col min-h-0 h-full">
+        <div className="w-full flex-1 overflow-auto h-full min-h-0">
+          <div className="text-sm min-w-[1900px] flex flex-col min-h-full">
+            {/* Header skeleton */}
+            <div className="grid grid-cols-16 bg-gray-100 sticky top-0 z-10 border-b border-gray-300 divide-x divide-gray-300">
+              {Array.from({ length: 16 }).map((_, idx) => (
+                <div key={idx} className="px-4 py-3 h-full flex items-center justify-center">
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+            {/* Rows skeleton */}
+            {Array.from({ length: 8 }).map((_, rowIdx) => (
+              <div key={rowIdx} className="grid grid-cols-16 border-b border-gray-200 divide-x divide-gray-200">
+                {Array.from({ length: 16 }).map((_, colIdx) => (
+                  <div key={colIdx} className="px-4 py-3 h-full flex items-center justify-center">
+                    <Skeleton className={`h-3 ${colIdx === 1 ? 'w-20' : colIdx === 15 ? 'w-12' : 'w-14'}`} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
+          <span className="text-sm text-slate-500 flex items-center justify-center gap-2">
+            <span className="inline-flex h-4 w-4 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
+            Đang tải danh sách ca...
+          </span>
+        </div>
       </div>
     );
   }
 
+  // Error state with retry button
   if (error) {
     return (
-      <div className="flex-1 flex justify-center items-center h-full bg-white p-4 text-red-600 gap-2">
-        <AlertCircle className="h-5 w-5 text-red-500" />
-        Lỗi tải danh sách ca
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-white p-8">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Lỗi tải dữ liệu</h3>
+            <p className="text-sm text-gray-500">Không thể tải danh sách ca. Vui lòng thử lại.</p>
+          </div>
+          <Button onClick={refetch} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Thử lại
+          </Button>
+        </div>
       </div>
     );
   }
@@ -208,7 +248,23 @@ export default function DataTable({
                 ))}
               </div>
             ) : (
-              <div className="px-4 py-8 text-center text-gray-500">No study match</div>
+              <div className="flex-1 flex flex-col items-center justify-center py-16 px-4">
+                <div className="flex flex-col items-center gap-4 max-w-md text-center">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                    <FileSearch className="h-8 w-8 text-slate-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-1">Không tìm thấy ca nào</h3>
+                    <p className="text-sm text-gray-500">
+                      Không có ca nào khớp với điều kiện lọc. Hãy thử điều chỉnh bộ lọc hoặc làm mới dữ liệu.
+                    </p>
+                  </div>
+                  <Button onClick={refetch} variant="outline" size="sm" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    Làm mới
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>

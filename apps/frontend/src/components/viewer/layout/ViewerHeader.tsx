@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import {
   Layers,
   Home,
@@ -17,10 +18,10 @@ interface ViewerHeaderProps {
   onToggleCollapse?: () => void;
 }
 
-export default function ViewerHeader({
+const ViewerHeader = React.memo(({
   isCollapsed = false,
   onToggleCollapse,
-}: ViewerHeaderProps) {
+}: ViewerHeaderProps) => {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
 
@@ -54,9 +55,8 @@ export default function ViewerHeader({
 
   return (
     <TooltipProvider>
-      <div className={`bg-linear-to-r from-slate-900 via-slate-850 to-slate-900 border-b-2 border-teal-900/40 flex justify-between items-center px-5 py-1 gap-4 overflow-hidden transition-all duration-300 shadow-xl ${
-        isCollapsed ? 'h-0 border-0' : 'h-[5vh]'
-      }`}>
+      <div className={`bg-linear-to-r from-slate-900 via-slate-850 to-slate-900 border-b-2 border-teal-900/40 flex justify-between items-center px-5 py-1 gap-4 overflow-hidden transition-all duration-300 shadow-xl ${isCollapsed ? 'h-0 border-0' : 'h-[5vh]'
+        }`}>
         {/* Medical Branding */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-linear-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg border border-teal-400/30 relative">
@@ -73,9 +73,9 @@ export default function ViewerHeader({
           {/* Home Button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleGoHome}
                 className="h-10 w-10 p-0 text-slate-400 hover:bg-teal-900/30 hover:text-teal-300 transition-all rounded-lg border border-transparent hover:border-teal-700/30"
               >
@@ -91,9 +91,9 @@ export default function ViewerHeader({
           {/* Toggle Header Button with Medical Style */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onToggleCollapse}
                 className="h-10 w-10 p-0 text-slate-400 hover:bg-teal-900/30 hover:text-teal-300 transition-all rounded-lg border border-transparent hover:border-teal-700/30"
               >
@@ -106,5 +106,7 @@ export default function ViewerHeader({
       </div>
     </TooltipProvider>
   );
-}
+});
+
+export default ViewerHeader;
 

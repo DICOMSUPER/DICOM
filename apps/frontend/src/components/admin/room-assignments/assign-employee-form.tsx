@@ -39,6 +39,8 @@ import {
   Monitor,
   AlertTriangle,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,6 +54,7 @@ import {
 import { ModalityMachine } from "@/common/interfaces/image-dicom/modality-machine.interface";
 import { cn } from "@/common/lib/utils";
 import { formatRole } from "@/common/utils/role-formatter";
+import { ROLE_OPTIONS } from "@/common/enums/role.enum";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { StepIndicator } from "@/components/ui/step-indicator";
 
@@ -70,6 +73,7 @@ import {
   useBulkCreateEmployeeRoomAssignmentsMutation,
 } from "@/store/employeeRoomAssignmentApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
+import { useGetDepartmentsQuery } from "@/store/departmentApi";
 import { extractApiData } from "@/common/utils/api";
 import { formatTimeRange } from "@/common/utils/schedule-helpers";
 import { formatStatus } from "@/common/utils/format-status";
@@ -330,16 +334,8 @@ export function AssignEmployeeForm({
       return;
     }
 
-    if (!selectedSchedule && !areTimesValid) {
-      if (!formStartTime || !formEndTime) {
-        toast.error(
-          "Start time and end time are required when creating a new schedule"
-        );
-      } else {
-        const errorMsg =
-          getTimeValidationError || "End time must be after start time";
-        toast.error(errorMsg);
-      }
+    if (!selectedSchedule && !formShiftId) {
+      toast.error('Please select a shift template');
       return;
     }
 
@@ -600,35 +596,18 @@ export function AssignEmployeeForm({
       );
   }, [selectedRoom]);
 
-  const roleOptions = useMemo(() => {
-    return Array.from(
-      new Set(availableEmployees.map((e) => e.role).filter(Boolean))
-    ) as string[];
-  }, [availableEmployees]);
+  // Use ROLE_OPTIONS from enum for role filter
+  const roleOptions = ROLE_OPTIONS;
 
+  // Fetch all departments from API
+  const { data: departmentsData } = useGetDepartmentsQuery({ page: 1, limit: 1000 });
   const departmentOptions = useMemo(() => {
-    const deptMap = new Map<string, { id: string; name: string }>();
-    availableEmployees.forEach((employee) => {
-      if (employee.departmentId) {
-        let deptName = employee.departmentId;
-        if (employee.department) {
-          if (typeof employee.department === "string") {
-            deptName = employee.department;
-          } else {
-            deptName =
-              employee.department.departmentName ||
-              employee.department.departmentCode ||
-              employee.departmentId;
-          }
-        }
-        deptMap.set(employee.departmentId, {
-          id: employee.departmentId,
-          name: deptName,
-        });
-      }
-    });
-    return Array.from(deptMap.values());
-  }, [availableEmployees]);
+    if (!departmentsData?.data) return [];
+    return departmentsData.data.map((dept: any) => ({
+      id: dept.id,
+      name: dept.departmentName || dept.departmentCode || dept.id,
+    }));
+  }, [departmentsData]);
 
   const employeeColumns = useMemo(
     () => [
@@ -723,55 +702,18 @@ export function AssignEmployeeForm({
     return diffDays >= 1;
   }, [formDate, selectedSchedule]);
 
-  // Helper function to parse time string to minutes
-  const parseTime = (timeStr: string) => {
-    const parts = timeStr.split(":");
-    return parseInt(parts[0]) * 60 + parseInt(parts[1] || "0");
-  };
 
   const areTimesValid = useMemo(() => {
     if (selectedSchedule) return true;
-
-    if (formShiftId) return true;
-
-    if (!formStartTime || !formEndTime) return false;
-
-    const startMinutes = parseTime(formStartTime);
-    const endMinutes = parseTime(formEndTime);
-
-    // End time must be after start time
-    return endMinutes > startMinutes;
-  }, [formStartTime, formEndTime, formShiftId, selectedSchedule]);
-
-  // Get time validation error message
-  const getTimeValidationError = useMemo(() => {
-    if (!formStartTime || !formEndTime) return null;
-    if (formShiftId) return null;
-
-    const startMinutes = parseTime(formStartTime);
-    const endMinutes = parseTime(formEndTime);
-
-    if (endMinutes <= startMinutes) {
-      return "End time must be after start time";
-    }
-    return null;
-  }, [formStartTime, formEndTime, formShiftId]);
+    // Shift template is now required, so times are always valid if a template is selected
+    return !!formShiftId;
+  }, [formShiftId, selectedSchedule]);
 
   const hasDate = !!(selectedSchedule?.work_date || formDate);
   const hasRoom = !!(selectedSchedule?.room_id || formRoomId);
-  const hasTimes = selectedSchedule
-    ? true
-    : formShiftId
-    ? true
-    : !!(formStartTime && formEndTime);
-  const hasSelectedEmployee = !!(
-    selectedEmployeeId || selectedEmployeeIds.length > 0
-  );
-  const submitting =
-    isSubmitting ||
-    isCreatingAssignment ||
-    isBulkCreating ||
-    isCreatingSchedule;
+  const hasTimes = selectedSchedule ? true : !!formShiftId;
+  const hasSelectedEmployee = !!(selectedEmployeeId || selectedEmployeeIds.length > 0);
+  const submitting = isSubmitting || isCreatingAssignment || isBulkCreating || isCreatingSchedule;
 
   return (
     <Card className="border border-border overflow-auto">
@@ -1336,112 +1278,65 @@ export function AssignEmployeeForm({
           </div>
         )}
 
-        {/* Shift Template Selection (for new schedules) */}
-        {formDate && formRoomId && !selectedSchedule && (
-          <>
-            <div>
-              <label className="text-sm font-medium mb-2 text-foreground block">
-                Shift Template (Optional)
-              </label>
-              <p className="text-xs text-foreground mb-2">
-                Select a shift template to automatically fill start and end
-                times.
-              </p>
-              <Select
-                value={formShiftId || "__none__"}
-                onValueChange={(value) => {
-                  setFormShiftId(value === "__none__" ? "" : value);
-                }}
-                disabled={loadingShiftTemplates}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a shift template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">
-                    None (set times manually)
-                  </SelectItem>
-                  {shiftTemplates.map((shift) => (
-                    <SelectItem
-                      key={shift.shift_template_id}
-                      value={shift.shift_template_id}
-                    >
-                      {shift.shift_name} ({shift.start_time} - {shift.end_time})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Shift Template Selection (for new schedules) */}
+            {formDate && formRoomId && !selectedSchedule && (
+              <>
+                <div>
+                  <label className="text-sm font-medium mb-2 text-foreground block">
+                    Shift Template (Optional)
+                  </label>
+                  <p className="text-xs text-foreground mb-2">
+                    Select a shift template to automatically fill start and end times.
+                  </p>
+                  <Select
+                    value={formShiftId || '__none__'}
+                    onValueChange={(value) => {
+                      setFormShiftId(value === '__none__' ? '' : value);
+                    }}
+                    disabled={loadingShiftTemplates}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a shift template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shiftTemplates.map((shift) => (
+                        <SelectItem key={shift.shift_template_id} value={shift.shift_template_id}>
+                          {shift.shift_name} ({shift.start_time} - {shift.end_time})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Manual Time Entry */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-sm font-medium mb-2 text-foreground">
-                  Start Time{" "}
-                  {!formShiftId && <span className="text-red-600">*</span>}
-                </p>
-                <TimePicker
-                  value={formStartTime}
-                  onChange={(value) => setFormStartTime(value)}
-                  placeholder="HH:MM"
-                  disabled={!!formShiftId}
-                  error={
-                    (!areTimesValid || getTimeValidationError) &&
-                    !formShiftId &&
-                    formStartTime
-                      ? true
-                      : false
+                {/* Time Info - Display from shift template */}
+                {formShiftId && (() => {
+                  const selectedShift = shiftTemplates.find((s) => s.shift_template_id === formShiftId);
+                  if (selectedShift) {
+                    return (
+                      <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                        <p className="text-sm font-medium text-foreground">Schedule Time</p>
+                        <p className="text-lg font-semibold mt-1">
+                          {selectedShift.start_time} - {selectedShift.end_time}
+                        </p>
+                        <p className="text-xs text-foreground mt-1">
+                          Time is automatically set from the selected shift template
+                        </p>
+                      </div>
+                    );
                   }
-                />
-                {getTimeValidationError && !formShiftId && (
-                  <p className="text-xs text-red-600 mt-1">
-                    {getTimeValidationError}
+                  return null;
+                })()}
+
+                {/* Warning if no shift template selected */}
+                {!formShiftId && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1.5">
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    <span>Please select a shift template to set the schedule time</span>
                   </p>
                 )}
-                {!areTimesValid &&
-                  !formShiftId &&
-                  (!formStartTime || !formEndTime) &&
-                  !getTimeValidationError && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Both start and end times are required
-                    </p>
-                  )}
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-2 text-foreground">
-                  End Time{" "}
-                  {!formShiftId && <span className="text-red-600">*</span>}
-                </p>
-                <TimePicker
-                  value={formEndTime}
-                  onChange={(value) => setFormEndTime(value)}
-                  placeholder="HH:MM"
-                  disabled={!!formShiftId}
-                  error={
-                    (!areTimesValid || getTimeValidationError) &&
-                    !formShiftId &&
-                    formEndTime
-                      ? true
-                      : false
-                  }
-                />
-                {getTimeValidationError && !formShiftId && (
-                  <p className="text-xs text-red-600 mt-1">
-                    {getTimeValidationError}
-                  </p>
-                )}
-                {!areTimesValid &&
-                  !formShiftId &&
-                  (!formStartTime || !formEndTime) &&
-                  !getTimeValidationError && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Both start and end times are required
-                    </p>
-                  )}
-              </div>
-            </div>
-          </>
-        )}
+
+              </>
+            )}
 
         <div className="grid gap-4">
           <div>
@@ -1495,8 +1390,8 @@ export function AssignEmployeeForm({
                     <SelectContent>
                       <SelectItem value="all">All roles</SelectItem>
                       {roleOptions.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {formatRole(role)}
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

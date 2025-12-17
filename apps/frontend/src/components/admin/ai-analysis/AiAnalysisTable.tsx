@@ -114,19 +114,19 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
         const getStatusConfig = (isHelpful?: boolean) => {
           return isHelpful
             ? {
-                variant: "default" as const,
-                className:
-                  "bg-blue-500 hover:bg-blue-600 text-white border-blue-500",
-                label: "Helpful",
-              }
+              variant: "default" as const,
+              className:
+                "bg-blue-500 hover:bg-blue-600 text-white border-blue-500",
+              label: "Helpful",
+            }
             : isHelpful === false
-            ? {
+              ? {
                 variant: "destructive" as const,
                 className:
                   "bg-red-500 hover:bg-red-600 text-white border-red-500",
                 label: "Not Helpful",
               }
-            : {
+              : {
                 variant: "outline" as const,
                 className: "",
                 label: "No Feedback",
@@ -170,12 +170,13 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
         <div className="flex justify-center gap-2">
           {onViewDetails && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewDetails(aiAnalysis)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
             >
-              <Eye className="h-4 w-4 text-green-600" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
             </Button>
           )}
         </div>

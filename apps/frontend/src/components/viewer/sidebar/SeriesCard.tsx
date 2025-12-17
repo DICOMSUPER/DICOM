@@ -28,14 +28,14 @@ interface SeriesCardProps {
   onSeriesClick: (series: DicomSeries) => void;
 }
 
-export default function SeriesCard({
+const SeriesCard = React.memo(({
   series,
   isSelected,
   thumbnailPath,
   loadingThumbnail = false,
   viewMode = "grid",
   onSeriesClick,
-}: SeriesCardProps) {
+}: SeriesCardProps) => {
   const modality = "CT"; // Could be dynamic from series data
   const finalThumbnailPath = thumbnailPath;
   const hasInstances = (series?.numberOfInstances ?? 0) > 0;
@@ -45,15 +45,13 @@ export default function SeriesCard({
   if (viewMode === "list") {
     return (
       <div
-        className={`flex items-center gap-3 p-3 rounded transition-all duration-200 ${
-          isDisabled
+        className={`flex items-center gap-3 p-3 rounded transition-all duration-200 ${isDisabled
             ? "opacity-50 cursor-not-allowed bg-slate-900"
             : isSelected
-            ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
-            : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
-        } border-l-4 ${
-          isSelected ? "border-slate-400" : "border-slate-600"
-        } group ${!isDisabled && 'hover:border-slate-400'}`}
+              ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
+              : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
+          } border-l-4 ${isSelected ? "border-slate-400" : "border-slate-600"
+          } group ${!isDisabled && 'hover:border-slate-400'}`}
         onClick={() => !isDisabled && onSeriesClick(series)}
         title={isDisabled ? "No instances available" : undefined}
       >
@@ -94,11 +92,10 @@ export default function SeriesCard({
           <div className="flex items-center gap-2 mb-1">
             <Badge
               variant="secondary"
-              className={`${
-                isSelected
+              className={`${isSelected
                   ? "bg-slate-600 text-slate-100"
                   : "bg-teal-600 text-white"
-              } text-xs font-semibold px-2 py-0.5`}
+                } text-xs font-semibold px-2 py-0.5`}
             >
               {modality}
             </Badge>
@@ -107,13 +104,12 @@ export default function SeriesCard({
             </span>
             <Badge
               variant="outline"
-              className={`${
-                isDisabled
+              className={`${isDisabled
                   ? "text-red-400 border-red-500"
                   : isSelected
-                  ? "text-green-200 border-green-300"
-                  : "text-emerald-400 border-emerald-500"
-              } text-xs flex items-center gap-1`}
+                    ? "text-green-200 border-green-300"
+                    : "text-emerald-400 border-emerald-500"
+                } text-xs flex items-center gap-1`}
             >
               <Activity className="h-3 w-3" />
               {series?.numberOfInstances || 0}
@@ -129,9 +125,8 @@ export default function SeriesCard({
           </div>
 
           <div
-            className={`text-sm font-medium ${
-              isSelected ? "text-slate-100" : "text-white"
-            } truncate`}
+            className={`text-sm font-medium ${isSelected ? "text-slate-100" : "text-white"
+              } truncate`}
           >
             {series?.seriesDescription || "No description available"}
           </div>
@@ -154,15 +149,13 @@ export default function SeriesCard({
   // Grid view component
   return (
     <div
-      className={`rounded transition-all duration-200 ${
-        isDisabled
+      className={`rounded transition-all duration-200 ${isDisabled
           ? "opacity-50 cursor-not-allowed bg-slate-900"
           : isSelected
-          ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
-          : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
-      } p-4 mb-2 border-l-4 ${
-        isSelected ? "border-slate-400" : "border-slate-600"
-      } group ${!isDisabled && 'hover:border-slate-400'}`}
+            ? "bg-linear-to-r from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-500/50 cursor-pointer"
+            : "bg-linear-to-r from-slate-800 to-slate-750 hover:from-slate-600 hover:to-slate-500 text-slate-200 hover:shadow-md cursor-pointer"
+        } p-4 mb-2 border-l-4 ${isSelected ? "border-slate-400" : "border-slate-600"
+        } group ${!isDisabled && 'hover:border-slate-400'}`}
       onClick={() => !isDisabled && onSeriesClick(series)}
       title={isDisabled ? "No instances available" : undefined}
     >
@@ -171,11 +164,10 @@ export default function SeriesCard({
         <div className="flex items-center gap-2">
           <Badge
             variant="secondary"
-            className={`${
-              isSelected
+            className={`${isSelected
                 ? "bg-slate-600 text-slate-100"
                 : "bg-teal-600 text-white"
-            } text-xs font-semibold px-2 py-1`}
+              } text-xs font-semibold px-2 py-1`}
           >
             {modality}
           </Badge>
@@ -184,13 +176,12 @@ export default function SeriesCard({
           </span>
           <Badge
             variant="outline"
-            className={`${
-              isDisabled
+            className={`${isDisabled
                 ? "text-red-400 border-red-500"
                 : isSelected
-                ? "text-green-200 border-green-300"
-                : "text-emerald-400 border-emerald-500"
-            } text-xs flex items-center gap-1`}
+                  ? "text-green-200 border-green-300"
+                  : "text-emerald-400 border-emerald-500"
+              } text-xs flex items-center gap-1`}
           >
             <Activity className="h-3 w-3" />
             {series?.numberOfInstances || 0}
@@ -208,18 +199,16 @@ export default function SeriesCard({
 
       {/* Description */}
       <div
-        className={`text-sm mb-3 font-medium ${
-          isSelected ? "text-slate-100" : "text-white"
-        }`}
+        className={`text-sm mb-3 font-medium ${isSelected ? "text-slate-100" : "text-white"
+          }`}
       >
         {series?.seriesDescription || "No description available"}
       </div>
 
       {/* DICOM Thumbnail */}
       <div
-        className={`rounded-lg overflow-hidden mb-3 border-2 aspect-square ${
-          isSelected ? "border-teal-400" : "border-slate-600"
-        } relative group/preview transition-all duration-200`}
+        className={`rounded-lg overflow-hidden mb-3 border-2 aspect-square ${isSelected ? "border-teal-400" : "border-slate-600"
+          } relative group/preview transition-all duration-200`}
       >
         {loadingThumbnail ? (
           <div className="flex items-center justify-center w-full h-full bg-linear-to-br from-slate-900 to-slate-800">
@@ -239,9 +228,8 @@ export default function SeriesCard({
             {series?.numberOfInstances ? (
               <div className="flex flex-col items-center justify-center text-center p-4">
                 <div
-                  className={`text-4xl font-bold mb-1 ${
-                    isSelected ? "text-teal-400" : "text-slate-400"
-                  }`}
+                  className={`text-4xl font-bold mb-1 ${isSelected ? "text-teal-400" : "text-slate-400"
+                    }`}
                 >
                   {series?.seriesNumber || "?"}
                 </div>
@@ -309,4 +297,6 @@ export default function SeriesCard({
       </div>
     </div>
   );
-}
+});
+
+export default SeriesCard;

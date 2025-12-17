@@ -3,6 +3,7 @@ import { Patient } from "@/common/interfaces/patient/patient-workflow.interface"
 import { Calendar, FileText, Heart, MapPin, Phone, User } from "lucide-react";
 import React from "react";
 import { formatDate } from "@/common/lib/formatTimeDate";
+import { modalStyles } from "@/common/utils/format-status";
 
 // Format gender for display
 const formatGender = (gender: string | null | undefined): string => {
@@ -18,36 +19,26 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
   };
 
   return (
-    <div className="rounded-2xl p-6 shadow border-border border space-y-6">
-      <div className="flex items-center gap-2 text-lg font-semibold">
-        <User className="h-5 w-5" />
-        Patient Information
+    <div className={modalStyles.section}>
+      <div className={modalStyles.sectionHeader}>
+        <div className={modalStyles.sectionIconContainer}>
+          <User className={modalStyles.sectionIcon} />
+        </div>
+        <h3 className={modalStyles.sectionTitle}>Patient Information</h3>
       </div>
 
       {/* Hero Section */}
-      <section className="rounded-[28px] bg-linear-to-br from-primary/10 via-background to-background shadow-lg ring-1 ring-border/30 p-6 lg:p-8 space-y-6">
+      <section className={modalStyles.heroSection}>
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-foreground shadow-sm">
+            <div className={`${modalStyles.heroLabel} inline-flex items-center gap-2`}>
               <User className="h-3.5 w-3.5" />
               {patient?.patientCode || "N/A"}
             </div>
             <div>
-              <p className="text-3xl font-semibold text-foreground leading-tight">
+              <p className={modalStyles.heroTitle}>
                 {patient?.firstName} {patient?.lastName}
               </p>
-              <div className="mt-3 grid gap-2 text-sm text-foreground">
-                <p className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {patient?.dateOfBirth
-                    ? formatDate(patient.dateOfBirth)
-                    : "Date of birth not set"}
-                </p>
-                <p className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  {patient?.gender ? formatGender(patient.gender) : "Gender not specified"}
-                </p>
-              </div>
             </div>
           </div>
           <div className="space-y-4 text-right">
@@ -57,9 +48,9 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
               {patient?.isActive ? "Active" : "Inactive"}
             </Badge>
             {patient?.bloodType && (
-              <div className="rounded-2xl bg-background/70 px-4 py-3 text-sm text-foreground shadow">
-                <p className="uppercase text-xs tracking-wide">Blood Type</p>
-                <p className="text-base font-semibold text-foreground flex items-center gap-1 justify-end">
+              <div className={modalStyles.infoCard}>
+                <p className={modalStyles.infoCardLabel}>Blood Type</p>
+                <p className={`${modalStyles.infoCardLarge} flex items-center gap-1 justify-end`}>
                   <Heart className="h-4 w-4" />
                   {patient.bloodType}
                 </p>
@@ -69,78 +60,80 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <Calendar className="h-5 w-5" />
+          <div className={modalStyles.infoCard}>
+            <div className={modalStyles.sectionIconContainer}>
+              <Calendar className={modalStyles.sectionIcon} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-foreground">Date of Birth</p>
-              <p className="text-lg font-semibold text-foreground">
+              <p className={modalStyles.infoCardLabel}>Date of Birth</p>
+              <p className={modalStyles.infoCardLarge}>
                 {patient?.dateOfBirth
                   ? formatDate(patient.dateOfBirth)
                   : "N/A"}
               </p>
-              <p className="text-xs text-foreground">Birth date</p>
+              <p className="text-xs text-slate-500">Birth date</p>
             </div>
           </div>
-          <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <User className="h-5 w-5" />
+          <div className={modalStyles.infoCard}>
+            <div className={modalStyles.sectionIconContainer}>
+              <User className={modalStyles.sectionIcon} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-foreground">Gender</p>
-              <p className="text-lg font-semibold text-foreground">
+              <p className={modalStyles.infoCardLabel}>Gender</p>
+              <p className={modalStyles.infoCardLarge}>
                 {patient?.gender ? formatGender(patient.gender) : "N/A"}
               </p>
-              <p className="text-xs text-foreground">Patient gender</p>
+              <p className="text-xs text-slate-500">Patient gender</p>
             </div>
           </div>
-          <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-            <div className="rounded-xl bg-primary/10 p-3 text-primary">
-              <Heart className="h-5 w-5" />
+          <div className={modalStyles.infoCard}>
+            <div className={modalStyles.sectionIconContainer}>
+              <Heart className={modalStyles.sectionIcon} />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-foreground">Blood Type</p>
-              <p className="text-lg font-semibold text-foreground">
+              <p className={modalStyles.infoCardLabel}>Blood Type</p>
+              <p className={modalStyles.infoCardLarge}>
                 {patient?.bloodType || "N/A"}
               </p>
-              <p className="text-xs text-foreground">Blood group</p>
+              <p className="text-xs text-slate-500">Blood group</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Overview Section */}
-      <section className="rounded-2xl p-6 shadow border-border border space-y-4">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <User className="h-5 w-5" />
-          Contact Information
+      {/* Contact Information Section */}
+      <section className={modalStyles.section}>
+        <div className={modalStyles.sectionHeader}>
+          <div className={modalStyles.sectionIconContainer}>
+            <Phone className={modalStyles.sectionIcon} />
+          </div>
+          <h3 className={modalStyles.sectionTitle}>Contact Information</h3>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <Phone className="h-4 w-4" />
+          <div className={modalStyles.gridCard}>
+            <div className={modalStyles.gridCardLabel}>
+              <Phone className={modalStyles.gridCardIcon} />
               Phone Number
             </div>
-            <p className="text-base font-semibold text-foreground">
+            <p className={modalStyles.gridCardValue}>
               {patient?.phoneNumber || "N/A"}
             </p>
           </div>
-          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10 md:col-span-2">
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <MapPin className="h-4 w-4" />
+          <div className={`${modalStyles.gridCard} md:col-span-2`}>
+            <div className={modalStyles.gridCardLabel}>
+              <MapPin className={modalStyles.gridCardIcon} />
               Address
             </div>
-            <p className="text-base font-semibold text-foreground">
+            <p className={modalStyles.gridCardValue}>
               {patient?.address || "N/A"}
             </p>
           </div>
-          <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10 md:col-span-3">
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <FileText className="h-4 w-4" />
+          <div className={`${modalStyles.gridCard} md:col-span-3`}>
+            <div className={modalStyles.gridCardLabel}>
+              <FileText className={modalStyles.gridCardIcon} />
               Insurance Number
             </div>
-            <p className="text-base font-semibold text-foreground">
+            <p className={modalStyles.gridCardValue}>
               {patient?.insuranceNumber || "N/A"}
             </p>
           </div>

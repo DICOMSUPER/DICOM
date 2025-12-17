@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, SortConfig } from "@/components/ui/data-table";
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Zap,
   UserStar,
+  Play,
 } from "lucide-react";
 import { formatDate, formatTime, formatTimeVN } from "@/common/lib/formatTimeDate";
 import Pagination, {
@@ -27,13 +28,17 @@ import {
 import { is } from "date-fns/locale";
 import { format } from "date-fns";
 import TransferDetailModal from "./transfer-detail-modal";
-import { TooltipProvider } from "@/components/ui-next/Tooltip/Tooltip";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { formatStatus } from "@/common/utils/format-status";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -68,10 +73,24 @@ export function PatientEncounterTable({
   onSort,
   initialSort,
 }: PatientEncounterTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [showTransferModal, setShowTransferModal] = React.useState(false);
   const [selectedEncounter, setSelectedEncounter] =
     React.useState<PatientEncounter | null>(null);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [encounterToComplete, setEncounterToComplete] = useState<string | null>(null);
+
+  const handleCompleteClick = (encounterId: string) => {
+    setEncounterToComplete(encounterId);
+    setShowCompleteDialog(true);
+  };
+
+  const handleConfirmComplete = () => {
+    if (encounterToComplete) {
+      onComplete(encounterToComplete);
+      setShowCompleteDialog(false);
+      setEncounterToComplete(null);
+    }
+  };
 
   const handleShowTransferDetail = (encounter: PatientEncounter) => {
     setSelectedEncounter(encounter);
@@ -87,7 +106,7 @@ export function PatientEncounterTable({
     };
 
     const config = statusConfig[status] || { dotColor: "bg-slate-400", textColor: "text-slate-700", animate: false };
-    
+
     return (
       <div className="flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${config.dotColor} ${config.animate ? 'animate-pulse' : ''}`} />
@@ -220,9 +239,10 @@ export function PatientEncounterTable({
             <Button
               variant="outline"
               size="sm"
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-medium text-xs transition-colors bg-transparent"
               onClick={() => onStartServing(encounter.id)}
+              className="h-8 text-xs font-medium border-indigo-200 text-indigo-700 hover:bg-indigo-50"
             >
+              <Play className="h-3.5 w-3.5 mr-1.5" />
               Start
             </Button>
           )}
@@ -231,32 +251,35 @@ export function PatientEncounterTable({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 font-medium text-xs transition-colors bg-transparent"
-                onClick={() => onComplete(encounter.id)}
+                onClick={() => handleCompleteClick(encounter.id)}
+                className="h-8 text-xs font-medium border-emerald-200 text-emerald-700 hover:bg-emerald-50"
               >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                 Complete
               </Button>
             )}
           {onViewDetails && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewDetails(encounter.id)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
             >
-              <Eye className="h-4 w-4 text-green-600" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
             </Button>
           )}
           {encounter.status === EncounterStatus.ARRIVED &&
             encounter.assignedPhysicianId === employeeId &&
             onTransferPhysician && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => onTransferPhysician(encounter.id)}
-                className="h-8 w-8 p-0"
+                className="h-8 text-xs font-medium border-blue-200 text-blue-700 hover:bg-blue-50"
               >
-                <Phone className="h-4 w-4 text-blue-600" />
+                <Phone className="h-3.5 w-3.5 mr-1.5" />
+                Transfer
               </Button>
             )}
         </div>
@@ -265,18 +288,37 @@ export function PatientEncounterTable({
   ];
 
   return (
-    <DataTable<PatientEncounter>
-      columns={columns}
-      data={encounterItems}
-      isLoading={isLoading}
-      emptyStateIcon={emptyStateIcon}
-      emptyStateTitle={emptyStateTitle}
-      emptyStateDescription={emptyStateDescription}
-      rowKey={(encounter) => encounter.id}
-      page={page}
-      limit={limit}
-      onSort={onSort}
-      initialSort={initialSort}
-    />
+    <>
+      <DataTable<PatientEncounter>
+        columns={columns}
+        data={encounterItems}
+        isLoading={isLoading}
+        emptyStateIcon={emptyStateIcon}
+        emptyStateTitle={emptyStateTitle}
+        emptyStateDescription={emptyStateDescription}
+        rowKey={(encounter) => encounter.id}
+        page={page}
+        limit={limit}
+        onSort={onSort}
+        initialSort={initialSort}
+      />
+
+      <AlertDialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Encounter</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this encounter as complete? This action will finish the current patient visit.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmComplete} className="bg-emerald-600 hover:bg-emerald-700">
+              Complete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

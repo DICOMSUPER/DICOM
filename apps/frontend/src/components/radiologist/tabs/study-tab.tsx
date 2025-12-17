@@ -21,7 +21,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
   const { getPatientById } = usePatientService();
   const { data: patientData, isLoading, isError, error } = getPatientById(patientId);
 
-  const { data: imagingOrdersData } =
+  const { data: imagingOrdersData, refetch: refetchOrders, isFetching: isFetchingOrders } =
     useGetImagingOrdersByPatientIdQuery({ patientId });
 
 
@@ -94,7 +94,9 @@ if (isError)
         <SidebarTab
           examHistory={examHistory}
           patient={patientData.data}
-          setSelectedExam={handleSelectExam} // ✅ KẾT NỐI ĐÚNG
+          setSelectedExam={handleSelectExam}
+          onRefresh={refetchOrders}
+          isFetching={isFetchingOrders}
         />
       )}
 

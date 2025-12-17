@@ -4,7 +4,6 @@ export interface GridViewportOptions {
   viewportType?: string;
   toolGroupId?: string;
   presentationIds?: AppTypes.PresentationIds;
-  flipHorizontal?: boolean;
   //
   orientation?: string;
   allowUnmatchedView?: boolean;

@@ -64,18 +64,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }));
     }, [value, editorKey]);
 
+    // Track if the last change came from inside the editor
+    const isInternalChangeRef = React.useRef(false);
+
     // ⛔ Slate không tự update khi value từ parent đổi
-    // 🔥 Fix: reset nội dung mỗi khi value thay đổi từ ngoài
+    // 🔥 Fix: reset nội dung mỗi khi value thay đổi từ ngoài (không phải từ typing)
     useEffect(() => {
+        // Skip if the change came from internal typing
+        if (isInternalChangeRef.current) {
+            isInternalChangeRef.current = false;
+            return;
+        }
+
         const parsed = value?.split("\n") || [""];
         const newSlateValue: Descendant[] = parsed.map(line => ({
             type: "paragraph",
             children: [{ text: line }],
         }));
 
-        editor.children = newSlateValue;
-        Transforms.deselect(editor);
-        editor.onChange();
+        // Only reset if content is actually different
+        const currentText = editor.children
+            .map(n => ('children' in n ? n.children.map((c: any) => c.text || "").join("") : ""))
+            .join("\n");
+
+        if (currentText !== value) {
+            editor.children = newSlateValue;
+            Transforms.deselect(editor);
+            editor.onChange();
+        }
     }, [value, editor]);
 
     const renderElement = useCallback((props: RenderElementProps) => {
@@ -110,6 +126,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             .map(n => ('children' in n ? n.children.map((c: any) => c.text || "").join("") : ""))
             .join("\n");
 
+        // Mark this as an internal change so useEffect doesn't reset the editor
+        isInternalChangeRef.current = true;
         onChange(text);
     };
 

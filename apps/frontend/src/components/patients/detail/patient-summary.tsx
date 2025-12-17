@@ -37,7 +37,7 @@ interface VitalSignDisplay {
 
 const getVitalStatus = (value: number | undefined, type: string): 'normal' | 'high' | 'low' => {
   if (value === undefined) return 'normal';
-  
+
   switch (type) {
     case 'bpSystolic':
       return value > 140 ? 'high' : value < 90 ? 'low' : 'normal';
@@ -58,7 +58,7 @@ const transformVitalSigns = (vitalSigns: VitalSignsSimplified | undefined): Vita
     // Blood Pressure - fixed to show systolic/diastolic in correct order
     {
       label: 'Blood Pressure',
-      value: (vitalSigns?.bpSystolic && vitalSigns?.bpDiastolic) 
+      value: (vitalSigns?.bpSystolic && vitalSigns?.bpDiastolic)
         ? `${vitalSigns.bpSystolic}/${vitalSigns.bpDiastolic}`
         : '_/_',
       unit: 'mmHg',
@@ -82,7 +82,7 @@ const transformVitalSigns = (vitalSigns: VitalSignsSimplified | undefined): Vita
       status: getVitalStatus(vitalSigns?.temperature, 'temperature'),
     },
   ];
-  
+
   return vitals;
 };
 
@@ -111,11 +111,11 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
               status === 'active'
                 ? 'bg-green-50 text-green-700 border-green-200'
                 : status === 'resolved'
-                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : 'bg-gray-50 text-gray-700 border-gray-200'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-gray-50 text-gray-700 border-gray-200'
             }
           >
-            {status || 'Unknown'}
+            {formatStatus(status || 'Unknown')}
           </Badge>
         );
       },
@@ -132,8 +132,8 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
               severity === 'severe'
                 ? 'bg-red-50 text-red-700 border-red-200'
                 : severity === 'moderate'
-                ? 'bg-orange-50 text-orange-700 border-orange-200'
-                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                  ? 'bg-orange-50 text-orange-700 border-orange-200'
+                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
             }
           >
             {severity}
@@ -227,11 +227,10 @@ export function PatientSummaryTab({ overview }: { overview: PatientOverview }) {
             {vitalSignsDisplay.map((vital) => (
               <div key={vital.label} className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    vital.status === 'normal' ? 'bg-green-50 text-green-600' :
-                    vital.status === 'high' ? 'bg-red-50 text-red-600' :
-                    'bg-blue-50 text-blue-600'
-                  }`}>
+                  <div className={`p-2 rounded-lg ${vital.status === 'normal' ? 'bg-green-50 text-green-600' :
+                      vital.status === 'high' ? 'bg-red-50 text-red-600' :
+                        'bg-blue-50 text-blue-600'
+                    }`}>
                     {vital.icon}
                   </div>
                   <div className="flex-1">
@@ -244,25 +243,23 @@ export function PatientSummaryTab({ overview }: { overview: PatientOverview }) {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <div className={`h-2 rounded-full ${
-                    vital.status === 'normal' ? 'bg-green-200' :
-                    vital.status === 'high' ? 'bg-red-200' :
-                    'bg-blue-200'
-                  }`}>
-                    <div className={`h-full rounded-full ${
-                      vital.status === 'normal' ? 'bg-green-500' :
-                      vital.status === 'high' ? 'bg-red-500' :
-                      'bg-blue-500'
-                    }`} style={{ width: vital.status === 'normal' ? '80%' : '60%' }}></div>
+                  <div className={`h-2 rounded-full ${vital.status === 'normal' ? 'bg-green-200' :
+                      vital.status === 'high' ? 'bg-red-200' :
+                        'bg-blue-200'
+                    }`}>
+                    <div className={`h-full rounded-full ${vital.status === 'normal' ? 'bg-green-500' :
+                        vital.status === 'high' ? 'bg-red-500' :
+                          'bg-blue-500'
+                      }`} style={{ width: vital.status === 'normal' ? '80%' : '60%' }}></div>
                   </div>
                   <Badge
                     variant="outline"
                     className={
                       vital.status === 'normal' ? 'bg-green-50 text-green-700 border-green-200' :
-                      vital.status === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
-                      'bg-blue-50 text-blue-700 border-blue-200'
+                        vital.status === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
+                          'bg-blue-50 text-blue-700 border-blue-200'
                     }
                   >
                     {formatStatus(vital.status)}

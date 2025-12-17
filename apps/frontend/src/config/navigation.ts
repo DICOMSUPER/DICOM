@@ -169,10 +169,10 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/physician/clinic-visit",
-      label: "Clinic Visit",
+      label: "Patient Encounters",
 
       icon: FileText,
-      description: "Manage patient clinic visit",
+      description: "Manage patient patient encounters",
     },
     {
       href: "/physician/imaging-orders",

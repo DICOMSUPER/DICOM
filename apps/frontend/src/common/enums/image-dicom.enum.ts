@@ -64,3 +64,9 @@ export enum AnnotationStatus {
   FINAL = "final",
   REVIEWED = "reviewed",
 }
+
+export enum SegmentationStatus {
+  DRAFT = "draft",
+  FINAL = "final",
+  REVIEWED = "reviewed",
+}

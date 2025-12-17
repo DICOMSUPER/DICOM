@@ -7,7 +7,7 @@ import { resolveDicomImageUrl } from "@/common/utils/dicom/resolveDicomImageUrl"
 import { useLazyGetInstancesByReferenceQuery } from "@/store/dicomInstanceApi";
 import { extractApiData } from "@/common/utils/api";
 
-export const StudyItem = ({
+export const StudyItem = React.memo(({
   study,
   selectedSeries,
   onSeriesClick,
@@ -25,7 +25,7 @@ export const StudyItem = ({
   const [localLoadingInstances, setLocalLoadingInstances] = useState<Set<string>>(new Set());
   const [fetchInstancesByReference] = useLazyGetInstancesByReferenceQuery();
   const loadedSeriesRef = useRef<Set<string>>(new Set());
-  
+
   useEffect(() => {
     if (urlStudyId && study.id === urlStudyId && !open) {
       setOpen(true);
@@ -39,7 +39,7 @@ export const StudyItem = ({
 
     const loadThumbnails = async () => {
       const updatedThumbnails: Record<string, string> = {};
-      const seriesToLoad = study.series.filter((s: DicomSeries) => 
+      const seriesToLoad = study.series.filter((s: DicomSeries) =>
         s && s.id && !loadedSeriesRef.current.has(s.id) && !localThumbnailPaths[s.id]
       );
 
@@ -114,11 +114,11 @@ export const StudyItem = ({
           {filteredSeries.length > 0 ? (
             filteredSeries.map((series: DicomSeries) => {
               const thumbnailPath = localThumbnailPaths[series.id];
-              const isLoadingThumbnail = 
+              const isLoadingThumbnail =
                 localLoadingInstances.has(series.id) &&
                 !thumbnailPath &&
                 (series.numberOfInstances ?? 0) > 0;
-              
+
               return (
                 <SeriesCard
                   key={series.id}
@@ -138,4 +138,4 @@ export const StudyItem = ({
       )}
     </div>
   );
-};
+});

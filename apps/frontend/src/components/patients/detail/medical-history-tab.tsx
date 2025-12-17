@@ -6,23 +6,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Calendar, 
-  User, 
-  MapPin, 
+import {
+  Search,
+  Filter,
+  Plus,
+  Calendar,
+  User,
+  MapPin,
   FileText,
   Stethoscope,
   Syringe,
   Activity
 } from 'lucide-react';
-import { 
-  MedicalProcedure, 
-  Diagnosis, 
-  Visit, 
-  Immunization 
+import {
+  MedicalProcedure,
+  Diagnosis,
+  Visit,
+  Immunization
 } from '@/types/patient-detail';
 import { formatStatus } from '@/common/utils/format-status';
 
@@ -33,11 +33,11 @@ interface MedicalHistoryTabProps {
   immunizations: Immunization[];
 }
 
-export function MedicalHistoryTab({ 
-  procedures, 
-  diagnoses, 
-  visits, 
-  immunizations 
+export function MedicalHistoryTab({
+  procedures,
+  diagnoses,
+  visits,
+  immunizations
 }: MedicalHistoryTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -77,7 +77,7 @@ export function MedicalHistoryTab({
             <TabsTrigger value="procedures">Procedures</TabsTrigger>
             <TabsTrigger value="immunizations">Immunizations</TabsTrigger>
           </TabsList>
-          
+
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -109,30 +109,42 @@ export function MedicalHistoryTab({
               <p className="text-sm text-gray-600">Medical procedures performed on the patient</p>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b border-gray-200">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Procedure</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Doctor</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Location</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {procedures.map((procedure) => (
-                      <tr key={procedure.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 px-4 text-gray-900">{procedure.date}</td>
-                        <td className="py-4 px-4 font-medium text-gray-900">{procedure.procedure}</td>
-                        <td className="py-4 px-4 text-gray-600">{procedure.doctor}</td>
-                        <td className="py-4 px-4 text-gray-600">{procedure.location}</td>
-                        <td className="py-4 px-4 text-gray-600 max-w-xs truncate">{procedure.notes}</td>
+              {procedures.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                    <Stethoscope className="w-8 h-8 text-blue-300" />
+                  </div>
+                  <p className="text-gray-500 text-lg font-medium">No procedures found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    This patient has no recorded procedures yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Procedure</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Doctor</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Location</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Notes</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {procedures.map((procedure) => (
+                        <tr key={procedure.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-4 px-4 text-gray-900">{procedure.date}</td>
+                          <td className="py-4 px-4 font-medium text-gray-900">{procedure.procedure}</td>
+                          <td className="py-4 px-4 text-gray-600">{procedure.doctor}</td>
+                          <td className="py-4 px-4 text-gray-600">{procedure.location}</td>
+                          <td className="py-4 px-4 text-gray-600 max-w-xs truncate">{procedure.notes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -147,38 +159,50 @@ export function MedicalHistoryTab({
               <p className="text-sm text-gray-600">Medical diagnoses and conditions</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {diagnoses.map((diagnosis) => (
-                  <div key={diagnosis.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-semibold text-gray-900">{diagnosis.condition}</h4>
-                          <Badge variant="outline" className={getStatusColor(diagnosis.status)}>
-                            {formatStatus(diagnosis.status)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {diagnosis.date}
+              {diagnoses.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-red-300" />
+                  </div>
+                  <p className="text-gray-500 text-lg font-medium">No diagnoses found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    This patient has no recorded diagnoses yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {diagnoses.map((diagnosis) => (
+                    <div key={diagnosis.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-semibold text-gray-900">{diagnosis.condition}</h4>
+                            <Badge variant="outline" className={getStatusColor(diagnosis.status)}>
+                              {formatStatus(diagnosis.status)}
+                            </Badge>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {diagnosis.doctor}
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {diagnosis.date}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {diagnosis.doctor}
+                            </div>
+                            <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                              {diagnosis.icd10Code}
+                            </span>
                           </div>
-                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                            {diagnosis.icd10Code}
-                          </span>
+                          {diagnosis.notes && (
+                            <p className="text-sm text-gray-600 mt-2">{diagnosis.notes}</p>
+                          )}
                         </div>
-                        {diagnosis.notes && (
-                          <p className="text-sm text-gray-600 mt-2">{diagnosis.notes}</p>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -193,52 +217,64 @@ export function MedicalHistoryTab({
               <p className="text-sm text-gray-600">Patient visit history and records</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {visits.map((visit) => (
-                  <div key={visit.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-semibold text-gray-900">{visit.type}</h4>
-                        <Badge variant="outline" className={getStatusColor(visit.status)}>
-                          {formatStatus(visit.status)}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {visit.date} at {visit.time}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Doctor:</span>
-                        <span className="ml-2 text-gray-600">{visit.doctor}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Chief Complaint:</span>
-                        <span className="ml-2 text-gray-600">{visit.chiefComplaint}</span>
-                      </div>
-                      {visit.diagnosis && (
-                        <div>
-                          <span className="font-medium text-gray-700">Diagnosis:</span>
-                          <span className="ml-2 text-gray-600">{visit.diagnosis}</span>
-                        </div>
-                      )}
-                      {visit.treatment && (
-                        <div>
-                          <span className="font-medium text-gray-700">Treatment:</span>
-                          <span className="ml-2 text-gray-600">{visit.treatment}</span>
-                        </div>
-                      )}
-                      {visit.followUp && (
-                        <div className="md:col-span-2">
-                          <span className="font-medium text-gray-700">Follow-up:</span>
-                          <span className="ml-2 text-gray-600">{visit.followUp}</span>
-                        </div>
-                      )}
-                    </div>
+              {visits.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+                    <Activity className="w-8 h-8 text-green-300" />
                   </div>
-                ))}
-              </div>
+                  <p className="text-gray-500 text-lg font-medium">No visits found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    This patient has no recorded visits yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {visits.map((visit) => (
+                    <div key={visit.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-semibold text-gray-900">{visit.type}</h4>
+                          <Badge variant="outline" className={getStatusColor(visit.status)}>
+                            {formatStatus(visit.status)}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {visit.date} at {visit.time}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Doctor:</span>
+                          <span className="ml-2 text-gray-600">{visit.doctor}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Chief Complaint:</span>
+                          <span className="ml-2 text-gray-600">{visit.chiefComplaint}</span>
+                        </div>
+                        {visit.diagnosis && (
+                          <div>
+                            <span className="font-medium text-gray-700">Diagnosis:</span>
+                            <span className="ml-2 text-gray-600">{visit.diagnosis}</span>
+                          </div>
+                        )}
+                        {visit.treatment && (
+                          <div>
+                            <span className="font-medium text-gray-700">Treatment:</span>
+                            <span className="ml-2 text-gray-600">{visit.treatment}</span>
+                          </div>
+                        )}
+                        {visit.followUp && (
+                          <div className="md:col-span-2">
+                            <span className="font-medium text-gray-700">Follow-up:</span>
+                            <span className="ml-2 text-gray-600">{visit.followUp}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -253,44 +289,56 @@ export function MedicalHistoryTab({
               <p className="text-sm text-gray-600">Vaccination history and immunization records</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {immunizations.map((immunization) => (
-                  <div key={immunization.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{immunization.vaccine}</h4>
-                        <p className="text-sm text-gray-600">Dose {immunization.doseNumber}</p>
-                      </div>
-                      <div className="text-sm text-gray-500">{immunization.date}</div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-gray-700">Manufacturer:</span>
-                        <span className="ml-2 text-gray-600">{immunization.manufacturer}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Lot Number:</span>
-                        <span className="ml-2 text-gray-600 font-mono">{immunization.lotNumber}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Administered By:</span>
-                        <span className="ml-2 text-gray-600">{immunization.administeredBy}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">Location:</span>
-                        <span className="ml-2 text-gray-600">{immunization.location}</span>
-                      </div>
-                      {immunization.nextDueDate && (
-                        <div className="md:col-span-2">
-                          <span className="font-medium text-gray-700">Next Due:</span>
-                          <span className="ml-2 text-gray-600">{immunization.nextDueDate}</span>
-                        </div>
-                      )}
-                    </div>
+              {immunizations.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4">
+                    <Syringe className="w-8 h-8 text-purple-300" />
                   </div>
-                ))}
-              </div>
+                  <p className="text-gray-500 text-lg font-medium">No immunizations found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    This patient has no recorded immunizations yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {immunizations.map((immunization) => (
+                    <div key={immunization.id} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{immunization.vaccine}</h4>
+                          <p className="text-sm text-gray-600">Dose {immunization.doseNumber}</p>
+                        </div>
+                        <div className="text-sm text-gray-500">{immunization.date}</div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Manufacturer:</span>
+                          <span className="ml-2 text-gray-600">{immunization.manufacturer}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Lot Number:</span>
+                          <span className="ml-2 text-gray-600 font-mono">{immunization.lotNumber}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Administered By:</span>
+                          <span className="ml-2 text-gray-600">{immunization.administeredBy}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Location:</span>
+                          <span className="ml-2 text-gray-600">{immunization.location}</span>
+                        </div>
+                        {immunization.nextDueDate && (
+                          <div className="md:col-span-2">
+                            <span className="font-medium text-gray-700">Next Due:</span>
+                            <span className="ml-2 text-gray-600">{immunization.nextDueDate}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

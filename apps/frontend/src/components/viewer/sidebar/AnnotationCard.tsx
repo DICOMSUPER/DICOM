@@ -12,11 +12,14 @@ import {
   Lock,
   Ruler,
   Layers,
-  Image,
+  Image as ImageIcon,
   Trash2,
   CheckCircle2,
   FileCheck,
   Save,
+  Info,
+  Edit3,
+  ShieldCheck
 } from "lucide-react";
 import { AnnotationColorPicker } from "./AnnotationColorPicker";
 import {
@@ -26,8 +29,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Info } from "lucide-react";
 import { useLazyGetUserByIdQuery } from "@/store/userApi";
+import { AnnotationDetailModal } from "./AnnotationDetailModal";
 
 interface AnnotationCardProps {
   annotation: ImageAnnotation;
@@ -81,41 +84,46 @@ const useUserName = (userId?: string) => {
 const getStatusColorClasses = (status: AnnotationStatus | undefined, isHighlight: boolean) => {
   if (!status) {
     return {
-      circle: isHighlight ? "text-teal-400 fill-teal-400" : "text-slate-400 fill-slate-400",
       dot: isHighlight ? "bg-teal-400" : "bg-slate-400",
       text: "text-slate-400",
       label: "Local",
+      border: "border-slate-500",
+      bg: "bg-slate-500/10"
     };
   }
   if (status === AnnotationStatus.FINAL) {
     return {
-      circle: "text-emerald-400 fill-emerald-400",
       dot: "bg-emerald-400",
       text: "text-emerald-400",
       label: "Final",
+      border: "border-emerald-500/50",
+      bg: "bg-emerald-500/10"
     };
   }
   if (status === AnnotationStatus.DRAFT) {
     return {
-      circle: "text-amber-400 fill-amber-400",
       dot: "bg-amber-400",
       text: "text-amber-400",
       label: "Draft",
+      border: "border-amber-500/50",
+      bg: "bg-amber-500/10"
     };
   }
   if (status === AnnotationStatus.REVIEWED) {
     return {
-      circle: "text-blue-400 fill-blue-400",
       dot: "bg-blue-400",
       text: "text-blue-400",
       label: "Reviewed",
+      border: "border-blue-500/50",
+      bg: "bg-blue-500/10"
     };
   }
   return {
-    circle: isHighlight ? "text-teal-400 fill-teal-400" : "text-slate-400 fill-slate-400",
     dot: isHighlight ? "bg-teal-400" : "bg-slate-400",
     text: isHighlight ? "text-teal-400" : "text-slate-400",
     label: "Local",
+    border: "border-slate-500",
+    bg: "bg-slate-500/10"
   };
 };
 
@@ -127,18 +135,18 @@ const getMeasurementDisplay = (annotation: ImageAnnotation) => {
       unit: metadata.measurementUnit as string,
     };
   }
-  
+
   if (annotation.measurementValue !== undefined) {
     return {
       value: annotation.measurementValue,
       unit: annotation.measurementUnit || "px",
     };
   }
-  
+
   return null;
 };
 
-export function AnnotationCard({
+const AnnotationCard = React.memo(({
   annotation,
   color,
   isHighlight,
@@ -157,23 +165,23 @@ export function AnnotationCard({
   onSaveLocal,
   formatAnnotationType,
   formatDate,
-}: AnnotationCardProps) {
+}: AnnotationCardProps) => {
   const statusColors = getStatusColorClasses(annotation.annotationStatus, isHighlight);
   const measurement = getMeasurementDisplay(annotation);
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const { name: reviewerName, isFetching: reviewerLoading } = useUserName(annotation.reviewerId);
   const { name: annotatorName, isFetching: annotatorLoading } = useUserName(annotation.annotatorId);
-  
+
   // Check if user is physician
   const isPhysician = userRole === Roles.PHYSICIAN;
   const isLocal = (annotation as any).isLocal;
   const currentStatus = annotation.annotationStatus;
-  
+
   // Determine what status changes are available
   const canMarkAsFinal = isLocal || currentStatus === AnnotationStatus.DRAFT;
   const canMarkAsReviewed = isPhysician && currentStatus === AnnotationStatus.FINAL;
   const canChangeToDraft = false;
-  
+
   // Read-only logic: REVIEWED and FINAL are read-only for edit/delete
   const isReadOnly = currentStatus === AnnotationStatus.REVIEWED;
   const isEditDeleteDisabled = isReadOnly || currentStatus === AnnotationStatus.FINAL;
@@ -182,312 +190,254 @@ export function AnnotationCard({
     <div
       key={annotation.id}
       onClick={() => onAnnotationClick(annotation.id)}
-      className={`rounded-lg border-l-4 p-3 space-y-2 transition-all cursor-pointer relative ${
-        isHighlight
-          ? "bg-teal-900/40 border-teal-400 shadow-lg ring-2 ring-teal-500/50"
-          : "bg-slate-900/50 hover:bg-slate-900/80"
-      }`}
+      className={`rounded-lg border-l-4 p-3 transition-all cursor-pointer relative group ${isHighlight
+        ? "bg-teal-900/40 border-teal-400 shadow-lg ring-1 ring-teal-500/30"
+        : "bg-slate-900/50 hover:bg-slate-900/80 border-slate-700"
+        }`}
       style={{
         borderLeftColor: isHighlight ? "#14b8a6" : color,
         borderLeftWidth: isHighlight ? "6px" : "4px",
       }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-center gap-1.5">
-            <div
-              className="h-2.5 w-2.5 rounded-full shrink-0 border border-slate-700"
-              style={{ backgroundColor: color }}
-            />
-            <Tag className="h-3 w-3 text-teal-400 shrink-0" />
-            <span className="text-xs font-medium text-white truncate">
-              {formatAnnotationType(annotation.annotationType)}
-            </span>
-          </div>
-          
-          {annotation.textContent && (
-            <p className="text-xs text-slate-300 line-clamp-1 ml-6">
-              {annotation.textContent}
-            </p>
-          )}
-          
-          {/* Instance and Frame Info */}
-          <div className="flex items-center gap-3 ml-6 text-[10px] text-slate-400">
-            {!(annotation as any).isLocal && (
-              <div className="flex items-center gap-1">
-                <Image className="h-2.5 w-2.5" />
-                <span>
-                  Instance:{" "}
-                  {annotation.instance?.instanceNumber ||
-                    annotation.instanceId?.slice(0, 8) ||
-                    "unknown"}
-                </span>
-              </div>
-            )}
-            {(() => {
-              const metadata = annotation.annotationData?.metadata as any;
-              const sliceIndex = metadata?.sliceIndex;
-              if (sliceIndex !== undefined) {
-                return (
-                  <div className="flex items-center gap-1">
-                    <Layers className="h-2.5 w-2.5" />
-                    <span>Frame: {sliceIndex + 1}</span>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-          </div>
-
-          <div className="flex items-center gap-3 ml-6 text-xs text-slate-400">
-            {annotation.annotationDate && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-2.5 w-2.5" />
-                <span className="truncate text-xs">
-                  {formatDate(annotation.annotationDate)}
-                </span>
-              </div>
-            )}
-            {measurement && measurement.value != null && (
-              <div className="flex items-center gap-1">
-                <Ruler className="h-2.5 w-2.5" />
-                <span className="text-xs text-slate-300 font-medium">
-                  {measurement.value.toFixed(1)} {measurement.unit}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* Header: Type and Status */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <div
+            className="h-3 w-3 rounded-full shrink-0 border border-slate-600 shadow-sm"
+            style={{ backgroundColor: color }}
+          />
+          <span className="text-sm font-semibold text-slate-100 truncate">
+            {formatAnnotationType(annotation.annotationType)}
+          </span>
+          <Tag className="h-3 w-3 text-slate-500" />
         </div>
-        
-        <div className="flex flex-col items-center gap-2 shrink-0">
-          {/* Status indicator on top */}
-          <div className="flex items-center gap-1.5">
-            <div className="relative">
-              <Circle className={`h-2.5 w-2.5 ${statusColors.circle}`} />
-              <div
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-1 w-1 rounded-full ${statusColors.dot}`}
-              />
-            </div>
-            <span className={`text-xs font-medium ${statusColors.text}`}>
-              {statusColors.label}
-            </span>
-          </div>
-          
-          {/* Action buttons - 2x2 grid */}
-          <div className="grid grid-cols-3 gap-1">
-            {/* Save Button for Local Annotations */}
-            {isLocal && onSaveLocal && (
-              <div
-                role="button"
-                tabIndex={0}
-                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-teal-700/50 bg-teal-600/20 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSaveLocal(annotation);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                    onSaveLocal(annotation);
-                  }
-                }}
-                title="Save to database"
-              >
-                <Save className="h-3 w-3 text-teal-400" />
-              </div>
-            )}
-            
-            {/* Status Change Dropdown for Saved Annotations */}
-            {!isLocal && (canMarkAsFinal || canMarkAsReviewed || canChangeToDraft) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation();
-                      }
-                    }}
-                  >
-                    <FileCheck className="h-3 w-3 text-blue-400" />
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-slate-800 border-slate-700" align="end">
-                  {canMarkAsFinal && (
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onStatusChange(annotation, AnnotationStatus.FINAL);
-                      }}
-                      className="text-white hover:bg-slate-700 cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-2 text-blue-400" />
-                      Mark as Final
-                    </DropdownMenuItem>
-                  )}
-                  {canMarkAsReviewed && (
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onStatusChange(annotation, AnnotationStatus.REVIEWED);
-                      }}
-                      className="text-white hover:bg-slate-700 cursor-pointer"
-                    >
-                      <Lock className="h-3.5 w-3.5 mr-2 text-green-400" />
-                      Mark as Reviewed (Physician)
-                    </DropdownMenuItem>
-                  )}
-                  {canChangeToDraft && (
-                    <>
-                      <DropdownMenuSeparator className="bg-slate-700" />
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(annotation, AnnotationStatus.DRAFT);
-                        }}
-                        className="text-white hover:bg-slate-700 cursor-pointer"
-                      >
-                        <FileCheck className="h-3.5 w-3.5 mr-2 text-amber-400" />
-                        Change to Draft
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            
-            {/* Info */}
-            <div
-              role="button"
-              tabIndex={0}
-              className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowInfo((v) => !v);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.stopPropagation();
-                  setShowInfo((v) => !v);
-                }
-              }}
-              title="Annotation info"
-            >
-              <Info className="h-3 w-3 text-slate-300" />
-            </div>
 
-            {!isEditDeleteDisabled && (
-              <AnnotationColorPicker
-                annotationId={annotation.id}
-                currentColor={color}
-                isOpen={colorPickerOpen}
-                tempColor={tempColor}
-                onOpen={onColorPickerOpen}
-                onClose={onColorPickerClose}
-                onColorChange={onColorChange}
-                onTempColorChange={onTempColorChange}
-              />
-            )}
-
-            {!isEditDeleteDisabled && !isLocal && currentStatus === AnnotationStatus.DRAFT && (
-              <div
-                role="button"
-                tabIndex={0}
-                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLockToggle(annotation.id, !isLocked);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    onLockToggle(annotation.id, !isLocked);
-                  }
-                }}
-                title={isLocked ? "Unlock annotation" : "Lock annotation"}
-              >
-                <Lock
-                  className={`h-3 w-3 ${
-                    isLocked
-                      ? "text-red-500"
-                      : "text-slate-400"
-                  }`}
-                />
-              </div>
-            )}
-
-            {!isEditDeleteDisabled && (
-              <div
-                role="button"
-                tabIndex={0}
-                className="h-5 w-5 flex items-center justify-center cursor-pointer rounded hover:bg-red-900/50 transition-colors group"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteClick(annotation);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    onDeleteClick(annotation);
-                  }
-                }}
-                title="Delete annotation"
-              >
-                <Trash2 className="h-3 w-3 text-slate-400 group-hover:text-red-400 transition-colors" />
-              </div>
-            )}
-            
-            {isReadOnly && (
-              <div className="h-4 w-4 flex items-center justify-center" title="Read-only (Reviewed)">
-                <Lock className="h-2.5 w-2.5 text-green-500" />
-              </div>
-            )}
-            
-            {currentStatus === AnnotationStatus.FINAL && !isReadOnly && (
-              <div className="h-4 w-4 flex items-center justify-center" title="Final (Protected)">
-                <Lock className="h-2.5 w-2.5 text-blue-500" />
-              </div>
-            )}
-          </div>
+        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}>
+          <div className={`h-1.5 w-1.5 rounded-full ${statusColors.dot}`} />
+          {statusColors.label}
         </div>
       </div>
 
-      {showInfo && (
-        <div className="mt-2 rounded-md border border-slate-700/60 bg-slate-900/60 p-2 text-[11px] text-slate-200 space-y-1.5">
-          <div className="flex justify-between">
-            <span className="text-slate-400">Status</span>
-            <span className="font-semibold">{annotation.annotationStatus}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Annotator</span>
-            <span className="font-semibold">
-              {annotatorLoading ? "Loading..." : annotatorName || annotation.annotatorId || "—"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Reviewer</span>
-            <span className="font-semibold">
-              {reviewerLoading ? "Loading..." : reviewerName || annotation.reviewerId || "—"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Reviewed</span>
-            <span className="font-semibold">
-              {annotation.reviewDate ? formatDate(annotation.reviewDate as any) : "—"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Color</span>
-            <span className="font-semibold">{annotation.colorCode || color || "—"}</span>
-          </div>
+      {/* Body: Metadata (Text, Measurements, Instance, Date) */}
+      <div className="space-y-1.5 mb-3 pl-5">
+        {annotation.textContent && (
+          <p className="text-xs text-slate-300 line-clamp-1 italic">
+            "{annotation.textContent}"
+          </p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+          {/* Measurements */}
+          {measurement && measurement.value != null && (
+            <div className="flex items-center gap-1.5 text-slate-300 font-medium">
+              <Ruler className="h-3 w-3" />
+              <span>
+                {measurement.value.toFixed(1)} {measurement.unit}
+              </span>
+            </div>
+          )}
+
+          {/* Instance Info */}
+          {!(annotation as any).isLocal && (
+            <div className="flex items-center gap-1.5">
+              <ImageIcon className="h-3 w-3" />
+              <span>
+                {annotation.instance?.instanceNumber ||
+                  annotation.instanceId?.slice(0, 8) ||
+                  "unknown"}
+              </span>
+            </div>
+          )}
+
+          {/* Frame Info */}
+          {(() => {
+            const metadata = annotation.annotationData?.metadata as any;
+            const sliceIndex = metadata?.sliceIndex;
+            if (sliceIndex !== undefined) {
+              return (
+                <div className="flex items-center gap-1.5">
+                  <Layers className="h-3 w-3" />
+                  <span>Frame: {sliceIndex + 1}</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Date */}
+          {annotation.annotationDate && (
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3 w-3" />
+              <span>
+                {formatDate(annotation.annotationDate)}
+              </span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Footer: Action Icons Row */}
+      <div className="flex items-center justify-between border-t border-slate-800/50 pt-2 mt-1">
+        {/* Left Group: Status Indicators (Lock) */}
+        <div className="flex items-center gap-1">
+          {!isEditDeleteDisabled && !isLocal && currentStatus === AnnotationStatus.DRAFT && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-slate-800 text-slate-400 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLockToggle(annotation.id, !isLocked);
+              }}
+              title={isLocked ? "Unlock annotation" : "Lock annotation"}
+            >
+              <Lock
+                className={`h-3.5 w-3.5 ${isLocked
+                  ? "text-red-400"
+                  : "text-slate-400"
+                  }`}
+              />
+            </Button>
+          )}
+
+          {(isReadOnly || currentStatus === AnnotationStatus.FINAL) && (
+            <div className="h-7 w-7 flex items-center justify-center cursor-help" title={isReadOnly ? "Read-only (Reviewed)" : "Protected (Final)"}>
+              <Lock className={`h-3.5 w-3.5 ${isReadOnly ? "text-emerald-500" : "text-blue-500"}`} />
+            </div>
+          )}
+        </div>
+
+        {/* Right Group: Actions */}
+        <div className="flex items-center gap-1">
+          {!isEditDeleteDisabled && (
+            <AnnotationColorPicker
+              annotationId={annotation.id}
+              currentColor={color}
+              isOpen={colorPickerOpen}
+              tempColor={tempColor}
+              onOpen={onColorPickerOpen}
+              onClose={onColorPickerClose}
+              onColorChange={onColorChange}
+              onTempColorChange={onTempColorChange}
+            />
+          )}
+
+          {/* Save Button for Local Annotations */}
+          {isLocal && onSaveLocal && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-slate-800 text-teal-500 hover:text-teal-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveLocal(annotation);
+              }}
+              title="Save to database"
+            >
+              <Save className="h-3.5 w-3.5" />
+            </Button>
+          )}
+
+          {/* Status Change Dropdown for Saved Annotations */}
+          {!isLocal && (canMarkAsFinal || canMarkAsReviewed || canChangeToDraft) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 hover:bg-slate-800 text-slate-400 hover:text-white"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Change Status"
+                >
+                  <FileCheck className="h-3.5 w-3.5 text-emerald-500" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-slate-900 border-slate-700 text-slate-200" align="end">
+                {canMarkAsFinal && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStatusChange(annotation, AnnotationStatus.FINAL);
+                    }}
+                    className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer transition-colors gap-2"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    Mark as Final
+                  </DropdownMenuItem>
+                )}
+                {canMarkAsReviewed && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStatusChange(annotation, AnnotationStatus.REVIEWED);
+                    }}
+                    className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer transition-colors gap-2"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-blue-400" />
+                    Mark as Reviewed
+                  </DropdownMenuItem>
+                )}
+                {canChangeToDraft && (
+                  <>
+                    <DropdownMenuSeparator className="bg-slate-700" />
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStatusChange(annotation, AnnotationStatus.DRAFT);
+                      }}
+                      className="text-slate-200 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer transition-colors gap-2"
+                    >
+                      <FileCheck className="h-4 w-4 text-amber-400" />
+                      Change to Draft
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 hover:bg-slate-800 text-slate-400 hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowInfoModal(true);
+            }}
+            title="Info"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </Button>
+
+          {!isEditDeleteDisabled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-slate-800 text-slate-400 hover:text-red-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(annotation);
+              }}
+              title="Delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <AnnotationDetailModal
+        annotation={annotation}
+        open={showInfoModal}
+        onOpenChange={setShowInfoModal}
+        annotatorName={annotatorLoading ? "Loading..." : annotatorName}
+        reviewerName={reviewerLoading ? "Loading..." : reviewerName}
+        formatAnnotationType={formatAnnotationType}
+        formatDate={formatDate}
+        color={color}
+      />
     </div>
   );
-}
+});
 
+export { AnnotationCard };

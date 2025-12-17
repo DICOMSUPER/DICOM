@@ -20,7 +20,7 @@ interface FolderItemProps {
   urlStudyId?: string;
 }
 
-export const FolderItem = ({
+export const FolderItem = React.memo(({
   orderId,
   folderName,
   procedureName,
@@ -34,7 +34,7 @@ export const FolderItem = ({
 }: FolderItemProps) => {
   const { data, isLoading, isError } = useGetDicomStudiesByOrderIdQuery(
     orderId,
-    { 
+    {
       skip: !isExpanded,
       refetchOnMountOrArgChange: false,
     }
@@ -68,7 +68,7 @@ export const FolderItem = ({
   // Get summary info from first study
   const studySummary = useMemo(() => {
     if (!studies || studies.length === 0) return null;
-    
+
     const firstStudy = studies[0];
     return {
       studyDate: firstStudy.studyDate,
@@ -107,14 +107,14 @@ export const FolderItem = ({
                 </Badge>
               )}
             </div>
-            
+
             {/* Procedure name */}
             {procedureName && (
               <span className="text-xs text-slate-400 truncate">
                 {procedureName}
               </span>
             )}
-            
+
             {/* Study info - date, time, series count */}
             {studySummary && (
               <div className="flex items-center gap-3 text-[10px] text-slate-500">
@@ -137,7 +137,7 @@ export const FolderItem = ({
                 )}
               </div>
             )}
-            
+
             {/* Modality machine name */}
             {studySummary?.modalityName && (
               <span className="text-[10px] text-slate-500 truncate">
@@ -191,4 +191,4 @@ export const FolderItem = ({
       )}
     </div>
   );
-};
+});

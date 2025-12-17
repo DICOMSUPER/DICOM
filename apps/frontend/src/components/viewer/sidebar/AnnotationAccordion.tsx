@@ -2,16 +2,17 @@
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
   AccordionTrigger,
 } from "@/components/ui-next/Accordion";
 import { ImageAnnotation } from "@/common/interfaces/image-dicom/image-annotation.interface";
 import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
 import { Roles } from "@/common/enums/user.enum";
-import { Database, FileEdit, Layers, RefreshCw } from "lucide-react";
+import { Database, FileEdit, Layers, RefreshCw, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   useLazyGetAnnotationsBySeriesIdQuery,
   useCreateAnnotationMutation,
@@ -28,6 +29,7 @@ import type { Annotation } from "@cornerstonejs/tools/types";
 import { useViewer } from "@/common/contexts/ViewerContext";
 import { AnnotationCard } from "./AnnotationCard";
 import { AnnotationDeleteDialog } from "./AnnotationDeleteDialog";
+import { AccordionLoading, AccordionError, AccordionEmpty } from "./SidebarCommon";
 import { AnnotationStatusModal } from "../modals/AnnotationStatusModal";
 import { SaveAnnotationModal } from "../modals/SaveAnnotationModal";
 import {
@@ -51,6 +53,7 @@ export default function AnnotationAccordion({
 }: AnnotationAccordionProps) {
   const [annotations, setAnnotations] = useState<ImageAnnotation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const [tempColor, setTempColor] = useState<string>("");
@@ -64,7 +67,7 @@ export default function AnnotationAccordion({
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadedSeriesRef = useRef<Set<string>>(new Set());
   const [forceRefresh] = useState(0);
-  
+
   const { publish } = useViewerEvents();
   const { state, reloadAnnotationsForSeries } = useViewer();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -104,11 +107,11 @@ export default function AnnotationAccordion({
           if (metadata?.source === "db") return;
           if (!ann.annotationUID) return;
           if (seenUIDs.has(ann.annotationUID)) return;
-          
+
           seenUIDs.add(ann.annotationUID);
 
           let colorCode: string | undefined;
-          
+
           if (ann.metadata) {
             const metadata = ann.metadata as any;
             const metadataColor = metadata.color || metadata.segmentColor || metadata.annotationColor;
@@ -121,7 +124,7 @@ export default function AnnotationAccordion({
               }
             }
           }
-          
+
           if (!colorCode && ann.data) {
             const data = ann.data as any;
             if (data.color) {
@@ -133,7 +136,7 @@ export default function AnnotationAccordion({
               }
             }
           }
-          
+
           if (!colorCode && ann.annotationUID) {
             try {
               const styles = (annotation.config as any)?.style?.getAnnotationStyles?.(ann.annotationUID);
@@ -153,7 +156,7 @@ export default function AnnotationAccordion({
 
           const referencedImageId = (ann.data as any)?.referencedImageId || ann.metadata?.referencedImageId;
           let sliceIndex = metadata?.sliceIndex;
-          
+
           if (sliceIndex === undefined && referencedImageId) {
             const match = referencedImageId.match(/frame=(\d+)/i);
             if (match) {
@@ -196,6 +199,7 @@ export default function AnnotationAccordion({
   const loadAnnotations = useCallback(async (force = false) => {
     if (!selectedSeriesId) {
       setAnnotations([]);
+      setError(null);
       return;
     }
 
@@ -207,6 +211,7 @@ export default function AnnotationAccordion({
 
     console.log(`[AnnotationAccordion] Fetching annotations for series ${selectedSeriesId}`);
     setLoading(true);
+    setError(null);
     try {
       const response = await fetchAnnotationsBySeries(selectedSeriesId).unwrap();
       const fetchedAnnotations = extractApiData<ImageAnnotation>(response);
@@ -221,32 +226,35 @@ export default function AnnotationAccordion({
           publish(ViewerEvents.DESELECT_ANNOTATION);
         }
       }
-      
+
       setAnnotations(mergedAnnotations);
 
       const colorMap = new Map<string, string>();
       const lockMap = new Map<string, boolean>();
-      
+
       mergedAnnotations.forEach((ann) => {
         if (ann.colorCode) {
           const parsed = parseColorCode(ann.colorCode);
           if (parsed) colorMap.set(ann.id, parsed);
         }
-        
+
         if (!(ann as any)?.isLocal) {
           lockMap.set(ann.id, true);
         }
       });
-      
+
       setAnnotationColors(colorMap);
       setAnnotationLockedMap(lockMap);
-      
+
       // Mark this series as loaded
       loadedSeriesRef.current.add(selectedSeriesId);
     } catch (error) {
       console.error("Failed to load annotations:", error);
+      setError('Failed to load annotations from database. Showing local annotations only.');
+      toast.error('Failed to load saved annotations');
+
       const localAnnotations = collectLocalAnnotations();
-      
+
       if (selectedAnnotationIdRef.current) {
         const stillExists = localAnnotations.some(ann => ann.id === selectedAnnotationIdRef.current);
         if (!stillExists) {
@@ -255,7 +263,7 @@ export default function AnnotationAccordion({
           publish(ViewerEvents.DESELECT_ANNOTATION);
         }
       }
-      
+
       setAnnotations(localAnnotations);
     } finally {
       setLoading(false);
@@ -264,32 +272,32 @@ export default function AnnotationAccordion({
 
   useEffect(() => {
     loadAnnotations(forceRefresh > 0);
-    
+
     const handleAnnotationEvent = () => {
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
-      
+
       refreshTimeoutRef.current = setTimeout(() => {
         loadAnnotations(true); // Force refresh on annotation events
       }, 500);
     };
-    
+
     const eventNames = [
       ToolEnums.Events.ANNOTATION_COMPLETED,
       ToolEnums.Events.ANNOTATION_MODIFIED,
       ToolEnums.Events.ANNOTATION_REMOVED,
     ];
-    
+
     eventNames.forEach((eventName) => {
       eventTarget.addEventListener(eventName, handleAnnotationEvent as EventListener);
     });
-    
+
     return () => {
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
-      
+
       eventNames.forEach((eventName) => {
         eventTarget.removeEventListener(eventName, handleAnnotationEvent as EventListener);
       });
@@ -311,12 +319,12 @@ export default function AnnotationAccordion({
       setSelectedAnnotationId(annotationId);
 
       const annotation = annotations.find((a) => a.id === annotationId);
-      
+
       if (annotation) {
-        const annotationUID = annotation.annotationData?.annotationUID || 
-                              (annotation as any)?.annotationUID || 
-                              annotation.annotationId ||
-                              annotation.id;
+        const annotationUID = annotation.annotationData?.annotationUID ||
+          (annotation as any)?.annotationUID ||
+          annotation.annotationId ||
+          annotation.id;
         publish(ViewerEvents.SELECT_ANNOTATION, {
           annotationId: annotation.id,
           annotationUID: annotationUID,
@@ -334,17 +342,17 @@ export default function AnnotationAccordion({
 
   const handleColorChange = useCallback(
     async (annotationId: string) => {
-    if (!tempColor) return;
-    
-    const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(tempColor);
-    if (!isValidColor) return;
+      if (!tempColor) return;
+
+      const isValidColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(tempColor);
+      if (!isValidColor) return;
 
       setAnnotationColors((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(annotationId, tempColor);
-      return newMap;
-    });
-    
+        const newMap = new Map(prev);
+        newMap.set(annotationId, tempColor);
+        return newMap;
+      });
+
       const annotationItem = annotations.find((a) => a.id === annotationId);
       if (!annotationItem) return;
 
@@ -364,28 +372,30 @@ export default function AnnotationAccordion({
       }
 
       if (!isLocal) {
-    try {
-      await updateAnnotation({
-        id: annotationId,
-        data: { colorCode: tempColor },
-      }).unwrap();
-      
-      setAnnotations(prev => prev.map(ann => 
-        ann.id === annotationId 
-          ? { ...ann, colorCode: tempColor }
-          : ann
-      ));
-    } catch (error) {
-      console.error("Failed to update annotation color in database:", error);
-      setAnnotationColors((prev) => {
-        const newMap = new Map(prev);
-        newMap.delete(annotationId);
-        return newMap;
-      });
+        try {
+          await updateAnnotation({
+            id: annotationId,
+            data: { colorCode: tempColor },
+          }).unwrap();
+
+          setAnnotations(prev => prev.map(ann =>
+            ann.id === annotationId
+              ? { ...ann, colorCode: tempColor }
+              : ann
+          ));
+          toast.success('Annotation color updated');
+        } catch (error) {
+          console.error("Failed to update annotation color in database:", error);
+          toast.error('Failed to update annotation color');
+          setAnnotationColors((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(annotationId);
+            return newMap;
+          });
         }
       }
-    
-    setColorPickerOpen(null);
+
+      setColorPickerOpen(null);
       setTempColor("");
     },
     [tempColor, annotations, updateAnnotation, publish]
@@ -394,19 +404,19 @@ export default function AnnotationAccordion({
   const handleLockToggle = useCallback(
     (annotationId: string, locked: boolean) => {
       const annotation = annotations.find((a) => a.id === annotationId);
-      
+
       // Prevent lock/unlock for reviewed/final annotations (they're read-only)
-      if (annotation?.annotationStatus === 'reviewed' as any || 
-          annotation?.annotationStatus === 'final' as any) {
+      if (annotation?.annotationStatus === 'reviewed' as any ||
+        annotation?.annotationStatus === 'final' as any) {
         return;
       }
-      
+
       setAnnotationLockedMap((prev) => {
         const newMap = new Map(prev);
         newMap.set(annotationId, locked);
         return newMap;
       });
-    
+
       if (annotation) {
         publish(ViewerEvents.LOCK_ANNOTATION, {
           annotationId: annotation.id,
@@ -433,15 +443,15 @@ export default function AnnotationAccordion({
     }
 
     const isLocal = (annotationToDelete as any)?.isLocal;
-    const annotationUID = 
-      annotationToDelete.annotationData?.annotationUID || 
-      (annotationToDelete as any)?.annotationUID || 
+    const annotationUID =
+      annotationToDelete.annotationData?.annotationUID ||
+      (annotationToDelete as any)?.annotationUID ||
       annotationToDelete.annotationId;
 
     if (isLocal) {
       if (annotationUID) {
         annotation.state.removeAnnotation(annotationUID);
-        
+
         state.viewportIds.forEach((viewportId, viewportIndex) => {
           const renderingEngineId = state.renderingEngineIds.get(viewportIndex);
           if (renderingEngineId) {
@@ -455,38 +465,40 @@ export default function AnnotationAccordion({
           }
         });
       }
-      
+
       setAnnotations(prev => prev.filter(a => a.id !== annotationToDelete.id));
-      
+
       if (selectedAnnotationId === annotationToDelete.id) {
         selectedAnnotationIdRef.current = null;
         setSelectedAnnotationId(null);
         publish(ViewerEvents.DESELECT_ANNOTATION);
       }
-      
+
       toast.success('Draft annotation deleted');
       setAnnotationToDelete(null);
     } else {
       try {
         await deleteAnnotation(annotationToDelete.id);
+
+        if (selectedSeriesId) {
+          await reloadAnnotationsForSeries(selectedSeriesId);
+        }
+
+        setAnnotations(prev => prev.filter(a => a.id !== annotationToDelete.id));
+
+        if (selectedAnnotationId === annotationToDelete.id) {
+          selectedAnnotationIdRef.current = null;
+          setSelectedAnnotationId(null);
+          publish(ViewerEvents.DESELECT_ANNOTATION);
+        }
+
+        toast.success('Annotation deleted successfully');
+        setAnnotationToDelete(null);
       } catch (error) {
-        console.log('Delete API call details:', error);
+        console.error('Delete API call failed:', error);
+        toast.error('Failed to delete annotation');
+        setAnnotationToDelete(null);
       }
-      
-      if (selectedSeriesId) {
-        await reloadAnnotationsForSeries(selectedSeriesId);
-      }
-      
-      setAnnotations(prev => prev.filter(a => a.id !== annotationToDelete.id));
-      
-      if (selectedAnnotationId === annotationToDelete.id) {
-        selectedAnnotationIdRef.current = null;
-        setSelectedAnnotationId(null);
-        publish(ViewerEvents.DESELECT_ANNOTATION);
-      }
-      
-      toast.success('Annotation deleted successfully');
-      setAnnotationToDelete(null);
     }
   }, [annotationToDelete, deleteAnnotation, selectedAnnotationId, publish, state.viewportIds, state.renderingEngineIds, selectedSeriesId, reloadAnnotationsForSeries]);
 
@@ -499,14 +511,14 @@ export default function AnnotationAccordion({
   const handleStatusChangeConfirm = useCallback(async (annotationId: string, newStatus: AnnotationStatus) => {
     try {
       const currentAnnotation = annotations.find(ann => ann.id === annotationId);
-      
+
       if (currentAnnotation?.annotationStatus === AnnotationStatus.REVIEWED) {
         toast.error('Reviewed annotations cannot be changed');
         throw new Error('Invalid status transition: reviewed annotations are immutable');
       }
-      
-      if (currentAnnotation?.annotationStatus === AnnotationStatus.FINAL && 
-          newStatus === AnnotationStatus.DRAFT) {
+
+      if (currentAnnotation?.annotationStatus === AnnotationStatus.FINAL &&
+        newStatus === AnnotationStatus.DRAFT) {
         toast.error('Final status can only be changed to reviewed, not back to draft');
         throw new Error('Invalid status transition: final can only be changed to reviewed');
       }
@@ -522,8 +534,8 @@ export default function AnnotationAccordion({
         },
       }).unwrap();
 
-      setAnnotations(prev => prev.map(ann => 
-        ann.id === annotationId 
+      setAnnotations(prev => prev.map(ann =>
+        ann.id === annotationId
           ? { ...ann, annotationStatus: newStatus }
           : ann
       ));
@@ -539,20 +551,20 @@ export default function AnnotationAccordion({
   // State for save annotation modal
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [annotationToSave, setAnnotationToSave] = useState<ImageAnnotation | null>(null);
-  
+
   // Handle clicking save button - open modal
   const handleSaveLocalAnnotation = useCallback((annotation: ImageAnnotation) => {
     setAnnotationToSave(annotation);
     setSaveModalOpen(true);
   }, []);
-  
+
   // Handle actual save after confirmation
   const handleSaveConfirm = useCallback(async (status: AnnotationStatus) => {
     if (!annotationToSave || !selectedSeriesId) return;
-    
+
     try {
       let instanceId = annotationToSave.instanceId;
-      
+
       // If instanceId is missing or 'unknown', fetch the first instance from series
       if (!instanceId || instanceId === 'unknown') {
         try {
@@ -595,17 +607,17 @@ export default function AnnotationAccordion({
       };
 
       await createAnnotation(annotationData).unwrap();
-      
-      const annotationUID = annotationToSave.annotationData?.annotationUID || 
-                            (annotationToSave as any)?.annotationUID || 
-                            annotationToSave.id;
-      
+
+      const annotationUID = annotationToSave.annotationData?.annotationUID ||
+        (annotationToSave as any)?.annotationUID ||
+        annotationToSave.id;
+
       if (annotationUID) {
         annotation.state.removeAnnotation(annotationUID);
       }
-      
+
       await reloadAnnotationsForSeries(selectedSeriesId);
-      
+
       toast.success(`Annotation saved as ${status}`);
       setSaveModalOpen(false);
       setAnnotationToSave(null);
@@ -627,17 +639,17 @@ export default function AnnotationAccordion({
       if (isLocal === true) {
         draft.push(ann);
       } else {
-      const metadata = ann.annotationData?.metadata as Record<string, unknown> | undefined;
-      const source = typeof metadata?.source === "string" ? metadata.source.toLowerCase() : "";
-      
-      if (source === "db") {
+        const metadata = ann.annotationData?.metadata as Record<string, unknown> | undefined;
+        const source = typeof metadata?.source === "string" ? metadata.source.toLowerCase() : "";
+
+        if (source === "db") {
           database.push(ann);
         } else {
           const hasDbFields = !!(ann as any).createdAt || !!(ann as any).updatedAt;
           if (hasDbFields || ann.annotatorId !== "local") {
-        database.push(ann);
-      } else {
-        draft.push(ann);
+            database.push(ann);
+          } else {
+            draft.push(ann);
           }
         }
       }
@@ -656,8 +668,8 @@ export default function AnnotationAccordion({
 
   return (
     <>
-    <Accordion type="single" collapsible className="w-full" defaultValue="annotations">
-      <AccordionItem value="annotations" className="border-b border-slate-800">
+      <Accordion type="single" collapsible className="w-full" defaultValue="annotations">
+        <AccordionItem value="annotations" className="border-b border-slate-800">
           <AccordionTrigger className="py-2 hover:no-underline">
             <div className="flex items-center gap-2 w-full">
               <Layers className="h-3.5 w-3.5 text-teal-400" />
@@ -703,27 +715,42 @@ export default function AnnotationAccordion({
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-2">
-          {loading ? (
-              <div className="text-center text-slate-500 py-4 text-xs">Loading...</div>
+            {loading ? (
+              <AccordionLoading message="Loading annotations..." />
+            ) : error ? (
+              <AccordionError
+                message="Error Loading Annotations"
+                error={error}
+                onRetry={() => {
+                  if (selectedSeriesId) {
+                    loadedSeriesRef.current.delete(selectedSeriesId);
+                  }
+                  loadAnnotations(true);
+                }}
+              />
             ) : !selectedSeriesId ? (
-            <div className="text-center text-slate-500 py-4 text-xs">
-                Please select a series to view annotations
-            </div>
-          ) : totalAnnotations === 0 ? (
-            <div className="text-center text-slate-500 py-4 text-xs">
-              No annotations in this series
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {database.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 px-1">
-                    <Database className="h-3 w-3 text-emerald-400" />
-                    <span className="text-xs font-medium text-emerald-300">
-                      Saved ({database.length})
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
+              <AccordionEmpty
+                icon={Layers}
+                title="No Series Selected"
+                description="Please select a series to view annotations"
+              />
+            ) : totalAnnotations === 0 ? (
+              <AccordionEmpty
+                icon={FileEdit}
+                title="No Annotations"
+                description="No annotations found in this series"
+              />
+            ) : (
+              <div className="space-y-3">
+                {database.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                      <Database className="h-3 w-3 text-emerald-400" />
+                      <span className="text-xs font-medium text-emerald-300">
+                        Saved ({database.length})
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
                       {database.map((ann) => (
                         <AnnotationCard
                           key={ann.id}
@@ -748,51 +775,52 @@ export default function AnnotationAccordion({
                         />
                       ))}
                     </div>
-                </div>
-              )}
-              
-              {draft.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 px-1">
-                    <FileEdit className="h-3 w-3 text-amber-400" />
-                    <span className="text-xs font-medium text-amber-300">
-                      Drafts ({draft.length})
-                    </span>
                   </div>
+                )}
+
+                {draft.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                      <FileEdit className="h-3 w-3 text-amber-400" />
+                      <span className="text-xs font-medium text-amber-300">
+                        Drafts ({draft.length})
+                      </span>
+                    </div>
                     <div className="space-y-1.5">
                       {draft.map((ann) => {
                         const isHighlight = selectedAnnotationId === ann.id;
                         return (
-                        <AnnotationCard
-                          key={ann.id}
-                          annotation={ann}
-                          color={displayColors.get(ann.id) || "#3B82F6"}
-                          isHighlight={isHighlight}
-                          isLocked={annotationLockedMap.get(ann.id) || false}
-                          colorPickerOpen={colorPickerOpen === ann.id}
-                          tempColor={tempColor}
-                          userRole={user?.role || ""}
-                          onAnnotationClick={handleAnnotationClick}
-                          onColorPickerOpen={handleColorPickerOpen}
-                          onColorChange={handleColorChange}
-                          onLockToggle={handleLockToggle}
-                          onDeleteClick={handleDeleteClick}
-                          onColorPickerClose={() => setColorPickerOpen(null)}
-                          onTempColorChange={setTempColor}
-                          onStatusChange={handleStatusChange}
-                          onSaveLocal={handleSaveLocalAnnotation}
-                          formatAnnotationType={formatAnnotationType}
-                          formatDate={formatDate}
-                        />
-                      )})}
+                          <AnnotationCard
+                            key={ann.id}
+                            annotation={ann}
+                            color={displayColors.get(ann.id) || "#3B82F6"}
+                            isHighlight={isHighlight}
+                            isLocked={annotationLockedMap.get(ann.id) || false}
+                            colorPickerOpen={colorPickerOpen === ann.id}
+                            tempColor={tempColor}
+                            userRole={user?.role || ""}
+                            onAnnotationClick={handleAnnotationClick}
+                            onColorPickerOpen={handleColorPickerOpen}
+                            onColorChange={handleColorChange}
+                            onLockToggle={handleLockToggle}
+                            onDeleteClick={handleDeleteClick}
+                            onColorPickerClose={() => setColorPickerOpen(null)}
+                            onTempColorChange={setTempColor}
+                            onStatusChange={handleStatusChange}
+                            onSaveLocal={handleSaveLocalAnnotation}
+                            formatAnnotationType={formatAnnotationType}
+                            formatDate={formatDate}
+                          />
+                        )
+                      })}
                     </div>
-                </div>
-              )}
-            </div>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+                  </div>
+                )}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <AnnotationDeleteDialog
         annotation={annotationToDelete}

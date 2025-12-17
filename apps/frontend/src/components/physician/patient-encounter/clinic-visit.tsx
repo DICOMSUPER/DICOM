@@ -221,7 +221,7 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
           : undefined,
       heartRate:
         vitalSigns.heartRate ||
-        (vitalSigns.heartRate && vitalSigns.heartRate !== 0)
+          (vitalSigns.heartRate && vitalSigns.heartRate !== 0)
           ? vitalSigns.heartRate || vitalSigns.heartRate
           : undefined,
       bpSystolic:
@@ -274,11 +274,11 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
             <div className="flex items-center gap-3 mb-2">
               <Stethoscope className="text-blue-600" size={28} />
               <h1 className="text-3xl font-bold text-gray-900">
-                Clinic Visit Details
+                Patient Encounter Details
               </h1>
             </div>
             <p className="text-sm text-gray-500 ml-10">
-              Visit ID:{" "}
+              Encounter ID:{" "}
               <span className="font-mono font-semibold">{detail.id}</span>
             </p>
           </div>
