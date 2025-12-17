@@ -51,4 +51,3 @@ export function RequestProcedureStatsCards({
 
   return <ReceptionStatsCards stats={stats} />;
 }
-

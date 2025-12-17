@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Building2, Phone, Mail } from 'lucide-react';
-import { Department } from '@/common/interfaces/user/department.interface';
-import { DataTable } from '@/components/ui/data-table';
-import { SortConfig } from '@/components/ui/data-table';
-import { formatRole } from '@/common/utils/role-formatter';
-import { formatDateTime } from '@/common/utils/format-status';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Eye, Edit, Trash2, Building2, Phone, Mail } from "lucide-react";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { DataTable } from "@/components/ui/data-table";
+import { SortConfig } from "@/components/ui/data-table";
+import { formatRole } from "@/common/utils/role-formatter";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface DepartmentTableProps {
   departments: Department[];
@@ -38,9 +38,9 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
 }) => {
   const columns = [
     {
-      header: 'Department Code',
+      header: "Department Code",
       sortable: true,
-      sortField: 'departmentCode',
+      sortField: "departmentCode",
       cell: (department: Department) => (
         <div className="font-medium text-blue-600">
           {department.departmentCode}
@@ -48,16 +48,16 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       ),
     },
     {
-      header: 'Department Name',
+      header: "Department Name",
       sortable: true,
-      sortField: 'departmentName',
+      sortField: "departmentName",
       cell: (department: Department) => (
         <div className="text-foreground">{department.departmentName}</div>
       ),
     },
     {
-      header: 'Status',
-      headerClassName: 'text-center',
+      header: "Status",
+      headerClassName: "text-center",
       sortable: false,
       cell: (department: Department) => (
         <div className="flex justify-center">
@@ -66,17 +66,17 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       ),
     },
     {
-      header: 'Head Department',
+      header: "Head Department",
       cell: (department: Department) => (
         <div className="text-foreground">
           {department.headDepartment
             ? `${department.headDepartment.firstName} ${department.headDepartment.lastName}`
-            : '—'}
+            : "—"}
         </div>
       ),
     },
     {
-      header: 'Contact',
+      header: "Contact",
       cell: (department: Department) => (
         <div className="text-foreground">
           {department.headDepartment?.email ? (
@@ -105,42 +105,52 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       ),
     },
     {
-      header: 'Role',
+      header: "Role",
       cell: (department: Department) => (
-        <div className="text-foreground">{department.headDepartment?.role ? formatRole(department.headDepartment.role) : '—'}</div>
+        <div className="text-foreground">
+          {department.headDepartment?.role
+            ? formatRole(department.headDepartment.role)
+            : "—"}
+        </div>
       ),
     },
     {
-      header: 'Description',
+      header: "Description",
       cell: (department: Department) => (
-        <div className="max-w-[250px] truncate text-foreground">{department.description}</div>
+        <div className="max-w-[250px] truncate text-foreground">
+          {department.description}
+        </div>
       ),
     },
     {
-      header: 'Room Count',
+      header: "Room Count",
       cell: (department: Department) => (
         <div className="text-foreground">{department.rooms?.length || 0}</div>
       ),
     },
     {
-      header: 'Created',
+      header: "Created",
       sortable: true,
-      sortField: 'createdAt',
+      sortField: "createdAt",
       cell: (department: Department) => (
-        <div className="text-foreground text-sm">{formatDateTime(department.createdAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(department.createdAt)}
+        </div>
       ),
     },
     {
-      header: 'Updated',
+      header: "Updated",
       sortable: true,
-      sortField: 'updatedAt',
+      sortField: "updatedAt",
       cell: (department: Department) => (
-        <div className="text-foreground text-sm">{formatDateTime(department.updatedAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(department.updatedAt)}
+        </div>
       ),
     },
     {
-      header: 'Actions',
-      headerClassName: 'text-center',
+      header: "Actions",
+      headerClassName: "text-center",
       cell: (department: Department) => (
         <div className="flex items-center gap-2 justify-center">
           {onViewDetails && (

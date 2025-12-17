@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Dialog,
@@ -6,14 +6,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Department } from '@/common/interfaces/user/department.interface';
-import { Building, Mail, Phone, User, Calendar, Users } from 'lucide-react';
-import { formatStatus, formatRole, modalStyles, getStatusBadgeColor } from '@/common/utils/format-status';
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Building, Mail, Phone, User, Calendar, Users } from "lucide-react";
+import {
+  formatStatus,
+  formatRole,
+  modalStyles,
+  getStatusBadgeColor,
+} from "@/common/utils/format-status";
 
 interface DepartmentViewModalProps {
   department: Department | null;
@@ -28,27 +33,35 @@ export function DepartmentViewModal({
   onClose,
   onEdit,
 }: DepartmentViewModalProps) {
-
   const getStatusBadge = (isActive: boolean) => {
     const colorKey = getStatusBadgeColor(isActive);
     return (
-      <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
-        <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-        {isActive ? 'Active' : 'Inactive'}
+      <Badge
+        className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}
+      >
+        <div
+          className={`w-2 h-2 rounded-full ${
+            isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+          }`}
+        />
+        {isActive ? "Active" : "Inactive"}
       </Badge>
     );
   };
 
   const formatDateTime = (dateValue?: string | Date | null) => {
-    if (!dateValue) return '—';
-    const date = typeof dateValue === 'string' || dateValue instanceof Date ? new Date(dateValue) : null;
-    if (!date || Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
+    if (!dateValue) return "—";
+    const date =
+      typeof dateValue === "string" || dateValue instanceof Date
+        ? new Date(dateValue)
+        : null;
+    if (!date || Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
@@ -57,7 +70,9 @@ export function DepartmentViewModal({
       <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
         {/* Fixed Header */}
         <DialogHeader className={modalStyles.dialogHeader}>
-          <DialogTitle className={modalStyles.dialogTitle}>Department Details</DialogTitle>
+          <DialogTitle className={modalStyles.dialogTitle}>
+            Department Details
+          </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="flex-1 min-h-0 h-full px-6 py-4">
@@ -84,12 +99,14 @@ export function DepartmentViewModal({
                       <div className="mt-3 space-y-2">
                         <p className={modalStyles.heroSubtitle}>
                           <Users className="h-4 w-4 text-teal-600" />
-                          {department.rooms?.length || 0} room{department.rooms?.length !== 1 ? 's' : ''} assigned
+                          {department.rooms?.length || 0} room
+                          {department.rooms?.length !== 1 ? "s" : ""} assigned
                         </p>
                         {department.headDepartment && (
                           <p className={modalStyles.heroSubtitle}>
                             <User className="h-4 w-4 text-teal-600" />
-                            Head: {department.headDepartment.firstName} {department.headDepartment.lastName}
+                            Head: {department.headDepartment.firstName}{" "}
+                            {department.headDepartment.lastName}
                           </p>
                         )}
                       </div>
@@ -131,7 +148,7 @@ export function DepartmentViewModal({
                   <p className={modalStyles.gridCardValue}>
                     {department.headDepartment
                       ? `${department.headDepartment.firstName} ${department.headDepartment.lastName}`
-                      : '—'}
+                      : "—"}
                   </p>
                 </div>
               </div>
@@ -146,7 +163,9 @@ export function DepartmentViewModal({
                     <h3 className={modalStyles.sectionTitle}>Description</h3>
                   </div>
                   <div className={modalStyles.infoCard}>
-                    <p className={modalStyles.infoCardValue}>{department.description}</p>
+                    <p className={modalStyles.infoCardValue}>
+                      {department.description}
+                    </p>
                   </div>
                 </section>
               )}
@@ -158,19 +177,22 @@ export function DepartmentViewModal({
                     <div className={modalStyles.sectionIconContainer}>
                       <User className={modalStyles.sectionIcon} />
                     </div>
-                    <h3 className={modalStyles.sectionTitle}>Head Department</h3>
+                    <h3 className={modalStyles.sectionTitle}>
+                      Head Department
+                    </h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className={modalStyles.infoCard}>
                       <div className={modalStyles.infoCardLabel}>Name</div>
                       <p className={modalStyles.infoCardLarge}>
-                        {department.headDepartment.firstName} {department.headDepartment.lastName}
+                        {department.headDepartment.firstName}{" "}
+                        {department.headDepartment.lastName}
                       </p>
                     </div>
                     <div className={modalStyles.infoCard}>
                       <div className={modalStyles.infoCardLabel}>Role</div>
                       <p className={modalStyles.infoCardLarge}>
-                        {formatRole(department.headDepartment.role) || '—'}
+                        {formatRole(department.headDepartment.role) || "—"}
                       </p>
                     </div>
                     {department.headDepartment.email && (
@@ -179,7 +201,9 @@ export function DepartmentViewModal({
                           <Mail className="w-3 h-3 inline mr-1" />
                           Email
                         </div>
-                        <p className={modalStyles.infoCardValue}>{department.headDepartment.email}</p>
+                        <p className={modalStyles.infoCardValue}>
+                          {department.headDepartment.email}
+                        </p>
                       </div>
                     )}
                     {department.headDepartment.phone && (
@@ -188,7 +212,9 @@ export function DepartmentViewModal({
                           <Phone className="w-3 h-3 inline mr-1" />
                           Phone
                         </div>
-                        <p className={modalStyles.infoCardValue}>{department.headDepartment.phone}</p>
+                        <p className={modalStyles.infoCardValue}>
+                          {department.headDepartment.phone}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -230,11 +256,18 @@ export function DepartmentViewModal({
 
         {/* Fixed Footer */}
         <DialogFooter className={modalStyles.dialogFooter}>
-          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className={modalStyles.secondaryButton}
+          >
             Close
           </Button>
           {onEdit && department && (
-            <Button onClick={() => onEdit(department)} className={modalStyles.primaryButton}>
+            <Button
+              onClick={() => onEdit(department)}
+              className={modalStyles.primaryButton}
+            >
               Edit Department
             </Button>
           )}

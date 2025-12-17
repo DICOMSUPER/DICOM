@@ -39,8 +39,6 @@ import {
   Monitor,
   AlertTriangle,
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, Search, Users, Building2, UserCheck, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -335,7 +333,7 @@ export function AssignEmployeeForm({
     }
 
     if (!selectedSchedule && !formShiftId) {
-      toast.error('Please select a shift template');
+      toast.error("Please select a shift template");
       return;
     }
 
@@ -600,7 +598,10 @@ export function AssignEmployeeForm({
   const roleOptions = ROLE_OPTIONS;
 
   // Fetch all departments from API
-  const { data: departmentsData } = useGetDepartmentsQuery({ page: 1, limit: 1000 });
+  const { data: departmentsData } = useGetDepartmentsQuery({
+    page: 1,
+    limit: 1000,
+  });
   const departmentOptions = useMemo(() => {
     if (!departmentsData?.data) return [];
     return departmentsData.data.map((dept: any) => ({
@@ -702,7 +703,6 @@ export function AssignEmployeeForm({
     return diffDays >= 1;
   }, [formDate, selectedSchedule]);
 
-
   const areTimesValid = useMemo(() => {
     if (selectedSchedule) return true;
     // Shift template is now required, so times are always valid if a template is selected
@@ -712,8 +712,14 @@ export function AssignEmployeeForm({
   const hasDate = !!(selectedSchedule?.work_date || formDate);
   const hasRoom = !!(selectedSchedule?.room_id || formRoomId);
   const hasTimes = selectedSchedule ? true : !!formShiftId;
-  const hasSelectedEmployee = !!(selectedEmployeeId || selectedEmployeeIds.length > 0);
-  const submitting = isSubmitting || isCreatingAssignment || isBulkCreating || isCreatingSchedule;
+  const hasSelectedEmployee = !!(
+    selectedEmployeeId || selectedEmployeeIds.length > 0
+  );
+  const submitting =
+    isSubmitting ||
+    isCreatingAssignment ||
+    isBulkCreating ||
+    isCreatingSchedule;
 
   return (
     <Card className="border border-border overflow-auto">
@@ -1278,65 +1284,76 @@ export function AssignEmployeeForm({
           </div>
         )}
 
-            {/* Shift Template Selection (for new schedules) */}
-            {formDate && formRoomId && !selectedSchedule && (
-              <>
-                <div>
-                  <label className="text-sm font-medium mb-2 text-foreground block">
-                    Shift Template (Optional)
-                  </label>
-                  <p className="text-xs text-foreground mb-2">
-                    Select a shift template to automatically fill start and end times.
-                  </p>
-                  <Select
-                    value={formShiftId || '__none__'}
-                    onValueChange={(value) => {
-                      setFormShiftId(value === '__none__' ? '' : value);
-                    }}
-                    disabled={loadingShiftTemplates}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a shift template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shiftTemplates.map((shift) => (
-                        <SelectItem key={shift.shift_template_id} value={shift.shift_template_id}>
-                          {shift.shift_name} ({shift.start_time} - {shift.end_time})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Shift Template Selection (for new schedules) */}
+        {formDate && formRoomId && !selectedSchedule && (
+          <>
+            <div>
+              <label className="text-sm font-medium mb-2 text-foreground block">
+                Shift Template (Optional)
+              </label>
+              <p className="text-xs text-foreground mb-2">
+                Select a shift template to automatically fill start and end
+                times.
+              </p>
+              <Select
+                value={formShiftId || "__none__"}
+                onValueChange={(value) => {
+                  setFormShiftId(value === "__none__" ? "" : value);
+                }}
+                disabled={loadingShiftTemplates}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a shift template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {shiftTemplates.map((shift) => (
+                    <SelectItem
+                      key={shift.shift_template_id}
+                      value={shift.shift_template_id}
+                    >
+                      {shift.shift_name} ({shift.start_time} - {shift.end_time})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                {/* Time Info - Display from shift template */}
-                {formShiftId && (() => {
-                  const selectedShift = shiftTemplates.find((s) => s.shift_template_id === formShiftId);
-                  if (selectedShift) {
-                    return (
-                      <div className="bg-muted/50 rounded-lg p-3 border border-border">
-                        <p className="text-sm font-medium text-foreground">Schedule Time</p>
-                        <p className="text-lg font-semibold mt-1">
-                          {selectedShift.start_time} - {selectedShift.end_time}
-                        </p>
-                        <p className="text-xs text-foreground mt-1">
-                          Time is automatically set from the selected shift template
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+            {/* Time Info - Display from shift template */}
+            {formShiftId &&
+              (() => {
+                const selectedShift = shiftTemplates.find(
+                  (s) => s.shift_template_id === formShiftId
+                );
+                if (selectedShift) {
+                  return (
+                    <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                      <p className="text-sm font-medium text-foreground">
+                        Schedule Time
+                      </p>
+                      <p className="text-lg font-semibold mt-1">
+                        {selectedShift.start_time} - {selectedShift.end_time}
+                      </p>
+                      <p className="text-xs text-foreground mt-1">
+                        Time is automatically set from the selected shift
+                        template
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
-                {/* Warning if no shift template selected */}
-                {!formShiftId && (
-                  <p className="text-xs text-amber-600 flex items-center gap-1.5">
-                    <AlertTriangle className="h-3 w-3 shrink-0" />
-                    <span>Please select a shift template to set the schedule time</span>
-                  </p>
-                )}
-
-              </>
+            {/* Warning if no shift template selected */}
+            {!formShiftId && (
+              <p className="text-xs text-amber-600 flex items-center gap-1.5">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                <span>
+                  Please select a shift template to set the schedule time
+                </span>
+              </p>
             )}
+          </>
+        )}
 
         <div className="grid gap-4">
           <div>

@@ -1,7 +1,13 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, RotateCcw } from "lucide-react";
 
@@ -26,10 +32,10 @@ export function DepartmentFilters({
   isSearching = false,
   className = "",
 }: DepartmentFiltersProps) {
-  const hasActiveFilters = searchTerm || statusFilter !== 'all';
+  const hasActiveFilters = searchTerm || statusFilter !== "all";
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onSearch) {
+    if (e.key === "Enter" && onSearch) {
       onSearch();
     }
   };
@@ -49,8 +55,8 @@ export function DepartmentFilters({
             />
           </div>
           {onSearch && (
-            <Button 
-              onClick={onSearch} 
+            <Button
+              onClick={onSearch}
               disabled={isSearching}
               className="h-9 px-4"
             >
@@ -71,7 +77,11 @@ export function DepartmentFilters({
             </SelectContent>
           </Select>
           {onReset && (
-            <Button variant="outline" onClick={onReset} className="whitespace-nowrap h-9 px-4">
+            <Button
+              variant="outline"
+              onClick={onReset}
+              className="whitespace-nowrap h-9 px-4"
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
@@ -81,4 +91,3 @@ export function DepartmentFilters({
     </div>
   );
 }
-
