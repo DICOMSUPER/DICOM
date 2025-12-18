@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   useGetRequestProceduresPaginatedQuery,
   useDeleteRequestProcedureMutation,
+  useGetRequestProcedureStatsQuery,
 } from '@/store/requestProcedureAPi';
 import { RequestProcedureTable } from '@/components/admin/procedure/ProcedureTable';
 import { RequestProcedureStatsCards } from '@/components/admin/procedure/procedure-stats-cards';
@@ -65,6 +66,13 @@ export default function Page() {
     refetch: refetchProcedures,
   } = useGetRequestProceduresPaginatedQuery(queryParams);
 
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetRequestProcedureStatsQuery();
+  console.log("procedure statsData",statsData?.data?.data );
+
   const [deleteRequestProcedure, { isLoading: isDeletingProcedure }] = useDeleteRequestProcedureMutation();
 
   useEffect(() => {
@@ -92,14 +100,6 @@ export default function Page() {
     hasPreviousPage: proceduresData.hasPreviousPage,
   };
 
-  const stats = useMemo(() => {
-    const total = proceduresData?.total ?? 0;
-    const active = procedures.filter((p) => p.isActive).length;
-    const inactive = procedures.filter((p) => !p.isActive).length;
-    const totalBodyParts = procedures.length; // Or sum by unique bodyPartId if needed
-    return { total, active, inactive, totalBodyParts };
-  }, [procedures, proceduresData?.total]);
-
   const getStatusProcedureBadge = (isActive: boolean) =>
     isActive ? (
       <Badge className="bg-green-100 text-green-800">Active</Badge>
@@ -108,7 +108,7 @@ export default function Page() {
     );
 
   const handleRefresh = async () => {
-    await refetchProcedures();
+    await Promise.all([refetchProcedures(), refetchStats()]);
   };
 
   const handleSearch = useCallback(() => {
@@ -196,11 +196,10 @@ export default function Page() {
       )}
 
       <RequestProcedureStatsCards
-        totalCount={stats.total}
-        activeCount={stats.active}
-        inactiveCount={stats.inactive}
-        totalBodyParts={stats.totalBodyParts}
-        isLoading={proceduresLoading}
+        totalCount={statsData?.data?.data?.total as number}
+        activeCount={statsData?.data?.data?.active as number}
+        inactiveCount={statsData?.data?.data?.inactive as number}
+        isLoading={statsLoading || proceduresLoading}
       />
 
       <RequestProcedureFilters

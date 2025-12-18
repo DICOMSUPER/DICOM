@@ -163,4 +163,27 @@ export class RequestProcedureService {
       relation: ['bodyPart', 'modality'],
     });
   };
+
+  getStats = async (): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+  }> => {
+    const repo = this.entityManager.getRepository(RequestProcedure);
+    const [total, active, inactive] = await Promise.all([
+      repo.count({ where: { isDeleted: false } }),
+      repo.count({
+        where: { isActive: true, isDeleted: false },
+      }),
+      repo.count({
+        where: { isActive: false, isDeleted: false },
+      }),
+    ]);
+
+    return {
+      total,
+      active,
+      inactive,
+    };
+  };
 }

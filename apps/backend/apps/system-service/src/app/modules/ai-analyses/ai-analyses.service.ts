@@ -444,114 +444,316 @@ export class AiAnalysesService {
     return Buffer.from(buffer);
   }
 
-  async analyzeDiagnosisWithImageAndROI(
-    image_url: string,
-    modelName: string,
-    aiResult: AiResultDiagnosis
-  ): Promise<string> {
-    try {
-      // Prepare prediction details for the prompt
-      const predictionsText =
-        aiResult.predictions
-          ?.map((pred, idx) => {
-            const area = pred.width * pred.height;
-            const areaPercentage = (
-              (area / (aiResult.image.width * aiResult.image.height)) *
-              100
-            ).toFixed(2);
-            return `
-Detection ${idx + 1}:
-- Class: ${pred.class}
-- Confidence: ${(pred.confidence * 100).toFixed(2)}%
-- Location: (x: ${pred.x}, y: ${pred.y})
-- Size: ${pred.width}x${pred.height} pixels
-- Area Coverage: ${areaPercentage}% of image
-- Bounding Box Points: ${pred.points?.length || 0} points`;
-          })
-          .join('\n') || 'No detections found';
+//   async analyzeDiagnosisWithImageAndROI(
+//     image_url: string,
+//     modelName: string,
+//     aiResult: AiResultDiagnosis
+//   ): Promise<string> {
+//     try {
+//       const predictionsText =
+//         aiResult.predictions
+//           ?.map((pred, idx) => {
+//             const area = pred.width * pred.height;
+//             const areaPercentage = (
+//               (area / (aiResult.image.width * aiResult.image.height)) *
+//               100
+//             ).toFixed(2);
+//             return `
+// Detection ${idx + 1}:
+// - Class: ${pred.class}
+// - Confidence: ${(pred.confidence * 100).toFixed(2)}%
+// - Location: (x: ${pred.x}, y: ${pred.y})
+// - Size: ${pred.width}x${pred.height} pixels
+// - Area Coverage: ${areaPercentage}% of image
+// - Bounding Box Points: ${pred.points?.length || 0} points`;
+//           })
+//           .join('\n') || 'No detections found';
 
-      const totalDetections = aiResult.predictions?.length || 0;
-      const totalArea =
-        aiResult.predictions?.reduce(
-          (sum, pred) => sum + pred.width * pred.height,
-          0
-        ) || 0;
-      const totalAreaPercentage = (
-        (totalArea / (aiResult.image.width * aiResult.image.height)) *
-        100
-      ).toFixed(2);
+//       const totalDetections = aiResult.predictions?.length || 0;
+//       const totalArea =
+//         aiResult.predictions?.reduce(
+//           (sum, pred) => sum + pred.width * pred.height,
+//           0
+//         ) || 0;
+//       const totalAreaPercentage = (
+//         (totalArea / (aiResult.image.width * aiResult.image.height)) *
+//         100
+//       ).toFixed(2);
 
-      const prompt = `You are a medical imaging AI assistant analyzing diagnostic results from the "${modelName}" model.
+//       const prompt = `You are a medical imaging AI assistant analyzing diagnostic results from the "${modelName}" model.
 
-**IMAGE ANALYSIS TASK:**
-Analyze the provided medical image and AI detection results to assess the patient's condition.
+// **IMAGE ANALYSIS TASK:**
+// Analyze the provided medical image and AI detection results to assess the patient's condition.
 
-**AI MODEL INFORMATION:**
-- Model Name: ${modelName}
-- Image Dimensions: ${aiResult.image.width}x${aiResult.image.height} pixels
-- Total Detections: ${totalDetections}
-- Total Affected Area: ${totalAreaPercentage}% of image
+// **AI MODEL INFORMATION:**
+// - Model Name: ${modelName}
+// - Image Dimensions: ${aiResult.image.width}x${aiResult.image.height} pixels
+// - Total Detections: ${totalDetections}
+// - Total Affected Area: ${totalAreaPercentage}% of image
 
-**DETECTION RESULTS:**${predictionsText}
+// **DETECTION RESULTS:**${predictionsText}
 
-**ASSESSMENT REQUIREMENTS:**
-Based on the detection results and image analysis, provide:
+// **ASSESSMENT REQUIREMENTS:**
+// Based on the detection results and image analysis, provide:
 
-1. **Condition Severity Assessment:**
-   - Evaluate severity based on:
-     * Number of detections
-     * Total area coverage (${totalAreaPercentage}%)
-     * Distribution pattern
-     * Confidence levels
-   - Classify as: Mild, Moderate, or Severe
+// 1. **Condition Severity Assessment:**
+//    - Evaluate severity based on:
+//      * Number of detections
+//      * Total area coverage (${totalAreaPercentage}%)
+//      * Distribution pattern
+//      * Confidence levels
+//    - Classify as: Mild, Moderate, or Severe
 
-2. **Clinical Interpretation:**
-   - Describe the detected abnormalities
-   - Explain their significance
-   - Note any concerning patterns
+// 2. **Clinical Interpretation:**
+//    - Describe the detected abnormalities
+//    - Explain their significance
+//    - Note any concerning patterns
 
-3. **Recommendations:**
-   - Suggest next steps for patient care
-   - Indicate if urgent attention is needed
-   - Mention any follow-up imaging required
+// 3. **Recommendations:**
+//    - Suggest next steps for patient care
+//    - Indicate if urgent attention is needed
+//    - Mention any follow-up imaging required
 
-4. **Confidence Assessment:**
-   - Comment on the reliability of these findings
-   - Note any limitations or areas of uncertainty
+// 4. **Confidence Assessment:**
+//    - Comment on the reliability of these findings
+//    - Note any limitations or areas of uncertainty
 
-Provide a clear, professional medical assessment in 200-300 words.`;
+// Provide a clear, professional medical assessment in 200-300 words.`;
 
-      const completion = await this.openai.chat.completions.create({
-        model: 'google/gemma-3-27b-it:free',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt,
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: image_url,
-                },
-              },
-            ],
-          },
-        ],
-      });
+//       const completion = await this.openai.chat.completions.create({
+//         model: 'google/gemma-3-27b-it:free',
+//         messages: [
+//           {
+//             role: 'user',
+//             content: [
+//               {
+//                 type: 'text',
+//                 text: prompt,
+//               },
+//               {
+//                 type: 'image_url',
+//                 image_url: {
+//                   url: image_url,
+//                 },
+//               },
+//             ],
+//           },
+//         ],
+//       });
 
-      return completion.choices[0].message.content as string;
-    } catch (error) {
-      console.error('❌ Error in analyzeDiagnosisWithImageAndROI:', error);
-      throw new BadRequestException(
-        'Failed to analyze diagnosis: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+//       return completion.choices[0].message.content as string;
+//     } catch (error) {
+//       console.error('❌ Error in analyzeDiagnosisWithImageAndROI:', error);
+//       throw new BadRequestException(
+//         'Failed to analyze diagnosis: ' +
+//           (error instanceof Error ? error.message : 'Unknown error')
+//       );
+//     }
+//   }
+
+async analyzeDiagnosisWithImageAndROI(
+  image_url: string,
+  modelName: string,
+  aiResult: AiResultDiagnosis
+): Promise<string> {
+  try {
+    // Check if predictions exist
+    if (!aiResult.predictions || aiResult.predictions.length === 0) {
+      throw new BadRequestException('No predictions found in AI result');
     }
-  }
 
+    // Prepare detailed information for each detection region
+    const detectionsDetail = aiResult.predictions.map((pred, idx) => {
+      const area = pred.width * pred.height;
+      const areaPercentage = (
+        (area / (aiResult.image.width * aiResult.image.height)) * 100
+      ).toFixed(2);
+      
+      // Get sample points from polygon (no need to list all)
+      const samplePoints = pred.points
+        ?.slice(0, 4) // Take first 4 points as sample
+        .map(p => `(${p.x.toFixed(0)}, ${p.y.toFixed(0)})`)
+        .join(', ') || 'N/A';
+
+      // Determine relative position in image
+      const posX = pred.x / aiResult.image.width;
+      const posY = pred.y / aiResult.image.height;
+      
+      let horizontalPos = 'center';
+      if (posX < 0.33) horizontalPos = 'left';
+      else if (posX > 0.67) horizontalPos = 'right';
+      
+      let verticalPos = 'middle';
+      if (posY < 0.33) verticalPos = 'upper';
+      else if (posY > 0.67) verticalPos = 'lower';
+
+      return {
+        index: idx + 1,
+        class: pred.class,
+        confidence: (pred.confidence * 100).toFixed(2),
+        centerX: pred.x,
+        centerY: pred.y,
+        width: pred.width,
+        height: pred.height,
+        area: area,
+        areaPercentage: areaPercentage,
+        samplePoints: samplePoints,
+        totalPoints: pred.points?.length || 0,
+        position: `${verticalPos} ${horizontalPos}`,
+        relativeX: (posX * 100).toFixed(1),
+        relativeY: (posY * 100).toFixed(1)
+      };
+    });
+
+    // Create detailed text description of detection regions
+    const detectionsText = detectionsDetail
+      .map(det => `
+📍 Detection Region #${det.index}:
+   • Pathology Type: "${det.class}"
+   • Confidence Score: ${det.confidence}%
+   • Center Position: (${det.centerX}, ${det.centerY})
+   • Relative Location: ${det.position} (${det.relativeX}% from left, ${det.relativeY}% from top)
+   • Region Dimensions: ${det.width} × ${det.height} pixels
+   • Area Coverage: ${det.area} pixels² (${det.areaPercentage}% of total image area)
+   • Polygon Boundary: ${det.totalPoints} detailed boundary points
+   • Sample Coordinates: ${det.samplePoints}...`)
+      .join('\n');
+
+    const totalDetections = aiResult.predictions.length;
+    const totalArea = detectionsDetail.reduce((sum, det) => sum + det.area, 0);
+    const totalAreaPercentage = (
+      (totalArea / (aiResult.image.width * aiResult.image.height)) * 100
+    ).toFixed(2);
+
+    // Create list of detected classes
+    const detectedClasses = [...new Set(detectionsDetail.map(d => d.class))].join(', ');
+
+    const prompt = `You are an experienced Diagnostic Imaging Specialist with years of expertise in medical image analysis. Please provide a comprehensive professional analysis of this AI diagnostic result.
+ DIAGNOSTIC INFORMATION
+ **Basic Information:**
+   • AI Model: ${modelName}
+   • Detected Pathology Types: ${detectedClasses}
+   • Image Dimensions: ${aiResult.image.width} × ${aiResult.image.height} pixels
+   • Total Regions Detected: ${totalDetections} outlined region(s)
+   • Total Affected Area: ${totalAreaPercentage}% of total image area
+
+${detectionsText}
+
+**Please carefully observe the provided medical image and the polygon-outlined regions**, then provide a comprehensive analysis following this structure:
+
+**1️ DETAILED ANATOMICAL LOCATION (4-5 sentences):**
+   Based on polygon points and position within the image:
+   • Precisely identify the pathology location within the organ (e.g., left/right lung, upper/middle/lower lobe)
+   • Describe relative position compared to important anatomical structures
+   • Assess distribution pattern: localized in one area or diffusely spread across multiple regions
+   • Comment on the boundaries of the pathological region (well-defined or irregular)
+
+**2️ SEVERITY ASSESSMENT (4-5 sentences):**
+   Classify severity level: **MILD** / **MODERATE** / **SEVERE** / **CRITICAL**
+   
+   Assessment criteria:
+   • Affected area: ${totalAreaPercentage}% of total area
+     - Below 10%: Mild
+     - 10-30%: Moderate
+     - 30-50%: Severe
+     - Above 50%: Critical
+   • Number of lesions: ${totalDetections} region(s)
+   • AI Confidence: ${detectionsDetail.map(d => d.confidence).join('%, ')}%
+   • Does the location affect critical organ function?
+
+**3️ IMAGING CHARACTERISTICS DESCRIPTION (5-6 sentences):**
+   Based on the actual image and polygon outlines:
+   • Describe the shape and size of the pathological regions
+   • Characterize density patterns (solid, hazy, heterogeneous, etc.)
+   • Define boundaries (sharp, ill-defined, invasive, etc.)
+   • Note relationships with surrounding structures
+   • Compare with typical imaging features of this condition
+   • Identify any additional abnormal findings (if present)
+
+**4️ CLINICAL SIGNIFICANCE (3-4 sentences):**
+   • Explain how this pathology impacts the patient
+   • Common clinical symptoms associated with this finding
+   • Initial prognosis assessment
+   • Potential complications that may arise
+
+**5️ MANAGEMENT RECOMMENDATIONS (4-5 sentences):**
+   • Urgency level: EMERGENCY / URGENT / ROUTINE / FOLLOW-UP
+   • Additional diagnostic tests required
+   • Suggested treatment approach
+   • Timeline for follow-up/monitoring
+   • Special considerations for patient care
+
+**6️ RELIABILITY ASSESSMENT (2-3 sentences):**
+   • Confidence level of AI results (based on confidence scores)
+   • Factors that may affect result accuracy
+   • Recommendation for specialist physician confirmation
+
+ IMPORTANT GUIDELINES
+
+ MUST DO:
+   • Carefully observe the image and polygon-marked regions
+   • Use accurate medical terminology with clear explanations
+   • Provide evidence-based assessment from specific imaging findings
+   • Maintain objective, professional analysis
+   • Total length: 300-350 words
+
+ DO NOT:
+   • Make 100% definitive diagnoses (these are AI-assisted results)
+   • Ignore information from polygon points
+   • Provide vague, non-specific analysis
+   • Use alarming or panic-inducing language
+
+Please write a professional medical report that is valuable for clinical decision-making!`;
+
+    const completion = await this.openai.chat.completions.create({
+      model: 'google/gemma-3-27b-it:free',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: image_url,
+              },
+            },
+          ],
+        },
+      ],
+      // temperature: 0.7,
+      // max_tokens: 1500, // Increased for detailed analysis
+    });
+
+    const analysisResult = completion.choices[0].message.content as string;
+    
+    // Logging for debugging
+    console.log('AI Analysis completed successfully');
+    console.log('Detection summary:', {
+      modelName,
+      totalDetections,
+      totalAreaPercentage: `${totalAreaPercentage}%`,
+      classes: detectedClasses
+    });
+
+    return analysisResult;
+  } catch (error) {
+    console.error('Error in analyzeDiagnosisWithImageAndROI:', error);
+    
+    // More detailed error handling
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    
+    throw new BadRequestException(
+      'Failed to analyze diagnosis: ' +
+        (error instanceof Error ? error.message : 'Unknown error')
+    );
+  }
+}
   async getByStudyId(studyId: string): Promise<AiAnalysis[]> {
     console.log(`Retrieving AI analyses for study ID: ${studyId}`);
     const analyses = await this.aiAnalysisRepository.find({
@@ -559,5 +761,32 @@ Provide a clear, professional medical assessment in 200-300 words.`;
       order: { createdAt: 'DESC' },
     });
     return analyses;
+  }
+
+  async getStats(): Promise<{
+    total: number;
+    completed: number;
+    failed: number;
+    pending: number;
+  }> {
+    const [total, completed, failed, pending] = await Promise.all([
+      this.aiAnalysisRepository.count(),
+      this.aiAnalysisRepository.count({
+        where: { analysisStatus: AnalysisStatus.COMPLETED },
+      }),
+      this.aiAnalysisRepository.count({
+        where: { analysisStatus: AnalysisStatus.FAILED },
+      }),
+      this.aiAnalysisRepository.count({
+        where: { analysisStatus: AnalysisStatus.PENDING },
+      }),
+    ]);
+
+    return {
+      total,
+      completed,
+      failed,
+      pending,
+    };
   }
 }

@@ -42,7 +42,10 @@ export const aiAnalysisApi = createApi({
         method: "POST",
         data: body,
       }),
-      invalidatesTags: ["AiAnalysis"],
+      invalidatesTags: [
+        { type: "AiAnalysis", id: "LIST" },
+        { type: "AiAnalysis", id: "STATS" },
+      ],
     }),
 
     getAiAnalysisById: builder.query<ApiResponse<AiAnalysis>, string>({
@@ -55,7 +58,10 @@ export const aiAnalysisApi = createApi({
       CreateAiAnalysisDto
     >({
       query: (body) => ({ url: "", method: "POST", data: body }),
-      invalidatesTags: ["AiAnalysis"],
+      invalidatesTags: [
+        { type: "AiAnalysis", id: "LIST" },
+        { type: "AiAnalysis", id: "STATS" },
+      ],
     }),
 
     deleteAiAnalysis: builder.mutation<{ success: boolean }, string>({
@@ -63,6 +69,7 @@ export const aiAnalysisApi = createApi({
       invalidatesTags: (result, error, id) => [
         { type: "AiAnalysis", id },
         { type: "AiAnalysis", id: "LIST" },
+        { type: "AiAnalysis", id: "STATS" },
       ],
     }),
 
@@ -97,7 +104,21 @@ export const aiAnalysisApi = createApi({
       }),
       // Don't cache blob response to avoid serialization issues
       extraOptions: { maxRetries: 0 },
-    }),  }),
+    }),
+
+    getAiAnalysisStats: builder.query<
+      ApiResponse<{data:{
+        total: number;
+        completed: number;
+        failed: number;
+        pending: number;
+      }}>,
+      void
+    >({
+      query: () => ({ url: "/stats", method: "GET" }),
+      providesTags: [{ type: "AiAnalysis", id: "STATS" }],
+    }),
+  }),
 });
 
 export const {
@@ -108,4 +129,5 @@ export const {
   useDiagnosisImageByAIMutation,
   useSubmitFeedbackMutation,
   useExportToExcelMutation,
+  useGetAiAnalysisStatsQuery,
 } = aiAnalysisApi;

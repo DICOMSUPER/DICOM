@@ -61,7 +61,10 @@ export const requestProcedureApi = createApi({
       Partial<RequestProcedure>
     >({
       query: (data) => ({ url: "", method: "POST", data }),
-      invalidatesTags: [{ type: "RequestProcedure", id: "LIST" }],
+      invalidatesTags: [
+        { type: "RequestProcedure", id: "LIST" },
+        { type: "RequestProcedure", id: "STATS" },
+      ],
     }),
 
     updateRequestProcedure: builder.mutation<
@@ -72,6 +75,7 @@ export const requestProcedureApi = createApi({
       invalidatesTags: (result, error, { id }) => [
         { type: "RequestProcedure", id },
         { type: "RequestProcedure", id: "LIST" },
+        { type: "RequestProcedure", id: "STATS" },
       ],
     }),
 
@@ -80,7 +84,20 @@ export const requestProcedureApi = createApi({
       invalidatesTags: (result, error, id) => [
         { type: "RequestProcedure", id },
         { type: "RequestProcedure", id: "LIST" },
+        { type: "RequestProcedure", id: "STATS" },
       ],
+    }),
+
+    getRequestProcedureStats: builder.query<
+      ApiResponse<{data:{
+        total: number;
+        active: number;
+        inactive: number;
+      }}>,
+      void
+    >({
+      query: () => ({ url: "/stats", method: "GET" }),
+      providesTags: [{ type: "RequestProcedure", id: "STATS" }],
     }),
   }),
 });
@@ -92,4 +109,5 @@ export const {
   useCreateRequestProcedureMutation,
   useUpdateRequestProcedureMutation,
   useDeleteRequestProcedureMutation,
+  useGetRequestProcedureStatsQuery,
 } = requestProcedureApi;

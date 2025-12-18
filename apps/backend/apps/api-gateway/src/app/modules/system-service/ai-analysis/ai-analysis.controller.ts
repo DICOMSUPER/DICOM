@@ -89,6 +89,17 @@ export class AiAnalysisController {
     return this.systemService.send('ai_analysis.findAll', filter);
   }
 
+  @Get('stats')
+  @Role(
+    Roles.RADIOLOGIST,
+    Roles.SYSTEM_ADMIN,
+    Roles.PHYSICIAN,
+    Roles.IMAGING_TECHNICIAN
+  )
+  async getStats() {
+    return this.systemService.send('ai_analysis.getStats', {});
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.systemService.send('ai_analysis.findOne', { id });

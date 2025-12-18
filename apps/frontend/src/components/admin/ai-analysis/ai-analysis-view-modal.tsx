@@ -174,7 +174,6 @@ export function AiAnalysisViewModal({
                 <div
                   className="relative group rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() =>
-                
                     setPreviewImage({
                       src: DEMO_IMAGE_URL,
                       alt: "Analyzed scan with detections",
@@ -346,6 +345,20 @@ export function AiAnalysisViewModal({
                             </div>
                           </div>
                         )}
+
+                      {/* analyze message */}
+                      {aiAnalysis.aiAnalyzeMessage && (
+                        <div className="mb-5 p-4 rounded-lg bg-slate-50 border border-slate-100">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 mb-1.5">
+                            AI Analyzing
+                          </p>
+                          <div className="prose prose-invert prose-sm max-w-none">
+                            <p className="whitespace-pre-wrap leading-relaxed">
+                              {aiAnalysis.aiAnalyzeMessage || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </section>
                   )}
 

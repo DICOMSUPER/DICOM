@@ -167,4 +167,18 @@ export class AiAnalysesController {
       );
     }
   }
+
+  @MessagePattern('ai_analysis.getStats')
+  async getStats() {
+    try {
+      const stats = await this.aiAnalysesService.getStats();
+      return { data: stats };
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get AI analysis stats',
+        'SystemService'
+      );
+    }
+  }
 }

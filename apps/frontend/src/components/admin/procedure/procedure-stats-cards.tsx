@@ -7,7 +7,7 @@ interface RequestProcedureStatsCardsProps {
   totalCount: number;
   activeCount: number;
   inactiveCount: number;
-  totalBodyParts: number;
+
   isLoading?: boolean;
 }
 
@@ -15,7 +15,7 @@ export function RequestProcedureStatsCards({
   totalCount,
   activeCount,
   inactiveCount,
-  totalBodyParts,
+
   isLoading = false,
 }: RequestProcedureStatsCardsProps) {
   const stats = [
@@ -40,13 +40,7 @@ export function RequestProcedureStatsCards({
       icon: XCircle,
       isLoading,
     },
-    {
-      title: "Total Body Parts",
-      value: totalBodyParts,
-      description: "Across all procedures",
-      icon: Users,
-      isLoading,
-    },
+
   ];
 
   return <ReceptionStatsCards stats={stats} />;

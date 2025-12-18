@@ -8,6 +8,7 @@ import {
   useGetAiAnalysisPaginatedQuery,
   useDeleteAiAnalysisMutation,
   useExportToExcelMutation,
+  useGetAiAnalysisStatsQuery,
 } from "@/store/aiAnalysisApi";
 import { saveAs } from "file-saver";
 import { AiAnalysisTable } from "@/components/admin/ai-analysis/AiAnalysisTable";
@@ -29,11 +30,7 @@ import { SortConfig } from "@/components/ui/data-table";
 import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
 import { AnalysisStatus } from "@/common/enums/image-dicom.enum";
 
-interface ApiError {
-  data?: {
-    message?: string;
-  };
-}
+
 
 export default function Page() {
   const [page, setPage] = useState(1);
@@ -81,6 +78,15 @@ export default function Page() {
     }
   );
 
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = useGetAiAnalysisStatsQuery();
+
+
+  
+
   const [deleteAiAnalysis, { isLoading: isDeletingAiAnalysis }] =
     useDeleteAiAnalysisMutation();
 
@@ -110,22 +116,10 @@ export default function Page() {
     hasPreviousPage: aiAnalysisData.hasPreviousPage,
   };
 
-  const stats = useMemo(() => {
-    const total = aiAnalysisData?.total ?? 0;
-    const completed = aiAnalyses.filter(
-      (a) => a.analysisStatus === AnalysisStatus.COMPLETED
-    ).length;
-    const failed = aiAnalyses.filter(
-      (a) => a.analysisStatus === AnalysisStatus.FAILED
-    ).length;
-
-    return { total, completed, failed };
-  }, [aiAnalysisData?.total, aiAnalyses]);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchAiAnalysis();
+      await Promise.all([refetchAiAnalysis(), refetchStats()]);
     } catch (error) {
       console.error("Refresh error:", error);
     } finally {
@@ -194,7 +188,9 @@ export default function Page() {
   const handleExport = async (filters: ExportFilters) => {
     try {
       const blob = await exportToExcel(filters).unwrap();
-      const fileName = `AI_Analyses_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `AI_Analyses_Export_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
       saveAs(blob, fileName);
       toast.success("Excel file exported successfully");
       setIsExportModalOpen(false);
@@ -241,11 +237,11 @@ export default function Page() {
       )}
 
       <AiAnalysisStatsCards
-        totalCount={stats.total}
-        completedCount={stats.completed}
-        failedCount={stats.failed}
+        totalCount={statsData?.data?.data?.total as number}
+        completedCount={statsData?.data?.data?.completed as number}
+        failedCount={statsData?.data?.data?.failed as number}
         // pendingCount={stats.pending}
-        isLoading={aiAnalysisLoading}
+        isLoading={statsLoading || aiAnalysisLoading}
       />
 
       <AiAnalysisFilters
