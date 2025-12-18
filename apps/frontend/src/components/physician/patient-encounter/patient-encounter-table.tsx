@@ -1,39 +1,23 @@
 "use client";
 
-import React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DataTable, SortConfig } from "@/components/ui/data-table";
-import {
-  Phone,
-  User,
-  Clock,
-  Eye,
-  AlertCircle,
-  CheckCircle2,
-  Zap,
-  UserStar,
-} from "lucide-react";
-import { formatDate, formatTime, formatTimeVN } from "@/common/lib/formatTimeDate";
-import Pagination, {
-  type PaginationMeta,
-} from "@/components/common/PaginationV1";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
-import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import {
   EncounterPriorityLevel,
   EncounterStatus,
 } from "@/common/enums/patient-workflow.enum";
-import { is } from "date-fns/locale";
-import { format } from "date-fns";
-import TransferDetailModal from "./transfer-detail-modal";
-import { TooltipProvider } from "@/components/ui-next/Tooltip/Tooltip";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
+import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
 import { formatStatus } from "@/common/utils/format-status";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DataTable, SortConfig } from "@/components/ui/data-table";
+import {
+  AlertCircle,
+  Clock,
+  Eye,
+  Phone,
+  User
+} from "lucide-react";
+import React from "react";
 
 interface PatientEncounterTableProps {
   encounterItems: PatientEncounter[];
@@ -68,7 +52,7 @@ export function PatientEncounterTable({
   onSort,
   initialSort,
 }: PatientEncounterTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  // const [sorting, setSorting] = React.useState<SortingState>([]);
   const [showTransferModal, setShowTransferModal] = React.useState(false);
   const [selectedEncounter, setSelectedEncounter] =
     React.useState<PatientEncounter | null>(null);
@@ -143,11 +127,11 @@ export function PatientEncounterTable({
 
   const columns = [
     {
-      header: "Queue #",
+      header: "Number",
       sortable: true,
       sortField: "orderNumber",
       cell: (encounter: PatientEncounter) => (
-        <div className="font-bold text-lg text-foreground text-center">
+        <div className="font-bold text-lg text-foreground ml-6">
           {encounter.orderNumber}
         </div>
       ),
@@ -174,13 +158,13 @@ export function PatientEncounterTable({
       sortable: true,
       sortField: "createdAt",
       cell: (encounter: PatientEncounter) => (
-        <div className="space-y-1 text-center">
+        <div className="space-y-1 ml-6">
           <span className="font-semibold text-foreground text-sm">
-            {formatDate(encounter.createdAt)}
+            {formatDate(encounter.encounterDate)}
           </span>
-          <div className="flex justify-center items-center gap-4 text-xs text-foreground">
+          <div className="flex  items-center gap-4 text-xs text-foreground">
             <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(encounter.createdAt)}</span>
+            <span>{formatTime(encounter.encounterDate)}</span>
           </div>
         </div>
       ),

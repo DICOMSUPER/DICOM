@@ -86,7 +86,7 @@ export function PatientEncounterFiltersSection({
           <div className="relative w-32">
             <Input
               type="number"
-              placeholder="Order #"
+              placeholder="Number #"
               value={searchInputs.orderNumber}
               onChange={(e) => handleInputChange("orderNumber", e.target.value)}
               onKeyPress={handleKeyPress}

@@ -35,8 +35,8 @@ export const patientEncounterApi = createApi({
         method: "GET",
         params: {
           ...filters,
-          sortField: filters?.sortBy || filters?.sortField, // Map sortBy to sortField for backend
-          order: filters?.sortOrder || filters?.order, // Support both sortOrder and order
+          sortField: filters?.sortBy , // Map sortBy to sortField for backend
+          order: filters?.sortOrder , // Support both sortOrder and order
         },
       }),
       providesTags: ["PatientEncounter"],
@@ -57,8 +57,8 @@ export const patientEncounterApi = createApi({
           page,
           limit,
           ...filters,
-          sortField: filters?.sortBy || filters?.sortField, // Map sortBy to sortField for backend
-          order: filters?.sortOrder || filters?.order, // Support both sortOrder and order
+          sortField: filters?.sortBy , // Map sortBy to sortField for backend
+          order: filters?.sortOrder , // Support both sortOrder and order
         },
         method: "GET",
       }),

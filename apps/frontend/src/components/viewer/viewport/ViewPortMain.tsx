@@ -5,6 +5,7 @@ import {
   useViewer,
   type AnnotationHistoryEntry,
 } from "@/common/contexts/ViewerContext";
+import { toast } from "sonner";
 import type { SegmentationHistoryEntry } from "@/common/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
 import {
@@ -153,6 +154,7 @@ const ViewPortMain = ({
     height: number;
   } | null>(null);
   const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
+  const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
 
   const totalFramesRef = useRef(totalFrames);
   const diagnosisImageByAIRef = useRef<
@@ -374,7 +376,18 @@ const ViewPortMain = ({
       const currentViewport = viewportRef.current;
       if (!currentElement || !currentViewport) return;
 
+      // Get studyId from selectedSeries instead of searchParams
+      const studyIdToUse = selectedSeries?.studyId || studyId;
+      
+      console.log("📊 Study ID check:", {
+        fromSeries: selectedSeries?.studyId,
+        fromSearchParams: studyId,
+        willUse: studyIdToUse,
+      });
+
       setIsDiagnosing(true);
+      publish("ai:diagnosis:start", { viewportId: currentViewportId });
+      
       try {
         const base64Image = getCanvasAsBase64(currentElement);
         if (!base64Image) throw new Error("Failed to convert canvas to base64");
@@ -385,23 +398,63 @@ const ViewPortMain = ({
             aiModelId: modelId,
             modelName,
             versionName,
-            selectedStudyId: studyId !== null ? studyId : undefined,
+            selectedStudyId: studyIdToUse || undefined,
+            folder: "base64",
           })
           .unwrap();
 
-        if (!response?.data) return;
+        if (!response?.data) {
+          throw new Error("No response data received");
+        }
+        
+        console.log("📦 Full response structure:", JSON.stringify(response, null, 2));
+        console.log("📦 Response.data:", response.data);
+        
         const { predictions, image } = response.data;
+        const analysisId = response?.data?.analysisId || null;
+        const aiAnalyzeMessage = response?.data?.aiAnalyzeMessage || "";
+        
+        console.log("✅ Extracted data:", { 
+          predictionsCount: predictions?.length, 
+          imageWidth: image?.width, 
+          imageHeight: image?.height,
+          analysisId,
+          hasAiMessage: !!aiAnalyzeMessage
+        });
+        
+        setLastAnalysisId(analysisId);
+        
+        // Handle case when no predictions found
         if (
           !predictions ||
           !Array.isArray(predictions) ||
           predictions.length === 0
-        )
+        ) {
+          publish("ai:diagnosis:success", { 
+            analysisId, 
+            viewportId: currentViewportId,
+            studyId: studyIdToUse,
+            predictions: [],
+            aiAnalyzeMessage: aiAnalyzeMessage || "No abnormalities detected."
+          });
+          
+          toast.warning("No abnormalities detected in the image.");
           return;
-
+        }
+        
         setPredictions(predictions);
         const stackViewport = currentViewport as Types.IStackViewport;
-        // const canvas = stackViewport.canvas;
         const currentImageId = stackViewport.getCurrentImageId?.() || "";
+        
+        console.log("🖼️ Image metadata from response:", image);
+        console.log("📊 Drawing predictions:", {
+          predictionsCount: predictions.length,
+          imageWidth: image.width,
+          imageHeight: image.height,
+          viewportId: currentViewportId,
+          currentImageId
+        });
+        
         setAiImageMetadata({ width: image.width, height: image.height });
         setAnalyzedImageId(currentImageId);
 
@@ -412,17 +465,36 @@ const ViewPortMain = ({
           resolvedRenderingEngineId as string,
           image.width,
           image.height,
-          // canvas.width,
-          // canvas.height
         );
         batchedRender(currentViewport);
-      } catch (error) {
+        
+        console.log("📢 Publishing ai:diagnosis:success event with:", { 
+          analysisId, 
+          viewportId: currentViewportId,
+          studyId: studyIdToUse,
+          predictionsCount: predictions.length,
+          hasAiMessage: !!aiAnalyzeMessage
+        });
+        
+        publish("ai:diagnosis:success", { 
+          analysisId, 
+          viewportId: currentViewportId,
+          studyId: studyIdToUse,
+          predictions: predictions,
+          aiAnalyzeMessage: aiAnalyzeMessage
+        });
+        
+        toast.success(`AI diagnosis completed. Found ${predictions.length} detection(s).`);
+      } catch (error: any) {
         console.error("AI diagnosis failed:", error);
+        const errorMessage = error?.message || "AI diagnosis failed. Please try again.";
+        toast.error(errorMessage);
+        publish("ai:diagnosis:error", { error, viewportId: currentViewportId });
       } finally {
         setIsDiagnosing(false);
       }
     },
-    [resolvedRenderingEngineId, studyId]
+    [resolvedRenderingEngineId, studyId, selectedSeries, publish]
   );
 
   const handleClearAIAnnotations = useCallback(

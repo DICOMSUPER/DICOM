@@ -72,6 +72,15 @@ export class ImagingOrderFormService {
           orderingPhysicianId: userId,
         });
         await manager.save(form);
+        // add condition with dianosis
+        // await firstValueFrom(
+        //   this.patientService.send('PatientService.PatientCondition.Create', {
+        //     patientId: form.patientId,
+        //     diagnosis: form.clinicalIndication,
+        //     recordedBy: userId,
+        //   })
+        // );
+
         const createdOrders = await Promise.all(
           imagingOrders.map(async (orderDto) => {
             const order = manager.create(ImagingOrder, {

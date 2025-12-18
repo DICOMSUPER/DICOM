@@ -16,6 +16,7 @@ import {
 } from "@/store/patientEncounterApi";
 import { use, useState, useEffect } from "react";
 import CreateImagingOrder from "@/components/patients/detail/create-order-form";
+import { PatientConditionsTab } from "@/components/patients/detail/patient-conditions-tab";
 
 interface PatientDetailPageProps {
   params: Promise<{
@@ -144,7 +145,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 <TabsTrigger value="imaging-order">
                   Create Order Form
                 </TabsTrigger>
-                <TabsTrigger value="medical-history">Condition</TabsTrigger>
+                <TabsTrigger value="patient-condition">Condition</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="space-y-6">
                 {patientOverview?.data && (
@@ -167,14 +168,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                   encounterId={resolvedParams.id}
                 />
               </TabsContent>
-              <TabsContent value="medical-history" className="space-y-6">
-                {/* {isLoadingConditions ? (
-                  <Skeleton className="h-96 w-full" />
-                ) : (
-                  <MedicalHistoryTab
-                    conditions={conditionsData?.data.data || []}
-                  />
-                )} */}
+              <TabsContent value="patient-condition" className="space-y-6">
+                {patientEncounterData?.data?.patientId && (
+                  <PatientConditionsTab patientId={patientEncounterData.data.patientId} />
+                )}
               </TabsContent>
             </Tabs>
           </div>

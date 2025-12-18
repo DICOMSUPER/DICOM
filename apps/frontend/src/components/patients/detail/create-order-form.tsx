@@ -1,4 +1,7 @@
 "use client";
+import { Department } from "@/common/interfaces/user/department.interface";
+import { Room } from "@/common/interfaces/user/room.interface";
+import { calculateAge } from "@/common/lib/formatTimeDate";
 import DiagnosisInput from "@/components/common/DiagnosisInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,39 +15,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Department } from "@/common/interfaces/user/department.interface";
-import { Room } from "@/common/interfaces/user/room.interface";
-import { calculateAge } from "@/common/lib/formatTimeDate";
 import { useGetAllBodyPartsQuery } from "@/store/bodyPartApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
-import {
-  useGetRoomByDepartmentIdV2Query,
-  useGetRoomsByDepartmentIdQuery,
-} from "@/store/roomsApi";
+import { useGetRoomByDepartmentIdV2Query } from "@/store/roomsApi";
 import {
   CalendarFold,
   ClipboardList,
   MapPinHouse,
   Mars,
-  Plus,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import { ImagingOrder } from "@/components/pdf-generator/imaging-order";
-import { ProcedureForm } from "@/components/physician/imaging/procedure-form";
+import { ClinicalStatus } from "@/common/enums/patient-workflow.enum";
 import { ICreateImagingOrderForm } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
 import { CreateImagingOrderDto } from "@/common/interfaces/image-dicom/imaging-order.interface";
 import { Patient } from "@/common/interfaces/patient/patient-workflow.interface";
+import { handleEncrypt } from "@/common/utils/encryption";
+import { ProcedureForm } from "@/components/physician/imaging/procedure-form";
 import { useCreateImagingOrderFormMutation } from "@/store/imagingOrderFormApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
-import {
-  useGetCurrentProfileQuery,
-  useGetUserByIdQuery,
-} from "@/store/userApi";
-import { toast } from "sonner";
-import { handleEncrypt } from "@/common/utils/encryption";
+import { useCreateConditionMutation } from "@/store/patientConditionApi";
+import { useGetCurrentProfileQuery } from "@/store/userApi";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 export interface ImagingProcedure {
   id: string;
   modality: string;
@@ -54,6 +48,7 @@ export interface ImagingProcedure {
   procedureServiceId: string;
   procedureServiceName?: string;
   specialInstructions?: string;
+  contrastRequired?: boolean;
 }
 export interface ImagingProcedurePDF {
   patientName: string;
@@ -82,8 +77,6 @@ export default function CreateImagingOrder({
   encounterId,
 }: CreateImagingOrderProps) {
   const { data: profile } = useGetCurrentProfileQuery();
-  console.log("Profile Data:", profile?.data);
-
   const [department, setDepartment] = useState("");
   const [roomName, setRoomName] = useState("");
   const [departmentName, setDepartmentName] = useState("");
@@ -98,14 +91,15 @@ export default function CreateImagingOrder({
       procedureServiceId: "",
       specialInstructions: "",
       procedureServiceName: "",
+      contrastRequired: false,
     },
   ]);
   const [room, setRoom] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
-
   const [createImagingOrderForm, { isLoading: isCreating }] =
     useCreateImagingOrderFormMutation();
 
+  const [createCondition] = useCreateConditionMutation();
   const router = useRouter();
   // const addProcedure = () => {
   //   const newProcedure: ImagingProcedure = {
@@ -129,7 +123,7 @@ export default function CreateImagingOrder({
   const updateProcedure = (
     id: string,
     field: keyof ImagingProcedure,
-    value: string
+    value: string | boolean
   ) => {
     setProcedures((prev) =>
       prev.map((p) => {
@@ -144,6 +138,15 @@ export default function CreateImagingOrder({
             procedureServiceId: "",
           };
         }
+
+        if (field === "contrastRequired") {
+          return {
+            ...p,
+            contrastRequired:
+              typeof value === "boolean" ? value : value === "true",
+          };
+        }
+
         return { ...p, [field]: value };
       })
     );
@@ -160,7 +163,6 @@ export default function CreateImagingOrder({
 
   const handleSave = async () => {
     if (!isFormValid()) {
-      console.log("Form is invalid");
       toast.error("Please fill in all required fields");
       return;
     }
@@ -170,7 +172,7 @@ export default function CreateImagingOrder({
         (procedure) => ({
           request_procedure_id: procedure.procedureServiceId,
           clinicalIndication: procedure.clinicalIndication ?? "",
-          contrastRequired: false,
+          contrastRequired: procedure.contrastRequired ?? false,
           specialInstructions: procedure.specialInstructions ?? "",
         })
       );
@@ -183,22 +185,32 @@ export default function CreateImagingOrder({
         diagnosis,
         imagingOrders,
       };
-
       const result = await createImagingOrderForm(payload).unwrap();
-
-      console.log("✅ API Response:", result);
-
-      if (result?.success || result?.data) {
-        console.log("orderform:", result?.data);
-        toast.success("Imaging orders created successfully!");
-        handleDownloadPDF();
-
-        handleCancel();
-      } else {
+      if (!result?.success && !result?.data) {
         throw new Error("Unexpected response format");
       }
+
+      const diagnosisParts = diagnosis.split(" - ");
+      const diagnosisCode = diagnosisParts[0]?.trim() || "";
+      const diagnosisDisplay = diagnosisParts[1]?.trim() || diagnosis;
+
+      await createCondition({
+        patientId: result?.data?.patientId,
+        code: diagnosisCode,
+        codeSystem: "ICD-10",
+        codeDisplay: diagnosisDisplay,
+        clinicalStatus: ClinicalStatus.ACTIVE,
+        recordedDate: new Date().toISOString(),
+        bodySite: procedures[0].bodyPartName,
+      }).unwrap();
+
+      toast.success(
+        "Imaging orders and patient condition created successfully!"
+      );
+      handleDownloadPDF();
+      handleCancel();
     } catch (error: any) {
-      console.error("❌ Error creating imaging orders:", error);
+      console.error("❌ Error:", error);
       const errorMessage =
         error?.data?.message ||
         error?.message ||
@@ -241,6 +253,7 @@ export default function CreateImagingOrder({
         procedureServiceId: "",
         specialInstructions: "",
         procedureServiceName: "",
+        contrastRequired: false,
       },
     ]);
   };
@@ -258,7 +271,7 @@ export default function CreateImagingOrder({
       departmentName: departmentName,
       roomName: roomName,
       roomId: room,
-      date: new Date().toLocaleDateString("vi-VN"),
+      date: new Date().toISOString(),
       notes: notes,
       orderingPhysicianName: `${profile?.data?.firstName} ${profile?.data?.lastName}`,
     };

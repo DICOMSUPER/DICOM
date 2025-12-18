@@ -406,9 +406,9 @@ export class PatientEncounterService {
           {
             where: {
               encounterDate: Or(
-                // Between(today, endOfDay),
-                LessThan(today)
-              ), //in case missed previous date
+                Between(today, endOfDay), // Today's encounters
+                LessThan(today) // Previous days (in case missed)
+              ),
               status: In([EncounterStatus.WAITING]),
               isDeleted: false,
             },

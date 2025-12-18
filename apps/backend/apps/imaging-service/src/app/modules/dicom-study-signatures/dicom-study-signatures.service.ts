@@ -19,7 +19,6 @@ import {
   ValidationException,
 } from '@backend/shared-exception';
 import { ImageAnnotationsService } from '../image-annotations/image-annotations.service';
-import { ImagingOrdersService } from '../imaging-orders/imaging-orders.service';
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 
@@ -35,7 +34,9 @@ export class DicomStudySignaturesService {
     @Inject(process.env.USER_SERVICE_NAME || 'USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
     @Inject()
-    private readonly imageAnnotationsService: ImageAnnotationsService // @Inject() // private readonly imagingOrdersService: ImagingOrdersService // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE') // private readonly patientServiceClient: ClientProxy
+    private readonly imageAnnotationsService: ImageAnnotationsService,
+     // @Inject() // private readonly imagingOrdersService: ImagingOrdersService ,
+     // @Inject(process.env.PATIENT_SERVICE_NAME || 'PATIENT_SERVICE') // private readonly patientServiceClient: ClientProxy
   ) {}
 
   private async ensureUserHasDigitalSignature(userId: string): Promise<void> {

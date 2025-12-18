@@ -37,6 +37,9 @@ import {
 import { useGetServiceRoomByIdQuery } from "@/store/serviceRoomApi";
 import { useGetUserByIdQuery } from "@/store/userApi";
 import { EncounterPriorityLevel } from "@/common/enums/patient-workflow.enum";
+import {
+  ServiceRoom,
+} from "@/common/interfaces/user/service-room.interface";
 
 // Format status for display
 const capitalizeFirst = (str: string) => {
@@ -257,7 +260,7 @@ export default function EncounterDetailPage() {
 
   const physician = physicianData?.data;
   // @ts-ignore - API response structure may vary
-  const serviceRoom = serviceRoomData?.data?.data || serviceRoomData?.data;
+  const serviceRoom =  serviceRoomData?.data?.data as ServiceRoom;
   const createdBy = createdByData?.data;
   const isLoadingRelated =
     isServiceRoomLoading || isPhysicianLoading || isCreatedByLoading;

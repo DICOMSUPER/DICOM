@@ -39,6 +39,9 @@ class ViewerEventService {
     // AI events
     DIAGNOSE_VIEWPORT: 'ai::diagnose',
     CLEAR_AI_ANNOTATIONS: 'ai::clearAnnotations',
+    AI_DIAGNOSIS_START: 'ai:diagnosis:start',
+    AI_DIAGNOSIS_SUCCESS: 'ai:diagnosis:success',
+    AI_DIAGNOSIS_ERROR: 'ai:diagnosis:error',
   } as const;
 
   private listeners: Map<string, Subscription[]> = new Map();

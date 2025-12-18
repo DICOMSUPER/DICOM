@@ -35,7 +35,7 @@ export const aiAnalysisApi = createApi({
     }),
     diagnosisImageByAI: builder.mutation<
       ApiResponse<AiResultDiagnosis>,
-      { base64Image: string; aiModelId?: string, modelName?: string, versionName?: string, selectedStudyId?: string }
+      { base64Image: string; aiModelId?: string, modelName?: string, versionName?: string, selectedStudyId?: string, folder: string }
     >({
       query: (body) => ({
         url: "/diagnosis-image",
@@ -80,7 +80,24 @@ export const aiAnalysisApi = createApi({
         { type: "AiAnalysis", id: "LIST" },
       ],
     }),
-  }),
+    exportToExcel: builder.mutation<
+      Blob,
+      {
+        fromDate?: string;
+        toDate?: string;
+        status?: string;
+        isHelpful?: boolean;
+      }
+    >({
+      query: (filters) => ({
+        url: "/export-excel",
+        method: "POST",
+        data: filters,
+        responseType: "blob",
+      }),
+      // Don't cache blob response to avoid serialization issues
+      extraOptions: { maxRetries: 0 },
+    }),  }),
 });
 
 export const {
@@ -90,4 +107,5 @@ export const {
   useDeleteAiAnalysisMutation,
   useDiagnosisImageByAIMutation,
   useSubmitFeedbackMutation,
+  useExportToExcelMutation,
 } = aiAnalysisApi;

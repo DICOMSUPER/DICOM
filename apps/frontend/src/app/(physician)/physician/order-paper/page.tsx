@@ -17,6 +17,8 @@ function OrderPaperContent() {
     if (data) {
       try {
         setDecodedData(decryptPayload(data));
+        console.log("Decrypted Data:", decryptPayload(data));
+        console.log("Order date type:", typeof decodedData.date);
       } catch (error) {
         setError(
           "Failed to decrypt data. Please make sure you don't tamper with the URL."
@@ -444,7 +446,7 @@ function OrderPaperContent() {
             <div className="block font-semibold leading-snug">
               <span className="font-semibold">Order Date: </span>
               <span className="block">
-                {formatDateTime(new Date(decodedData.date))}
+                {decodedData.date ? formatDateTime(new Date(decodedData.date)) : formatDateTime(new Date())}
               </span>
             </div>
           </div>

@@ -175,7 +175,7 @@ export enum PatientFilterType {
 
 export enum ClinicalStatus {
   ACTIVE = "active",
-  RECURRENCE = "recurrence",
+  RECURRENT = "recurrent",
   RELAPSE = "relapse",
   INACTIVE = "inactive",
   REMISSION = "remission",

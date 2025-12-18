@@ -16,6 +16,9 @@ export class AiAnalysis extends BaseEntity {
   @Column({ name: 'original_image_name', nullable: true })
   originalImageName?: string;
 
+  @Column({ name: 'ai_analyze_message', type: 'text', nullable: true })
+  aiAnalyzeMessage?: string;
+
   @Column({
     name: 'analysis_status',
     type: 'enum',

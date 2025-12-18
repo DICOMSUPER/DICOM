@@ -20,7 +20,7 @@ import {
   ImageIcon,
   Scan,
   ThumbsUp,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { ImagePreviewModal } from "@/components/common/preview-image";
@@ -38,7 +38,6 @@ export function AiAnalysisViewModal({
   isOpen,
   onClose,
 }: AiAnalysisViewModalProps) {
- 
   const [previewImage, setPreviewImage] = useState<{
     src: string;
     alt: string;
@@ -95,8 +94,9 @@ export function AiAnalysisViewModal({
     return "text-red-600";
   };
 
- 
-  const DEMO_IMAGE_URL = "https://tse3.mm.bing.net/th/id/OIP.Ec7rD68_Qnfpznv-5VdUzwHaF6?cb=ucfimg2&ucfimg=1&w=1080&h=863&rs=1&pid=ImgDetMain&o=7&rm=3";
+  const DEMO_IMAGE_URL =
+    aiAnalysis?.originalImage ||
+    "https://tse3.mm.bing.net/th/id/OIP.Ec7rD68_Qnfpznv-5VdUzwHaF6?cb=ucfimg2&ucfimg=1&w=1080&h=863&rs=1&pid=ImgDetMain&o=7&rm=3";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -136,14 +136,14 @@ export function AiAnalysisViewModal({
               {/* Left Column - Images */}
               <div className="w-[340px] shrink-0 flex flex-col gap-5 p-6 bg-slate-50 border-r border-slate-100">
                 {/* Original Image */}
-                <div 
+                <div
                   className="relative group rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() =>
                     // 2. UPDATE: Set mode to 'original'
                     setPreviewImage({
                       src: DEMO_IMAGE_URL,
                       alt: "Original scan",
-                      mode: "original"
+                      mode: "original",
                     })
                   }
                 >
@@ -171,14 +171,14 @@ export function AiAnalysisViewModal({
                 </div>
 
                 {/* Analyzed Image */}
-                <div 
+                <div
                   className="relative group rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() =>
-                    // 3. UPDATE: Set mode to 'analyzed'
+                
                     setPreviewImage({
                       src: DEMO_IMAGE_URL,
                       alt: "Analyzed scan with detections",
-                      mode: "analyzed"
+                      mode: "analyzed",
                     })
                   }
                 >
@@ -370,7 +370,7 @@ export function AiAnalysisViewModal({
                           <ThumbsUp className="h-4 w-4 text-slate-600" />
                         </div>
                         <h3 className="text-base font-semibold text-slate-900">
-                          Feedback From Radiologist
+                          Feedback
                         </h3>
                       </div>
                       {aiAnalysis.isHelpful !== null &&
@@ -424,8 +424,6 @@ export function AiAnalysisViewModal({
           </Button>
         </DialogFooter>
       </DialogContent>
-
-      {/* 4. UPDATE: Pass 'mode' and 'predictions' */}
       <ImagePreviewModal
         isOpen={!!previewImage}
         onClose={() => setPreviewImage(null)}

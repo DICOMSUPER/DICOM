@@ -2,11 +2,14 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AiAnalysesService } from './ai-analyses.service';
 import {
+  AiAnalysis,
   CreateAiAnalysisDto,
   FilterAiAnalysisDto,
   UpdateAiAnalysisDto,
 } from '@backend/shared-domain';
 import { handleErrorFromMicroservices } from '@backend/shared-utils';
+import { AiResultDiagnosis } from '@backend/shared-interfaces';
+import { AnalysisStatus } from '@backend/shared-enums';
 
 @Controller()
 export class AiAnalysesController {
@@ -32,9 +35,9 @@ export class AiAnalysesController {
         modelName: string;
         versionName: string;
         selectedStudyId?: string;
+        folder: string;
       };
       userId: string;
-      // folder: string;
     }
   ) {
     return await this.aiAnalysesService.diagnosisImageByAI(
@@ -43,9 +46,33 @@ export class AiAnalysesController {
       data.body.modelName,
       data.body.versionName,
       data.userId,
-      // data.folder,
+      data.body.folder,
       data.body.selectedStudyId
     );
+  }
+
+  @MessagePattern('SystemService.AiAnalysis.AnalyzeDiagnosisWithImageAndROI')
+  async analyzeDiagnosisWithImageAndROI(
+    @Payload()
+    data: {
+      imageUrl: string;
+      modelName: string;
+      aiResult: AiResultDiagnosis;
+    }
+  ) {
+    try {
+      return await this.aiAnalysesService.analyzeDiagnosisWithImageAndROI(
+        data.imageUrl,
+        data.modelName,
+        data.aiResult
+      );
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to analyze diagnosis with image and ROI',
+        'SystemService'
+      );
+    }
   }
 
   @MessagePattern('ai_analysis.findAll')
@@ -100,6 +127,42 @@ export class AiAnalysesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to submit feedback',
+        'SystemService'
+      );
+    }
+  }
+
+  @MessagePattern('ai_analysis.exportToExcel')
+  async exportToExcel(
+    @Payload()
+    filter: {
+      fromDate?: string;
+      toDate?: string;
+      status?: AnalysisStatus;
+      isHelpful?: boolean;
+    }
+  ) {
+    try {
+      return await this.aiAnalysesService.exportToExcel(filter);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to export AI analyses to Excel',
+        'SystemService'
+      );
+    }
+  }
+
+  @MessagePattern('ai_analysis.getByStudyId')
+  async getAiAnalysisByStudyId(
+    @Payload() payload: { studyId: string }
+  ): Promise<AiAnalysis[]> {
+    try {
+      return await this.aiAnalysesService.getByStudyId(payload.studyId);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get AI analysis by study ID',
         'SystemService'
       );
     }

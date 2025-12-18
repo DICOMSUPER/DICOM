@@ -38,6 +38,13 @@ export class PatientConditionService {
   create = async (
     createPatientConditionDto: CreatePatientConditionDto
   ): Promise<PatientCondition> => {
+    if (!createPatientConditionDto.patientId) {
+      throw ThrowMicroserviceException(
+        HttpStatus.BAD_REQUEST,
+        'Patient ID is required to create a condition',
+        PATIENT_SERVICE
+      );
+    }
     return await this.patientConditionRepository.create(
       createPatientConditionDto
     );

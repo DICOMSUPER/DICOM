@@ -15,7 +15,7 @@ import type { Patient } from './patients.entity';
 
 @Entity('patient_conditions')
 export class PatientCondition extends BaseEntity {
-  @PrimaryGeneratedColumn({ name: 'condition_id' })
+  @PrimaryGeneratedColumn('uuid', { name: 'condition_id' })
   id!: string;
 
   @Index()
@@ -73,7 +73,10 @@ export class PatientCondition extends BaseEntity {
   @Column({ name: 'notes', type: 'text', nullable: true })
   notes?: string;
 
-  @ManyToOne(() => require('./patients.entity').Patient, (patient: Patient) => patient.conditions)
+  @ManyToOne(
+    () => require('./patients.entity').Patient,
+    (patient: Patient) => patient.conditions
+  )
   @JoinColumn({ name: 'patient_id' })
   patient?: Patient;
 }

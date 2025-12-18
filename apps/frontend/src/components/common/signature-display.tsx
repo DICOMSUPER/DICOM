@@ -21,7 +21,7 @@ const SignatureDisplay = memo(
         <SignatureAnimation duration={duration} delay={delay}>
           {`${lastName} ${firstName}`}
         </SignatureAnimation>
-        <p className="italic text-sm text-gray-600 mt-2">
+        <p className="italic text-sm mt-2" style={{ color: 'rgb(75, 85, 99)' }}>
           {`${role} ${lastName} ${firstName}`}
         </p>
       </>

@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
-import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
+import { DiagnosisStatus, EncounterStatus } from "@/common/enums/patient-workflow.enum";
 import { TemplateType } from "@/common/enums/report-template.enum";
 import { ImagingModality } from "@/common/interfaces/image-dicom/imaging_modality.interface";
 import {
@@ -70,6 +70,7 @@ import { ModalSetUpSignature } from "./modal-setup";
 import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
 import { SignatureType } from "@/common/enums/signature-type";
 import { formatStatus, modalStyles, getStatusBadgeColor } from "@/common/utils/format-status";
+import { useUpdatePatientEncounterMutation } from "@/store/patientEncounterApi";
 
 interface ModalDiagnosisReportDetailProps {
   open: boolean;
@@ -182,7 +183,8 @@ export function ModalDiagnosisReportDetail({
   const [updateDiagnosisMutation, { isLoading: isUpdating }] =
     useUpdateDiagnosisMutation();
 
-  // check if user have signature
+  const [updateEncounterMutation, { isLoading: isUpdatingEncounter }] =
+    useUpdatePatientEncounterMutation();
 
   // handle set up signature
   const [setupSignature, { isLoading: isSettingUpSignatureLoading }] =
@@ -383,6 +385,11 @@ export function ModalDiagnosisReportDetail({
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
         });
         toast.success("Report created successfully!");
+        
+        await updateEncounterMutation({
+          id: report?.data.encounter?.id as string,
+          data: { status: EncounterStatus.FINISHED },
+        }).unwrap();
       }
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to save description");

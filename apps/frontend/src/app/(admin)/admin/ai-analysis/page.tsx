@@ -7,13 +7,19 @@ import { Button } from "@/components/ui/button";
 import {
   useGetAiAnalysisPaginatedQuery,
   useDeleteAiAnalysisMutation,
+  useExportToExcelMutation,
 } from "@/store/aiAnalysisApi";
+import { saveAs } from "file-saver";
 import { AiAnalysisTable } from "@/components/admin/ai-analysis/AiAnalysisTable";
 import { AiAnalysisStatsCards } from "@/components/admin/ai-analysis/ai-analysis-stats-cards";
 import { AiAnalysisFilters } from "@/components/admin/ai-analysis/ai-analysis-filters";
 import { AiAnalysisViewModal } from "@/components/admin/ai-analysis/ai-analysis-view-modal";
 import { AiAnalysisFormModal } from "@/components/admin/ai-analysis/ai-analysis-form-modal";
 import { AiAnalysisDeleteModal } from "@/components/admin/ai-analysis/ai-analysis-delete-modal";
+import {
+  AiAnalysisExportModal,
+  ExportFilters,
+} from "@/components/admin/ai-analysis/ai-analysis-export-modal";
 import { RefreshButton } from "@/components/ui/refresh-button";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Pagination } from "@/components/common/PaginationV1";
@@ -39,6 +45,7 @@ export default function Page() {
     useState<AiAnalysis | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
@@ -76,6 +83,9 @@ export default function Page() {
 
   const [deleteAiAnalysis, { isLoading: isDeletingAiAnalysis }] =
     useDeleteAiAnalysisMutation();
+
+  const [exportToExcel, { isLoading: isExporting }] =
+    useExportToExcelMutation();
 
   useEffect(() => {
     if (aiAnalysisError) {
@@ -181,6 +191,26 @@ export default function Page() {
     setPage(1); // Reset to first page when sorting changes
   }, []);
 
+  const handleExport = async (filters: ExportFilters) => {
+    try {
+      const blob = await exportToExcel(filters).unwrap();
+      const fileName = `AI_Analyses_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(blob, fileName);
+      toast.success("Excel file exported successfully");
+      setIsExportModalOpen(false);
+    } catch (error) {
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      toast.error(
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to export to Excel"
+      );
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
@@ -193,8 +223,8 @@ export default function Page() {
           {/* Export Excel file button */}
           <Button
             size="default"
-            disabled={aiAnalysisLoading || aiAnalyses.length === 0}
-            onClick={() => {}}
+            disabled={aiAnalysisLoading}
+            onClick={() => setIsExportModalOpen(true)}
           >
             <Sheet />
             Export to Excel
@@ -265,6 +295,13 @@ export default function Page() {
         }}
         onConfirm={confirmDeleteAiAnalysis}
         isDeleting={isDeletingAiAnalysis}
+      />
+
+      <AiAnalysisExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        isExporting={isExporting}
       />
     </div>
   );

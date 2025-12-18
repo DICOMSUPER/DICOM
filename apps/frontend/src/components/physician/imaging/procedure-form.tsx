@@ -1,5 +1,6 @@
 import { ImagingProcedure } from "@/components/patients/detail/create-order-form";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -34,7 +35,7 @@ export function ProcedureForm({
   updateProcedure: (
     id: string,
     field: keyof ImagingProcedure,
-    value: string
+    value: string | boolean
   ) => void;
   removeProcedure: (id: string) => void;
   selectedProcedureIds: string[];
@@ -56,6 +57,18 @@ export function ProcedureForm({
         proc.id === procedure.procedureServiceId ||
         !selectedProcedureIds.includes(proc.id)
     ) || [];
+
+  // Get unique modalities from imagingModalitiesData
+  const uniqueModalities =
+    imagingModalitiesData?.reduce((acc: any[], machine: ModalityMachine) => {
+      if (
+        machine.modality &&
+        !acc.find((m) => m.id === (machine?.modality?.id as string))
+      ) {
+        acc.push(machine.modality);
+      }
+      return acc;
+    }, []) || [];
 
   return (
     <div>
@@ -82,7 +95,6 @@ export function ProcedureForm({
               Modality <span className="text-red-500">*</span>
             </Label>
             <Select
-              
               value={procedure.modality}
               onValueChange={(value) => {
                 updateProcedure(procedure.id, "modality", value);
@@ -97,16 +109,16 @@ export function ProcedureForm({
                 <SelectValue placeholder="Select modality" />
               </SelectTrigger>
               <SelectContent>
-                {imagingModalitiesData?.map((modality: ModalityMachine) => (
-                  modality.modality && (
+                {uniqueModalities.map(
+                  (modality: ImagingModality, modalityIndex: number) => (
                     <SelectItem
-                      key={`${modality.modality.id}-${index}`}
-                      value={modality.modality.id}
+                      key={`${modality.id}-${modalityIndex}`}
+                      value={modality.id}
                     >
-                      {modality.modality.modalityName}
+                      {modality.modalityName}
                     </SelectItem>
                   )
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -129,11 +141,16 @@ export function ProcedureForm({
                 <SelectValue placeholder="Select body part" />
               </SelectTrigger>
               <SelectContent>
-                {bodyPartsData?.map((bodyPart: BodyPart) => (
-                  <SelectItem key={`${bodyPart.id}-${index}`} value={bodyPart.id}>
-                    {bodyPart.name}
-                  </SelectItem>
-                ))}
+                {bodyPartsData?.map(
+                  (bodyPart: BodyPart, bodyPartIndex: number) => (
+                    <SelectItem
+                      key={`${bodyPart.id}-${bodyPartIndex}`}
+                      value={bodyPart.id}
+                    >
+                      {bodyPart.name}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -177,11 +194,13 @@ export function ProcedureForm({
               </SelectTrigger>
               <SelectContent>
                 {availableProcedures.length > 0 ? (
-                  availableProcedures.map((proc: RequestProcedure, index: number) => (
-                    <SelectItem key={`${proc.id}-${index}`} value={proc.id}>
-                      {proc.name}
-                    </SelectItem>
-                  ))
+                  availableProcedures.map(
+                    (proc: RequestProcedure, index: number) => (
+                      <SelectItem key={`${proc.id}-${index}`} value={proc.id}>
+                        {proc.name}
+                      </SelectItem>
+                    )
+                  )
                 ) : (
                   <div className="px-2 py-4 text-sm text-slate-500 text-center">
                     All procedures have been selected
@@ -211,6 +230,7 @@ export function ProcedureForm({
               }`}
             />
           </div>
+
           <div className="space-y-2 md:col-span-3">
             <Label className="text-slate-700 font-medium">
               Special Instructions (Optional)
@@ -227,6 +247,26 @@ export function ProcedureForm({
               }
               className="min-h-[100px] border-slate-300"
             />
+          </div>
+                    <div className="space-y-2 md:col-span-3">
+            <div className="flex items-center space-x-3">
+              <Switch
+                id={`contrast-${procedure.id}`}
+                checked={procedure.contrastRequired || false}
+                onCheckedChange={(checked) =>
+                  updateProcedure(procedure.id, "contrastRequired", checked)
+                }
+              />
+              <Label
+                htmlFor={`contrast-${procedure.id}`}
+                className="text-slate-700 font-medium cursor-pointer"
+              >
+                Contrast Required
+              </Label>
+            </div>
+            <p className="text-xs text-slate-500 ml-11">
+              Enable this if the procedure requires contrast material/dye
+            </p>
           </div>
         </div>
       </div>

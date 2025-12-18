@@ -9,8 +9,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  MaxLength
+  MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateDiagnosesReportDto {
   @IsUUID()
@@ -32,7 +33,7 @@ export class CreateDiagnosesReportDto {
 
   @IsOptional()
   @IsEnum(DiagnosisStatus)
-  diagnosisStatus?: DiagnosisStatus = DiagnosisStatus.DRAFT;
+  diagnosisStatus?: DiagnosisStatus ;
 
   @IsEnum(Severity)
   @IsOptional()
@@ -54,4 +55,9 @@ export class CreateDiagnosesReportDto {
   @IsUUID()
   @IsOptional()
   signatureId?: string;
+
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  @IsUUID()
+  @IsOptional()
+  reportTemplateId?: string;
 }
