@@ -38,12 +38,13 @@ function ViewerPageContent() {
     state,
     setActiveViewport,
     setViewportSeries,
+    loadSeriesIntoViewport,
   } = useViewer();
 
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<string>("");
+  const [selectedTool, setSelectedTool] = useState<string>("Pan");
   const [seriesLayout, setSeriesLayout] = useState<string>("1x1");
   const [viewportReady, setViewportReady] = useState(false);
 
@@ -59,7 +60,7 @@ function ViewerPageContent() {
   useEffect(() => {
     const activeViewportState = state.viewportRuntimeStates.get(state.activeViewport);
     const isReady = activeViewportState?.viewportReady || false;
-    
+
     setViewportReady(isReady);
   }, [state.viewportRuntimeStates, state.activeViewport]);
 
@@ -101,8 +102,7 @@ function ViewerPageContent() {
   const handleSeriesSelect = useCallback((series: DicomSeries) => {
     setSelectedSeries(series);
     setViewportSeries(state.activeViewport, series);
-    // Auto-select Pan after loading a series
-    setSelectedTool("Pan");
+    // Pan tool is already active by default from ViewerContext
     console.log("Series selected:", series);
     updateURLParams({
       patient: patientId || "",
@@ -139,6 +139,39 @@ function ViewerPageContent() {
     []
   );
 
+  const handleToggleHeader = useCallback(() => {
+    setHeaderCollapsed((prev) => !prev);
+  }, []);
+
+  const handleToggleLeftSidebar = useCallback(() => {
+    setLeftSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  const handleToggleRightPanel = useCallback(() => {
+    setRightPanelCollapsed((prev) => !prev);
+  }, []);
+
+  const handleReloadSeries = useCallback(() => {
+    if (selectedSeries) {
+      // Use loadSeriesIntoViewport with forceRebuild to actually reload the images
+      loadSeriesIntoViewport(state.activeViewport, selectedSeries, {
+        studyId: studyId,
+        forceRebuild: true,
+      });
+      toast.success("Reloading series into viewport...");
+    } else {
+      toast.info("No series selected");
+    }
+  }, [selectedSeries, loadSeriesIntoViewport, state.activeViewport, studyId]);
+
+  const handleOpenChangeAll = useCallback((open: boolean) => {
+    handleAnnotationModalOpenChange("all", open);
+  }, [handleAnnotationModalOpenChange]);
+
+  const handleOpenChangeDraft = useCallback((open: boolean) => {
+    handleAnnotationModalOpenChange("draft", open);
+  }, [handleAnnotationModalOpenChange]);
+
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col">
@@ -146,7 +179,7 @@ function ViewerPageContent() {
       <div className="flex flex-col shrink-0">
         <ViewerHeader
           isCollapsed={headerCollapsed}
-          onToggleCollapse={() => setHeaderCollapsed(!headerCollapsed)}
+          onToggleCollapse={handleToggleHeader}
         />
         {headerCollapsed && (
           <div className="bg-slate-900 border-b border-slate-800 flex items-center justify-center transition-all duration-300">
@@ -169,7 +202,7 @@ function ViewerPageContent() {
           minWidth={250}
           maxWidth={500}
           collapsed={leftSidebarCollapsed}
-          onToggleCollapse={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+          onToggleCollapse={handleToggleLeftSidebar}
         >
           <ViewerLeftSidebar
             seriesLayout={seriesLayout}
@@ -181,14 +214,7 @@ function ViewerPageContent() {
             activeAnnotationView={activeAnnotationsModal}
             viewportReady={viewportReady}
             isStudyLocked={isStudyLocked}
-            onReloadSeries={() => {
-              if (selectedSeries) {
-                setViewportSeries(state.activeViewport, selectedSeries);
-                toast.success("Reloaded series into viewport");
-              } else {
-                toast.info("No series selected");
-              }
-            }}
+            onReloadSeries={handleReloadSeries}
           />
         </ResizablePanel>
 
@@ -208,7 +234,7 @@ function ViewerPageContent() {
           minWidth={250}
           maxWidth={500}
           collapsed={rightPanelCollapsed}
-          onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          onToggleCollapse={handleToggleRightPanel}
         >
           <ViewerRightSidebar
             onSeriesSelect={handleSeriesSelect}
@@ -223,12 +249,12 @@ function ViewerPageContent() {
       {/* Annotation Modals */}
       <SeriesAnnotationsModal
         open={activeAnnotationsModal === "all"}
-        onOpenChange={(open) => handleAnnotationModalOpenChange("all", open)}
+        onOpenChange={handleOpenChangeAll}
         cachedSeriesList={series}
       />
       <DraftAnnotationsModal
         open={activeAnnotationsModal === "draft"}
-        onOpenChange={(open) => handleAnnotationModalOpenChange("draft", open)}
+        onOpenChange={handleOpenChangeDraft}
         cachedSeriesList={series}
       />
     </div>

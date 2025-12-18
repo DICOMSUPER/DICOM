@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { ConfirmationModal } from '@/components/ui/confirmation-modal';
-import { Room } from '@/common/interfaces/user/room.interface';
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { Room } from "@/common/interfaces/user/room.interface";
 
 interface RoomDeleteModalProps {
   room: Room | null;
@@ -28,8 +28,9 @@ export function RoomDeleteModal({
       title="Delete Room"
       description={
         <>
-          Are you sure you want to delete room <strong>{room.roomCode}</strong>? This action
-          cannot be undone and will permanently remove this room from the system.
+          Are you sure you want to delete room <strong>{room.roomCode}</strong>?
+          This action cannot be undone and will permanently remove this room
+          from the system.
         </>
       }
       confirmText="Delete"
@@ -39,4 +40,3 @@ export function RoomDeleteModal({
     />
   );
 }
-

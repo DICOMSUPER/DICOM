@@ -51,4 +51,3 @@ export function RoomStatsCards({
 
   return <StatsCards stats={stats} />;
 }
-

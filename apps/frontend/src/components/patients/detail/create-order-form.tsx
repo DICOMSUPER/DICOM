@@ -39,6 +39,12 @@ import { useCreateConditionMutation } from "@/store/patientConditionApi";
 import { useGetCurrentProfileQuery } from "@/store/userApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
+// Format gender for display
+const formatGender = (gender: string | null | undefined): string => {
+  if (!gender) return "N/A";
+  return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+};
 export interface ImagingProcedure {
   id: string;
   modality: string;
@@ -358,7 +364,7 @@ export default function CreateImagingOrder({
                                 Gender
                               </p>
                               <p className="text-sm font-semibold text-slate-900">
-                                {patient.gender}
+                                {formatGender(patient.gender)}
                               </p>
                             </div>
                           </div>
@@ -452,9 +458,8 @@ export default function CreateImagingOrder({
                     <span className="text-red-500">*</span>
                   </Label>
                   <DiagnosisInput
-                    className={`${
-                      !diagnosis ? "border-slate-300" : "border-teal-300"
-                    } w-full p-2 border rounded-lg`}
+                    className={`${!diagnosis ? "border-slate-300" : "border-teal-300"
+                      } w-full p-2 border rounded-lg`}
                     state={diagnosis}
                     setState={setDiagnosis}
                   />
@@ -478,9 +483,8 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${
-                          !department ? "border-slate-300" : "border-teal-300"
-                        } w-full`}
+                        className={`${!department ? "border-slate-300" : "border-teal-300"
+                          } w-full`}
                       >
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
@@ -512,9 +516,8 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${
-                          !room ? "border-slate-300" : "border-teal-300"
-                        } w-full`}
+                        className={`${!room ? "border-slate-300" : "border-teal-300"
+                          } w-full`}
                       >
                         <SelectValue placeholder="Select room" />
                       </SelectTrigger>

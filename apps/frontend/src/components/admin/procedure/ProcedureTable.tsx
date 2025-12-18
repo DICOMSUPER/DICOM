@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, Building2 } from 'lucide-react';
-import { RequestProcedure } from '@/common/interfaces/image-dicom/request-procedure.interface';
-import { DataTable, SortConfig } from '@/components/ui/data-table';
-import { formatDateTime } from '@/common/utils/format-status';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Eye, Edit, Trash2, Building2 } from "lucide-react";
+import { RequestProcedure } from "@/common/interfaces/image-dicom/request-procedure.interface";
+import { DataTable, SortConfig } from "@/components/ui/data-table";
+import { formatDateTime } from "@/common/utils/format-status";
 
 interface RequestProcedureTableProps {
   procedures: RequestProcedure[];
@@ -36,34 +36,36 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
 }) => {
   const columns = [
     {
-      header: 'Name',
+      header: "Name",
       cell: (procedure: RequestProcedure) => (
-        <div className="font-medium text-blue-600">
-          {procedure.name}
+        <div className="font-medium text-blue-600">{procedure.name}</div>
+      ),
+    },
+    {
+      header: "Modality Name",
+      cell: (procedure: RequestProcedure) => (
+        <div className="text-foreground">
+          {procedure.modality?.modalityName}
         </div>
       ),
     },
     {
-      header: 'Modality Name',
-      cell: (procedure: RequestProcedure) => (
-        <div className="text-foreground">{procedure.modality?.modalityName}</div>
-      ),
-    },
-    {
-      header: 'Body Part',
+      header: "Body Part",
       cell: (procedure: RequestProcedure) => (
         <div className="text-foreground">{procedure.bodyPart?.name}</div>
       ),
     },
     {
-      header: 'Description',
+      header: "Description",
       cell: (procedure: RequestProcedure) => (
-        <div className="max-w-[250px] truncate text-foreground">{procedure.description}</div>
+        <div className="max-w-[250px] truncate text-foreground">
+          {procedure.description}
+        </div>
       ),
     },
     {
-      header: 'Active',
-      headerClassName: 'text-center',
+      header: "Active",
+      headerClassName: "text-center",
       cell: (procedure: RequestProcedure) => (
         <div className="flex justify-center">
           {getStatusBadge(procedure.isActive as boolean)}
@@ -71,54 +73,61 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
       ),
     },
     {
-      header: 'Created',
+      header: "Created",
       sortable: true,
-      sortField: 'createdAt',
+      sortField: "createdAt",
       cell: (procedure: RequestProcedure) => (
-        <div className="text-foreground text-sm">{formatDateTime(procedure.createdAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(procedure.createdAt)}
+        </div>
       ),
     },
     {
-      header: 'Updated',
+      header: "Updated",
       sortable: true,
-      sortField: 'updatedAt',
+      sortField: "updatedAt",
       cell: (procedure: RequestProcedure) => (
-        <div className="text-foreground text-sm">{formatDateTime(procedure.updatedAt)}</div>
+        <div className="text-foreground text-sm">
+          {formatDateTime(procedure.updatedAt)}
+        </div>
       ),
     },
     {
-      header: 'Actions',
-      headerClassName: 'text-center',
+      header: "Actions",
+      headerClassName: "text-center",
       cell: (procedure: RequestProcedure) => (
         <div className="flex items-center gap-2">
           {onViewDetails && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onViewDetails(procedure)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-teal-200 text-teal-700 hover:bg-teal-50"
             >
-              <Eye className="h-4 w-4 text-green-600" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              View
             </Button>
           )}
           {onEditProcedure && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onEditProcedure(procedure)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-blue-200 text-blue-700 hover:bg-blue-50"
             >
-              <Edit className="h-4 w-4 text-blue-600" />
+              <Edit className="h-3.5 w-3.5 mr-1.5" />
+              Edit
             </Button>
           )}
           {onDeleteProcedure && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onDeleteProcedure(procedure)}
-              className="h-8 w-8 p-0"
+              className="h-8 text-xs font-medium border-red-200 text-red-700 hover:bg-red-50"
             >
-              <Trash2 className="h-4 w-4 text-red-600" />
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete
             </Button>
           )}
         </div>

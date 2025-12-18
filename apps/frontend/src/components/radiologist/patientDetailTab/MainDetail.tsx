@@ -42,6 +42,7 @@ import SelectTemplateDialog from "./SelectTemplateDialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import RejectDicomDialog from "./RejectDicomDialog";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 import html2pdf from "html2pdf.js";
 import PrintDiagnosis from "./PrintDiagnosis";
@@ -98,6 +99,7 @@ const MedicalRecordMain = ({
   const [signerUser, setSignerUser] = useState<any>(null);
   const [signData] = useSignDataMutation();
   const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [isAcceptConfirmOpen, setIsAcceptConfirmOpen] = useState(false);
 
   const router = useRouter();
   const printRef = useRef<HTMLDivElement>(null);
@@ -484,7 +486,7 @@ const MedicalRecordMain = ({
 
                 <Button
                   className="mt-6"
-                  onClick={handleCreateDiagnosis}
+                  onClick={() => setIsAcceptConfirmOpen(true)}
                   disabled={!signerId}
                 >
                   Tạo chẩn đoán
@@ -637,6 +639,21 @@ const MedicalRecordMain = ({
           open={isRejectOpen}
           onClose={() => setIsRejectOpen(false)}
           onConfirm={handleRejectDicom}
+        />
+
+        {/* Accept/Create Diagnosis Confirmation */}
+        <ConfirmationModal
+          isOpen={isAcceptConfirmOpen}
+          onClose={() => setIsAcceptConfirmOpen(false)}
+          onConfirm={() => {
+            setIsAcceptConfirmOpen(false);
+            handleCreateDiagnosis();
+          }}
+          title="Xác nhận tạo chẩn đoán"
+          description="Bạn có chắc chắn muốn tạo chẩn đoán cho ca này? Hành động này sẽ chuyển ca sang trạng thái chờ duyệt."
+          confirmText="Xác nhận"
+          cancelText="Huỷ"
+          variant="success"
         />
 
         <Dialog open={isReasonOpen} onOpenChange={setIsReasonOpen}>

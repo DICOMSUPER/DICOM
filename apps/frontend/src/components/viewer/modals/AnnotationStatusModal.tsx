@@ -37,7 +37,7 @@ const StatusInfo = {
   },
   [AnnotationStatus.FINAL]: {
     label: "Final",
-    color: "bg-blue-500",
+    color: "bg-emerald-500",
     description: "Submitted for review, can still be edited",
     icon: CheckCircle2,
   },
@@ -89,11 +89,11 @@ export function AnnotationStatusModal({
   const isFromReviewed = currentStatus === AnnotationStatus.REVIEWED;
   const isFinalToDraft = currentStatus === AnnotationStatus.FINAL && targetStatus === AnnotationStatus.DRAFT;
 
-  const canChange = 
+  const canChange =
     !isFromReviewed &&
     !isFinalToDraft &&
     ((targetStatus === AnnotationStatus.FINAL) ||
-     (targetStatus === AnnotationStatus.REVIEWED && isPhysician));
+      (targetStatus === AnnotationStatus.REVIEWED && isPhysician));
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -162,8 +162,8 @@ export function AnnotationStatusModal({
                   isFromReviewed
                     ? "Reviewed annotations cannot be changed. They are immutable."
                     : isFinalToDraft
-                    ? "Final status can only be changed to reviewed, not back to draft."
-                    : "Only physicians can mark annotations as REVIEWED."
+                      ? "Final status can only be changed to reviewed, not back to draft."
+                      : "Only physicians can mark annotations as REVIEWED."
                 }
               </AlertDescription>
             </Alert>

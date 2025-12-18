@@ -24,8 +24,10 @@ import {
   useCreateRoomScheduleMutation, 
   useUpdateRoomScheduleMutation 
 } from "@/store/scheduleApi";
+import { useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/common/enums/role.enum";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 // Schema validation
 const scheduleSchema = z.object({
@@ -78,6 +80,9 @@ export function ScheduleForm({
     schedule?.work_date ? new Date(schedule.work_date) : undefined
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
+  const [duplicateSchedule, setDuplicateSchedule] = useState<any>(null);
   // Debug users data
   console.log('ScheduleForm Users Debug:', {
     users,
@@ -129,6 +134,19 @@ export function ScheduleForm({
 
   const selectedShiftTemplateId = watch("shift_template_id");
   const watchedWorkDate = watch("work_date");
+  const watchedRoomId = watch("room_id");
+
+  // Query existing schedules for the selected room and date
+  const { data: existingSchedules = [] } = useGetRoomSchedulesQuery(
+    {
+      room_id: watchedRoomId && watchedRoomId !== "none" ? watchedRoomId : undefined,
+      work_date_from: watchedWorkDate || undefined,
+      work_date_to: watchedWorkDate || undefined,
+    },
+    {
+      skip: !watchedRoomId || watchedRoomId === "none" || !watchedWorkDate || isEdit,
+    }
+  );
 
   const workDateObj = watchedWorkDate ? new Date(watchedWorkDate) : undefined;
   if (workDateObj) {
@@ -176,31 +194,68 @@ export function ScheduleForm({
   }, [selectedShiftTemplateId, shiftTemplates, setValue]);
 
   const onSubmit = async (data: any) => {
-    setIsSubmitting(true);
-
     // Block submits if schedule is locked
     if (isLocked) {
       toast.error("Completed or cancelled schedules cannot be edited.");
-      setIsSubmitting(false);
       return;
     }
 
-    try {
-      // Convert "none" and empty string values to undefined for optional fields
-      // Add default values for optional fields
-      const processedData = {
-        ...data,
-        room_id: (data.room_id === "none" || data.room_id === "") ? undefined : data.room_id,
-        shift_template_id: (data.shift_template_id === "none" || data.shift_template_id === "") ? undefined : data.shift_template_id,
-        // Enforce status rules: create always scheduled; edit only allowed transition scheduled -> cancelled
-        schedule_status: isEdit
-          ? data.schedule_status || schedule?.schedule_status || "scheduled"
-          : "scheduled",
-        overtime_hours: data.overtime_hours || 0,
-      };
+    // Process the data
+    const processedData = {
+      ...data,
+      room_id: (data.room_id === "none" || data.room_id === "") ? undefined : data.room_id,
+      shift_template_id: (data.shift_template_id === "none" || data.shift_template_id === "") ? undefined : data.shift_template_id,
+      schedule_status: isEdit
+        ? data.schedule_status || schedule?.schedule_status || "scheduled"
+        : "scheduled",
+      overtime_hours: data.overtime_hours || 0,
+    };
 
+    // Check for duplicate schedules (only when creating, not editing)
+    if (!isEdit && processedData.room_id && existingSchedules.length > 0) {
+      const duplicate = existingSchedules.find((s) => {
+        // Check same room and date
+        if (s.room_id !== processedData.room_id) return false;
+        if (s.work_date !== processedData.work_date) return false;
+        
+        // If both have shift templates, check if they match
+        if (processedData.shift_template_id && s.shift_template_id) {
+          return s.shift_template_id === processedData.shift_template_id;
+        }
+        
+        // Otherwise check time overlap
+        if (processedData.actual_start_time && processedData.actual_end_time && 
+            s.actual_start_time && s.actual_end_time) {
+          const newStart = processedData.actual_start_time;
+          const newEnd = processedData.actual_end_time;
+          const existStart = s.actual_start_time;
+          const existEnd = s.actual_end_time;
+          
+          // Check for time overlap
+          return (newStart < existEnd && newEnd > existStart);
+        }
+        
+        // If no shift template and no times, consider it a potential duplicate
+        return true;
+      });
+
+      if (duplicate) {
+        setDuplicateSchedule(duplicate);
+        setPendingSubmitData(processedData);
+        setShowDuplicateWarning(true);
+        return;
+      }
+    }
+
+    // Proceed with submission
+    await submitSchedule(processedData);
+  };
+
+  const submitSchedule = async (processedData: any) => {
+    setIsSubmitting(true);
+
+    try {
       console.log('Form submission debug:', {
-        originalData: data,
         processedData,
         isEdit,
         scheduleId: schedule?.schedule_id
@@ -223,6 +278,21 @@ export function ScheduleForm({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirmDuplicate = async () => {
+    setShowDuplicateWarning(false);
+    if (pendingSubmitData) {
+      await submitSchedule(pendingSubmitData);
+      setPendingSubmitData(null);
+      setDuplicateSchedule(null);
+    }
+  };
+
+  const handleCancelDuplicate = () => {
+    setShowDuplicateWarning(false);
+    setPendingSubmitData(null);
+    setDuplicateSchedule(null);
   };
 
   const isLoading = isCreating || isUpdating || isSubmitting;
@@ -362,33 +432,24 @@ export function ScheduleForm({
         </Select>
       </div>
 
-      {/* Time Range */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="actual_start_time">Start Time</Label>
-          <Input
-            id="actual_start_time"
-            type="time"
-            {...register("actual_start_time")}
-            disabled={isLoading}
-          />
-          {errors.actual_start_time && (
-            <p className="text-sm text-red-500">{errors.actual_start_time.message}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="actual_end_time">End Time</Label>
-          <Input
-            id="actual_end_time"
-            type="time"
-            {...register("actual_end_time")}
-            disabled={isLoading}
-          />
-          {errors.actual_end_time && (
-            <p className="text-sm text-red-500">{errors.actual_end_time.message}</p>
-          )}
-        </div>
-      </div>
+      {/* Time Info - Auto-set from shift template */}
+      {selectedShiftTemplateId && selectedShiftTemplateId !== "none" && (() => {
+        const template = shiftTemplates.find((t: any) => t.shift_template_id === selectedShiftTemplateId);
+        if (template) {
+          return (
+            <div className="bg-muted/50 rounded-lg p-3 border border-border">
+              <Label className="text-sm text-foreground">Schedule Time</Label>
+              <p className="text-sm font-medium mt-1">
+                {template.start_time} - {template.end_time}
+              </p>
+              <p className="text-xs text-foreground mt-1">
+                Time is automatically set from the selected shift template
+              </p>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Room Selection */}
       <div className="space-y-2">
@@ -491,6 +552,37 @@ export function ScheduleForm({
           )}
         </Button>
       </div>
+
+      {/* Duplicate Schedule Warning Modal */}
+      <ConfirmationModal
+        isOpen={showDuplicateWarning}
+        onClose={handleCancelDuplicate}
+        onConfirm={handleConfirmDuplicate}
+        title="Schedule Already Exists"
+        description={
+          <div className="space-y-3 text-left">
+            <p>A schedule already exists for this room/date/time:</p>
+            {duplicateSchedule && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <div><strong>Room:</strong> {duplicateSchedule.room?.roomCode || duplicateSchedule.room_id}</div>
+                <div><strong>Date:</strong> {duplicateSchedule.work_date}</div>
+                <div><strong>Time:</strong> {duplicateSchedule.actual_start_time} - {duplicateSchedule.actual_end_time}</div>
+                {duplicateSchedule.shift_template?.shift_name && (
+                  <div><strong>Shift:</strong> {duplicateSchedule.shift_template.shift_name}</div>
+                )}
+                <div><strong>Staff assigned:</strong> {duplicateSchedule.employeeRoomAssignments?.length || 0}</div>
+              </div>
+            )}
+            <p className="text-amber-700 font-medium">
+              Do you still want to create a new schedule? Consider assigning staff to the existing schedule instead.
+            </p>
+          </div>
+        }
+        confirmText="Create Anyway"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={isSubmitting}
+      />
     </form>
   );
 }

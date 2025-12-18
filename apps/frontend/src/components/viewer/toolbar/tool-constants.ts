@@ -30,6 +30,7 @@ import {
   CircleScissorsTool,
   RectangleScissorsTool,
   SphereScissorsTool,
+  ScaleOverlayTool,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
 
@@ -62,7 +63,8 @@ export type AnnotationTool =
   | "KeyImage"
   | "Label"
   | "DragProbe"
-  | "PaintFill";
+  | "PaintFill"
+  | "ScaleOverlay";
 
 export type SegmentationTool =
   | "Brush"
@@ -249,6 +251,11 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     toolClass: EraserTool,
     category: "segmentation", // Changed from "annotation" - Eraser works on segmentation labelmaps
   },
+  ScaleOverlay: {
+    toolName: ScaleOverlayTool.toolName,
+    toolClass: ScaleOverlayTool,
+    category: "annotation",
+  },
 
   // Segmentation tools
   Brush: {
@@ -299,38 +306,13 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
   Reset: { toolName: "Reset", toolClass: null, category: "custom" },
 };
 
-// Tool bindings configuration
+// Tool bindings configuration - keyboard shortcuts disabled for all tools except scroll wheel
 export const TOOL_BINDINGS: Record<string, ToolBindings> = {
-  [WindowLevelTool.toolName]: { primary: MouseBindings.Primary, keyboard: "w" },
-  [PanTool.toolName]: { auxiliary: MouseBindings.Auxiliary, keyboard: "p" },
-  [ZoomTool.toolName]: { secondary: MouseBindings.Secondary, keyboard: "z" },
+  [WindowLevelTool.toolName]: { primary: MouseBindings.Primary },
+  [PanTool.toolName]: { auxiliary: MouseBindings.Auxiliary },
+  [ZoomTool.toolName]: { secondary: MouseBindings.Secondary },
   [StackScrollTool.toolName]: { wheel: MouseBindings.Wheel },
-  [ProbeTool.toolName]: { keyboard: "i" },
-  [LengthTool.toolName]: { keyboard: "l" },
-  [RectangleROITool.toolName]: { keyboard: "r" },
-  [CircleROITool.toolName]: { keyboard: "c" },
-  [EllipticalROITool.toolName]: { keyboard: "e" },
-  [AngleTool.toolName]: { keyboard: "a" },
-  [BidirectionalTool.toolName]: { keyboard: "b" },
-  [ArrowAnnotateTool.toolName]: { keyboard: "t" },
-  [CobbAngleTool.toolName]: { keyboard: "k" },
-  [MagnifyTool.toolName]: { keyboard: "m" },
-  [PlanarRotateTool.toolName]: {
-    wheelWithCtrl: MouseBindings.Wheel,
-    keyboard: "o",
-  },
-  [TrackballRotateTool.toolName]: { keyboard: "r" },
-  [MIPJumpToClickTool.toolName]: { keyboard: "j" },
-  [SegmentBidirectionalTool.toolName]: { keyboard: "d" },
-  [KeyImageTool.toolName]: { keyboard: "q" },
-  [LabelTool.toolName]: { keyboard: "n" },
-  [DragProbeTool.toolName]: { keyboard: "f" },
-  [PaintFillTool.toolName]: { keyboard: "y" },
-  [EraserTool.toolName]: { keyboard: "shift+z" },
-  [BrushTool.toolName]: { keyboard: "s" },
-  [CircleScissorsTool.toolName]: { keyboard: "g" },
-  [RectangleScissorsTool.toolName]: { keyboard: "x" },
-  [SphereScissorsTool.toolName]: { keyboard: "shift+s" },
+  [PlanarRotateTool.toolName]: { wheelWithCtrl: MouseBindings.Wheel },
 };
 
 // Helper functions

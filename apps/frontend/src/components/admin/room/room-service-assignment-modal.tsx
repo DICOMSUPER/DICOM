@@ -1,28 +1,31 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { Room } from '@/common/interfaces/user/room.interface';
-import { useCreateServiceRoomMutation, useDeleteServiceRoomMutation } from '@/store/serviceRoomApi';
-import { useGetServicesQuery } from '@/store/serviceApi';
-import { useGetServicesByRoomQuery } from '@/store/serviceRoomApi';
-import { Services } from '@/common/interfaces/user/service.interface';
-import { ServiceRoom } from '@/common/interfaces/user/service-room.interface';
-import { Stethoscope, X } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Room } from "@/common/interfaces/user/room.interface";
+import {
+  useCreateServiceRoomMutation,
+  useDeleteServiceRoomMutation,
+} from "@/store/serviceRoomApi";
+import { useGetServicesQuery } from "@/store/serviceApi";
+import { useGetServicesByRoomQuery } from "@/store/serviceRoomApi";
+import { Services } from "@/common/interfaces/user/service.interface";
+import { ServiceRoom } from "@/common/interfaces/user/service-room.interface";
+import { Stethoscope, X } from "lucide-react";
 
 interface RoomServiceAssignmentModalProps {
   room: Room | null;
@@ -31,23 +34,31 @@ interface RoomServiceAssignmentModalProps {
   onSuccess?: () => void;
 }
 
-export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }: RoomServiceAssignmentModalProps) {
+export function RoomServiceAssignmentModal({
+  room,
+  isOpen,
+  onClose,
+  onSuccess,
+}: RoomServiceAssignmentModalProps) {
   const [createServiceRoom] = useCreateServiceRoomMutation();
   const [deleteServiceRoom] = useDeleteServiceRoomMutation();
   const { data: servicesData } = useGetServicesQuery();
-  const { data: existingAssignmentsData, refetch: refetchAssignments } = useGetServicesByRoomQuery(
-    room?.id || '',
-    { skip: !room?.id || !isOpen }
+  const { data: existingAssignmentsData, refetch: refetchAssignments } =
+    useGetServicesByRoomQuery(room?.id || "", { skip: !room?.id || !isOpen });
+
+  const services: Services[] = useMemo(
+    () => servicesData?.data ?? [],
+    [servicesData?.data]
   );
-  
-  const services: Services[] = useMemo(() => servicesData?.data ?? [], [servicesData?.data]);
   const existingAssignments: ServiceRoom[] = useMemo(
     () => existingAssignmentsData?.data ?? [],
     [existingAssignmentsData?.data]
   );
 
   const assignedServiceIds = useMemo(() => {
-    return new Set(existingAssignments.map((assignment) => assignment.serviceId));
+    return new Set(
+      existingAssignments.map((assignment) => assignment.serviceId)
+    );
   }, [existingAssignments]);
 
   const availableServices = useMemo(() => {
@@ -56,7 +67,7 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
 
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,17 +76,17 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
       refetchAssignments();
       setSelectedServiceIds([]);
       setIsActive(true);
-      setNotes('');
+      setNotes("");
     }
   }, [isOpen, room, refetchAssignments]);
 
   const handleSubmit = async () => {
     if (!room?.id) {
-      toast.error('Room is required');
+      toast.error("Room is required");
       return;
     }
     if (!selectedServiceIds.length) {
-      toast.error('Select at least one service');
+      toast.error("Select at least one service");
       return;
     }
 
@@ -92,17 +103,24 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
       toast.success(
         payloads.length > 1
           ? `Assigned ${payloads.length} services to room`
-          : 'Service assigned to room successfully'
+          : "Service assigned to room successfully"
       );
       setSelectedServiceIds([]);
       setIsActive(true);
-      setNotes('');
+      setNotes("");
       await refetchAssignments();
       onSuccess?.();
       // Keep modal open to allow multiple assignments
     } catch (error) {
-      const apiError = error as { data?: { message?: string }; message?: string };
-      toast.error(apiError?.data?.message || apiError?.message || 'Failed to assign service to room');
+      const apiError = error as {
+        data?: { message?: string };
+        message?: string;
+      };
+      toast.error(
+        apiError?.data?.message ||
+          apiError?.message ||
+          "Failed to assign service to room"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -120,11 +138,11 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
   const handleUnassign = async (assignmentId: string) => {
     try {
       await deleteServiceRoom(assignmentId).unwrap();
-      toast.success('Service unassigned from room');
+      toast.success("Service unassigned from room");
       await refetchAssignments();
       onSuccess?.();
     } catch (error: any) {
-      toast.error(error?.data?.message || 'Failed to unassign service');
+      toast.error(error?.data?.message || "Failed to unassign service");
     }
   };
 
@@ -149,11 +167,15 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Room Code</p>
-                  <p className="text-base font-semibold text-foreground">{room.roomCode}</p>
+                  <p className="text-base font-semibold text-foreground">
+                    {room.roomCode}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
                   <p className="text-sm text-foreground">Room Type</p>
-                  <p className="text-base font-semibold text-foreground">{room.roomType || 'N/A'}</p>
+                  <p className="text-base font-semibold text-foreground">
+                    {room.roomType || "N/A"}
+                  </p>
                 </div>
               </div>
             </section>
@@ -167,7 +189,9 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                 <Label className="text-foreground">Services *</Label>
                 <div className="space-y-2 rounded-lg border border-border p-3">
                   {availableServices.length === 0 ? (
-                    <p className="text-sm text-foreground">All services are already assigned to this room.</p>
+                    <p className="text-sm text-foreground">
+                      All services are already assigned to this room.
+                    </p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto pr-1">
                       {availableServices.map((service) => {
@@ -179,7 +203,9 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                           >
                             <Checkbox
                               checked={checked}
-                              onCheckedChange={(val) => handleToggleService(service.id, !!val)}
+                              onCheckedChange={(val) =>
+                                handleToggleService(service.id, !!val)
+                              }
                             />
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-foreground">
@@ -208,7 +234,9 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {existingAssignments
-                    .filter((assignment) => assignment.isActive && assignment.service)
+                    .filter(
+                      (assignment) => assignment.isActive && assignment.service
+                    )
                     .map((assignment) => (
                       <div
                         key={assignment.id}
@@ -217,7 +245,8 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-foreground">
-                              {assignment.service?.serviceName || "Unknown Service"}
+                              {assignment.service?.serviceName ||
+                                "Unknown Service"}
                             </p>
                             {assignment.service?.serviceCode && (
                               <p className="text-xs text-foreground mt-0.5">
@@ -225,8 +254,14 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                               </p>
                             )}
                           </div>
-                          <Badge className={`${assignment.isActive ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'} text-xs font-medium shrink-0 border`}>
-                            {assignment.isActive ? 'Active' : 'Inactive'}
+                          <Badge
+                            className={`${
+                              assignment.isActive
+                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                : "bg-gray-100 text-gray-700 border-gray-200"
+                            } text-xs font-medium shrink-0 border`}
+                          >
+                            {assignment.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </div>
                         <div className="flex justify-end">
@@ -252,7 +287,9 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                 Notes
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-foreground">Notes</Label>
+                <Label htmlFor="notes" className="text-foreground">
+                  Notes
+                </Label>
                 <Textarea
                   id="notes"
                   value={notes}
@@ -275,7 +312,10 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
                   checked={isActive}
                   onCheckedChange={(checked) => setIsActive(checked)}
                 />
-                <Label htmlFor="isActive" className="text-foreground cursor-pointer">
+                <Label
+                  htmlFor="isActive"
+                  className="text-foreground cursor-pointer"
+                >
                   Active
                 </Label>
               </div>
@@ -287,12 +327,14 @@ export function RoomServiceAssignmentModal({ room, isOpen, onClose, onSuccess }:
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || availableServices.length === 0}>
-            {isSubmitting ? 'Assigning...' : 'Assign Service'}
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || availableServices.length === 0}
+          >
+            {isSubmitting ? "Assigning..." : "Assign Service"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

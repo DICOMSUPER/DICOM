@@ -136,7 +136,7 @@ export const imagingOrderApi = createApi({
       }),
       transformResponse: (response: any) => {
         // Handle nested pagination structure: { data: [...], total: 1 }
-        if (response && typeof response === 'object' && 'data' in response) {
+        if (response && typeof response === "object" && "data" in response) {
           if (Array.isArray(response.data)) {
             return response.data;
           }
@@ -161,7 +161,12 @@ export const imagingOrderApi = createApi({
 
     getImagingOrderByRoomIdFilter: builder.query<
       PaginatedResponse<ImagingOrder>,
-      RoomFilter & { page?: number; limit?: number; sortBy?: string; order?: 'asc' | 'desc' }
+      RoomFilter & {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        order?: "asc" | "desc";
+      }
     >({
       query: ({ id, filterParams, page, limit, sortBy, order }) => ({
         url: `/${id}/room/filter`,
@@ -175,9 +180,9 @@ export const imagingOrderApi = createApi({
         },
       }),
       transformResponse: (response: any) => {
-        if (response?.data) {
-          return response.data;
-        }
+        // if (response?.data) {
+        //   return response.data;
+        // }
         return response;
       },
     }),

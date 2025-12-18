@@ -206,20 +206,6 @@ export default function EncounterModal({
                       <p className={modalStyles.heroTitle}>
                         {getEncounterTypeLabel(encounter.encounterType)}
                       </p>
-                      <div className="mt-3 grid gap-2 text-sm text-foreground">
-                        <p className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {encounter.encounterDate
-                            ? formatDate(encounter.encounterDate)
-                            : "No date set"}
-                        </p>
-                        {physician && (
-                          <p className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            Dr. {physician.firstName} {physician.lastName}
-                          </p>
-                        )}
-                      </div>
                     </div>
                   </div>
                   <div className="space-y-4 text-right">

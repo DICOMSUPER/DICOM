@@ -14,8 +14,6 @@ export const selectViewportSeries = (state: ViewerState, viewport: number): Dico
 export const selectViewportTransform = (state: ViewerState, viewport: number): ViewportTransform => {
   return state.viewportTransforms.get(viewport) || {
     rotation: 0,
-    flipH: false,
-    flipV: false,
     zoom: 1,
     pan: { x: 0, y: 0 },
   };

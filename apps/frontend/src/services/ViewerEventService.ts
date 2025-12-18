@@ -14,7 +14,6 @@ class ViewerEventService {
   public static readonly EVENTS = {
     // Viewport transformation events
     ROTATE_VIEWPORT: 'viewport::rotate',
-    FLIP_VIEWPORT: 'viewport::flip',
     RESET_VIEW: 'viewport::resetView',
     INVERT_COLORMAP: 'viewport::invertColorMap',
     REFRESH_VIEWPORT: 'viewport::refresh',

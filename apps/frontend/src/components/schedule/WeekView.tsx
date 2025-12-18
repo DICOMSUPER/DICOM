@@ -4,7 +4,10 @@ import { useMemo } from "react";
 import { format, isSameDay } from "date-fns";
 import { CalendarOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RoomSchedule, ShiftTemplate } from "@/common/interfaces/schedule/schedule.interface";
+import {
+  RoomSchedule,
+  ShiftTemplate,
+} from "@/common/interfaces/schedule/schedule.interface";
 import {
   TimelineSegment,
   buildTimelineSegments,
@@ -12,31 +15,41 @@ import {
 } from "@/common/utils/time-segment-utils";
 
 // Helper function to get employee names from room assignments
-const getEmployeeNames = (schedule: RoomSchedule, maxNames: number = 2): string => {
-  if (!schedule.employeeRoomAssignments || schedule.employeeRoomAssignments.length === 0) {
-    return 'Unassigned';
+const getEmployeeNames = (
+  schedule: RoomSchedule,
+  maxNames: number = 2
+): string => {
+  if (
+    !schedule.employeeRoomAssignments ||
+    schedule.employeeRoomAssignments.length === 0
+  ) {
+    return "Unassigned";
   }
-  
+
   const activeAssignments = schedule.employeeRoomAssignments
-    .filter(a => a.isActive && a.employee)
+    .filter((a) => a.isActive && a.employee)
     .slice(0, maxNames);
-  
+
   if (activeAssignments.length === 0) {
-    return 'Unassigned';
+    return "Unassigned";
   }
-  
+
   const names = activeAssignments
-    .map(a => `${a.employee?.firstName || ''} ${a.employee?.lastName || ''}`.trim())
+    .map((a) =>
+      `${a.employee?.firstName || ""} ${a.employee?.lastName || ""}`.trim()
+    )
     .filter(Boolean);
-  
-  const totalCount = schedule.employeeRoomAssignments.filter(a => a.isActive && a.employee).length;
-  const displayNames = names.join(', ');
-  
+
+  const totalCount = schedule.employeeRoomAssignments.filter(
+    (a) => a.isActive && a.employee
+  ).length;
+  const displayNames = names.join(", ");
+
   // If there are more employees than we're showing, add a count
   if (totalCount > maxNames) {
     return `${displayNames} +${totalCount - maxNames}`;
   }
-  
+
   return displayNames;
 };
 
@@ -108,7 +121,12 @@ export function WeekView({
   }, [schedulesWithTemplates, shiftTemplateMap]);
 
   const timelineSegments = useMemo(
-    () => buildTimelineSegments(timeSlots, schedulesWithTemplates, referencedTemplates),
+    () =>
+      buildTimelineSegments(
+        timeSlots,
+        schedulesWithTemplates,
+        referencedTemplates
+      ),
     [timeSlots, schedulesWithTemplates, referencedTemplates]
   );
 
@@ -121,7 +139,8 @@ export function WeekView({
     const dayKey = format(day, "yyyy-MM-dd");
     return schedulesWithTemplates.filter(
       (schedule) =>
-        schedule.work_date === dayKey && scheduleFallsInSegment(schedule, segment)
+        schedule.work_date === dayKey &&
+        scheduleFallsInSegment(schedule, segment)
     );
   };
 
@@ -131,28 +150,50 @@ export function WeekView({
         <div className="min-w-[900px]">
           {/* Header */}
           <div className="grid grid-cols-8 gap-0 border-b border-gray-200">
-            <div className="text-xs md:text-sm font-medium text-gray-700 p-3 border-r border-gray-200">Time</div>
+            <div className="text-xs md:text-sm font-medium text-gray-700 p-3 border-r border-gray-200">
+              Time
+            </div>
             {weekDays.map((day, index) => (
-              <div key={index} className={`text-center p-3 border-r border-gray-200 last:border-r-0 ${isSameDay(day, selectedDate) ? 'bg-blue-50' : ''}`}>
-                <div className="text-xs md:text-sm font-medium text-gray-700">{format(day, "EEE")}</div>
-                <div className={`text-xs ${isSameDay(day, selectedDate) ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>{format(day, "MMM d")}</div>
+              <div
+                key={index}
+                className={`text-center p-3 border-r border-gray-200 last:border-r-0 ${
+                  isSameDay(day, selectedDate) ? "bg-blue-50" : ""
+                }`}
+              >
+                <div className="text-xs md:text-sm font-medium text-gray-700">
+                  {format(day, "EEE")}
+                </div>
+                <div
+                  className={`text-xs ${
+                    isSameDay(day, selectedDate)
+                      ? "text-blue-600 font-semibold"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {format(day, "MMM d")}
+                </div>
               </div>
             ))}
           </div>
-          
+
           {/* Skeleton Time slots */}
           <div className="space-y-0">
             {loadingSegments.map((segment) => (
-              <div key={segment.id} className="grid grid-cols-8 gap-0 min-h-22 border-b border-gray-100">
+              <div
+                key={segment.id}
+                className="grid grid-cols-8 gap-0 min-h-22 border-b border-gray-100"
+              >
                 <div className="text-xs md:text-sm text-gray-700 font-medium p-3 border-r border-gray-200 flex items-center">
                   {renderSegmentLabel(segment)}
                 </div>
                 <div className="col-span-7 h-full">
                   <div className="grid grid-cols-7 h-full">
                     {weekDays.map((day, dayIndex) => (
-                      <div 
-                        key={dayIndex} 
-                        className={`h-full p-2 border-r border-gray-100 last:border-r-0 ${isSameDay(day, selectedDate) ? 'bg-blue-50' : ''}`}
+                      <div
+                        key={dayIndex}
+                        className={`h-full p-2 border-r border-gray-100 last:border-r-0 ${
+                          isSameDay(day, selectedDate) ? "bg-blue-50" : ""
+                        }`}
                       >
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs relative w-full">
                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-gray-300 rounded-l-lg"></div>
@@ -178,11 +219,28 @@ export function WeekView({
       <div className="min-w-[900px]">
         {/* Header */}
         <div className="grid grid-cols-8 gap-0 border-b border-gray-200">
-          <div className="text-xs md:text-sm font-medium text-gray-700 p-3 border-r border-gray-200">Time</div>
+          <div className="text-xs md:text-sm font-medium text-gray-700 p-3 border-r border-gray-200">
+            Time
+          </div>
           {weekDays.map((day, index) => (
-            <div key={index} className={`text-center p-3 border-r border-gray-200 last:border-r-0 ${isSameDay(day, selectedDate) ? 'bg-blue-50' : ''}`}>
-              <div className="text-xs md:text-sm font-medium text-gray-700">{format(day, "EEE")}</div>
-              <div className={`text-xs ${isSameDay(day, selectedDate) ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>{format(day, "MMM d")}</div>
+            <div
+              key={index}
+              className={`text-center p-3 border-r border-gray-200 last:border-r-0 ${
+                isSameDay(day, selectedDate) ? "bg-blue-50" : ""
+              }`}
+            >
+              <div className="text-xs md:text-sm font-medium text-gray-700">
+                {format(day, "EEE")}
+              </div>
+              <div
+                className={`text-xs ${
+                  isSameDay(day, selectedDate)
+                    ? "text-blue-600 font-semibold"
+                    : "text-gray-500"
+                }`}
+              >
+                {format(day, "MMM d")}
+              </div>
             </div>
           ))}
         </div>
@@ -190,7 +248,10 @@ export function WeekView({
         {/* Time slots */}
         <div className="space-y-0">
           {timelineSegments.map((segment) => (
-            <div key={segment.id} className="grid grid-cols-8 gap-0 min-h-22 border-b border-gray-100">
+            <div
+              key={segment.id}
+              className="grid grid-cols-8 gap-0 min-h-22 border-b border-gray-100"
+            >
               <div className="text-xs md:text-sm text-gray-700 font-medium p-3 border-r border-gray-200 flex items-center">
                 {renderSegmentLabel(segment)}
               </div>
@@ -199,17 +260,18 @@ export function WeekView({
                   {weekDays.map((day, dayIndex) => {
                     const daySchedules = getSchedulesForSegment(day, segment);
                     return (
-                      <div 
-                        key={dayIndex} 
+                      <div
+                        key={dayIndex}
                         className={`h-full p-2 border-r border-gray-100 last:border-r-0 ${
                           isSameDay(day, selectedDate) ? "bg-blue-50" : ""
                         } ${segment.type === "break" ? "bg-amber-50/40" : ""}`}
                       >
-                        {segment.type === "break" && daySchedules.length === 0 && (
-                          <div className="h-full flex items-center justify-center text-[11px] font-semibold text-amber-700 border border-dashed border-amber-200 rounded-md bg-amber-50/60">
-                            Break window
-                          </div>
-                        )}
+                        {segment.type === "break" &&
+                          daySchedules.length === 0 && (
+                            <div className="h-full flex items-center justify-center text-[11px] font-semibold text-amber-700 border border-dashed border-amber-200 rounded-md bg-amber-50/60">
+                              Break window
+                            </div>
+                          )}
                         {daySchedules.map((schedule) => (
                           <div
                             key={schedule.schedule_id}
@@ -222,17 +284,19 @@ export function WeekView({
                                 {getEmployeeNames(schedule, 2)}
                               </div>
                               <div className="text-gray-600 text-xs">
-                                {schedule.actual_start_time} - {schedule.actual_end_time}
+                                {schedule.actual_start_time} -{" "}
+                                {schedule.actual_end_time}
                               </div>
                             </div>
                           </div>
                         ))}
-                        {daySchedules.length === 0 && segment.type !== "break" && (
-                          <div className="h-full flex flex-col items-center justify-center gap-1 text-gray-400">
-                            <CalendarOff className="h-3 w-3" />
-                            <span className="text-[10px]">—</span>
-                          </div>
-                        )}
+                        {daySchedules.length === 0 &&
+                          segment.type !== "break" && (
+                            <div className="h-full flex flex-col items-center justify-center gap-1 text-gray-400">
+                              <CalendarOff className="h-3 w-3" />
+                              <span className="text-[10px]">—</span>
+                            </div>
+                          )}
                         {daySchedules.length > 1 && (
                           <button
                             type="button"
@@ -254,5 +318,3 @@ export function WeekView({
     </div>
   );
 }
-
-

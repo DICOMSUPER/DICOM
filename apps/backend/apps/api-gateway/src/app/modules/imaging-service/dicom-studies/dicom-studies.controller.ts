@@ -572,6 +572,8 @@ export class DicomStudiesController {
     @Param('id') id: string,
     @Body() updateDicomStudyDto: UpdateDicomStudyDto
   ) {
+    console.log('body for update study: ', id, updateDicomStudyDto);
+
     const study = await firstValueFrom(
       this.imagingService.send('ImagingService.DicomStudies.Update', {
         id,

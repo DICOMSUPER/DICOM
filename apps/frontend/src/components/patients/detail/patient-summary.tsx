@@ -35,11 +35,8 @@ interface VitalSignDisplay {
   status: "normal" | "high" | "low";
 }
 
-const getVitalStatus = (
-  value: number | undefined,
-  type: string
-): "normal" | "high" | "low" => {
-  if (value === undefined) return "normal";
+const getVitalStatus = (value: number | undefined, type: string): 'normal' | 'high' | 'low' => {
+  if (value === undefined) return 'normal';
 
   switch (type) {
     case "bpSystolic":
@@ -62,12 +59,11 @@ const transformVitalSigns = (
   const vitals: VitalSignDisplay[] = [
     // Blood Pressure - fixed to show systolic/diastolic in correct order
     {
-      label: "Blood Pressure",
-      value:
-        vitalSigns?.bpSystolic && vitalSigns?.bpDiastolic
-          ? `${vitalSigns.bpSystolic}/${vitalSigns.bpDiastolic}`
-          : "_/_",
-      unit: "mmHg",
+      label: 'Blood Pressure',
+      value: (vitalSigns?.bpSystolic && vitalSigns?.bpDiastolic)
+        ? `${vitalSigns.bpSystolic}/${vitalSigns.bpDiastolic}`
+        : '_/_',
+      unit: 'mmHg',
       icon: <Activity className="h-5 w-5" />,
       status: getVitalStatus(vitalSigns?.bpSystolic, "bpSystolic"),
     },
@@ -122,14 +118,14 @@ function ConditionsTable({ conditions }: { conditions: PatientCondition[] }) {
           <Badge
             variant="outline"
             className={
-              status === "active"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : status === "resolved"
-                ? "bg-blue-50 text-blue-700 border-blue-200"
-                : "bg-gray-50 text-gray-700 border-gray-200"
+              status === 'active'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : status === 'resolved'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-gray-50 text-gray-700 border-gray-200'
             }
           >
-            {status || "Unknown"}
+            {formatStatus(status || 'Unknown')}
           </Badge>
         );
       },

@@ -10,7 +10,23 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/common/lib/utils";
-import { Users, Clock, CalendarDays, DoorOpen, User, Building2, Wifi, Tv, Droplets, Phone, Stethoscope, Thermometer, Bell, Search } from "lucide-react";
+import {
+  Users,
+  Clock,
+  CalendarDays,
+  DoorOpen,
+  User,
+  Building2,
+  Wifi,
+  Tv,
+  Droplets,
+  Phone,
+  Stethoscope,
+  Thermometer,
+  Bell,
+  Search,
+  Coffee,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { RoomSchedule } from "@/common/interfaces/schedule/schedule.interface";
@@ -79,16 +95,13 @@ export function ScheduleAssignmentList({
   }, [schedules]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && onSearch) {
+    if (e.key === "Enter" && onSearch) {
       onSearch();
     }
   };
 
-  const renderAssignments = (
-    schedule: RoomSchedule
-  ): AssignmentWithMeta[] => {
-    const optimistic =
-      optimisticAssignments[schedule.schedule_id] ?? [];
+  const renderAssignments = (schedule: RoomSchedule): AssignmentWithMeta[] => {
+    const optimistic = optimisticAssignments[schedule.schedule_id] ?? [];
     const base = schedule.employeeRoomAssignments ?? [];
 
     const merged = [...base];
@@ -146,8 +159,8 @@ export function ScheduleAssignmentList({
               />
             </div>
             {onSearch && (
-              <Button 
-                onClick={onSearch} 
+              <Button
+                onClick={onSearch}
                 disabled={isSearching}
                 className="h-9 px-4"
               >
@@ -166,7 +179,7 @@ export function ScheduleAssignmentList({
         </p>
       </div>
 
-      <ScrollArea className="p-4 rounded-lg border border-border shadow-sm">
+      <ScrollArea className="h-[calc(100vh-400px)] min-h-[400px] p-4 rounded-lg border border-border shadow-sm">
         <div className="space-y-3">
           {isLoading
             ? renderSkeletons()
@@ -176,41 +189,97 @@ export function ScheduleAssignmentList({
                 const room = schedule.room;
                 const occupancy = assignments.length;
                 const capacity = room?.capacity || 0;
-                
+
                 const meta = [
                   {
                     label: room?.roomCode ?? "Room TBD",
                     icon: DoorOpen,
+                    title: "Room Code",
                   },
                   {
                     label: formatDate(schedule.work_date),
                     icon: CalendarDays,
+                    title: "Work Date",
                   },
                   {
                     label: `${schedule.actual_start_time ?? "--:--"} → ${
                       schedule.actual_end_time ?? "--:--"
                     }`,
                     icon: Clock,
+                    title: "Working Hours",
+                  },
+                  {
+                    label:
+                      schedule?.shift_template?.break_start_time &&
+                      schedule?.shift_template?.break_end_time
+                        ? `${schedule.shift_template.break_start_time} → ${schedule.shift_template.break_end_time}`
+                        : "No Break",
+                    icon: Coffee,
+                    title: "Break Time",
                   },
                 ];
 
                 // Get room equipment
                 type EquipmentItem = { name: string; icon: React.ReactNode };
-                const roomEquipment: EquipmentItem[] = room ? ([] as (EquipmentItem | null)[]).concat(
-                  room.hasTV ? { name: 'TV', icon: <Tv className="h-3 w-3" /> } : null,
-                  room.hasAirConditioning ? { name: 'AC', icon: <Thermometer className="h-3 w-3" /> } : null,
-                  room.hasWiFi ? { name: 'WiFi', icon: <Wifi className="h-3 w-3" /> } : null,
-                  room.hasTelephone ? { name: 'Phone', icon: <Phone className="h-3 w-3" /> } : null,
-                  room.hasAttachedBathroom ? { name: 'Bathroom', icon: <Droplets className="h-3 w-3" /> } : null,
-                  room.isWheelchairAccessible ? { name: 'Wheelchair', icon: <Users className="h-3 w-3" /> } : null,
-                  room.hasOxygenSupply ? { name: 'Oxygen', icon: <Stethoscope className="h-3 w-3" /> } : null,
-                  room.hasNurseCallButton ? { name: 'Nurse Call', icon: <Bell className="h-3 w-3" /> } : null,
-                ).filter((item): item is EquipmentItem => item !== null) : [];
+                const roomEquipment: EquipmentItem[] = room
+                  ? ([] as (EquipmentItem | null)[])
+                      .concat(
+                        room.hasTV
+                          ? { name: "TV", icon: <Tv className="h-3 w-3" /> }
+                          : null,
+                        room.hasAirConditioning
+                          ? {
+                              name: "AC",
+                              icon: <Thermometer className="h-3 w-3" />,
+                            }
+                          : null,
+                        room.hasWiFi
+                          ? { name: "WiFi", icon: <Wifi className="h-3 w-3" /> }
+                          : null,
+                        room.hasTelephone
+                          ? {
+                              name: "Phone",
+                              icon: <Phone className="h-3 w-3" />,
+                            }
+                          : null,
+                        room.hasAttachedBathroom
+                          ? {
+                              name: "Bathroom",
+                              icon: <Droplets className="h-3 w-3" />,
+                            }
+                          : null,
+                        room.isWheelchairAccessible
+                          ? {
+                              name: "Wheelchair",
+                              icon: <Users className="h-3 w-3" />,
+                            }
+                          : null,
+                        room.hasOxygenSupply
+                          ? {
+                              name: "Oxygen",
+                              icon: <Stethoscope className="h-3 w-3" />,
+                            }
+                          : null,
+                        room.hasNurseCallButton
+                          ? {
+                              name: "Nurse Call",
+                              icon: <Bell className="h-3 w-3" />,
+                            }
+                          : null
+                      )
+                      .filter((item): item is EquipmentItem => item !== null)
+                  : [];
 
                 // Get room services
-                const roomServices = room?.serviceRooms?.filter(sr => sr.isActive && sr.service).map(sr => 
-                  sr.service?.serviceName || sr.service?.serviceCode || 'Unknown'
-                ) || [];
+                const roomServices =
+                  room?.serviceRooms
+                    ?.filter((sr) => sr.isActive && sr.service)
+                    .map(
+                      (sr) =>
+                        sr.service?.serviceName ||
+                        sr.service?.serviceCode ||
+                        "Unknown"
+                    ) || [];
 
                 return (
                   <Card
@@ -230,8 +299,9 @@ export function ScheduleAssignmentList({
                               {schedule.shift_template?.shift_name ?? "Shift"}
                             </h3>
                             <div className="flex flex-wrap gap-3">
-                              {meta.map(({ label, icon: Icon }) => (
+                              {meta?.map(({ label, icon: Icon, title }) => (
                                 <div
+                                  title={title}
                                   key={label}
                                   className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-border"
                                 >
@@ -249,16 +319,21 @@ export function ScheduleAssignmentList({
                             <div className="space-y-2 pt-2 border-t border-border">
                               <div className="flex items-center gap-2 mb-2">
                                 <Building2 className="h-4 w-4 text-gray-500" />
-                                <span className="text-sm font-semibold text-gray-900">Room Details</span>
+                                <span className="text-sm font-semibold text-gray-900">
+                                  Room Details
+                                </span>
                               </div>
-                              
+
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                                 {/* Capacity & Occupancy */}
                                 {capacity > 0 && (
                                   <div className="flex items-center gap-2">
                                     <Users className="h-3 w-3 text-gray-500" />
                                     <span className="text-gray-700">
-                                      <span className="font-semibold">{occupancy}</span> / {capacity} assigned
+                                      <span className="font-semibold">
+                                        {occupancy}
+                                      </span>{" "}
+                                      / {capacity} assigned
                                     </span>
                                   </div>
                                 )}
@@ -266,38 +341,54 @@ export function ScheduleAssignmentList({
                                 {/* Room Type */}
                                 {room.roomType && (
                                   <div className="text-gray-700">
-                                    <span className="font-semibold">Type:</span> {room.roomType}
+                                    <span className="font-semibold">Type:</span>{" "}
+                                    {room.roomType}
                                   </div>
                                 )}
 
                                 {/* Department */}
                                 {room.department && (
                                   <div className="text-gray-700">
-                                    <span className="font-semibold">Dept:</span>{' '}
-                                    {typeof room.department === 'string' 
-                                      ? room.department 
-                                      : (room.department.departmentName || room.department.departmentCode || 'N/A')}
+                                    <span className="font-semibold">Dept:</span>{" "}
+                                    {typeof room.department === "string"
+                                      ? room.department
+                                      : room.department.departmentName ||
+                                        room.department.departmentCode ||
+                                        "N/A"}
                                   </div>
                                 )}
 
                                 {/* Floor */}
-                                {room.floor !== undefined && room.floor !== null && (
-                                  <div className="text-gray-700">
-                                    <span className="font-semibold">Floor:</span> {room.floor}
-                                  </div>
-                                )}
+                                {room.floor !== undefined &&
+                                  room.floor !== null && (
+                                    <div className="text-gray-700">
+                                      <span className="font-semibold">
+                                        Floor:
+                                      </span>{" "}
+                                      {room.floor}
+                                    </div>
+                                  )}
                               </div>
 
                               {/* Services */}
                               {roomServices.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
-                                  {roomServices.slice(0, 5).map((service, idx) => (
-                                    <Badge key={idx} variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
-                                      {service}
-                                    </Badge>
-                                  ))}
+                                  {roomServices
+                                    .slice(0, 5)
+                                    .map((service, idx) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="secondary"
+                                        className="text-[10px] text-white px-1.5 py-0.5"
+                                      >
+                                        {service}
+                                      </Badge>
+                                    ))}
                                   {roomServices.length > 5 && (
-                                    <Badge variant="secondary" className="text-[10px] text-white px-1.5 py-0.5">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] text-white px-1.5 py-0.5"
+                                    >
                                       +{roomServices.length - 5} more
                                     </Badge>
                                   )}
@@ -307,14 +398,23 @@ export function ScheduleAssignmentList({
                               {/* Equipment */}
                               {roomEquipment.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
-                                  {roomEquipment.slice(0, 6).map((eq, idx: number) => (
-                                    <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                                      {eq.icon}
-                                      {eq.name}
-                                    </Badge>
-                                  ))}
+                                  {roomEquipment
+                                    .slice(0, 6)
+                                    .map((eq, idx: number) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="outline"
+                                        className="text-[10px] px-1.5 py-0.5 flex items-center gap-1"
+                                      >
+                                        {eq.icon}
+                                        {eq.name}
+                                      </Badge>
+                                    ))}
                                   {roomEquipment.length > 6 && (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1.5 py-0.5"
+                                    >
                                       +{roomEquipment.length - 6} more
                                     </Badge>
                                   )}
@@ -347,7 +447,8 @@ export function ScheduleAssignmentList({
                           {assignments.length === 0 && (
                             <div className="w-full px-3 py-2 bg-gray-100 rounded-lg border border-border">
                               <p className="text-sm text-gray-600">
-                                No employees assigned yet. Select this schedule to add one.
+                                No employees assigned yet. Select this schedule
+                                to add one.
                               </p>
                             </div>
                           )}
@@ -370,12 +471,13 @@ export function ScheduleAssignmentList({
                               <div className="flex-1 text-sm">
                                 {assignment.employee?.id ? (
                                   <Link
-                                    href={`/profile/${assignment.employee.id}`}
+                                    href={`/admin/profile/${assignment.employee.id}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className="block transition-all hover:text-primary group"
                                   >
                                     <p className="font-bold text-gray-900 leading-tight group-hover:underline">
-                                      {assignment.employee.firstName} {assignment.employee.lastName}
+                                      {assignment.employee.firstName}{" "}
+                                      {assignment.employee.lastName}
                                     </p>
                                   </Link>
                                 ) : (
@@ -419,9 +521,16 @@ export function ScheduleAssignmentList({
 
           {!isLoading && filteredSchedules.length === 0 && (
             <Card className="border-dashed border border-border">
-              <CardContent className="p-6 text-center text-sm text-foreground">
-                No schedules match your search. Try adjusting the filters or
-                refresh the data.
+              <CardContent className="py-12 flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <CalendarDays className="h-8 w-8 text-slate-400" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-1">No schedules found</h3>
+                  <p className="text-sm text-foreground max-w-md">
+                    No schedules match your search criteria. Try adjusting your filters or create a new schedule.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -430,4 +539,3 @@ export function ScheduleAssignmentList({
     </div>
   );
 }
-

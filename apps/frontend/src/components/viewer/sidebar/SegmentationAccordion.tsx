@@ -19,6 +19,8 @@ import {
   Plus,
   Edit3,
   Info,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { useViewer } from "@/common/contexts/ViewerContext";
 import type { SegmentationLayerData } from "@/common/contexts/ViewerContext";
@@ -36,25 +38,62 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useGetUserByIdQuery } from "@/store/userApi";
+import { SegmentationDetailModal } from "./SegmentationDetailModal";
+import { SegmentationCard } from "./SegmentationCard";
+import { AccordionLoading, AccordionError, AccordionEmpty } from "./SidebarCommon";
+import { SaveSegmentationModal } from "../modals/SaveSegmentationModal";
+import { SegmentationStatusModal } from "../modals/SegmentationStatusModal";
+import { AnnotationStatus } from "@/common/enums/image-dicom.enum";
+import { Roles } from "@/common/enums/user.enum";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { useUpdateImageSegmentationLayerMutation } from "@/store/imageSegmentationLayerApi";
 
 interface SegmentationAccordionProps {
-  onSaveLayer: (layerId: string) => void;
+  onSaveLayer: (layerId: string, status?: AnnotationStatus) => void;
   onDeleteLayer: (layerId: string) => void;
   onUpdateLayerMetadata: (layerId: string, updates: { name?: string; notes?: string }) => void;
+  onRefresh?: () => void;
+  loading?: boolean;
+  refreshing?: boolean;
+  error?: string | null;
+  seriesId?: string | null;
+  userRole?: string;
 }
 
 export default function SegmentationAccordion({
   onSaveLayer,
   onDeleteLayer,
   onUpdateLayerMetadata,
+  onRefresh,
+  loading = false,
+  refreshing = false,
+  error = null,
+  seriesId,
+  userRole,
 }: SegmentationAccordionProps) {
   const [layerToDelete, setLayerToDelete] = useState<SegmentationLayerData | null>(null);
   const [editingLayer, setEditingLayer] = useState<SegmentationLayerData | null>(null);
   const [layerName, setLayerName] = useState("");
   const [layerNotes, setLayerNotes] = useState("");
-  const [infoLayerId, setInfoLayerId] = useState<string | null>(null);
-  const [infoSegmentatorId, setInfoSegmentatorId] = useState<string | undefined>();
-  const [infoReviewerId, setInfoReviewerId] = useState<string | undefined>();
+  const [infoModalLayer, setInfoModalLayer] = useState<SegmentationLayerData | null>(null);
+
+  // Feature Parity State
+  const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
+  const [tempColor, setTempColor] = useState<string>("");
+  const [segmentationColors, setSegmentationColors] = useState<Map<string, string>>(new Map());
+  const [segmentationLockedMap, setSegmentationLockedMap] = useState<Map<string, boolean>>(new Map());
+  const [segmentationStatusMap, setSegmentationStatusMap] = useState<Map<string, AnnotationStatus>>(new Map());
+
+  // Modal State
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [layerToSave, setLayerToSave] = useState<SegmentationLayerData | null>(null);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [layerToUpdateStatus, setLayerToUpdateStatus] = useState<SegmentationLayerData | null>(null);
+  const [targetStatus, setTargetStatus] = useState<AnnotationStatus>(AnnotationStatus.FINAL);
+
+  const user = useSelector((state: RootState) => state.auth.user);
+  const [updateImageSegmentationLayer] = useUpdateImageSegmentationLayerMutation();
 
   const {
     state,
@@ -69,9 +108,44 @@ export default function SegmentationAccordion({
     return Array.from(state.segmentationLayers.values());
   }, [state.segmentationLayers]);
 
+  // Initialize status/colors from notes hack if present, or defaults
+  useEffect(() => {
+    const newStatusMap = new Map<string, AnnotationStatus>();
+    const newColorMap = new Map<string, string>();
+    const newLockMap = new Map<string, boolean>();
+
+    layers.forEach(layer => {
+      // Status Mock Logic: Check notes for [STATUS:XYZ]
+      let status = AnnotationStatus.DRAFT;
+      if (layer.metadata.origin === "database") {
+        if (layer.metadata.notes?.includes("[STATUS:FINAL]")) status = AnnotationStatus.FINAL;
+        else if (layer.metadata.notes?.includes("[STATUS:REVIEWED]")) status = AnnotationStatus.REVIEWED;
+        // Default DB layers to Final if no tag? Or Draft? Let's say Draft unless specified.
+      }
+      // If local, always Draft
+      newStatusMap.set(layer.metadata.id, status);
+
+      // Color Logic: Default Blue
+      newColorMap.set(layer.metadata.id, "#3b82f6");
+
+      // Lock Logic (Read-only if Reviewed)
+      if (status === AnnotationStatus.REVIEWED) {
+        newLockMap.set(layer.metadata.id, true);
+      }
+    });
+
+    setSegmentationStatusMap(newStatusMap);
+    setSegmentationColors(newColorMap);
+    setSegmentationLockedMap(newLockMap);
+  }, [layers]);
+
   const selectedLayerId = useMemo(() => {
     return state.selectedSegmentationLayer;
   }, [state.selectedSegmentationLayer]);
+
+  const activeSeries = useMemo(() => {
+    return state.viewportSeries.get(state.activeViewport);
+  }, [state.viewportSeries, state.activeViewport]);
 
   const handleEditLayer = useCallback((layer: SegmentationLayerData) => {
     setEditingLayer(layer);
@@ -102,23 +176,93 @@ export default function SegmentationAccordion({
     }
   }, [layerToDelete, onDeleteLayer]);
 
+  // --- Feature Handlers ---
+
+  const handleColorPickerOpen = useCallback((id: string, currentColor: string) => {
+    setColorPickerOpen(id);
+    setTempColor(currentColor);
+  }, []);
+
+  const handleColorChange = useCallback((layerId: string) => {
+    if (!tempColor) return;
+    setSegmentationColors(prev => new Map(prev).set(layerId, tempColor));
+    setColorPickerOpen(null);
+    // TODO: Save color to DB if db layer (update metadata or dedicated field if available)
+    toast.success("Layer color updated (Local)");
+  }, [tempColor]);
+
+  const handleLockToggle = useCallback((layerId: string, locked: boolean) => {
+    setSegmentationLockedMap(prev => new Map(prev).set(layerId, locked));
+  }, []);
+
+  const handleSaveLayerClick = useCallback((layer: SegmentationLayerData) => {
+    setLayerToSave(layer);
+    setSaveModalOpen(true);
+  }, []);
+
+  const handleSaveConfirm = useCallback(async (status: AnnotationStatus) => {
+    if (layerToSave) {
+      onSaveLayer(layerToSave.metadata.id, status);
+      setSaveModalOpen(false);
+      setLayerToSave(null);
+    }
+  }, [layerToSave, onSaveLayer]);
+
+  const handleStatusChangeClick = useCallback((layerId: string, status: AnnotationStatus) => {
+    const layer = layers.find(l => l.metadata.id === layerId);
+    if (layer) {
+      setLayerToUpdateStatus(layer);
+      setTargetStatus(status);
+      setStatusModalOpen(true);
+    }
+  }, [layers]);
+
+  const handleStatusConfirm = useCallback(async (layerId: string, status: AnnotationStatus) => {
+    // Mock API call since real status field missing
+    // We will update the notes with [STATUS:XYZ] tag
+    const layer = layers.find(l => l.metadata.id === layerId);
+    if (!layer) return;
+
+    const oldNotes = layer.metadata.notes || "";
+    // Remove old status tag if any
+    const cleanNotes = oldNotes.replace(/\[STATUS:[A-Z]+\]\s*/g, "");
+    const newNotes = `[STATUS:${status}] ${cleanNotes}`;
+
+    try {
+      // Optimistic update
+      setSegmentationStatusMap(prev => new Map(prev).set(layerId, status));
+
+      if (layer.metadata.origin === 'database') {
+        // Call API to update notes
+        await updateImageSegmentationLayer({
+          id: layerId,
+          updateImageSegmentationLayerDto: {
+            notes: newNotes
+          }
+        }).unwrap();
+        // Also update local context via prop if needed, but refetch might handle it
+        toast.success(`Status updated to ${status}`);
+        onRefresh?.(); // Refetch to sync
+      } else {
+        // Local only
+        toast.success(`Status updated to ${status} (Local)`);
+      }
+    } catch (e) {
+      console.error("Failed to update status", e);
+      toast.error("Failed to update status");
+    }
+    setStatusModalOpen(false);
+  }, [layers, updateImageSegmentationLayer, onRefresh]);
+
   const isGloballyVisible = isSegmentationVisible();
 
-  const { data: segmentatorUser } = useGetUserByIdQuery(infoSegmentatorId!, {
-    skip: !infoSegmentatorId,
+  const infoMeta: any = infoModalLayer?.metadata;
+  const { data: segmentatorUser } = useGetUserByIdQuery(infoMeta?.segmentatorId!, {
+    skip: !infoMeta?.segmentatorId,
   });
-  const { data: reviewerUser } = useGetUserByIdQuery(infoReviewerId!, {
-    skip: !infoReviewerId,
+  const { data: reviewerUser } = useGetUserByIdQuery(infoMeta?.reviewerId!, {
+    skip: !infoMeta?.reviewerId,
   });
-
-  useEffect(() => {
-    if (!infoLayerId) return;
-    const layer = layers.find((l) => l.metadata.id === infoLayerId);
-    if (!layer) return;
-    const meta: any = layer.metadata;
-    setInfoSegmentatorId(meta.segmentatorId);
-    setInfoReviewerId(meta.reviewerId);
-  }, [infoLayerId, layers]);
 
   return (
     <>
@@ -153,7 +297,32 @@ export default function SegmentationAccordion({
                 >
                   <Plus className="h-3 w-3 text-teal-300" />
                 </div>
-                
+
+                {/* Refresh Button */}
+                {onRefresh && (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className={`h-5 w-5 p-0 flex items-center justify-center cursor-pointer rounded hover:bg-slate-700 transition-colors ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!refreshing) {
+                        onRefresh();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && !refreshing) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onRefresh();
+                      }
+                    }}
+                    title="Refresh Segmentation Layers"
+                  >
+                    <RefreshCw className={`h-3 w-3 text-slate-400 ${refreshing ? 'animate-spin' : ''}`} />
+                  </div>
+                )}
+
                 {/* Toggle Visibility */}
                 <div
                   role="button"
@@ -185,220 +354,68 @@ export default function SegmentationAccordion({
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-2">
-            {layers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center py-8 px-4">
-                <Layers className="h-12 w-12 mb-3 text-slate-600" />
-                <div className="text-slate-400 text-sm mb-2">
-                  No Segmentation Layers
-                </div>
-                <div className="text-slate-500 text-xs mb-4">
-                  Create a layer to start segmenting
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    addSegmentationLayer();
-                    toast.success("New segmentation layer created");
-                  }}
-                  className="bg-teal-600 hover:bg-teal-700 text-white"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Create First Layer
-                </Button>
-              </div>
+            {loading ? (
+              <AccordionLoading message="Loading segmentation layers..." />
+            ) : error ? (
+              <AccordionError
+                message="Error Loading Layers"
+                error={error}
+                onRetry={onRefresh}
+                isRetrying={refreshing}
+              />
+            ) : !seriesId ? (
+              <AccordionEmpty
+                icon={Layers}
+                title="No Series Selected"
+                description="Please select a series to view segmentation layers"
+              />
+            ) : layers.length === 0 ? (
+              <AccordionEmpty
+                icon={Layers}
+                title="No Segmentation Layers"
+                description="Create a layer to start segmenting"
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      addSegmentationLayer();
+                      toast.success("New segmentation layer created");
+                    }}
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    Create First Layer
+                  </Button>
+                }
+              />
             ) : (
               <div className="space-y-1.5">
-                {layers.map((layer) => {
-                  const layerId = layer.metadata.id;
-                  const isSelected = selectedLayerId === layerId;
-                  const isVisible = state.segmentationLayerVisibility.get(layerId) ?? true;
-                  const isFromDatabase = layer.metadata.origin === "database";
-                  const showInfo = infoLayerId === layerId;
-                  const meta: any = layer.metadata;
-
-                  return (
-                    <div
-                      key={layerId}
-                      onClick={() => selectSegmentationLayer(layerId)}
-                      className={`rounded-lg border-l-4 p-3 space-y-2 transition-all cursor-pointer relative ${
-                        isSelected
-                          ? "bg-blue-900/40 border-blue-400 shadow-lg ring-2 ring-blue-500/50"
-                          : "bg-slate-900/50 hover:bg-slate-900/80"
-                      }`}
-                      style={{
-                        borderLeftColor: isSelected ? "#3b82f6" : "#64748b",
-                        borderLeftWidth: isSelected ? "6px" : "4px",
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-center gap-1.5">
-                            <div
-                              className="h-2.5 w-2.5 rounded-full shrink-0 border border-slate-700"
-                              style={{ backgroundColor: "#3b82f6" }}
-                            />
-                            <span className="text-xs font-medium text-white truncate">
-                              {layer.metadata.name || `Layer ${layerId.slice(0, 8)}`}
-                            </span>
-                            {isFromDatabase && (
-                              <Database className="h-3 w-3 text-emerald-400" />
-                            )}
-                          </div>
-
-                          {layer.metadata.notes && (
-                            <p className="text-xs text-slate-300 line-clamp-1 ml-6">
-                              {layer.metadata.notes}
-                            </p>
-                          )}
-
-                          <div className="flex items-center gap-3 ml-6 text-[10px] text-slate-400">
-                            <div className="flex items-center gap-1">
-                              <Layers className="h-2.5 w-2.5" />
-                              <span>Snapshots: {layer.snapshots?.length || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-2 shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            {isFromDatabase ? (
-                              <span className="text-xs font-medium text-emerald-400">Saved</span>
-                            ) : (
-                              <span className="text-xs font-medium text-amber-400">Local</span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {!isFromDatabase && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 hover:bg-slate-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditLayer(layer);
-                                }}
-                              >
-                                <Edit3 className="h-2.5 w-2.5 text-slate-400" />
-                              </Button>
-                            )}
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0 hover:bg-slate-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleSegmentationLayerVisibility(layerId);
-                              }}
-                            >
-                              {isVisible ? (
-                                <Eye className="h-2.5 w-2.5 text-blue-400" />
-                              ) : (
-                                <EyeOff className="h-2.5 w-2.5 text-slate-400" />
-                              )}
-                            </Button>
-
-                            {!isFromDatabase && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 hover:bg-slate-700 text-teal-400 hover:text-teal-300"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSaveLayer(layerId);
-                                }}
-                              >
-                                <Save className="h-2.5 w-2.5" />
-                              </Button>
-                            )}
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0 hover:bg-slate-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setInfoLayerId((prev) => (prev === layerId ? null : layerId));
-                              }}
-                            >
-                              <Info className="h-2.5 w-2.5 text-slate-300" />
-                            </Button>
-
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0 hover:bg-slate-700 hover:text-red-500"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(layer);
-                              }}
-                            >
-                              <Trash2 className="h-2.5 w-2.5 text-slate-400" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {showInfo && (
-                          <div className="mt-2 rounded-md border border-slate-700/60 bg-slate-900/60 p-2 text-[11px] text-slate-200 space-y-1.5">
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Status</span>
-                              <span className="font-semibold">
-                                {meta.segmentationStatus || "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Frame</span>
-                              <span className="font-semibold">
-                                {meta.frame != null ? meta.frame : "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Segmentator</span>
-                              <span className="font-semibold">
-                                {segmentatorUser?.data
-                                  ? [segmentatorUser.data.firstName, segmentatorUser.data.lastName]
-                                      .filter(Boolean)
-                                      .join(" ")
-                                      .trim()
-                                  : meta.segmentatorId || "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Reviewer</span>
-                              <span className="font-semibold">
-                                {reviewerUser?.data
-                                  ? [reviewerUser.data.firstName, reviewerUser.data.lastName]
-                                      .filter(Boolean)
-                                      .join(" ")
-                                      .trim()
-                                  : meta.reviewerId || "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Segmentation Date</span>
-                              <span className="font-semibold">
-                                {meta.segmentationDate || "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Review Date</span>
-                              <span className="font-semibold">
-                                {meta.reviewDate || "—"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-400">Color</span>
-                              <span className="font-semibold">
-                                {meta.colorCode || "—"}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {layers.map((layer) => (
+                  <SegmentationCard
+                    key={layer.metadata.id}
+                    layer={layer}
+                    isSelected={selectedLayerId === layer.metadata.id}
+                    isVisible={state.segmentationLayerVisibility.get(layer.metadata.id) ?? true}
+                    status={segmentationStatusMap.get(layer.metadata.id) || AnnotationStatus.DRAFT}
+                    color={segmentationColors.get(layer.metadata.id) || "#3b82f6"}
+                    isLocked={segmentationLockedMap.get(layer.metadata.id) || false}
+                    colorPickerOpen={colorPickerOpen === layer.metadata.id}
+                    tempColor={tempColor}
+                    onSelect={selectSegmentationLayer}
+                    onEdit={handleEditLayer}
+                    onToggleVisibility={toggleSegmentationLayerVisibility}
+                    onSave={() => handleSaveLayerClick(layer)}
+                    onInfo={(l) => setInfoModalLayer(l)}
+                    onDelete={handleDeleteClick}
+                    onColorPickerOpen={handleColorPickerOpen}
+                    onColorPickerClose={() => setColorPickerOpen(null)}
+                    onColorChange={handleColorChange}
+                    onTempColorChange={setTempColor}
+                    onLockToggle={handleLockToggle}
+                    onStatusChange={handleStatusChangeClick}
+                    userRole={user?.role}
+                  />
+                ))}
               </div>
             )}
           </AccordionContent>
@@ -413,7 +430,7 @@ export default function SegmentationAccordion({
             <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this segmentation layer? This action cannot be undone.
               {layerToDelete && (
-                  <div className="mt-2 p-2 bg-slate-800 rounded text-xs">
+                <div className="mt-2 p-2 bg-slate-800 rounded text-xs">
                   <div className="flex items-center gap-1.5">
                     <Layers className="h-3 w-3 text-blue-400" />
                     <span className="text-white font-medium">
@@ -486,6 +503,44 @@ export default function SegmentationAccordion({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Segmentation Detail Modal */}
+      <SegmentationDetailModal
+        layer={infoModalLayer}
+        open={!!infoModalLayer}
+        onOpenChange={(open) => !open && setInfoModalLayer(null)}
+        segmentatorName={
+          segmentatorUser?.data
+            ? [segmentatorUser.data.firstName, segmentatorUser.data.lastName]
+              .filter(Boolean)
+              .join(" ")
+              .trim()
+            : undefined
+        }
+        reviewerName={
+          reviewerUser?.data
+            ? [reviewerUser.data.firstName, reviewerUser.data.lastName]
+              .filter(Boolean)
+              .join(" ")
+              .trim()
+            : undefined
+        }
+      />
+
+      <SaveSegmentationModal
+        open={saveModalOpen}
+        onOpenChange={setSaveModalOpen}
+        layer={layerToSave}
+        onConfirm={handleSaveConfirm}
+      />
+
+      <SegmentationStatusModal
+        open={statusModalOpen}
+        onOpenChange={setStatusModalOpen}
+        layer={layerToUpdateStatus}
+        targetStatus={targetStatus}
+        onConfirm={handleStatusConfirm}
+      />
     </>
   );
 }
