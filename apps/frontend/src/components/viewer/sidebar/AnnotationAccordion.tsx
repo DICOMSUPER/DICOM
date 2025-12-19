@@ -107,6 +107,9 @@ export default function AnnotationAccordion({
           if (metadata?.source === "db") return;
           if (!ann.annotationUID) return;
           if (seenUIDs.has(ann.annotationUID)) return;
+          
+          // Skip ScaleOverlay annotations - they are persistent UI elements, not user annotations
+          if (metadata?.toolName === "ScaleOverlay") return;
 
           seenUIDs.add(ann.annotationUID);
 

@@ -418,6 +418,8 @@ export class UsersService {
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const maxAge = this.parseExpiresIn(expiresIn);
 
+      const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+      
       return {
         success: true,
         message: 'Đăng nhập thành công',
@@ -427,8 +429,8 @@ export class UsersService {
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
-            secure: this.configService.get<string>('NODE_ENV') === 'production',
-            sameSite: 'none',
+            secure: isProduction, // true in production (HTTPS), false in dev (HTTP)
+            sameSite: isProduction ? 'none' : 'lax', // 'none' requires secure:true
             maxAge: maxAge,
             path: '/',
           },
@@ -477,6 +479,9 @@ export class UsersService {
         this.configService.get<string>('JWT_EXPIRES_IN') || '1d';
       const maxAge = this.parseExpiresIn(expiresIn);
 
+      // Cookie settings must be consistent for login/logout to work properly
+      const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+      
       return {
         tokenResponse,
         cookieOptions: {
@@ -484,8 +489,8 @@ export class UsersService {
           value: tokenResponse.accessToken,
           options: {
             httpOnly: true,
-            secure: true,
-            sameSite: 'none',
+            secure: isProduction, // true in production (HTTPS), false in dev (HTTP)
+            sameSite: isProduction ? 'none' : 'lax', // 'none' requires secure:true
             maxAge: maxAge,
             path: '/',
           },

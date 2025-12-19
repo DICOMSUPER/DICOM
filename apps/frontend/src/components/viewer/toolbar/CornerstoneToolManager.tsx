@@ -737,15 +737,8 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         }
       });
 
-      if (toolGroup && typeof toolGroup.setToolEnabled === "function") {
-        try {
-          toolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
-          // Enable Scale Overlay by default
-          toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
-        } catch (error) {
-          console.warn("Error enabling tools:", error);
-        }
-      }
+      // NOTE: Do NOT enable ScaleOverlayTool here - it needs the viewport to be added first
+      // We'll enable it after adding the viewport below
 
       if (toolGroup && typeof toolGroup.addViewport === "function") {
         try {
@@ -770,6 +763,14 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
                 if (!isAlreadyAdded) {
                   toolGroup.addViewport(viewportId, renderingEngineId);
+                  
+                  // Enable persistent tools AFTER viewport is added (they need the viewport)
+                  try {
+                    toolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
+                    toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
+                  } catch (enableError) {
+                    console.warn("[ToolManager] Error enabling persistent tools:", enableError);
+                  }
                 }
 
                 initialized = true;
@@ -860,6 +861,14 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
               viewportRegisteredRef.current = true;
               console.debug(`[ToolManager] Added viewport ${viewportId} via READY event`);
 
+              // Enable persistent tools AFTER viewport is added
+              try {
+                currentToolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
+                currentToolGroup.setToolEnabled(ScaleOverlayTool.toolName);
+              } catch (enableError) {
+                console.warn("[ToolManager] Error enabling persistent tools via READY event:", enableError);
+              }
+
               // Activate any pending tool after viewport registration
               const currentSelectedTool = pendingToolActivationRef.current || selectedToolRef.current;
               if (currentSelectedTool && currentToolGroup.hasTool && !isCustomTool(currentSelectedTool as ToolType)) {
@@ -901,6 +910,14 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
                   currentToolGroup.addViewport(viewportId, renderingEngineId);
                   viewportRegisteredRef.current = true;
                   console.log(`✅ Added viewport ${viewportId} to tool group via IMAGE_RENDERED event`);
+
+                  // Enable persistent tools AFTER viewport is added
+                  try {
+                    currentToolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
+                    currentToolGroup.setToolEnabled(ScaleOverlayTool.toolName);
+                  } catch (enableError) {
+                    console.warn("[ToolManager] Error enabling persistent tools via IMAGE_RENDERED:", enableError);
+                  }
 
                   if (imageRenderedHandlerRef.current) {
                     eventTarget.removeEventListener(

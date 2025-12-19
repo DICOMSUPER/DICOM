@@ -46,6 +46,7 @@ import {
   useCreateImageSegmentationLayerMutation,
   useDeleteImageSegmentationLayerMutation,
 } from "@/store/imageSegmentationLayerApi";
+import { SegmentationStatus } from "@/common/enums/image-dicom.enum";
 import { toast } from "sonner";
 import { useMemo, useCallback, memo, useState, useEffect } from "react";
 import { Slider } from "@/components/ui/slider";
@@ -259,13 +260,13 @@ export default function ViewerLeftSidebar({
   const [deleteImageSegmentationLayer] =
     useDeleteImageSegmentationLayerMutation();
   const [submitFeedback] = useSubmitFeedbackMutation();
-  
+
   const { subscribe } = useViewerEvents();
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [currentAnalysisId, setCurrentAnalysisId] = useState<string | null>(null);
   const [aiPredictions, setAiPredictions] = useState<any[]>([]);
   const [aiAnalyzeMessage, setAiAnalyzeMessage] = useState<string>("");
-  
+
   // Listen for AI diagnosis success
   useEffect(() => {
     const unsubscribe = subscribe("ai:diagnosis:success", (data: any) => {
@@ -290,6 +291,13 @@ export default function ViewerLeftSidebar({
         return;
       }
 
+      // Validate instanceId exists (required by backend)
+      if (!layer.instanceId || layer.instanceId === 'unknown') {
+        toast.error("Cannot save: Layer has no valid DICOM instance reference. Please ensure the image is loaded before saving.");
+        console.error("Missing instanceId for layer:", layerId, layer);
+        return;
+      }
+
       const frame = deriveFrameForLayer(layer.snapshots as SegmentationSnapshot[]);
       const compressedSnapshots = compressSnapshots(layer.snapshots);
 
@@ -299,6 +307,8 @@ export default function ViewerLeftSidebar({
         notes: layer.notes,
         frame,
         snapshots: compressedSnapshots,
+        colorCode: layer.colorCode || '#3b82f6', // Default blue
+        segmentationStatus: SegmentationStatus.DRAFT, // Default to draft when saving from control panel
       }).unwrap();
 
       toast.success("Segmentation layer saved to database");
@@ -321,10 +331,10 @@ export default function ViewerLeftSidebar({
       toast.error("Error deleting segmentation layer from database");
     }
   }, [deleteImageSegmentationLayer, deleteSegmentationLayer, refetchSegmentationLayers]);
-  
+
   const handleSubmitFeedback = useCallback(async (isHelpful: boolean, comment?: string) => {
     if (!currentAnalysisId) return;
-    
+
     await submitFeedback({
       id: currentAnalysisId,
       feedback: {
@@ -332,7 +342,7 @@ export default function ViewerLeftSidebar({
         feedbackComment: comment,
       },
     }).unwrap();
-    
+
     // Close modal after successful feedback submission
     setShowAnalysisModal(false);
   }, [currentAnalysisId, submitFeedback]);
@@ -542,23 +552,22 @@ export default function ViewerLeftSidebar({
             <p className="text-slate-400 text-xs mb-3">
               Analyze current viewport with AI model
             </p>
-            <AIDiagnosisButton 
+            <AIDiagnosisButton
               onClearAI={() => {
                 setCurrentAnalysisId(null);
                 setAiPredictions([]);
                 setAiAnalyzeMessage("");
               }}
             />
-            
+
 
             <Button
               onClick={() => setShowAnalysisModal(true)}
               disabled={!currentAnalysisId}
-              className={`w-full mt-3 ${
-                currentAnalysisId
-                  ? 'bg-teal-600 hover:bg-teal-700 text-white'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
+              className={`w-full mt-3 ${currentAnalysisId
+                ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                }`}
             >
               View Analysis
             </Button>
@@ -691,15 +700,15 @@ export default function ViewerLeftSidebar({
       </div>
 
       {/* AI Analysis Results Modal */}
-    
-        <AIAnalysisModal
-          open={showAnalysisModal}
-          onClose={() => setShowAnalysisModal(false)}
-          predictions={aiPredictions}
-          aiAnalyzeMessage={aiAnalyzeMessage}
-          analysisId={currentAnalysisId as string}
-          onSubmitFeedback={handleSubmitFeedback}
-        />
+
+      <AIAnalysisModal
+        open={showAnalysisModal}
+        onClose={() => setShowAnalysisModal(false)}
+        predictions={aiPredictions}
+        aiAnalyzeMessage={aiAnalyzeMessage}
+        analysisId={currentAnalysisId as string}
+        onSubmitFeedback={handleSubmitFeedback}
+      />
 
     </TooltipProvider>
   );

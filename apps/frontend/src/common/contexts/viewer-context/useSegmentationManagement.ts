@@ -42,6 +42,7 @@ const SEGMENTATION_HISTORY_IGNORED_REASONS = new Set([
   "segmentation-view-toggle-hide",
   "history-undo",
   "history-redo",
+  "database-load-restore",
 ]);
 
 interface UseSegmentationManagementProps {
@@ -248,99 +249,136 @@ export const useSegmentationManagement = ({
     return state.segmentationLayerVisibility.get(layerId) ?? true;
   }, [state.selectedSegmentationLayer, state.segmentationLayerVisibility]);
 
-  // Effect 1: Handle visibility-only changes (non-destructive style updates)
-  useEffect(() => {
-    const currentLayerId = state.selectedSegmentationLayer;
-    const currentVisibility = selectedLayerVisibility;
-    const visibilityChanged = previousLayerVisibilityRef.current !== currentVisibility;
-    
-    // Update ref
-    previousLayerVisibilityRef.current = currentVisibility;
-    
-    // Only handle pure visibility changes here
-    if (!visibilityChanged || !currentLayerId) {
-      return;
-    }
-
-    // Skip if layer or viewport also changed - let the data restoration effect handle it
-    const layerChanged = previousLayerSelectionRef.current !== state.selectedSegmentationLayer;
-    const viewportChanged = previousActiveViewportRef.current !== state.activeViewport;
-    const currentViewportId = state.viewportIds.get(state.activeViewport);
-    const viewportIdChanged = previousViewportIdRef.current !== currentViewportId;
-    
-    if (layerChanged || viewportChanged || viewportIdChanged) {
-      return;
-    }
-
-    // Apply visibility via style API
-    if (!currentViewportId) return;
-    
-    const segmentationId = segmentationIdForViewport(currentViewportId);
-    
-    try {
-      const styleToApply = currentVisibility
-        ? {
-            fillAlpha: 0.5,
-            outlineOpacity: 1,
-            renderFill: true,
-            renderOutline: true,
-          }
-        : {
-            fillAlpha: 0,
-            outlineOpacity: 0,
-            renderFill: false,
-            renderOutline: false,
-          };
-
-      const segStyleApi = segmentationStyle;
-      if (typeof segStyleApi?.setStyle === 'function') {
-        segStyleApi.setStyle(
-          { 
-            segmentationId,
-            type: ToolEnums.SegmentationRepresentations.Labelmap,
-          },
-          styleToApply
-        );
-      }
-    } catch (e) {
-      console.warn("[Segmentation] Failed to set segmentation visibility:", e);
-    }
-  }, [selectedLayerVisibility, state.selectedSegmentationLayer, state.activeViewport, state.viewportIds]);
-
-  // Effect 2: Handle layer/viewport changes (data restoration)
+  // Unified Effect: Handle visibility, layer, and viewport changes
+  // This consolidates all sync logic to avoid race conditions between separate effects
   useEffect(() => {
     const viewportIndex = state.activeViewport;
-    const layerChanged = previousLayerSelectionRef.current !== state.selectedSegmentationLayer;
-    const viewportChanged = previousActiveViewportRef.current !== viewportIndex;
+    const currentLayerId = state.selectedSegmentationLayer;
     const currentViewportId = state.viewportIds.get(viewportIndex);
+    const currentVisibility = selectedLayerVisibility;
+    
+    // Calculate what changed BEFORE updating any refs
+    const layerChanged = previousLayerSelectionRef.current !== currentLayerId;
+    const viewportChanged = previousActiveViewportRef.current !== viewportIndex;
     const viewportIdChanged = previousViewportIdRef.current !== currentViewportId;
-
-    // Capture previous layer ID before updating the ref
+    const visibilityChanged = previousLayerVisibilityRef.current !== currentVisibility;
+    
+    // Capture previous layer ID before updating refs
     const prevLayerId = previousLayerSelectionRef.current;
-
-    // Update refs
-    previousLayerSelectionRef.current = state.selectedSegmentationLayer;
+    
+    // Now update all refs together
+    previousLayerSelectionRef.current = currentLayerId;
     previousActiveViewportRef.current = viewportIndex;
     previousViewportIdRef.current = currentViewportId;
-
-    // Only proceed if layer or viewport changed
-    if (!layerChanged && !viewportChanged && !viewportIdChanged) {
+    previousLayerVisibilityRef.current = currentVisibility;
+    
+    // Nothing changed - early exit
+    if (!layerChanged && !viewportChanged && !viewportIdChanged && !visibilityChanged) {
       return;
     }
-
+    
+    // Get viewport data
     const { stackViewport, viewportId, imageIds, imageIdToInstanceMap, renderingEngineId, isValid } = getViewportData(viewportIndex);
     
-    if (!isValid || !viewportId) {
+    if (!viewportId) {
+      return;
+    }
+    
+    const segmentationId = segmentationIdForViewport(viewportId);
+    
+    // CASE 1: Only visibility changed (no layer/viewport changes)
+    if (visibilityChanged && !layerChanged && !viewportChanged && !viewportIdChanged) {
+      if (!currentLayerId) return;
+      
+      console.log("[Segmentation] Visibility toggle:", { currentVisibility, segmentationId, viewportId });
+      
+      try {
+        // Use a complete style object with all required properties
+        const styleToApply = currentVisibility
+          ? {
+              renderFill: true,
+              renderOutline: true,
+              fillAlpha: 0.25,
+              outlineWidthActive: 2,
+              outlineOpacity: 1,
+              outlineOpacityInactive: 0.85,
+              renderFillInactive: true,
+              renderOutlineInactive: true,
+            }
+          : {
+              renderFill: false,
+              renderOutline: false,
+              fillAlpha: 0,
+              outlineWidthActive: 0,
+              outlineOpacity: 0,
+              outlineOpacityInactive: 0,
+              renderFillInactive: false,
+              renderOutlineInactive: false,
+            };
+
+        // Try using segmentation.config.style.setStyle (more reliable)
+        const segConfigStyle = segmentation.config?.style;
+        if (typeof segConfigStyle?.setStyle === 'function') {
+          segConfigStyle.setStyle(
+            { 
+              segmentationId,
+              type: ToolEnums.SegmentationRepresentations.Labelmap,
+            },
+            styleToApply
+          );
+          console.log("[Segmentation] Applied visibility style via segmentation.config.style");
+        } else {
+          // Fallback to segmentationStyle direct import
+          const segStyleApi = segmentationStyle;
+          if (typeof segStyleApi?.setStyle === 'function') {
+            segStyleApi.setStyle(
+              { 
+                segmentationId,
+                type: ToolEnums.SegmentationRepresentations.Labelmap,
+              },
+              styleToApply
+            );
+            console.log("[Segmentation] Applied visibility style via segmentationStyle");
+          }
+        }
+        
+        // Force re-render after style change
+        if (renderingEngineId) {
+          const engine = getRenderingEngine(renderingEngineId);
+          if (engine) {
+            engine.renderViewports([viewportId]);
+            console.log("[Segmentation] Triggered viewport render for visibility change");
+          }
+        }
+        
+        // Also trigger via stackViewport for immediate feedback
+        if (stackViewport) {
+          requestAnimationFrame(() => {
+            try {
+              batchedRender(stackViewport);
+            } catch {
+              // ignore
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("[Segmentation] Failed to set segmentation visibility:", e);
+      }
+      return;
+    }
+    
+    // CASE 2: Layer or viewport changed - need to restore/clear data
+    if (!isValid) {
       return;
     }
 
+    // Use a unique operation ID to handle cancellation properly
+    const operationId = Symbol('layer-switch');
     let cancelled = false;
+    
     const applySnapshot = async () => {
-      // Prevent concurrent layer switch operations
-      if (layerSwitchInProgressRef.current) {
-        return;
-      }
-      
+      // Instead of a mutex that blocks, we just mark this operation
+      // and check for cancellation throughout
       layerSwitchInProgressRef.current = true;
       
       try {
@@ -368,14 +406,14 @@ export const useSegmentationManagement = ({
         return;
       }
 
-      const segmentationId = segmentationIdForViewport(viewportId);
+      const currentSegmentationId = segmentationIdForViewport(viewportId);
 
-      // Auto-save previous layer state before switching logic overwrites it
-      if (layerChanged && prevLayerId && isSegmentationValid(segmentationId)) {
+      // Auto-save previous layer state before switching
+      if (layerChanged && prevLayerId && isSegmentationValid(currentSegmentationId)) {
         if (isSegmentationDirtyRef.current) {
           try {
             const snapshot = captureSegmentationSnapshot(
-              segmentationId,
+              currentSegmentationId,
               viewportId,
               imageIdToInstanceMap
             );
@@ -393,39 +431,125 @@ export const useSegmentationManagement = ({
         }
       }
 
+      if (cancelled) {
+        layerSwitchInProgressRef.current = false;
+        return;
+      }
+
+      // Get the current layer data (use refs to get latest values)
       const layerId = selectedLayerData?.layerId;
       const latestSnapshot = selectedLayerData?.latestSnapshot ?? null;
 
       // Handle Data Restoration
-      if (isSegmentationValid(segmentationId)) {
+      if (isSegmentationValid(currentSegmentationId)) {
         isRestoringSnapshotRef.current = true;
         try {
           if (layerId && latestSnapshot) {
-            restoreSegmentationSnapshot(latestSnapshot, {
+            console.log("[Segmentation] Restoring snapshot for layer:", layerId, {
+              snapshotImageCount: latestSnapshot.imageData?.length ?? 0,
+              snapshotWithData: latestSnapshot.imageData?.filter((d: any) => d.pixelData?.some((p: number) => p !== 0)).length ?? 0,
+            });
+            const restored = restoreSegmentationSnapshot(latestSnapshot, {
               reason: "layer-sync-restore",
               viewportId,
             });
+            console.log("[Segmentation] Snapshot restore result:", restored);
             isSegmentationDirtyRef.current = false;
           } else {
-            clearSegmentationData(segmentationId, {
-              reason: "layer-sync-clear",
+            console.log("[Segmentation] Clearing data for layer switch:", { 
+              layerId, 
+              hasLatestSnapshot: !!latestSnapshot,
+              segmentationId: currentSegmentationId,
+              viewportId 
             });
+            const cleared = clearSegmentationData(currentSegmentationId, {
+              reason: "layer-sync-clear",
+              viewportId,
+            });
+            console.log("[Segmentation] Data clear result:", cleared);
             isSegmentationDirtyRef.current = false;
           }
         } finally {
           isRestoringSnapshotRef.current = false;
         }
+      } else {
+        console.log("[Segmentation] Skipping data restore/clear - segmentation not valid:", currentSegmentationId);
       }
 
-      // Force viewport render
+      if (cancelled) {
+        layerSwitchInProgressRef.current = false;
+        return;
+      }
+
+      // Apply visibility style for the current layer
+      const visibility = state.segmentationLayerVisibility.get(currentLayerId ?? '') ?? true;
+      console.log("[Segmentation] Applying visibility style after layer switch:", { visibility, currentLayerId });
+      try {
+        const styleToApply = visibility
+          ? {
+              renderFill: true,
+              renderOutline: true,
+              fillAlpha: 0.25,
+              outlineWidthActive: 2,
+              outlineOpacity: 1,
+              outlineOpacityInactive: 0.85,
+              renderFillInactive: true,
+              renderOutlineInactive: true,
+            }
+          : {
+              renderFill: false,
+              renderOutline: false,
+              fillAlpha: 0,
+              outlineWidthActive: 0,
+              outlineOpacity: 0,
+              outlineOpacityInactive: 0,
+              renderFillInactive: false,
+              renderOutlineInactive: false,
+            };
+
+        // Try using segmentation.config.style.setStyle (more reliable)
+        const segConfigStyle = segmentation.config?.style;
+        if (typeof segConfigStyle?.setStyle === 'function') {
+          segConfigStyle.setStyle(
+            { 
+              segmentationId: currentSegmentationId,
+              type: ToolEnums.SegmentationRepresentations.Labelmap,
+            },
+            styleToApply
+          );
+        } else {
+          const segStyleApi = segmentationStyle;
+          if (typeof segStyleApi?.setStyle === 'function') {
+            segStyleApi.setStyle(
+              { 
+                segmentationId: currentSegmentationId,
+                type: ToolEnums.SegmentationRepresentations.Labelmap,
+              },
+              styleToApply
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("[Segmentation] Failed to set visibility style:", e);
+      }
+
+      // Force viewport render - multiple render passes to ensure visual update
       if (!cancelled && stackViewport) {
+        // Small delay to let the labelmap buffer updates settle
         await new Promise<void>((resolve) => setTimeout(resolve, 50));
         
-        if (cancelled) return;
+        if (cancelled) {
+          layerSwitchInProgressRef.current = false;
+          return;
+        }
+        
+        console.log("[Segmentation] Layer switch: triggering render for", viewportId);
         
         try {
+          // First render pass
           batchedRender(stackViewport);
 
+          // Render via engine for complete pipeline
           if (renderingEngineId) {
             const engine = getRenderingEngine(renderingEngineId);
             if (engine) {
@@ -433,10 +557,28 @@ export const useSegmentationManagement = ({
             }
           }
           
+          // Second render pass after a frame to catch any delayed updates
           requestAnimationFrame(() => {
             if (!cancelled) {
               try {
                 batchedRender(stackViewport);
+                
+                // Trigger a SEGMENTATION_RENDERED event to ensure tools update
+                if (renderingEngineId) {
+                  const engine = getRenderingEngine(renderingEngineId);
+                  if (engine) {
+                    // Schedule another render to ensure all updates are visible
+                    setTimeout(() => {
+                      if (!cancelled) {
+                        try {
+                          engine.renderViewports([viewportId]);
+                        } catch {
+                          // ignore
+                        }
+                      }
+                    }, 100);
+                  }
+                }
               } catch {
                 // ignore
               }
@@ -448,6 +590,7 @@ export const useSegmentationManagement = ({
       }
       
       layerSwitchInProgressRef.current = false;
+      console.log("[Segmentation] Layer switch complete for", currentLayerId);
     };
 
     void applySnapshot();
@@ -459,6 +602,8 @@ export const useSegmentationManagement = ({
     state.activeViewport,
     state.selectedSegmentationLayer,
     state.viewportIds,
+    state.segmentationLayerVisibility,
+    selectedLayerVisibility,
     selectedLayerData,
     getViewportData,
     dispatch,
@@ -602,6 +747,12 @@ export const useSegmentationManagement = ({
         visible: state.segmentationLayerVisibility.get(layerId) ?? true,
         origin: layerData.metadata.origin,
         snapshots: layerData.snapshots,
+        // Additional metadata fields for save/update operations
+        colorCode: layerData.metadata.colorCode,
+        segmentationStatus: layerData.metadata.segmentationStatus,
+        segmentatorId: layerData.metadata.segmentatorId,
+        reviewerId: layerData.metadata.reviewerId,
+        frame: layerData.metadata.frame,
       })
     );
   }, [
@@ -836,18 +987,74 @@ export const useSegmentationManagement = ({
 
           const firstLayerId =
             layers.size > 0 ? layers.keys().next().value : null;
+          
+          // Dispatch layers to state
           dispatch({
             type: "SET_SEGMENTATION_LAYERS",
             layers,
             selectedLayer: firstLayerId ?? null,
           });
+
+          // Explicitly restore the first layer's snapshot after dispatch
+          // This ensures the segmentation is visible immediately, not just stored in state
+          if (firstLayerId) {
+            const firstLayerData = layers.get(firstLayerId);
+            const latestSnapshot = firstLayerData?.snapshots?.[firstLayerData.snapshots.length - 1];
+            
+            if (latestSnapshot) {
+              // Get active viewport data for restoration
+              const viewportIndex = state.activeViewport;
+              const viewportId = state.viewportIds.get(viewportIndex);
+              
+              if (viewportId) {
+                console.log("[Segmentation] Explicitly restoring database layer snapshot:", {
+                  layerId: firstLayerId,
+                  viewportId,
+                  snapshotImageCount: latestSnapshot.imageData?.length ?? 0,
+                });
+                
+                // Small delay to ensure labelmap is ready after ensureViewportLabelmapSegmentation
+                await new Promise<void>(resolve => setTimeout(resolve, 50));
+                
+                // Restore the snapshot
+                const restored = restoreSegmentationSnapshot(latestSnapshot, {
+                  reason: "database-load-restore",
+                  viewportId,
+                });
+                
+                console.log("[Segmentation] Database layer restoration result:", restored);
+                
+                // Force render to show the restored segmentation
+                if (restored) {
+                  const renderingEngineId = renderingEngineIdsRef.current.get(viewportIndex);
+                  if (renderingEngineId) {
+                    const engine = getRenderingEngine(renderingEngineId);
+                    if (engine) {
+                      engine.renderViewports([viewportId]);
+                    }
+                  }
+                  
+                  // Also render via viewport ref
+                  const stackViewport = viewportRefs.current.get(viewportIndex);
+                  if (stackViewport) {
+                    try {
+                      batchedRender(stackViewport);
+                    } catch {
+                      // ignore render errors
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to load segmentation layers", error);
       }
     },
-    [fetchSegmentationLayersBySeries, dispatch]
+    [fetchSegmentationLayersBySeries, dispatch, state.activeViewport, state.viewportIds, renderingEngineIdsRef, viewportRefs]
   );
+
 
   const setSegmentationBrushSize = useCallback(
     (radius: number, isInMM: boolean = true) => {

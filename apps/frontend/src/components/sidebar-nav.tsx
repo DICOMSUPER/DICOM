@@ -76,6 +76,13 @@ export function SidebarNav() {
           <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
           <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
           <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
+          <div className="h-10 w-full bg-slate-200 animate-pulse rounded" />
         </div>
       </nav>
     );
