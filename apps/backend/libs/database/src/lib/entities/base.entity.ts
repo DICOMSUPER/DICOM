@@ -1,10 +1,10 @@
 import { Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { BaseEntity as TypeOrmBaseEntity } from 'typeorm';
 export abstract class BaseEntity extends TypeOrmBaseEntity {
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz',  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz', })
   updatedAt!: Date;
 
   @Column({ name: 'is_deleted', default: false })

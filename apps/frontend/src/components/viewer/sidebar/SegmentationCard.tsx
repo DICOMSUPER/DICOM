@@ -128,10 +128,10 @@ export const SegmentationCard = React.memo(({
     const isPhysician = userRole === Roles.PHYSICIAN;
     const canMarkAsFinal = !isFromDatabase || status === AnnotationStatus.DRAFT;
     const canMarkAsReviewed = isPhysician && status === AnnotationStatus.FINAL;
-    const canChangeToDraft = isFromDatabase && status === AnnotationStatus.FINAL;
+    const canChangeToDraft = false; // FINAL items can never be changed back to draft
 
     const isReadOnly = status === AnnotationStatus.REVIEWED;
-    const isEditDeleteDisabled = isReadOnly || (status === AnnotationStatus.FINAL && !canChangeToDraft);
+    const isEditDeleteDisabled = isReadOnly || status === AnnotationStatus.FINAL;
 
     return (
         <div
@@ -261,7 +261,7 @@ export const SegmentationCard = React.memo(({
                         />
                     )}
 
-                    {!isEditDeleteDisabled && !isFromDatabase && (
+                    {!isEditDeleteDisabled && isFromDatabase && (
                         <Button
                             variant="ghost"
                             size="sm"

@@ -104,11 +104,14 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Logout successful' })
   async logoutUser(@Res({ passthrough: true }) res: Response) {
     try {
-      const secure = process.env.NODE_ENV === 'production';
+      // Production: secure=true, sameSite='none' (cross-origin HTTPS)
+      // Development: secure=false, sameSite='lax' (same-origin HTTP)
+      const isProduction = process.env.NODE_ENV === 'production';
+      
       res.cookie('accessToken', '', {
         httpOnly: true,
-        secure,
-        sameSite: secure ? 'none' : 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 0,
         path: '/',
       });

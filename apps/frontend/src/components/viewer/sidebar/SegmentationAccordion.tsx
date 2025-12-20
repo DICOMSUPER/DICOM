@@ -108,25 +108,32 @@ export default function SegmentationAccordion({
     return Array.from(state.segmentationLayers.values());
   }, [state.segmentationLayers]);
 
-  // Initialize status/colors from notes hack if present, or defaults
+  // Initialize status/colors from layer metadata
   useEffect(() => {
     const newStatusMap = new Map<string, AnnotationStatus>();
     const newColorMap = new Map<string, string>();
     const newLockMap = new Map<string, boolean>();
 
     layers.forEach(layer => {
-      // Status Mock Logic: Check notes for [STATUS:XYZ]
+      // Status Logic: Read from segmentationStatus field
       let status = AnnotationStatus.DRAFT;
       if (layer.metadata.origin === "database") {
-        if (layer.metadata.notes?.includes("[STATUS:FINAL]")) status = AnnotationStatus.FINAL;
-        else if (layer.metadata.notes?.includes("[STATUS:REVIEWED]")) status = AnnotationStatus.REVIEWED;
-        // Default DB layers to Final if no tag? Or Draft? Let's say Draft unless specified.
+        // Use proper segmentationStatus field from database
+        const dbStatus = layer.metadata.segmentationStatus;
+        if (dbStatus === 'final' || dbStatus === AnnotationStatus.FINAL) {
+          status = AnnotationStatus.FINAL;
+        } else if (dbStatus === 'reviewed' || dbStatus === AnnotationStatus.REVIEWED) {
+          status = AnnotationStatus.REVIEWED;
+        } else {
+          status = AnnotationStatus.DRAFT;
+        }
       }
       // If local, always Draft
       newStatusMap.set(layer.metadata.id, status);
 
-      // Color Logic: Default Blue
-      newColorMap.set(layer.metadata.id, "#3b82f6");
+      // Color Logic: Read from colorCode field, fallback to default blue
+      const colorCode = layer.metadata.colorCode || "#3b82f6";
+      newColorMap.set(layer.metadata.id, colorCode);
 
       // Lock Logic (Read-only if Reviewed)
       if (status === AnnotationStatus.REVIEWED) {
@@ -183,13 +190,31 @@ export default function SegmentationAccordion({
     setTempColor(currentColor);
   }, []);
 
-  const handleColorChange = useCallback((layerId: string) => {
+  const handleColorChange = useCallback(async (layerId: string) => {
     if (!tempColor) return;
     setSegmentationColors(prev => new Map(prev).set(layerId, tempColor));
     setColorPickerOpen(null);
-    // TODO: Save color to DB if db layer (update metadata or dedicated field if available)
-    toast.success("Layer color updated (Local)");
-  }, [tempColor]);
+
+    // Save color to DB if database layer
+    const layer = layers.find(l => l.metadata.id === layerId);
+    if (layer?.metadata.origin === 'database') {
+      try {
+        await updateImageSegmentationLayer({
+          id: layerId,
+          updateImageSegmentationLayerDto: {
+            colorCode: tempColor,
+          }
+        }).unwrap();
+        toast.success("Layer color updated");
+        onRefresh?.();
+      } catch (error) {
+        console.error("Failed to update layer color:", error);
+        toast.error("Failed to update layer color");
+      }
+    } else {
+      toast.success("Layer color updated (Local)");
+    }
+  }, [tempColor, layers, updateImageSegmentationLayer, onRefresh]);
 
   const handleLockToggle = useCallback((layerId: string, locked: boolean) => {
     setSegmentationLockedMap(prev => new Map(prev).set(layerId, locked));
@@ -218,33 +243,43 @@ export default function SegmentationAccordion({
   }, [layers]);
 
   const handleStatusConfirm = useCallback(async (layerId: string, status: AnnotationStatus) => {
-    // Mock API call since real status field missing
-    // We will update the notes with [STATUS:XYZ] tag
     const layer = layers.find(l => l.metadata.id === layerId);
     if (!layer) return;
 
-    const oldNotes = layer.metadata.notes || "";
-    // Remove old status tag if any
-    const cleanNotes = oldNotes.replace(/\[STATUS:[A-Z]+\]\s*/g, "");
-    const newNotes = `[STATUS:${status}] ${cleanNotes}`;
+    const currentStatus = segmentationStatusMap.get(layerId);
+
+    // Validation rules matching annotation logic
+    if (currentStatus === AnnotationStatus.REVIEWED) {
+      toast.error('Reviewed segmentations cannot be changed');
+      throw new Error('Invalid status transition: reviewed segmentations are immutable');
+    }
+
+    if (currentStatus === AnnotationStatus.FINAL && status === AnnotationStatus.DRAFT) {
+      toast.error('Final status can only be changed to reviewed, not back to draft');
+      throw new Error('Invalid status transition: final can only be changed to reviewed');
+    }
+
+    if (status === AnnotationStatus.REVIEWED && user?.role !== Roles.PHYSICIAN) {
+      toast.error('Only physicians can mark as reviewed');
+      return;
+    }
 
     try {
       // Optimistic update
       setSegmentationStatusMap(prev => new Map(prev).set(layerId, status));
 
       if (layer.metadata.origin === 'database') {
-        // Call API to update notes
+        // Call API to update segmentationStatus field
         await updateImageSegmentationLayer({
           id: layerId,
           updateImageSegmentationLayerDto: {
-            notes: newNotes
+            segmentationStatus: status as any, // SegmentationStatus enum matches AnnotationStatus values
           }
         }).unwrap();
-        // Also update local context via prop if needed, but refetch might handle it
         toast.success(`Status updated to ${status}`);
         onRefresh?.(); // Refetch to sync
       } else {
-        // Local only
+        // Local only - just update local state
         toast.success(`Status updated to ${status} (Local)`);
       }
     } catch (e) {
@@ -388,36 +423,93 @@ export default function SegmentationAccordion({
                   </Button>
                 }
               />
-            ) : (
-              <div className="space-y-1.5">
-                {layers.map((layer) => (
-                  <SegmentationCard
-                    key={layer.metadata.id}
-                    layer={layer}
-                    isSelected={selectedLayerId === layer.metadata.id}
-                    isVisible={state.segmentationLayerVisibility.get(layer.metadata.id) ?? true}
-                    status={segmentationStatusMap.get(layer.metadata.id) || AnnotationStatus.DRAFT}
-                    color={segmentationColors.get(layer.metadata.id) || "#3b82f6"}
-                    isLocked={segmentationLockedMap.get(layer.metadata.id) || false}
-                    colorPickerOpen={colorPickerOpen === layer.metadata.id}
-                    tempColor={tempColor}
-                    onSelect={selectSegmentationLayer}
-                    onEdit={handleEditLayer}
-                    onToggleVisibility={toggleSegmentationLayerVisibility}
-                    onSave={() => handleSaveLayerClick(layer)}
-                    onInfo={(l) => setInfoModalLayer(l)}
-                    onDelete={handleDeleteClick}
-                    onColorPickerOpen={handleColorPickerOpen}
-                    onColorPickerClose={() => setColorPickerOpen(null)}
-                    onColorChange={handleColorChange}
-                    onTempColorChange={setTempColor}
-                    onLockToggle={handleLockToggle}
-                    onStatusChange={handleStatusChangeClick}
-                    userRole={user?.role}
-                  />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              // Group layers by origin (database vs local)
+              const databaseLayers = layers.filter(l => l.metadata.origin === 'database');
+              const localLayers = layers.filter(l => l.metadata.origin !== 'database');
+
+              return (
+                <div className="space-y-3">
+                  {databaseLayers.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2 px-1">
+                        <Database className="h-3 w-3 text-emerald-400" />
+                        <span className="text-xs font-medium text-emerald-300">
+                          Saved ({databaseLayers.length})
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {databaseLayers.map((layer) => (
+                          <SegmentationCard
+                            key={layer.metadata.id}
+                            layer={layer}
+                            isSelected={selectedLayerId === layer.metadata.id}
+                            isVisible={state.segmentationLayerVisibility.get(layer.metadata.id) ?? true}
+                            status={segmentationStatusMap.get(layer.metadata.id) || AnnotationStatus.DRAFT}
+                            color={segmentationColors.get(layer.metadata.id) || "#3b82f6"}
+                            isLocked={segmentationLockedMap.get(layer.metadata.id) || false}
+                            colorPickerOpen={colorPickerOpen === layer.metadata.id}
+                            tempColor={tempColor}
+                            onSelect={selectSegmentationLayer}
+                            onEdit={handleEditLayer}
+                            onToggleVisibility={toggleSegmentationLayerVisibility}
+                            onSave={() => handleSaveLayerClick(layer)}
+                            onInfo={(l) => setInfoModalLayer(l)}
+                            onDelete={handleDeleteClick}
+                            onColorPickerOpen={handleColorPickerOpen}
+                            onColorPickerClose={() => setColorPickerOpen(null)}
+                            onColorChange={handleColorChange}
+                            onTempColorChange={setTempColor}
+                            onLockToggle={handleLockToggle}
+                            onStatusChange={handleStatusChangeClick}
+                            userRole={user?.role}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {localLayers.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2 px-1">
+                        <Edit3 className="h-3 w-3 text-amber-400" />
+                        <span className="text-xs font-medium text-amber-300">
+                          Local ({localLayers.length})
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {localLayers.map((layer) => (
+                          <SegmentationCard
+                            key={layer.metadata.id}
+                            layer={layer}
+                            isSelected={selectedLayerId === layer.metadata.id}
+                            isVisible={state.segmentationLayerVisibility.get(layer.metadata.id) ?? true}
+                            status={segmentationStatusMap.get(layer.metadata.id) || AnnotationStatus.DRAFT}
+                            color={segmentationColors.get(layer.metadata.id) || "#3b82f6"}
+                            isLocked={segmentationLockedMap.get(layer.metadata.id) || false}
+                            colorPickerOpen={colorPickerOpen === layer.metadata.id}
+                            tempColor={tempColor}
+                            onSelect={selectSegmentationLayer}
+                            onEdit={handleEditLayer}
+                            onToggleVisibility={toggleSegmentationLayerVisibility}
+                            onSave={() => handleSaveLayerClick(layer)}
+                            onInfo={(l) => setInfoModalLayer(l)}
+                            onDelete={handleDeleteClick}
+                            onColorPickerOpen={handleColorPickerOpen}
+                            onColorPickerClose={() => setColorPickerOpen(null)}
+                            onColorChange={handleColorChange}
+                            onTempColorChange={setTempColor}
+                            onLockToggle={handleLockToggle}
+                            onStatusChange={handleStatusChangeClick}
+                            userRole={user?.role}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -430,19 +522,19 @@ export default function SegmentationAccordion({
             <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this segmentation layer? This action cannot be undone.
               {layerToDelete && (
-                <div className="mt-2 p-2 bg-slate-800 rounded text-xs">
-                  <div className="flex items-center gap-1.5">
+                <span className="block mt-2 p-2 bg-slate-800 rounded text-xs">
+                  <span className="flex items-center gap-1.5">
                     <Layers className="h-3 w-3 text-blue-400" />
                     <span className="text-white font-medium">
                       {layerToDelete.metadata.name || `Layer ${layerToDelete.metadata.id.slice(0, 8)}`}
                     </span>
-                  </div>
+                  </span>
                   {layerToDelete.metadata.origin === "database" ? (
-                    <div className="text-emerald-400 text-[10px] mt-1">Database layer</div>
+                    <span className="block text-emerald-400 text-[10px] mt-1">Database layer</span>
                   ) : (
-                    <div className="text-amber-400 text-[10px] mt-1">Local layer (not saved to database)</div>
+                    <span className="block text-amber-400 text-[10px] mt-1">Local layer (not saved to database)</span>
                   )}
-                </div>
+                </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -485,7 +577,7 @@ export default function SegmentationAccordion({
                 value={layerNotes}
                 onChange={(e) => setLayerNotes(e.target.value)}
                 placeholder="Enter notes"
-                className="bg-slate-800 border-slate-700 text-white resize-none"
+                className="bg-slate-800 border-slate-700 text-white resize-none placeholder-white"
                 rows={3}
               />
             </div>

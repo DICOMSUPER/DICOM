@@ -52,7 +52,7 @@ export const patientConditionApi = createApi({
       query: (data) => ({
         url: "",
         method: "POST",
-        body: data,
+        data,
       }),
       invalidatesTags: ["PatientCondition"],
     }),
@@ -64,7 +64,7 @@ export const patientConditionApi = createApi({
       query: ({ id, data }) => ({
         url: `/${id}`,
         method: "PATCH",
-        body: data,
+        data,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "PatientCondition", id },
@@ -94,7 +94,7 @@ export const patientConditionApi = createApi({
       query: ({ patientId, conditions }) => ({
         url: "/bulk",
         method: "POST",
-        body: { patientId, conditions },
+        data: { patientId, conditions },
       }),
       invalidatesTags: ["PatientCondition"],
     }),
@@ -106,7 +106,7 @@ export const patientConditionApi = createApi({
       query: ({ patientId, conditions }) => ({
         url: `/patient/${patientId}/bulk`,
         method: "PUT",
-        body: { conditions },
+        data: { conditions },
       }),
       invalidatesTags: ["PatientCondition"],
     }),

@@ -57,6 +57,11 @@ export class RequestProcedureController {
     await this.redisService.deleteKeyStartingWith(
       cacheKeyBuilder.paginated(CacheEntity.requestProcedures)
     );
+
+    // Invalidate stats cache
+    await this.redisService.delete(
+      cacheKeyBuilder.stats(CacheEntity.requestProcedures)
+    );
   }
 
   @Get()
@@ -136,6 +141,30 @@ export class RequestProcedureController {
     );
     await this.redisService.set(pattern, procedures, CACHE_TTL_SECONDS);
     return procedures;
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get request procedure statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Request procedure statistics',
+  })
+  @ApiTags('Request Procedures')
+  async getRequestProcedureStats() {
+    const pattern = cacheKeyBuilder.stats(CacheEntity.requestProcedures);
+
+    const cachedStats = await this.redisService.get(pattern);
+    if (cachedStats) {
+      return cachedStats;
+    }
+
+    const stats = await firstValueFrom(
+      this.imagingService.send('ImagingService.RequestProcedure.GetStats', {})
+    );
+
+    await this.redisService.set(pattern, stats, CACHE_TTL_SECONDS);
+
+    return {data:stats};
   }
 
   @Get(':id')
@@ -240,4 +269,6 @@ export class RequestProcedureController {
 
     return procedure;
   }
+
+
 }

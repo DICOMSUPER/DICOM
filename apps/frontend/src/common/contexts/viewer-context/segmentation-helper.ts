@@ -1133,6 +1133,36 @@ export function restoreSegmentationSnapshot(
     return null;
   };
 
+  // Additional fallback: match by instanceId only (useful for database snapshots from different sessions)
+  const resolveByInstanceIdOnly = (instanceId?: string): string | null => {
+    if (!viewportMapping || !instanceId) {
+      return null;
+    }
+    for (const [labelmapId, info] of viewportMapping.entries()) {
+      if (info.instanceId === instanceId) {
+        return labelmapId;
+      }
+    }
+    return null;
+  };
+
+  // Additional fallback: match by frame index (0-based position in viewport mapping)
+  const resolveByFrameIndex = (frameNumber?: number): string | null => {
+    if (!viewportMapping || typeof frameNumber !== "number") {
+      return null;
+    }
+    const entries = Array.from(viewportMapping.entries());
+    // Try 1-based frame number first (common in DICOM)
+    if (frameNumber >= 1 && frameNumber <= entries.length) {
+      return entries[frameNumber - 1]?.[0] ?? null;
+    }
+    // Try 0-based index
+    if (frameNumber >= 0 && frameNumber < entries.length) {
+      return entries[frameNumber]?.[0] ?? null;
+    }
+    return null;
+  };
+
   let changedSlices = 0;
   const modifiedSliceIds: string[] = [];
 
@@ -1154,20 +1184,49 @@ export function restoreSegmentationSnapshot(
   }
 
   const framesWithData = snapshot.imageData.filter(d => d.pixelData.some(p => p !== 0)).length;
-  debugLog('restoreSegmentationSnapshot: Processing', snapshot.imageData.length, 'frames,', framesWithData, 'with data');
+  console.log('[Segmentation] restoreSegmentationSnapshot: Processing', snapshot.imageData.length, 'frames,', framesWithData, 'with data');
+  
+  // Log viewport mapping for debugging
+  if (viewportMapping) {
+    console.log('[Segmentation] viewportMapping has', viewportMapping.size, 'entries');
+    // Log first few entries for debugging
+    const entries = Array.from(viewportMapping.entries()).slice(0, 3);
+    entries.forEach(([id, info]) => {
+      console.log('[Segmentation]   mapping entry:', { 
+        labelmapId: id.substring(0, 30) + '...', 
+        frameNumber: info.frameNumber, 
+        instanceId: info.instanceId?.substring(0, 8) || 'none'
+      });
+    });
+  } else {
+    console.log('[Segmentation] WARNING: No viewportMapping found for restoration!');
+  }
 
   snapshot.imageData.forEach(
     ({ imageId, pixelData, originalImageId, frameNumber, instanceId }) => {
-      const targetImageId =
-        (originalImageId && reverseOriginalToLabelmap?.get(originalImageId)) ||
-        resolveByFrameAndInstance(frameNumber, instanceId) ||
-        imageId;
+      // Try multiple strategies in order of reliability
+      const matchByOriginalId = originalImageId && reverseOriginalToLabelmap?.get(originalImageId);
+      const matchByFrameAndInstance = resolveByFrameAndInstance(frameNumber, instanceId);
+      const matchByInstanceOnly = resolveByInstanceIdOnly(instanceId);
+      const matchByFrameIndex = resolveByFrameIndex(frameNumber);
+      
+      let targetImageId = matchByOriginalId || matchByFrameAndInstance || matchByInstanceOnly || matchByFrameIndex || imageId;
+      
+      // Log matching strategy for frames with data
+      const nonZeroPixels = pixelData.filter(p => p !== 0).length;
+      if (nonZeroPixels > 0) {
+        const matchStrategy = matchByOriginalId ? 'originalId' : 
+                              matchByFrameAndInstance ? 'frameAndInstance' : 
+                              matchByInstanceOnly ? 'instanceOnly' : 
+                              matchByFrameIndex ? 'frameIndex' : 'directImageId';
+        console.log('[Segmentation] Frame', frameNumber, 'match strategy:', matchStrategy, 
+          'instanceId:', instanceId?.substring(0, 8) || 'none',
+          'targetId:', targetImageId?.substring(0, 40) || 'none');
+      }
 
       const cachedImage = targetImageId
         ? cache.getImage(targetImageId)
         : null;
-      
-      const nonZeroPixels = pixelData.filter(p => p !== 0).length;
       
       if (!cachedImage) {
         if (nonZeroPixels > 0) {
@@ -1244,46 +1303,100 @@ export function restoreSegmentationSnapshot(
 
 export function clearSegmentationData(
   segmentationId: string,
-  options?: { reason?: string }
+  options?: { reason?: string; viewportId?: string }
 ): boolean {
+  console.log("[Segmentation] clearSegmentationData called:", { segmentationId, options });
+  
   if (!segmentationId) {
-    return false;
-  }
-
-  // Use safe getter to prevent representationData errors
-  const labelmapData = safeGetLabelmapData(segmentationId);
-  const imageIds =
-    labelmapData &&
-    "imageIds" in labelmapData &&
-    Array.isArray(labelmapData.imageIds)
-      ? (labelmapData.imageIds as string[])
-      : [];
-
-  if (!imageIds.length) {
+    console.log("[Segmentation] clearSegmentationData: No segmentationId");
     return false;
   }
 
   let modified = 0;
-  imageIds.forEach((imageId) => {
-    const cachedImage = imageId ? cache.getImage(imageId) : null;
-    if (!cachedImage) {
-      return;
+  
+  // First, try to use viewportImageMappings if viewportId is provided (most reliable)
+  if (options?.viewportId) {
+    const viewportMapping = viewportImageMappings.get(options.viewportId);
+    if (viewportMapping && viewportMapping.size > 0) {
+      console.log("[Segmentation] clearSegmentationData: Using viewportImageMappings with", viewportMapping.size, "entries");
+      for (const labelmapId of viewportMapping.keys()) {
+        const cachedImage = cache.getImage(labelmapId);
+        if (!cachedImage) {
+          continue;
+        }
+        const targetPixels =
+          typeof cachedImage.getPixelData === "function"
+            ? cachedImage.getPixelData()
+            : (cachedImage as { pixelData?: Uint8Array }).pixelData;
+        if (!targetPixels) {
+          continue;
+        }
+        targetPixels.fill(0);
+        modified += 1;
+      }
     }
-    const targetPixels =
-      typeof cachedImage.getPixelData === "function"
-        ? cachedImage.getPixelData()
-        : (cachedImage as { pixelData?: Uint8Array }).pixelData;
-    if (!targetPixels) {
-      return;
+  }
+  
+  // Fallback: try labelmapData.imageIds if viewportImageMappings didn't work
+  if (modified === 0) {
+    const labelmapData = safeGetLabelmapData(segmentationId);
+    const imageIds =
+      labelmapData &&
+      "imageIds" in labelmapData &&
+      Array.isArray(labelmapData.imageIds)
+        ? (labelmapData.imageIds as string[])
+        : [];
+
+    console.log("[Segmentation] clearSegmentationData: Using labelmapData.imageIds with", imageIds.length, "entries");
+
+    imageIds.forEach((imageId) => {
+      const cachedImage = imageId ? cache.getImage(imageId) : null;
+      if (!cachedImage) {
+        return;
+      }
+      const targetPixels =
+        typeof cachedImage.getPixelData === "function"
+          ? cachedImage.getPixelData()
+          : (cachedImage as { pixelData?: Uint8Array }).pixelData;
+      if (!targetPixels) {
+        return;
+      }
+      targetPixels.fill(0);
+      modified += 1;
+    });
+  }
+  
+  // Second fallback: try viewportLabelmapImageIds
+  if (modified === 0 && options?.viewportId) {
+    const labelmapImageIds = viewportLabelmapImageIds.get(options.viewportId);
+    if (labelmapImageIds && labelmapImageIds.length > 0) {
+      console.log("[Segmentation] clearSegmentationData: Using viewportLabelmapImageIds with", labelmapImageIds.length, "entries");
+      labelmapImageIds.forEach((imageId) => {
+        const cachedImage = imageId ? cache.getImage(imageId) : null;
+        if (!cachedImage) {
+          return;
+        }
+        const targetPixels =
+          typeof cachedImage.getPixelData === "function"
+            ? cachedImage.getPixelData()
+            : (cachedImage as { pixelData?: Uint8Array }).pixelData;
+        if (!targetPixels) {
+          return;
+        }
+        targetPixels.fill(0);
+        modified += 1;
+      });
     }
-    targetPixels.fill(0);
-    modified += 1;
-  });
+  }
+
+  console.log("[Segmentation] clearSegmentationData: Cleared", modified, "labelmap images");
 
   if (modified === 0) {
+    console.log("[Segmentation] clearSegmentationData: No imageIds found to clear");
     return false;
   }
 
+  // Trigger segmentation modified event
   eventTarget.dispatchEvent(
     new CustomEvent(ToolEnums.Events.SEGMENTATION_DATA_MODIFIED, {
       detail: {
@@ -1292,6 +1405,20 @@ export function clearSegmentationData(
       },
     })
   );
+
+  // Explicitly render the viewport to ensure segmentation clears visually
+  if (options?.viewportId) {
+    try {
+      const renderingEngineId = options.viewportId.replace('viewport-', 'renderingEngine_viewport-');
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      if (renderingEngine) {
+        renderingEngine.renderViewports([options.viewportId]);
+        debugLog('clearSegmentationData: Triggered viewport render for', options.viewportId);
+      }
+    } catch (renderError) {
+      debugLog('clearSegmentationData: Failed to trigger render:', renderError);
+    }
+  }
 
   return true;
 }

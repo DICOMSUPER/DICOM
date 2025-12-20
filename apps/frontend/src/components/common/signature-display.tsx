@@ -33,7 +33,7 @@ const SignatureDisplay = memo(
         <SignatureAnimation duration={duration} delay={delay}>
           {`${unaccentedLastName} ${unaccentedFirstName}`}
         </SignatureAnimation>
-        <p className="italic text-sm text-gray-600 mt-2">
+        <p className="italic text-sm  mt-2" style={{ color: 'rgb(75, 85, 99)' }}>
           {`${role} ${unaccentedLastName} ${unaccentedFirstName}`}
         </p>
       </>

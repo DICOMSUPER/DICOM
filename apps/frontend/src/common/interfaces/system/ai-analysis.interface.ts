@@ -16,6 +16,7 @@ export interface AiAnalysis extends BaseEntity {
   versionName?: string;
   originalImage?: string;
   originalImageName?: string;
+  aiAnalyzeMessage?: string;
   // aiModel?: AiModel;
   
   // Feedback fields

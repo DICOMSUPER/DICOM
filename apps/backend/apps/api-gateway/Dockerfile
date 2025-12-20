@@ -14,6 +14,9 @@ RUN npx nx build api-gateway
 FROM node:20-alpine
 WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV=production
+
 # install runtime deps (root package.json is enough)
 COPY package*.json ./
 RUN npm ci --omit=dev

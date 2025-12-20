@@ -42,10 +42,14 @@ export default function DicomStudyPage() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({});
 
   const apiFilters = useMemo(() => {
-    const baseFilters = prepareApiFilters(filters, pagination, {});
+    const baseFilters = prepareApiFilters(filters, pagination, {
+      dateFields: ["dateFrom", "dateTo"],
+    });
     const sortParams = sortConfigToQueryParams(sortConfig);
     return { ...baseFilters, ...sortParams };
   }, [filters, pagination, sortConfig]);
+
+
 
   const { data, isLoading, isFetching, refetch: refetchStudies } =
     useGetDicomStudiesFilteredWithPaginationQuery({ filters: apiFilters }, {

@@ -5,6 +5,7 @@ import {
   useViewer,
   type AnnotationHistoryEntry,
 } from "@/common/contexts/ViewerContext";
+import { toast } from "sonner";
 import type { SegmentationHistoryEntry } from "@/common/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
 import {
@@ -239,6 +240,7 @@ const ViewPortMain = ({
     height: number;
   } | null>(null);
   const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
+  const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
 
   // Helper to check viewport match
   const isCurrentViewport = useCallback((targetViewportId?: string) => {
@@ -333,29 +335,60 @@ const ViewPortMain = ({
       const currentViewport = viewportRef.current;
       if (!currentElement || !currentViewport) return;
 
+      const studyIdToUse = selectedSeries?.studyId || studyId;
+
       setIsDiagnosing(true);
+      publish("ai:diagnosis:start", { viewportId: viewportIdRef.current });
+      
       try {
         const base64Image = getCanvasAsBase64(currentElement);
         if (!base64Image) throw new Error("Failed to convert canvas to base64");
 
-        const response = await diagnosisImageByAIRef.current?.({
-          base64Image,
-          aiModelId: modelId,
-          modelName,
-          versionName,
-          selectedStudyId: studyId !== null ? studyId : undefined,
-        }).unwrap();
+        const response = await diagnosisImageByAIRef
+          .current?.({
+            base64Image,
+            aiModelId: modelId,
+            modelName,
+            versionName,
+            selectedStudyId: studyIdToUse || undefined,
+            folder: "base64",
+          })
+          .unwrap();
 
-        if (!response?.data) return;
-
+        if (!response?.data) {
+          throw new Error("No response data received");
+        }
+        
         const { predictions, image } = response.data;
-        if (!predictions || !Array.isArray(predictions) || predictions.length === 0) return;
-
+        const analysisId = response?.data?.analysisId || null;
+        const aiAnalyzeMessage = response?.data?.aiAnalyzeMessage || "";
+        
+        
+        setLastAnalysisId(analysisId);
+        
+        // Handle case when no predictions found
+        if (
+          !predictions ||
+          !Array.isArray(predictions) ||
+          predictions.length === 0
+        ) {
+          publish("ai:diagnosis:success", { 
+            analysisId, 
+            viewportId: viewportIdRef.current,
+            studyId: studyIdToUse,
+            predictions: [],
+            aiAnalyzeMessage: aiAnalyzeMessage || "No abnormalities detected."
+          });
+          
+          toast.warning("No abnormalities detected in the image.");
+          return;
+        }
+        
         setPredictions(predictions);
 
         const stackViewport = currentViewport as Types.IStackViewport;
         const currentImageId = stackViewport.getCurrentImageId?.() || "";
-
+        
         setAiImageMetadata({ width: image.width, height: image.height });
         setAnalyzedImageId(currentImageId);
 
@@ -369,13 +402,27 @@ const ViewPortMain = ({
         );
 
         batchedRender(currentViewport);
-      } catch (error) {
+        
+        
+        publish("ai:diagnosis:success", { 
+          analysisId, 
+          viewportId: viewportIdRef.current,
+          studyId: studyIdToUse,
+          predictions: predictions,
+          aiAnalyzeMessage: aiAnalyzeMessage
+        });
+        
+        toast.success(`AI diagnosis completed. Found ${predictions.length} detection(s).`);
+      } catch (error: any) {
         console.error("AI diagnosis failed:", error);
+        const errorMessage = error?.message || "AI diagnosis failed. Please try again.";
+        toast.error(errorMessage);
+        publish("ai:diagnosis:error", { error, viewportId: viewportIdRef.current });
       } finally {
         setIsDiagnosing(false);
       }
     },
-    [isCurrentViewport, resolvedRenderingEngineId, studyId]
+    [isCurrentViewport,resolvedRenderingEngineId, studyId, selectedSeries, publish]
   );
 
   const handleClearAIAnnotations = useCallback(

@@ -49,12 +49,12 @@ export class DiagnosesReport extends BaseEntity {
     name: 'diagnosis_status',
     type: 'enum',
     enum: DiagnosisStatus,
-    default: DiagnosisStatus.DRAFT,
+    default: DiagnosisStatus.PENDING_APPROVAL,
   })
   diagnosisStatus!: DiagnosisStatus;
 
-  // @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
-  // severity!: Severity;
+  @Column({ name: 'severity', type: 'enum', enum: Severity, nullable: true })
+  severity!: Severity;
 
   @Column({ name: 'diagnosis_date', type: 'date', nullable: true })
   diagnosisDate!: Date;
@@ -70,7 +70,8 @@ export class DiagnosesReport extends BaseEntity {
 
   @ManyToOne(
     () => ReportTemplate,
-    (reportTemplate) => reportTemplate.diagnosisReports
+    (reportTemplate) => reportTemplate.diagnosisReports,
+    { nullable: true }
   )
   @JoinColumn({ name: 'report_template_id' })
   reportTemplate?: ReportTemplate;

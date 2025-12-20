@@ -94,7 +94,8 @@ export function PatientEncounterTable({
 
   const handleShowTransferDetail = (encounter: PatientEncounter) => {
     setSelectedEncounter(encounter);
-    setShowTransferModal(true);
+    setShowTransferModal(true)
+    ;
   };
 
   const getStatusBadge = (status: EncounterStatus) => {
@@ -162,11 +163,11 @@ export function PatientEncounterTable({
 
   const columns = [
     {
-      header: "Queue #",
+      header: "Number",
       sortable: true,
       sortField: "orderNumber",
       cell: (encounter: PatientEncounter) => (
-        <div className="font-bold text-lg text-foreground text-center">
+        <div className="font-bold text-lg text-foreground ml-6">
           {encounter.orderNumber}
         </div>
       ),
@@ -193,13 +194,13 @@ export function PatientEncounterTable({
       sortable: true,
       sortField: "createdAt",
       cell: (encounter: PatientEncounter) => (
-        <div className="space-y-1 text-center">
+        <div className="space-y-1 ml-6">
           <span className="font-semibold text-foreground text-sm">
-            {formatDate(encounter.createdAt)}
+            {formatDate(encounter.encounterDate)}
           </span>
-          <div className="flex justify-center items-center gap-4 text-xs text-foreground">
+          <div className="flex  items-center gap-4 text-xs text-foreground">
             <Clock className="w-3.5 h-3.5" />
-            <span>{formatTime(encounter.createdAt)}</span>
+            <span>{formatTime(encounter.encounterDate)}</span>
           </div>
         </div>
       ),

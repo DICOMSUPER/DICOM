@@ -69,7 +69,13 @@ export const store = configureStore({
     [ImageSegmentationLayerApi.reducerPath]: ImageSegmentationLayerApi.reducer,
   },
   middleware: (getDefault) =>
-    getDefault()
+    getDefault({
+      serializableCheck: {
+        // Ignore Blob in actions and state for export functionality
+        ignoredActions: ['aiAnalysisApi/executeMutation/fulfilled'],
+        ignoredPaths: ['aiAnalysisApi.mutations'],
+      },
+    })
       .concat(patientApi.middleware)
       .concat(patientEncounterApi.middleware)
       .concat(patientConditionApi.middleware)

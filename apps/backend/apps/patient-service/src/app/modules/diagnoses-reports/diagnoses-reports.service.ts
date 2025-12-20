@@ -91,6 +91,7 @@ export class DiagnosesReportService {
       ...createDiagnosesReportDto,
       diagnosisDate: date,
       diagnosisName: createDiagnosesReportDto.diagnosisName,
+      
       // ??
       // `${encounter?.patient.lastName} ${encounter?.patient.firstName} (${formattedDate})`,
     };

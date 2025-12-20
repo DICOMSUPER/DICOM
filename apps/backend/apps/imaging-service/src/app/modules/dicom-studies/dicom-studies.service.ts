@@ -301,6 +301,20 @@ export class DicomStudiesService {
         dateTo: toDate,
       });
     }
+    // if does not provide dateFrom and dateTo, default to today
+    if (!dateFrom && !dateTo) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date();
+      tomorrow.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere(
+        'dicomStudy.studyDate BETWEEN :today AND :tomorrow',
+        {
+          today: today,
+          tomorrow: tomorrow,
+        }
+      );
+    }
 
     if (modalityMachineId) {
       queryBuilder.andWhere(
@@ -318,7 +332,11 @@ export class DicomStudiesService {
         userId: userInfo.userId,
       });
       queryBuilder.andWhere('dicomStudy.studyStatus IN (:...status)', {
-        status: [DicomStudyStatus.PENDING_APPROVAL, DicomStudyStatus.APPROVED],
+        status: [
+          DicomStudyStatus.PENDING_APPROVAL,
+          DicomStudyStatus.APPROVED,
+          DicomStudyStatus.RESULT_PRINTED,
+        ],
       });
     }
 

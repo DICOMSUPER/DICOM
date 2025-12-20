@@ -13,7 +13,6 @@ import {
   VerificationFailedException,
   UserNotFoundException,
   ResourceNotFoundException,
-  AuthenticationException,
   BusinessLogicException,
 } from '@backend/shared-exception';
 

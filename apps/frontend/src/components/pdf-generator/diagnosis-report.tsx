@@ -16,6 +16,7 @@ export interface DiagnosisReportPDFProps {
   dicomStudy?: DicomStudy;
   orderingPhysicianName?: string;
   radiologistName?: string;
+  signatureImage?: string;
 }
 
 export const DiagnosisReportPDF = ({
@@ -23,7 +24,10 @@ export const DiagnosisReportPDF = ({
   dicomStudy,
   orderingPhysicianName,
   radiologistName,
+  signatureImage,
 }: DiagnosisReportPDFProps) => {
+  console.log("DiagnosisReportPDF - signatureImage received:", signatureImage ? `${signatureImage.substring(0, 50)}...` : "undefined");
+  
   const doc = new jsPDF();
 
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -219,6 +223,34 @@ export const DiagnosisReportPDF = ({
     }
   );
 
+
+if (signatureImage) {
+  try {
+    const signatureImgWidth = 70; 
+    const signatureHeight = 20;
+    const signatureY = signatureStartY + 15;
+    const adjustedX = rightSignatureX + 10;
+    
+    doc.addImage(
+      signatureImage,
+      "PNG",
+      adjustedX,
+      signatureY,
+      signatureImgWidth,
+      signatureHeight,
+      undefined,
+      "FAST"
+    );
+  } catch (error) {
+    doc.setLineWidth(0.5);
+    doc.line(
+      rightSignatureX,
+      signatureStartY + 25,
+      rightSignatureX + signatureWidth,
+      signatureStartY + 25
+    );
+  }
+} else {
   doc.setLineWidth(0.5);
   doc.line(
     rightSignatureX,
@@ -226,18 +258,16 @@ export const DiagnosisReportPDF = ({
     rightSignatureX + signatureWidth,
     signatureStartY + 25
   );
-
+}
   doc.setFontSize(12);
   doc.setFont("Roboto");
   const physicianName = radiologistName || "N/A";
   doc.text(
     physicianName,
     rightSignatureX + signatureWidth / 2,
-    signatureStartY + 30,
+    signatureStartY + 40,
     { align: "center" }
   );
-
-  // Footer metadata (ensure new line)
   const footerY = signatureStartY + 46;
   doc.setFontSize(9);
   doc.setTextColor(60);
@@ -245,18 +275,6 @@ export const DiagnosisReportPDF = ({
     `Report ID: ${diagnosisReportPDF.report?.id || "N/A"}`,
     marginLeft,
     footerY
-  );
-  doc.text(
-    `Exported: ${new Date().toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })}`,
-    marginLeft,
-    footerY + 6
   );
   doc.setTextColor(0);
 

@@ -12,6 +12,8 @@ import { FolderItem } from './FolderItems';
 import AnnotationAccordion from '../sidebar/AnnotationAccordion';
 import SegmentationAccordion from '../sidebar/SegmentationAccordion';
 import { extractApiData } from '@/common/utils/api';
+import { SegmentationStatus } from '@/common/enums/image-dicom.enum';
+import { compressSnapshots } from '@/common/contexts/viewer-context/segmentation-helper';
 import { toast } from 'sonner';
 
 interface ViewerRightSidebarProps {
@@ -142,19 +144,42 @@ const ViewerRightSidebar = ({
         return;
       }
 
-      // Hack: Prepend status to notes if supported, or just ignore for now if API doesn't support it directly
-      const notesWithStatus = status ? `[STATUS:${status}] ${layer.notes || ""}` : layer.notes;
+      // Validate instanceId exists (required by backend)
+      if (!layer.instanceId || layer.instanceId === 'unknown') {
+        toast.error("Cannot save: Layer has no valid DICOM instance reference. Please ensure the image is loaded before saving.");
+        console.error("Missing instanceId for layer:", layerId, layer);
+        return;
+      }
 
-      await createImageSegmentationLayers({
+      // Use provided status or default to draft
+      const segmentationStatus = status === SegmentationStatus.FINAL
+        ? SegmentationStatus.FINAL
+        : status === SegmentationStatus.REVIEWED
+          ? SegmentationStatus.REVIEWED
+          : SegmentationStatus.DRAFT;
+
+      const payload = {
         layerName: layer.name,
         instanceId: layer.instanceId as string,
-        notes: notesWithStatus,
+        notes: layer.notes,
         frame: 1,
-        snapshots: layer.snapshots || [],
-      }).unwrap();
+        snapshots: compressSnapshots(layer.snapshots || []), // Compress snapshots before sending
+        colorCode: layer.colorCode || '#3b82f6',
+        segmentationStatus: segmentationStatus,
+      };
 
-      toast.success(status === 'FINAL' ? "Segmentation submitted as Final" : "Segmentation saved successfully");
-      await refetchSegmentationLayers();
+      console.log('[DEBUG] Segmentation save payload:', {
+        ...payload,
+        snapshotsCount: payload.snapshots?.length || 0,
+        snapshotsSize: JSON.stringify(payload.snapshots).length,
+        instanceId: payload.instanceId,
+        isValidUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.instanceId || ''),
+      });
+
+      await createImageSegmentationLayers(payload).unwrap();
+
+      toast.success(status === SegmentationStatus.FINAL ? "Segmentation submitted as Final" : "Segmentation saved successfully");
+      await refetchSegmentationLayers([layerId]);
     } catch (error) {
       console.error("Error saving segmentation layer:", error);
       toast.error("Error saving segmentation layer to database");

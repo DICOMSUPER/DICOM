@@ -4,7 +4,9 @@ export interface AiResultDiagnosis {
     width: number;
     height: number;
   };
-  prediction: PredictionMetadata[];
+  predictions: PredictionMetadata[];
+  analysisId?: string;
+  aiAnalyzeMessage?: string;
 }
 
 export interface PredictionMetadata {

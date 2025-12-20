@@ -110,8 +110,7 @@ export const NotificationItem = ({
             {notification.createdAt
               ? formatDistanceToNow(
                   new Date(
-                    new Date(notification.createdAt).getTime() +
-                      7 * 60 * 60 * 1000
+                    new Date(notification.createdAt).getTime() 
                   ),
                   { addSuffix: true }
                 ).replace('about ', '')

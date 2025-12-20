@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images:{
-    domains: ["tse3.mm.bing.net"],
+    domains: ["tse3.mm.bing.net","res.cloudinary.com"],
     formats: ["image/avif", "image/webp"],
   },
 

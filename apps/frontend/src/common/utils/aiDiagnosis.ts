@@ -93,11 +93,15 @@ export const drawAIPredictions = (
   // canvasHeight: number
 ): void => {
   console.log(
-    "Drawing",
+    "🎨 drawAIPredictions called with:",
     predictions.length,
-    "AI predictions for viewport:",
+    "predictions for viewport:",
     viewportId
   );
+  
+  console.log("📐 AI Image dimensions:", { aiImageWidth, aiImageHeight });
+  console.log("🔍 Reference Image ID:", referencedImageId);
+  console.log("🎬 Rendering Engine ID:", renderingEngineId);
 
   try {
     const renderingEngine = getRenderingEngine(renderingEngineId);

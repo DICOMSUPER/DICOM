@@ -12,11 +12,12 @@ export const axiosBaseQuery =
       data?: AxiosRequestConfig["data"];
       params?: AxiosRequestConfig["params"];
       headers?: AxiosRequestConfig["headers"];
+      responseType?: AxiosRequestConfig["responseType"];
     },
     unknown,
     unknown
   > =>
-  async ({ url, method, data, params, headers }) => {
+  async ({ url, method, data, params, headers, responseType }) => {
     try {
       const result = await axiosInstance({
         url: basePath ? basePath + url : url,
@@ -24,9 +25,15 @@ export const axiosBaseQuery =
         data,
         params,
         headers,
+        responseType,
       });
 
       const resData = result.data;
+
+      // If responseType is blob, return directly without logging
+      if (responseType === 'blob') {
+        return { data: resData };
+      }
 
       // Debug API response structure
       // console.log("API Response Debug:", {

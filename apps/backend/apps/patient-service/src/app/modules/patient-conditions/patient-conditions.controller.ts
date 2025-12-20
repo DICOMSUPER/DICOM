@@ -32,7 +32,18 @@ export class PatientConditionController {
       `Using pattern: ${PATIENT_SERVICE}.${moduleName}.${MESSAGE_PATTERNS.CREATE}`
     );
     try {
+      console.log("📦 Raw payload received:", JSON.stringify(data, null, 2));
+      console.log("📦 Data type:", typeof data);
+      console.log("📦 Data keys:", Object.keys(data));
+      
       const { createPatientConditionDto } = data;
+      
+      console.log("📦 Extracted DTO:", createPatientConditionDto);
+      
+      if (!createPatientConditionDto) {
+        throw new Error("createPatientConditionDto is undefined in payload");
+      }
+      
       return await this.patientConditionService.create(
         createPatientConditionDto
       );

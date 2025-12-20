@@ -61,7 +61,7 @@ import {
   Star,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { ModalApproveStudy } from "../diagnosis-report/modal-approve-study";
 import { ModalSetUpSignature } from "../diagnosis-report/modal-setup";
@@ -69,6 +69,8 @@ import { ModalRejectReport } from "./modal-reject-report";
 import { EmptyReportState } from "./empty-report";
 import { BodyPart } from "@/common/interfaces/imaging/body-part.interface";
 import { formatStatus } from "@/common/utils/format-status";
+import captureSignature from "@/common/lib/captureStringSignature";
+import SignatureDisplay from "@/components/common/signature-display";
 import { handleEncrypt } from "@/common/utils/encryption";
 
 interface DiagnosisReportDetailProps {
@@ -82,6 +84,8 @@ export function DiagnosisReportDetail({
 }: DiagnosisReportDetailProps) {
   const router = useRouter();
 
+  const signatureRef = useRef<HTMLDivElement>(null);
+  
   const [filtersReportTemplate, setFiltersReportTemplate] =
     useState<FilterReportTemplate>({
       modalityId: "",
@@ -264,12 +268,18 @@ export function DiagnosisReportDetail({
         return;
       }
 
+      // Only include reportTemplateId if it has a value
+      const updateData: any = {
+        description: descriptionToSave,
+      };
+      
+      if (selectedReportTemplateId && selectedReportTemplateId.trim()) {
+        updateData.reportTemplateId = selectedReportTemplateId;
+      }
+
       await updateDiagnosisMutation({
         id: reportId,
-        updateDiagnosis: {
-          description: descriptionToSave,
-          reportTemplateId: selectedReportTemplateId,
-        },
+        updateDiagnosis: updateData,
       }).unwrap();
       await refetch();
       toast.success("Report description updated successfully");
@@ -416,6 +426,20 @@ export function DiagnosisReportDetail({
 
   const handleDownloadReport = async () => {
     try {
+      // Capture signature image first
+      let signatureImage: string | undefined;
+      if (signatureRef.current) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          signatureImage = await captureSignature(signatureRef.current);
+        } catch (signatureError) {
+          console.error("Failed to capture signature:", signatureError);
+          toast.warning("Proceeding without signature image");
+        }
+      } else {
+        console.log("signatureRef.current is null or undefined");
+      }
+      
       const result = await updateDicomStudy({
         id: report?.data.studyId as string,
         data: { studyStatus: DicomStudyStatus.RESULT_PRINTED },
@@ -427,15 +451,17 @@ export function DiagnosisReportDetail({
           dicomStudy: dicomStudyData?.data,
           orderingPhysicianName: `${orderingPhysicianData?.data?.firstName} ${orderingPhysicianData?.data?.lastName}`,
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
+          signatureImage,
         };
-        // DiagnosisReportPDF(reportData);
+        // };
+        DiagnosisReportPDF(reportData);
 
-        console.log("reportData:", reportData);
-        const encrypted = handleEncrypt(reportData);
+        // console.log("reportData:", reportData);
+        // const encrypted = handleEncrypt(reportData);
 
-        router.push(
-          "/physician/report-paper?data=" + encodeURIComponent(encrypted)
-        );
+        // router.push(
+        //   "/physician/report-paper?data=" + encodeURIComponent(encrypted)
+        // );
 
         toast.success("Report created successfully!");
       }
@@ -890,7 +916,7 @@ export function DiagnosisReportDetail({
 
             {/* Physician Signature Information */}
             {physicianSignatureData?.data && (
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
+              <div className="bg-linear-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-emerald-100 rounded-lg">
                     <svg
@@ -982,7 +1008,7 @@ export function DiagnosisReportDetail({
             {!isEditDescriptionOpen ? (
               <Button
                 disabled={
-                  dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED
+                  dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
                 }
                 className="w-full"
                 onClick={handleEditDescriptionOpen}
@@ -1293,6 +1319,31 @@ export function DiagnosisReportDetail({
           </div>
         )}
       </div>
+
+      {/* Hidden Signature for Capture */}
+      {radiologistData?.data && (
+        <div 
+          ref={signatureRef} 
+          style={{ 
+            position: 'fixed',
+            top: '-9999px',
+            left: '0',
+            width: '400px',
+            height: '100px',
+            background: 'white',
+            padding: '20px',
+            zIndex: -1
+          }}
+        >
+          <SignatureDisplay
+            firstName={radiologistData.data.firstName}
+            lastName={radiologistData.data.lastName}
+            duration={0.1}
+            delay={0}
+            role="Dr."
+          />
+        </div>
+      )}
 
       {/* Modals */}
       <ModalSetUpSignature

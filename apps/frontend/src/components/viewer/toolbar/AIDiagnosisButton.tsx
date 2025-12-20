@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
-import { Brain, Loader2, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
-import { useViewer } from '@/common/contexts/ViewerContext';
+import { useState, useCallback, useEffect } from "react";
+import {
+  Brain,
+  Loader2,
+  Trash2,
+  ChevronDown,
+  AlertTriangle,
+} from "lucide-react";
+import { useViewer } from "@/common/contexts/ViewerContext";
+import { useViewerEvents } from "@/common/contexts/ViewerEventContext";
 
 // Types
 interface RoboflowProject {
@@ -21,49 +28,73 @@ interface RoboflowVersion {
 
 interface AIDiagnosisButtonProps {
   disabled?: boolean;
+  onClearAI?: () => void;
 }
 
-export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
-  const { state, diagnosisViewport, clearAIAnnotations, getViewportSeries } = useViewer();
+export const AIDiagnosisButton = ({ disabled, onClearAI }: AIDiagnosisButtonProps) => {
+  const { state, diagnosisViewport, clearAIAnnotations, getViewportSeries } =
+    useViewer();
   
+  const { subscribe } = useViewerEvents();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
-  
+
   const [projects, setProjects] = useState<RoboflowProject[]>([]);
   const [versions, setVersions] = useState<RoboflowVersion[]>([]);
-  
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [selectedVersionId, setSelectedVersionId] = useState<string>('');
 
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
   useEffect(() => {
     fetchProjects();
   }, []);
 
- 
   useEffect(() => {
     if (selectedProjectId) {
       fetchVersions(selectedProjectId);
-      setSelectedVersionId(''); 
+      setSelectedVersionId("");
     } else {
       setVersions([]);
-      setSelectedVersionId('');
+      setSelectedVersionId("");
     }
   }, [selectedProjectId]);
+  
+  // Listen for AI diagnosis lifecycle events
+  useEffect(() => {
+    const unsubscribeStart = subscribe("ai:diagnosis:start", () => {
+      setIsProcessing(true);
+    });
+    
+    const unsubscribeSuccess = subscribe("ai:diagnosis:success", () => {
+      setIsProcessing(false);
+    });
+    
+    const unsubscribeError = subscribe("ai:diagnosis:error", () => {
+      setIsProcessing(false);
+    });
+    
+    return () => {
+      unsubscribeStart();
+      unsubscribeSuccess();
+      unsubscribeError();
+    };
+  }, [subscribe]);
 
   const fetchProjects = async () => {
     setIsLoadingProjects(true);
     try {
-      const response = await fetch(`https://api.roboflow.com/${process.env.NEXT_PUBLIC_WORKSPACE}?api_key=${process.env.NEXT_PUBLIC_ROBOFLOW_API_KEY}`);
+      const response = await fetch(
+        `https://api.roboflow.com/${process.env.NEXT_PUBLIC_WORKSPACE}?api_key=${process.env.NEXT_PUBLIC_ROBOFLOW_API_KEY}`
+      );
       const data = await response.json();
-      
+
       if (data.workspace?.projects) {
         setProjects(data.workspace.projects);
-        console.log(' Loaded projects:', data.workspace.projects.length);
+        console.log(" Loaded projects:", data.workspace.projects.length);
       }
     } catch (error) {
-      console.error(' Failed to fetch projects:', error);
+      console.error(" Failed to fetch projects:", error);
     } finally {
       setIsLoadingProjects(false);
     }
@@ -73,13 +104,13 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
   const fetchVersions = async (projectId: string) => {
     setIsLoadingVersions(true);
     try {
-      const projectName = projectId.split('/')[1];
+      const projectName = projectId.split("/")[1];
       const response = await fetch(
         `https://api.roboflow.com/${process.env.NEXT_PUBLIC_WORKSPACE}/${projectName}?api_key=${process.env.NEXT_PUBLIC_ROBOFLOW_API_KEY}`
       );
       const data = await response.json();
       if (data.versions) {
-        const trainedVersions = data.versions.filter((v: any) => v.model);       
+        const trainedVersions = data.versions.filter((v: any) => v.model);
         const versionList = trainedVersions.map((v: any) => ({
           id: v.id,
           modelId: v.model.id,
@@ -88,16 +119,18 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
           modelEndpoint: v.model?.endpoint,
           modelMap: v.model?.map,
         }));
-        
+
         setVersions(versionList);
-        console.log(` Loaded ${versionList.length} trained versions (filtered from ${data.versions.length} total)`);
-        
+        console.log(
+          ` Loaded ${versionList.length} trained versions (filtered from ${data.versions.length} total)`
+        );
+
         if (versionList.length === 0) {
-          console.warn(' No trained versions found for this project');
+          console.warn(" No trained versions found for this project");
         }
       }
     } catch (error) {
-      console.error(' Failed to fetch versions:', error);
+      console.error(" Failed to fetch versions:", error);
       setVersions([]);
     } finally {
       setIsLoadingVersions(false);
@@ -106,30 +139,29 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
 
   const handleDiagnose = useCallback(async () => {
     if (!selectedProjectId || !selectedVersionId) {
-      alert('Please select both Model Name and Version');
+      alert("Please select both Model Name and Version");
       return;
     }
 
-          const viewportId = state.viewportIds.get(state.activeViewport);
-  if (!viewportId) {
-    console.error("❌ No viewport ID found for active viewport");
-    alert("Viewport not ready. Please wait for the image to load.");
-    return;
-  }
-    setIsProcessing(true);
-    
+    const viewportId = state.viewportIds.get(state.activeViewport);
+    if (!viewportId) {
+      console.error("❌ No viewport ID found for active viewport");
+      alert("Viewport not ready. Please wait for the image to load.");
+      return;
+    }
+
     try {
       await diagnosisViewport(state.activeViewport, {
-          modelId: versions.find(v => v.id === selectedVersionId)?.modelId as string,
-          modelName: projects.find(p => p.id === selectedProjectId)?.name as string,
-          versionName: versions.find(v => v.id === selectedVersionId)?.name as string,
-
+        modelId: versions.find((v) => v.id === selectedVersionId)
+          ?.modelId as string,
+        modelName: projects.find((p) => p.id === selectedProjectId)
+          ?.name as string,
+        versionName: versions.find((v) => v.id === selectedVersionId)
+          ?.name as string,
       });
-      
-      setTimeout(() => setIsProcessing(false), 3000);
     } catch (error) {
-      console.error('AI diagnosis error:', error);
-      setIsProcessing(false);
+      console.error("AI diagnosis error:", error);
+      // Error state will be handled by event listener
     }
   }, [
     diagnosisViewport,
@@ -142,7 +174,8 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
 
   const handleClearAI = useCallback(() => {
     clearAIAnnotations(state.activeViewport);
-  }, [clearAIAnnotations, state.activeViewport]);
+    onClearAI?.();
+  }, [clearAIAnnotations, state.activeViewport, onClearAI]);
 
   const hasSeriesInViewport = !!getViewportSeries(state.activeViewport);
 
@@ -161,7 +194,7 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
             className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2.5 pr-10 appearance-none cursor-pointer hover:bg-slate-750 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <option value="">
-              {isLoadingProjects ? 'Loading models...' : 'Choose a model'}
+              {isLoadingProjects ? "Loading models..." : "Choose a model"}
             </option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
@@ -182,15 +215,20 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
           <select
             value={selectedVersionId}
             onChange={(e) => setSelectedVersionId(e.target.value)}
-            disabled={!selectedProjectId || disabled || isLoadingVersions || isProcessing}
+            disabled={
+              !selectedProjectId ||
+              disabled ||
+              isLoadingVersions ||
+              isProcessing
+            }
             className="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-2.5 pr-10 appearance-none cursor-pointer hover:bg-slate-750 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <option value="">
-              {isLoadingVersions ? 'Loading versions...' : 'Choose a version'}
+              {isLoadingVersions ? "Loading versions..." : "Choose a version"}
             </option>
             {versions.map((version) => (
               <option key={version.id} value={version.id}>
-                {version.name} 
+                {version.name}
               </option>
             ))}
           </select>
@@ -224,17 +262,18 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
           className={`
             flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
             transition-all duration-200 font-medium
-            ${isProcessing 
-              ? 'bg-blue-600 cursor-wait' 
-              : 'bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'
+            ${
+              isProcessing
+                ? "bg-blue-600 cursor-wait"
+                : "bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
             }
             ${
               disabled ||
               !selectedProjectId ||
               !selectedVersionId ||
               !hasSeriesInViewport
-                ? 'opacity-50 cursor-not-allowed'
-                : ''
+                ? "opacity-50 cursor-not-allowed"
+                : ""
             }
             text-white shadow-lg hover:shadow-xl
             border border-blue-400/30
@@ -247,7 +286,7 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
             <Brain className="w-5 h-5" />
           )}
           <span className="text-sm">
-            {isProcessing ? 'Analyzing...' : 'AI Diagnosis'}
+            {isProcessing ? "Analyzing..." : "AI Diagnosis"}
           </span>
         </button>
 
@@ -259,7 +298,7 @@ export const AIDiagnosisButton = ({ disabled }: AIDiagnosisButtonProps) => {
             flex items-center gap-2 px-3 py-2.5 rounded-lg
             transition-all duration-200
             bg-slate-700 hover:bg-slate-600
-            ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
+            ${disabled || isProcessing ? "opacity-50 cursor-not-allowed" : ""}
             text-slate-300 hover:text-white
             border border-slate-600
           `}

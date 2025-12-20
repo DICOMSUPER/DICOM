@@ -17,6 +17,7 @@ import {
 } from "@/store/patientEncounterApi";
 import { use, useState, useEffect } from "react";
 import CreateImagingOrder from "@/components/patients/detail/create-order-form";
+import { PatientConditionsTab } from "@/components/patients/detail/patient-conditions-tab";
 
 interface PatientDetailPageProps {
   params: Promise<{
@@ -145,7 +146,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 <TabsTrigger value="imaging-order">
                   Create Order Form
                 </TabsTrigger>
-                <TabsTrigger value="medical-history">Condition</TabsTrigger>
+                <TabsTrigger value="patient-condition">Condition</TabsTrigger>
               </TabsList>
               <TabsContent value="overview" className="space-y-6">
                 {isLoadingOverview ? (
@@ -182,18 +183,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                   encounterId={resolvedParams.id}
                 />
               </TabsContent>
-              <TabsContent value="medical-history" className="space-y-6">
-                <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
-                      <AlertTriangle className="w-8 h-8 text-amber-300" />
-                    </div>
-                    <p className="text-slate-500 text-lg font-medium">No conditions recorded</p>
-                    <p className="text-slate-400 text-sm mt-2">
-                      Medical conditions for this patient will appear here once recorded.
-                    </p>
-                  </div>
-                </div>
+              <TabsContent value="patient-condition" className="space-y-6">
+                {patientEncounterData?.data?.patientId && (
+                  <PatientConditionsTab patientId={patientEncounterData.data.patientId} />
+                )}
               </TabsContent>
             </Tabs>
           </div>

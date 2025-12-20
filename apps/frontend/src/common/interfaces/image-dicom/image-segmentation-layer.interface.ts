@@ -30,7 +30,9 @@ export interface CreateImageSegmentationLayerDto {
   frame?: number;
   segmentationStatus?: SegmentationStatus;
   colorCode?: string;
-  segmentationDate?: Date;
+  segmentationDate?: Date | string;
+  reviewerId?: string;
+  reviewDate?: Date | string;
   snapshots: object[];
 }
 

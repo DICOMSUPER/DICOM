@@ -27,6 +27,7 @@ import {
 } from '../../../../../src/constant/cache';
 import { cacheKeyBuilder } from '../../../../utils/cache-builder.utils';
 import { RedisService } from '@backend/redis';
+// import { CreatePatientConditionDto } from 'libs/shared-domain/src';
 @Controller('patient-conditions')
 @UseInterceptors(RequestLoggingInterceptor, TransformInterceptor)
 export class PatientConditionController {
@@ -58,10 +59,20 @@ export class PatientConditionController {
   @Post()
   async create(@Body() createPatientConditionDto: any) {
     try {
+      console.log("🔵 API Gateway received body:", JSON.stringify(createPatientConditionDto, null, 2));
+      console.log("🔵 Body type:", typeof createPatientConditionDto);
+      console.log("🔵 Body keys:", Object.keys(createPatientConditionDto || {}));
+      
+      if (!createPatientConditionDto || Object.keys(createPatientConditionDto).length === 0) {
+        throw new BadRequestException('Request body is empty or invalid');
+      }
+      
+      console.log("🔵 Sending to microservice:", { createPatientConditionDto });
+      
       const result = await firstValueFrom(
         this.patientService.send(
           'PatientService.PatientCondition.Create',
-          createPatientConditionDto
+          { createPatientConditionDto }
         )
       );
 

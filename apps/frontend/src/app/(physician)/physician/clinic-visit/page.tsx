@@ -9,7 +9,7 @@ import { RefreshButton } from "@/components/ui/refresh-button";
 import { EncounterStatus } from "@/common/enums/patient-workflow.enum";
 import { PaginationMeta } from "@/common/interfaces/pagination/pagination.interface";
 import { PatientEncounterFilters } from "@/common/interfaces/patient/patient-visit.interface";
-import { PaginationParams } from "@/common/interfaces/patient/patient-workflow.interface";
+import { PaginationParams, PatientEncounter } from "@/common/interfaces/patient/patient-workflow.interface";
 import { RootState } from "@/store";
 import {
   useGetCurrentEmployeeRoomAssignmentQuery,
@@ -298,7 +298,7 @@ export default function QueuePage() {
       />
       <PatientEncounterTable
         employeeId={currentEmployeeSchedule?.data?.employeeId as string}
-        encounterItems={data?.data || data || []}
+        encounterItems={data?.data as PatientEncounter[]}
         onStartServing={handleStartServing}
         onComplete={handleComplete}
         onViewDetails={handleViewDetails}

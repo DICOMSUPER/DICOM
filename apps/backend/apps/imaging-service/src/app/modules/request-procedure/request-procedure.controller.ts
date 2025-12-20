@@ -158,4 +158,26 @@ export class RequestProcedureController {
       );
     }
   }
+
+  @MessagePattern(
+    `${IMAGING_SERVICE}.${moduleName}.GetStats`
+  )
+  async getStats(): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+  }> {
+    this.logger.log(
+      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.GetStats`
+    );
+    try {
+      return await this.requestProcedureService.getStats();
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to get request procedure stats',
+        IMAGING_SERVICE
+      );
+    }
+  }
 }

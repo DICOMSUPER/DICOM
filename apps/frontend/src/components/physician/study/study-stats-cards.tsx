@@ -12,19 +12,19 @@ interface StudyStatsCardsProps {
 export function StudyStatsCards({ stats, isLoading = false }: StudyStatsCardsProps) {
   const todayStats = stats?.today || {
     totalDicomStudies: 0,
-    totalScannedStudies: 0,
+    // totalScannedStudies: 0,
     totalPendingApprovalStudies: 0,
     totalApprovedStudies: 0,
-    totalTechnicianVerifiedStudies: 0,
+    // totalTechnicianVerifiedStudies: 0,
     totalResultPrintedStudies: 0,
   };
 
   const totalStats = stats?.total || {
     totalDicomStudies: 0,
-    totalScannedStudies: 0,
+    // totalScannedStudies: 0,
     totalPendingApprovalStudies: 0,
     totalApprovedStudies: 0,
-    totalTechnicianVerifiedStudies: 0,
+    // totalTechnicianVerifiedStudies: 0,
     totalResultPrintedStudies: 0,
   };
 
@@ -36,13 +36,13 @@ export function StudyStatsCards({ stats, isLoading = false }: StudyStatsCardsPro
       icon: FileText,
       isLoading,
     },
-    {
-      title: 'Scanned',
-      value: `${todayStats.totalScannedStudies} / ${totalStats.totalScannedStudies}`,
-      description: 'Today / All time',
-      icon: Scan,
-      isLoading,
-    },
+    // {
+    //   title: 'Scanned',
+    //   value: `${todayStats.totalScannedStudies} / ${totalStats.totalScannedStudies}`,
+    //   description: 'Today / All time',
+    //   icon: Scan,
+    //   isLoading,
+    // },
     {
       title: 'Pending Approval',
       value: `${todayStats.totalPendingApprovalStudies} / ${totalStats.totalPendingApprovalStudies}`,
@@ -57,13 +57,13 @@ export function StudyStatsCards({ stats, isLoading = false }: StudyStatsCardsPro
       icon: CheckCircle,
       isLoading,
     },
-    {
-      title: 'Technician Verified',
-      value: `${todayStats.totalTechnicianVerifiedStudies} / ${totalStats.totalTechnicianVerifiedStudies}`,
-      description: 'Today / All time',
-      icon: UserCheck,
-      isLoading,
-    },
+    // {
+    //   title: 'Technician Verified',
+    //   value: `${todayStats.totalTechnicianVerifiedStudies} / ${totalStats.totalTechnicianVerifiedStudies}`,
+    //   description: 'Today / All time',
+    //   icon: UserCheck,
+    //   isLoading,
+    // },
     {
       title: 'Result Printed',
       value: `${todayStats.totalResultPrintedStudies} / ${totalStats.totalResultPrintedStudies}`,

@@ -14,6 +14,9 @@ RUN npx nx build imaging-service
 FROM node:20-alpine
 WORKDIR /app
 
+# Set production environment
+ENV NODE_ENV=production
+
 # Install dumb-init for proper signal handling
 RUN apk update && apk add --no-cache dumb-init
 
