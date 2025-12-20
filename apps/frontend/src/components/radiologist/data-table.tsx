@@ -2,9 +2,7 @@
 
 import StudyTab from "./tabs/study-tab";
 import { useTabs } from "./tabs/tab-context";
-import {
-  DicomStudy,
-} from "@/common/interfaces/image-dicom/dicom-study.interface";
+import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interface";
 import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
 import { Suspense } from "react";
@@ -12,6 +10,7 @@ import { AlertCircle, RefreshCw, FileSearch } from "lucide-react";
 import { formatStatus } from "@/common/utils/format-status";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "path";
 
 // Helper function to calculate age from date of birth
 const calculateAge = (dateOfBirth: string): number => {
@@ -54,7 +53,10 @@ const studyStatusBadge = (status?: string) => {
     [DicomStudyStatus.RESULT_PRINTED]: "text-emerald-700",
     [DicomStudyStatus.REJECTED]: "text-red-700",
   };
-  return { label: formatStatus(status), className: map[status] || "text-slate-700" };
+  return {
+    label: formatStatus(status),
+    className: map[status] || "text-slate-700",
+  };
 };
 
 const reportStatusBadge = (status?: string) => {
@@ -65,7 +67,10 @@ const reportStatusBadge = (status?: string) => {
     [DiagnosisStatus.REJECTED]: "text-red-700",
     [DiagnosisStatus.DRAFT]: "text-slate-700",
   };
-  return { label: formatStatus(status), className: map[status] || "text-slate-700" };
+  return {
+    label: formatStatus(status),
+    className: map[status] || "text-slate-700",
+  };
 };
 
 export default function DataTable({
@@ -92,19 +97,32 @@ export default function DataTable({
         <div className="w-full flex-1 overflow-auto h-full min-h-0">
           <div className="text-sm min-w-[1900px] flex flex-col min-h-full">
             {/* Header skeleton */}
-            <div className="grid grid-cols-16 bg-gray-100 sticky top-0 z-10 border-b border-gray-300 divide-x divide-gray-300">
-              {Array.from({ length: 16 }).map((_, idx) => (
-                <div key={idx} className="px-4 py-3 h-full flex items-center justify-center">
+            <div className="grid grid-cols-17 bg-gray-100 sticky top-0 z-10 border-b border-gray-300 divide-x divide-gray-300">
+              {Array.from({ length: 17 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="px-4 py-3 h-full flex items-center justify-center"
+                >
                   <Skeleton className="h-4 w-16" />
                 </div>
               ))}
             </div>
             {/* Rows skeleton */}
             {Array.from({ length: 8 }).map((_, rowIdx) => (
-              <div key={rowIdx} className="grid grid-cols-16 border-b border-gray-200 divide-x divide-gray-200">
-                {Array.from({ length: 16 }).map((_, colIdx) => (
-                  <div key={colIdx} className="px-4 py-3 h-full flex items-center justify-center">
-                    <Skeleton className={`h-3 ${colIdx === 1 ? 'w-20' : colIdx === 15 ? 'w-12' : 'w-14'}`} />
+              <div
+                key={rowIdx}
+                className="grid grid-cols-17 border-b border-gray-200 divide-x divide-gray-200"
+              >
+                {Array.from({ length: 17 }).map((_, colIdx) => (
+                  <div
+                    key={colIdx}
+                    className="px-4 py-3 h-full flex items-center justify-center"
+                  >
+                    <Skeleton
+                      className={`h-3 ${
+                        colIdx === 1 ? "w-20" : colIdx === 15 ? "w-12" : "w-14"
+                      }`}
+                    />
                   </div>
                 ))}
               </div>
@@ -130,8 +148,12 @@ export default function DataTable({
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Lỗi tải dữ liệu</h3>
-            <p className="text-sm text-gray-500">Không thể tải danh sách ca. Vui lòng thử lại.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              Lỗi tải dữ liệu
+            </h3>
+            <p className="text-sm text-gray-500">
+              Không thể tải danh sách ca. Vui lòng thử lại.
+            </p>
           </div>
           <Button onClick={refetch} variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
@@ -147,7 +169,7 @@ export default function DataTable({
       <div className="flex-1 bg-white overflow-hidden flex flex-col min-h-0 h-full">
         <div className="w-full flex-1 overflow-auto h-full min-h-0">
           <div className="text-sm min-w-[1900px] flex flex-col min-h-full">
-            <div className="grid grid-cols-16 bg-gray-100 sticky top-0 z-10 border-b border-gray-300 text-left font-semibold text-gray-700 divide-x divide-gray-300">
+            <div className="grid grid-cols-17 bg-gray-100 sticky top-0 z-10 border-b border-gray-300 text-left font-semibold text-gray-700 divide-x divide-gray-300">
               {[
                 "No.",
                 "Study UID",
@@ -163,30 +185,41 @@ export default function DataTable({
                 "Room",
                 "Modality",
                 "Contrast",
+                "Import Date",
                 "Notes",
                 "Actions",
               ].map((label) => (
-                <div key={label} className="px-4 py-2 h-full text-center flex items-center justify-center">
+                <div
+                  key={label}
+                  className="px-4 py-2 h-full text-center flex items-center justify-center"
+                >
                   {label}
                 </div>
               ))}
             </div>
 
             {tableData && tableData.length > 0 ? (
-              <div
-                className="divide-y divide-gray-200 flex-1 min-h-full grid auto-rows-fr"
-              >
+              <div className="divide-y divide-gray-200 flex-1 min-h-full grid auto-rows-fr">
                 {tableData.map((row: DicomStudy, idx: number) => (
                   <div
                     key={`${row.studyInstanceUid ?? idx}-${idx}`}
-                    className="grid grid-cols-16 items-center text-gray-700 hover:bg-gray-50 divide-x divide-gray-200"
+                    className="grid grid-cols-17 items-center text-gray-700 hover:bg-gray-50 divide-x divide-gray-200"
                   >
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{idx + 1}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center" title={row.studyInstanceUid}>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {idx + 1}
+                    </div>
+                    <div
+                      className="px-4 py-2 h-full text-center flex items-center justify-center"
+                      title={row.studyInstanceUid}
+                    >
                       {`...${row.studyInstanceUid?.slice(-7)}`}
                     </div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.patientCode}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.patient?.lastName}</div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {row.patientCode}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {row.patient?.lastName}
+                    </div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center font-medium">
                       {row.patient?.firstName}
                     </div>
@@ -194,32 +227,67 @@ export default function DataTable({
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">
                       {(() => {
                         const badge = studyStatusBadge(row.studyStatus);
-                        return <span className={`text-xs font-semibold ${badge.className}`}>{badge.label}</span>;
+                        return (
+                          <span
+                            className={`text-xs font-semibold ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                        );
                       })()}
                     </div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">
                       {(() => {
-                        const badge = reportStatusBadge(row.report?.diagnosisStatus);
-                        return <span className={`text-xs font-semibold ${badge.className}`}>{badge.label}</span>;
+                        const badge = reportStatusBadge(
+                          row.report?.diagnosisStatus
+                        );
+                        return (
+                          <span
+                            className={`text-xs font-semibold ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                        );
                       })()}
                     </div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">
                       {row.patient?.dateOfBirth && row.patient?.gender
-                        ? `${row.patient.gender.charAt(0).toUpperCase()}, ${calculateAge(
+                        ? `${row.patient.gender
+                            .charAt(0)
+                            .toUpperCase()}, ${calculateAge(
                             row.patient?.dateOfBirth as unknown as string
                           )}`
                         : "N/A"}
                     </div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.imagingOrder?.procedure?.bodyPart?.name}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{formatDate(row.studyDate)}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{formatTime(row.studyTime)}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.room?.roomCode}</div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center" title={row.modalityMachine?.name}>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {row.imagingOrder?.procedure?.bodyPart?.name}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {formatDate(row.studyDate)}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {formatTime(row.studyTime)}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {row.room?.roomCode}
+                    </div>
+                    <div
+                      className="px-4 py-2 h-full text-center flex items-center justify-center"
+                      title={row.modalityMachine?.name}
+                    >
                       {row.imagingOrder?.procedure?.modality?.modalityCode}
                     </div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">{row.imagingOrder?.contrastRequired ? "Yes" : "No"}</div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">
-                      <div className="truncate" title={row.imagingOrder?.imagingOrderForm?.notes}>
+                      {row.imagingOrder?.contrastRequired ? "Yes" : "No"}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      {formatCreatedAt(row?.createdAt)}
+                    </div>
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
+                      <div
+                        className="truncate"
+                        title={row.imagingOrder?.imagingOrderForm?.notes}
+                      >
                         {row.imagingOrder?.imagingOrderForm?.notes}
                       </div>
                     </div>
@@ -254,12 +322,20 @@ export default function DataTable({
                     <FileSearch className="h-8 w-8 text-slate-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-1">Không tìm thấy ca nào</h3>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-1">
+                      Không tìm thấy ca nào
+                    </h3>
                     <p className="text-sm text-gray-500">
-                      Không có ca nào khớp với điều kiện lọc. Hãy thử điều chỉnh bộ lọc hoặc làm mới dữ liệu.
+                      Không có ca nào khớp với điều kiện lọc. Hãy thử điều chỉnh
+                      bộ lọc hoặc làm mới dữ liệu.
                     </p>
                   </div>
-                  <Button onClick={refetch} variant="outline" size="sm" className="gap-2">
+                  <Button
+                    onClick={refetch}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
                     <RefreshCw className="h-4 w-4" />
                     Làm mới
                   </Button>
