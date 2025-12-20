@@ -1,45 +1,39 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import Keyv from 'keyv';
 
 @Injectable()
 export class RedisService {
   private readonly logger = new Logger(RedisService.name);
   private isConnected = true;
-  private redisClient: any; // Underlying Redis client
 
-  constructor(@Inject('REDIS_INSTANCE') private readonly redis: Keyv) {
+  constructor(
+    @Inject('REDIS_INSTANCE') private readonly redis: Keyv,
+    @Optional() @Inject('REDIS_CLIENT') private readonly redisClient: any
+  ) {
     this.setupErrorHandlers();
-    this.extractRedisClient();
+    this.logClientInfo();
   }
 
-  private extractRedisClient(): void {
-    // Try different paths to access the underlying Redis client
-    try {
-      // For @keyv/redis adapter
-      this.redisClient = (this.redis as any).opts?.store?.redis;
+  private logClientInfo(): void {
+    if (this.redisClient) {
+      this.logger.log('Redis client injected successfully');
+      this.logger.log(
+        `Redis client type: ${this.redisClient.constructor.name}`
+      );
 
-      // Alternative paths
-      if (!this.redisClient) {
-        this.redisClient = (this.redis as any).opts?.store?.client;
-      }
-      if (!this.redisClient) {
-        this.redisClient = (this.redis as any).redis;
-      }
-      if (!this.redisClient) {
-        this.redisClient = (this.redis as any).opts?.store;
-      }
-
-      if (this.redisClient) {
-        this.logger.log('Successfully extracted underlying Redis client');
+      // Detect Redis library
+      if (typeof this.redisClient.scanStream === 'function') {
+        this.logger.log('✓ Detected: ioredis (scanStream available)');
+      } else if (typeof this.redisClient.scanIterator === 'function') {
+        this.logger.log('✓ Detected: node-redis v4+ (scanIterator available)');
+      } else if (typeof this.redisClient.scan === 'function') {
+        this.logger.log('✓ Detected: Redis client with manual SCAN');
       } else {
-        this.logger.warn(
-          'Could not extract Redis client - pattern deletion will not work'
-        );
+        this.logger.warn('✗ No SCAN method found on Redis client');
       }
-    } catch (error) {
-      this.logger.error(
-        'Error extracting Redis client:',
-        (error as Error).message
+    } else {
+      this.logger.warn(
+        'Redis client not injected - pattern deletion will not work'
       );
     }
   }
@@ -70,22 +64,16 @@ export class RedisService {
     }
 
     try {
-      this.logger.log(`Getting from Redis: ${key}`);
       const value = await this.redis.get<string>(key);
       if (!value) {
-        this.logger.log(`Cache MISS: ${key}`);
+        this.logger.debug(`Cache MISS: ${key}`);
         return undefined;
       }
 
-      this.logger.log(`Cache HIT: ${key}`);
+      this.logger.debug(`Cache HIT: ${key}`);
       try {
         return JSON.parse(value) as T;
-      } catch (parseError) {
-        this.logger.warn(
-          `Failed to parse cache value for key ${key}: ${
-            (parseError as Error).message
-          }`
-        );
+      } catch {
         return value as T;
       }
     } catch (error) {
@@ -130,44 +118,37 @@ export class RedisService {
       return;
     }
 
+    if (!this.redisClient) {
+      this.logger.error(
+        'Redis client not available - cannot perform pattern deletion'
+      );
+      return;
+    }
+
     try {
       this.logger.debug(`Deleting keys from Redis starting with: ${prefix}`);
 
-      // Get the namespace from Keyv if it exists
+      // Get the namespace from Keyv
       const namespace = (this.redis as any).opts?.namespace;
       const fullPrefix = namespace ? `${namespace}:${prefix}` : prefix;
 
-      if (
-        this.redisClient &&
-        typeof this.redisClient.scanStream === 'function'
-      ) {
-        // Method 1: Use scanStream (ioredis)
+      this.logger.debug(`Full search pattern: ${fullPrefix}*`);
+
+      // @keyv/redis uses ioredis, which supports scanStream
+      if (typeof this.redisClient.scanStream === 'function') {
+        this.logger.debug('Using scanStream method (ioredis)');
         await this.deleteWithScanStream(fullPrefix);
-      } else if (
-        this.redisClient &&
-        typeof this.redisClient.scanIterator === 'function'
-      ) {
-        // Method 2: Use scanIterator (node-redis v4+)
-        await this.deleteWithScanIterator(fullPrefix);
-      } else if (
-        this.redisClient &&
-        typeof this.redisClient.scan === 'function'
-      ) {
-        // Method 3: Use manual SCAN loop
+      } else if (typeof this.redisClient.scan === 'function') {
+        this.logger.debug('Using manual SCAN method');
         await this.deleteWithManualScan(fullPrefix);
       } else {
-        // Fallback: Try to use Keyv's iterator (probably won't work based on your error)
-        this.logger.warn(
-          'No Redis client available for pattern deletion, attempting Keyv iterator fallback'
-        );
-        await this.deleteWithKeyvIterator(prefix);
+        this.logger.error('No supported SCAN method found on Redis client');
       }
     } catch (error) {
       this.handleError(`deleteKeyStartingWith(${prefix})`, error as Error);
     }
   }
 
-  // Method 1: ioredis scanStream
   private async deleteWithScanStream(pattern: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const stream = this.redisClient.scanStream({
@@ -182,51 +163,32 @@ export class RedisService {
       });
 
       stream.on('end', async () => {
-        if (keysToDelete.length > 0) {
-          this.logger.debug(
-            `Deleting ${keysToDelete.length} keys matching pattern: ${pattern}`
-          );
-          // Delete in batches of 100
-          for (let i = 0; i < keysToDelete.length; i += 100) {
-            const batch = keysToDelete.slice(i, i + 100);
-            await this.redisClient.del(...batch);
+        try {
+          if (keysToDelete.length > 0) {
+            this.logger.log(
+              `Deleting ${keysToDelete.length} keys matching pattern: ${pattern}*`
+            );
+
+            // Delete in batches of 100
+            for (let i = 0; i < keysToDelete.length; i += 100) {
+              const batch = keysToDelete.slice(i, i + 100);
+              await this.redisClient.del(...batch);
+            }
+
+            this.logger.log(`Successfully deleted ${keysToDelete.length} keys`);
+          } else {
+            this.logger.debug(`No keys found matching pattern: ${pattern}*`);
           }
-        } else {
-          this.logger.debug(`No keys found matching pattern: ${pattern}`);
+          resolve();
+        } catch (error) {
+          reject(error);
         }
-        resolve();
       });
 
       stream.on('error', reject);
     });
   }
 
-  // Method 2: node-redis v4+ scanIterator
-  private async deleteWithScanIterator(pattern: string): Promise<void> {
-    const keysToDelete: string[] = [];
-
-    for await (const key of this.redisClient.scanIterator({
-      MATCH: `${pattern}*`,
-      COUNT: 100,
-    })) {
-      keysToDelete.push(key);
-    }
-
-    if (keysToDelete.length > 0) {
-      this.logger.debug(
-        `Deleting ${keysToDelete.length} keys matching pattern: ${pattern}`
-      );
-      // Delete in batches
-      for (let i = 0; i < keysToDelete.length; i += 100) {
-        const batch = keysToDelete.slice(i, i + 100);
-        await this.redisClient.del(batch);
-      }
-    } else {
-      this.logger.debug(`No keys found matching pattern: ${pattern}`);
-    }
-  }
-
-  // Method 3: Manual SCAN loop
   private async deleteWithManualScan(pattern: string): Promise<void> {
     let cursor = '0';
     const keysToDelete: string[] = [];
@@ -239,15 +201,38 @@ export class RedisService {
         'COUNT',
         100
       );
-      cursor = reply[0];
-      const keys = reply[1];
-      keysToDelete.push(...keys);
+
+      // Handle different response formats
+      let newCursor: string;
+      let keys: string[];
+
+      if (Array.isArray(reply)) {
+        // ioredis format: [cursor, keys]
+        newCursor = reply[0];
+        keys = reply[1] || [];
+      } else if (typeof reply === 'object' && reply !== null) {
+        // node-redis v4+ format: {cursor, keys}
+        newCursor = reply.cursor;
+        keys = reply.keys || [];
+      } else {
+        this.logger.error(
+          `Unexpected SCAN reply format: ${JSON.stringify(reply)}`
+        );
+        break;
+      }
+
+      cursor = newCursor;
+
+      if (Array.isArray(keys) && keys.length > 0) {
+        keysToDelete.push(...keys);
+      }
     } while (cursor !== '0');
 
     if (keysToDelete.length > 0) {
-      this.logger.debug(
-        `Deleting ${keysToDelete.length} keys matching pattern: ${pattern}`
+      this.logger.log(
+        `Deleting ${keysToDelete.length} keys matching pattern: ${pattern}*`
       );
+
       // Delete in batches
       for (let i = 0; i < keysToDelete.length; i += 100) {
         const batch = keysToDelete.slice(i, i + 100);
@@ -257,39 +242,13 @@ export class RedisService {
           await this.redisClient.del(...batch);
         }
       }
+
+      this.logger.log(`Successfully deleted ${keysToDelete.length} keys`);
     } else {
-      this.logger.debug(`No keys found matching pattern: ${pattern}`);
+      this.logger.debug(`No keys found matching pattern: ${pattern}*`);
     }
   }
 
-  // Fallback: Keyv iterator (likely won't work)
-  private async deleteWithKeyvIterator(prefix: string): Promise<void> {
-    const iteratorFn = (this.redis as any).iterator;
-    if (typeof iteratorFn !== 'function') {
-      this.logger.error(
-        'Keyv iterator not available and no Redis client found - pattern deletion failed'
-      );
-      return;
-    }
-
-    const iterator = iteratorFn.call(this.redis, undefined);
-    const keysToDelete: string[] = [];
-
-    for await (const key of iterator) {
-      if (typeof key === 'string' && key.startsWith(prefix)) {
-        keysToDelete.push(key);
-      }
-    }
-
-    if (keysToDelete.length > 0) {
-      await Promise.all(keysToDelete.map((key) => this.redis.delete(key)));
-      this.logger.debug(
-        `Deleted ${keysToDelete.length} keys using Keyv iterator`
-      );
-    }
-  }
-
-  // Health check method
   async isHealthy(): Promise<boolean> {
     try {
       const testKey = '__health_check__';
@@ -301,5 +260,10 @@ export class RedisService {
       this.logger.error('Redis health check failed:', (error as Error).message);
       return false;
     }
+  }
+
+  // Utility method to check if pattern deletion is available
+  async canDeleteByPattern(): Promise<boolean> {
+    return this.redisClient !== null && this.redisClient !== undefined;
   }
 }

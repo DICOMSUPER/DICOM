@@ -70,6 +70,7 @@
     "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "date-fns-tz": "^3.2.0",
     "dcmjs": "^0.45.0",
     "dcmjs-imaging": "^0.2.2",
     "dicom-parser": "^1.8.21",

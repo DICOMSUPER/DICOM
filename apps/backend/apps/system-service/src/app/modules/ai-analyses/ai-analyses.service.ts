@@ -77,8 +77,8 @@ export class AiAnalysesService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-      console.log("AI result", result);
-      
+      console.log('AI result', result);
+
       // const image = await this.cloudinaryService.uploadBase64ToCloudinary(
       //   base64Image,
       //   {
@@ -132,10 +132,10 @@ export class AiAnalysesService {
     const cachedService = await this.redisService.get<
       PaginatedResponseDto<AiAnalysis>
     >(keyName);
-    if (cachedService) {
-      console.log('AI analyses retrieved from cache');
-      return cachedService;
-    }
+    // if (cachedService) {
+    //   console.log('AI analyses retrieved from cache');
+    //   return cachedService;
+    // }
 
     // Build query options
     const options: any = {

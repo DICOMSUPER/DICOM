@@ -149,7 +149,7 @@ export class DicomStudiesService {
   ): Promise<DicomStudy> => {
     return this.entityManager.transaction(async (em) => {
       await this.checkImagingOrder(createDicomStudyDto.orderId, em);
-      await this.checkImagingModality(createDicomStudyDto.modalityId, em);
+      // await this.checkImagingModality(createDicomStudyDto.modalityId as string, em);
 
       return await this.dicomStudiesRepository.create(createDicomStudyDto, em);
     });

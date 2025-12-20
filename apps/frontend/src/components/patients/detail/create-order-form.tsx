@@ -76,6 +76,7 @@ export interface ImagingProcedurePDF {
   procedures: ImagingProcedure[];
   roomId?: string;
   date?: string;
+  orderNumber?: string;
 }
 
 interface CreateImagingOrderProps {
@@ -90,6 +91,7 @@ export default function CreateImagingOrder({
   const { data: profile } = useGetCurrentProfileQuery();
   console.log("Profile Data:", profile?.data);
 
+  const [orderNumber, setOrderNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [roomName, setRoomName] = useState("");
   const [departmentName, setDepartmentName] = useState("");
@@ -197,7 +199,8 @@ export default function CreateImagingOrder({
       if (result?.success || result?.data) {
         console.log("orderform:", result?.data);
         toast.success("Imaging orders created successfully!");
-        handleDownloadPDF();
+        const orderNumber = result?.data?.imagingOrders?.[0]?.orderNumber;
+        handleDownloadPDF(orderNumber as string);
 
         handleCancel();
       } else {
@@ -251,7 +254,7 @@ export default function CreateImagingOrder({
     ]);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = (orderNumber: string) => {
     const imagingProcedurePDF: ImagingProcedurePDF = {
       patientCode: patient.patientCode || "",
       patientName: `${patient.firstName} ${patient.lastName}`,
@@ -265,6 +268,7 @@ export default function CreateImagingOrder({
       roomName: roomName,
       roomId: room,
       date: new Date().toLocaleDateString("vi-VN"),
+      orderNumber: orderNumber,
       notes: notes,
       orderingPhysicianName: `${profile?.data?.firstName} ${profile?.data?.lastName}`,
     };
@@ -445,8 +449,9 @@ export default function CreateImagingOrder({
                     <span className="text-red-500">*</span>
                   </Label>
                   <DiagnosisInput
-                    className={`${!diagnosis ? "border-slate-300" : "border-teal-300"
-                      } w-full p-2 border rounded-lg`}
+                    className={`${
+                      !diagnosis ? "border-slate-300" : "border-teal-300"
+                    } w-full p-2 border rounded-lg`}
                     state={diagnosis}
                     setState={setDiagnosis}
                   />
@@ -470,8 +475,9 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${!department ? "border-slate-300" : "border-teal-300"
-                          } w-full`}
+                        className={`${
+                          !department ? "border-slate-300" : "border-teal-300"
+                        } w-full`}
                       >
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
@@ -503,8 +509,9 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${!room ? "border-slate-300" : "border-teal-300"
-                          } w-full`}
+                        className={`${
+                          !room ? "border-slate-300" : "border-teal-300"
+                        } w-full`}
                       >
                         <SelectValue placeholder="Select room" />
                       </SelectTrigger>

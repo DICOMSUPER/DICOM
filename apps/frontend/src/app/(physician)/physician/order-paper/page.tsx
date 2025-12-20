@@ -217,6 +217,16 @@ function OrderPaperContent() {
           </p>
         </div>
 
+        <div className="border-b-2 border-black py-8 text-center">
+          <div className="text-sm font-bold mb-3 text-gray-600 uppercase tracking-wide">
+            Your Order Number
+          </div>
+          <div className="text-8xl font-bold text-black">
+            {decodedData.orderNumber &&
+              String(decodedData.orderNumber).padStart(3, "0")}
+          </div>
+        </div>
+
         {/* Content */}
         <div className="p-6">
           {/* Patient Information */}
