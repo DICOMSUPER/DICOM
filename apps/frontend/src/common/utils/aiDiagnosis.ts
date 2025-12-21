@@ -89,19 +89,9 @@ export const drawAIPredictions = (
   renderingEngineId: string,
   aiImageWidth: number,
   aiImageHeight: number,
-  // canvasWidth: number,
-  // canvasHeight: number
+
 ): void => {
-  console.log(
-    "🎨 drawAIPredictions called with:",
-    predictions.length,
-    "predictions for viewport:",
-    viewportId
-  );
-  
-  console.log("📐 AI Image dimensions:", { aiImageWidth, aiImageHeight });
-  console.log("🔍 Reference Image ID:", referencedImageId);
-  console.log("🎬 Rendering Engine ID:", renderingEngineId);
+
 
   try {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -161,30 +151,24 @@ export const drawAIPredictions = (
     if (foundToolGroup) {
       if (!foundToolGroup.hasTool(PlanarFreehandROITool.toolName)) {
         foundToolGroup.addTool(PlanarFreehandROITool.toolName);
-        console.log("✅ Added PlanarFreehandROI tool");
+
       }
       if (!foundToolGroup.hasTool(RectangleROITool.toolName)) {
         foundToolGroup.addTool(RectangleROITool.toolName);
-        console.log("✅ Added RectangleROI tool");
+
       }
 
       foundToolGroup.setToolEnabled(PlanarFreehandROITool.toolName);
       foundToolGroup.setToolEnabled(RectangleROITool.toolName);
-      console.log("✅ Tools enabled for rendering");
+
     } else {
       console.warn("Could not find ToolGroup for viewport", viewportId);
     }
 
     predictions.forEach((prediction, index) => {
-      console.log(
-        `Drawing prediction ${index + 1}/${predictions.length}:`,
-        prediction.class
-      );
-
       const color = getColorForClass(prediction.class);
-      const annotationUID = `ai-${
-        prediction.detection_id || Date.now()
-      }-${Math.random().toString(36).substr(2, 9)}`;
+      const annotationUID = `ai-${prediction.detection_id || Date.now()
+        }-${Math.random().toString(36).substr(2, 9)}`;
 
       if (prediction.points && prediction.points.length > 0) {
         // const worldPoints: Types.Point3[] = prediction.points.map((p) => {
@@ -197,7 +181,7 @@ export const drawAIPredictions = (
         //   const worldPos = viewport.canvasToWorld([p.x, p.y] as Types.Point2);
         //   return [worldPos[0], worldPos[1], 0] as Types.Point3;
         // });
-        const worldPoints : Types.Point3[]= prediction.points.map((p: any) => {
+        const worldPoints: Types.Point3[] = prediction.points.map((p: any) => {
           // B1: Scale tọa độ AI về tọa độ màn hình hiện tại (CSS Pixel)
           const screenX = p.x * scaleX;
           const screenY = p.y * scaleY;
@@ -209,93 +193,7 @@ export const drawAIPredictions = (
           return [worldPos[0], worldPos[1], 0];
         });
 
-        console.log("worldPoint", worldPoints);
-
- const enabledElement = getEnabledElement(element);
-  // if (enabledElement) {
-  //   const { viewport: vp } = enabledElement;
-    
-  //   // ✅ Tìm hoặc tạo SVG layer
-  //   let svgLayer = element.querySelector('.cornerstone-svg-layer') as HTMLDivElement;
-    
-  //   if (!svgLayer) {
-  //     svgLayer = document.createElement('div');
-  //     svgLayer.classList.add('cornerstone-svg-layer');
-  //     svgLayer.style.position = 'absolute';
-  //     svgLayer.style.top = '0';
-  //     svgLayer.style.left = '0';
-  //     svgLayer.style.width = '100%';
-  //     svgLayer.style.height = '100%';
-  //     svgLayer.style.pointerEvents = 'none';
-  //     element.appendChild(svgLayer);
-  //   }
-
-  //   // ✅ TẠO SVGDrawingHelper object
-  //   const nodeCache: Record<string, SVGElement> = {};
-  //   const touchedNodes = new Set<string>();
-    
-  //   const svgDrawingHelper = {
-  //     svgLayerElement: svgLayer,
-  //     svgNodeCacheForCanvas: nodeCache,
-      
-  //     getSvgNode: (cacheKey: string) => {
-  //       return nodeCache[cacheKey] as SVGGElement | undefined;
-  //     },
-      
-  //     appendNode: (svgNode: SVGElement, cacheKey: string) => {
-  //       nodeCache[cacheKey] = svgNode;
-  //       if (!svgLayer.contains(svgNode)) {
-  //         svgLayer.appendChild(svgNode);
-  //       }
-  //     },
-      
-  //     setNodeTouched: (cacheKey: string) => {
-  //       touchedNodes.add(cacheKey);
-  //     },
-      
-  //     clearUntouched: () => {
-  //       Object.keys(nodeCache).forEach(key => {
-  //         if (!touchedNodes.has(key) && nodeCache[key]) {
-  //           nodeCache[key].remove();
-  //           delete nodeCache[key];
-  //         }
-  //       });
-  //       touchedNodes.clear();
-  //     }
-  //   };
-
-  //   // Convert world position → canvas position
-  //   const canvasPos = vp.worldToCanvas(labelWorldPos);
-    
-  //   const textLines = [
-  //     `${prediction.class.toUpperCase()}`,
-  //     `${(prediction.confidence * 100).toFixed(1)}%`
-  //   ];
-
-  //   const textUID = `text-${annotationUID}`;
-    
-  //   // ✅ BÂY GIỜ CÓ THỂ DÙNG drawTextBox
-  //   drawing.drawTextBox(
-  //     svgDrawingHelper,
-  //     annotationUID,
-  //     textUID,
-  //     textLines,
-  //     [canvasPos[0], canvasPos[1]],
-  //     {
-  //       color: color,
-  //       background: "rgba(0, 0, 0, 0.8)",
-  //       fontFamily: "Arial",
-  //       fontSize: "14px",
-  //       padding: 5,
-  //       centerX: true,
-  //       centerY: false
-  //     }
-  //   );
-
-  //   console.log(`✅ Drew text box for ${prediction.class} at canvas (${canvasPos[0]}, ${canvasPos[1]})`);
-  // }
-
-
+        const enabledElement = getEnabledElement(element);
         const camera = viewport.getCamera();
 
         const className = prediction.class;
@@ -320,7 +218,7 @@ export const drawAIPredictions = (
               textBox: {
                 hasMoved: false,
                 //
-                worldPosition: [0,0,0],
+                worldPosition: [0, 0, 0],
                 worldBoundingBox: {
                   topLeft: [0, 0, 0] as Types.Point3,
                   topRight: [0, 0, 0] as Types.Point3,
@@ -462,9 +360,6 @@ export const drawAIPredictions = (
       }
     });
 
-    console.log("✅ All predictions added to state");
-    console.log("🔄 Triggering annotation renders...");
-
     // Force annotation rendering
     toolsUtilities.triggerAnnotationRenderForViewportIds([viewportId]);
     viewport.render();
@@ -472,45 +367,11 @@ export const drawAIPredictions = (
 
     // Additional delayed render to ensure SVG updates
     setTimeout(() => {
-      console.log("🔄 Delayed render triggered");
       toolsUtilities.triggerAnnotationRenderForViewportIds([viewportId]);
       viewport.render();
     }, 100);
 
-    console.log("Finished drawing AI predictions");
-    // ============================================
-    // 🔍 DEBUG: CHECK ANNOTATION STATE
-    // ============================================
-    console.log("\n" + "=".repeat(60));
-    console.log("🔍 ANNOTATION STATE DEBUG");
-    console.log("=".repeat(60));
-
-    console.log("\n📊 == ALL ANNOTATIONS (getAllAnnotations) ==");
     const allAnnotations = annotation.state.getAllAnnotations();
-    console.log("Total annotations:", allAnnotations.length);
-    console.log("Annotations:", allAnnotations);
-
-    console.log("\n📦 == ANNOTATIONS BY ELEMENT ==");
-    // ✅ SỬA: Gọi đúng với toolName
-    const polygonsByElement = annotation.state.getAnnotations(
-      PlanarFreehandROITool.toolName,
-      element
-    );
-    const rectanglesByElement = annotation.state.getAnnotations(
-      RectangleROITool.toolName,
-      element
-    );
-    console.log("PlanarFreehandROI annotations:", polygonsByElement);
-    console.log("RectangleROI annotations:", rectanglesByElement);
-
-    console.log("\n🎯 == ANNOTATIONS BY FRAME OF REFERENCE ==");
-    const annotationsByFrame = annotation.state.getAnnotations(
-      PlanarFreehandROITool.toolName,
-      element
-    );
-    console.log("Annotations for frameOfReferenceUID:", annotationsByFrame);
-
-    console.log("\n🤖 == AI ANNOTATIONS ONLY ==");
     const aiAnnotations = allAnnotations.filter((ann) =>
       ann.annotationUID?.startsWith("ai-")
     );
@@ -526,26 +387,6 @@ export const drawAIPredictions = (
         label: ann.data?.label,
       }))
     );
-
-    console.log("\n🔧 == TOOL GROUP STATE ==");
-    const debugToolGroup = ToolGroupManager.getToolGroup(
-      `toolGroup_${viewportId}`
-    );
-    if (debugToolGroup) {
-      console.log("Tool group found:", `toolGroup_${viewportId}`);
-      console.log(
-        "Has PlanarFreehandROI:",
-        debugToolGroup.hasTool(PlanarFreehandROITool.toolName)
-      );
-      console.log(
-        "Has RectangleROI:",
-        debugToolGroup.hasTool(RectangleROITool.toolName)
-      );
-    } else {
-      console.warn("⚠️ Tool group not found");
-    }
-
-    console.log("\n" + "=".repeat(60) + "\n");
   } catch (error) {
     console.error("❌ Error drawing AI predictions:", error);
     console.error("Stack:", (error as Error).stack);
