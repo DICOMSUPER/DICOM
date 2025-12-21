@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/store/authSlice";
 import { Monitor, CheckCircle, Users, FileText } from "lucide-react";
+import { useLazyGetCurrentProfileQuery } from "@/store/userApi";
 
 export default function Page() {
   const router = useRouter();
@@ -15,79 +16,78 @@ export default function Page() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ email: string } | null>(null);
 
+  const [getProfile] = useLazyGetCurrentProfileQuery();
+  
   const handleLogin = async (email: string, password: string) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
+  try {
+    const res = await fetch(
+      "/api/user/login",
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
         credentials: "include",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        const errorMessage = data.message || `Login failed (${res.status})`;
-        toast.error(errorMessage);
-        throw new Error(errorMessage);
       }
+    );
 
-      // Save token
-      const token = data.data.tokenResponse.accessToken;
+    const data = await res.json();
 
-      // Decode token to get user info and role
-      const decoded: any = jwtDecode(token);
-
-      const role = decoded.role;
-      if (!role) {
-        toast.error("Role not found in token");
-      }
-
-      dispatch(
-        setCredentials({
-          token,
-          user: {
-            id: decoded.userId || decoded.sub,
-            email: decoded.email || email,
-            role: role,
-            firstName: decoded.firstName,
-            lastName: decoded.lastName,
-          },
-        })
-      );
-
-      // Show success toast
-      toast.success("Login successful! Redirecting...");
-
-      setTimeout(() => {
-        switch (role) {
-          case "system_admin":
-            router.push("/admin/dashboard");
-            break;
-          case "imaging_technician":
-            router.push("/imaging-technician/dashboard");
-            break;
-          case "reception_staff":
-            router.push("/reception/dashboard");
-            break;
-          case "physician":
-            router.push("/physician/dashboard");
-            break;
-          case "radiologist":
-            router.push("/radiologist/dashboard");
-            break;
-          default:
-            router.push("/dashboard");
-        }
-      }, 1000);
-      setIsLoggedIn(true);
-    } catch (error) {
-      if (error instanceof TypeError) {
-        toast.error("Unable to connect to server");
-      }
-      throw error;
+    if (!res.ok) {
+      toast.error(data.message || "Login failed");
+      return;
     }
-  };
+
+    const profileResult = await getProfile().unwrap();
+    const user = profileResult.data;
+    const role = user.role;
+
+    if (!role) {
+      toast.error("Role not found");
+      return;
+    }
+
+    document.cookie = `userRole=${role}; path=/; SameSite=Lax`;
+
+    // 4️⃣ Lưu redux (optional)
+    dispatch(
+      setCredentials({
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      })
+    );
+
+    toast.success("Login successful!");
+
+    // 5️⃣ Redirect
+    switch (role) {
+      case "system_admin":
+        router.push("/admin/dashboard");
+        break;
+      case "imaging_technician":
+        router.push("/imaging-technician/dashboard");
+        break;
+      case "reception_staff":
+        router.push("/reception/dashboard");
+        break;
+      case "physician":
+        router.push("/physician/dashboard");
+        break;
+      case "radiologist":
+        router.push("/radiologist/dashboard");
+        break;
+      default:
+        router.push("/dashboard");
+    }
+  } catch (err) {
+    toast.error("Unable to login");
+  }
+};
+
 
   const handleLogout = () => {
     setUser(null);

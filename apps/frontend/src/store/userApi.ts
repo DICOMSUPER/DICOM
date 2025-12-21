@@ -138,6 +138,7 @@ export const {
   useCreateStaffAccountMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useLazyGetCurrentProfileQuery,
   useGetCurrentProfileQuery,
   useGetUserStatsQuery,
 } = userApi;

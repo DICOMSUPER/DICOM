@@ -73,6 +73,7 @@ export async function middleware(req: NextRequest) {
 
   try {
     const decoded = jwt.decode(token) as { role?: Roles; exp?: number } | null;
+    
 
     if (!decoded || !decoded.role) {
       return NextResponse.redirect(new URL("/login", req.url));
