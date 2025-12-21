@@ -7,13 +7,21 @@ import {
 } from "@/common/contexts/ViewerContext";
 import { toast } from "sonner";
 import type { SegmentationHistoryEntry } from "@/common/contexts/viewer-context/segmentation-helper";
+import {
+  captureSegmentationSnapshot,
+  ensureViewportLabelmapSegmentation,
+  segmentationIdForViewport,
+} from "@/common/contexts/viewer-context/segmentation-helper";
 import { useDiagnosisImageByAIMutation } from "@/store/aiAnalysisApi";
+import { useSegmentWithBBoxMutation } from "@/store/aiSegmentationApi";
 import {
   getCanvasAsBase64,
   drawAIPredictions,
   clearAIAnnotations as clearAIAnnotationsUtil,
 } from "@/common/utils/aiDiagnosis";
-import { Types } from "@cornerstonejs/core";
+import { cache, eventTarget, Types } from "@cornerstonejs/core";
+import { Enums as ToolEnums } from "@cornerstonejs/tools";
+import pako from "pako";
 import { batchedRender } from "@/common/utils/renderBatcher";
 import { Loader2, ImageOff } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -171,6 +179,8 @@ const ViewPortMain = ({
     prevFrame,
     goToFrame,
     refreshViewport,
+    getImageIdToInstanceMap,
+    state,
   } = useViewer();
 
   // Refs
@@ -205,6 +215,7 @@ const ViewPortMain = ({
 
   // Mutation hooks (must be declared before refs that use them)
   const [diagnosisImageByAI] = useDiagnosisImageByAIMutation();
+  const [segmentWithBBox] = useSegmentWithBBoxMutation();
   const { publish } = useViewerEvents();
 
   // Stable refs for event handlers
@@ -213,6 +224,7 @@ const ViewPortMain = ({
   const disposeViewportRef = useRef(disposeViewport);
   const loadSeriesRef = useRef(loadSeriesIntoViewport);
   const diagnosisImageByAIRef = useRef(diagnosisImageByAI);
+  const segmentWithBBoxRef = useRef(segmentWithBBox);
 
   // Update all refs in a single effect
   useEffect(() => {
@@ -221,7 +233,8 @@ const ViewPortMain = ({
     disposeViewportRef.current = disposeViewport;
     loadSeriesRef.current = loadSeriesIntoViewport;
     diagnosisImageByAIRef.current = diagnosisImageByAI;
-  }, [resolvedViewportId, viewport, disposeViewport, loadSeriesIntoViewport, diagnosisImageByAI]);
+    segmentWithBBoxRef.current = segmentWithBBox;
+  }, [resolvedViewportId, viewport, disposeViewport, loadSeriesIntoViewport, diagnosisImageByAI, segmentWithBBox]);
 
   const {
     isLoading,
@@ -241,6 +254,7 @@ const ViewPortMain = ({
   } | null>(null);
   const [analyzedImageId, setAnalyzedImageId] = useState<string>("");
   const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
+  const [isAISegmenting, setIsAISegmenting] = useState(false);
 
   // Helper to check viewport match
   const isCurrentViewport = useCallback((targetViewportId?: string) => {
@@ -332,8 +346,12 @@ const ViewPortMain = ({
       if (!isCurrentViewport(viewportId) || !viewportIdRef.current) return;
 
       const currentElement = elementRef.current;
-      const currentViewport = viewportRef.current;
-      if (!currentElement || !currentViewport) return;
+      // Get viewport directly from context instead of potentially stale ref
+      const currentViewport = getStackViewport(viewportIndex) || viewportRef.current;
+      if (!currentElement || !currentViewport) {
+        console.log("[ViewPortMain] Skipping AI Diagnosis - no element/viewport");
+        return;
+      }
 
       const studyIdToUse = selectedSeries?.studyId || studyId;
 
@@ -437,6 +455,292 @@ const ViewPortMain = ({
       batchedRender(viewportRef.current);
     },
     [isCurrentViewport]
+  );
+
+  // AI Segmentation handler
+  const handleAISegmentation = useCallback(
+    async (data: {
+      viewportId?: string;
+      bbox: [number, number, number, number];
+      imageIds: string[];
+      currentImageIndex: number;
+    }) => {
+      console.log("[ViewPortMain] handleAISegmentation called:", {
+        receivedViewportId: data?.viewportId,
+        currentViewportId: viewportIdRef.current,
+        isCurrentViewport: isCurrentViewport(data?.viewportId),
+        hasElement: !!elementRef.current,
+        hasViewport: !!viewportRef.current,
+        bbox: data?.bbox,
+        imageIdsCount: data?.imageIds?.length,
+        currentImageIndex: data?.currentImageIndex,
+      });
+
+      const { viewportId, bbox, imageIds, currentImageIndex } = data || {};
+
+
+      if (!isCurrentViewport(viewportId) || !viewportIdRef.current) {
+        console.log("[ViewPortMain] Skipping AI Segmentation - wrong viewport");
+        return;
+      }
+
+      const currentElement = elementRef.current;
+      // Get viewport directly from context instead of potentially stale ref
+      const currentViewport = getStackViewport(viewportIndex) || viewportRef.current;
+      
+      console.log("[ViewPortMain] AI Segmentation viewport check:", {
+        hasElement: !!currentElement,
+        hasViewportFromContext: !!getStackViewport(viewportIndex),
+        hasViewportFromRef: !!viewportRef.current,
+        usingViewport: !!currentViewport,
+      });
+      
+      if (!currentElement || !currentViewport) {
+        console.log("[ViewPortMain] Skipping AI Segmentation - no element/viewport");
+        return;
+      }
+
+      publish(ViewerEvents.AI_SEGMENTATION_START, { viewportId: viewportIdRef.current });
+      setIsAISegmenting(true);
+
+      try {
+
+        const base64Image = getCanvasAsBase64(currentElement);
+        if (!base64Image) throw new Error("Failed to capture viewport image");
+
+        // Get current image info
+        const currentImageId = imageIds[currentImageIndex];
+        const imageIdToInstanceMap = getImageIdToInstanceMap(viewportIndex);
+        const instanceId = imageIdToInstanceMap[currentImageId] || "";
+        const frameNumber = currentImageIndex + 1;
+
+        console.log("[ViewPortMain] AI Segmentation:", {
+          viewportId: viewportIdRef.current,
+          frameNumber,
+          instanceId,
+          bboxLength: bbox.length,
+          base64ImageLength: base64Image.length,
+        });
+
+        await ensureViewportLabelmapSegmentation({
+          viewportId: viewportIdRef.current,
+          imageIds,
+          imageIdToInstanceMap,
+        });
+
+        // 4. Get the labelmap buffer to determine dimensions
+        const labelmapImageId = `labelmap:${viewportIdRef.current}:${frameNumber}`;
+        const labelmapImage = cache.getImage(labelmapImageId);
+
+        if (!labelmapImage) {
+          throw new Error(`Labelmap image not found: ${labelmapImageId}`);
+        }
+
+        const labelmapPixels =
+          typeof labelmapImage.getPixelData === "function"
+            ? labelmapImage.getPixelData()
+            : (labelmapImage as { pixelData?: Uint8Array }).pixelData;
+
+        if (!labelmapPixels) {
+          throw new Error("Failed to get labelmap pixel data");
+        }
+
+        const targetWidth = labelmapImage.width;
+        const targetHeight = labelmapImage.height;
+
+        const worldTopLeft: Types.Point3 = [bbox[0], bbox[1], 0];
+        const worldBottomRight: Types.Point3 = [bbox[2], bbox[3], 0];
+        
+        const canvasTopLeft = (currentViewport as Types.IStackViewport).worldToCanvas(worldTopLeft);
+        const canvasBottomRight = (currentViewport as Types.IStackViewport).worldToCanvas(worldBottomRight);
+        
+        const rect = currentElement.getBoundingClientRect();
+        const canvasClientWidth = rect.width;
+        const canvasClientHeight = rect.height;
+
+        const clientToImageScaleX = targetWidth / canvasClientWidth;
+        const clientToImageScaleY = targetHeight / canvasClientHeight;
+        
+        const pixelBbox: [number, number, number, number] = [
+          Math.max(0, Math.min(targetWidth, canvasTopLeft[0] * clientToImageScaleX)),
+          Math.max(0, Math.min(targetHeight, canvasTopLeft[1] * clientToImageScaleY)),
+          Math.max(0, Math.min(targetWidth, canvasBottomRight[0] * clientToImageScaleX)),
+          Math.max(0, Math.min(targetHeight, canvasBottomRight[1] * clientToImageScaleY)),
+        ];
+
+        console.log("[ViewPortMain] BBox coordinate conversion:", {
+          worldBbox: bbox,
+          canvasTopLeft,
+          canvasBottomRight,
+          clientDisplaySize: { w: canvasClientWidth, h: canvasClientHeight },
+          imageSize: { w: targetWidth, h: targetHeight },
+          clientToImageScaleX,
+          clientToImageScaleY,
+          pixelBbox,
+        });
+
+        toast.info("Processing AI segmentation...");
+
+        console.log("[ViewPortMain] About to call segmentWithBBox API:", {
+          imageUrlLength: base64Image.length,
+          bbox: pixelBbox,
+          frameNumber,
+          instanceId,
+          hasSegmentWithBBoxRef: !!segmentWithBBoxRef.current,
+        });
+
+
+        const result = await segmentWithBBoxRef.current?.({
+          imageUrl: base64Image,
+          bbox: pixelBbox,
+          frameNumber,
+          instanceId,
+        }).unwrap();
+
+        if (!result) {
+          throw new Error("No result from AI segmentation API");
+        }
+
+        // Get display dimensions for coordinate transformation understanding
+        const displayRect = currentElement.getBoundingClientRect();
+        
+        console.log("[ViewPortMain] AI Segmentation coordinate analysis:", {
+          displaySize: { w: displayRect.width, h: displayRect.height },
+          aiMaskSize: { w: result.width, h: result.height },
+          labelmapSize: { w: targetWidth, h: targetHeight },
+          isCompressed: result.isCompressed,
+        });
+
+
+        let aiPixelData: Uint8Array;
+        if (result.isCompressed) {
+          const binaryString = atob(result.pixelData);
+          const compressedBytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            compressedBytes[i] = binaryString.charCodeAt(i);
+          }
+          aiPixelData = pako.inflate(compressedBytes);
+        } else {
+          const binaryString = atob(result.pixelData);
+          aiPixelData = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            aiPixelData[i] = binaryString.charCodeAt(i);
+          }
+        }
+        
+        const displayWidth = displayRect.width;
+        const displayHeight = displayRect.height;
+        const aiWidth = result.width;
+        const aiHeight = result.height;
+        
+        const imageAspect = targetWidth / targetHeight;
+        const displayAspect = displayWidth / displayHeight;
+        
+        let renderWidth: number, renderHeight: number;
+        let offsetX: number, offsetY: number;
+        
+        if (displayAspect > imageAspect) {
+          
+          renderHeight = displayHeight;
+          renderWidth = displayHeight * imageAspect;
+          offsetX = (displayWidth - renderWidth) / 2;
+          offsetY = 0;
+        } else {
+          renderWidth = displayWidth;
+          renderHeight = displayWidth / imageAspect;
+          offsetX = 0;
+          offsetY = (displayHeight - renderHeight) / 2;
+        }
+        
+        console.log("[ViewPortMain] Coordinate mapping:", {
+          imageAspect,
+          displayAspect,
+          renderArea: { w: renderWidth, h: renderHeight },
+          offset: { x: offsetX, y: offsetY },
+        });
+        
+        let resizedPixelData = new Uint8Array(targetWidth * targetHeight);
+  
+        const scaleX = targetWidth / renderWidth;
+        const scaleY = targetHeight / renderHeight;
+        
+        for (let y = 0; y < targetHeight; y++) {
+          for (let x = 0; x < targetWidth; x++) {
+            const displayX = (x / scaleX) + offsetX;
+            const displayY = (y / scaleY) + offsetY;
+            
+            const aiX = Math.floor(displayX * (aiWidth / displayWidth));
+            const aiY = Math.floor(displayY * (aiHeight / displayHeight));
+            
+            if (aiX >= 0 && aiX < aiWidth && aiY >= 0 && aiY < aiHeight) {
+              const srcIndex = aiY * aiWidth + aiX;
+              const dstIndex = y * targetWidth + x;
+              resizedPixelData[dstIndex] = aiPixelData[srcIndex] > 0 ? 1 : 0;
+            }
+          }
+        }
+
+        if (resizedPixelData.length !== labelmapPixels.length) {
+          throw new Error(`Size mismatch: ${resizedPixelData.length} vs ${labelmapPixels.length}`);
+        }
+
+        labelmapPixels.set(resizedPixelData);
+
+        const segmentationId = segmentationIdForViewport(viewportIdRef.current);
+        eventTarget.dispatchEvent(
+          new CustomEvent(ToolEnums.Events.SEGMENTATION_DATA_MODIFIED, {
+            detail: {
+              segmentationId,
+              modifiedSlicesToUse: [labelmapImageId],
+              reason: "medsam2-ai-segmentation",
+            },
+          })
+        );
+
+        const snapshot = captureSegmentationSnapshot(
+          segmentationId,
+          viewportIdRef.current,
+          imageIdToInstanceMap
+        );
+
+        if (snapshot && state.selectedSegmentationLayer) {
+          console.log("[ViewPortMain] AI Segmentation snapshot captured:", {
+            segmentationId: snapshot.segmentationId,
+            capturedAt: snapshot.capturedAt,
+            imageDataCount: snapshot.imageData.length,
+            firstImageData: snapshot.imageData[0] ? {
+              imageId: snapshot.imageData[0].imageId,
+              originalImageId: snapshot.imageData[0].originalImageId,
+              frameNumber: snapshot.imageData[0].frameNumber,
+              instanceId: snapshot.imageData[0].instanceId,
+              pixelDataLength: snapshot.imageData[0].pixelData?.length,
+              hasNonZeroPixels: Array.from(snapshot.imageData[0].pixelData || []).some(p => p > 0),
+            } : null,
+          });
+
+          publish(ViewerEvents.AI_SEGMENTATION_SUCCESS, {
+            viewportId: viewportIdRef.current,
+            snapshot,
+            layerId: state.selectedSegmentationLayer,
+          });
+        }
+
+        batchedRender(currentViewport);
+        toast.success("AI segmentation completed!");
+        setIsAISegmenting(false);
+
+      } catch (error: any) {
+        const errorMessage = error?.message || "AI segmentation failed";
+        console.error("[ViewPortMain] AI Segmentation error:", error);
+        toast.error(errorMessage);
+        publish(ViewerEvents.AI_SEGMENTATION_ERROR, { 
+          error, 
+          viewportId: viewportIdRef.current 
+        });
+        setIsAISegmenting(false);
+      }
+    },
+    [isCurrentViewport, viewportIndex, getImageIdToInstanceMap, getStackViewport, state.selectedSegmentationLayer, publish]
   );
 
   // Annotation visibility handler
@@ -613,6 +917,7 @@ const ViewPortMain = ({
   useViewerEvent(ViewerEvents.REDO_SEGMENTATION, handleRedoSegmentation, [handleRedoSegmentation]);
   useViewerEvent(ViewerEvents.REFRESH_VIEWPORT, handleRefresh, [handleRefresh]);
   useViewerEvent(ViewerEvents.DIAGNOSE_VIEWPORT, handleAIDiagnosis, [handleAIDiagnosis]);
+  useViewerEvent(ViewerEvents.AI_SEGMENT_VIEWPORT, handleAISegmentation, [handleAISegmentation]);
   useViewerEvent(ViewerEvents.CLEAR_AI_ANNOTATIONS, handleClearAIAnnotations, [handleClearAIAnnotations]);
   useViewerEvent(ViewerEvents.TOGGLE_ANNOTATIONS, handleToggleAnnotations, [handleToggleAnnotations]);
   useViewerEvent(ViewerEvents.SELECT_ANNOTATION, handleSelectAnnotation, [handleSelectAnnotation]);
@@ -676,8 +981,8 @@ const ViewPortMain = ({
               />
             )}
 
-            {isLoading && <LoadingOverlay progress={loadingProgress} />}
-            {isDiagnosing && <AIDiagnosisOverlay />}
+            {(isLoading ) && <LoadingOverlay progress={loadingProgress} />}
+            {(isDiagnosing || isAISegmenting) && <AIDiagnosisOverlay />}
 
             {showNavigationOverlay && (
               <>

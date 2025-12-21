@@ -18,6 +18,8 @@ import {
   Trash,
   Layers,
   Lock,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -58,6 +60,10 @@ export default function SegmentationControlPanel({
   onSaveLayerToDatabase,
   onDeleteLayerFromDatabase,
   onUpdateLayerMetadata,
+  // AI Segmentation props
+  isAISegmentationMode = false,
+  isAILoading = false,
+  onAISegment,
 }: {
   onClose: () => void;
   layers: Layer[];
@@ -79,6 +85,10 @@ export default function SegmentationControlPanel({
     layerId: string,
     updates: { name?: string; notes?: string }
   ) => void;
+  // AI Segmentation props
+  isAISegmentationMode?: boolean;
+  isAILoading?: boolean;
+  onAISegment?: () => void;
 }) {
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -265,6 +275,55 @@ export default function SegmentationControlPanel({
             <Trash2 size={14} />
           </button>
         </div>
+
+        {/* AI Segmentation Button */}
+        {onAISegment && (
+          <div className="mb-3">
+            <button
+              onClick={onAISegment}
+              disabled={isAILoading || layers.length === 0}
+              className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-medium transition ${
+                isAILoading || layers.length === 0
+                  ? "bg-slate-700 text-slate-400 cursor-not-allowed opacity-50"
+                  : isAISegmentationMode
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              }`}
+              title={
+                layers.length === 0
+                  ? "Add a layer first"
+                  : isAISegmentationMode
+                  ? "Click to cancel AI segmentation mode"
+                  : "Click to start AI segmentation, then draw a box"
+              }
+            >
+              {isAILoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : isAISegmentationMode ? (
+                <>
+                  <X size={16} />
+                  <span>Cancel AI Segment</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 size={16} />
+                  <span>Segment with AI (New)</span>
+                </>
+              )}
+            </button>
+            <p className="text-xs text-slate-400 mt-1 text-center">
+              {layers.length === 0
+                ? "Add a segmentation layer first"
+                : isAISegmentationMode
+                ? "Draw a bounding box on the image. AI will process automatically."
+                : "Click to enable bbox drawing, then draw to segment."}
+            </p>
+          </div>
+        )}
+
 
         {/* Current Layer Info */}
         <div className="mb-4 p-3 bg-slate-700 rounded border border-slate-600">

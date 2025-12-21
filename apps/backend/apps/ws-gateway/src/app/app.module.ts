@@ -15,21 +15,21 @@ import { UserServiceClientModule } from '@backend/shared-client';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
+    UserServiceClientModule,
     NotificationModule,
     ConnectionModule,
-    UserServiceClientModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RoleGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RoleGuard,
+    // },
   ],
 })
 export class AppModule {}

@@ -411,6 +411,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
         endOfDate: endOfDate.toISOString(),
       })
       .orderBy('encounter.order_number', 'DESC')
+      .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false })
       .limit(1);
 
     return qb.getOne();
@@ -532,6 +533,9 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     const endOfDate = new Date();
     endOfDate.setHours(23, 59, 59, 999);
 
+    console.log('Start of date:', startOfDate);
+    console.log('End of date:', endOfDate);
+
     const repository = await this.getRepository();
 
     const qb = repository
@@ -541,9 +545,12 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
         serviceRoomIds,
       })
       .andWhere('encounter.created_at BETWEEN :startOfDate AND :endOfDate', {
-        startOfDate: startOfDate.toISOString(),
-        endOfDate: endOfDate.toISOString(),
-      });
+        startOfDate: startOfDate,
+        endOfDate: endOfDate,
+      })
+      .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false });
+
+    console.log(qb.getSql());
 
     return qb.getMany();
   }

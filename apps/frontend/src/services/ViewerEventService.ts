@@ -41,6 +41,12 @@ class ViewerEventService {
     AI_DIAGNOSIS_START: 'ai:diagnosis:start',
     AI_DIAGNOSIS_SUCCESS: 'ai:diagnosis:success',
     AI_DIAGNOSIS_ERROR: 'ai:diagnosis:error',
+    
+    // AI Segmentation events
+    AI_SEGMENT_VIEWPORT: 'ai::segmentViewport',
+    AI_SEGMENTATION_START: 'ai:segmentation:start',
+    AI_SEGMENTATION_SUCCESS: 'ai:segmentation:success',
+    AI_SEGMENTATION_ERROR: 'ai:segmentation:error',
   } as const;
 
   private listeners: Map<string, Subscription[]> = new Map();

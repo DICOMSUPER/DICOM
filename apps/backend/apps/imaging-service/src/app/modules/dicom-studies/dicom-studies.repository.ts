@@ -170,13 +170,17 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
       .leftJoinAndSelect('study.imagingOrder', 'order')
       .leftJoinAndSelect('order.imagingOrderForm', 'imagingOrderForm')
       .leftJoinAndSelect('study.modalityMachine', 'modality_machine')
-      .leftJoinAndSelect('modality_machine.modality', 'modality_machine_modality')
+      .leftJoinAndSelect(
+        'modality_machine.modality',
+        'modality_machine_modality'
+      )
       .innerJoinAndSelect('study.series', 'series')
       .innerJoinAndSelect('series.instances', 'instance')
       .innerJoinAndSelect('order.procedure', 'procedure')
       .leftJoinAndSelect('procedure.modality', 'modality')
       .leftJoinAndSelect('procedure.bodyPart', 'bodyPart')
-      .andWhere('study.isDeleted = :notDeleted', { notDeleted: false });
+      .andWhere('study.isDeleted = :notDeleted', { notDeleted: false })
+      .orderBy('study.createdAt', 'DESC');
 
     if (data.roomId) {
       qb.andWhere('imagingOrderForm.roomId = :roomId', { roomId: data.roomId });

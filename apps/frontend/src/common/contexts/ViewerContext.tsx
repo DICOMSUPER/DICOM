@@ -138,6 +138,8 @@ interface ViewerContextType {
   getAllCurrentLayerSnapshots: () => SegmentationSnapshot[];
   refetchSegmentationLayers: (excludeLayerIds?: string[]) => Promise<void>;
   setSegmentationBrushSize: (radius: number, isInMM?: boolean) => void;
+  getImageIdToInstanceMap: (viewport: number) => Record<string, string>;
+  saveSegmentationSnapshot: (layerId: string, snapshot: SegmentationSnapshot) => void;
 }
 
 const ViewerContext = createContext<ViewerContextType | undefined>(undefined);
@@ -1581,6 +1583,14 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Context Value ---
 
+  // Helper to get imageIdToInstanceMap for a viewport
+  const getImageIdToInstanceMap = useCallback(
+    (viewport: number): Record<string, string> => {
+      return imageIdInstanceMapRef.current.get(viewport) ?? {};
+    },
+    []
+  );
+
   // Group related actions into memoized sub-objects for better performance
   const viewportActions = useMemo(
     () => ({
@@ -1599,6 +1609,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       nextFrame,
       prevFrame,
       refreshViewport,
+      getImageIdToInstanceMap,
     }),
     [
       setViewportSeries,
@@ -1616,6 +1627,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       nextFrame,
       prevFrame,
       refreshViewport,
+      getImageIdToInstanceMap,
     ]
   );
 
@@ -1646,6 +1658,19 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     ]
   );
 
+  // Helper to save a segmentation snapshot to a layer
+  const saveSegmentationSnapshot = useCallback(
+    (layerId: string, snapshot: SegmentationSnapshot) => {
+      dispatch({
+        type: "UPSERT_SEGMENTATION_LAYER_SNAPSHOT",
+        layerId,
+        snapshot,
+      });
+      console.log("[ViewerContext] Saved segmentation snapshot to layer:", layerId);
+    },
+    []
+  );
+
   const segmentationActions = useMemo(
     () => ({
       toggleSegmentationControlPanel,
@@ -1669,6 +1694,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       setSegmentationBrushSize,
       undoSegmentation,
       redoSegmentation,
+      saveSegmentationSnapshot,
     }),
     [
       toggleSegmentationControlPanel,
@@ -1692,6 +1718,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       setSegmentationBrushSize,
       undoSegmentation,
       redoSegmentation,
+      saveSegmentationSnapshot,
     ]
   );
 

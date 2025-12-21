@@ -111,9 +111,9 @@ export class PatientConditionController {
       });
 
       const cachedData = await this.redisService.get(pattern);
-      if (cachedData) {
-        return cachedData;
-      }
+      // if (cachedData) {
+      //   return cachedData;
+      // }
 
       const paginationDto = {
         ...validatedParams,
@@ -152,9 +152,9 @@ export class PatientConditionController {
       );
 
       const cachedData = await this.redisService.get(pattern);
-      if (cachedData) {
-        return cachedData;
-      }
+      // if (cachedData) {
+      //   return cachedData;
+      // }
 
       const result = await firstValueFrom(
         this.patientService.send(
@@ -185,9 +185,9 @@ export class PatientConditionController {
       const pattern = cacheKeyBuilder.id(CacheEntity.patientConditions, id);
 
       const cachedData = await this.redisService.get(pattern);
-      if (cachedData) {
-        return cachedData;
-      }
+      // if (cachedData) {
+      //   return cachedData;
+      // }
 
       const result = await firstValueFrom(
         this.patientService.send('PatientService.PatientCondition.FindOne', {

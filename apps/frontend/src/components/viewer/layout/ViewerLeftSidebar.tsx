@@ -50,6 +50,7 @@ import { SegmentationStatus } from "@/common/enums/image-dicom.enum";
 import { toast } from "sonner";
 import { useMemo, useCallback, memo, useState, useEffect } from "react";
 import { Slider } from "@/components/ui/slider";
+import { useAISegmentation } from "@/common/hooks/useAISegmentation";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -253,6 +254,8 @@ export default function ViewerLeftSidebar({
     getSegmentationHistoryState,
     refetchSegmentationLayers,
     setSegmentationBrushSize,
+    getRenderingEngineId,
+    getImageIdToInstanceMap,
   } = useViewer();
 
   const [createImageSegmentationLayers] =
@@ -416,6 +419,76 @@ export default function ViewerLeftSidebar({
     [selectedTool]
   );
 
+  // AI Segmentation
+  const { 
+    startAISegmentationMode, 
+    cancelAISegmentationMode,
+    isLoading: isAILoading, 
+    isAISegmentationMode 
+  } = useAISegmentation();
+  
+  // Get viewport element ref for AI segmentation
+  const activeViewportId = state.viewportIds.get(state.activeViewport);
+  
+  const aiSegmentationState = useMemo(() => {
+    return {
+      isLoading: isAILoading,
+      isAISegmentationMode,
+    };
+  }, [isAILoading, isAISegmentationMode]);
+
+  const handleAISegment = useCallback(async () => {
+    // If already in AI mode, cancel it
+    if (isAISegmentationMode) {
+      cancelAISegmentationMode();
+      return;
+    }
+
+    if (!activeViewportId) {
+      toast.error("No active viewport");
+      return;
+    }
+
+    const viewportElement = document.querySelector(
+      `[data-viewport-uid="${activeViewportId}"]`
+    ) as HTMLDivElement | null;
+
+    if (!viewportElement) {
+      toast.error("Viewport element not found");
+      return;
+    }
+
+    // Get viewport using Cornerstone rendering engine
+    const renderingEngineId = getRenderingEngineId(state.activeViewport);
+    if (!renderingEngineId) {
+      toast.error("Rendering engine not found");
+      return;
+    }
+
+    const { getRenderingEngine } = await import("@cornerstonejs/core");
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const stackViewport = renderingEngine?.getViewport(activeViewportId);
+    
+    if (!stackViewport) {
+      toast.error("Stack viewport not ready");
+      return;
+    }
+
+    const imageIds = (stackViewport as any).getImageIds?.() || [];
+    const currentImageIndex = (stackViewport as any).getCurrentImageIdIndex?.() || 0;
+    
+    // Get imageIdToInstanceMap from context
+    const imageIdToInstanceMap = getImageIdToInstanceMap(state.activeViewport);
+    
+    // Start AI segmentation mode - enables RectangleROI tool
+    startAISegmentationMode(
+      viewportElement,
+      activeViewportId,
+      imageIds,
+      imageIdToInstanceMap,
+      currentImageIndex
+    );
+  }, [activeViewportId, startAISegmentationMode, cancelAISegmentationMode, isAISegmentationMode, state.activeViewport, getRenderingEngineId, getImageIdToInstanceMap]);
 
 
   return (
@@ -680,6 +753,10 @@ export default function ViewerLeftSidebar({
                     layerId: string,
                     updates: { name?: string; notes?: string }
                   ) => updateSegmentationLayerMetadata(layerId, updates)}
+                  // AI Segmentation props
+                  isAISegmentationMode={aiSegmentationState.isAISegmentationMode}
+                  isAILoading={aiSegmentationState.isLoading}
+                  onAISegment={handleAISegment}
                 />
               )}
               <div className="grid grid-cols-2 gap-2">
