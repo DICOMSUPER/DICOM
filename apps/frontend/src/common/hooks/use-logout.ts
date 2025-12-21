@@ -32,10 +32,10 @@ export function useLogout() {
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
 
-      // Call backend logout to clear the httpOnly cookie
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/logout`, {
+      // Call backend logout to clear the httpOnly cookie (via Next.js proxy)
+      await fetch("/api/user/logout", {
         method: "POST",
-        credentials: "include", // Important: sends httpOnly cookie to backend
+        credentials: "include",
         headers,
       });
       

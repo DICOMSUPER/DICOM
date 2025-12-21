@@ -19,6 +19,18 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
+  // Proxy API calls through frontend domain so cookies are set on vercel.app
+  // This eliminates the cross-domain cookie issue
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+    ];
+  },
+
   webpack: (config, { isServer }) => {
     // resolve fs for one of the dependencies
     if (!isServer) {

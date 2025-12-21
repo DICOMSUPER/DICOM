@@ -19,10 +19,16 @@ export default function Page() {
   const [getProfile] = useLazyGetCurrentProfileQuery();
   
   const handleLogin = async (email: string, password: string) => {
+<<<<<<< HEAD
   try {
     const res = await fetch(
       "/api/user/login",
       {
+=======
+    try {
+      // Using relative /api path - Next.js rewrites proxy to backend
+      const res = await fetch("/api/user/login", {
+>>>>>>> b12c863e39beb1404842714c795c7f5754541966
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
