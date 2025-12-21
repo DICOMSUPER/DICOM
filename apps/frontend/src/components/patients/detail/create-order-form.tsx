@@ -71,6 +71,7 @@ export interface ImagingProcedurePDF {
   procedures: ImagingProcedure[];
   roomId?: string;
   date?: string;
+  orderNumber?: string;
 }
 
 interface CreateImagingOrderProps {
@@ -83,6 +84,9 @@ export default function CreateImagingOrder({
   encounterId,
 }: CreateImagingOrderProps) {
   const { data: profile } = useGetCurrentProfileQuery();
+  console.log("Profile Data:", profile?.data);
+
+  const [orderNumber, setOrderNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [roomName, setRoomName] = useState("");
   const [departmentName, setDepartmentName] = useState("");
@@ -192,9 +196,8 @@ export default function CreateImagingOrder({
         imagingOrders,
       };
       const result = await createImagingOrderForm(payload).unwrap();
-      if (!result?.success && !result?.data) {
-        throw new Error("Unexpected response format");
-      }
+
+      console.log("✅ API Response:", result);
 
       const diagnosisParts = diagnosis.split(" - ");
       const diagnosisCode = diagnosisParts[0]?.trim() || "";
@@ -210,10 +213,19 @@ export default function CreateImagingOrder({
         bodySite: procedures[0].bodyPartName,
       }).unwrap();
 
-      toast.success(
-        "Imaging orders and patient condition created successfully!"
-      );
-      handleDownloadPDF();
+      if (result?.success || result?.data) {
+        console.log("orderform:", result?.data);
+        toast.success(
+          "Imaging orders and patient condition created successfully!"
+        );
+        const orderNumber = result?.data?.imagingOrders?.[0]?.orderNumber;
+        handleDownloadPDF(orderNumber as string);
+
+        handleCancel();
+      } else {
+        throw new Error("Unexpected response format");
+      }
+
       handleCancel();
     } catch (error: any) {
       console.error("❌ Error:", error);
@@ -264,7 +276,7 @@ export default function CreateImagingOrder({
     ]);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = (orderNumber: string) => {
     const imagingProcedurePDF: ImagingProcedurePDF = {
       patientCode: patient.patientCode || "",
       patientName: `${patient.firstName} ${patient.lastName}`,
@@ -277,7 +289,8 @@ export default function CreateImagingOrder({
       departmentName: departmentName,
       roomName: roomName,
       roomId: room,
-      date: new Date().toISOString(),
+      date: new Date().toLocaleDateString("vi-VN"),
+      orderNumber: orderNumber,
       notes: notes,
       orderingPhysicianName: `${profile?.data?.firstName} ${profile?.data?.lastName}`,
     };
@@ -458,8 +471,9 @@ export default function CreateImagingOrder({
                     <span className="text-red-500">*</span>
                   </Label>
                   <DiagnosisInput
-                    className={`${!diagnosis ? "border-slate-300" : "border-teal-300"
-                      } w-full p-2 border rounded-lg`}
+                    className={`${
+                      !diagnosis ? "border-slate-300" : "border-teal-300"
+                    } w-full p-2 border rounded-lg`}
                     state={diagnosis}
                     setState={setDiagnosis}
                   />
@@ -483,8 +497,9 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${!department ? "border-slate-300" : "border-teal-300"
-                          } w-full`}
+                        className={`${
+                          !department ? "border-slate-300" : "border-teal-300"
+                        } w-full`}
                       >
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
@@ -516,8 +531,9 @@ export default function CreateImagingOrder({
                       }}
                     >
                       <SelectTrigger
-                        className={`${!room ? "border-slate-300" : "border-teal-300"
-                          } w-full`}
+                        className={`${
+                          !room ? "border-slate-300" : "border-teal-300"
+                        } w-full`}
                       >
                         <SelectValue placeholder="Select room" />
                       </SelectTrigger>
