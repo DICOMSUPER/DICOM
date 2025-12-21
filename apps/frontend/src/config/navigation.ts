@@ -261,6 +261,13 @@ export const roleNavigation: RoleNavigation = {
       description: "View imaging studies by modality and machine",
     },
     {
+      href: "/radiologist/report-template",
+      label: "Report Templates",
+      icon: FileText,
+      description: "Manage report templates for efficient reporting",
+    },
+
+    {
       href: "/radiologist/schedule",
       label: "Schedule",
       icon: Clock,
