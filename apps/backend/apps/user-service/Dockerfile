@@ -8,6 +8,11 @@ COPY apps ./apps
 COPY libs ./libs
 
 RUN npm ci
+
+# sync root files (like .env) if any changes, not fail when errors
+RUN npx nx sync || true
+
+
 RUN npx nx build user-service
 
 # Stage 2 – runtime image
@@ -20,6 +25,9 @@ ENV NODE_ENV=production
 # install runtime deps (root package.json is enough)
 COPY package*.json ./
 RUN npm ci --omit=dev
+
+# sync root files (like .env) if any changes, not fail when errors
+RUN npx nx sync || true
 
 # copy compiled service from Nx dist folder
 COPY --from=builder /workspace/apps/user-service/dist ./

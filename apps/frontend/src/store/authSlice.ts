@@ -1,7 +1,7 @@
 // store/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
-import { Roles } from "../common/enums/user.enum";
+import { Roles } from "../enums/user.enum";
 
 export interface User {
   id: string;
@@ -32,37 +32,45 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
 
-      // Save to localStorage only - cookies are set by backend with httpOnly flag
-      // DO NOT set accessToken cookie here - it creates duplicates with the backend's httpOnly cookie
+      // Save to localStorage and cookies with expiration (7 days)
       if (typeof window !== "undefined") {
+        const expiresInDays = 7;
         try {
           localStorage.setItem("token", action.payload.token);
           localStorage.setItem("user", JSON.stringify(action.payload.user));
         } catch (err) {
           console.error("Failed to write auth to localStorage", err);
         }
+        Cookies.set("accessToken", action.payload.token, {
+          expires: expiresInDays,
+          path: "/",
+          sameSite: "none", // ✅ Cho phép cross-site
+          secure: true,
+        });
+        Cookies.set("user", JSON.stringify(action.payload.user), {
+          expires: expiresInDays,
+          path: "/",
+          sameSite: "strict",
+        });
       }
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
 
-      // Remove from localStorage only
-      // The httpOnly accessToken cookie is cleared by backend's logout endpoint
-      // We can only remove non-httpOnly cookies that might exist from old code
+      // Remove from localStorage and cookies
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        // Try to remove any stale non-httpOnly cookies (from old code versions)
-        Cookies.remove("accessToken", { path: "/" });
-        Cookies.remove("user", { path: "/" });
+        Cookies.remove("accessToken");
+        Cookies.remove("user");
       }
     },
     loadCredentials: (state) => {
       if (typeof window !== "undefined") {
-        // Load from localStorage only - accessToken cookie is httpOnly and can't be read by JS
-        let token: string | null = null;
-        let userString: string | null = null;
+        // Prefer localStorage (works even if cookie domain doesn't match), fallback to cookies
+        let token: string | undefined | null = null;
+        let userString: string | undefined | null = null;
 
         try {
           token = localStorage.getItem("token");
@@ -70,6 +78,9 @@ const authSlice = createSlice({
         } catch (err) {
           console.error("Failed to read auth from localStorage", err);
         }
+
+        if (!token) token = Cookies.get("accessToken");
+        if (!userString) userString = Cookies.get("user");
 
         if (token) {
           state.token = token;
@@ -94,13 +105,15 @@ const authSlice = createSlice({
                 lastName: userData.lastName,
               };
             } else {
-              console.error("Invalid user data structure in localStorage");
-              localStorage.removeItem("user");
+              console.error("Invalid user data structure in cookies");
+              // Clear invalid cookie
+              Cookies.remove("user");
               state.user = null;
             }
           } catch (error) {
-            console.error("Failed to parse user data from localStorage:", error);
-            localStorage.removeItem("user");
+            console.error("Failed to parse user data from cookies:", error);
+            // Clear invalid cookie
+            Cookies.remove("user");
             state.user = null;
           }
         }

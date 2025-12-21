@@ -13,5 +13,13 @@
       "@backend/shared-exception": ["../../libs/shared-exception/src/index.ts"],
       "@backend/shared-utils": ["../../libs/shared-utils/src/index.ts"]
     }
-  }
+  },
+  "references": [
+    {
+      "path": "../../libs/shared-enums"
+    },
+    {
+      "path": "../../libs/shared-domain"
+    }
+  ]
 }
