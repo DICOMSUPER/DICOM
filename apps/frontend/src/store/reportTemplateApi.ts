@@ -33,7 +33,7 @@ export const reportTemplateApi = createApi({
       { page?: number; limit?: number; search?: string } | void
     >({
       query: (params) => ({
-        url: "paginated",
+        url: "/paginated",
         method: "GET",
         params,
       }),

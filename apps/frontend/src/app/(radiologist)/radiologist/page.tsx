@@ -63,6 +63,25 @@ export default function RadiologistDashboard() {
             </Link>
           </CardContent>
         </Card>
+        // reports 
+        {/* <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Report Templates
+            </CardTitle>
+            <Clock className="h-4 w-4 text-foreground" />
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              Manage report templates for efficient reporting
+            </CardDescription>
+            <Link href="/radiologist/report-template">
+              <Button variant="outline" className="w-full">
+                Report Templates
+              </Button>
+            </Link>
+          </CardContent>
+        </Card> */}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

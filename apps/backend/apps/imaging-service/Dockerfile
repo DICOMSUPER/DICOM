@@ -8,6 +8,11 @@ COPY apps ./apps
 COPY libs ./libs
 
 RUN npm ci
+
+# sync root files (like .env) if any changes, not fail when errors
+RUN npx nx sync || true
+
+
 RUN npx nx build imaging-service
 
 # Stage 2 – runtime image
@@ -18,11 +23,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install dumb-init for proper signal handling
-RUN apk update && apk add --no-cache dumb-init
+# RUN apk update && apk add --no-cache dumb-init
 
 # install runtime deps (root package.json is enough)
 COPY package*.json ./
 RUN npm ci --omit=dev
+
+
+# sync root files (like .env) if any changes, not fail when errors
+RUN npx nx sync || true
+
 
 # copy compiled service from Nx dist folder
 COPY --from=builder /workspace/apps/imaging-service/dist ./
