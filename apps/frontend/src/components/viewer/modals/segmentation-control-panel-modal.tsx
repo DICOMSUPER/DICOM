@@ -310,7 +310,7 @@ export default function SegmentationControlPanel({
               ) : (
                 <>
                   <Wand2 size={16} />
-                  <span>Segment with AI (BBox)</span>
+                  <span>Segment with AI (New)</span>
                 </>
               )}
             </button>
