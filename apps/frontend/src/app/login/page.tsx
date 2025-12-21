@@ -17,7 +17,8 @@ export default function Page() {
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
+      // Using relative /api path - Next.js rewrites proxy to backend
+      const res = await fetch("/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
