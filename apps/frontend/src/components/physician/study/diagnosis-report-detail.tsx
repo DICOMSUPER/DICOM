@@ -85,7 +85,7 @@ export function DiagnosisReportDetail({
   const router = useRouter();
 
   const signatureRef = useRef<HTMLDivElement>(null);
-  
+
   const [filtersReportTemplate, setFiltersReportTemplate] =
     useState<FilterReportTemplate>({
       modalityId: "",
@@ -272,7 +272,7 @@ export function DiagnosisReportDetail({
       const updateData: any = {
         description: descriptionToSave,
       };
-      
+
       if (selectedReportTemplateId && selectedReportTemplateId.trim()) {
         updateData.reportTemplateId = selectedReportTemplateId;
       }
@@ -430,7 +430,7 @@ export function DiagnosisReportDetail({
       let signatureImage: string | undefined;
       if (signatureRef.current) {
         try {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           signatureImage = await captureSignature(signatureRef.current);
         } catch (signatureError) {
           console.error("Failed to capture signature:", signatureError);
@@ -439,7 +439,7 @@ export function DiagnosisReportDetail({
       } else {
         console.log("signatureRef.current is null or undefined");
       }
-      
+
       const result = await updateDicomStudy({
         id: report?.data.studyId as string,
         data: { studyStatus: DicomStudyStatus.RESULT_PRINTED },
@@ -453,15 +453,15 @@ export function DiagnosisReportDetail({
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
           signatureImage,
         };
-        // };
-        DiagnosisReportPDF(reportData);
 
-        // console.log("reportData:", reportData);
-        // const encrypted = handleEncrypt(reportData);
+        // DiagnosisReportPDF(reportData);
 
-        // router.push(
-        //   "/physician/report-paper?data=" + encodeURIComponent(encrypted)
-        // );
+        console.log("reportData:", reportData);
+        const encrypted = handleEncrypt(reportData);
+
+        router.push(
+          "/physician/report-paper?data=" + encodeURIComponent(encrypted)
+        );
 
         toast.success("Report created successfully!");
       }
@@ -1008,7 +1008,8 @@ export function DiagnosisReportDetail({
             {!isEditDescriptionOpen ? (
               <Button
                 disabled={
-                  dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
+                  dicomStudyData?.data.studyStatus ===
+                    DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
                 }
                 className="w-full"
                 onClick={handleEditDescriptionOpen}
@@ -1045,12 +1046,12 @@ export function DiagnosisReportDetail({
                       disabled={isBodyPartsLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue 
+                        <SelectValue
                           placeholder={
-                            isBodyPartsLoading 
-                              ? "Loading body parts..." 
+                            isBodyPartsLoading
+                              ? "Loading body parts..."
                               : "Select Body Part"
-                          } 
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -1082,12 +1083,12 @@ export function DiagnosisReportDetail({
                       disabled={isImagingModalitiesLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue 
+                        <SelectValue
                           placeholder={
-                            isImagingModalitiesLoading 
-                              ? "Loading modalities..." 
+                            isImagingModalitiesLoading
+                              ? "Loading modalities..."
                               : "Select Modality"
-                          } 
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -1116,12 +1117,17 @@ export function DiagnosisReportDetail({
                     <Select
                       value={selectedReportTemplateId}
                       onValueChange={handleSelectTemplate}
-                      disabled={isReportTemplatesLoading || !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId}
+                      disabled={
+                        isReportTemplatesLoading ||
+                        !filtersReportTemplate.bodyPartId ||
+                        !filtersReportTemplate.modalityId
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
                           placeholder={
-                            !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId
+                            !filtersReportTemplate.bodyPartId ||
+                            !filtersReportTemplate.modalityId
                               ? "Select body part & modality first"
                               : isReportTemplatesLoading
                               ? "Loading templates..."
@@ -1135,7 +1141,8 @@ export function DiagnosisReportDetail({
                             <span className="animate-spin mr-2">⏳</span>
                             Loading templates...
                           </div>
-                        ) : !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId ? (
+                        ) : !filtersReportTemplate.bodyPartId ||
+                          !filtersReportTemplate.modalityId ? (
                           <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
                             <AlertCircle className="w-5 h-5 mb-2 text-slate-400" />
                             Please select body part and modality first
@@ -1322,17 +1329,17 @@ export function DiagnosisReportDetail({
 
       {/* Hidden Signature for Capture */}
       {radiologistData?.data && (
-        <div 
-          ref={signatureRef} 
-          style={{ 
-            position: 'fixed',
-            top: '-9999px',
-            left: '0',
-            width: '400px',
-            height: '100px',
-            background: 'white',
-            padding: '20px',
-            zIndex: -1
+        <div
+          ref={signatureRef}
+          style={{
+            position: "fixed",
+            top: "-9999px",
+            left: "0",
+            width: "400px",
+            height: "100px",
+            background: "white",
+            padding: "20px",
+            zIndex: -1,
           }}
         >
           <SignatureDisplay
