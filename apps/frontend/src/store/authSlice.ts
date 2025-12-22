@@ -1,7 +1,7 @@
 // store/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
-import { Roles } from "../enums/user.enum";
+import { Roles } from "@/common/enums/user.enum";
 
 export interface User {
   id: string;
