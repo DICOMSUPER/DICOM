@@ -35,20 +35,19 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       const statusLabel =
         statusRaw.length > 0
           ? `${statusRaw
-              .split("_")
-              .map(
-                (part: string) =>
-                  part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-              )
-              .join(" ")}`
+            .split("_")
+            .map(
+              (part: string) =>
+                part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            )
+            .join(" ")}`
           : "ORDER";
 
       return {
         id: order.id,
-        label: `${statusLabel} • ${
-          order.procedure?.modality?.modalityCode || "Không rõ"
-        } • ${new Date(order.createdAt).toLocaleDateString("vi-VN")}`,
-        modality: order.procedure?.modality?.modalityCode || "Không rõ",
+        label: `${statusLabel} • ${order.procedure?.modality?.modalityCode || "Unknown"
+          } • ${new Date(order.createdAt).toLocaleDateString("vi-VN")}`,
+        modality: order.procedure?.modality?.modalityCode || "Unknown",
         date: new Date(order.createdAt).toLocaleDateString("vi-VN"),
         encounterId: order.imagingOrderForm?.encounterId || null,
         status: order.orderStatus,
@@ -57,7 +56,7 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
     });
   }, [imagingOrdersData]);
 
- 
+
   const handleSelectExam = useCallback(
     (studyId: string | null, encounterId: string | null) => {
       setSelectedStudyId(studyId);
@@ -72,20 +71,20 @@ export default function MedicalRecordPage({ patientId }: MedicalRecordPageProps)
       skip: !selectedStudyId,
     });
 
-if (isLoading)
-  return (
-    <div className="flex flex-col items-center justify-center h-full flex-1 text-slate-500 gap-2">
-      <span className="inline-flex h-8 w-8 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
-      Đang tải...
-    </div>
-  );
-if (isError)
-  return (
-    <div className="flex flex-col items-center justify-center h-full flex-1 text-red-600 gap-2">
-      <AlertCircle className="h-8 w-8 text-red-500" />
-      Lỗi tải dữ liệu: {(error as any)?.message || "Không thể tải dữ liệu"}
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="flex flex-col items-center justify-center h-full flex-1 text-slate-500 gap-2">
+        <span className="inline-flex h-8 w-8 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
+        Loading...
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="flex flex-col items-center justify-center h-full flex-1 text-red-600 gap-2">
+        <AlertCircle className="h-8 w-8 text-red-500" />
+        Data loading error: {(error as any)?.message || "Unable to load data"}
+      </div>
+    );
 
   return (
     <div className="flex h-full">

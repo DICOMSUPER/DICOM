@@ -160,20 +160,20 @@ export default function TabProvider({ children }: { children: ReactNode }) {
       // Nếu có sessionStorage, restore tabs
       if (storedTabs) {
         const parsed: SerializableTabData[] = JSON.parse(storedTabs);
-        
+
         if (Array.isArray(parsed) && parsed.length > 0) {
           const recreated = parsed.map(recreateTab);
-          
+
           // Kiểm tra xem có patient tab trong restored tabs không
           const hasPatientTab = recreated.some(
             (t) => t.id === "patient-" + savedPatientId
           );
-          
+
           // Nếu có patientId nhưng chưa có tab, thêm vào
           if (savedPatientId && !hasPatientTab) {
             const newTab: TabData = {
               id: "patient-" + savedPatientId,
-              name: "Hồ sơ bệnh nhân",
+              name: "Patient Record",
               tabContent: <MedicalRecordPage patientId={savedPatientId} />,
               hasSideBar: true,
             };
@@ -182,7 +182,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
           } else {
             setActiveTabId(storedActiveId || parsed[0].id);
           }
-          
+
           setAvailableTabs(recreated);
           return;
         }
@@ -196,7 +196,7 @@ export default function TabProvider({ children }: { children: ReactNode }) {
           tabContent: <MedicalRecordPage patientId={savedPatientId} />,
           hasSideBar: false,
         };
-        
+
         setAvailableTabs((prev) => [...prev, newTab]);
         setActiveTabId(newTab.id);
       }

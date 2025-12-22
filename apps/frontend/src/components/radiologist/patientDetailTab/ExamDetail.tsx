@@ -32,7 +32,7 @@ export const ExamItemDetail = React.memo(
 
         {shouldFetch && (
           <div className="px-3 py-2 bg-gray-50 text-xs space-y-2 rounded">
-            {isLoading && <div>Đang tải dữ liệu...</div>}
+            {isLoading && <div>Loading data...</div>}
 
             {study && (
               <>
@@ -43,9 +43,9 @@ export const ExamItemDetail = React.memo(
                 </div>
 
                 <div>
-                  (S)- {study.performingTechnicianId || "Không rõ"}
+                  (S)- {study.performingTechnicianId || "Unknown"}
                   <br />
-                  (A)- {study.verifyingRadiologistId || "Không rõ"}
+                  (A)- {study.verifyingRadiologistId || "Unknown"}
                 </div>
 
                 {/* ✅ FIX: truyền ĐỦ 2 tham số */}
@@ -58,13 +58,13 @@ export const ExamItemDetail = React.memo(
                   }
                   className="text-blue-600 hover:underline text-xs"
                 >
-                  Xem chi tiết
+                  View Details
                 </button>
               </>
             )}
 
             {!isLoading && !study && !error && (
-              <div className="text-gray-400">Không có dữ liệu.</div>
+              <div className="text-gray-400">No data available.</div>
             )}
           </div>
         )}

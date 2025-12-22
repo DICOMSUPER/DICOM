@@ -6,7 +6,7 @@ import { DicomStudy } from "@/common/interfaces/image-dicom/dicom-study.interfac
 import { DicomStudyStatus } from "@/common/enums/image-dicom.enum";
 import { DiagnosisStatus } from "@/common/enums/patient-workflow.enum";
 import { Suspense } from "react";
-import { AlertCircle, RefreshCw, FileSearch } from "lucide-react";
+import { AlertCircle, RefreshCw, FileSearch, User, UserCircle, Mars, Venus } from "lucide-react";
 import { formatStatus } from "@/common/utils/format-status";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,21 @@ const calculateAge = (dateOfBirth: string): number => {
     age--;
   }
   return age;
+};
+
+// Helper function to format gender with capitalization
+const formatGender = (gender: string): string => {
+  return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+};
+
+// Helper function to get gender icon
+const GenderIcon = ({ gender }: { gender: string }) => {
+  if (gender?.toLowerCase() === 'male') {
+    return <Mars className="h-4 w-4 text-blue-500" />;
+  } else if (gender?.toLowerCase() === 'female') {
+    return <Venus className="h-4 w-4 text-pink-500" />;
+  }
+  return <UserCircle className="h-4 w-4 text-gray-500" />;
 };
 
 // Helper function to format date (e.g., "1993-03-25" to "3/25/93")
@@ -119,9 +134,8 @@ export default function DataTable({
                     className="px-4 py-3 h-full flex items-center justify-center"
                   >
                     <Skeleton
-                      className={`h-3 ${
-                        colIdx === 1 ? "w-20" : colIdx === 15 ? "w-12" : "w-14"
-                      }`}
+                      className={`h-3 ${colIdx === 1 ? "w-20" : colIdx === 15 ? "w-12" : "w-14"
+                        }`}
                     />
                   </div>
                 ))}
@@ -132,7 +146,7 @@ export default function DataTable({
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-center">
           <span className="text-sm text-slate-500 flex items-center justify-center gap-2">
             <span className="inline-flex h-4 w-4 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
-            Đang tải danh sách ca...
+            Loading cases...
           </span>
         </div>
       </div>
@@ -149,15 +163,15 @@ export default function DataTable({
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-1">
-              Lỗi tải dữ liệu
+              Data Loading Error
             </h3>
             <p className="text-sm text-gray-500">
-              Không thể tải danh sách ca. Vui lòng thử lại.
+              Unable to load case list. Please try again.
             </p>
           </div>
           <Button onClick={refetch} variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            Thử lại
+            Retry
           </Button>
         </div>
       </div>
@@ -250,14 +264,17 @@ export default function DataTable({
                         );
                       })()}
                     </div>
-                    <div className="px-4 py-2 h-full text-center flex items-center justify-center">
-                      {row.patient?.dateOfBirth && row.patient?.gender
-                        ? `${row.patient.gender
-                            .charAt(0)
-                            .toUpperCase()}, ${calculateAge(
-                            row.patient?.dateOfBirth as unknown as string
-                          )}`
-                        : "N/A"}
+                    <div className="px-4 py-2 h-full text-center flex items-center justify-center gap-1">
+                      {row.patient?.dateOfBirth && row.patient?.gender ? (
+                        <>
+                          <GenderIcon gender={row.patient.gender} />
+                          <span>
+                            {formatGender(row.patient.gender)}, {calculateAge(row.patient?.dateOfBirth as unknown as string)}
+                          </span>
+                        </>
+                      ) : (
+                        "N/A"
+                      )}
                     </div>
                     <div className="px-4 py-2 h-full text-center flex items-center justify-center">
                       {row.imagingOrder?.procedure?.bodyPart?.name}
@@ -302,8 +319,7 @@ export default function DataTable({
 
                           openTab?.(
                             row.studyInstanceUid,
-                            `${row.patient?.lastName} ${
-                              row.patient?.firstName
+                            `${row.patient?.lastName} ${row.patient?.firstName
                             } - (${formatCreatedAt(row.createdAt)})`,
                             <StudyTab patientId={row.patient?.id as string} />
                           );
@@ -323,11 +339,11 @@ export default function DataTable({
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-1">
-                      Không tìm thấy ca nào
+                      No cases found
                     </h3>
                     <p className="text-sm text-gray-500">
-                      Không có ca nào khớp với điều kiện lọc. Hãy thử điều chỉnh
-                      bộ lọc hoặc làm mới dữ liệu.
+                      No cases match the filter criteria. Try adjusting the
+                      filters or refreshing the data.
                     </p>
                   </div>
                   <Button
@@ -337,7 +353,7 @@ export default function DataTable({
                     className="gap-2"
                   >
                     <RefreshCw className="h-4 w-4" />
-                    Làm mới
+                    Refresh
                   </Button>
                 </div>
               </div>

@@ -52,7 +52,7 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-xl">
                 <DialogHeader>
-                    <DialogTitle>Chọn Template</DialogTitle>
+                    <DialogTitle>Select Template</DialogTitle>
                 </DialogHeader>
 
                 {/* Select Modality */}
@@ -60,7 +60,7 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
                     <label className="text-sm font-medium">Modality</label>
                     <Select onValueChange={(value) => setModalityId(value)}>
                         <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Chọn modality" />
+                            <SelectValue placeholder="Select modality" />
                         </SelectTrigger>
                         <SelectContent>
                             {modalities.map((m: any) => (
@@ -77,7 +77,7 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
                     <label className="text-sm font-medium">Body Part</label>
                     <Select onValueChange={(value) => setBodyPartId(value)}>
                         <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Chọn bộ phận" />
+                            <SelectValue placeholder="Select body part" />
                         </SelectTrigger>
                         <SelectContent>
                             {bodyParts.map((bp: any) => (
@@ -91,13 +91,13 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
 
                 {/* Template List */}
                 {isLoading ? (
-                    <p className="text-center py-4 text-gray-500">Đang tải template...</p>
+                    <p className="text-center py-4 text-gray-500">Loading templates...</p>
                 ) : (
                     <ScrollArea className="max-h-[420px] px-2">
                         <div className="space-y-3">
                             {templates.length === 0 && modalityId && bodyPartId && (
                                 <p className="text-gray-500 text-center">
-                                    Không tìm thấy template phù hợp
+                                    No matching templates found
                                 </p>
                             )}
 
@@ -139,7 +139,7 @@ const SelectTemplateDialog: React.FC<SelectTemplateDialogProps> = ({
                                                         onClose();
                                                     }}
                                                 >
-                                                    Dùng template này
+                                                    Use this template
                                                 </Button>
                                             </div>
                                         )}

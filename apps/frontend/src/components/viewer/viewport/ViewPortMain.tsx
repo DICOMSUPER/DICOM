@@ -357,7 +357,7 @@ const ViewPortMain = ({
 
       setIsDiagnosing(true);
       publish("ai:diagnosis:start", { viewportId: viewportIdRef.current });
-      
+
       try {
         const base64Image = getCanvasAsBase64(currentElement);
         if (!base64Image) throw new Error("Failed to convert canvas to base64");
@@ -376,37 +376,37 @@ const ViewPortMain = ({
         if (!response?.data) {
           throw new Error("No response data received");
         }
-        
+
         const { predictions, image } = response.data;
         const analysisId = response?.data?.analysisId || null;
         const aiAnalyzeMessage = response?.data?.aiAnalyzeMessage || "";
-        
-        
+
+
         setLastAnalysisId(analysisId);
-        
+
         // Handle case when no predictions found
         if (
           !predictions ||
           !Array.isArray(predictions) ||
           predictions.length === 0
         ) {
-          publish("ai:diagnosis:success", { 
-            analysisId, 
+          publish("ai:diagnosis:success", {
+            analysisId,
             viewportId: viewportIdRef.current,
             studyId: studyIdToUse,
             predictions: [],
             aiAnalyzeMessage: aiAnalyzeMessage || "No abnormalities detected."
           });
-          
+
           toast.warning("No abnormalities detected in the image.");
           return;
         }
-        
+
         setPredictions(predictions);
 
         const stackViewport = currentViewport as Types.IStackViewport;
         const currentImageId = stackViewport.getCurrentImageId?.() || "";
-        
+
         setAiImageMetadata({ width: image.width, height: image.height });
         setAnalyzedImageId(currentImageId);
 
@@ -420,16 +420,16 @@ const ViewPortMain = ({
         );
 
         batchedRender(currentViewport);
-        
-        
-        publish("ai:diagnosis:success", { 
-          analysisId, 
+
+
+        publish("ai:diagnosis:success", {
+          analysisId,
           viewportId: viewportIdRef.current,
           studyId: studyIdToUse,
           predictions: predictions,
           aiAnalyzeMessage: aiAnalyzeMessage
         });
-        
+
         toast.success(`AI diagnosis completed. Found ${predictions.length} detection(s).`);
       } catch (error: any) {
         console.error("AI diagnosis failed:", error);
@@ -440,7 +440,7 @@ const ViewPortMain = ({
         setIsDiagnosing(false);
       }
     },
-    [isCurrentViewport,resolvedRenderingEngineId, studyId, selectedSeries, publish]
+    [isCurrentViewport, resolvedRenderingEngineId, studyId, selectedSeries, publish]
   );
 
   const handleClearAIAnnotations = useCallback(
@@ -487,14 +487,14 @@ const ViewPortMain = ({
       const currentElement = elementRef.current;
       // Get viewport directly from context instead of potentially stale ref
       const currentViewport = getStackViewport(viewportIndex) || viewportRef.current;
-      
+
       console.log("[ViewPortMain] AI Segmentation viewport check:", {
         hasElement: !!currentElement,
         hasViewportFromContext: !!getStackViewport(viewportIndex),
         hasViewportFromRef: !!viewportRef.current,
         usingViewport: !!currentViewport,
       });
-      
+
       if (!currentElement || !currentViewport) {
         console.log("[ViewPortMain] Skipping AI Segmentation - no element/viewport");
         return;
@@ -550,17 +550,17 @@ const ViewPortMain = ({
 
         const worldTopLeft: Types.Point3 = [bbox[0], bbox[1], 0];
         const worldBottomRight: Types.Point3 = [bbox[2], bbox[3], 0];
-        
+
         const canvasTopLeft = (currentViewport as Types.IStackViewport).worldToCanvas(worldTopLeft);
         const canvasBottomRight = (currentViewport as Types.IStackViewport).worldToCanvas(worldBottomRight);
-        
+
         const rect = currentElement.getBoundingClientRect();
         const canvasClientWidth = rect.width;
         const canvasClientHeight = rect.height;
 
         const clientToImageScaleX = targetWidth / canvasClientWidth;
         const clientToImageScaleY = targetHeight / canvasClientHeight;
-        
+
         const pixelBbox: [number, number, number, number] = [
           Math.max(0, Math.min(targetWidth, canvasTopLeft[0] * clientToImageScaleX)),
           Math.max(0, Math.min(targetHeight, canvasTopLeft[1] * clientToImageScaleY)),
@@ -603,7 +603,7 @@ const ViewPortMain = ({
 
         // Get display dimensions for coordinate transformation understanding
         const displayRect = currentElement.getBoundingClientRect();
-        
+
         console.log("[ViewPortMain] AI Segmentation coordinate analysis:", {
           displaySize: { w: displayRect.width, h: displayRect.height },
           aiMaskSize: { w: result.width, h: result.height },
@@ -627,20 +627,20 @@ const ViewPortMain = ({
             aiPixelData[i] = binaryString.charCodeAt(i);
           }
         }
-        
+
         const displayWidth = displayRect.width;
         const displayHeight = displayRect.height;
         const aiWidth = result.width;
         const aiHeight = result.height;
-        
+
         const imageAspect = targetWidth / targetHeight;
         const displayAspect = displayWidth / displayHeight;
-        
+
         let renderWidth: number, renderHeight: number;
         let offsetX: number, offsetY: number;
-        
+
         if (displayAspect > imageAspect) {
-          
+
           renderHeight = displayHeight;
           renderWidth = displayHeight * imageAspect;
           offsetX = (displayWidth - renderWidth) / 2;
@@ -651,27 +651,27 @@ const ViewPortMain = ({
           offsetX = 0;
           offsetY = (displayHeight - renderHeight) / 2;
         }
-        
+
         console.log("[ViewPortMain] Coordinate mapping:", {
           imageAspect,
           displayAspect,
           renderArea: { w: renderWidth, h: renderHeight },
           offset: { x: offsetX, y: offsetY },
         });
-        
+
         let resizedPixelData = new Uint8Array(targetWidth * targetHeight);
-  
+
         const scaleX = targetWidth / renderWidth;
         const scaleY = targetHeight / renderHeight;
-        
+
         for (let y = 0; y < targetHeight; y++) {
           for (let x = 0; x < targetWidth; x++) {
             const displayX = (x / scaleX) + offsetX;
             const displayY = (y / scaleY) + offsetY;
-            
+
             const aiX = Math.floor(displayX * (aiWidth / displayWidth));
             const aiY = Math.floor(displayY * (aiHeight / displayHeight));
-            
+
             if (aiX >= 0 && aiX < aiWidth && aiY >= 0 && aiY < aiHeight) {
               const srcIndex = aiY * aiWidth + aiX;
               const dstIndex = y * targetWidth + x;
@@ -733,9 +733,9 @@ const ViewPortMain = ({
         const errorMessage = error?.message || "AI segmentation failed";
         console.error("[ViewPortMain] AI Segmentation error:", error);
         toast.error(errorMessage);
-        publish(ViewerEvents.AI_SEGMENTATION_ERROR, { 
-          error, 
-          viewportId: viewportIdRef.current 
+        publish(ViewerEvents.AI_SEGMENTATION_ERROR, {
+          error,
+          viewportId: viewportIdRef.current
         });
         setIsAISegmenting(false);
       }
@@ -981,7 +981,7 @@ const ViewPortMain = ({
               />
             )}
 
-            {(isLoading ) && <LoadingOverlay progress={loadingProgress} />}
+            {(isLoading) && <LoadingOverlay progress={loadingProgress} />}
             {(isDiagnosing || isAISegmenting) && <AIDiagnosisOverlay />}
 
             {showNavigationOverlay && (

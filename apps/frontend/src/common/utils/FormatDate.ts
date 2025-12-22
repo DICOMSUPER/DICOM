@@ -1,9 +1,9 @@
 
 export function formatDateYMD(date?: Date | string): string {
-  if (!date) return "Không có";
+  if (!date) return "N/A";
 
   const d = new Date(date);
-  if (isNaN(d.getTime())) return "Không hợp lệ";
+  if (isNaN(d.getTime())) return "Invalid date";
 
   const year = d.getFullYear();
   const month = (d.getMonth() + 1).toString().padStart(2, "0");
@@ -13,10 +13,10 @@ export function formatDateYMD(date?: Date | string): string {
 }
 
 export function formatDateVN(date?: Date | string): string {
-  if (!date) return "Không có";
+  if (!date) return "N/A";
 
   const d = new Date(date);
-  if (isNaN(d.getTime())) return "Không hợp lệ";
+  if (isNaN(d.getTime())) return "Invalid date";
 
   const day = d.getDate().toString().padStart(2, "0");
   const month = (d.getMonth() + 1).toString().padStart(2, "0");

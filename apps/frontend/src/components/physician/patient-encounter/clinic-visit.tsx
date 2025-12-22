@@ -18,6 +18,8 @@ import {
   FileText,
   VenusAndMars,
   ChartBarStacked,
+  Mars,
+  Venus,
 } from "lucide-react";
 import React, { useState } from "react";
 import { VitalSignForm } from "./vital-sign-form";
@@ -39,6 +41,32 @@ import { formatStatus } from "@/common/utils/format-status";
 interface ClinicVisitProps {
   detail: PatientEncounter;
 }
+
+// Helper function to format gender with capitalization
+const formatGender = (gender: string): string => {
+  if (!gender) return 'N/A';
+  return gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+};
+
+// Helper to get gender icon
+const getGenderIcon = (gender: string) => {
+  if (gender?.toLowerCase() === 'male') {
+    return <Mars className="text-blue-500" size={16} />;
+  } else if (gender?.toLowerCase() === 'female') {
+    return <Venus className="text-pink-500" size={16} />;
+  }
+  return <VenusAndMars className="text-gray-400" size={16} />;
+};
+
+// Helper to get gender badge color
+const getGenderBadgeClass = (gender: string): string => {
+  if (gender?.toLowerCase() === 'male') {
+    return 'bg-blue-100 text-blue-800';
+  } else if (gender?.toLowerCase() === 'female') {
+    return 'bg-pink-100 text-pink-800';
+  }
+  return 'bg-gray-100 text-gray-800';
+};
 
 const ClinicVisit = ({ detail }: ClinicVisitProps) => {
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false);
@@ -341,11 +369,11 @@ const ClinicVisit = ({ detail }: ClinicVisitProps) => {
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-100">
                 <span className="font-medium text-gray-600 flex items-center gap-2">
-                  <VenusAndMars className="text-gray-400" />
+                  {getGenderIcon(detail.patient?.gender || '')}
                   Gender:
                 </span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                  {detail.patient?.gender}
+                <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 ${getGenderBadgeClass(detail.patient?.gender || '')}`}>
+                  {formatGender(detail.patient?.gender || '')}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-100">

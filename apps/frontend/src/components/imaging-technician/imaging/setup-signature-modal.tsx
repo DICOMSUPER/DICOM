@@ -133,7 +133,7 @@ export default function SetupSignatureModal({
                   <SignatureDisplay
                     firstName={user?.firstName || ""}
                     lastName={user?.lastName || ""}
-                    role="Kỹ thuật viên"
+                    role="Technician"
                   />
                 </>
               ) : (
@@ -153,11 +153,9 @@ export default function SetupSignatureModal({
                 placeholder="Enter at least 6 characters"
                 value={pin}
                 onChange={handlePinChange}
-                className={`w-full border ${
-                  pinError ? "border-red-500" : "border-gray-300"
-                } rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 ${
-                  pinError ? "focus:ring-red-500" : "focus:ring-blue-500"
-                }`}
+                className={`w-full border ${pinError ? "border-red-500" : "border-gray-300"
+                  } rounded-md px-3 py-2 pr-10 focus:outline-none focus:ring-2 ${pinError ? "focus:ring-red-500" : "focus:ring-blue-500"
+                  }`}
               />
               <button
                 type="button"

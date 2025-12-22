@@ -112,7 +112,7 @@ export function ModalSetUpSignature({
                   <SignatureDisplay
                     firstName={user?.firstName}
                     lastName={user?.lastName}
-                    role="Bác sĩ"
+                    role="Doctor"
                   />
                 ) : (
                   <p className="text-gray-400 text-sm">
@@ -148,6 +148,17 @@ export function ModalSetUpSignature({
                     </div>
                   </FormControl>
                   <FormMessage />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={() => form.setValue("pin", "")}
+                      className="px-0 h-auto"
+                    >
+                      Clear
+                    </Button>
+                  </div>
                 </FormItem>
               )}
             />
