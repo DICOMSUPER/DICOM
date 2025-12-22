@@ -8,16 +8,14 @@ export default function AnotherHeaderPDF() {
         <div className="flex-shrink-0">
           <img
             src="/assets/logo_nobg.png"
-            alt="FPT University Clinic Logo"
+            alt="Dicom Clinic Logo"
             className="w-24 h-24 object-contain"
           />
         </div>
 
         {/* Center: Hospital Info */}
         <div className="flex-1 text-center">
-          <div className="text-lg font-bold uppercase">
-            FPT University Clinic
-          </div>
+          <div className="text-lg font-bold uppercase">Dicom Clinic</div>
           <div className="text-sm font-medium mt-1">
             Medical Imaging & Radiology Department
           </div>

@@ -154,9 +154,9 @@ export class RequestProcedureController {
     const pattern = cacheKeyBuilder.stats(CacheEntity.requestProcedures);
 
     const cachedStats = await this.redisService.get(pattern);
-    if (cachedStats) {
-      return cachedStats;
-    }
+    // if (cachedStats) {
+    //   return cachedStats;
+    // }
 
     const stats = await firstValueFrom(
       this.imagingService.send('ImagingService.RequestProcedure.GetStats', {})
@@ -164,7 +164,7 @@ export class RequestProcedureController {
 
     await this.redisService.set(pattern, stats, CACHE_TTL_SECONDS);
 
-    return {data:stats};
+    return { data: stats };
   }
 
   @Get(':id')
@@ -269,6 +269,4 @@ export class RequestProcedureController {
 
     return procedure;
   }
-
-
 }
