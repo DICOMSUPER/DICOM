@@ -100,7 +100,7 @@ const ViewerHeader = React.memo(({
                 {isCollapsed ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-slate-800 border-teal-700">{isCollapsed ? 'Hiện header' : 'Ẩn header'}</TooltipContent>
+            <TooltipContent className="bg-slate-800 border-teal-700">{isCollapsed ? 'Show header' : 'Hide header'}</TooltipContent>
           </Tooltip>
         </div>
       </div>

@@ -63,7 +63,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium text-sm">Thông tin ca</h3>
+          <h3 className="font-medium text-sm">Case Information</h3>
           {onRefresh && (
             <button
               onClick={onRefresh}
@@ -84,7 +84,7 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
         {/* Thông tin bệnh nhân */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
-            THÔNG TIN BỆNH NHÂN
+            PATIENT INFORMATION
           </h4>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
@@ -92,21 +92,21 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
               <span className="font-medium">{patient.patientCode}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Họ và tên:</span>
+              <span className="text-gray-600">Full Name:</span>
               <span className="font-medium">
                 {patient.firstName + " " + patient.lastName}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Năm sinh:</span>
+              <span className="text-gray-600">Date of Birth:</span>
               <span>{formatDateYMD(patient.dateOfBirth)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Điện thoại:</span>
+              <span className="text-gray-600">Phone:</span>
               <span>{patient.phoneNumber}</span>
             </div>
             <div className="text-sm text-gray-600 mt-2">
-              <div>Địa chỉ: {patient.address}</div>
+              <div>Address: {patient.address}</div>
             </div>
           </div>
         </div>
@@ -116,17 +116,17 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
         {/* Chưa chẩn đoán */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
-            Chưa chẩn đoán
+            Pending Diagnosis
           </h4>
           <ScrollArea className="h-full">
             {isLoading ? (
               <div className="flex h-48 items-center justify-center text-gray-500 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Đang tải...
+                Loading...
               </div>
             ) : inProgressExams.length === 0 ? (
               <div className="flex h-48 items-center justify-center text-gray-400 text-sm text-center">
-                Không có exam nào
+                No exams available
               </div>
             ) : (
               <div className="space-y-1">
@@ -149,17 +149,17 @@ const SidebarTab: React.FC<SidebarTabProps> = ({
         {/* Lịch sử khám */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-2">
-            LỊCH SỬ KHÁM
+            EXAM HISTORY
           </h4>
           <ScrollArea className="h-full">
             {isLoading ? (
               <div className="flex h-48 items-center justify-center text-gray-500 text-sm">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Đang tải...
+                Loading...
               </div>
             ) : progressExams.length === 0 ? (
               <div className="flex h-48 items-center justify-center text-gray-400 text-sm text-center">
-                Không có lịch sử
+                No history available
               </div>
             ) : (
               <div className="space-y-1">

@@ -18,7 +18,7 @@ interface PrintDiagnosisProps {
 
 const PrintDiagnosis = forwardRef<HTMLDivElement, PrintDiagnosisProps>(
     ({ diagnosis, patientName, encounterId }, ref) => {
-        if (!diagnosis) return <div>Chưa có chẩn đoán để in</div>;
+        if (!diagnosis) return <div>No diagnosis available to print</div>;
 
         return (
             <div
@@ -32,22 +32,22 @@ const PrintDiagnosis = forwardRef<HTMLDivElement, PrintDiagnosisProps>(
                 }}
             >
                 <h1 style={{ textAlign: "center", fontWeight: 700, fontSize: "24px", marginBottom: "16px" }}>
-                    BÁO CÁO CHẨN ĐOÁN
+                    DIAGNOSIS REPORT
                 </h1>
 
                 <div style={{ marginBottom: "16px" }}>
-                    {patientName && <p><strong>Bệnh nhân:</strong> {patientName}</p>}
+                    {patientName && <p><strong>Patient:</strong> {patientName}</p>}
                     {encounterId && <p><strong>Encounter ID:</strong> {encounterId}</p>}
-                    {diagnosis.diagnosisDate && <p><strong>Ngày chẩn đoán:</strong> {diagnosis.diagnosisDate}</p>}
-                    {diagnosis.diagnosedByName && <p><strong>Người ký:</strong> {diagnosis.diagnosedByName}</p>}
-                    {diagnosis.diagnosisType && <p><strong>Loại chẩn đoán:</strong> {diagnosis.diagnosisType}</p>}
-                    {diagnosis.severity && <p><strong>Mức độ:</strong> {diagnosis.severity}</p>}
+                    {diagnosis.diagnosisDate && <p><strong>Diagnosis Date:</strong> {diagnosis.diagnosisDate}</p>}
+                    {diagnosis.diagnosedByName && <p><strong>Signed By:</strong> {diagnosis.diagnosedByName}</p>}
+                    {diagnosis.diagnosisType && <p><strong>Diagnosis Type:</strong> {diagnosis.diagnosisType}</p>}
+                    {diagnosis.severity && <p><strong>Severity:</strong> {diagnosis.severity}</p>}
                 </div>
 
                 <hr style={{ border: "1px solid #ccc", margin: "16px 0" }} />
 
                 <div style={{ marginBottom: "16px" }}>
-                    <h2 style={{ fontWeight: 600, fontSize: "20px", marginBottom: "8px" }}>Nội dung chẩn đoán</h2>
+                    <h2 style={{ fontWeight: 600, fontSize: "20px", marginBottom: "8px" }}>Diagnosis Content</h2>
                     <div style={{ whiteSpace: "pre-line" }}>{diagnosis.description}</div>
                 </div>
 
@@ -55,7 +55,7 @@ const PrintDiagnosis = forwardRef<HTMLDivElement, PrintDiagnosisProps>(
                     <>
                         <hr style={{ border: "1px solid #ccc", margin: "16px 0" }} />
                         <div>
-                            <h2 style={{ fontWeight: 600, fontSize: "20px", marginBottom: "8px" }}>Ghi chú</h2>
+                            <h2 style={{ fontWeight: 600, fontSize: "20px", marginBottom: "8px" }}>Notes</h2>
                             <div>{diagnosis.notes}</div>
                         </div>
                     </>

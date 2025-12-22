@@ -420,16 +420,16 @@ export default function ViewerLeftSidebar({
   );
 
   // AI Segmentation
-  const { 
-    startAISegmentationMode, 
+  const {
+    startAISegmentationMode,
     cancelAISegmentationMode,
-    isLoading: isAILoading, 
-    isAISegmentationMode 
+    isLoading: isAILoading,
+    isAISegmentationMode
   } = useAISegmentation();
-  
+
   // Get viewport element ref for AI segmentation
   const activeViewportId = state.viewportIds.get(state.activeViewport);
-  
+
   const aiSegmentationState = useMemo(() => {
     return {
       isLoading: isAILoading,
@@ -468,7 +468,7 @@ export default function ViewerLeftSidebar({
     const { getRenderingEngine } = await import("@cornerstonejs/core");
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const stackViewport = renderingEngine?.getViewport(activeViewportId);
-    
+
     if (!stackViewport) {
       toast.error("Stack viewport not ready");
       return;
@@ -476,10 +476,10 @@ export default function ViewerLeftSidebar({
 
     const imageIds = (stackViewport as any).getImageIds?.() || [];
     const currentImageIndex = (stackViewport as any).getCurrentImageIdIndex?.() || 0;
-    
+
     // Get imageIdToInstanceMap from context
     const imageIdToInstanceMap = getImageIdToInstanceMap(state.activeViewport);
-    
+
     // Start AI segmentation mode - enables RectangleROI tool
     startAISegmentationMode(
       viewportElement,

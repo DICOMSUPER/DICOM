@@ -395,8 +395,27 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       }
     }, [viewport, viewportId]);
 
+    // Helper to get fresh viewport - tries props first, then ref, then rendering engine
+    const getFreshViewport = useCallback(() => {
+      // Try prop first
+      if (viewport) return viewport;
+      // Try ref
+      if (viewportRef.current) return viewportRef.current;
+      // Fall back to rendering engine
+      if (renderingEngineId && viewportId) {
+        try {
+          const renderingEngine = getRenderingEngine(renderingEngineId);
+          return renderingEngine?.getViewport(viewportId) ?? null;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    }, [viewport, renderingEngineId, viewportId]);
+
     const handleUndoSegmentation = useCallback((historyEntry?: SegmentationHistoryEntry) => {
-      if (!viewport || !viewportReady || !historyEntry) return;
+      const currentViewport = getFreshViewport();
+      if (!currentViewport || !viewportReady || !historyEntry) return;
 
       const previousSnapshot = historyEntry.previousSnapshot as SegmentationSnapshot | undefined;
       if (previousSnapshot) {
@@ -408,22 +427,23 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       if (segmentationId) {
         try {
           if (clearSegmentationData(segmentationId, { reason: "history-undo" })) {
-            viewport.render?.();
+            currentViewport.render?.();
           }
         } catch (error) {
           console.error("Failed to clear segmentation during undo", error);
         }
       }
-    }, [viewport, viewportReady, applySegmentationSnapshot]);
+    }, [getFreshViewport, viewportReady, applySegmentationSnapshot]);
 
     const handleRedoSegmentation = useCallback((historyEntry?: SegmentationHistoryEntry) => {
-      if (!viewport || !viewportReady) return;
+      const currentViewport = getFreshViewport();
+      if (!currentViewport || !viewportReady) return;
 
       const snapshot = historyEntry?.snapshot as SegmentationSnapshot | undefined;
       if (snapshot) {
         applySegmentationSnapshot(snapshot, "redo");
       }
-    }, [viewport, viewportReady, applySegmentationSnapshot]);
+    }, [getFreshViewport, viewportReady, applySegmentationSnapshot]);
 
     const handleCustomTool = useCallback((toolName: string) => {
       console.log("[ToolManager] handleCustomTool triggered for:", toolName);
@@ -763,7 +783,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
 
                 if (!isAlreadyAdded) {
                   toolGroup.addViewport(viewportId, renderingEngineId);
-                  
+
                   // Enable persistent tools AFTER viewport is added (they need the viewport)
                   try {
                     toolGroup.setToolEnabled(PlanarFreehandROITool.toolName);

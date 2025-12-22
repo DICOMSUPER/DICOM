@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Paintbrush, 
-  CircleDot, 
-  Square, 
-  Globe, 
-  Eraser, 
+import {
+  Paintbrush,
+  CircleDot,
+  Square,
+  Globe,
+  Eraser,
   Trash2,
   Eye,
   EyeOff,
@@ -73,8 +73,8 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
   };
 
   const toggleSegmentVisibility = (segmentIndex: number) => {
-    setSegments(prev => prev.map(seg => 
-      seg.index === segmentIndex 
+    setSegments(prev => prev.map(seg =>
+      seg.index === segmentIndex
         ? { ...seg, visible: !seg.visible }
         : seg
     ));
@@ -84,7 +84,7 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
     const maxIndex = Math.max(...segments.map(s => s.index));
     const colors = ["#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080"];
     const newColor = colors[segments.length % colors.length];
-    
+
     setSegments(prev => [...prev, {
       index: maxIndex + 1,
       color: newColor,
@@ -107,9 +107,9 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
         <div className="space-y-2">
           <div className="text-sm font-semibold text-slate-300 flex items-center gap-2">
             <Paintbrush className="h-4 w-4" />
-            <span>Công cụ Segmentation</span>
+            <span>Segmentation Tools</span>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             {segmentationTools.map((tool) => (
               <Tooltip key={tool.toolId}>
@@ -138,7 +138,7 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
           {/* Brush Size Control */}
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Kích thước brush</span>
+              <span>Brush size</span>
               <span className="text-blue-400 font-medium">{brushSize}px</span>
             </div>
             <Slider
@@ -168,7 +168,7 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right" className="bg-slate-900 border-slate-700 text-white">
-                Thêm segment mới
+                Add new segment
               </TooltipContent>
             </Tooltip>
           </div>
@@ -190,7 +190,7 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
                   className="w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0"
                   style={{ backgroundColor: segment.color }}
                 />
-                
+
                 {/* Label */}
                 <span className="text-xs text-slate-200 flex-1 truncate">
                   {segment.label}
@@ -241,7 +241,7 @@ const SegmentationControls: React.FC<SegmentationControlsProps> = ({
             className="w-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white border-slate-600 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Xóa toàn bộ Segmentation
+            Clear All Segmentation
           </Button>
         </div>
       </div>

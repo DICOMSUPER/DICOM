@@ -34,7 +34,7 @@ export default function ResizablePanel({
     // Use requestAnimationFrame for smooth updates
     requestAnimationFrame(() => {
       let newWidth: number;
-      
+
       if (side === "left") {
         newWidth = e.clientX;
       } else {
@@ -43,7 +43,7 @@ export default function ResizablePanel({
 
       // Clamp width between min and max
       newWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
-      
+
       // Update width directly via CSS for better performance
       if (panelRef.current) {
         panelRef.current.style.width = `${newWidth}px`;
@@ -57,7 +57,7 @@ export default function ResizablePanel({
     document.body.style.cursor = "default";
     document.body.style.userSelect = "auto";
     document.body.style.pointerEvents = "auto";
-    
+
     // Save final width to state
     if (panelRef.current) {
       setWidth(parseInt(panelRef.current.style.width) || defaultWidth);
@@ -88,10 +88,9 @@ export default function ResizablePanel({
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`relative bg-slate-900 ${className} ${
-          collapsed ? "w-0" : ""
-        } ${!isResizing ? "transition-all duration-300" : ""}`}
-        style={{ 
+        className={`relative bg-slate-900 ${className} ${collapsed ? "w-0" : ""
+          } ${!isResizing ? "transition-all duration-300" : ""}`}
+        style={{
           width: collapsed ? 0 : width,
           willChange: isResizing ? "width" : "auto"
         }}
@@ -102,16 +101,14 @@ export default function ResizablePanel({
         {/* Resize Handle */}
         {!collapsed && (
           <div
-            className={`absolute top-0 ${
-              side === "left" ? "right-0" : "left-0"
-            } w-1 h-full cursor-ew-resize hover:bg-blue-500 transition-colors group`}
+            className={`absolute top-0 ${side === "left" ? "right-0" : "left-0"
+              } w-1 h-full cursor-ew-resize hover:bg-blue-500 transition-colors group`}
             onMouseDown={handleMouseDown}
           >
             {/* Visual indicator on hover */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className={`h-full w-1 bg-blue-500 ${
-                side === "left" ? "ml-0" : "mr-0"
-              }`} />
+              <div className={`h-full w-1 bg-blue-500 ${side === "left" ? "ml-0" : "mr-0"
+                }`} />
             </div>
           </div>
         )}
@@ -120,12 +117,11 @@ export default function ResizablePanel({
       {/* Toggle Button - Positioned correctly for each side */}
       <button
         onClick={onToggleCollapse}
-        className={`w-4 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors ${
-          side === "left" ? "border-r border-slate-800" : "border-l border-slate-800"
-        }`}
-        title={collapsed ? "Mở" : "Đóng"}
+        className={`w-4 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors ${side === "left" ? "border-r border-slate-800" : "border-l border-slate-800"
+          }`}
+        title={collapsed ? "Open" : "Close"}
       >
-        {collapsed 
+        {collapsed
           ? (side === "left" ? <ChevronRight size={16} /> : <ChevronLeft size={16} />)
           : (side === "left" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />)
         }
