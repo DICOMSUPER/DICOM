@@ -85,7 +85,7 @@ export default function Page() {
   } = useGetAiAnalysisStatsQuery();
 
 
-  
+
 
   const [deleteAiAnalysis, { isLoading: isDeletingAiAnalysis }] =
     useDeleteAiAnalysisMutation();
@@ -155,7 +155,7 @@ export default function Page() {
   const confirmDeleteAiAnalysis = async () => {
     if (!selectedAiAnalysis) return;
     try {
-      await deleteAiAnalysis(selectedAiAnalysis.analysisId).unwrap();
+      await deleteAiAnalysis(selectedAiAnalysis.id).unwrap();
       toast.success(
         `AI analysis for study ${selectedAiAnalysis.studyId} deleted successfully`
       );
@@ -169,8 +169,8 @@ export default function Page() {
       };
       toast.error(
         apiError?.data?.message ||
-          apiError?.message ||
-          "Failed to delete AI analysis"
+        apiError?.message ||
+        "Failed to delete AI analysis"
       );
     }
   };
@@ -188,9 +188,8 @@ export default function Page() {
   const handleExport = async (filters: ExportFilters) => {
     try {
       const blob = await exportToExcel(filters).unwrap();
-      const fileName = `AI_Analyses_Export_${
-        new Date().toISOString().split("T")[0]
-      }.xlsx`;
+      const fileName = `AI_Analyses_Export_${new Date().toISOString().split("T")[0]
+        }.xlsx`;
       saveAs(blob, fileName);
       toast.success("Excel file exported successfully");
       setIsExportModalOpen(false);
@@ -201,8 +200,8 @@ export default function Page() {
       };
       toast.error(
         apiError?.data?.message ||
-          apiError?.message ||
-          "Failed to export to Excel"
+        apiError?.message ||
+        "Failed to export to Excel"
       );
     }
   };

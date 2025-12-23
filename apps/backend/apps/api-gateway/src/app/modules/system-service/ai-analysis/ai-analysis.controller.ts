@@ -37,7 +37,7 @@ import type { Response } from 'express';
 export class AiAnalysisController {
   constructor(
     @Inject('SYSTEM_SERVICE') private readonly systemService: ClientProxy
-  ) {}
+  ) { }
 
   @Post()
   async create(@Body() createAiAnalysisDto: CreateAiAnalysisDto) {
@@ -167,16 +167,26 @@ export class AiAnalysisController {
       .send('ai_analysis.exportToExcel', filter)
       .toPromise();
 
-    const fileName = `AI_Analyses_Export_${
-      new Date().toISOString().split('T')[0]
-    }.xlsx`;
+    const fileName = `AI_Analyses_Export_${new Date().toISOString().split('T')[0]
+      }.xlsx`;
+
+    // Handle serialized Buffer from microservice
+    // In production, Buffer objects get serialized as {type: 'Buffer', data: [...]}
+    let excelBuffer: Buffer;
+    if (buffer?.type === 'Buffer' && Array.isArray(buffer.data)) {
+      excelBuffer = Buffer.from(buffer.data);
+    } else if (Buffer.isBuffer(buffer)) {
+      excelBuffer = buffer;
+    } else {
+      excelBuffer = Buffer.from(buffer);
+    }
 
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.send(Buffer.from(buffer));
+    res.send(excelBuffer);
   }
 
   // SystemService.AiAnalysis.AnalyzeDiagnosisWithImageAndROI

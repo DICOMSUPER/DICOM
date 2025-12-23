@@ -89,8 +89,9 @@ export function DiagnosisReportDetail({
   const [filtersReportTemplate, setFiltersReportTemplate] =
     useState<FilterReportTemplate>({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true
     });
   // const [isRefreshing, setIsRefreshing] = useState(false);
   const {
@@ -199,14 +200,14 @@ export function DiagnosisReportDetail({
       const template = selectedReportTemplate.data;
       const sections = [
         template.technicalTemplate &&
-          `Technical:\n${template.technicalTemplate}`,
+        `Technical:\n${template.technicalTemplate}`,
         template.descriptionTemplate &&
-          `Description:\n${template.descriptionTemplate}`,
+        `Description:\n${template.descriptionTemplate}`,
         template.findingsTemplate && `Findings:\n${template.findingsTemplate}`,
         template.conclusionTemplate &&
-          `Conclusion:\n${template.conclusionTemplate}`,
+        `Conclusion:\n${template.conclusionTemplate}`,
         template.recommendationTemplate &&
-          `Recommendation:\n${template.recommendationTemplate}`,
+        `Recommendation:\n${template.recommendationTemplate}`,
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -406,7 +407,7 @@ export function DiagnosisReportDetail({
 
       setSelectedStudyId(studyId);
       setModalApproveOpen(true);
-    } catch (error: any) {}
+    } catch (error: any) { }
   };
 
   const handleViewImage = () => {
@@ -616,9 +617,8 @@ export function DiagnosisReportDetail({
                   </div>
                   <div className="text-sm text-slate-900 font-medium">
                     {dicomStudyData?.data.studyDate
-                      ? `${formatDateVN(dicomStudyData.data.studyDate)} ${
-                          dicomStudyData.data.studyTime || ""
-                        }`
+                      ? `${formatDateVN(dicomStudyData.data.studyDate)} ${dicomStudyData.data.studyTime || ""
+                      }`
                       : "N/A"}
                   </div>
                 </div>
@@ -629,29 +629,25 @@ export function DiagnosisReportDetail({
                   </div>
                   <Badge
                     className={`
-                      ${
-                        dicomStudyData?.data.studyStatus ===
+                      ${dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.APPROVED
-                          ? "bg-green-100 text-green-700 border-green-300"
-                          : ""
+                        ? "bg-green-100 text-green-700 border-green-300"
+                        : ""
                       }
-                      ${
-                        dicomStudyData?.data.studyStatus ===
+                      ${dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.TECHNICIAN_VERIFIED
-                          ? "bg-blue-100 text-blue-700 border-blue-300"
-                          : ""
+                        ? "bg-blue-100 text-blue-700 border-blue-300"
+                        : ""
                       }
-                      ${
-                        dicomStudyData?.data.studyStatus ===
+                      ${dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.PENDING_APPROVAL
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                          : ""
+                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                        : ""
                       }
-                      ${
-                        dicomStudyData?.data.studyStatus ===
+                      ${dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.RESULT_PRINTED
-                          ? "bg-purple-100 text-purple-700 border-purple-300"
-                          : ""
+                        ? "bg-purple-100 text-purple-700 border-purple-300"
+                        : ""
                       }
                     `}
                   >
@@ -742,17 +738,15 @@ export function DiagnosisReportDetail({
                       </div>
                       <Badge
                         className={`
-                          ${
-                            dicomStudyData.data.imagingOrder.orderStatus ===
+                          ${dicomStudyData.data.imagingOrder.orderStatus ===
                             "completed"
-                              ? "bg-green-100 text-green-700 border-green-300"
-                              : ""
+                            ? "bg-green-100 text-green-700 border-green-300"
+                            : ""
                           }
-                          ${
-                            dicomStudyData.data.imagingOrder.orderStatus ===
+                          ${dicomStudyData.data.imagingOrder.orderStatus ===
                             "pending"
-                              ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                              : ""
+                            ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                            : ""
                           }
                         `}
                       >
@@ -1009,7 +1003,7 @@ export function DiagnosisReportDetail({
               <Button
                 disabled={
                   dicomStudyData?.data.studyStatus ===
-                    DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
+                  DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
                 }
                 className="w-full"
                 onClick={handleEditDescriptionOpen}
@@ -1115,6 +1109,22 @@ export function DiagnosisReportDetail({
                     </Select>
 
                     <Select
+                      value={filtersReportTemplate.templateType || "all"}
+                      onValueChange={(value) =>
+                        handleSelectChange("templateType", value as "all" | TemplateType)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Template Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value={TemplateType.STANDARD}>Standard</SelectItem>
+                        <SelectItem value={TemplateType.CUSTOM}>Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
                       value={selectedReportTemplateId}
                       onValueChange={handleSelectTemplate}
                       disabled={
@@ -1127,11 +1137,11 @@ export function DiagnosisReportDetail({
                         <SelectValue
                           placeholder={
                             !filtersReportTemplate.bodyPartId ||
-                            !filtersReportTemplate.modalityId
+                              !filtersReportTemplate.modalityId
                               ? "Select body part & modality first"
                               : isReportTemplatesLoading
-                              ? "Loading templates..."
-                              : "Select Report Template"
+                                ? "Loading templates..."
+                                : "Select Report Template"
                           }
                         />
                       </SelectTrigger>
@@ -1252,27 +1262,27 @@ export function DiagnosisReportDetail({
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50 bg-white rounded-xl p-6">
               {report.data.diagnosisStatus ===
                 DiagnosisStatus.PENDING_APPROVAL && (
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleApproveReport}
-                    disabled={isUpdating || isApprovingDiagnosis}
-                    className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
-                  >
-                    <Star className="w-4 h-4" />
-                    <span>
-                      {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
-                    </span>
-                  </Button>
-                  <Button
-                    onClick={() => setModalRejectOpen(true)}
-                    disabled={isUpdating || isRejectingDiagnosis}
-                    className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
-                  >
-                    <CircleX className="w-4 h-4" />
-                    <span>Reject Report</span>
-                  </Button>
-                </div>
-              )}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleApproveReport}
+                      disabled={isUpdating || isApprovingDiagnosis}
+                      className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                    >
+                      <Star className="w-4 h-4" />
+                      <span>
+                        {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={() => setModalRejectOpen(true)}
+                      disabled={isUpdating || isRejectingDiagnosis}
+                      className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                    >
+                      <CircleX className="w-4 h-4" />
+                      <span>Reject Report</span>
+                    </Button>
+                  </div>
+                )}
 
               {/*  {dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED ||
                 dicomStudyData?.data.studyStatus ===
@@ -1296,8 +1306,8 @@ export function DiagnosisReportDetail({
                   ? "Study Already Signed"
                   : DicomStudyStatus.APPROVED ===
                     dicomStudyData?.data.studyStatus
-                  ? "Study Approved"
-                  : "Sign to Approve Study"}
+                    ? "Study Approved"
+                    : "Sign to Approve Study"}
               </Button>
               <Button
                 onClick={handleViewImage}

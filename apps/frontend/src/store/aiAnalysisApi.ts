@@ -1,12 +1,12 @@
 import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
 import {
-    PaginatedResponse
+  PaginatedResponse
 } from "@/common/interfaces/pagination/pagination.interface";
 import {
-    AiAnalysis,
-    CreateAiAnalysisDto,
-    FilterAiAnalysisDto,
-    SubmitFeedbackDto,
+  AiAnalysis,
+  CreateAiAnalysisDto,
+  FilterAiAnalysisDto,
+  SubmitFeedbackDto,
 } from "@/common/interfaces/system/ai-analysis.interface";
 import { AiResultDiagnosis } from "@/common/interfaces/system/ai-result.interface";
 import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
@@ -25,12 +25,12 @@ export const aiAnalysisApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "AiAnalysis" as const,
-                id: r.analysisId,
-              })),
-              { type: "AiAnalysis", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "AiAnalysis" as const,
+              id: r.id,
+            })),
+            { type: "AiAnalysis", id: "LIST" },
+          ]
           : [{ type: "AiAnalysis", id: "LIST" }],
     }),
     diagnosisImageByAI: builder.mutation<
@@ -65,7 +65,7 @@ export const aiAnalysisApi = createApi({
     }),
 
     deleteAiAnalysis: builder.mutation<{ success: boolean }, string>({
-      query: (id) => ({ url: `${id}`, method: "DELETE" }),
+      query: (id) => ({ url: `/${id}`, method: "DELETE" }),
       invalidatesTags: (result, error, id) => [
         { type: "AiAnalysis", id },
         { type: "AiAnalysis", id: "LIST" },
@@ -107,12 +107,14 @@ export const aiAnalysisApi = createApi({
     }),
 
     getAiAnalysisStats: builder.query<
-      ApiResponse<{data:{
-        total: number;
-        completed: number;
-        failed: number;
-        pending: number;
-      }}>,
+      ApiResponse<{
+        data: {
+          total: number;
+          completed: number;
+          failed: number;
+          pending: number;
+        }
+      }>,
       void
     >({
       query: () => ({ url: "/stats", method: "GET" }),

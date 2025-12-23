@@ -1,9 +1,9 @@
 import { TemplateType } from "@/common/enums/report-template.enum";
 import { BaseEntity } from "../base.interface";
-import { BodyPart } from "../image-dicom/body-part.interface";
 import { ImagingModality } from "../image-dicom/imaging_modality.interface";
 import { User } from "../user/user.interface";
 import { DiagnosisReport } from "./patient-workflow.interface";
+import { BodyPart } from "../imaging/body-part.interface";
 
 export interface ReportTemplate extends BaseEntity {
   reportTemplatesId: string;
@@ -26,7 +26,7 @@ export interface ReportTemplate extends BaseEntity {
 
 export interface FilterReportTemplate {
   ownerUserId?: string;
-  templateType?: TemplateType;
+  templateType?: TemplateType | "all";
   modalityId?: string;
   bodyPartId?: string;
   isPublic?: boolean;

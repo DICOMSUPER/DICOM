@@ -130,8 +130,8 @@ export class AiAnalysesService {
           base64Image.startsWith('/9j/') || base64Image.startsWith('iVBOR')
             ? 'image/jpeg'
             : base64Image.startsWith('iVBOR')
-            ? 'image/png'
-            : 'image/jpeg'; // default
+              ? 'image/png'
+              : 'image/jpeg'; // default
         formattedBase64 = `data:${imageType};base64,${base64Image}`;
         console.log('📝 Formatted base64 with data URI prefix');
       }
@@ -413,8 +413,8 @@ export class AiAnalysesService {
           analysis.isHelpful === true
             ? 'Yes'
             : analysis.isHelpful === false
-            ? 'No'
-            : 'N/A',
+              ? 'No'
+              : 'N/A',
         feedbackComment: analysis.feedbackComment || '',
         errorMessage: analysis.errorMessage || '',
         createdAt: analysis.createdAt
@@ -570,7 +570,7 @@ export class AiAnalysesService {
           100
         ).toFixed(2);
 
-        // Get sample points from polygon (no need to list all)
+        // Get sample points from polygon
         const samplePoints =
           pred.points
             ?.slice(0, 4) // Take first 4 points as sample
@@ -611,7 +611,7 @@ export class AiAnalysesService {
       const detectionsText = detectionsDetail
         .map(
           (det) => `
-📍 Detection Region #${det.index}:
+   Detection Region #${det.index}:
    • Pathology Type: "${det.class}"
    • Confidence Score: ${det.confidence}%
    • Center Position: (${det.centerX}, ${det.centerY})
@@ -705,18 +705,22 @@ ${detectionsText}
    • Use accurate medical terminology with clear explanations
    • Provide evidence-based assessment from specific imaging findings
    • Maintain objective, professional analysis
-   • Total length: 300-350 words
+   • Write in plain text format WITHOUT any markdown formatting
 
  DO NOT:
    • Make 100% definitive diagnoses (these are AI-assisted results)
    • Ignore information from polygon points
    • Provide vague, non-specific analysis
    • Use alarming or panic-inducing language
+   • Use markdown formatting like ** or * or # for styling
+   • Include word count or any meta-information at the end
 
-Please write a professional medical report that is valuable for clinical decision-making!`;
+Please write a professional medical report in PLAIN TEXT (no markdown, no bold markers, no asterisks) about 200-250 words that is valuable for clinical decision-making!`;
 
+      const openAiModel = this.configService.get('OPENAI_MODEL');
+      console.log('Model name:', openAiModel);
       const completion = await this.openai.chat.completions.create({
-        model: 'google/gemma-3-27b-it:free',
+        model: openAiModel,
         messages: [
           {
             role: 'user',
@@ -734,8 +738,8 @@ Please write a professional medical report that is valuable for clinical decisio
             ],
           },
         ],
-        // temperature: 0.7,
-        // max_tokens: 1500, // Increased for detailed analysis
+        temperature: 0.7,
+        // max_tokens: 300,
       });
 
       const analysisResult = completion.choices[0].message.content as string;
@@ -760,7 +764,7 @@ Please write a professional medical report that is valuable for clinical decisio
 
       throw new BadRequestException(
         'Failed to analyze diagnosis: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
+        (error instanceof Error ? error.message : 'Unknown error')
       );
     }
   }
@@ -798,5 +802,55 @@ Please write a professional medical report that is valuable for clinical decisio
       failed,
       pending,
     };
+  }
+
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
+    console.log(`🗑️ Deleting AI analysis: ${id}`);
+
+    try {
+      // Find the AI analysis
+      const aiAnalysis = await this.findOne(id);
+
+      // Delete the Cloudinary image if it exists
+      if (aiAnalysis.originalImageName) {
+        try {
+          console.log(`Deleting Cloudinary image: ${aiAnalysis.originalImageName}`);
+          await this.cloudinaryService.deleteImageFromCloudinary(aiAnalysis.originalImageName);
+          console.log('Cloudinary image deleted successfully');
+        } catch (cloudinaryError) {
+          // Log error but don't fail the deletion
+          console.error(
+            'Failed to delete Cloudinary image:',
+            cloudinaryError
+          );
+          console.warn(
+            'Continuing with database deletion despite Cloudinary error'
+          );
+        }
+      } else {
+        console.log('No Cloudinary image to delete');
+      }
+
+      // Delete from database
+      await this.aiAnalysisRepository.remove(aiAnalysis);
+      console.log('AI analysis deleted from database');
+
+      // Clear related cache
+      const keyName = createCacheKey.system(
+        'ai_analyses',
+        undefined,
+        'filter_ai_analyses'
+      );
+      await this.redisService.delete(keyName);
+      console.log('Cache cleared');
+
+      return {
+        success: true,
+        message: 'AI analysis deleted successfully',
+      };
+    } catch (error) {
+      console.error('Error deleting AI analysis:', error);
+      throw error;
+    }
   }
 }

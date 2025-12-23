@@ -27,20 +27,20 @@ interface ImagingOrderItemProps {
 const ImagingOrderItem = ({ order, onViewReport }: ImagingOrderItemProps) => {
   const [open, setIsOpen] = useState(false);
   const [updateImagingOrder, { isLoading }] = useUpdateImagingOrderMutation();
-const onCancel = async () => {
-  try {
-    await updateImagingOrder({
-      id: order.id,
-      body: { orderStatus: ImagingOrderStatus.CANCELLED },
-    }).unwrap();
-    
-    setIsOpen(false);
-    toast.success("Imaging order cancelled successfully");
-  } catch (error) {
-    toast.error("Failed to cancel imaging order");
-    console.error("Cancel error:", error);
-  }
-};
+  const onCancel = async () => {
+    try {
+      await updateImagingOrder({
+        id: order.id,
+        body: { orderStatus: ImagingOrderStatus.CANCELLED },
+      }).unwrap();
+
+      setIsOpen(false);
+      toast.success("Imaging order cancelled successfully");
+    } catch (error) {
+      toast.error("Failed to cancel imaging order");
+      console.error("Cancel error:", error);
+    }
+  };
   const onClose = () => {
     setIsOpen(false);
   };
@@ -174,10 +174,6 @@ const onCancel = async () => {
               Cancel Order
             </Button>
           )}
-          {/* neu co ket qua  */}
-          <Button className="text-sm bg-emerald-400 text-white hover:underline">
-            View Report
-          </Button>
         </div>
       </div>
       <ModalCancel
