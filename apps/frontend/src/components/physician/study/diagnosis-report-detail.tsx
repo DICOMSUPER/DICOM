@@ -72,6 +72,7 @@ import { formatStatus } from "@/common/utils/format-status";
 import captureSignature from "@/common/lib/captureStringSignature";
 import SignatureDisplay from "@/components/common/signature-display";
 import { handleEncrypt } from "@/common/utils/encryption";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -91,7 +92,7 @@ export function DiagnosisReportDetail({
       modalityId: "",
       templateType: "all",
       bodyPartId: "",
-      isPublic: true
+      isPublic: true,
     });
   // const [isRefreshing, setIsRefreshing] = useState(false);
   const {
@@ -105,6 +106,9 @@ export function DiagnosisReportDetail({
   const [modalSetupOpen, setModalSetupOpen] = useState(false);
   const [modalApproveOpen, setModalApproveOpen] = useState(false);
   const [modalRejectOpen, setModalRejectOpen] = useState(false);
+  const [confirmApproveModalOpen, setConfirmApproveModalOpen] = useState(false);
+  const [confirmApproveReportModalOpen, setConfirmApproveReportModalOpen] =
+    useState(false);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [selectedReportTemplateId, setSelectedReportTemplateId] =
     useState<string>("");
@@ -200,14 +204,14 @@ export function DiagnosisReportDetail({
       const template = selectedReportTemplate.data;
       const sections = [
         template.technicalTemplate &&
-        `Technical:\n${template.technicalTemplate}`,
+          `Technical:\n${template.technicalTemplate}`,
         template.descriptionTemplate &&
-        `Description:\n${template.descriptionTemplate}`,
+          `Description:\n${template.descriptionTemplate}`,
         template.findingsTemplate && `Findings:\n${template.findingsTemplate}`,
         template.conclusionTemplate &&
-        `Conclusion:\n${template.conclusionTemplate}`,
+          `Conclusion:\n${template.conclusionTemplate}`,
         template.recommendationTemplate &&
-        `Recommendation:\n${template.recommendationTemplate}`,
+          `Recommendation:\n${template.recommendationTemplate}`,
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -406,8 +410,8 @@ export function DiagnosisReportDetail({
       }
 
       setSelectedStudyId(studyId);
-      setModalApproveOpen(true);
-    } catch (error: any) { }
+      setConfirmApproveModalOpen(true);
+    } catch (error: any) {}
   };
 
   const handleViewImage = () => {
@@ -617,8 +621,9 @@ export function DiagnosisReportDetail({
                   </div>
                   <div className="text-sm text-slate-900 font-medium">
                     {dicomStudyData?.data.studyDate
-                      ? `${formatDateVN(dicomStudyData.data.studyDate)} ${dicomStudyData.data.studyTime || ""
-                      }`
+                      ? `${formatDateVN(dicomStudyData.data.studyDate)} ${
+                          dicomStudyData.data.studyTime || ""
+                        }`
                       : "N/A"}
                   </div>
                 </div>
@@ -629,25 +634,29 @@ export function DiagnosisReportDetail({
                   </div>
                   <Badge
                     className={`
-                      ${dicomStudyData?.data.studyStatus ===
+                      ${
+                        dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.APPROVED
-                        ? "bg-green-100 text-green-700 border-green-300"
-                        : ""
+                          ? "bg-green-100 text-green-700 border-green-300"
+                          : ""
                       }
-                      ${dicomStudyData?.data.studyStatus ===
+                      ${
+                        dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.TECHNICIAN_VERIFIED
-                        ? "bg-blue-100 text-blue-700 border-blue-300"
-                        : ""
+                          ? "bg-blue-100 text-blue-700 border-blue-300"
+                          : ""
                       }
-                      ${dicomStudyData?.data.studyStatus ===
+                      ${
+                        dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.PENDING_APPROVAL
-                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                        : ""
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                          : ""
                       }
-                      ${dicomStudyData?.data.studyStatus ===
+                      ${
+                        dicomStudyData?.data.studyStatus ===
                         DicomStudyStatus.RESULT_PRINTED
-                        ? "bg-purple-100 text-purple-700 border-purple-300"
-                        : ""
+                          ? "bg-purple-100 text-purple-700 border-purple-300"
+                          : ""
                       }
                     `}
                   >
@@ -738,15 +747,17 @@ export function DiagnosisReportDetail({
                       </div>
                       <Badge
                         className={`
-                          ${dicomStudyData.data.imagingOrder.orderStatus ===
+                          ${
+                            dicomStudyData.data.imagingOrder.orderStatus ===
                             "completed"
-                            ? "bg-green-100 text-green-700 border-green-300"
-                            : ""
+                              ? "bg-green-100 text-green-700 border-green-300"
+                              : ""
                           }
-                          ${dicomStudyData.data.imagingOrder.orderStatus ===
+                          ${
+                            dicomStudyData.data.imagingOrder.orderStatus ===
                             "pending"
-                            ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                            : ""
+                              ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                              : ""
                           }
                         `}
                       >
@@ -1003,7 +1014,7 @@ export function DiagnosisReportDetail({
               <Button
                 disabled={
                   dicomStudyData?.data.studyStatus ===
-                  DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
+                    DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
                 }
                 className="w-full"
                 onClick={handleEditDescriptionOpen}
@@ -1111,7 +1122,10 @@ export function DiagnosisReportDetail({
                     <Select
                       value={filtersReportTemplate.templateType || "all"}
                       onValueChange={(value) =>
-                        handleSelectChange("templateType", value as "all" | TemplateType)
+                        handleSelectChange(
+                          "templateType",
+                          value as "all" | TemplateType
+                        )
                       }
                     >
                       <SelectTrigger className="w-full">
@@ -1119,8 +1133,12 @@ export function DiagnosisReportDetail({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value={TemplateType.STANDARD}>Standard</SelectItem>
-                        <SelectItem value={TemplateType.CUSTOM}>Custom</SelectItem>
+                        <SelectItem value={TemplateType.STANDARD}>
+                          Standard
+                        </SelectItem>
+                        <SelectItem value={TemplateType.CUSTOM}>
+                          Custom
+                        </SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -1137,11 +1155,11 @@ export function DiagnosisReportDetail({
                         <SelectValue
                           placeholder={
                             !filtersReportTemplate.bodyPartId ||
-                              !filtersReportTemplate.modalityId
+                            !filtersReportTemplate.modalityId
                               ? "Select body part & modality first"
                               : isReportTemplatesLoading
-                                ? "Loading templates..."
-                                : "Select Report Template"
+                              ? "Loading templates..."
+                              : "Select Report Template"
                           }
                         />
                       </SelectTrigger>
@@ -1262,27 +1280,27 @@ export function DiagnosisReportDetail({
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/50 bg-white rounded-xl p-6">
               {report.data.diagnosisStatus ===
                 DiagnosisStatus.PENDING_APPROVAL && (
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={handleApproveReport}
-                      disabled={isUpdating || isApprovingDiagnosis}
-                      className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
-                    >
-                      <Star className="w-4 h-4" />
-                      <span>
-                        {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
-                      </span>
-                    </Button>
-                    <Button
-                      onClick={() => setModalRejectOpen(true)}
-                      disabled={isUpdating || isRejectingDiagnosis}
-                      className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
-                    >
-                      <CircleX className="w-4 h-4" />
-                      <span>Reject Report</span>
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setConfirmApproveReportModalOpen(true)}
+                    disabled={isUpdating || isApprovingDiagnosis}
+                    className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  >
+                    <Star className="w-4 h-4" />
+                    <span>
+                      {isApprovingDiagnosis ? "Approving..." : "Approve Report"}
+                    </span>
+                  </Button>
+                  <Button
+                    onClick={() => setModalRejectOpen(true)}
+                    disabled={isUpdating || isRejectingDiagnosis}
+                    className="bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
+                  >
+                    <CircleX className="w-4 h-4" />
+                    <span>Reject Report</span>
+                  </Button>
+                </div>
+              )}
 
               {/*  {dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED ||
                 dicomStudyData?.data.studyStatus ===
@@ -1306,8 +1324,8 @@ export function DiagnosisReportDetail({
                   ? "Study Already Signed"
                   : DicomStudyStatus.APPROVED ===
                     dicomStudyData?.data.studyStatus
-                    ? "Study Approved"
-                    : "Sign to Approve Study"}
+                  ? "Study Approved"
+                  : "Sign to Approve Study"}
               </Button>
               <Button
                 onClick={handleViewImage}
@@ -1382,6 +1400,33 @@ export function DiagnosisReportDetail({
         onClose={() => setModalRejectOpen(false)}
         onConfirm={handleRejectReport}
         isLoading={isRejectingDiagnosis}
+      />
+      <ConfirmationModal
+        isOpen={confirmApproveModalOpen}
+        onClose={() => setConfirmApproveModalOpen(false)}
+        onConfirm={() => {
+          setConfirmApproveModalOpen(false);
+          setModalApproveOpen(true);
+        }}
+        title="Confirm Study Approval"
+        description="Are you sure you want to sign and approve this study? This action will digitally sign the study with your credentials and cannot be undone."
+        confirmText="Proceed to Sign"
+        cancelText="Cancel"
+        variant="info"
+      />
+      <ConfirmationModal
+        isOpen={confirmApproveReportModalOpen}
+        onClose={() => setConfirmApproveReportModalOpen(false)}
+        onConfirm={() => {
+          setConfirmApproveReportModalOpen(false);
+          handleApproveReport();
+        }}
+        title="Confirm Report Approval"
+        description="Are you sure you want to approve this diagnosis report? Once approved, the report will be ready for study signing."
+        confirmText="Approve Report"
+        cancelText="Cancel"
+        variant="success"
+        isLoading={isApprovingDiagnosis}
       />
     </div>
   );

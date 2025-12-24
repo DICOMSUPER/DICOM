@@ -18,7 +18,7 @@ import {
   PaginatedQuery,
   PaginatedResponse as PaginationResponse,
 } from "@/common/interfaces/pagination/pagination.interface";
-import { tr } from "date-fns/locale";
+import { roomApi } from "./roomsApi";
 
 export const patientEncounterApi = createApi({
   reducerPath: "patientEncounterApi",
@@ -35,8 +35,8 @@ export const patientEncounterApi = createApi({
         method: "GET",
         params: {
           ...filters,
-          sortField: filters?.sortBy , // Map sortBy to sortField for backend
-          order: filters?.sortOrder , // Support both sortOrder and order
+          sortField: filters?.sortBy, // Map sortBy to sortField for backend
+          order: filters?.sortOrder, // Support both sortOrder and order
         },
       }),
       providesTags: ["PatientEncounter"],
@@ -57,8 +57,8 @@ export const patientEncounterApi = createApi({
           page,
           limit,
           ...filters,
-          sortField: filters?.sortBy , // Map sortBy to sortField for backend
-          order: filters?.sortOrder , // Support both sortOrder and order
+          sortField: filters?.sortBy, // Map sortBy to sortField for backend
+          order: filters?.sortOrder, // Support both sortOrder and order
         },
         method: "GET",
       }),
@@ -130,6 +130,10 @@ export const patientEncounterApi = createApi({
         { type: "PatientEncounter", id: `patient-${patientId}` },
         "PatientEncounter",
       ],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        await queryFulfilled;
+        dispatch(roomApi.util.invalidateTags(["Room"]));
+      },
     }),
 
     // Update encounter
@@ -146,6 +150,10 @@ export const patientEncounterApi = createApi({
         { type: "PatientEncounter", id },
         "PatientEncounter",
       ],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        await queryFulfilled;
+        dispatch(roomApi.util.invalidateTags(["Room"]));
+      },
     }),
     transferPatientEncounter: builder.mutation<
       ApiResponse<PatientEncounter>,
@@ -160,6 +168,10 @@ export const patientEncounterApi = createApi({
         { type: "PatientEncounter", id },
         "PatientEncounter",
       ],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        await queryFulfilled;
+        dispatch(roomApi.util.invalidateTags(["Room"]));
+      },
     }),
     // Delete encounter
     deletePatientEncounter: builder.mutation<void, string>({
@@ -168,6 +180,10 @@ export const patientEncounterApi = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["PatientEncounter"],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        await queryFulfilled;
+        dispatch(roomApi.util.invalidateTags(["Room"]));
+      },
     }),
 
     getPatientEncountersInRoom: builder.query<
@@ -209,6 +225,10 @@ export const patientEncounterApi = createApi({
         { type: "PatientEncounter", id },
         "PatientEncounter",
       ],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        await queryFulfilled;
+        dispatch(roomApi.util.invalidateTags(["Room"]));
+      },
     }),
 
     filterEncounterWithPagination: builder.query<

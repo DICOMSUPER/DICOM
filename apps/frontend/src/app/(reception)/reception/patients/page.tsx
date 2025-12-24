@@ -23,8 +23,9 @@ import {
   PatientSearchFilters,
 } from "@/common/interfaces/patient/patient-workflow.interface";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import { SortConfig } from '@/components/ui/data-table';
-import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
+import { SortConfig } from "@/components/ui/data-table";
+import { sortConfigToQueryParams } from "@/common/utils/sort-utils";
+import sortBy from "@/common/utils/sortBy";
 
 interface ApiError {
   data?: {
@@ -48,12 +49,15 @@ export default function ReceptionPage() {
       page,
       limit,
       search: appliedSearchTerm,
+      //reverse => newer patient first
+      order: "desc",
+      sortBy: "createdAt",
     };
-    
+
     // Add sort parameters (supports n fields)
     const sortParams = sortConfigToQueryParams(sortConfig);
     Object.assign(params, sortParams);
-    
+
     return params;
   }, [page, limit, appliedSearchTerm, sortConfig]);
 
@@ -192,7 +196,12 @@ export default function ReceptionPage() {
         <div className="flex items-center gap-4">
           <RefreshButton
             onRefresh={handleRefresh}
-            loading={patientsLoading || patientsFetching || statsLoading || statsFetching}
+            loading={
+              patientsLoading ||
+              patientsFetching ||
+              statsLoading ||
+              statsFetching
+            }
           />
           <QuickActionsBar />
         </div>
