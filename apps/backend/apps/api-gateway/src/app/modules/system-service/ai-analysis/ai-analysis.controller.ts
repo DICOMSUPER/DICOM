@@ -89,6 +89,7 @@ export class AiAnalysisController {
     return this.systemService.send('ai_analysis.findAll', filter);
   }
 
+  // Specific routes MUST come before dynamic routes to avoid conflicts
   @Get('stats')
   @Role(
     Roles.RADIOLOGIST,
@@ -100,6 +101,13 @@ export class AiAnalysisController {
     return this.systemService.send('ai_analysis.getStats', {});
   }
 
+  // get ai analysis by study id
+  @Get('study/:studyId')
+  async getAiAnalysisByStudyId(@Param('studyId') studyId: string) {
+    return this.systemService.send('ai_analysis.getByStudyId', { studyId });
+  }
+
+  // Dynamic :id routes come AFTER specific routes
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.systemService.send('ai_analysis.findOne', { id });
@@ -146,6 +154,7 @@ export class AiAnalysisController {
     });
   }
 
+  // Specific POST routes come before any dynamic POST routes
   @Post('export-excel')
   @Role(
     Roles.RADIOLOGIST,
@@ -203,11 +212,5 @@ export class AiAnalysisController {
       'SystemService.AiAnalysis.AnalyzeDiagnosisWithImageAndROI',
       body
     );
-  }
-
-  // get ai analysis by study id
-  @Get('study/:studyId')
-  async getAiAnalysisByStudyId(@Param('studyId') studyId: string) {
-    return this.systemService.send('ai_analysis.getByStudyId', { studyId });
   }
 }
