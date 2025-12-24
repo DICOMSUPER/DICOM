@@ -271,7 +271,7 @@ export class ImagingOrdersService {
               ]),
               isDeleted: false,
               createdAt: Or(
-                // Between(startOfToday, endOfToday),
+                // Between(startOfToday, endOfToday), //same, indate => edge case: order start at 2:58 today => auto canceled at 3: error
                 LessThan(startOfToday) //Incase missing previous date
               ),
             },

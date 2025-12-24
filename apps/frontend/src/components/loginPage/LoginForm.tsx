@@ -22,10 +22,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setIsLoading(true);
     try {
       await onLogin(email, password);
-      // Keep loading state until navigation; unmount will reset it
     } catch (error) {
+      // Error is handled by parent, just let finally reset loading
+    } finally {
       setIsLoading(false);
-      throw error;
     }
   };
 
