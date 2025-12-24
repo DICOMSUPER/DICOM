@@ -9,8 +9,6 @@ export interface PatientConditionSearchFilters {
   code?: string;
   codeSystem?: string;
   clinicalStatus?: string;
-  verificationStatus?: string;
-  severity?: string;
   recordedDateFrom?: Date;
   recordedDateTo?: Date;
   limit?: number;
@@ -24,9 +22,6 @@ export interface ConditionWithDetails {
   codeSystem?: string;
   codeDisplay?: string;
   clinicalStatus?: string;
-  verificationStatus?: string;
-  severity?: string;
-  stageSummary?: string;
   bodySite?: string;
   recordedDate: Date;
   notes?: string;
@@ -107,20 +102,7 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
       });
     }
 
-    if (filters.verificationStatus) {
-      queryBuilder.andWhere(
-        'condition.verificationStatus = :verificationStatus',
-        {
-          verificationStatus: filters.verificationStatus,
-        }
-      );
-    }
 
-    if (filters.severity) {
-      queryBuilder.andWhere('condition.severity = :severity', {
-        severity: filters.severity,
-      });
-    }
 
     if (filters.recordedDateFrom) {
       queryBuilder.andWhere('condition.recordedDate >= :recordedDateFrom', {
@@ -227,7 +209,6 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
   async getConditionStats(patientId?: string): Promise<{
     totalConditions: number;
     conditionsByCode: Record<string, number>;
-    conditionsBySeverity: Record<string, number>;
     conditionsByClinicalStatus: Record<string, number>;
     conditionsThisMonth: number;
   }> {
@@ -249,7 +230,7 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
         }),
         this.getRepository().find({
           where: whereClause,
-          select: ['code', 'severity', 'clinicalStatus'],
+          select: ['code', 'clinicalStatus'],
         }),
       ]);
 
@@ -257,13 +238,6 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
     const conditionsByCode = allConditions.reduce((acc, condition) => {
       const code = condition.code;
       acc[code] = (acc[code] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Count conditions by severity
-    const conditionsBySeverity = allConditions.reduce((acc, condition) => {
-      const severity = condition.severity || 'UNKNOWN';
-      acc[severity] = (acc[severity] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -280,7 +254,6 @@ export class PatientConditionRepository extends BaseRepository<PatientCondition>
     return {
       totalConditions,
       conditionsByCode,
-      conditionsBySeverity,
       conditionsByClinicalStatus,
       conditionsThisMonth,
     };

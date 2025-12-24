@@ -35,7 +35,7 @@ describe('DiagnosesReportService', () => {
     encounterId: 'encounter-1',
     diagnosisName: 'Type 2 Diabetes',
     diagnosisDate: new Date('2024-01-01'),
-    diagnosisStatus: DiagnosisStatus.ACTIVE,
+    diagnosisStatus: DiagnosisStatus.PENDING_APPROVAL,
     diagnosisType: DiagnosisType.PRIMARY,
     isDeleted: false,
     encounter: mockEncounter as PatientEncounter,
@@ -46,13 +46,13 @@ describe('DiagnosesReportService', () => {
     studyId: 'study-1',
     diagnosisName: 'Type 2 Diabetes',
     diagnosisDate: '2024-01-01',
-    diagnosisStatus: DiagnosisStatus.ACTIVE,
+    diagnosisStatus: DiagnosisStatus.PENDING_APPROVAL,
     diagnosisType: DiagnosisType.PRIMARY,
     severity: Severity.MILD,
   };
 
   const mockUpdateReportDto: UpdateDiagnosesReportDto = {
-    diagnosisStatus: DiagnosisStatus.ACTIVE,
+    diagnosisStatus: DiagnosisStatus.PENDING_APPROVAL,
     notes: 'Confirmed diagnosis',
   };
 
@@ -259,9 +259,9 @@ describe('DiagnosesReportService', () => {
       const reports: DiagnosesReport[] = [mockReport as DiagnosesReport];
       diagnosisReportRepository.filter.mockResolvedValue(reports);
 
-      const result = await service.filter(['study-1'], DiagnosisStatus.ACTIVE);
+      const result = await service.filter(['study-1'], DiagnosisStatus.PENDING_APPROVAL);
 
-      expect(diagnosisReportRepository.filter).toHaveBeenCalledWith(['study-1'], DiagnosisStatus.ACTIVE);
+      expect(diagnosisReportRepository.filter).toHaveBeenCalledWith(['study-1'], DiagnosisStatus.PENDING_APPROVAL);
       expect(result).toEqual(reports);
     });
 

@@ -1,5 +1,4 @@
 import { BaseEntity } from '@backend/database';
-import { OrderFormStatus } from '@backend/shared-enums';
 import {
   Column,
   Entity,
@@ -29,14 +28,6 @@ export class ImagingOrderForm extends BaseEntity {
 
   @OneToMany(() => ImagingOrder, (order) => order.imagingOrderForm)
   imagingOrders!: ImagingOrder[];
-
-  @Column({
-    name: 'order_form_status',
-    type: 'enum',
-    enum: OrderFormStatus,
-    default: OrderFormStatus.IN_PROGRESS,
-  })
-  orderFormStatus!: OrderFormStatus;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;

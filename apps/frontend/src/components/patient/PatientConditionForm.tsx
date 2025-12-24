@@ -26,7 +26,6 @@ import {
 } from "@/common/interfaces/patient/patient-condition.interface";
 import {
   ClinicalStatus,
-  ConditionVerificationStatus,
 } from "@/common/enums/patient-workflow.enum";
 import { Plus, X, Save, Edit } from "lucide-react";
 
@@ -54,9 +53,6 @@ export function PatientConditionForm({
       codeSystem: condition.codeSystem,
       codeDisplay: condition.codeDisplay,
       clinicalStatus: condition.clinicalStatus,
-      verificationStatus: condition.verificationStatus,
-      severity: condition.severity,
-      stageSummary: condition.stageSummary,
       bodySite: condition.bodySite,
       recordedDate: condition.recordedDate.toISOString().split("T")[0],
       notes: condition.notes,
@@ -72,9 +68,6 @@ export function PatientConditionForm({
         codeSystem: "",
         codeDisplay: "",
         clinicalStatus: undefined,
-        verificationStatus: undefined,
-        severity: "",
-        stageSummary: "",
         bodySite: "",
         recordedDate: new Date().toISOString().split("T")[0],
         notes: "",
@@ -111,10 +104,6 @@ export function PatientConditionForm({
         return "default";
       case ClinicalStatus.INACTIVE:
         return "secondary";
-      case ClinicalStatus.RECURRENT:
-        return "destructive";
-      case ClinicalStatus.REMISSION:
-        return "outline";
       case ClinicalStatus.RESOLVED:
         return "secondary";
       default:
@@ -246,66 +235,6 @@ export function PatientConditionForm({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Verification Status
-                    </label>
-                    <Select
-                      value={condition.verificationStatus || "no-verification"}
-                      onValueChange={(value) =>
-                        updateCondition(
-                          index,
-                          "verificationStatus",
-                          value === "no-verification" ? undefined : value
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select verification" />
-                      </SelectTrigger>
-                      <SelectContent className="border-border">
-                        <SelectItem value="no-verification">
-                          No verification
-                        </SelectItem>
-                        {Object.values(ConditionVerificationStatus).map(
-                          (status) => (
-                            <SelectItem key={status} value={status}>
-                              {status.charAt(0).toUpperCase() +
-                                status.slice(1).replace("-", " ")}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Severity
-                    </label>
-                    <Input
-                      placeholder="e.g., Mild, Moderate, Severe"
-                      value={condition.severity || ""}
-                      onChange={(e) =>
-                        updateCondition(index, "severity", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Stage Summary
-                    </label>
-                    <Input
-                      placeholder="e.g., Stage 1, Early stage"
-                      value={condition.stageSummary || ""}
-                      onChange={(e) =>
-                        updateCondition(index, "stageSummary", e.target.value)
-                      }
-                    />
-                  </div>
-
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
                       Body Site

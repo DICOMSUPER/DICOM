@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsEnum, IsDateString, IsUUID, ValidateNested, MaxLength, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ClinicalStatus, ConditionVerificationStatus } from '@backend/shared-enums';
+import { ClinicalStatus } from '@backend/shared-enums';
 import { ConditionStageDto } from './condition-stage.dto';
 
 export class CreatePatientConditionDto {
@@ -26,9 +26,6 @@ export class CreatePatientConditionDto {
   @IsEnum(ClinicalStatus)
   clinicalStatus?: ClinicalStatus;
 
-  @IsOptional()
-  @IsEnum(ConditionVerificationStatus)
-  verificationStatus?: ConditionVerificationStatus;
 
   @IsOptional()
   @ValidateNested()

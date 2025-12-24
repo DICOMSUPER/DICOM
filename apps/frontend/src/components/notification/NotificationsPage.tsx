@@ -15,8 +15,8 @@ import {
 import { CheckCheck, Search, Bell } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { NotificationType, NotificationPriority } from "@/common/enums/notification.enum";
-import { getNotificationTypeConfig, getNotificationPriorityConfig } from "@/common/utils/notification-utils";
+import { NotificationType } from "@/common/enums/notification.enum";
+import { getNotificationTypeConfig } from "@/common/utils/notification-utils";
 import { useGetNotificationsByUserQuery } from "@/store/notificationApi";
 import { FilterNotificationDto } from "@/common/interfaces/system/notification.interface";
 
@@ -24,7 +24,6 @@ export function NotificationsPage() {
   const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
-  const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   // Build filter parameters for API
@@ -41,10 +40,6 @@ export function NotificationsPage() {
       params.type = filterType as NotificationType;
     }
 
-    // Priority filter
-    if (filterPriority !== "all" && filterPriority !== "none") {
-      params.priority = filterPriority as NotificationPriority;
-    }
 
     // Status filter
     if (filterStatus !== "all") {
@@ -52,7 +47,7 @@ export function NotificationsPage() {
     }
 
     return params;
-  }, [searchQuery, filterType, filterPriority, filterStatus]);
+  }, [searchQuery, filterType, filterStatus]);
 
   // Fetch notifications with filters
   const {
@@ -121,23 +116,6 @@ export function NotificationsPage() {
                 return (
                   <SelectItem key={type} value={type}>
                     {config.label}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="All Priorities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Priorities</SelectItem>
-              {Object.values(NotificationPriority).map((priority) => {
-                const config = getNotificationPriorityConfig(priority);
-                return (
-                  <SelectItem key={priority} value={priority}>
-                    {config?.label || priority}
                   </SelectItem>
                 );
               })}

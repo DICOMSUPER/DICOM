@@ -10,7 +10,7 @@ import {
   ImagingOrder,
   ImagingOrderForm,
 } from '@backend/shared-domain';
-import { OrderFormStatus, OrderStatus } from '@backend/shared-enums';
+import { OrderStatus } from '@backend/shared-enums';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,

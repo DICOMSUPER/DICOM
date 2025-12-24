@@ -1,6 +1,4 @@
 export enum NotificationType {
-  AI_RESULT = 'ai_result',
-  URGENT_CASE = 'urgent_case',
   ASSIGNMENT = 'assignment',
 }
 
@@ -11,11 +9,7 @@ export enum RelatedEntityType {
   ENCOUNTER = 'Encounter',
 }
 
-export enum NotificationPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-}
+
 
 export enum LogLevel {
   DEBUG = 'DEBUG',

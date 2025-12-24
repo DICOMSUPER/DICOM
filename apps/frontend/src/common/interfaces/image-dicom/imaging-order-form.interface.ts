@@ -10,11 +10,7 @@ export interface ICreateImagingOrderForm {
   notes?: string;
   imagingOrders: CreateImagingOrderDto[];
 }
-export enum OrderFormStatus {
-  IN_PROGRESS = "in_progress",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-}
+
 
 export interface ImagingOrderForm {
   id: string;
@@ -22,7 +18,6 @@ export interface ImagingOrderForm {
   encounterId: string;
   orderingPhysicianId: string;
   imagingOrders?: ImagingOrder[]; // Optional if not always loaded
-  orderFormStatus: OrderFormStatus;
   diagnosis?: string | null;
   notes?: string;
   roomId?: string;
@@ -36,45 +31,12 @@ export interface IImagingOrderForm extends BaseEntity {
   encounterId: string;
   orderingPhysicianId?: string;
   imagingOrders?: ImagingOrder[];
-  orderFormStatus: OrderFormStatus;
   diagnosis?: string | null;
   notes?: string | null;
   roomId?: string | null;
   room: Room | null;
 }
-export interface ImagingOrderFormFilters {
-  status?: OrderFormStatus | "all";
-  patientName?: string;
-}
 
-// export interface ImagingOrder {
-//   createdAt: string;
-//   updatedAt: string;
-//   isDeleted: boolean;
-//   id: string;
-//   orderNumber: number;
-//   procedureId: string;
-//   orderStatus: string;
-//   imagingOrderFormId: string;
-//   completedDate: string | null;
-//   clinicalIndication: string;
-//   contrastRequired: boolean;
-//   specialInstructions: string;
-// }
-
-// export interface ImagingOrderForm {
-//   createdAt: string;
-//   updatedAt: string;
-//   isDeleted: boolean;
-//   id: string;
-//   patientId: string;
-//   encounterId: string;
-//   orderingPhysicianId: string;
-//   orderFormStatus: string;
-//   notes: string;
-//   roomId: string;
-//   imagingOrders: ImagingOrder[];
-// }
 
 export interface ImagingOrderFormResponseData {
   data: ImagingOrderForm[];

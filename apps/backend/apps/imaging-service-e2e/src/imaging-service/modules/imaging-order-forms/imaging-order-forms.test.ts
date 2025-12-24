@@ -6,7 +6,6 @@ import {
 import { firstValueFrom } from 'rxjs';
 
 import { ImagingOrderForm } from '@backend/shared-domain';
-import { OrderFormStatus } from '@backend/shared-enums';
 import {
   IMAGING_SERVICE,
   MESSAGE_PATTERNS,
@@ -106,7 +105,6 @@ export function runImagingOrderFormsE2ETests(port = 5003, host = 'localhost') {
       const dto = {
         patientId: uuidv4(),
         encounterId: uuidv4(),
-        orderFormStatus: OrderFormStatus.IN_PROGRESS,
         roomId: '4a92dd33-f70c-46bf-8a54-211ff5668940', //Check in db for roomId if fail
         diagnosis: 'E2E Test Diagnosis',
         notes: `E2E Order Form ${Date.now()}`,
@@ -200,7 +198,6 @@ export function runImagingOrderFormsE2ETests(port = 5003, host = 'localhost') {
         id: createdOrderFormId,
         updateDto: {
           notes: newNotes,
-          orderFormStatus: OrderFormStatus.COMPLETED,
         },
       };
 

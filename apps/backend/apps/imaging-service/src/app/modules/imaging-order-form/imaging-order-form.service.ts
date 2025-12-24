@@ -24,7 +24,6 @@ import {
 } from '@backend/shared-domain';
 import {
   NotificationType,
-  OrderFormStatus,
   OrderStatus,
   RelatedEntityType,
 } from '@backend/shared-enums';
@@ -126,7 +125,7 @@ export class ImagingOrderFormService {
     filter: FilterImagingOrderFormDto,
     userId: string
   ): Promise<PaginatedResponseDto<ImagingOrderForm>> {
-    const { page = 1, limit = 10, patientName, status, sortBy, order } = filter;
+    const { page = 1, limit = 10, patientName, sortBy, order } = filter;
 
     const keyName = createCacheKey.system(
       'imaging_order_forms',
@@ -168,9 +167,6 @@ export class ImagingOrderFormService {
       });
     }
 
-    if (status) {
-      queryBuilder.andWhere('orderForm.orderFormStatus = :status', { status });
-    }
     if (userId) {
       queryBuilder.andWhere('orderForm.orderingPhysicianId = :userId', {
         userId,
@@ -272,17 +268,6 @@ export class ImagingOrderFormService {
   ): Promise<ImagingOrderForm> {
     const orderForm = await this.findOne(id);
 
-    if (
-      updateDto.orderFormStatus === OrderFormStatus.COMPLETED &&
-      orderForm.orderFormStatus !== OrderFormStatus.COMPLETED
-    ) {
-      const allOrdersCompleted = await this.checkAllOrdersCompleted(id);
-      if (!allOrdersCompleted) {
-        throw new BadRequestException(
-          'Cannot mark order form as completed. Not all imaging orders are completed.'
-        );
-      }
-    }
 
     Object.assign(orderForm, updateDto);
     return await this.orderFormRepository.save(orderForm);
@@ -452,24 +437,6 @@ export class ImagingOrderFormService {
     return totalOrders === completedOrders;
   }
 
-  async autoUpdateOrderFormStatus(orderFormId: string): Promise<void> {
-    const orderForm = await this.findOne(orderFormId);
-
-    // Skip if already completed or cancelled
-    if (
-      orderForm.orderFormStatus === OrderFormStatus.COMPLETED ||
-      orderForm.orderFormStatus === OrderFormStatus.CANCELLED
-    ) {
-      return;
-    }
-
-    const allOrdersCompleted = await this.checkAllOrdersCompleted(orderFormId);
-
-    if (allOrdersCompleted) {
-      orderForm.orderFormStatus = OrderFormStatus.COMPLETED;
-      await this.orderFormRepository.save(orderForm);
-    }
-  }
 
   async getOrdersByFormId(orderFormId: string): Promise<ImagingOrder[]> {
     return await this.orderRepository.find({

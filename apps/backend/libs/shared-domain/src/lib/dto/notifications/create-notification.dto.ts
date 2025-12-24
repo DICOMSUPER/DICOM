@@ -1,5 +1,4 @@
 import {
-  NotificationPriority,
   NotificationType,
   RelatedEntityType,
 } from '@backend/shared-enums';
@@ -32,9 +31,6 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   message!: string;
 
-  @IsOptional()
-  @IsEnum(NotificationPriority)
-  priority?: NotificationPriority = NotificationPriority.LOW;
 
   @IsOptional()
   @IsEnum(RelatedEntityType)

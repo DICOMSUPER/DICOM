@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import {
   ClinicalStatus,
-  ConditionVerificationStatus,
 } from "@/common/enums/patient-workflow.enum";
 import { modalStyles } from "@/common/utils/format-status";
 
@@ -85,33 +84,12 @@ export default function PatientConditionModal({
         return "bg-gray-100 text-gray-700 border-gray-200";
       case ClinicalStatus.RESOLVED:
         return "bg-green-100 text-green-700 border-green-200";
-      case ClinicalStatus.RECURRENCE:
-        return "bg-rose-100 text-rose-700 border-rose-200";
-      case ClinicalStatus.REMISSION:
-        return "bg-blue-100 text-blue-700 border-blue-200";
       default:
         return "bg-muted text-foreground border-border";
     }
   };
 
-  const getVerificationBadgeClass = (status?: ConditionVerificationStatus) => {
-    switch (status) {
-      case ConditionVerificationStatus.CONFIRMED:
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
-      case ConditionVerificationStatus.PROVISIONAL:
-        return "bg-amber-100 text-amber-700 border-amber-200";
-      case ConditionVerificationStatus.DIFFERENTIAL:
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case ConditionVerificationStatus.UNCONFIRMED:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      case ConditionVerificationStatus.REFUTED:
-        return "bg-rose-100 text-rose-700 border-rose-200";
-      case ConditionVerificationStatus.ENTERED_IN_ERROR:
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-muted text-foreground border-border";
-    }
-  };
+
 
   const formatStatus = (status: string) => {
     return status
@@ -185,51 +163,11 @@ export default function PatientConditionModal({
                       {formatStatus(condition.clinicalStatus)}
                     </Badge>
                   )}
-                  {condition.verificationStatus && (
-                    <Badge
-                      className={`${getVerificationBadgeClass(
-                        condition.verificationStatus
-                      )} px-4 py-1 text-xs font-semibold shadow-sm`}
-                    >
-                      {formatStatus(condition.verificationStatus)}
-                    </Badge>
-                  )}
+
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-3">
-                {condition.severity && (
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <Activity className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">
-                        Severity
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {condition.severity}
-                      </p>
-                      <p className="text-xs text-foreground">Condition level</p>
-                    </div>
-                  </div>
-                )}
-                {condition.stageSummary && (
-                  <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
-                    <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-foreground">
-                        Stage
-                      </p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {condition.stageSummary}
-                      </p>
-                      <p className="text-xs text-foreground">Stage summary</p>
-                    </div>
-                  </div>
-                )}
                 {condition.bodySite && (
                   <div className="rounded-2xl bg-background/80 p-4 shadow-sm ring-1 ring-border/20 flex items-start gap-3 transition hover:ring-border/40">
                     <div className="rounded-xl bg-primary/10 p-3 text-primary">
@@ -299,22 +237,6 @@ export default function PatientConditionModal({
                     Clinical Details
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {condition.severity && (
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Severity</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {condition.severity}
-                        </p>
-                      </div>
-                    )}
-                    {condition.stageSummary && (
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">Stage Summary</p>
-                        <p className="text-base font-semibold text-foreground">
-                          {condition.stageSummary}
-                        </p>
-                      </div>
-                    )}
                     {condition.bodySite && (
                       <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10 md:col-span-2">
                         <div className="flex items-center gap-2 text-sm text-foreground">
@@ -360,20 +282,6 @@ export default function PatientConditionModal({
                           )} px-3 py-1 text-xs font-semibold shadow-sm border`}
                         >
                           {formatStatus(condition.clinicalStatus)}
-                        </Badge>
-                      </div>
-                    )}
-                    {condition.verificationStatus && (
-                      <div className="rounded-2xl bg-primary/10 text-foreground p-4 shadow-sm space-y-2 ring-1 ring-border/10">
-                        <p className="text-sm text-foreground">
-                          Verification Status
-                        </p>
-                        <Badge
-                          className={`${getVerificationBadgeClass(
-                            condition.verificationStatus
-                          )} px-3 py-1 text-xs font-semibold shadow-sm border`}
-                        >
-                          {formatStatus(condition.verificationStatus)}
                         </Badge>
                       </div>
                     )}

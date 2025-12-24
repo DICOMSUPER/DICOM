@@ -12,7 +12,6 @@ import { NotificationDetailModal } from "./NotificationDetailModal";
 import {
   getNotificationIcon,
   getNotificationTypeBadge,
-  getNotificationPriorityBadge,
 } from "@/common/utils/notification-utils";
 
 interface NotificationItemProps {
@@ -132,10 +131,6 @@ export const NotificationItem = ({
           <div className="inline-flex items-center gap-1">
             <span className="font-semibold">Type:</span>
             {getNotificationTypeBadge(notification.notificationType)}
-          </div>
-          <div className="inline-flex items-center gap-1">
-            <span className="font-semibold">Priority:</span>
-            {getNotificationPriorityBadge(notification.priority)}
           </div>
         </div>
 

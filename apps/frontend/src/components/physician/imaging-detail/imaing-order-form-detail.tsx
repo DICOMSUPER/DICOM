@@ -1,36 +1,28 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 import {
   type IImagingOrderForm,
-  OrderFormStatus,
 } from "@/common/interfaces/image-dicom/imaging-order-form.interface";
-import { formatDate, formatTime } from "@/common/lib/formatTimeDate";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { useGetPatientByIdQuery } from "@/store/patientApi";
 import { useGetRoomByIdQuery } from "@/store/roomsApi";
 import {
-  Calendar,
-  Clock,
+  AlertCircle,
+  BookType,
   Copy,
+  Disc,
   FileText,
   Mail,
   Phone,
   RefreshCw,
   StickyNote,
-  User,
-  Beaker,
-  AlertCircle,
-  Disc,
-  BookType,
+  User
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import ImagingOrderItem from "./imaging-order-item";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { useUpdateImagingOrderMutation } from "@/store/imagingOrderApi";
-import { useState } from "react";
 
 interface ImagingOrderFormDetailProps {
   imagingOrderForm: IImagingOrderForm;
@@ -43,29 +35,6 @@ const ImagingOrderFormDetail = ({
 }: ImagingOrderFormDetailProps) => {
 
   const [isOpen, setIsOpen] = useState(false);
-  const getStatusBadge = (status: OrderFormStatus) => {
-    const statusConfig = {
-      [OrderFormStatus.IN_PROGRESS]: {
-        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: "Pending",
-      },
-      [OrderFormStatus.COMPLETED]: {
-        color: "bg-green-100 text-green-800 border-green-200",
-        label: "Completed",
-      },
-      [OrderFormStatus.CANCELLED]: {
-        color: "bg-red-100 text-red-800 border-red-200",
-        label: "Cancelled",
-      },
-    };
-
-    const config = statusConfig[status];
-    return (
-      <Badge className={`${config.color} px-3 py-1 text-sm font-medium`}>
-        {config.label}
-      </Badge>
-    );
-  };
 
   const { data: patientData } = useGetPatientByIdQuery(
     imagingOrderForm?.patientId,
