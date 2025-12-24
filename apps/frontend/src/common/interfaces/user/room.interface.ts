@@ -41,11 +41,11 @@ export interface RoomPagination {
 
 export interface CreateRoomDto {
   roomCode: string;
-  roomType: string;
+  roomType: RoomType;
   department: string;
   floor: number;
   capacity: number;
-  status: string;
+  status: RoomStatus;
   description: string;
   hasTV: boolean;
   hasAirConditioning: boolean;

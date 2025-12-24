@@ -2,6 +2,8 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { ScheduleFormData } from "@/common/lib/validation/schedule-schema";
 import { Department } from "@/common/interfaces/user/department.interface";
+import { ScheduleStatus } from "@/common/enums/schedule.enum";
+import { ShiftTemplate } from "@/common/interfaces/user/shift-template.interface";
 
 
 export interface User {
@@ -41,28 +43,15 @@ export interface Room {
   queueStats?: {
     currentInProgress?: {
       queueNumber?: number;
-      qa?: QueueAssignment;
     };
     maxWaiting?: {
       queueNumber?: number;
-      qa?: QueueAssignment;
     };
   };
 }
 
-export interface ShiftTemplate {
-  shift_template_id: string;
-  shift_name: string;
-  shift_type: "morning" | "afternoon" | "night" | "full_day" | "custom";
-  start_time: string;
-  end_time: string;
-  break_start_time?: string;
-  break_end_time?: string;
-  description?: string;
-  is_active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export ShiftTemplate for convenience
+export type { ShiftTemplate };
 
 export interface ShiftTemplateStats {
   totalTemplates: number;
@@ -79,11 +68,7 @@ export interface RoomSchedule {
   work_date: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status:
-    | "scheduled"
-    | "in_progress"
-    | "completed"
-    | "cancelled";
+  schedule_status: ScheduleStatus;
   notes?: string;
   overtime_hours: number;
   created_by?: string;
