@@ -31,9 +31,9 @@ export enum DiagnosisStatus {
 }
 
 export enum Severity {
-  LOW = "low",
+  MILD = "mild",
   MODERATE = "moderate",
-  HIGH = "high",
+  SEVERE = "severe",
   CRITICAL = "critical",
 }
 
@@ -176,7 +176,6 @@ export enum PatientFilterType {
 export enum ClinicalStatus {
   ACTIVE = "active",
   RECURRENT = "recurrent",
-  RELAPSE = "relapse",
   INACTIVE = "inactive",
   REMISSION = "remission",
   RESOLVED = "resolved",

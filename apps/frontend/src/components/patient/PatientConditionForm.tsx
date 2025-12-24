@@ -111,7 +111,7 @@ export function PatientConditionForm({
         return "default";
       case ClinicalStatus.INACTIVE:
         return "secondary";
-      case ClinicalStatus.RECURRENCE:
+      case ClinicalStatus.RECURRENT:
         return "destructive";
       case ClinicalStatus.REMISSION:
         return "outline";
