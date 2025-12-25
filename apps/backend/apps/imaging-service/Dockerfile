@@ -38,5 +38,4 @@ RUN npx nx sync || true
 COPY --from=builder /workspace/apps/imaging-service/dist ./
 
 EXPOSE 5003
-ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "main.js"]
