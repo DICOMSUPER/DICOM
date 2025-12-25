@@ -121,7 +121,7 @@ export class DicomStudiesService {
       [],
       em
     );
-
+  
     if (!imagingOrder) {
       throw ThrowMicroserviceException(
         HttpStatus.BAD_REQUEST,
@@ -143,6 +143,7 @@ export class DicomStudiesService {
     }
     return imagingOrder;
   };
+
 
   create = async (
     createDicomStudyDto: CreateDicomStudyDto

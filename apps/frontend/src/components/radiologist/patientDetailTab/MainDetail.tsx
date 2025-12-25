@@ -115,6 +115,7 @@ const MedicalRecordMain = ({
       skip: !selectedStudyId,
     }
   );
+  console.log("check 1 ", studyDetail)
   const [updateImagingOrder] = useUpdateImagingOrderMutation();
 
   const technicianId = studyDetail?.data?.performingTechnicianId;
@@ -122,6 +123,8 @@ const MedicalRecordMain = ({
   const { data: technicianSignature } = useGetUserByIdQuery(technicianId!, {
     skip: !technicianId,
   });
+
+  const isStudyRejected = studyDetail?.data?.studyStatus === DicomStudyStatus.REJECTED;
 
   const handleRejectDicom = async (reason: string) => {
     try {
@@ -421,6 +424,7 @@ const MedicalRecordMain = ({
                   variant="outline"
                   onClick={() => setIsTemplateOpen(true)}
                   className="mb-4"
+                  disabled={isStudyRejected}
                 >
                   Chọn Template
                 </Button>
@@ -440,6 +444,7 @@ const MedicalRecordMain = ({
                         size="sm"
                         className="h-7 w-7 p-0"
                         onClick={handleOpenPinDialog}
+                        disabled={isStudyRejected}
                       >
                         <Clipboard className="h-4 w-4" />
                       </Button>
@@ -487,7 +492,7 @@ const MedicalRecordMain = ({
                 <Button
                   className="mt-6"
                   onClick={() => setIsAcceptConfirmOpen(true)}
-                  disabled={!signerId}
+                  disabled={!signerId || isStudyRejected}
                 >
                   Tạo chẩn đoán
                 </Button>
@@ -496,6 +501,7 @@ const MedicalRecordMain = ({
                   variant="destructive"
                   className="mt-6 ml-3"
                   onClick={() => setIsRejectOpen(true)}
+                  disabled={isStudyRejected}
                 >
                   Từ chối
                 </Button>
