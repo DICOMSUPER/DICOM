@@ -8,7 +8,7 @@ import {
 import {
   BloodType,
   ClinicalStatus,
-  ConditionVerificationStatus,
+
   DiagnosisStatus,
   DiagnosisType,
   EncounterType,
@@ -331,13 +331,7 @@ export class SeedingService {
       ClinicalStatus.REMISSION,
     ];
 
-    const verificationStatuses = [
-      ConditionVerificationStatus.CONFIRMED,
-      ConditionVerificationStatus.PROVISIONAL,
-      ConditionVerificationStatus.DIFFERENTIAL,
-    ];
 
-    const severities = ['Mild', 'Moderate', 'Severe'];
 
     let conditionCounter = 0;
 
@@ -354,11 +348,7 @@ export class SeedingService {
           codeSystem: 'ICD-10',
           codeDisplay: condition.display,
           clinicalStatus:
-            clinicalStatuses[conditionCounter % clinicalStatuses.length],
-          verificationStatus:
-            verificationStatuses[conditionCounter % verificationStatuses.length],
-          severity: severities[conditionCounter % severities.length],
-          stageSummary: i === 0 ? 'Giai đoạn đầu' : 'Theo dõi',
+            clinicalStatuses[conditionCounter % clinicalStatuses.length],      
           bodySite: condition.bodySite,
           recordedDate: new Date(),
           notes: `Tình trạng ${condition.display.toLowerCase()} của bệnh nhân`,
@@ -540,8 +530,7 @@ export class SeedingService {
           diagnosisName: diagnosis.name,
           description: diagnosis.description,
           diagnosisType: diagnosisTypes[i % diagnosisTypes.length],
-          diagnosisStatus: DiagnosisStatus.ACTIVE,
-          severity: severities[diagnosisCounter % severities.length],
+          diagnosisStatus: DiagnosisStatus.PENDING_APPROVAL,
           diagnosisDate: new Date(encounter.encounterDate),
           diagnosedBy: physicianIds[diagnosisCounter % physicianIds.length],
           notes: `Chẩn đoán ${i === 0 ? 'chính' : 'phụ'} cho bệnh nhân`,

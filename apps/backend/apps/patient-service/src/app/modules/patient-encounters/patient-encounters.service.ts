@@ -406,7 +406,7 @@ export class PatientEncounterService {
           {
             where: {
               encounterDate: Or(
-                Between(today, endOfDay), // Today's encounters
+                // Between(today, endOfDay), // Today's encounters => edge case: encounter start at 2:58 today => auto canceled at 3: error
                 LessThan(today) // Previous days (in case missed)
               ),
               status: In([EncounterStatus.WAITING]),

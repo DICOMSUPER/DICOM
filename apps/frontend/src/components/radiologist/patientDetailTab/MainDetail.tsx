@@ -6,6 +6,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Lock,
   Eye,
@@ -67,8 +70,16 @@ const AdvancedToolsTab = () => <div>Advanced Tools Content</div>;
 const VideoTab = () => <div>Video Content</div>;
 const FilesTab = () => <div>Files Content</div>;
 const IKQTab = () => <div>In IKQ Content</div>;
-const ReceiveTab = () => <div>In nhận Content</div>;
-const PortalTab = () => <div>Tra cứu Portal Content</div>;
+const ReceiveTab = () => <div>Print Receipt Content</div>;
+const PortalTab = () => <div>Portal Lookup Content</div>;
+
+// Helper function to format enum labels for display
+const formatEnumLabel = (value: string): string => {
+  return value
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 type TabValue =
   | "info"
@@ -92,6 +103,9 @@ const MedicalRecordMain = ({
   const [createDiagnosis] = useCreateDiagnosisMutation();
   const [updateDiagnosis] = useUpdateDiagnosisMutation();
   const [description, setDescription] = useState("");
+  const [selectedDiagnosisType, setSelectedDiagnosisType] = useState<DiagnosisType>(DiagnosisType.PRIMARY);
+  const [selectedSeverity, setSelectedSeverity] = useState<Severity>(Severity.MODERATE);
+  const [diagnosisNotes, setDiagnosisNotes] = useState("");
   const [activeTab, setActiveTab] = useState<TabValue>("info");
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
@@ -135,11 +149,11 @@ const MedicalRecordMain = ({
 
       await updateStudyDicom({ id: selectedStudyId, data: payload });
 
-      toast.success("Reject DICOM thành công!");
+      toast.success("DICOM rejected successfully!");
       setIsRejectOpen(false);
     } catch (err) {
       console.error(err);
-      toast.error("Reject thất bại!");
+      toast.error("Rejection failed!");
     }
   };
 
@@ -155,11 +169,11 @@ const MedicalRecordMain = ({
         updateDiagnosis: payload,
       });
 
-      toast.success("Đã cập nhật chẩn đoán!");
+      toast.success("Diagnosis updated!");
       setIsEditMode(false);
     } catch (err) {
       console.error(err);
-      toast.error("Cập nhật thất bại");
+      toast.error("Update failed");
     }
   };
 
@@ -204,8 +218,8 @@ const MedicalRecordMain = ({
       return signatureId;
     } catch (err) {
       console.error(err);
-      toast.error("PIN sai hoặc ký thất bại!");
-      throw new Error("PIN sai hoặc ký thất bại!");
+      toast.error("Incorrect PIN or signing failed!");
+      throw new Error("Incorrect PIN or signing failed!");
     }
   };
 
@@ -215,21 +229,23 @@ const MedicalRecordMain = ({
 
   const handleCreateDiagnosis = async () => {
     if (!selectedStudyId || !encounterId)
-      return toast.warning("Thiếu study hoặc encounter ID!");
+      return toast.warning("Missing study or encounter ID!");
 
-    if (!signerId) return toast.warning("Cần xác nhận PIN người ký!");
+    if (!signerId) return toast.warning("PIN verification required!");
 
     const payload: CreateDiagnosisReportDto = {
       encounterId,
       studyId: selectedStudyId,
-      diagnosisName: `Huy Nguyen (${new Date().toISOString().slice(0, 10)})`,
-      description: description || "Nhập nội dung chẩn đoán...",
-      diagnosisType: DiagnosisType.PRIMARY,
-      severity: Severity.MODERATE,
+      diagnosisName: signerUser
+        ? `${signerUser.firstName} ${signerUser.lastName} (${new Date().toISOString().slice(0, 10)})`
+        : `Diagnosis (${new Date().toISOString().slice(0, 10)})`,
+      description: description || "Enter diagnosis content...",
+      diagnosisType: selectedDiagnosisType,
+      severity: selectedSeverity,
       diagnosisDate: new Date().toISOString().slice(0, 10),
       diagnosedBy: signerUser?.id,
       diagnosisStatus: DiagnosisStatus.PENDING_APPROVAL,
-      notes: "Patient to receive diabetic education before discharge.",
+      notes: diagnosisNotes || undefined,
       signatureId: signerId,
     };
 
@@ -250,16 +266,16 @@ const MedicalRecordMain = ({
         await refetchDiagnosis();
       }
 
-      toast.success("Đã lưu chẩn đoán thành công!");
+      toast.success("Diagnosis saved successfully!");
     } catch (err) {
       console.error(err);
-      toast.error("Lưu thất bại, vui lòng thử lại.");
+      toast.error("Save failed, please try again.");
     }
   };
 
   const renderEmptyTab = (
     title: string,
-    description = "Không có dữ liệu hiển thị cho mục này.",
+    description = "No data available for this section.",
     icon?: React.ReactNode
   ) => (
     <div className="h-full flex flex-1 flex-col items-center justify-center text-center gap-3 py-10 text-sm text-gray-600">
@@ -280,25 +296,25 @@ const MedicalRecordMain = ({
       case "video":
         return renderEmptyTab(
           "Video",
-          "Chưa có video cho ca này.",
+          "No video available for this case.",
           <Video className="h-6 w-6" />
         );
       case "files":
         return renderEmptyTab(
           "Files",
-          "Chưa có tệp đính kèm cho ca này.",
+          "No attachments available for this case.",
           <FileText className="h-6 w-6" />
         );
       case "receive":
         return renderEmptyTab(
-          "In nhận",
-          "Chưa có dữ liệu in nhận cho ca này.",
+          "Print Receipt",
+          "No print receipt data available for this case.",
           <MessageSquare className="h-6 w-6" />
         );
       case "portal":
         return renderEmptyTab(
           "Portal",
-          "Không có liên kết portal cho ca này.",
+          "No portal link available for this case.",
           <Mail className="h-6 w-6" />
         );
       default:
@@ -313,19 +329,19 @@ const MedicalRecordMain = ({
         <div className="flex flex-col items-center gap-4">
           <Stethoscope className="h-16 w-16 animate-bounce text-blue-600" />
           <h1 className="text-2xl font-bold text-gray-700">
-            Chào mừng đến với Medical Record
+            Welcome to Medical Record
           </h1>
           <p className="text-gray-500">
-            Vui lòng chọn một{" "}
-            <span className="font-medium text-blue-600">Study</span> để bắt đầu.
+            Please select a{" "}
+            <span className="font-medium text-blue-600">Study</span> to get started.
           </p>
           <Button
             size="lg"
             variant="outline"
             className="mt-4"
-            onClick={() => toast("Hãy chọn Study từ danh sách bên trái!")}
+            onClick={() => toast("Please select a Study from the list on the left!")}
           >
-            Hướng dẫn chọn Study
+            How to Select a Study
           </Button>
         </div>
         {/* </Card> */}
@@ -335,7 +351,7 @@ const MedicalRecordMain = ({
 
   if (isDiagnosisLoading)
     return (
-      <div className="flex-1 flex items-center justify-center">Đang tải...</div>
+      <div className="flex-1 flex items-center justify-center">Loading...</div>
     );
 
   const hasDiagnosis = diagnosisData?.data?.length > 0;
@@ -344,31 +360,31 @@ const MedicalRecordMain = ({
   return (
     <main className="flex-1 flex flex-col h-full overflow-y-auto">
       <div className="bg-white border-b border-gray-200 px-6 py-3">
-          <Tabs
-            value={activeTab}
-            onValueChange={(val) => {
-              if (val === "view") {
-                router.push(`/viewer?study=${selectedStudyId}&patient=${patientId}`);
-                return; // do not switch tab, it's a navigation action
-              }
-              if (val === "ikq") {
-                handleExportPdf();
-                return; // keep current tab
-              }
-              setActiveTab(val as TabValue);
-            }}
-            className="w-full"
-          >
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => {
+            if (val === "view") {
+              router.push(`/viewer?study=${selectedStudyId}&patient=${patientId}`);
+              return; // do not switch tab, it's a navigation action
+            }
+            if (val === "ikq") {
+              handleExportPdf();
+              return; // keep current tab
+            }
+            setActiveTab(val as TabValue);
+          }}
+          className="w-full"
+        >
           <TabsList className="bg-transparent border-b border-gray-200">
             {[
               {
                 value: "info",
-                label: "Nhận ca",
+                label: "Accept Case",
                 icon: <Lock className="w-4 h-4" />,
               },
               {
                 value: "view",
-                label: "Xem hình",
+                label: "View Image",
                 icon: <Eye className="w-4 h-4" />,
               },
               {
@@ -393,7 +409,7 @@ const MedicalRecordMain = ({
               },
               {
                 value: "receive",
-                label: "In nhận",
+                label: "Print Receipt",
                 icon: <MessageSquare className="w-4 h-4" />,
               },
               {
@@ -426,10 +442,62 @@ const MedicalRecordMain = ({
                   className="mb-4"
                   disabled={isStudyRejected}
                 >
-                  Chọn Template
+                  Select Template
                 </Button>
 
                 <RichTextEditor value={description} onChange={setDescription} />
+
+                {/* Diagnosis Type, Severity, and Notes */}
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="diagnosisType">Diagnosis Type</Label>
+                    <Select
+                      value={selectedDiagnosisType}
+                      onValueChange={(value) => setSelectedDiagnosisType(value as DiagnosisType)}
+                    >
+                      <SelectTrigger id="diagnosisType">
+                        <SelectValue placeholder="Select diagnosis type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(DiagnosisType).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {formatEnumLabel(type)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="severity">Severity</Label>
+                    <Select
+                      value={selectedSeverity}
+                      onValueChange={(value) => setSelectedSeverity(value as Severity)}
+                    >
+                      <SelectTrigger id="severity">
+                        <SelectValue placeholder="Select severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.values(Severity).map((sev) => (
+                          <SelectItem key={sev} value={sev}>
+                            {formatEnumLabel(sev)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Enter any additional notes..."
+                    value={diagnosisNotes}
+                    onChange={(e) => setDiagnosisNotes(e.target.value)}
+                    rows={3}
+                  />
+                </div>
 
                 <Separator className="my-6" />
 
@@ -437,7 +505,7 @@ const MedicalRecordMain = ({
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="font-medium text-sm">
-                        Người ký (Alt + 1):
+                        Signer (Alt + 1):
                       </span>
                       <Button
                         variant="outline"
@@ -451,7 +519,7 @@ const MedicalRecordMain = ({
                       {signerId && (
                         <span className="ml-2 text-green-600 text-xs flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
-                          <span>Đã ký</span>
+                          <span>Signed</span>
                         </span>
                       )}
                     </div>
@@ -460,30 +528,30 @@ const MedicalRecordMain = ({
                         <SignatureDisplay
                           firstName={signerUser.firstName}
                           lastName={signerUser.lastName}
-                          role="Bác sĩ"
+                          role="Doctor"
                           duration={1}
                           delay={0.3}
                         />
                       ) : (
-                        "Chưa ký"
+                        "Not signed"
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <span className="font-medium text-sm">Kỹ thuật viên:</span>
+                    <span className="font-medium text-sm">Technician:</span>
 
                     <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center mt-3 text-sm text-gray-700">
                       {technicianSignature?.data ? (
                         <SignatureDisplay
                           firstName={technicianSignature.data.firstName}
                           lastName={technicianSignature.data.lastName}
-                          role="Kỹ thuật viên"
+                          role="Technician"
                           duration={1}
                           delay={0.3}
                         />
                       ) : (
-                        "Không tìm thấy kỹ thuật viên"
+                        "Technician not found"
                       )}
                     </div>
                   </div>
@@ -494,7 +562,7 @@ const MedicalRecordMain = ({
                   onClick={() => setIsAcceptConfirmOpen(true)}
                   disabled={!signerId || isStudyRejected}
                 >
-                  Tạo chẩn đoán
+                  Create Diagnosis
                 </Button>
 
                 <Button
@@ -503,7 +571,7 @@ const MedicalRecordMain = ({
                   onClick={() => setIsRejectOpen(true)}
                   disabled={isStudyRejected}
                 >
-                  Từ chối
+                  Reject
                 </Button>
               </div>
             ) : (
@@ -532,7 +600,7 @@ const MedicalRecordMain = ({
                 {!isEditMode ? (
                   <>
                     <Button onClick={handleExportPdf}>
-                      In nhận (Xuất PDF)
+                      Print Receipt (Export PDF)
                     </Button>
 
                     <p className="whitespace-pre-line">
@@ -541,42 +609,42 @@ const MedicalRecordMain = ({
 
                     <Separator />
 
-                    <h3 className="font-semibold">Thông tin người ký</h3>
+                    <h3 className="font-semibold">Signer Information</h3>
                     <div className="grid grid-cols-2 gap-8">
                       <div>
                         <span className="font-medium text-sm block mb-3">
-                          Người ký:
+                          Signer:
                         </span>
                         <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
                           {signerUser ? (
                             <SignatureDisplay
                               firstName={signerUser.firstName}
                               lastName={signerUser.lastName}
-                              role="Bác sĩ"
+                              role="Doctor"
                               duration={1}
                               delay={0.3}
                             />
                           ) : (
-                            "Chưa ký"
+                            "Not signed"
                           )}
                         </div>
                       </div>
 
                       <div>
                         <span className="font-medium text-sm block mb-3">
-                          Kỹ thuật viên:
+                          Technician:
                         </span>
                         <div className="border rounded h-24 bg-gray-50 flex flex-col items-center justify-center">
                           {technicianSignature?.data ? (
                             <SignatureDisplay
                               firstName={technicianSignature.data.firstName}
                               lastName={technicianSignature.data.lastName}
-                              role="Kỹ thuật viên"
+                              role="Technician"
                               duration={1}
                               delay={0.3}
                             />
                           ) : (
-                            "Không tìm thấy kỹ thuật viên"
+                            "Technician not found"
                           )}
                         </div>
                       </div>
@@ -655,25 +723,25 @@ const MedicalRecordMain = ({
             setIsAcceptConfirmOpen(false);
             handleCreateDiagnosis();
           }}
-          title="Xác nhận tạo chẩn đoán"
-          description="Bạn có chắc chắn muốn tạo chẩn đoán cho ca này? Hành động này sẽ chuyển ca sang trạng thái chờ duyệt."
-          confirmText="Xác nhận"
-          cancelText="Huỷ"
+          title="Confirm Create Diagnosis"
+          description="Are you sure you want to create a diagnosis for this case? This action will move the case to pending approval status."
+          confirmText="Confirm"
+          cancelText="Cancel"
           variant="success"
         />
 
         <Dialog open={isReasonOpen} onOpenChange={setIsReasonOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Lý do bị từ chối</DialogTitle>
+              <DialogTitle>Rejection Reason</DialogTitle>
             </DialogHeader>
 
             <p className="text-sm text-gray-700">
-              {diagnosis?.rejectionReason || "Không có lý do"}
+              {diagnosis?.rejectionReason || "No reason provided"}
             </p>
 
             <DialogFooter>
-              <Button onClick={() => setIsReasonOpen(false)}>Đóng</Button>
+              <Button onClick={() => setIsReasonOpen(false)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

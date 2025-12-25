@@ -9,7 +9,6 @@ import {
 import { BaseEntity } from '@backend/database';
 import {
   ClinicalStatus,
-  ConditionVerificationStatus,
 } from '@backend/shared-enums';
 import type { Patient } from './patients.entity';
 
@@ -41,22 +40,10 @@ export class PatientCondition extends BaseEntity {
   })
   clinicalStatus?: ClinicalStatus;
 
-  @Index()
-  @Column({
-    name: 'verification_status',
-    type: 'enum',
-    enum: ConditionVerificationStatus,
-    nullable: true,
-  })
-  verificationStatus?: ConditionVerificationStatus;
+
 
   // severity as simple string or code; keeping string for flexibility
-  @Column({ name: 'severity', length: 50, nullable: true })
-  severity?: string;
 
-  // clinical stage/notes
-  @Column({ name: 'stage_summary', length: 100, nullable: true })
-  stageSummary?: string;
 
   // bodySite simplified
   @Column({ name: 'body_site', length: 100, nullable: true })

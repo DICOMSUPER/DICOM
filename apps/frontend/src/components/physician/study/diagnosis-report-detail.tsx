@@ -72,6 +72,7 @@ import { formatStatus } from "@/common/utils/format-status";
 import captureSignature from "@/common/lib/captureStringSignature";
 import SignatureDisplay from "@/components/common/signature-display";
 import { handleEncrypt } from "@/common/utils/encryption";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 interface DiagnosisReportDetailProps {
   reportId: string;
@@ -85,12 +86,13 @@ export function DiagnosisReportDetail({
   const router = useRouter();
 
   const signatureRef = useRef<HTMLDivElement>(null);
-  
+
   const [filtersReportTemplate, setFiltersReportTemplate] =
     useState<FilterReportTemplate>({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true,
     });
   // const [isRefreshing, setIsRefreshing] = useState(false);
   const {
@@ -104,6 +106,9 @@ export function DiagnosisReportDetail({
   const [modalSetupOpen, setModalSetupOpen] = useState(false);
   const [modalApproveOpen, setModalApproveOpen] = useState(false);
   const [modalRejectOpen, setModalRejectOpen] = useState(false);
+  const [confirmApproveModalOpen, setConfirmApproveModalOpen] = useState(false);
+  const [confirmApproveReportModalOpen, setConfirmApproveReportModalOpen] =
+    useState(false);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [selectedReportTemplateId, setSelectedReportTemplateId] =
     useState<string>("");
@@ -272,7 +277,7 @@ export function DiagnosisReportDetail({
       const updateData: any = {
         description: descriptionToSave,
       };
-      
+
       if (selectedReportTemplateId && selectedReportTemplateId.trim()) {
         updateData.reportTemplateId = selectedReportTemplateId;
       }
@@ -405,7 +410,7 @@ export function DiagnosisReportDetail({
       }
 
       setSelectedStudyId(studyId);
-      setModalApproveOpen(true);
+      setConfirmApproveModalOpen(true);
     } catch (error: any) {}
   };
 
@@ -430,7 +435,7 @@ export function DiagnosisReportDetail({
       let signatureImage: string | undefined;
       if (signatureRef.current) {
         try {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           signatureImage = await captureSignature(signatureRef.current);
         } catch (signatureError) {
           console.error("Failed to capture signature:", signatureError);
@@ -439,7 +444,7 @@ export function DiagnosisReportDetail({
       } else {
         console.log("signatureRef.current is null or undefined");
       }
-      
+
       const result = await updateDicomStudy({
         id: report?.data.studyId as string,
         data: { studyStatus: DicomStudyStatus.RESULT_PRINTED },
@@ -453,15 +458,15 @@ export function DiagnosisReportDetail({
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
           signatureImage,
         };
-        // };
-        DiagnosisReportPDF(reportData);
 
-        // console.log("reportData:", reportData);
-        // const encrypted = handleEncrypt(reportData);
+        // DiagnosisReportPDF(reportData);
 
-        // router.push(
-        //   "/physician/report-paper?data=" + encodeURIComponent(encrypted)
-        // );
+        console.log("reportData:", reportData);
+        const encrypted = handleEncrypt(reportData);
+
+        router.push(
+          "/physician/report-paper?data=" + encodeURIComponent(encrypted)
+        );
 
         toast.success("Report created successfully!");
       }
@@ -1008,7 +1013,8 @@ export function DiagnosisReportDetail({
             {!isEditDescriptionOpen ? (
               <Button
                 disabled={
-                  dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
+                  dicomStudyData?.data.studyStatus ===
+                    DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
                 }
                 className="w-full"
                 onClick={handleEditDescriptionOpen}
@@ -1045,12 +1051,12 @@ export function DiagnosisReportDetail({
                       disabled={isBodyPartsLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue 
+                        <SelectValue
                           placeholder={
-                            isBodyPartsLoading 
-                              ? "Loading body parts..." 
+                            isBodyPartsLoading
+                              ? "Loading body parts..."
                               : "Select Body Part"
-                          } 
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -1082,12 +1088,12 @@ export function DiagnosisReportDetail({
                       disabled={isImagingModalitiesLoading}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue 
+                        <SelectValue
                           placeholder={
-                            isImagingModalitiesLoading 
-                              ? "Loading modalities..." 
+                            isImagingModalitiesLoading
+                              ? "Loading modalities..."
                               : "Select Modality"
-                          } 
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -1114,14 +1120,42 @@ export function DiagnosisReportDetail({
                     </Select>
 
                     <Select
+                      value={filtersReportTemplate.templateType || "all"}
+                      onValueChange={(value) =>
+                        handleSelectChange(
+                          "templateType",
+                          value as "all" | TemplateType
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Template Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value={TemplateType.STANDARD}>
+                          Standard
+                        </SelectItem>
+                        <SelectItem value={TemplateType.CUSTOM}>
+                          Custom
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
                       value={selectedReportTemplateId}
                       onValueChange={handleSelectTemplate}
-                      disabled={isReportTemplatesLoading || !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId}
+                      disabled={
+                        isReportTemplatesLoading ||
+                        !filtersReportTemplate.bodyPartId ||
+                        !filtersReportTemplate.modalityId
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
                           placeholder={
-                            !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId
+                            !filtersReportTemplate.bodyPartId ||
+                            !filtersReportTemplate.modalityId
                               ? "Select body part & modality first"
                               : isReportTemplatesLoading
                               ? "Loading templates..."
@@ -1135,7 +1169,8 @@ export function DiagnosisReportDetail({
                             <span className="animate-spin mr-2">⏳</span>
                             Loading templates...
                           </div>
-                        ) : !filtersReportTemplate.bodyPartId || !filtersReportTemplate.modalityId ? (
+                        ) : !filtersReportTemplate.bodyPartId ||
+                          !filtersReportTemplate.modalityId ? (
                           <div className="flex flex-col items-center justify-center py-4 text-sm text-slate-500">
                             <AlertCircle className="w-5 h-5 mb-2 text-slate-400" />
                             Please select body part and modality first
@@ -1247,7 +1282,7 @@ export function DiagnosisReportDetail({
                 DiagnosisStatus.PENDING_APPROVAL && (
                 <div className="flex gap-3">
                   <Button
-                    onClick={handleApproveReport}
+                    onClick={() => setConfirmApproveReportModalOpen(true)}
                     disabled={isUpdating || isApprovingDiagnosis}
                     className="bg-linear-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg transition-all hover:shadow-md font-medium"
                   >
@@ -1322,17 +1357,17 @@ export function DiagnosisReportDetail({
 
       {/* Hidden Signature for Capture */}
       {radiologistData?.data && (
-        <div 
-          ref={signatureRef} 
-          style={{ 
-            position: 'fixed',
-            top: '-9999px',
-            left: '0',
-            width: '400px',
-            height: '100px',
-            background: 'white',
-            padding: '20px',
-            zIndex: -1
+        <div
+          ref={signatureRef}
+          style={{
+            position: "fixed",
+            top: "-9999px",
+            left: "0",
+            width: "400px",
+            height: "100px",
+            background: "white",
+            padding: "20px",
+            zIndex: -1,
           }}
         >
           <SignatureDisplay
@@ -1365,6 +1400,33 @@ export function DiagnosisReportDetail({
         onClose={() => setModalRejectOpen(false)}
         onConfirm={handleRejectReport}
         isLoading={isRejectingDiagnosis}
+      />
+      <ConfirmationModal
+        isOpen={confirmApproveModalOpen}
+        onClose={() => setConfirmApproveModalOpen(false)}
+        onConfirm={() => {
+          setConfirmApproveModalOpen(false);
+          setModalApproveOpen(true);
+        }}
+        title="Confirm Study Approval"
+        description="Are you sure you want to sign and approve this study? This action will digitally sign the study with your credentials and cannot be undone."
+        confirmText="Proceed to Sign"
+        cancelText="Cancel"
+        variant="info"
+      />
+      <ConfirmationModal
+        isOpen={confirmApproveReportModalOpen}
+        onClose={() => setConfirmApproveReportModalOpen(false)}
+        onConfirm={() => {
+          setConfirmApproveReportModalOpen(false);
+          handleApproveReport();
+        }}
+        title="Confirm Report Approval"
+        description="Are you sure you want to approve this diagnosis report? Once approved, the report will be ready for study signing."
+        confirmText="Approve Report"
+        cancelText="Cancel"
+        variant="success"
+        isLoading={isApprovingDiagnosis}
       />
     </div>
   );

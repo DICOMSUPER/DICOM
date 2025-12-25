@@ -1,6 +1,5 @@
 import {
   ClinicalStatus,
-  ConditionVerificationStatus,
 } from '@backend/shared-enums';
 import { IPatientBasic } from './patient.interface';
 
@@ -11,9 +10,6 @@ export interface IPatientCondition {
   codeSystem?: string;
   codeDisplay?: string;
   clinicalStatus?: ClinicalStatus;
-  verificationStatus?: ConditionVerificationStatus;
-  severity?: string;
-  stageSummary?: string;
   bodySite?: string;
   recordedDate: Date;
   notes?: string;

@@ -17,7 +17,7 @@ const RejectDicomDialog: React.FC<RejectDicomDialogProps> = ({ open, onClose, on
 
   const handleConfirm = () => {
     if (!reason.trim()) {
-      alert("Vui lòng nhập lý do reject!");
+      alert("Please enter a reason for rejection!");
       return;
     }
     onConfirm(reason);
@@ -35,17 +35,17 @@ const RejectDicomDialog: React.FC<RejectDicomDialogProps> = ({ open, onClose, on
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Nhập lý do reject DICOM..."
+            placeholder="Enter reason for rejecting DICOM..."
             rows={4}
           />
         </div>
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>
-            Huỷ
+            Cancel
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>
-            Xác nhận Reject
+            Confirm Reject
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -156,6 +156,7 @@ export const roomApi = createApi({
         method: "GET",
         params: { serviceId, departmentId, role },
       }),
+      providesTags: ["Room"],
     }),
 
     // Get room stats

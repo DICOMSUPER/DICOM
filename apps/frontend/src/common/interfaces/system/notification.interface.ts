@@ -1,4 +1,4 @@
-import { NotificationPriority, NotificationType, RelatedEntityType } from "@/common/enums/notification.enum";
+import { NotificationType, RelatedEntityType } from "@/common/enums/notification.enum";
 import { BaseEntity } from "../base.interface";
 import { QueryParams } from "../pagination/pagination.interface";
 export interface Notification extends BaseEntity {
@@ -8,7 +8,6 @@ export interface Notification extends BaseEntity {
   notificationType: NotificationType;
   title: string;
   message: string;
-  priority?: NotificationPriority;
   relatedEntityType?: RelatedEntityType;
   relatedEntityId?: string;
   isRead: boolean;
@@ -17,7 +16,6 @@ export interface Notification extends BaseEntity {
 export interface FilterNotificationDto extends QueryParams {
   title?: string;
   type?: NotificationType;
-  priority?: NotificationPriority;
   isRead?: boolean;
   startDate?: string; 
   endDate?: string;   

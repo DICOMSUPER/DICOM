@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { PatientCondition } from "@/common/interfaces/patient/patient-condition.interface";
 import {
   ClinicalStatus,
-  ConditionVerificationStatus,
 } from "@/common/enums/patient-workflow.enum";
 import {
   Edit,
@@ -61,35 +60,11 @@ export function PatientConditionList({
         return "bg-gray-100 text-gray-700 border-gray-200";
       case ClinicalStatus.RESOLVED:
         return "bg-green-100 text-green-700 border-green-200";
-      case ClinicalStatus.RECURRENCE:
-        return "bg-rose-100 text-rose-700 border-rose-200";
-      case ClinicalStatus.REMISSION:
-        return "bg-blue-100 text-blue-700 border-blue-200";
       default:
         return "bg-muted text-foreground border-border";
     }
   };
 
-  const getVerificationBadgeClass = (
-    status?: ConditionVerificationStatus
-  ) => {
-    switch (status) {
-      case ConditionVerificationStatus.CONFIRMED:
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
-      case ConditionVerificationStatus.PROVISIONAL:
-        return "bg-amber-100 text-amber-700 border-amber-200";
-      case ConditionVerificationStatus.DIFFERENTIAL:
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case ConditionVerificationStatus.UNCONFIRMED:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      case ConditionVerificationStatus.REFUTED:
-        return "bg-rose-100 text-rose-700 border-rose-200";
-      case ConditionVerificationStatus.ENTERED_IN_ERROR:
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-muted text-foreground border-border";
-    }
-  };
 
   const formatStatus = (status: string) => {
     return status
@@ -166,15 +141,7 @@ export function PatientConditionList({
                       {formatStatus(condition.clinicalStatus)}
                     </Badge>
                   )}
-                  {condition.verificationStatus && (
-                    <Badge
-                      className={`${getVerificationBadgeClass(
-                        condition.verificationStatus
-                      )} px-2 py-0.5 text-xs font-semibold border`}
-                    >
-                      {formatStatus(condition.verificationStatus)}
-                    </Badge>
-                  )}
+
                   {onView && (
                     <Button
                       variant="outline"
@@ -193,60 +160,7 @@ export function PatientConditionList({
               </div>
             </CardHeader>
 
-            {expandedCondition === condition.id && (
-              <CardContent className="pt-0 flex flex-col gap-3">
-                {(condition.severity ||
-                  condition.stageSummary ||
-                  condition.bodySite) && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {condition.severity && (
-                      <div>
-                        <span className="text-xs font-medium text-gray-600">
-                          Severity:
-                        </span>
-                        <p className="text-sm text-foreground">
-                          {condition.severity}
-                        </p>
-                      </div>
-                    )}
-                    {condition.stageSummary && (
-                      <div>
-                        <span className="text-xs font-medium text-gray-600">
-                          Stage:
-                        </span>
-                        <p className="text-sm text-foreground">
-                          {condition.stageSummary}
-                        </p>
-                      </div>
-                    )}
-                    {condition.bodySite && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-foreground">
-                          {condition.bodySite}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
 
-                <div className="flex items-center gap-1 text-xs text-gray-600">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>Recorded: {formatDate(condition.recordedDate)}</span>
-                </div>
-
-                {condition.notes && (
-                  <div>
-                    <span className="text-xs font-medium text-gray-600">
-                      Notes:
-                    </span>
-                    <p className="text-sm text-foreground mt-1">
-                      {condition.notes}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            )}
           </Card>
         ))}
       </div>

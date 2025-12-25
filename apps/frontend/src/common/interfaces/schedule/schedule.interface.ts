@@ -1,6 +1,8 @@
 import { EmployeeRoomAssignment } from "@/common/interfaces/user/employee-room-assignment.interface";
 import { Department } from "@/common/interfaces/user/department.interface";
 import { Room as RoomInterface } from "@/common/interfaces/user/room.interface";
+import { ScheduleStatus } from "@/common/enums/schedule.enum";
+import { ShiftTemplate } from "@/common/interfaces/user/shift-template.interface";
 
 // Employee Schedule Interfaces
 export interface Employee {
@@ -19,17 +21,8 @@ export interface Employee {
 // Use the Room type from user interface to ensure consistency
 export type Room = RoomInterface;
 
-export interface ShiftTemplate {
-  shift_template_id: string;
-  shift_name: string;
-  shift_type: 'MORNING' | 'AFTERNOON' | 'NIGHT' | 'FULL_DAY' | 'morning' | 'afternoon' | 'night' | 'full_day' | 'custom';
-  start_time: string;
-  end_time: string;
-  break_start_time?: string;
-  break_end_time?: string;
-  description?: string;
-  is_active: boolean;
-}
+// Re-export ShiftTemplate for convenience
+export type { ShiftTemplate };
 
 export interface RoomSchedule {
   schedule_id: string;
@@ -38,7 +31,7 @@ export interface RoomSchedule {
   work_date: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  schedule_status: ScheduleStatus;
   notes?: string;
   overtime_hours: number;
   created_by?: string;
@@ -55,7 +48,7 @@ export interface CreateRoomScheduleDto {
   work_date: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  schedule_status?: ScheduleStatus;
   notes?: string;
   overtime_hours?: number;
 }
@@ -66,7 +59,7 @@ export interface UpdateRoomScheduleDto {
   work_date?: string;
   actual_start_time?: string;
   actual_end_time?: string;
-  schedule_status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  schedule_status?: ScheduleStatus;
   notes?: string;
   overtime_hours?: number;
 }

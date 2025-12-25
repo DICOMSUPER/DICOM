@@ -179,6 +179,17 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
               View
             </Button>
           )}
+          {onDeleteAiAnalysis && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDeleteAiAnalysis(aiAnalysis)}
+              className="h-8 text-xs font-medium border-red-200 text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Delete
+            </Button>
+          )}
         </div>
       ),
     },

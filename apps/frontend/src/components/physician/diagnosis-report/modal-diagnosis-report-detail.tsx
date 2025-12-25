@@ -89,8 +89,9 @@ export function ModalDiagnosisReportDetail({
   const [filtersReportTemplate, setFiltersReportTemplate] =
     useState<FilterReportTemplate>({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true,
     });
   const {
     data: report,
@@ -215,14 +216,14 @@ export function ModalDiagnosisReportDetail({
       const template = selectedReportTemplate.data;
       const sections = [
         template.technicalTemplate &&
-          `Technical:\n${template.technicalTemplate}`,
+        `Technical:\n${template.technicalTemplate}`,
         template.descriptionTemplate &&
-          `Description:\n${template.descriptionTemplate}`,
+        `Description:\n${template.descriptionTemplate}`,
         template.findingsTemplate && `Findings:\n${template.findingsTemplate}`,
         template.conclusionTemplate &&
-          `Conclusion:\n${template.conclusionTemplate}`,
+        `Conclusion:\n${template.conclusionTemplate}`,
         template.recommendationTemplate &&
-          `Recommendation:\n${template.recommendationTemplate}`,
+        `Recommendation:\n${template.recommendationTemplate}`,
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -235,8 +236,9 @@ export function ModalDiagnosisReportDetail({
     setIsEditDescriptionOpen(true);
     setFiltersReportTemplate({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true,
     });
     setEditedDescription("");
     setEditedReportDescription(report?.data?.description || "");
@@ -266,8 +268,9 @@ export function ModalDiagnosisReportDetail({
     setSelectedReportTemplateId("");
     setFiltersReportTemplate({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true,
     });
   }, []);
 
@@ -331,8 +334,9 @@ export function ModalDiagnosisReportDetail({
     setSelectedStudyId("");
     setFiltersReportTemplate({
       modalityId: "",
-      templateType: TemplateType.STANDARD,
+      templateType: "all",
       bodyPartId: "",
+      isPublic: true,
     });
   }, [onClose]);
 
@@ -341,12 +345,11 @@ export function ModalDiagnosisReportDetail({
     const isAnimated = status === DiagnosisStatus.PENDING_APPROVAL;
     return (
       <Badge className={`${modalStyles.badge[colorKey]} px-3 py-1 text-xs font-medium border flex items-center gap-1.5`}>
-        <div className={`w-2 h-2 rounded-full ${
-          colorKey === 'green' ? 'bg-emerald-500 animate-pulse' : 
-          colorKey === 'red' ? 'bg-red-500' :
-          colorKey === 'amber' ? 'bg-amber-500 animate-pulse' :
-          'bg-slate-400'
-        }`} />
+        <div className={`w-2 h-2 rounded-full ${colorKey === 'green' ? 'bg-emerald-500 animate-pulse' :
+            colorKey === 'red' ? 'bg-red-500' :
+              colorKey === 'amber' ? 'bg-amber-500 animate-pulse' :
+                'bg-slate-400'
+          }`} />
         {formatStatus(status)}
       </Badge>
     );
@@ -385,7 +388,7 @@ export function ModalDiagnosisReportDetail({
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
         });
         toast.success("Report created successfully!");
-        
+
         await updateEncounterMutation({
           id: report?.data.encounter?.id as string,
           data: { status: EncounterStatus.FINISHED },
@@ -418,695 +421,702 @@ export function ModalDiagnosisReportDetail({
 
           <ScrollArea className="flex-1 min-h-0 h-full">
 
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 px-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-teal-600 mb-4"></div>
-              <p className="text-slate-500 font-medium">
-                Loading report details...
-              </p>
-            </div>
-          ) : report ? (
-            <div className="space-y-6 px-8 py-6">
-              <div className="bg-gradient-to-br from-teal-50 to-slate-50 rounded-xl p-6 border border-teal-200/50 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold text-teal-600 uppercase tracking-wide">
-                      Patient Information
-                    </div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {report.data.encounter?.patient?.firstName}{" "}
-                      {report.data.encounter?.patient?.lastName}
-                    </div>
-                    <div className="text-sm text-slate-600 flex items-center gap-2">
-                      <span className="inline-block w-1 h-1 bg-slate-400 rounded-full"></span>
-                      ID: {report.data.encounter?.patient?.patientCode}
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="text-xs font-semibold text-teal-600 uppercase tracking-wide">
-                      Diagnosis Name
-                    </div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {report.data.diagnosisName}
-                    </div>
-                    <div className="flex items-center gap-2 pt-2">
-                      {getStatusBadge(report.data.diagnosisStatus)}
-                    </div>
-                  </div>
-                </div>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-16 px-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-teal-600 mb-4"></div>
+                <p className="text-slate-500 font-medium">
+                  Loading report details...
+                </p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Diagnosis Date Card */}
-                <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
-                    <Calendar className="w-4 h-4 text-teal-600" />
-                    Diagnosis Date
-                  </div>
-                  <div className="text-lg font-semibold text-slate-900">
-                    {formatDate(report.data.diagnosisDate)}
+            ) : report ? (
+              <div className="space-y-6 px-8 py-6">
+                <div className="bg-gradient-to-br from-teal-50 to-slate-50 rounded-xl p-6 border border-teal-200/50 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold text-teal-600 uppercase tracking-wide">
+                        Patient Information
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">
+                        {report.data.encounter?.patient?.firstName}{" "}
+                        {report.data.encounter?.patient?.lastName}
+                      </div>
+                      <div className="text-sm text-slate-600 flex items-center gap-2">
+                        <span className="inline-block w-1 h-1 bg-slate-400 rounded-full"></span>
+                        ID: {report.data.encounter?.patient?.patientCode}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-xs font-semibold text-teal-600 uppercase tracking-wide">
+                        Diagnosis Name
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">
+                        {report.data.diagnosisName}
+                      </div>
+                      <div className="flex items-center gap-2 pt-2">
+                        {getStatusBadge(report.data.diagnosisStatus)}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Diagnosis Type Card */}
-                <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
-                    <ClipboardList className="w-4 h-4 text-teal-600" />
-                    Diagnosis Type
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-sm font-medium bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100 transition-colors"
-                  >
-                    {report.data.diagnosisType}
-                  </Badge>
-                </div>
-
-                {/* Severity Card */}
-                <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
-                    <AlertCircle className="w-4 h-4 text-teal-600" />
-                    Severity Level
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-sm font-medium bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 transition-colors"
-                  >
-                    {report.data.severity || "N/A"}
-                  </Badge>
-                </div>
-              </div>
-              <Separator className="my-2 bg-slate-200/50" />
-
-              {/* study data */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200/50 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900">
-                    Study Information
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Study Instance UID */}
-                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-                      Study Instance UID
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Diagnosis Date Card */}
+                  <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
+                      <Calendar className="w-4 h-4 text-teal-600" />
+                      Diagnosis Date
                     </div>
-                    <div className="text-sm text-slate-900 font-mono truncate">
-                      {dicomStudyData?.data.studyInstanceUid || "N/A"}
+                    <div className="text-lg font-semibold text-slate-900">
+                      {formatDate(report.data.diagnosisDate)}
                     </div>
                   </div>
 
-                  {/* Study Date & Time */}
-                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Study Date & Time
-                    </div>
-                    <div className="text-sm text-slate-900 font-medium">
-                      {dicomStudyData?.data.studyDate
-                        ? `${formatDateVN(dicomStudyData.data.studyDate)} ${
-                            dicomStudyData.data.studyTime || ""
-                          }`
-                        : "N/A"}
-                    </div>
-                  </div>
-
-                  {/* Study Status */}
-                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-                      Study Status
+                  {/* Diagnosis Type Card */}
+                  <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
+                      <ClipboardList className="w-4 h-4 text-teal-600" />
+                      Diagnosis Type
                     </div>
                     <Badge
-                      className={`
-          ${
-            dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED
-              ? "bg-green-100 text-green-700 border-green-300"
-              : ""
-          }
-          ${
-            dicomStudyData?.data.studyStatus ===
-            DicomStudyStatus.TECHNICIAN_VERIFIED
-              ? "bg-blue-100 text-blue-700 border-blue-300"
-              : ""
-          }
-          ${
-            dicomStudyData?.data.studyStatus === DicomStudyStatus.SCANNED
-              ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-              : ""
-          }
-          ${
-            dicomStudyData?.data.studyStatus === DicomStudyStatus.RESULT_PRINTED
-              ? "bg-purple-100 text-purple-700 border-purple-300"
-              : ""
-          }
-        `}
+                      variant="outline"
+                      className="text-sm font-medium bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100 transition-colors"
                     >
-                      {formatStatus(dicomStudyData?.data.studyStatus)}
+                      {report.data.diagnosisType}
                     </Badge>
                   </div>
 
-                  {/* Study Description */}
-                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100 md:col-span-2">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-                      Study Description
+                  {/* Severity Card */}
+                  <div className="group bg-white border border-slate-200/60 rounded-xl p-5 transition-all hover:shadow-md hover:border-teal-200/50">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
+                      <AlertCircle className="w-4 h-4 text-teal-600" />
+                      Severity Level
                     </div>
-                    <div className="text-sm text-slate-900 font-medium">
-                      {dicomStudyData?.data.studyDescription || "N/A"}
-                    </div>
-                  </div>
-
-                  {/* Number of Series */}
-                  <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-                      Number of Series
-                    </div>
-                    <div className="text-2xl font-bold text-slate-900">
-                      {dicomStudyData?.data.numberOfSeries || 0}
-                    </div>
+                    <Badge
+                      variant="outline"
+                      className="text-sm font-medium bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 transition-colors"
+                    >
+                      {report.data.severity || "N/A"}
+                    </Badge>
                   </div>
                 </div>
+                <Separator className="my-2 bg-slate-200/50" />
 
-                {/* Modality Machine */}
-                {dicomStudyData?.data.modalityMachine && (
-                  <div className="mt-4 bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <Image className="w-4 h-4" />
-                      Modality Machine
+                {/* study data */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200/50 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <FileText className="w-5 h-5 text-blue-600" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Machine Name
-                        </div>
-                        <div className="text-sm font-medium text-slate-900">
-                          {dicomStudyData.data.modalityMachine.name}
-                        </div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Study Information
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Study Instance UID */}
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                        Study Instance UID
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Manufacturer
-                        </div>
-                        <div className="text-sm font-medium text-slate-900">
-                          {dicomStudyData.data.modalityMachine.manufacturer}
-                        </div>
+                      <div className="text-sm text-slate-900 font-mono truncate">
+                        {dicomStudyData?.data.studyInstanceUid || "N/A"}
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">Model</div>
-                        <div className="text-sm font-medium text-slate-900">
-                          {dicomStudyData.data.modalityMachine.model}
-                        </div>
+                    </div>
+
+                    {/* Study Date & Time */}
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Study Date & Time
                       </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Modality Type
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {
-                            dicomStudyData.data.modalityMachine.modality
-                              ?.modalityCode
-                          }{" "}
-                          -{" "}
-                          {
-                            dicomStudyData.data.modalityMachine.modality
-                              ?.modalityName
+                      <div className="text-sm text-slate-900 font-medium">
+                        {dicomStudyData?.data.studyDate
+                          ? `${formatDateVN(dicomStudyData.data.studyDate)} ${dicomStudyData.data.studyTime || ""
+                          }`
+                          : "N/A"}
+                      </div>
+                    </div>
+
+                    {/* Study Status */}
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                        Study Status
+                      </div>
+                      <Badge
+                        className={`
+          ${dicomStudyData?.data.studyStatus === DicomStudyStatus.APPROVED
+                            ? "bg-green-100 text-green-700 border-green-300"
+                            : ""
                           }
-                        </Badge>
+          ${dicomStudyData?.data.studyStatus ===
+                            DicomStudyStatus.TECHNICIAN_VERIFIED
+                            ? "bg-blue-100 text-blue-700 border-blue-300"
+                            : ""
+                          }
+          ${dicomStudyData?.data.studyStatus === DicomStudyStatus.SCANNED
+                            ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                            : ""
+                          }
+          ${dicomStudyData?.data.studyStatus === DicomStudyStatus.RESULT_PRINTED
+                            ? "bg-purple-100 text-purple-700 border-purple-300"
+                            : ""
+                          }
+        `}
+                      >
+                        {formatStatus(dicomStudyData?.data.studyStatus)}
+                      </Badge>
+                    </div>
+
+                    {/* Study Description */}
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100 md:col-span-2">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                        Study Description
+                      </div>
+                      <div className="text-sm text-slate-900 font-medium">
+                        {dicomStudyData?.data.studyDescription || "N/A"}
+                      </div>
+                    </div>
+
+                    {/* Number of Series */}
+                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                        Number of Series
+                      </div>
+                      <div className="text-2xl font-bold text-slate-900">
+                        {dicomStudyData?.data.numberOfSeries || 0}
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Imaging Order */}
-                {dicomStudyData?.data.imagingOrder && (
-                  <div className="mt-4 bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <ClipboardList className="w-4 h-4" />
-                      Imaging Order
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Order Number
-                        </div>
-                        <div className="text-sm font-medium text-slate-900">
-                          #{dicomStudyData.data.imagingOrder.orderNumber}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Order Status
-                        </div>
-                        <Badge
-                          className={`
-              ${
-                dicomStudyData.data.imagingOrder.orderStatus === "completed"
-                  ? "bg-green-100 text-green-700 border-green-300"
-                  : ""
-              }
-              ${
-                dicomStudyData.data.imagingOrder.orderStatus === "pending"
-                  ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                  : ""
-              }
-            `}
-                        >
-                          {formatStatus(dicomStudyData.data.imagingOrder.orderStatus)}
-                        </Badge>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          Contrast Required
-                        </div>
-                        <Badge
-                          variant={
-                            dicomStudyData.data.imagingOrder.contrastRequired
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {dicomStudyData.data.imagingOrder.contrastRequired
-                            ? "Yes"
-                            : "No"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Procedure */}
-                    {dicomStudyData.data.imagingOrder.procedure && (
-                      <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-                        <div className="text-xs font-semibold text-blue-700 mb-2">
-                          Procedure
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              Procedure Name
-                            </div>
-                            <div className="text-sm font-medium text-slate-900">
-                              {dicomStudyData.data.imagingOrder.procedure.name}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              Body Part
-                            </div>
-                            <div className="text-sm font-medium text-slate-900">
-                              {dicomStudyData.data.imagingOrder.procedure
-                                .bodyPart?.name || "N/A"}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              Modality
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {
-                                dicomStudyData.data.imagingOrder.procedure
-                                  .modality?.modalityCode
-                              }
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Clinical Indication */}
-                    {dicomStudyData.data.imagingOrder.clinicalIndication && (
-                      <div className="mt-3">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Clinical Indication
-                        </div>
-                        <div className="text-sm text-slate-900">
-                          {dicomStudyData.data.imagingOrder.clinicalIndication}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Special Instructions */}
-                    {dicomStudyData.data.imagingOrder.specialInstructions && (
-                      <div className="mt-2">
-                        <div className="text-xs text-slate-500 mb-1">
-                          Special Instructions
-                        </div>
-                        <div className="text-sm text-slate-900">
-                          {dicomStudyData.data.imagingOrder.specialInstructions}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Series List */}
-                {dicomStudyData?.data.series &&
-                  dicomStudyData.data.series.length > 0 && (
+                  {/* Modality Machine */}
+                  {dicomStudyData?.data.modalityMachine && (
                     <div className="mt-4 bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
                       <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
                         <Image className="w-4 h-4" />
-                        Series ({dicomStudyData.data.series.length})
+                        Modality Machine
                       </div>
-                      <div className="space-y-2">
-                        {dicomStudyData.data.series.map(
-                          (series: any, index: number) => (
-                            <div
-                              key={series.id}
-                              className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 hover:border-blue-200 transition-colors"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs font-mono"
-                                    >
-                                      Series #{series?.seriesNumber}
-                                    </Badge>
-                                    <div className="text-sm font-medium text-slate-900">
-                                      {series.seriesDescription}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Machine Name
+                          </div>
+                          <div className="text-sm font-medium text-slate-900">
+                            {dicomStudyData.data.modalityMachine.name}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Manufacturer
+                          </div>
+                          <div className="text-sm font-medium text-slate-900">
+                            {dicomStudyData.data.modalityMachine.manufacturer}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">Model</div>
+                          <div className="text-sm font-medium text-slate-900">
+                            {dicomStudyData.data.modalityMachine.model}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Modality Type
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {
+                              dicomStudyData.data.modalityMachine.modality
+                                ?.modalityCode
+                            }{" "}
+                            -{" "}
+                            {
+                              dicomStudyData.data.modalityMachine.modality
+                                ?.modalityName
+                            }
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Imaging Order */}
+                  {dicomStudyData?.data.imagingOrder && (
+                    <div className="mt-4 bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                      <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <ClipboardList className="w-4 h-4" />
+                        Imaging Order
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Order Number
+                          </div>
+                          <div className="text-sm font-medium text-slate-900">
+                            #{dicomStudyData.data.imagingOrder.orderNumber}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Order Status
+                          </div>
+                          <Badge
+                            className={`
+              ${dicomStudyData.data.imagingOrder.orderStatus === "completed"
+                                ? "bg-green-100 text-green-700 border-green-300"
+                                : ""
+                              }
+              ${dicomStudyData.data.imagingOrder.orderStatus === "pending"
+                                ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                : ""
+                              }
+            `}
+                          >
+                            {formatStatus(dicomStudyData.data.imagingOrder.orderStatus)}
+                          </Badge>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-500 mb-1">
+                            Contrast Required
+                          </div>
+                          <Badge
+                            variant={
+                              dicomStudyData.data.imagingOrder.contrastRequired
+                                ? "default"
+                                : "outline"
+                            }
+                          >
+                            {dicomStudyData.data.imagingOrder.contrastRequired
+                              ? "Yes"
+                              : "No"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Procedure */}
+                      {dicomStudyData.data.imagingOrder.procedure && (
+                        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+                          <div className="text-xs font-semibold text-blue-700 mb-2">
+                            Procedure
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <div className="text-xs text-slate-500 mb-1">
+                                Procedure Name
+                              </div>
+                              <div className="text-sm font-medium text-slate-900">
+                                {dicomStudyData.data.imagingOrder.procedure.name}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500 mb-1">
+                                Body Part
+                              </div>
+                              <div className="text-sm font-medium text-slate-900">
+                                {dicomStudyData.data.imagingOrder.procedure
+                                  .bodyPart?.name || "N/A"}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500 mb-1">
+                                Modality
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {
+                                  dicomStudyData.data.imagingOrder.procedure
+                                    .modality?.modalityCode
+                                }
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Clinical Indication */}
+                      {dicomStudyData.data.imagingOrder.clinicalIndication && (
+                        <div className="mt-3">
+                          <div className="text-xs text-slate-500 mb-1">
+                            Clinical Indication
+                          </div>
+                          <div className="text-sm text-slate-900">
+                            {dicomStudyData.data.imagingOrder.clinicalIndication}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Special Instructions */}
+                      {dicomStudyData.data.imagingOrder.specialInstructions && (
+                        <div className="mt-2">
+                          <div className="text-xs text-slate-500 mb-1">
+                            Special Instructions
+                          </div>
+                          <div className="text-sm text-slate-900">
+                            {dicomStudyData.data.imagingOrder.specialInstructions}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Series List */}
+                  {dicomStudyData?.data.series &&
+                    dicomStudyData.data.series.length > 0 && (
+                      <div className="mt-4 bg-white/80 backdrop-blur rounded-lg p-4 border border-blue-100">
+                        <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                          <Image className="w-4 h-4" />
+                          Series ({dicomStudyData.data.series.length})
+                        </div>
+                        <div className="space-y-2">
+                          {dicomStudyData.data.series.map(
+                            (series: any, index: number) => (
+                              <div
+                                key={series.id}
+                                className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 hover:border-blue-200 transition-colors"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs font-mono"
+                                      >
+                                        Series #{series?.seriesNumber}
+                                      </Badge>
+                                      <div className="text-sm font-medium text-slate-900">
+                                        {series.seriesDescription}
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Body Part:
-                                      </span>{" "}
-                                      <span className="text-slate-900 font-medium">
-                                        {series.bodyPartExamined}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Protocol:
-                                      </span>{" "}
-                                      <span className="text-slate-900 font-medium">
-                                        {series.protocolName}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Instances:
-                                      </span>{" "}
-                                      <span className="text-slate-900 font-medium">
-                                        {series.numberOfInstances}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Time:
-                                      </span>{" "}
-                                      <span className="text-slate-900 font-medium">
-                                        {series.seriesTime}
-                                      </span>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                      <div>
+                                        <span className="text-slate-500">
+                                          Body Part:
+                                        </span>{" "}
+                                        <span className="text-slate-900 font-medium">
+                                          {series.bodyPartExamined}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-500">
+                                          Protocol:
+                                        </span>{" "}
+                                        <span className="text-slate-900 font-medium">
+                                          {series.protocolName}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-500">
+                                          Instances:
+                                        </span>{" "}
+                                        <span className="text-slate-900 font-medium">
+                                          {series.numberOfInstances}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-slate-500">
+                                          Time:
+                                        </span>{" "}
+                                        <span className="text-slate-900 font-medium">
+                                          {series.seriesTime}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )
-                        )}
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-              </div>
-
-              <Separator className="my-6 bg-slate-200/50" />
-              {physicianSignatureData?.data && (
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <svg
-                        className="w-5 h-5 text-emerald-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-emerald-900">
-                        Digital Signature Verified
-                      </h3>
-                      <p className="text-sm text-emerald-700">
-                        This study has been digitally signed and approved
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
-                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
-                        Signed At
-                      </div>
-                      <div className="text-sm font-medium text-slate-900">
-                        {new Date(
-                          physicianSignatureData.data.signedAt
-                        ).toLocaleString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
-                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
-                        Signature Type
-                      </div>
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
-                        Physician Approval
-                      </Badge>
-                    </div>
-
-                    <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
-                      <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
-                        Certificate Serial
-                      </div>
-                      <div className="text-xs font-mono text-slate-700 truncate">
-                        {physicianSignatureData.data.certificateSerial}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 bg-white/60 backdrop-blur rounded-lg p-3 border border-emerald-100">
-                    <div className="flex items-center gap-2 text-sm text-emerald-800">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
-                      <span className="font-medium">
-                        This signature ensures the authenticity and integrity of
-                        the study approval
-                      </span>
-                    </div>
-                  </div>
+                    )}
                 </div>
-              )}
 
-              {!isEditDescriptionOpen ? (
-                <Button
-                  disabled={
-                    dicomStudyData?.data.studyStatus ===
-                    DicomStudyStatus.APPROVED
-                    // || dicomStudyData?.data.studyStatus ===
-                    // DicomStudyStatus.RESULT_PRINTED
-                  }
-                  className="w-full"
-                  onClick={handleEditDescriptionOpen}
-                >
-                  <div className="flex items-center justify-center">
-                    <Notebook className="w-4 h-4" />
-                    Edit Report Description
-                  </div>
-                </Button>
-              ) : (
-                <Button className="w-full" onClick={handleEditDescriptionClose}>
-                  <div className="flex items-center justify-center">
-                    <Notebook className="w-4 h-4" />
-                    Close Edit Mode
-                  </div>
-                </Button>
-              )}
+                <Separator className="my-6 bg-slate-200/50" />
+                {physicianSignatureData?.data && (
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/60 rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <svg
+                          className="w-5 h-5 text-emerald-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-emerald-900">
+                          Digital Signature Verified
+                        </h3>
+                        <p className="text-sm text-emerald-700">
+                          This study has been digitally signed and approved
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Display standard report template of diagnosis including selector and textarea */}
-              {isEditDescriptionOpen && (
-                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                        <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                          Signed At
+                        </div>
+                        <div className="text-sm font-medium text-slate-900">
+                          {new Date(
+                            physicianSignatureData.data.signedAt
+                          ).toLocaleString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                        <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                          Signature Type
+                        </div>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                          Physician Approval
+                        </Badge>
+                      </div>
+
+                      <div className="bg-white/80 backdrop-blur rounded-lg p-4 border border-emerald-100">
+                        <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-2">
+                          Certificate Serial
+                        </div>
+                        <div className="text-xs font-mono text-slate-700 truncate">
+                          {physicianSignatureData.data.certificateSerial}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 bg-white/60 backdrop-blur rounded-lg p-3 border border-emerald-100">
+                      <div className="flex items-center gap-2 text-sm text-emerald-800">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                        <span className="font-medium">
+                          This signature ensures the authenticity and integrity of
+                          the study approval
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!isEditDescriptionOpen ? (
+                  <Button
+                    disabled={
+                      dicomStudyData?.data.studyStatus ===
+                      DicomStudyStatus.APPROVED || !!physicianSignatureData?.data
+                    }
+                    className="w-full"
+                    onClick={handleEditDescriptionOpen}
+                  >
+                    <div className="flex items-center justify-center">
+                      <Notebook className="w-4 h-4" />
+                      Edit Report Description
+                    </div>
+                  </Button>
+                ) : (
+                  <Button className="w-full" onClick={handleEditDescriptionClose}>
+                    <div className="flex items-center justify-center">
+                      <Notebook className="w-4 h-4" />
+                      Close Edit Mode
+                    </div>
+                  </Button>
+                )}
+
+                {/* Display standard report template of diagnosis including selector and textarea */}
+                {isEditDescriptionOpen && (
+                  <div className="space-y-4">
+                    <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                      <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                        <FileText className="w-4 h-4 text-teal-600" />
+                        Choose Template
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <Select
+                          value={filtersReportTemplate.bodyPartId}
+                          onValueChange={(value) =>
+                            handleSelectChange("bodyPartId", value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="All Body Parts" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {bodyPartsData?.data.map((bodyPart: BodyPart) => (
+                              <SelectItem key={bodyPart.id} value={bodyPart.id}>
+                                {bodyPart.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={filtersReportTemplate.modalityId}
+                          onValueChange={(value) =>
+                            handleSelectChange("modalityId", value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="All Modalities" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {imagingModalitiesData?.data.map(
+                              (modality: ImagingModality) => (
+                                <SelectItem key={modality.id} value={modality.id}>
+                                  {modality.modalityName}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={filtersReportTemplate.templateType || "all"}
+                          onValueChange={(value) =>
+                            handleSelectChange("templateType", value as "all" | TemplateType)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Template Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value={TemplateType.STANDARD}>Standard</SelectItem>
+                            <SelectItem value={TemplateType.CUSTOM}>Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={selectedReportTemplateId}
+                          onValueChange={handleSelectTemplate}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={
+                                isReportTemplatesLoading
+                                  ? "Loading..."
+                                  : "Select report template"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {reportTemplatesData?.data.map(
+                              (report: ReportTemplate) => (
+                                <SelectItem
+                                  key={report.reportTemplatesId}
+                                  value={report.reportTemplatesId}
+                                >
+                                  {report.templateName}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Template Preview */}
+                    <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
+                          <FileText className="w-4 h-4 text-teal-600" />
+                          Template Preview
+                        </div>
+                        <Button
+                          onClick={handleApplyTemplate}
+                          disabled={!editedDescription.trim()}
+                          className="bg-gradient-to-r from-teal-600 to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Notebook className="w-4 h-4" />
+                          Apply to Description
+                        </Button>
+                      </div>
+                      <Textarea
+                        className="w-full min-h-[300px] text-slate-900 font-medium"
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        placeholder="Select a template above to preview content here..."
+                      />
+                    </div>
+
+                    {/* Description Textarea */}
+                    <div className="bg-white border border-slate-200/60 rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
+                          <FileText className="w-4 h-4 text-teal-600" />
+                          Description
+                        </div>
+                        <Button
+                          onClick={handleSaveDescription}
+                          disabled={!editedReportDescription.trim() || isUpdating}
+                          className="bg-gradient-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Download className="w-4 h-4" />
+                          {isUpdating ? "Saving..." : "Save Description"}
+                        </Button>
+                      </div>
+                      <Textarea
+                        className="w-full min-h-[300px] text-slate-900 font-medium"
+                        value={editedReportDescription}
+                        onChange={(e) =>
+                          setEditedReportDescription(e.target.value)
+                        }
+                        placeholder="Click 'Apply to Description' to load template content here, or type directly..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Display existing description when not in edit mode */}
+                {report.data.description && (
                   <div className="bg-white border border-slate-200/60 rounded-xl p-6">
                     <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
                       <FileText className="w-4 h-4 text-teal-600" />
-                      Choose Template
+                      Description
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <Select
-                        value={filtersReportTemplate.bodyPartId}
-                        onValueChange={(value) =>
-                          handleSelectChange("bodyPartId", value)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Body Parts" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bodyPartsData?.data.map((bodyPart: BodyPart) => (
-                            <SelectItem key={bodyPart.id} value={bodyPart.id}>
-                              {bodyPart.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={filtersReportTemplate.modalityId}
-                        onValueChange={(value) =>
-                          handleSelectChange("modalityId", value)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="All Modalities" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {imagingModalitiesData?.data.map(
-                            (modality: ImagingModality) => (
-                              <SelectItem key={modality.id} value={modality.id}>
-                                {modality.modalityName}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={selectedReportTemplateId}
-                        onValueChange={handleSelectTemplate}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={
-                              isReportTemplatesLoading
-                                ? "Loading..."
-                                : "Select report template"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {reportTemplatesData?.data.map(
-                            (report: ReportTemplate) => (
-                              <SelectItem
-                                key={report.reportTemplatesId}
-                                value={report.reportTemplatesId}
-                              >
-                                {report.templateName}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
+                    <div className="text-slate-900 whitespace-pre-wrap leading-relaxed">
+                      {report.data.description}
                     </div>
                   </div>
+                )}
 
-                  {/* Template Preview */}
-                  <div className="bg-white border border-slate-200/60 rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
-                        <FileText className="w-4 h-4 text-teal-600" />
-                        Template Preview
-                      </div>
-                      <Button
-                        onClick={handleApplyTemplate}
-                        disabled={!editedDescription.trim()}
-                        className="bg-gradient-to-r from-teal-600 to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Notebook className="w-4 h-4" />
-                        Apply to Description
-                      </Button>
+                {report.data.notes && (
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-6">
+                    <div className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                      Additional Notes
                     </div>
-                    <Textarea
-                      className="w-full min-h-[300px] text-slate-900 font-medium"
-                      value={editedDescription}
-                      onChange={(e) => setEditedDescription(e.target.value)}
-                      placeholder="Select a template above to preview content here..."
-                    />
-                  </div>
-
-                  {/* Description Textarea */}
-                  <div className="bg-white border border-slate-200/60 rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-sm font-semibold text-slate-700 flex items-center gap-2 uppercase tracking-wide">
-                        <FileText className="w-4 h-4 text-teal-600" />
-                        Description
-                      </div>
-                      <Button
-                        onClick={handleSaveDescription}
-                        disabled={!editedReportDescription.trim() || isUpdating}
-                        className="bg-gradient-to-r from-green-600 to-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Download className="w-4 h-4" />
-                        {isUpdating ? "Saving..." : "Save Description"}
-                      </Button>
+                    <div className="text-amber-900 whitespace-pre-wrap leading-relaxed font-medium">
+                      {report.data.notes}
                     </div>
-                    <Textarea
-                      className="w-full min-h-[300px] text-slate-900 font-medium"
-                      value={editedReportDescription}
-                      onChange={(e) =>
-                        setEditedReportDescription(e.target.value)
-                      }
-                      placeholder="Click 'Apply to Description' to load template content here, or type directly..."
-                    />
                   </div>
-                </div>
-              )}
-
-              {/* Display existing description when not in edit mode */}
-              {report.data.description && (
-                <div className="bg-white border border-slate-200/60 rounded-xl p-6">
-                  <div className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                    <FileText className="w-4 h-4 text-teal-600" />
-                    Description
-                  </div>
-                  <div className="text-slate-900 whitespace-pre-wrap leading-relaxed">
-                    {report.data.description}
-                  </div>
-                </div>
-              )}
-
-              {report.data.notes && (
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl p-6">
-                  <div className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    Additional Notes
-                  </div>
-                  <div className="text-amber-900 whitespace-pre-wrap leading-relaxed font-medium">
-                    {report.data.notes}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-16 text-slate-500 px-8">
-              <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-40" />
-              <p className="font-medium">No report found</p>
-            </div>
-          )}
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-slate-500 px-8">
+                <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                <p className="font-medium">No report found</p>
+              </div>
+            )}
           </ScrollArea>
 
           {/* Fixed Footer */}

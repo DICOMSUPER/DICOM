@@ -196,24 +196,7 @@ export class ImagingOrderFormController {
     }
   }
 
-  @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.CheckAndUpdateStatus`)
-  async checkAndUpdateStatus(
-    @Payload() data: { orderFormId: string }
-  ): Promise<void> {
-    this.logger.log(
-      `Using pattern: ${IMAGING_SERVICE}.${moduleName}.CheckAndUpdateStatus`
-    );
-    try {
-      const { orderFormId } = data;
-      await this.imagingOrderFormService.autoUpdateOrderFormStatus(orderFormId);
-    } catch (error) {
-      throw handleErrorFromMicroservices(
-        error,
-        `Failed to check and update status for order form with id: ${data.orderFormId}`,
-        IMAGING_SERVICE
-      );
-    }
-  }
+
   
   @MessagePattern(`${IMAGING_SERVICE}.${moduleName}.FindByPatientId`)
   async findByPatientId(

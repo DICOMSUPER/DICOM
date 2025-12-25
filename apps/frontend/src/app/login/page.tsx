@@ -32,23 +32,20 @@ export default function Page() {
       // ✅ Lấy profile bằng cookie
       const profileResult = await getProfile().unwrap();
       const user = profileResult.data;
-      console.log("check ",user)
+      console.log("check ", user);
 
       if (!user?.role) {
         toast.error("Role not found");
         return;
       }
 
+      console.log(data);
+
       // ✅ Lưu redux (UI state)
       dispatch(
         setCredentials({
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-          },
+          user: { ...user, role: user.role },
+          token: data?.data?.tokenResponse?.accessToken,
         })
       );
 

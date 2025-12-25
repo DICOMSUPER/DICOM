@@ -11,7 +11,7 @@ export interface ModalityMachine extends BaseEntity {
   model?: string;
   serialNumber?: string;
   roomId?: string;
-  status: string;
+  status: MachineStatus;
 }
 
 export interface CreateModalityMachineDto {

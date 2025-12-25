@@ -29,7 +29,7 @@ export default function SeriesFilter({
             <Search className="h-3.5 w-3.5 text-teal-400" />
           </div>
           <Input
-            placeholder="Tìm kiếm series..."
+            placeholder="Search series..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="h-9 bg-slate-900/70 border-teal-700/30 text-white placeholder:text-slate-500 focus:border-teal-500 focus:ring-teal-500/20"
@@ -44,7 +44,7 @@ export default function SeriesFilter({
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-600">
-              <SelectItem value="All" className="text-white hover:bg-slate-700">Tất cả</SelectItem>
+              <SelectItem value="All" className="text-white hover:bg-slate-700">All</SelectItem>
               <SelectItem value="CT" className="text-white hover:bg-slate-700">CT Scan</SelectItem>
               <SelectItem value="MRI" className="text-white hover:bg-slate-700">MRI</SelectItem>
               <SelectItem value="X-Ray" className="text-white hover:bg-slate-700">X-Ray</SelectItem>

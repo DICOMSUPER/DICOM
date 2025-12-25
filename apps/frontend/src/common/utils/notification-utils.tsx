@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/common/lib/utils";
-import { NotificationType, NotificationPriority } from "@/common/enums/notification.enum";
+import { NotificationType } from "@/common/enums/notification.enum";
 
 /**
  * Get icon component for notification type
@@ -64,42 +64,6 @@ export const getNotificationTypeConfig = (type: NotificationType) => {
 };
 
 /**
- * Get priority badge configuration
- * @param priority - Notification priority
- * @returns Badge configuration with label and className, or null if priority is not provided
- */
-export const getNotificationPriorityConfig = (
-  priority?: NotificationPriority
-) => {
-  if (!priority) return null;
-
-  const priorityConfig: Record<
-    NotificationPriority,
-    { label: string; className: string }
-  > = {
-    [NotificationPriority.LOW]: {
-      label: "Low",
-      className: "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200",
-    },
-    [NotificationPriority.MEDIUM]: {
-      label: "Medium",
-      className: "bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200",
-    },
-    [NotificationPriority.HIGH]: {
-      label: "High",
-      className: "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200",
-    },
-  };
-
-  return (
-    priorityConfig[priority] || {
-      label: priority.charAt(0).toUpperCase() + priority.slice(1),
-      className: "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200",
-    }
-  );
-};
-
-/**
  * Get notification type badge component
  * @param type - Notification type
  * @param size - Badge size class (default: "text-xs")
@@ -110,26 +74,6 @@ export const getNotificationTypeBadge = (
   size: string = "text-xs"
 ): React.ReactElement => {
   const config = getNotificationTypeConfig(type);
-
-  return (
-    <Badge variant="outline" className={cn(size, "font-medium", config.className)}>
-      {config.label}
-    </Badge>
-  );
-};
-
-/**
- * Get notification priority badge component
- * @param priority - Notification priority
- * @param size - Badge size class (default: "text-xs")
- * @returns Badge component or null if priority is not provided
- */
-export const getNotificationPriorityBadge = (
-  priority?: NotificationPriority,
-  size: string = "text-xs"
-): React.ReactElement | null => {
-  const config = getNotificationPriorityConfig(priority);
-  if (!config) return null;
 
   return (
     <Badge variant="outline" className={cn(size, "font-medium", config.className)}>

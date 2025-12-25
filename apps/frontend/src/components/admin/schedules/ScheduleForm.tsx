@@ -20,12 +20,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/common/lib/utils";
-import { 
-  useCreateRoomScheduleMutation, 
-  useUpdateRoomScheduleMutation 
+import {
+  useCreateRoomScheduleMutation,
+  useUpdateRoomScheduleMutation
 } from "@/store/scheduleApi";
 import { useGetRoomSchedulesQuery } from "@/store/roomScheduleApi";
 import { toast } from "sonner";
+import { ScheduleStatus } from "@/common/enums/schedule.enum";
 import { ROLE_OPTIONS } from "@/common/enums/role.enum";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
@@ -37,9 +38,7 @@ const scheduleSchema = z.object({
   actual_end_time: z.string().optional(),
   room_id: z.string().optional(),
   shift_template_id: z.string().optional(),
-  schedule_status: z
-    .enum(["scheduled", "in_progress", "completed", "cancelled"])
-    .optional(),
+  schedule_status: z.nativeEnum(ScheduleStatus).optional(),
   notes: z.string().optional(),
   overtime_hours: z.number().min(0).optional(),
 }).refine(
@@ -123,7 +122,7 @@ export function ScheduleForm({
       actual_end_time: schedule?.actual_end_time || "",
       room_id: (schedule?.room_id && schedule.room_id !== "") ? schedule.room_id : "none",
       shift_template_id: (schedule?.shift_template_id && schedule.shift_template_id !== "") ? schedule.shift_template_id : "none",
-      schedule_status: schedule?.schedule_status || "scheduled",
+      schedule_status: schedule?.schedule_status || ScheduleStatus.SCHEDULED,
       notes: schedule?.notes || "",
       overtime_hours: schedule?.overtime_hours || 0,
     },
@@ -159,11 +158,11 @@ export function ScheduleForm({
     : 0;
   const canCancel =
     isEdit &&
-    schedule?.schedule_status === "scheduled" &&
+    schedule?.schedule_status === ScheduleStatus.SCHEDULED &&
     diffDays >= 1;
   const isLocked =
-    schedule?.schedule_status === "completed" ||
-    schedule?.schedule_status === "cancelled";
+    schedule?.schedule_status === ScheduleStatus.COMPLETED ||
+    schedule?.schedule_status === ScheduleStatus.CANCELLED;
 
   // Reset form when schedule prop changes (for edit mode)
   useEffect(() => {
@@ -175,7 +174,7 @@ export function ScheduleForm({
         actual_end_time: schedule.actual_end_time || "",
         room_id: (schedule.room_id && schedule.room_id !== "") ? schedule.room_id : "none",
         shift_template_id: (schedule.shift_template_id && schedule.shift_template_id !== "") ? schedule.shift_template_id : "none",
-        schedule_status: schedule.schedule_status || "scheduled",
+        schedule_status: schedule.schedule_status || ScheduleStatus.SCHEDULED,
         notes: schedule.notes || "",
         overtime_hours: schedule.overtime_hours || 0,
       });
@@ -206,8 +205,8 @@ export function ScheduleForm({
       room_id: (data.room_id === "none" || data.room_id === "") ? undefined : data.room_id,
       shift_template_id: (data.shift_template_id === "none" || data.shift_template_id === "") ? undefined : data.shift_template_id,
       schedule_status: isEdit
-        ? data.schedule_status || schedule?.schedule_status || "scheduled"
-        : "scheduled",
+        ? data.schedule_status || schedule?.schedule_status || ScheduleStatus.SCHEDULED
+        : ScheduleStatus.SCHEDULED,
       overtime_hours: data.overtime_hours || 0,
     };
 
@@ -217,24 +216,24 @@ export function ScheduleForm({
         // Check same room and date
         if (s.room_id !== processedData.room_id) return false;
         if (s.work_date !== processedData.work_date) return false;
-        
+
         // If both have shift templates, check if they match
         if (processedData.shift_template_id && s.shift_template_id) {
           return s.shift_template_id === processedData.shift_template_id;
         }
-        
+
         // Otherwise check time overlap
-        if (processedData.actual_start_time && processedData.actual_end_time && 
-            s.actual_start_time && s.actual_end_time) {
+        if (processedData.actual_start_time && processedData.actual_end_time &&
+          s.actual_start_time && s.actual_end_time) {
           const newStart = processedData.actual_start_time;
           const newEnd = processedData.actual_end_time;
           const existStart = s.actual_start_time;
           const existEnd = s.actual_end_time;
-          
+
           // Check for time overlap
           return (newStart < existEnd && newEnd > existStart);
         }
-        
+
         // If no shift template and no times, consider it a potential duplicate
         return true;
       });
@@ -338,8 +337,8 @@ export function ScheduleForm({
           </SelectTrigger>
           <SelectContent className="border-border shadow-lg max-h-80">
             {users.map((user: any) => (
-              <SelectItem 
-                key={user.id} 
+              <SelectItem
+                key={user.id}
                 value={user.id}
                 className="py-4 px-4 cursor-pointer hover:bg-accent/50 focus:bg-accent min-h-16"
               >
@@ -493,9 +492,9 @@ export function ScheduleForm({
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent className="border-border">
-            <SelectItem value="scheduled" disabled>Scheduled (default)</SelectItem>
+            <SelectItem value={ScheduleStatus.SCHEDULED} disabled>Scheduled (default)</SelectItem>
             {canCancel && (
-              <SelectItem value="cancelled">
+              <SelectItem value={ScheduleStatus.CANCELLED}>
                 Cancelled (only when scheduled & ≥1 day before)
               </SelectItem>
             )}

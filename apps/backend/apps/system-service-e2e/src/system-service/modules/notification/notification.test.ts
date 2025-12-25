@@ -10,7 +10,7 @@ import {
   Notification,
 } from '@backend/shared-domain';
 import {
-  NotificationPriority,
+
   NotificationType,
   RelatedEntityType,
 } from 'libs/shared-enums/src';
@@ -47,7 +47,6 @@ export function runNotificationE2ETests(port = 5005, host = 'localhost') {
         notificationType: NotificationType.ASSIGNMENT,
         title: 'Test Notification',
         message: 'This is a test notification',
-        priority: NotificationPriority.LOW,
         relatedEntityId: '00739194-60dc-4a7a-83ee-52f0c06ef698',
         relatedEntityType: RelatedEntityType.ORDER,
         isRead: false,

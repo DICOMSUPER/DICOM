@@ -5,7 +5,7 @@ import { AiModel } from "./ai-model.interface";
 import { AiResultDiagnosis } from "./ai-result.interface";
 
 export interface AiAnalysis extends BaseEntity {
-  analysisId: string;
+  id: string;
   studyId: string;
   analysisStatus?: AnalysisStatus;
   analysisResults?: AiResultDiagnosis;
@@ -18,7 +18,7 @@ export interface AiAnalysis extends BaseEntity {
   originalImageName?: string;
   aiAnalyzeMessage?: string;
   // aiModel?: AiModel;
-  
+
   // Feedback fields
   isHelpful?: boolean;
   feedbackComment?: string;

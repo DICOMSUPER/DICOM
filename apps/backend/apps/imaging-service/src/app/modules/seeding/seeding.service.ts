@@ -22,7 +22,6 @@ import {
   DicomStudyStatus,
   AnnotationType,
   AnnotationStatus,
-  OrderFormStatus,
   Roles,
   MachineStatus,
 } from '@backend/shared-enums';
@@ -675,11 +674,6 @@ export class SeedingService {
       'Ghi hình bổ sung nếu phát hiện bất thường',
     ];
 
-    const orderFormStatuses = [
-      OrderFormStatus.IN_PROGRESS,
-      OrderFormStatus.COMPLETED,
-      OrderFormStatus.CANCELLED,
-    ];
 
     const patientIds = await this.getPatientIdsFromService(20);
     if (patientIds.length === 0) {
@@ -751,8 +745,6 @@ export class SeedingService {
         orderingPhysicianId: physicianId,
         encounterId,
         diagnosis,
-        orderFormStatus:
-          orderFormStatuses[formCounter % orderFormStatuses.length],
         notes: combinedNotes,
         roomId,
       };

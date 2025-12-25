@@ -27,7 +27,6 @@ import { useRouter } from "next/navigation";
 import {
   getNotificationIcon,
   getNotificationTypeBadge,
-  getNotificationPriorityBadge,
 } from "@/common/utils/notification-utils";
 
 interface NotificationDetailModalProps {
@@ -167,15 +166,7 @@ export function NotificationDetailModal({
             </div>
 
             {/* Priority */}
-            {notification.priority && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <AlertCircle className="h-4 w-4" />
-                  Priority
-                </div>
-                {getNotificationPriorityBadge(notification.priority)}
-              </div>
-            )}
+
 
             {/* Created At */}
             <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { ImagingOrderForm } from "./imaging-order-form.interface";
 import { ImagingModality } from "./imaging_modality.interface";
 import { RequestProcedure } from "./request-procedure.interface";
+import { ImagingOrderStatus } from "@/common/enums/image-dicom.enum";
 
 export interface ImagingOrder {
   id: string;
@@ -9,7 +10,7 @@ export interface ImagingOrder {
   // orderingPhysicianId: string;
   modalityId: string;
   procedureId: string | null;
-  orderStatus: string;
+  orderStatus: ImagingOrderStatus;
   bodyPart: string;
   completedDate: string | null;
   clinicalIndication: string;

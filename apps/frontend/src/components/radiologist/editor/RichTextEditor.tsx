@@ -48,7 +48,7 @@ const LIST_TYPES = ["numbered-list", "bulleted-list"];
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
     value,
     onChange,
-    placeholder = "Nhập nội dung...",
+    placeholder = "Enter content...",
     minHeight = "200px",
 }) => {
     const [editorKey, setEditorKey] = useState(0);

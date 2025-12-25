@@ -13,7 +13,7 @@ import { AnalysisStatus } from '@backend/shared-enums';
 
 @Controller()
 export class AiAnalysesController {
-  constructor(private readonly aiAnalysesService: AiAnalysesService) {}
+  constructor(private readonly aiAnalysesService: AiAnalysesService) { }
 
   @MessagePattern('ai_analysis.create')
   async create(@Payload() createAiAnalysisDto: CreateAiAnalysisDto) {
@@ -177,6 +177,19 @@ export class AiAnalysesController {
       throw handleErrorFromMicroservices(
         error,
         'Failed to get AI analysis stats',
+        'SystemService'
+      );
+    }
+  }
+
+  @MessagePattern('ai_analysis.remove')
+  async remove(@Payload() payload: { id: string }) {
+    try {
+      return await this.aiAnalysesService.remove(payload.id);
+    } catch (error) {
+      throw handleErrorFromMicroservices(
+        error,
+        'Failed to delete AI analysis',
         'SystemService'
       );
     }

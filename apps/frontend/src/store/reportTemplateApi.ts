@@ -1,6 +1,5 @@
-import { TemplateType } from "@/common/enums/report-template.enum";
 import { ApiResponse } from "@/common/interfaces/api-response/api-response.interface";
-import { ReportTemplate } from "@/common/interfaces/patient/report-template.interface";
+import { FilterReportTemplate, ReportTemplate } from "@/common/interfaces/patient/report-template.interface";
 import { axiosBaseQuery } from "@/common/lib/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { PaginatedResponse } from "./scheduleApi";
@@ -13,18 +12,18 @@ export const reportTemplateApi = createApi({
     // GET /report-templates
     getAllReportTemplates: builder.query<
       ApiResponse<ReportTemplate[]>,
-      { bodyPartId?: string; modalityId?: string, templateType?: TemplateType } | void
+      FilterReportTemplate | void
     >({
-      query: (filters) => ({ url: "", method: "GET" ,params: filters }),
+      query: (filters) => ({ url: "", method: "GET", params: filters }),
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "ReportTemplate" as const,
-                id: r.reportTemplatesId,
-              })),
-              { type: "ReportTemplate", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "ReportTemplate" as const,
+              id: r.reportTemplatesId,
+            })),
+            { type: "ReportTemplate", id: "LIST" },
+          ]
           : [{ type: "ReportTemplate", id: "LIST" }],
     }),
 
@@ -40,12 +39,12 @@ export const reportTemplateApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.data.map((r) => ({
-                type: "ReportTemplate" as const,
-                id: r.reportTemplatesId,
-              })),
-              { type: "ReportTemplate", id: "LIST" },
-            ]
+            ...result.data.map((r) => ({
+              type: "ReportTemplate" as const,
+              id: r.reportTemplatesId,
+            })),
+            { type: "ReportTemplate", id: "LIST" },
+          ]
           : [{ type: "ReportTemplate", id: "LIST" }],
     }),
 
@@ -82,10 +81,10 @@ export const reportTemplateApi = createApi({
 });
 
 export const {
-    useGetAllReportTemplatesQuery,
-    useGetReportTemplatesPaginatedQuery,
-    useGetReportTemplateByIdQuery,
-    useCreateReportTemplateMutation,
-    useUpdateReportTemplateMutation,
-    useDeleteReportTemplateMutation,
+  useGetAllReportTemplatesQuery,
+  useGetReportTemplatesPaginatedQuery,
+  useGetReportTemplateByIdQuery,
+  useCreateReportTemplateMutation,
+  useUpdateReportTemplateMutation,
+  useDeleteReportTemplateMutation,
 } = reportTemplateApi;

@@ -21,10 +21,12 @@ import {
   Scan,
   ThumbsUp,
   XCircle,
+  ImageOff,
 } from "lucide-react";
 import { useState } from "react";
 import { ImagePreviewModal } from "@/components/common/preview-image";
 import InfoItem from "./info-item";
+import { useGetUserByIdQuery } from "@/store/userApi";
 
 interface AiAnalysisViewModalProps {
   aiAnalysis: AiAnalysis | null;
@@ -94,9 +96,16 @@ export function AiAnalysisViewModal({
     return "text-red-600";
   };
 
-  const DEMO_IMAGE_URL =
-    aiAnalysis?.originalImage ||
-    "https://tse3.mm.bing.net/th/id/OIP.Ec7rD68_Qnfpznv-5VdUzwHaF6?cb=ucfimg2&ucfimg=1&w=1080&h=863&rs=1&pid=ImgDetMain&o=7&rm=3";
+  // Fetch reviewer user data if feedbackUserId exists
+  const { data: reviewerData } = useGetUserByIdQuery(
+    aiAnalysis?.feedbackUserId || "",
+    {
+      skip: !aiAnalysis?.feedbackUserId,
+    }
+  );
+
+  const hasImage = !!aiAnalysis?.originalImage;
+  const imageUrl = aiAnalysis?.originalImage || "";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -138,14 +147,15 @@ export function AiAnalysisViewModal({
                 {/* Original Image */}
                 <div
                   className="relative group rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() =>
-                    // 2. UPDATE: Set mode to 'original'
-                    setPreviewImage({
-                      src: DEMO_IMAGE_URL,
-                      alt: "Original scan",
-                      mode: "original",
-                    })
-                  }
+                  onClick={() => {
+                    if (hasImage) {
+                      setPreviewImage({
+                        src: imageUrl,
+                        alt: "Original scan",
+                        mode: "original",
+                      });
+                    }
+                  }}
                 >
                   <div className="absolute top-3 left-3 z-10">
                     <Badge
@@ -157,11 +167,18 @@ export function AiAnalysisViewModal({
                     </Badge>
                   </div>
                   <div className="aspect-4/3 bg-slate-100">
-                    <img
-                      src={DEMO_IMAGE_URL}
-                      alt="Original scan"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
+                    {hasImage ? (
+                      <img
+                        src={imageUrl}
+                        alt="Original scan"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                        <ImageOff className="h-12 w-12 mb-2" />
+                        <p className="text-xs font-medium">Image not available</p>
+                      </div>
+                    )}
                   </div>
                   <div className="px-4 py-3 bg-white border-t border-slate-100">
                     <p className="text-xs text-slate-500 font-medium">
@@ -173,13 +190,15 @@ export function AiAnalysisViewModal({
                 {/* Analyzed Image */}
                 <div
                   className="relative group rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() =>
-                    setPreviewImage({
-                      src: DEMO_IMAGE_URL,
-                      alt: "Analyzed scan with detections",
-                      mode: "analyzed",
-                    })
-                  }
+                  onClick={() => {
+                    if (hasImage) {
+                      setPreviewImage({
+                        src: imageUrl,
+                        alt: "Analyzed scan with detections",
+                        mode: "analyzed",
+                      });
+                    }
+                  }}
                 >
                   <div className="absolute top-3 left-3 z-10">
                     <Badge className="bg-slate-900 text-white border-0 shadow-sm">
@@ -188,11 +207,18 @@ export function AiAnalysisViewModal({
                     </Badge>
                   </div>
                   <div className="aspect-4/3 bg-slate-100">
-                    <img
-                      src={DEMO_IMAGE_URL}
-                      alt="Analyzed scan with detections"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
+                    {hasImage ? (
+                      <img
+                        src={imageUrl}
+                        alt="Analyzed scan with detections"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                        <ImageOff className="h-12 w-12 mb-2" />
+                        <p className="text-xs font-medium">Image not available</p>
+                      </div>
+                    )}
                   </div>
                   <div className="px-4 py-3 bg-white border-t border-slate-100">
                     <p className="text-xs font-medium text-slate-900">
@@ -407,9 +433,16 @@ export function AiAnalysisViewModal({
                       </p>
                     ) : (
                       <div className="space-y-3">
-                        <p className="text-sm text-slate-500">
-                          Submitted {formatDateTime(aiAnalysis.feedbackAt)}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-slate-500">
+                            Submitted {formatDateTime(aiAnalysis.feedbackAt)}
+                          </p>
+                          {reviewerData?.data && (
+                            <p className="text-sm font-medium text-slate-700">
+                              by {reviewerData.data.firstName} {reviewerData.data.lastName}
+                            </p>
+                          )}
+                        </div>
                         {aiAnalysis.feedbackComment && (
                           <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-100">
                             <p className="text-sm italic text-slate-600">

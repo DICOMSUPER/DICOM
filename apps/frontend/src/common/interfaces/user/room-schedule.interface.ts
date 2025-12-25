@@ -1,18 +1,7 @@
 import { ScheduleStatus } from "@/common/enums/schedule.enum";
 import { BaseEntity } from "../base.interface";
 import { Room } from "./room.interface";
-
-export interface ShiftTemplate {
-  shift_template_id: string;
-  shift_name: string;
-  shift_type: 'MORNING' | 'AFTERNOON' | 'NIGHT' | 'FULL_DAY' | 'morning' | 'afternoon' | 'night' | 'full_day' | 'custom';
-  start_time: string;
-  end_time: string;
-  break_start_time?: string;
-  break_end_time?: string;
-  description?: string;
-  is_active: boolean;
-}
+import { ShiftTemplate } from "./shift-template.interface";
 
 export interface RoomSchedule extends BaseEntity {
   schedule_id: string;

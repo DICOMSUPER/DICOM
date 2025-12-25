@@ -7,6 +7,8 @@ import { ImagingOrder } from "./imaging_order.interface";
 import {
   DiagnosisReport,
   DiagnosisStatus,
+  DiagnosisType,
+  Severity,
   Patient,
 } from "../patient/patient-workflow.interface";
 import { ModalityMachine } from "./modality-machine.interface";
@@ -33,10 +35,11 @@ export interface CreateDiagnosisPayload {
   studyId: string;
   diagnosisName: string;
   description: string;
-  diagnosisType: "primary" | "secondary" | "other";
-  severity: "mild" | "moderate" | "severe";
+  diagnosisType: DiagnosisType;
+  severity: Severity;
   diagnosisDate: string;
   diagnosedBy: string;
+  diagnosisStatus?: DiagnosisStatus;
   notes?: string;
 }
 
