@@ -456,7 +456,7 @@ export function DiagnosisReportDetail({
           dicomStudy: dicomStudyData?.data,
           orderingPhysicianName: `${orderingPhysicianData?.data?.firstName} ${orderingPhysicianData?.data?.lastName}`,
           radiologistName: `${radiologistData?.data?.firstName} ${radiologistData?.data?.lastName}`,
-          signatureImage,
+          // signatureImage, //sending the image => url too long
         };
 
         // DiagnosisReportPDF(reportData);
