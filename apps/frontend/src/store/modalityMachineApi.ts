@@ -225,10 +225,10 @@ export const modalityMachineApi = createApi({
       ModalityMachineStats,
       { roomId?: string }
     >({
-      query: ({ roomId }) => ({
+      query: (params) => ({
         url: "/stats",
         method: "GET",
-        params: { roomId },
+        params: { roomId: params?.roomId },
       }),
       transformResponse: (response: any) => response?.data || response,
       providesTags: ["ModalityMachine"],

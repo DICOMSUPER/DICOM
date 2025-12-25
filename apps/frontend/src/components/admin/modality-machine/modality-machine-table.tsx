@@ -22,6 +22,7 @@ interface ModalityMachineTableProps {
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
@@ -37,6 +38,7 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
   limit = 10,
   onSort,
   initialSort,
+  total,
 }) => {
 
   const columns = [
@@ -82,6 +84,7 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (machine: ModalityMachine) => getMachineStatusBadgeSimple(machine.status),
     },
@@ -158,6 +161,7 @@ export const ModalityMachineTable: React.FC<ModalityMachineTableProps> = ({
       limit={limit}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

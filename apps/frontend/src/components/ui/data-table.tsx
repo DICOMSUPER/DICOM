@@ -50,6 +50,7 @@ interface DataTableProps<T> {
   showNumberColumn?: boolean;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -72,6 +73,7 @@ export function DataTable<T extends Record<string, any>>({
   showNumberColumn = true,
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }: DataTableProps<T>) {
@@ -85,7 +87,7 @@ export function DataTable<T extends Record<string, any>>({
       setSortConfig(initialSort);
     }
   }, [initialSort]);
-  
+
   const useColumns = Array.isArray(columns) && Array.isArray(data);
   const resolvedColumnCount = useColumns ? (columns!.length + (showNumberColumn ? 1 : 0)) : (headers ? headers.length + (showNumberColumn ? 1 : 0) : skeletonColumns);
   const resolvedRows = useColumns ? data || [] : [];
@@ -93,16 +95,16 @@ export function DataTable<T extends Record<string, any>>({
 
   const handleSort = (column: DataTableColumn<T>, index: number, event?: React.MouseEvent) => {
     if (!column.sortable) return;
-    
+
     if (!onSort) {
       console.warn('onSort callback not provided. Sorting will not trigger API call.');
       return;
     }
 
     const sortField = column.sortField || `column_${index}`;
-    
+
     let newDirection: SortDirection = "asc";
-    
+
     if (sortConfig.field === sortField) {
       if (sortConfig.direction === "asc") {
         newDirection = "desc";
@@ -111,10 +113,10 @@ export function DataTable<T extends Record<string, any>>({
       }
     }
 
-    const newSortConfig: SortConfig = newDirection 
+    const newSortConfig: SortConfig = newDirection
       ? { field: sortField, direction: newDirection }
       : {};
-    
+
     setSortConfig(newSortConfig);
     onSort(newSortConfig);
   };
@@ -123,7 +125,7 @@ export function DataTable<T extends Record<string, any>>({
     if (!column.sortable) return null;
 
     const sortField = column.sortField || `column_${index}`;
-    
+
     if (sortConfig.field !== sortField) {
       return <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-foreground" />;
     }
@@ -142,6 +144,11 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <Card className={`border-border p-0 ${className}`}>
       <CardContent className="p-0">
+        {typeof total === 'number' && (
+          <div className="border-b border-border bg-slate-50/50 px-4 py-3 text-xs text-foreground font-medium">
+            Total Items: {total}
+          </div>
+        )}
         <TableEnhanced>
           <TableHeaderEnhanced>
             <TableRowEnhanced isHeader>
@@ -156,28 +163,28 @@ export function DataTable<T extends Record<string, any>>({
               )}
               {useColumns && columns
                 ? columns.map((column, index) => (
-                    <TableHeadEnhanced
-                      key={`header-${index}`}
-                      isLast={index === columns.length - 1 && !showNumberColumn}
-                      className={column.headerClassName}
-                    >
-                      {column.sortable ? (
-                        <Button
-                          variant="ghost"
-                          onClick={(e) => handleSort(column, index, e)}
-                          className="h-auto p-0 font-semibold text-foreground hover:bg-transparent hover:text-foreground transition-colors flex items-center [&_svg]:text-foreground"
-                          title={column.sortable ? "Click to sort" : undefined}
-                        >
-                          {column.header}
-                          {getSortIcon(column, index)}
-                        </Button>
-                      ) : (
-                        column.header
-                      )}
-                    </TableHeadEnhanced>
-                  ))
+                  <TableHeadEnhanced
+                    key={`header-${index}`}
+                    isLast={index === columns.length - 1 && !showNumberColumn}
+                    className={column.headerClassName}
+                  >
+                    {column.sortable ? (
+                      <Button
+                        variant="ghost"
+                        onClick={(e) => handleSort(column, index, e)}
+                        className="h-auto p-0 font-semibold text-foreground hover:bg-transparent hover:text-foreground transition-colors flex items-center [&_svg]:text-foreground"
+                        title={column.sortable ? "Click to sort" : undefined}
+                      >
+                        {column.header}
+                        {getSortIcon(column, index)}
+                      </Button>
+                    ) : (
+                      column.header
+                    )}
+                  </TableHeadEnhanced>
+                ))
                 : headers
-                ? headers.map((header, index) => (
+                  ? headers.map((header, index) => (
                     <TableHeadEnhanced
                       key={`header-${index}`}
                       isLast={index === headers.length - 1 && !showNumberColumn}
@@ -185,7 +192,7 @@ export function DataTable<T extends Record<string, any>>({
                       {header}
                     </TableHeadEnhanced>
                   ))
-                : null}
+                  : null}
             </TableRowEnhanced>
           </TableHeaderEnhanced>
           <TableBodyEnhanced>
@@ -194,36 +201,36 @@ export function DataTable<T extends Record<string, any>>({
             ) : (
               (useColumns && columns
                 ? resolvedRows.map((row, rowIndex) => {
-                    const rowNumber = (page - 1) * limit + rowIndex + 1;
-                    const isHovered = hoveredRowIndex === rowIndex;
-                    return (
-                      <TableRowEnhanced
-                        key={rowKey ? rowKey(row, rowIndex) : rowIndex}
-                        className={`${rowClassName?.(row, rowIndex)} ${isHovered ? 'bg-muted/40' : ''}`}
-                        onMouseEnter={() => setHoveredRowIndex(rowIndex)}
-                        onMouseLeave={() => setHoveredRowIndex(null)}
-                      >
-                        {showNumberColumn && (
-                          <TableCellEnhanced
-                            key={`${rowIndex}-number`}
-                            isLast={false}
-                            className="w-16 text-center text-foreground"
-                          >
-                            {rowNumber}
-                          </TableCellEnhanced>
-                        )}
-                        {columns.map((column, colIndex) => (
-                          <TableCellEnhanced
-                            key={`${rowIndex}-${colIndex}`}
-                            isLast={colIndex === columns.length - 1 && !showNumberColumn}
-                            className={column.className}
-                          >
-                            {column.cell(row)}
-                          </TableCellEnhanced>
-                        ))}
-                      </TableRowEnhanced>
-                    );
-                  })
+                  const rowNumber = (page - 1) * limit + rowIndex + 1;
+                  const isHovered = hoveredRowIndex === rowIndex;
+                  return (
+                    <TableRowEnhanced
+                      key={rowKey ? rowKey(row, rowIndex) : rowIndex}
+                      className={`${rowClassName?.(row, rowIndex)} ${isHovered ? 'bg-muted/40' : ''}`}
+                      onMouseEnter={() => setHoveredRowIndex(rowIndex)}
+                      onMouseLeave={() => setHoveredRowIndex(null)}
+                    >
+                      {showNumberColumn && (
+                        <TableCellEnhanced
+                          key={`${rowIndex}-number`}
+                          isLast={false}
+                          className="w-16 text-center text-foreground"
+                        >
+                          {rowNumber}
+                        </TableCellEnhanced>
+                      )}
+                      {columns.map((column, colIndex) => (
+                        <TableCellEnhanced
+                          key={`${rowIndex}-${colIndex}`}
+                          isLast={colIndex === columns.length - 1 && !showNumberColumn}
+                          className={column.className}
+                        >
+                          {column.cell(row)}
+                        </TableCellEnhanced>
+                      ))}
+                    </TableRowEnhanced>
+                  );
+                })
                 : children)
             )}
           </TableBodyEnhanced>
@@ -235,6 +242,7 @@ export function DataTable<T extends Record<string, any>>({
             description={emptyStateDescription}
           />
         )}
+
       </CardContent>
     </Card>
   );

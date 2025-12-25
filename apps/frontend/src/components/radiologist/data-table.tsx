@@ -46,7 +46,8 @@ const formatDate = (date: string): string => {
   return `${parseInt(month)}/${parseInt(day)}/${year.slice(2)}`;
 };
 
-const formatCreatedAt = (date: string): string => {
+const formatCreatedAt = (date?: string | Date): string => {
+  if (!date) return 'N/A';
   const dateObj = new Date(date);
   const [day, month, year] = dateObj.toLocaleDateString("vi-VN").split("/");
   return `${parseInt(day)}/${parseInt(month)}/${year.slice(2)}`;
@@ -93,11 +94,13 @@ export default function DataTable({
   isLoading,
   error,
   refetch,
+  total,
 }: {
   studies: DicomStudy[] | [];
   isLoading: boolean;
   error: boolean | Error;
   refetch: () => void;
+  total?: number;
 }) {
   const { openTab } = useTabs();
 
@@ -360,6 +363,11 @@ export default function DataTable({
             )}
           </div>
         </div>
+        {typeof total === 'number' && (
+          <div className="border-t border-gray-300 bg-gray-50 px-4 py-2 text-xs text-gray-500 font-medium">
+            Total Items: {total}
+          </div>
+        )}
       </div>
     </Suspense>
   );

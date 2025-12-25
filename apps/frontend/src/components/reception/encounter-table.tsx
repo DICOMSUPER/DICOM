@@ -17,6 +17,7 @@ interface EncounterTableProps {
   emptyStateDescription?: string;
   onViewDetails?: (encounter: PatientEncounter) => void;
   onEditEncounter?: (encounter: PatientEncounter) => void;
+  total?: number;
   page?: number;
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
@@ -31,6 +32,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
   emptyStateDescription = "No encounters match your search criteria. Try adjusting your filters or search terms.",
   onViewDetails,
   onEditEncounter,
+  total,
   page = 1,
   limit = 10,
   onSort,
@@ -55,21 +57,41 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
 
   const columns = [
     {
-      header: 'Patient',
+      header: 'First Name',
       sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div className="min-w-0">
           <div className="font-medium text-sm text-foreground">
-            {encounter?.patient?.firstName} {encounter?.patient?.lastName}
-          </div>
-          <div className="text-xs text-foreground">
-            <span className="font-mono">Patient Code: {encounter?.patient?.patientCode}</span>
+            {encounter?.patient?.firstName || '—'}
           </div>
         </div>
       ),
     },
     {
+      header: 'Last Name',
+      sortable: false,
+      cell: (encounter: PatientEncounter) => (
+        <div className="min-w-0">
+          <div className="font-medium text-sm text-foreground">
+            {encounter?.patient?.lastName || '—'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Patient Code',
+      sortable: false,
+      cell: (encounter: PatientEncounter) => (
+        <div className="min-w-0">
+          <span className="text-sm text-foreground font-mono">
+            {encounter?.patient?.patientCode || '—'}
+          </span>
+        </div>
+      ),
+    },
+    {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (encounter: PatientEncounter) => (
         <div>
@@ -226,6 +248,7 @@ export const EncounterTable: React.FC<EncounterTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(encounter) => encounter.id}
+      total={total}
       page={page}
       limit={limit}
       onSort={onSort}

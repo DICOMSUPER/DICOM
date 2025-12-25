@@ -107,10 +107,10 @@ export default function Page() {
   useEffect(() => {
     if (usersError) {
       const error = usersError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data &&
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load user data. Please try again.';
       setError(errorMessage);
@@ -297,6 +297,7 @@ export default function Page() {
         limit={limit}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

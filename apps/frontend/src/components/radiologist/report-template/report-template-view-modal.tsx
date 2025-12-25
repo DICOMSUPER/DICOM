@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReportTemplate } from "@/common/interfaces/patient/report-template.interface";
 import { FileText, Calendar, User, Eye, Lock } from "lucide-react";
 import { TemplateType } from "@/common/enums/report-template.enum";
-import { formatDateTime } from "@/common/utils/format-status";
+import { formatDateTime, modalStyles } from "@/common/utils/format-status";
 
 interface ReportTemplateViewModalProps {
   template: ReportTemplate | null;
@@ -63,9 +63,9 @@ export function ReportTemplateViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6 bg-white">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             Report Template Details
           </DialogTitle>
         </DialogHeader>
@@ -116,7 +116,7 @@ export function ReportTemplateViewModal({
                   <div>
                     <p className="text-sm text-slate-500 mb-1">Body Part</p>
                     <p className="font-medium text-slate-800">
-                      {template.bodyPart?.bodyPartName || "—"}
+                      {template.bodyPart?.name || "—"}
                     </p>
                   </div>
                   <div>
@@ -215,12 +215,12 @@ export function ReportTemplateViewModal({
           )}
         </ScrollArea>
 
-        <DialogFooter className="px-6 py-4 border-t border-gray-100 shrink-0 bg-white">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {template && onEdit && (
-            <Button onClick={() => onEdit(template)}>Edit Template</Button>
+            <Button onClick={() => onEdit(template)} className={modalStyles.primaryButton}>Edit Template</Button>
           )}
         </DialogFooter>
       </DialogContent>

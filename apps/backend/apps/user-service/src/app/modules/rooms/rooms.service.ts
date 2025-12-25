@@ -164,7 +164,7 @@ export class RoomsService {
 
       if (search) {
         qb.andWhere(
-          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          '(unaccent(LOWER(room.description)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(room.roomCode)) ILIKE unaccent(LOWER(:search)))',
           { search: `%${search}%` }
         );
       }
@@ -230,7 +230,7 @@ export class RoomsService {
 
       if (query?.search) {
         qb.andWhere(
-          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          '(unaccent(LOWER(room.description)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(room.roomCode)) ILIKE unaccent(LOWER(:search)))',
           { search: `%${query.search}%` }
         );
       }
@@ -356,7 +356,7 @@ export class RoomsService {
           }
         )
       );
-      console.log('modalityMachineRepo', modalityMachineRepo);
+
 
       if (modalityMachineRepo.length > 0) {
         throw new RoomDeletionFailedException(
@@ -431,7 +431,7 @@ export class RoomsService {
 
       if (data.search) {
         qb.andWhere(
-          '(room.description ILIKE :search OR room.roomCode ILIKE :search)',
+          '(unaccent(LOWER(room.description)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(room.roomCode)) ILIKE unaccent(LOWER(:search)))',
           { search: `%${data.search}%` }
         );
       }
@@ -440,10 +440,6 @@ export class RoomsService {
 
       const rooms = await qb.getMany();
 
-      // console.log(
-      //   `Room for department ${data.id}, filter: ${data.applyScheduleFilter}, role: ${data.role}`
-      // );
-      // console.log(JSON.stringify(rooms, null, 4));
       return rooms;
     } catch (error) {
       throw ThrowMicroserviceException(
@@ -458,11 +454,6 @@ export class RoomsService {
 
   async getRoomByDepartmentIdV2(departmentId: string): Promise<Room[]> {
     try {
-      console.log(
-        '🔍 START getRoomByDepartmentIdV2, departmentId:',
-        departmentId
-      );
-
       const qb = this.roomRepository
         .createQueryBuilder('room')
         .leftJoinAndSelect('room.department', 'department')
@@ -479,7 +470,7 @@ export class RoomsService {
       const vnTime = new Date(
         now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' })
       );
-      console.log('⏰ VN time:', vnTime);
+
 
       const currentDate = vnTime.toISOString().split('T')[0];
       const currentTime = vnTime.toTimeString().split(' ')[0];
@@ -487,12 +478,6 @@ export class RoomsService {
       const yesterday = new Date(vnTime);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayDate = yesterday.toISOString().split('T')[0];
-
-      console.log('📅 Query params:', {
-        currentDate,
-        currentTime,
-        yesterdayDate,
-      });
 
       qb.andWhere(
         `(
@@ -516,17 +501,7 @@ export class RoomsService {
 
       qb.distinct(true);
 
-      // Log SQL query
-      const sql = qb.getSql();
-      console.log('🗄️ SQL Query:', sql);
-      console.log('🔧 Parameters:', qb.getParameters());
-
-      console.log('⚙️ Executing query...');
       const rooms = await qb.getMany();
-
-      console.log('✅ Query executed successfully');
-      console.log('📦 Found rooms:', rooms.length);
-      console.log('📊 Rooms data:', JSON.stringify(rooms, null, 2));
 
       this.logger.log(
         `Found ${rooms.length} rooms for department ${departmentId} at ${currentDate} ${currentTime} VN time`

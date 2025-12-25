@@ -147,13 +147,13 @@ export default function Page() {
   const services: Services[] = servicesData?.data ?? [];
   const paginationMeta = roomServicesRes
     ? {
-        total: roomServicesRes.total,
-        page: roomServicesRes.page,
-        limit: roomServicesRes.limit,
-        totalPages: roomServicesRes.totalPages,
-        hasNextPage: roomServicesRes.hasNextPage,
-        hasPreviousPage: roomServicesRes.hasPreviousPage,
-      }
+      total: roomServicesRes.total,
+      page: roomServicesRes.page,
+      limit: roomServicesRes.limit,
+      totalPages: roomServicesRes.totalPages,
+      hasNextPage: roomServicesRes.hasNextPage,
+      hasPreviousPage: roomServicesRes.hasPreviousPage,
+    }
     : null;
 
   const stats = useMemo(() => {
@@ -321,6 +321,7 @@ export default function Page() {
         onDeleteRoomService={handleDeleteRoomService}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

@@ -24,6 +24,7 @@ interface MachineTableProps {
   emptyStateDescription?: string;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -37,6 +38,7 @@ export function MachineTable({
   emptyStateDescription = "No machines match your search criteria. Try adjusting your filters or search terms.",
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }: MachineTableProps) {
@@ -97,29 +99,55 @@ export function MachineTable({
     },
     {
       header: "Status",
+      headerClassName: "text-center",
       sortable: false,
       cell: (machine: ModalityMachine) => {
         const currentStatus =
           pendingStatus[machine.id] ?? (machine.status as MachineStatus);
         const hasPendingChange = currentStatus !== machine.status;
-        
-        const getStatusColor = (status: MachineStatus) => {
+
+        const getStatusStyles = (status: MachineStatus) => {
           switch (status) {
             case MachineStatus.ACTIVE:
-              return "text-green-600";
+              return {
+                bg: "bg-emerald-50 hover:bg-emerald-100",
+                text: "text-emerald-700",
+                dot: "bg-emerald-500",
+                border: "border-emerald-200",
+              };
             case MachineStatus.INACTIVE:
-              return "text-gray-500";
+              return {
+                bg: "bg-slate-50 hover:bg-slate-100",
+                text: "text-slate-600",
+                dot: "bg-slate-400",
+                border: "border-slate-200",
+              };
             case MachineStatus.MAINTENANCE:
-              return "text-amber-600";
-            case MachineStatus.OUT_OF_SERVICE:
-              return "text-red-600";
+              return {
+                bg: "bg-amber-50 hover:bg-amber-100",
+                text: "text-amber-700",
+                dot: "bg-amber-500",
+                border: "border-amber-200",
+              };
+
             default:
-              return "text-foreground";
+              return {
+                bg: "bg-gray-50 hover:bg-gray-100",
+                text: "text-gray-600",
+                dot: "bg-gray-400",
+                border: "border-gray-200",
+              };
           }
         };
-        
+
+        const formatStatusLabel = (status: MachineStatus) => {
+          return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+        };
+
+        const styles = getStatusStyles(currentStatus);
+
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <Select
               value={currentStatus}
               onValueChange={(value: MachineStatus) => {
@@ -136,19 +164,24 @@ export function MachineTable({
                 });
               }}
             >
-              <SelectTrigger className={`w-[140px] h-8 text-sm ${getStatusColor(currentStatus)}`}>
+              <SelectTrigger
+                className={`w-[150px] h-8 text-xs font-medium border ${styles.border} ${styles.bg} ${styles.text} focus:ring-1 focus:ring-offset-0`}
+              >
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent>
-                {machineStatusArray.map((status) => (
-                  <SelectItem 
-                    key={status} 
-                    value={status}
-                    className={getStatusColor(status)}
-                  >
-                    {status.replace(/_/g, " ")}
-                  </SelectItem>
-                ))}
+              <SelectContent className="border-border">
+                {machineStatusArray.map((status) => {
+                  const itemStyles = getStatusStyles(status);
+                  return (
+                    <SelectItem
+                      key={status}
+                      value={status}
+                      className={`${itemStyles.text} cursor-pointer`}
+                    >
+                      {formatStatusLabel(status)}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             {hasPendingChange && (
@@ -164,7 +197,7 @@ export function MachineTable({
                     return updated;
                   });
                 }}
-                className="h-7 px-2 text-xs"
+                className="h-7 px-3 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
               >
                 Save
               </Button>
@@ -206,6 +239,7 @@ export function MachineTable({
       rowKey={(machine) => machine.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

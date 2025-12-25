@@ -38,12 +38,6 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    console.log('Query params:', {
-      employeeId: data.employeeId,
-      dateArrayLength: dateArray.length,
-      dateRange: `${dateArray[0]} to ${dateArray[dateArray.length - 1]}`,
-    });
-
     if (dateArray.length === 0) {
       const obj: EmployeeRoomAssignmentStats = {};
       result.forEach((value, key) => {
@@ -61,17 +55,6 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
       .andWhere('era.isActive = :isActive', { isActive: true })
       .andWhere('era.isDeleted = :notDeleted', { notDeleted: false })
       .getMany();
-
-    // console.log(`Found ${employeeRoomAssignments.length} assignments`);
-
-    // Debug: Log what we found
-    // employeeRoomAssignments.forEach((assignment, index) => {
-    //   console.log(`Assignment ${index + 1}:`, {
-    //     assignmentId: assignment.id,
-    //     workDate: assignment.roomSchedule?.work_date,
-    //     employeeId: assignment.employeeId,
-    //   });
-    // });
 
     // Count actual assignments
     employeeRoomAssignments.forEach((assignment) => {
@@ -94,13 +77,12 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
     employeeId: string
   ): Promise<EmployeeRoomAssignment[]> {
     // const currentDate = new Date();
-    console.log('employee id', employeeId);
+
 
     const currentDateString = moment().format('YYYY-MM-DD');
     const currentTimeString = moment().format('HH:mm:ss');
 
-    console.log('Current date:', currentDateString);
-    console.log('Current time:', currentTimeString);
+
 
     return await this.entityManager
       .createQueryBuilder(EmployeeRoomAssignment, 'era')
@@ -143,7 +125,7 @@ export class EmployeeRoomAssignmentRepository extends BaseRepository<EmployeeRoo
   async findCurrentEmployeeRoomAssignment(
     userId: string
   ): Promise<EmployeeRoomAssignment | null> {
-    console.log('userId', userId);
+
     const now = moment();
     const currentDate = now.format('YYYY-MM-DD');
     const yesterdayDate = now.clone().subtract(1, 'day').format('YYYY-MM-DD');

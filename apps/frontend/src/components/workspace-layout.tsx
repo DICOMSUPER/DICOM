@@ -19,7 +19,9 @@ interface WorkspaceLayoutProps {
   noPadding?: boolean;
   noBreadcrumbs?: boolean;
   sideBarClass?: string;
+  subtitle?: string;
 }
+
 
 export function WorkspaceLayout({
   children,
@@ -28,6 +30,7 @@ export function WorkspaceLayout({
   noPadding = false,
   noBreadcrumbs = false,
   sideBarClass,
+  subtitle = "Medical Management Platform",
 }: WorkspaceLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const [isMounted, setIsMounted] = React.useState(false);
@@ -43,6 +46,20 @@ export function WorkspaceLayout({
   const handleLogout = () => {
     triggerLogout();
   };
+
+  const userInfo = (() => {
+    if (!isMounted || !user) {
+      return { initial: "U", displayName: "User", role: "Role" };
+    }
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    const displayName = fullName || "User";
+    return {
+      initial: user.email.charAt(0).toUpperCase(),
+      displayName: displayName || "User",
+      role: formatStatus(user.role) || "Role",
+    };
+  })();
+
   const sideBarClassName = sideBarClass
     ? `flex-1 overflow-y-auto ${sideBarClass}`
     : "flex-1 overflow-y-auto";
@@ -96,7 +113,7 @@ export function WorkspaceLayout({
               DICOM System
             </h1>
             <p className="text-xs text-slate-500">
-              Medical Management Platform
+              {subtitle}
             </p>
           </div>
 
@@ -108,14 +125,14 @@ export function WorkspaceLayout({
             <div className="p-3">
               <div className="flex items-center gap-3 mb-2 px-2">
                 <div className="flex h-10 w-10 min-w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold shrink-0">
-                  {isMounted ? (user?.email?.charAt(0).toUpperCase() || "U") : "U"}
+                  {userInfo.initial}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">
-                    {isMounted ? (user?.email?.split("@")[0] || "User") : "User"}
+                    {userInfo.displayName}
                   </p>
                   <p className="text-xs text-foreground truncate">
-                    {isMounted ? formatStatus(user?.role) || "Role" : "Role"}
+                    {userInfo.role}
                   </p>
                 </div>
               </div>

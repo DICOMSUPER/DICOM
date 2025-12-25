@@ -96,10 +96,10 @@ export default function ImagingModalityPage() {
   useEffect(() => {
     if (modalitiesError) {
       const error = modalitiesError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data &&
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load imaging modality data. Please try again.';
       setError(errorMessage);
@@ -161,8 +161,8 @@ export default function ImagingModalityPage() {
       };
       toast.error(
         apiError?.data?.message ||
-          apiError?.message ||
-          "Failed to delete imaging modality"
+        apiError?.message ||
+        "Failed to delete imaging modality"
       );
     }
   };
@@ -188,7 +188,7 @@ export default function ImagingModalityPage() {
       const error = err as ApiError;
       toast.error(
         error?.data?.message ||
-          `Failed to ${selectedModalityId ? "update" : "create"} imaging modality`
+        `Failed to ${selectedModalityId ? "update" : "create"} imaging modality`
       );
     }
   };
@@ -279,6 +279,7 @@ export default function ImagingModalityPage() {
         limit={meta.limit}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={meta.total}
       />
 
       <Pagination

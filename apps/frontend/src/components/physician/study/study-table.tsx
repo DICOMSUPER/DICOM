@@ -27,6 +27,7 @@ interface DicomStudyTableProps {
   emptyStateDescription?: string;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -40,6 +41,7 @@ export function DicomStudyTable({
   emptyStateDescription = "No studies match your search criteria. Try adjusting your filters or search terms.",
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }: DicomStudyTableProps) {
@@ -220,6 +222,7 @@ export function DicomStudyTable({
       rowKey={(study) => study.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

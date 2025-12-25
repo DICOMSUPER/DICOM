@@ -226,7 +226,7 @@ export class UsersService {
 
       if (query.search) {
         qb.andWhere(
-          '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+          '(unaccent(LOWER(user.username)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.email)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.firstName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.lastName)) ILIKE unaccent(LOWER(:search)))',
           { search: `%${query.search}%` }
         );
       }
@@ -294,7 +294,7 @@ export class UsersService {
 
       if (query?.search) {
         qb.andWhere(
-          '(user.username ILIKE :search OR user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+          '(unaccent(LOWER(user.username)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.email)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.firstName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(user.lastName)) ILIKE unaccent(LOWER(:search)))',
           { search: `%${query.search}%` }
         );
       }

@@ -21,6 +21,7 @@ interface RoomServiceTableProps {
   onDeleteRoomService?: (roomService: ServiceRoom) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
@@ -35,6 +36,7 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
   onDeleteRoomService,
   onSort,
   initialSort,
+  total,
 }) => {
 
   const columns = [
@@ -72,6 +74,7 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (roomService: ServiceRoom) => getStatusBadge(roomService.isActive),
     },
@@ -157,6 +160,7 @@ export const RoomServiceTable: React.FC<RoomServiceTableProps> = ({
       rowKey={(roomService) => roomService.id}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

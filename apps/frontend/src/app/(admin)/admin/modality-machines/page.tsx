@@ -99,7 +99,7 @@ export default function ModalityMachinePage() {
     data: modalityMachineStatsData,
     isLoading: modalityMachineStatsLoading,
     refetch: refetchModalityMachineStats,
-  } = useGetModalityMachineStatsQuery();
+  } = useGetModalityMachineStatsQuery({});
 
   const [createMachine, { isLoading: isCreating }] =
     useCreateModalityMachineMutation();
@@ -175,8 +175,8 @@ export default function ModalityMachinePage() {
       };
       toast.error(
         apiError?.data?.message ||
-          apiError?.message ||
-          "Failed to delete modality machine"
+        apiError?.message ||
+        "Failed to delete modality machine"
       );
     }
   };
@@ -202,9 +202,8 @@ export default function ModalityMachinePage() {
       const error = err as ApiError;
       toast.error(
         error?.data?.message ||
-          `Failed to ${
-            selectedMachineId ? "update" : "create"
-          } modality machine`
+        `Failed to ${selectedMachineId ? "update" : "create"
+        } modality machine`
       );
     }
   };
@@ -304,6 +303,7 @@ export default function ModalityMachinePage() {
         limit={meta.limit}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={meta.total}
       />
 
       <Pagination pagination={meta} onPageChange={handlePageChange} />

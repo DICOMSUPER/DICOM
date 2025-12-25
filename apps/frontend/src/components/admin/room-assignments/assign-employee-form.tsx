@@ -178,8 +178,8 @@ export function AssignEmployeeForm({
   const employeeQueryDate = selectedSchedule?.work_date
     ? selectedSchedule.work_date
     : formDate
-    ? format(formDate, "yyyy-MM-dd")
-    : "";
+      ? format(formDate, "yyyy-MM-dd")
+      : "";
   const employeeQueryStartTime = selectedSchedule?.actual_start_time?.trim()
     ? selectedSchedule.actual_start_time.trim()
     : formStartTime || undefined;
@@ -304,14 +304,14 @@ export function AssignEmployeeForm({
       selectedEmployeeIds.length === 1
         ? selectedEmployeeIds[0]
         : selectedEmployeeIds.length === 0
-        ? selectedEmployeeId
-        : null;
+          ? selectedEmployeeId
+          : null;
     const employeeCount =
       selectedEmployeeIds.length > 0
         ? selectedEmployeeIds.length
         : selectedEmployeeId
-        ? 1
-        : 0;
+          ? 1
+          : 0;
 
     if (employeeCount === 0 || (!isBulk && !employeeId)) {
       toast.warning("Please select at least one employee");
@@ -342,8 +342,7 @@ export function AssignEmployeeForm({
         ? selectedSchedule.employeeRoomAssignments?.length || 0
         : currentOccupancy;
       toast.error(
-        `Room capacity exceeded. Max capacity: ${
-          selectedRoom?.capacity || "N/A"
+        `Room capacity exceeded. Max capacity: ${selectedRoom?.capacity || "N/A"
         }, current: ${baseOccupancy}, trying to add: ${employeeCount}`
       );
       return;
@@ -393,8 +392,8 @@ export function AssignEmployeeForm({
         };
         toast.error(
           apiError?.data?.message ||
-            apiError?.message ||
-            "Failed to create schedule"
+          apiError?.message ||
+          "Failed to create schedule"
         );
         setIsSubmitting(false);
         return;
@@ -421,8 +420,8 @@ export function AssignEmployeeForm({
         };
         const successCount =
           (typeof resultData?.data === "object" &&
-          resultData.data !== null &&
-          "count" in resultData.data
+            resultData.data !== null &&
+            "count" in resultData.data
             ? (resultData.data as { count: number }).count
             : undefined) ??
           resultData?.count ??
@@ -481,12 +480,12 @@ export function AssignEmployeeForm({
   const filteredSchedules =
     formDate && formRoomId
       ? schedules.filter((s) => {
-          const scheduleDate = s.work_date
-            ? new Date(s.work_date).toDateString()
-            : null;
-          const selectedDateStr = formDate.toDateString();
-          return scheduleDate === selectedDateStr && s.room_id === formRoomId;
-        })
+        const scheduleDate = s.work_date
+          ? new Date(s.work_date).toDateString()
+          : null;
+        const selectedDateStr = formDate.toDateString();
+        return scheduleDate === selectedDateStr && s.room_id === formRoomId;
+      })
       : [];
 
   const selectedRoom = useMemo(() => {
@@ -514,8 +513,8 @@ export function AssignEmployeeForm({
       selectedEmployeeIds.length > 0
         ? selectedEmployeeIds.length
         : selectedEmployeeId
-        ? 1
-        : 0;
+          ? 1
+          : 0;
     const targetScheduleOccupancy = selectedSchedule
       ? selectedSchedule.employeeRoomAssignments?.length || 0
       : 0;
@@ -727,9 +726,8 @@ export function AssignEmployeeForm({
         <CardTitle className="text-xl">Assign Employee</CardTitle>
         <p className="text-sm text-foreground">
           {selectedSchedule
-            ? `Add another team member to ${
-                selectedSchedule.room?.roomCode ?? "a room"
-              } on ${formatDate(selectedSchedule.work_date)}.`
+            ? `Add another team member to ${selectedSchedule.room?.roomCode ?? "a room"
+            } on ${formatDate(selectedSchedule.work_date)}.`
             : "Select a room and date to assign an employee."}
         </p>
       </CardHeader>
@@ -863,19 +861,19 @@ export function AssignEmployeeForm({
               {rooms.map((room) => {
                 const roomOccupancy = formDate
                   ? schedules
-                      .filter(
-                        (s) =>
-                          s.room_id === room.id &&
-                          s.work_date &&
-                          new Date(s.work_date).toDateString() ===
-                            formDate.toDateString()
-                      )
-                      .reduce(
-                        (count, schedule) =>
-                          count +
-                          (schedule.employeeRoomAssignments?.length || 0),
-                        0
-                      )
+                    .filter(
+                      (s) =>
+                        s.room_id === room.id &&
+                        s.work_date &&
+                        new Date(s.work_date).toDateString() ===
+                        formDate.toDateString()
+                    )
+                    .reduce(
+                      (count, schedule) =>
+                        count +
+                        (schedule.employeeRoomAssignments?.length || 0),
+                      0
+                    )
                   : 0;
 
                 const isRoomAtCapacity = room.capacity
@@ -892,16 +890,15 @@ export function AssignEmployeeForm({
                     typeof room.department === "string"
                       ? room.department
                       : room.department.departmentName ||
-                        room.department.departmentCode ||
-                        "N/A";
+                      room.department.departmentCode ||
+                      "N/A";
                   details.push(`Dept: ${deptName}`);
                 }
                 if (room.floor !== undefined && room.floor !== null)
                   details.push(`Floor: ${room.floor}`);
                 if (room.capacity) {
                   details.push(
-                    `Capacity: ${roomOccupancy}/${room.capacity}${
-                      isRoomAtCapacity ? " (FULL)" : ""
+                    `Capacity: ${roomOccupancy}/${room.capacity}${isRoomAtCapacity ? " (FULL)" : ""
                     }${isRoomOverCapacity ? " (OVER)" : ""}`
                   );
                 }
@@ -1045,8 +1042,8 @@ export function AssignEmployeeForm({
                         selectedEmployeeIds.length > 0
                           ? selectedEmployeeIds.length
                           : selectedEmployeeId
-                          ? 1
-                          : 0;
+                            ? 1
+                            : 0;
                       const totalOccupancy = baseOccupancy + newAssignments;
                       const percentage = Math.min(
                         (totalOccupancy / selectedRoom.capacity) * 100,
@@ -1061,8 +1058,8 @@ export function AssignEmployeeForm({
                               wouldExceedCapacity && "bg-red-500",
                               isAtCapacity && "bg-amber-500",
                               !isAtCapacity &&
-                                !wouldExceedCapacity &&
-                                "bg-primary"
+                              !wouldExceedCapacity &&
+                              "bg-primary"
                             )}
                             style={{ width: `${percentage}%` }}
                           />
@@ -1103,8 +1100,8 @@ export function AssignEmployeeForm({
                       {typeof selectedRoom.department === "string"
                         ? selectedRoom.department
                         : selectedRoom.department.departmentName ||
-                          selectedRoom.department.departmentCode ||
-                          "N/A"}
+                        selectedRoom.department.departmentCode ||
+                        "N/A"}
                     </p>
                   </div>
                 )}
@@ -1274,8 +1271,7 @@ export function AssignEmployeeForm({
                     )}
                     {s.employeeRoomAssignments &&
                       s.employeeRoomAssignments.length > 0 &&
-                      ` (${s.employeeRoomAssignments.length} employee${
-                        s.employeeRoomAssignments.length > 1 ? "s" : ""
+                      ` (${s.employeeRoomAssignments.length} employee${s.employeeRoomAssignments.length > 1 ? "s" : ""
                       } assigned)`}
                   </SelectItem>
                 ))}
@@ -1460,6 +1456,7 @@ export function AssignEmployeeForm({
                   ? "bg-primary/10 hover:bg-primary/15 border-l-2 border-l-primary"
                   : undefined;
               }}
+              total={availableEmployees.length}
             />
           </div>
         </div>
@@ -1494,7 +1491,7 @@ export function AssignEmployeeForm({
             }
             variant={
               (selectedEmployeeId || selectedEmployeeIds.length > 0) &&
-              !wouldExceedCapacity
+                !wouldExceedCapacity
                 ? "default"
                 : "outline"
             }
@@ -1505,8 +1502,7 @@ export function AssignEmployeeForm({
                 Assigning...
               </>
             ) : selectedEmployeeIds.length > 0 ? (
-              `Assign ${selectedEmployeeIds.length} Employee${
-                selectedEmployeeIds.length > 1 ? "s" : ""
+              `Assign ${selectedEmployeeIds.length} Employee${selectedEmployeeIds.length > 1 ? "s" : ""
               }`
             ) : selectedEmployeeId ? (
               "Assign Employee"

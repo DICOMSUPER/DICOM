@@ -89,8 +89,8 @@ export function DiagnosisReportFiltersSection({
         </div>
         <div className="flex gap-2">
           <Select
-            value={filters.status || "all"}
-            onValueChange={(value) => handleSelectChange("status", value)}
+            value={filters.diagnosisStatus || "all"}
+            onValueChange={(value) => handleSelectChange("diagnosisStatus", value)}
           >
             <SelectTrigger className="w-40 h-9">
               <SelectValue placeholder="Status" />
@@ -100,7 +100,7 @@ export function DiagnosisReportFiltersSection({
               {/* <SelectItem value={DiagnosisStatus.DRAFT}>Active</SelectItem> */}
               <SelectItem value={DiagnosisStatus.REJECTED}>Rejected</SelectItem>
               <SelectItem value={DiagnosisStatus.APPROVED}>Approved</SelectItem>
-              <SelectItem value={DiagnosisStatus.PENDING_APPROVAL}>Ruled Out</SelectItem>
+              <SelectItem value={DiagnosisStatus.PENDING_APPROVAL}>Pending Approval</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -123,8 +123,8 @@ export function DiagnosisReportFiltersSection({
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-          <Button 
-            onClick={handleSearch} 
+          <Button
+            onClick={handleSearch}
             disabled={isSearching}
             className="h-9 px-4"
           >

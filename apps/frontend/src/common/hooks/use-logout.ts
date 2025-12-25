@@ -1,23 +1,23 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { logout as logoutAction } from "@/store/authSlice";
+import { logout as logoutAction, setLoggingOut } from "@/store/authSlice";
 import { notificationApi } from "@/store/notificationApi";
 import { RootState } from "@/store";
 
 export function useLogout() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const token = useSelector((state: RootState) => state.auth.token);
+  const isLoggingOut = useSelector((state: RootState) => state.auth.isLoggingOut);
 
   const logout = useCallback(async () => {
     if (isLoggingOut) return;
-    setIsLoggingOut(true);
+    dispatch(setLoggingOut(true));
     try {
       // Get token from Redux state or localStorage as fallback
       // Note: The httpOnly accessToken cookie is handled by the backend
@@ -49,7 +49,7 @@ export function useLogout() {
       // Even if backend logout fails, clear local state
       dispatch(logoutAction());
       dispatch(notificationApi.util.resetApiState());
-      setIsLoggingOut(false);
+      dispatch(setLoggingOut(false));
       toast.error("Failed to logout. Please try again.");
       router.push("/login");
     }
@@ -57,4 +57,3 @@ export function useLogout() {
 
   return { logout, isLoggingOut };
 }
-

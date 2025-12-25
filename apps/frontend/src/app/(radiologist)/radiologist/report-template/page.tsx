@@ -51,10 +51,24 @@ export default function Page() {
 
     if (appliedSearchTerm.trim()) {
       params.search = appliedSearchTerm.trim();
+      params.searchField = 'templateName';
+    }
+
+    if (appliedTypeFilter !== 'all') {
+      params.templateType = appliedTypeFilter;
+    }
+
+    if (appliedVisibilityFilter !== 'all') {
+      params.isPublic = appliedVisibilityFilter === 'public';
+    }
+
+    if (sortConfig.field) {
+      params.sortField = sortConfig.field;
+      params.order = sortConfig.direction || 'desc';
     }
 
     return params;
-  }, [page, limit, appliedSearchTerm]);
+  }, [page, limit, appliedSearchTerm, appliedTypeFilter, appliedVisibilityFilter, sortConfig]);
 
   const {
     data: templatesData,
@@ -72,8 +86,8 @@ export default function Page() {
       const error = templatesError as FetchBaseQueryError;
       const errorMessage =
         error?.data &&
-        typeof error.data === 'object' &&
-        'message' in error.data
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load template data. Please try again.';
       setError(errorMessage);
@@ -82,21 +96,8 @@ export default function Page() {
     }
   }, [templatesError]);
 
-  // Apply client-side filtering for type and visibility
-  const filteredTemplates = useMemo(() => {
-    let templates: ReportTemplate[] = templatesData?.data ?? [];
-
-    if (appliedTypeFilter !== 'all') {
-      templates = templates.filter((t) => t.templateType === appliedTypeFilter);
-    }
-
-    if (appliedVisibilityFilter !== 'all') {
-      const isPublic = appliedVisibilityFilter === 'public';
-      templates = templates.filter((t) => t.isPublic === isPublic);
-    }
-
-    return templates;
-  }, [templatesData?.data, appliedTypeFilter, appliedVisibilityFilter]);
+  // Templates come filtered from backend
+  const templates: ReportTemplate[] = templatesData?.data ?? [];
 
   const paginationMeta = templatesData && {
     total: templatesData.total,
@@ -185,7 +186,7 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Report Template Management</h1>
@@ -220,7 +221,7 @@ export default function Page() {
       />
 
       <ReportTemplateTable
-        templates={filteredTemplates}
+        templates={templates}
         isLoading={templatesLoading}
         emptyStateIcon={<FileText className="h-12 w-12" />}
         emptyStateTitle="No templates found"

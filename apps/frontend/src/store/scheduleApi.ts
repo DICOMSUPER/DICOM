@@ -99,6 +99,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  limit: number;
 }
 
 

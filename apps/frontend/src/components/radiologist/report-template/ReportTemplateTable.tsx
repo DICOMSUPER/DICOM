@@ -18,6 +18,7 @@ interface ReportTemplateTableProps {
   onViewDetails?: (template: ReportTemplate) => void;
   onEditTemplate?: (template: ReportTemplate) => void;
   onDeleteTemplate?: (template: ReportTemplate) => void;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -31,6 +32,7 @@ export const ReportTemplateTable: React.FC<ReportTemplateTableProps> = ({
   onViewDetails,
   onEditTemplate,
   onDeleteTemplate,
+  total,
   onSort,
   initialSort,
 }) => {
@@ -108,7 +110,7 @@ export const ReportTemplateTable: React.FC<ReportTemplateTableProps> = ({
       header: "Body Part",
       cell: (template: ReportTemplate) => (
         <div className="text-foreground">
-          {template.bodyPart?.bodyPartName || "—"}
+          {template.bodyPart?.name || "—"}
         </div>
       ),
     },
@@ -194,6 +196,7 @@ export const ReportTemplateTable: React.FC<ReportTemplateTableProps> = ({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(template) => template.reportTemplatesId}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

@@ -257,11 +257,12 @@ export class BaseRepository<T extends ObjectLiteral> {
       );
     }
 
-    // Search filter
+    // Search filter with unaccent for diacritic-insensitive matching (Vietnamese, etc.)
     if (search && searchField) {
-      query.andWhere(`entity.${searchField} LIKE :search`, {
-        search: `%${search}%`,
-      });
+      query.andWhere(
+        `unaccent(LOWER(entity.${searchField})) ILIKE unaccent(LOWER(:search))`,
+        { search: `%${search}%` }
+      );
     }
 
     // Sorting - support multiple sort fields (n fields)

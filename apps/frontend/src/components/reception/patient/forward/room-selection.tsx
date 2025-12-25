@@ -120,13 +120,12 @@ export default function RoomSelection({
                   onClick={() => setSelectedRoom(room)}
                   type="button"
                   aria-pressed={isSelected}
-                  className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${
-                    isSelected
+                  className={`p-4 border rounded-lg text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:shadow-sm ${isSelected
                       ? "border-primary bg-primary/5 ring-2 ring-primary/30"
                       : isAtCapacity
-                      ? "border-red-300 bg-red-50/50 opacity-60 cursor-not-allowed"
-                      : "border-border bg-background hover:border-primary/20 hover:bg-muted/50"
-                  }`}
+                        ? "border-red-300 bg-red-50/50 opacity-60 cursor-not-allowed"
+                        : "border-border bg-background hover:border-primary/20 hover:bg-muted/50"
+                    }`}
                 >
                   {/* Header */}
                   <div className="flex justify-between items-center mb-3">
@@ -135,19 +134,18 @@ export default function RoomSelection({
                     </h3>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`text-sm font-medium ${
-                          isNotConfigured
+                        className={`text-sm font-medium ${isNotConfigured
                             ? "text-gray-500"
                             : currentWaiting === 0
-                            ? "text-green-600"
-                            : queuePercent < 40
-                            ? "text-green-600"
-                            : queuePercent < 70
-                            ? "text-yellow-600"
-                            : queuePercent < 90
-                            ? "text-orange-600"
-                            : "text-red-600"
-                        }`}
+                              ? "text-green-600"
+                              : queuePercent < 40
+                                ? "text-green-600"
+                                : queuePercent < 70
+                                  ? "text-yellow-600"
+                                  : queuePercent < 90
+                                    ? "text-orange-600"
+                                    : "text-red-600"
+                          }`}
                       >
                         {statusInfo.label}
                       </span>
@@ -167,7 +165,7 @@ export default function RoomSelection({
 
                   {/* Progress bar */}
                   <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground flex justify-between">
+                    <div className="text-xs text-foreground flex justify-between">
                       <span>Current queue</span>
                       <span>
                         {isNotConfigured

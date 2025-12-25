@@ -33,7 +33,7 @@ export class FilterAiAnalysisDto extends PaginationDto {
   @IsDateString()
   endDate?: string;
 
-//   @IsOptional()
-//   @IsString()
-//   search?: string;
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

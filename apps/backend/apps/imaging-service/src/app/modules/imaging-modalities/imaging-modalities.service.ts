@@ -261,9 +261,10 @@ export class ImagingModalitiesService {
       }
 
       if (restPaginationDto.search && restPaginationDto.searchField) {
-        qb.andWhere(`modality.${restPaginationDto.searchField} LIKE :search`, {
-          search: `%${restPaginationDto.search}%`,
-        });
+        qb.andWhere(
+          `unaccent(LOWER(modality.${restPaginationDto.searchField})) ILIKE unaccent(LOWER(:search))`,
+          { search: `%${restPaginationDto.search}%` }
+        );
       }
 
       const [data, total] = await qb.getManyAndCount();

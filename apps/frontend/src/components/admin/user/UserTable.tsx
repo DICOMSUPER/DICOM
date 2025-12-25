@@ -20,6 +20,7 @@ interface UserTableProps {
   onToggleStatus?: (user: User) => void;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -36,6 +37,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   onToggleStatus,
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }) => {
@@ -107,6 +109,7 @@ export const UserTable: React.FC<UserTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (user: User) => getStatusBadge(user.isActive ?? true),
     },
@@ -188,6 +191,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       rowKey={(user) => user.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

@@ -22,6 +22,7 @@ interface OrderTableProps {
   emptyStateDescription?: string;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -38,6 +39,7 @@ export function OrderTable({
   emptyStateDescription = "No orders match your search criteria. Try adjusting your filters or search terms.",
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }: OrderTableProps) {
@@ -75,13 +77,8 @@ export function OrderTable({
       header: "Patient Name",
       sortable: false,
       cell: (order: ImagingOrder) => (
-        <div className="space-y-1">
-          <div className="font-semibold text-foreground">
-            {order.patient?.lastName || "—"}
-          </div>
-          <div className="text-foreground">
-            {order.patient?.firstName || "—"}
-          </div>
+        <div className="font-semibold text-foreground">
+          {order.patient?.lastName || ""} {order.patient?.firstName || ""}
         </div>
       ),
     },
@@ -151,9 +148,12 @@ export function OrderTable({
     },
     {
       header: "Status",
+      headerClassName: "text-center",
       sortable: false,
       cell: (order: ImagingOrder) => (
-        <OrderStatus status={order.orderStatus as ImagingOrderStatus} />
+        <div className="flex justify-center">
+          <OrderStatus status={order.orderStatus as ImagingOrderStatus} />
+        </div>
       ),
     },
     {
@@ -220,6 +220,7 @@ export function OrderTable({
       rowKey={(order) => order.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

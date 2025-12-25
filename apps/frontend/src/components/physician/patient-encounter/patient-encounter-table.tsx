@@ -51,6 +51,7 @@ interface PatientEncounterTableProps {
   emptyStateDescription?: string;
   employeeId: string;
   onTransferPhysician: (encounter: string) => void;
+  total?: number;
   page?: number;
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
@@ -68,6 +69,7 @@ export function PatientEncounterTable({
   emptyStateDescription = "No encounters match your search criteria. Try adjusting your filters or search terms.",
   employeeId,
   onTransferPhysician,
+  total,
   page = 1,
   limit = 10,
   onSort,
@@ -95,7 +97,7 @@ export function PatientEncounterTable({
   const handleShowTransferDetail = (encounter: PatientEncounter) => {
     setSelectedEncounter(encounter);
     setShowTransferModal(true)
-    ;
+      ;
   };
 
   const getStatusBadge = (status: EncounterStatus) => {
@@ -298,6 +300,7 @@ export function PatientEncounterTable({
         emptyStateTitle={emptyStateTitle}
         emptyStateDescription={emptyStateDescription}
         rowKey={(encounter) => encounter.id}
+        total={total}
         page={page}
         limit={limit}
         onSort={onSort}

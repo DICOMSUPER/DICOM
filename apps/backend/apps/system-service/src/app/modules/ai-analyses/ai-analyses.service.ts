@@ -212,7 +212,7 @@ export class AiAnalysesService {
   async findAll(
     filter: FilterAiAnalysisDto
   ): Promise<PaginatedResponseDto<AiAnalysis>> {
-    const { page, limit, patientId, studyId, status } = filter;
+    const { page = 1, limit = 10, patientId, studyId, status, search, startDate, endDate } = filter;
 
     // Generate cache key
     const keyName = createCacheKey.system(
@@ -222,52 +222,66 @@ export class AiAnalysesService {
       { ...filter }
     );
 
-    // Check cache
-    const cachedService = await this.redisService.get<
-      PaginatedResponseDto<AiAnalysis>
-    >(keyName);
+    // Check cache (disabled for now)
+    // const cachedService = await this.redisService.get<
+    //   PaginatedResponseDto<AiAnalysis>
+    // >(keyName);
     // if (cachedService) {
     //   console.log('AI analyses retrieved from cache');
     //   return cachedService;
     // }
 
-    // Build query options
-    const options: any = {
-      where: {},
-      order: { createdAt: 'DESC' },
-    };
-
-    // Apply filters
-    if (patientId) {
-      options.where = {
-        ...options.where,
-        patientId,
-      };
-    }
-    if (studyId) {
-      options.where = {
-        ...options.where,
-        studyId,
-      };
-    }
-    if (status) {
-      options.where = {
-        ...options.where,
-        status,
-      };
-    }
-    // if (modelName) {
-    //   options.where = {
-    //     ...options.where,
-    //     modelName,
-    //   };
-    // }
-
     try {
-      const result = await this.paginationService.paginate(
-        AiAnalysis,
-        { page, limit },
-        options
+      const skip = (page - 1) * limit;
+      
+      const qb = this.aiAnalysisRepository
+        .createQueryBuilder('analysis')
+        .orderBy('analysis.createdAt', 'DESC')
+        .skip(skip)
+        .take(limit);
+
+      // Apply exact-match filters
+      if (patientId) {
+        qb.andWhere('analysis.patientId = :patientId', { patientId });
+      }
+      if (studyId) {
+        qb.andWhere('analysis.studyId = :studyId', { studyId });
+      }
+      if (status) {
+        qb.andWhere('analysis.analysisStatus = :status', { status });
+      }
+
+      // Apply date range filter
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        qb.andWhere('analysis.createdAt >= :startDate', { startDate: start });
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        qb.andWhere('analysis.createdAt <= :endDate', { endDate: end });
+      }
+
+      // Apply text search with unaccent for diacritic-insensitive matching
+      if (search) {
+        qb.andWhere(
+          '(unaccent(LOWER(analysis.modelName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(analysis.studyId)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(analysis.aiAnalyzeMessage)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(analysis.errorMessage)) ILIKE unaccent(LOWER(:search)))',
+          { search: `%${search}%` }
+        );
+      }
+
+      const [data, total] = await qb.getManyAndCount();
+
+      const totalPages = Math.ceil(total / limit);
+      const result = new PaginatedResponseDto<AiAnalysis>(
+        data,
+        total,
+        page,
+        limit,
+        totalPages,
+        page < totalPages,
+        page > 1
       );
 
       await this.redisService.set(keyName, result, 3600);

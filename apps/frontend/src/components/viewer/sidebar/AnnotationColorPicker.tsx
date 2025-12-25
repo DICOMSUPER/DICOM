@@ -26,17 +26,17 @@ const COLOR_PALETTE = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308", "#84CC16", "#22C55E", "#10B981",
   "#14B8A6", "#06B6D4", "#0EA5E9", "#3B82F6", "#6366F1", "#8B5CF6", "#A855F7",
   "#D946EF", "#EC4899", "#F43F5E",
-  
+
   // Darker Variants
   "#DC2626", "#EA580C", "#D97706", "#CA8A04", "#65A30D", "#16A34A", "#059669",
   "#0D9488", "#0891B2", "#0284C7", "#2563EB", "#4F46E5", "#7C3AED", "#9333EA",
   "#C026D3", "#DB2777", "#E11D48",
-  
+
   // Lighter/Pastel Variants
   "#FCA5A5", "#FDBA74", "#FCD34D", "#FDE047", "#BEF264", "#86EFAC", "#6EE7B7",
   "#5EEAD4", "#7DD3FC", "#93C5FD", "#A5B4FC", "#C4B5FD", "#DDD6FE", "#E9D5FF",
   "#F9A8D4", "#FDA4AF",
-  
+
   // Neutral Options
   "#FFFFFF", "#F5F5F5", "#E5E5E5", "#D4D4D4", "#A3A3A3", "#737373",
   "#525252", "#404040", "#262626", "#171717", "#0A0A0A",
@@ -102,11 +102,10 @@ export function AnnotationColorPicker({
                   <button
                     key={paletteColor}
                     onClick={() => onTempColorChange(paletteColor)}
-                    className={`h-6 w-6 rounded border hover:border-white transition-all ${
-                      tempColor === paletteColor
+                    className={`h-6 w-6 rounded border hover:border-white transition-all ${tempColor === paletteColor
                         ? "border-white ring-1 ring-white/50"
                         : "border-slate-600"
-                    }`}
+                      }`}
                     style={{ backgroundColor: paletteColor }}
                     title={paletteColor}
                   />
@@ -121,11 +120,10 @@ export function AnnotationColorPicker({
                   <button
                     key={paletteColor}
                     onClick={() => onTempColorChange(paletteColor)}
-                    className={`h-6 w-6 rounded border hover:border-white transition-all ${
-                      tempColor === paletteColor
+                    className={`h-6 w-6 rounded border hover:border-white transition-all ${tempColor === paletteColor
                         ? "border-white ring-1 ring-white/50"
                         : "border-slate-600"
-                    }`}
+                      }`}
                     style={{ backgroundColor: paletteColor }}
                     title={paletteColor}
                   />
@@ -140,11 +138,10 @@ export function AnnotationColorPicker({
                   <button
                     key={paletteColor}
                     onClick={() => onTempColorChange(paletteColor)}
-                    className={`h-6 w-6 rounded border hover:border-white transition-all ${
-                      tempColor === paletteColor
+                    className={`h-6 w-6 rounded border hover:border-white transition-all ${tempColor === paletteColor
                         ? "border-white ring-1 ring-white/50"
                         : "border-slate-600"
-                    }`}
+                      }`}
                     style={{ backgroundColor: paletteColor }}
                     title={paletteColor}
                   />
@@ -159,11 +156,10 @@ export function AnnotationColorPicker({
                   <button
                     key={paletteColor}
                     onClick={() => onTempColorChange(paletteColor)}
-                    className={`h-6 w-6 rounded border hover:border-white transition-all ${
-                      tempColor === paletteColor
+                    className={`h-6 w-6 rounded border hover:border-white transition-all ${tempColor === paletteColor
                         ? "border-white ring-1 ring-white/50"
                         : "border-slate-600"
-                    }`}
+                      }`}
                     style={{ backgroundColor: paletteColor }}
                     title={paletteColor}
                   />

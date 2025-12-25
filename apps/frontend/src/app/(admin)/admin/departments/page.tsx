@@ -83,10 +83,10 @@ export default function Page() {
   useEffect(() => {
     if (departmentsError) {
       const error = departmentsError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data &&
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load department data. Please try again.';
       setError(errorMessage);
@@ -248,6 +248,7 @@ export default function Page() {
         onDeleteDepartment={handleDeleteDepartment}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

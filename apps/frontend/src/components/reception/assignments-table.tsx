@@ -41,6 +41,7 @@ interface AssignmentsTableProps {
   onEditAssignment?: (assignment: Assignment) => void;
   onRemoveAssignment?: (assignment: Assignment) => void;
   onMarkComplete?: (assignment: Assignment) => void;
+  total?: number;
 }
 
 export function AssignmentsTable({
@@ -53,6 +54,7 @@ export function AssignmentsTable({
   onEditAssignment,
   onRemoveAssignment,
   onMarkComplete,
+  total,
 }: AssignmentsTableProps) {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("en-US", {
@@ -79,9 +81,10 @@ export function AssignmentsTable({
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
+      total={total}
     >
       {assignments.map((assignment) => (
-        <TableRowEnhanced 
+        <TableRowEnhanced
           key={assignment.id}
           className={HIGH_PRIORITY_LEVELS.includes(assignment.priority?.toLowerCase() as PriorityLevel) ? 'bg-red-50 border-l-4 border-l-red-500 hover:bg-red-100' : ''}
         >

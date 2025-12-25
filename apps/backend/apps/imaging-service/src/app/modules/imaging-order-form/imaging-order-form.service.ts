@@ -312,17 +312,20 @@ export class ImagingOrderFormService {
     // Search
     if (search && searchField) {
       if (searchField === 'modalityName') {
-        queryBuilder.andWhere('modality.modalityName ILIKE :search', {
-          search: `%${search}%`,
-        });
+        queryBuilder.andWhere(
+          'unaccent(LOWER(modality.modalityName)) ILIKE unaccent(LOWER(:search))',
+          { search: `%${search}%` }
+        );
       } else if (searchField === 'procedureName') {
-        queryBuilder.andWhere('procedure.procedureName ILIKE :search', {
-          search: `%${search}%`,
-        });
+        queryBuilder.andWhere(
+          'unaccent(LOWER(procedure.procedureName)) ILIKE unaccent(LOWER(:search))',
+          { search: `%${search}%` }
+        );
       } else {
-        queryBuilder.andWhere(`orderForm.${searchField} ILIKE :search`, {
-          search: `%${search}%`,
-        });
+        queryBuilder.andWhere(
+          `unaccent(LOWER(orderForm.${searchField})) ILIKE unaccent(LOWER(:search))`,
+          { search: `%${search}%` }
+        );
       }
     }
 
@@ -389,7 +392,7 @@ export class ImagingOrderFormService {
     // Search
     if (search) {
       queryBuilder.andWhere(
-        '(orderForm.clinicalIndication ILIKE :search OR orderForm.specialInstructions ILIKE :search OR orderForm.notes ILIKE :search)',
+        '(unaccent(LOWER(orderForm.clinicalIndication)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(orderForm.specialInstructions)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(orderForm.notes)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${search}%` }
       );
     }
@@ -511,7 +514,7 @@ export class ImagingOrderFormService {
     // Search in clinical indication, special instructions, or notes
     if (search) {
       queryBuilder.andWhere(
-        '(orderForm.clinicalIndication ILIKE :search OR orderForm.specialInstructions ILIKE :search OR orderForm.notes ILIKE :search)',
+        '(unaccent(LOWER(orderForm.clinicalIndication)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(orderForm.specialInstructions)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(orderForm.notes)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${search}%` }
       );
     }

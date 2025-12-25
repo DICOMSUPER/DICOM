@@ -110,7 +110,7 @@ export function ModalityMachineFiltersSection({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground h-4 w-4" />
             <Input
-              placeholder="Search by machine name..."
+              placeholder="Search by name..."
               value={searchInputs.search}
               onChange={(e) => handleInputChange("search", e.target.value)}
               onKeyPress={handleKeyPress}
@@ -155,8 +155,8 @@ export function ModalityMachineFiltersSection({
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-          <Button 
-            onClick={handleSearch} 
+          <Button
+            onClick={handleSearch}
             disabled={isSearching}
             className="h-9 px-4"
           >

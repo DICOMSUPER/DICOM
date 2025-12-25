@@ -26,6 +26,7 @@ interface DiagnosisReportTableProps {
   emptyStateIcon?: React.ReactNode;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
+  total?: number;
   page?: number;
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
@@ -39,6 +40,7 @@ export function DiagnosisReportTable({
   emptyStateIcon = <User className="h-12 w-12 text-foreground" />,
   emptyStateTitle = "No diagnosis reports found",
   emptyStateDescription = "No diagnosis reports match your search criteria. Try adjusting your filters or search terms.",
+  total,
   page = 1,
   limit = 10,
   onSort,
@@ -212,6 +214,7 @@ export function DiagnosisReportTable({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(report) => report.id}
+      total={total}
       page={page}
       limit={limit}
       onSort={onSort}

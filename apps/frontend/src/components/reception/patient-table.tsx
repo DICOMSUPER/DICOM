@@ -19,6 +19,7 @@ interface PatientTableProps {
   onViewDetails?: (patient: Patient) => void;
   onEditPatient?: (patient: Patient) => void;
   onDeletePatient?: (patient: Patient) => void;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -32,6 +33,7 @@ export function PatientTable({
   onViewDetails,
   onEditPatient,
   onDeletePatient,
+  total,
   onSort,
   initialSort,
 }: PatientTableProps) {
@@ -205,6 +207,7 @@ export function PatientTable({
       emptyStateIcon={emptyStateIcon}
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

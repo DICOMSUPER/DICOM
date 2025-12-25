@@ -39,6 +39,7 @@ import {
 } from "@/store/reportTemplateApi";
 import { FileText } from "lucide-react";
 import { TemplateType } from "@/common/enums/report-template.enum";
+import { modalStyles } from "@/common/utils/format-status";
 
 interface ReportTemplateFormModalProps {
   template: ReportTemplate | null;
@@ -128,7 +129,7 @@ export function ReportTemplateFormModal({
     } catch (error: any) {
       toast.error(
         error?.data?.message ||
-          `Failed to ${isEdit ? "update" : "create"} template`
+        `Failed to ${isEdit ? "update" : "create"} template`
       );
     }
   };
@@ -140,9 +141,9 @@ export function ReportTemplateFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             {isEdit ? "Edit Report Template" : "Create New Report Template"}
           </DialogTitle>
         </DialogHeader>
@@ -352,16 +353,16 @@ export function ReportTemplateFormModal({
               </div>
             </ScrollArea>
 
-            <DialogFooter className="px-6 py-4 border-t border-gray-100 shrink-0">
-              <Button type="button" variant="outline" onClick={handleClose}>
+            <DialogFooter className={modalStyles.dialogFooter}>
+              <Button type="button" variant="outline" onClick={handleClose} className={modalStyles.secondaryButton}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button type="submit" disabled={form.formState.isSubmitting} className={modalStyles.primaryButton}>
                 {form.formState.isSubmitting
                   ? "Saving..."
                   : isEdit
-                  ? "Update Template"
-                  : "Create Template"}
+                    ? "Update Template"
+                    : "Create Template"}
               </Button>
             </DialogFooter>
           </form>

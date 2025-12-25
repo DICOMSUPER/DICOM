@@ -276,7 +276,7 @@ export class ServicesService {
       }
       
       if (restPaginationDto.search && restPaginationDto.searchField) {
-        qb.andWhere(`service.${restPaginationDto.searchField} LIKE :search`, {
+        qb.andWhere(`service.${restPaginationDto.searchField} ILIKE :search`, {
           search: `%${restPaginationDto.search}%`,
         });
       }

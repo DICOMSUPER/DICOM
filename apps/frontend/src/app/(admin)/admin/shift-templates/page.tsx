@@ -89,10 +89,10 @@ export default function Page() {
   useEffect(() => {
     if (templatesError) {
       const error = templatesError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data &&
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load shift template data. Please try again.';
       setError(errorMessage);
@@ -115,7 +115,7 @@ export default function Page() {
     const total = shiftTemplateStatsData?.totalTemplates ?? 0;
     const active = shiftTemplateStatsData?.activeTemplates ?? 0;
     const inactive = shiftTemplateStatsData?.inactiveTemplates ?? 0;
-    
+
     const getCountByType = (type: string) => {
       const typeData = shiftTemplateStatsData?.templatesByType?.find(
         (t) => t.type === type
@@ -274,6 +274,7 @@ export default function Page() {
         limit={limit}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

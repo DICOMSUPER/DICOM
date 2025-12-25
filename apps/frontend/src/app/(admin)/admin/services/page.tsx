@@ -34,11 +34,11 @@ import { SortConfig } from '@/components/ui/data-table';
 import { sortConfigToQueryParams } from '@/common/utils/sort-utils';
 
 export default function ServicePage() {
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
-    field: 'createdAt', 
-    direction: 'desc' 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'createdAt',
+    direction: 'desc'
   });
-  
+
   const [filters, setFilters] = useState<PaginatedQuery & { includeInactive?: boolean; includeDeleted?: boolean }>({
     page: 1,
     limit: 10,
@@ -77,18 +77,18 @@ export default function ServicePage() {
       includeInactive: filters.includeInactive,
       includeDeleted: filters.includeDeleted,
     };
-    
+
     // Add sort parameters (supports n fields)
     const sortParams = sortConfigToQueryParams(sortConfig);
     Object.assign(params, sortParams);
-    
+
     return params;
   }, [filters, sortConfig]);
 
   // RTK Query hooks
-  const { 
-    data, 
-    isLoading, 
+  const {
+    data,
+    isLoading,
     isFetching,
     error: servicesError,
     refetch: refetchServices,
@@ -111,10 +111,10 @@ export default function ServicePage() {
   useEffect(() => {
     if (servicesError) {
       const error = servicesError as FetchBaseQueryError;
-      const errorMessage = 
-        error?.data && 
-        typeof error.data === 'object' &&
-        'message' in error.data
+      const errorMessage =
+        error?.data &&
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load service data. Please try again.';
       setError(errorMessage);
@@ -137,7 +137,7 @@ export default function ServicePage() {
   }, [data]);
 
   const services = data?.data || [];
-  
+
   const stats = useMemo(() => {
     const total = serviceStatsData?.totalServices ?? 0;
     const active = serviceStatsData?.activeServices ?? 0;
@@ -307,8 +307,9 @@ export default function ServicePage() {
         isLoading={isLoading}
         page={filters.page}
         limit={filters.limit}
+        total={paginationMeta?.total}
       />
-      
+
       {paginationMeta && (
         <Pagination
           pagination={paginationMeta}
@@ -316,52 +317,52 @@ export default function ServicePage() {
         />
       )}
 
-        {/* View Details Modal */}
-        <ModalServiceDetail
-          open={detailModalOpen}
-          onClose={() => {
-            setDetailModalOpen(false);
-            setSelectedServiceId("");
-          }}
-          serviceId={selectedServiceId}
-        />
+      {/* View Details Modal */}
+      <ModalServiceDetail
+        open={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedServiceId("");
+        }}
+        serviceId={selectedServiceId}
+      />
 
-        {/* Add/Edit Form Modal */}
-        <ModalServiceForm
-          open={formModalOpen}
-          onClose={() => {
-            setFormModalOpen(false);
-            setSelectedServiceId("");
-            setEditMode(false);
-          }}
-          onSubmit={handleFormSubmit}
-          serviceId={editMode ? selectedServiceId : undefined}
-          isLoading={isCreating || isUpdating}
-        />
+      {/* Add/Edit Form Modal */}
+      <ModalServiceForm
+        open={formModalOpen}
+        onClose={() => {
+          setFormModalOpen(false);
+          setSelectedServiceId("");
+          setEditMode(false);
+        }}
+        onSubmit={handleFormSubmit}
+        serviceId={editMode ? selectedServiceId : undefined}
+        isLoading={isCreating || isUpdating}
+      />
 
-        {/* Delete Confirmation Dialog */}
-        <ConfirmationModal
-          isOpen={deleteDialogOpen}
-          onClose={() => {
-            setDeleteDialogOpen(false);
-            setSelectedServiceId("");
-          }}
-          onConfirm={handleConfirmDelete}
-          title="Delete Service"
-          description={
-            <>
-              Are you sure you want to delete service <strong>{services.find(s => s.id === selectedServiceId)?.serviceName || 'this service'}</strong>? This action
-              cannot be undone and will permanently remove this service from the system.
-            </>
-          }
-          confirmText="Delete"
-          cancelText="Cancel"
-          variant="danger"
-          isLoading={isDeleting}
-        />
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationModal
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setSelectedServiceId("");
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Service"
+        description={
+          <>
+            Are you sure you want to delete service <strong>{services.find(s => s.id === selectedServiceId)?.serviceName || 'this service'}</strong>? This action
+            cannot be undone and will permanently remove this service from the system.
+          </>
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
 
-        {/* Toggle Active Status Confirmation Dialog */}
-        {/* <AlertDialog
+      {/* Toggle Active Status Confirmation Dialog */}
+      {/* <AlertDialog
           open={toggleActiveDialogOpen}
           onOpenChange={setToggleActiveDialogOpen}
         >
@@ -392,7 +393,7 @@ export default function ServicePage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog> */}
-      
+
     </div>
   );
 }

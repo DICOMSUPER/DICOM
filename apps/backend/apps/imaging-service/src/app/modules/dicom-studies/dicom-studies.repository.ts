@@ -105,9 +105,10 @@ export class DicomStudiesRepository extends BaseRepository<DicomStudy> {
     });
 
     if (search && searchField) {
-      query.andWhere(`${searchField} LIKE :search`, {
-        search: `%${search}%`,
-      });
+      query.andWhere(
+        `unaccent(LOWER(${searchField})) ILIKE unaccent(LOWER(:search))`,
+        { search: `%${search}%` }
+      );
     }
 
     if (relation?.length) {

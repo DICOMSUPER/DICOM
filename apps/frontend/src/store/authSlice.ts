@@ -14,11 +14,13 @@ export interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
+  isLoggingOut: boolean;
 }
 
 const initialState: AuthState = {
   user: null,
   token: null,
+  isLoggingOut: false,
 };
 
 const authSlice = createSlice({
@@ -57,6 +59,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      state.isLoggingOut = false;
 
       // Remove from localStorage and cookies
       if (typeof window !== "undefined") {
@@ -65,6 +68,9 @@ const authSlice = createSlice({
         Cookies.remove("accessToken");
         Cookies.remove("user");
       }
+    },
+    setLoggingOut: (state, action: PayloadAction<boolean>) => {
+      state.isLoggingOut = action.payload;
     },
     loadCredentials: (state) => {
       if (typeof window !== "undefined") {
@@ -122,5 +128,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, loadCredentials } = authSlice.actions;
+export const { setCredentials, logout, loadCredentials, setLoggingOut } = authSlice.actions;
 export default authSlice.reducer;

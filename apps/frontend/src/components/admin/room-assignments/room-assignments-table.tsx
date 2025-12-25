@@ -19,6 +19,7 @@ interface RoomAssignmentsTableProps {
   isLoading?: boolean;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export function RoomAssignmentsTable({
@@ -29,6 +30,7 @@ export function RoomAssignmentsTable({
   isLoading = false,
   onSort,
   initialSort,
+  total,
 }: RoomAssignmentsTableProps) {
   return (
     <DataTable<EmployeeRoomAssignment>
@@ -147,6 +149,7 @@ export function RoomAssignmentsTable({
       emptyStateDescription="Create an assignment to see it listed here."
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 }

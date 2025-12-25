@@ -17,6 +17,7 @@ import {
 } from "@/common/enums/patient-workflow.enum";
 import DatePickerDropdown from "../radiologist/date-picker";
 import { Services } from "@/common/interfaces/user/service.interface";
+import { formatStatus } from "@/common/utils/format-status";
 
 const defaultPriorityOptions: EncounterPriorityLevel[] = [
   ...Object.values(EncounterPriorityLevel),
@@ -114,7 +115,7 @@ export function EncounterFilter({
               <SelectItem value="all">All Priority</SelectItem>
               {priorityOptions.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {option}
+                  {formatStatus(option)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -134,7 +135,7 @@ export function EncounterFilter({
               <SelectItem value="all">All Type</SelectItem>
               {typeOptions.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {option}
+                  {formatStatus(option)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -154,7 +155,7 @@ export function EncounterFilter({
               <SelectItem value="all">All Status</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option} value={option}>
-                  {option}
+                  {formatStatus(option)}
                 </SelectItem>
               ))}
             </SelectContent>

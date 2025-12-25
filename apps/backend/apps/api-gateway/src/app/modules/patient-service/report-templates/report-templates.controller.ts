@@ -52,7 +52,9 @@ export class ReportTemplatesController {
     @Query('search') search?: string,
     @Query('searchField') searchField?: string,
     @Query('sortField') sortField?: string,
-    @Query('order') order?: 'asc' | 'desc'
+    @Query('order') order?: 'asc' | 'desc',
+    @Query('templateType') templateType?: string,
+    @Query('isPublic') isPublic?: string
   ) {
     const paginationDto = {
       page: page ? Number(page) : undefined,
@@ -61,6 +63,8 @@ export class ReportTemplatesController {
       searchField,
       sortField,
       order,
+      templateType,
+      isPublic: isPublic !== undefined ? isPublic === 'true' : undefined,
     };
     return await firstValueFrom(
       this.patientService.send('PatientService.ReportTemplate.FindMany', {

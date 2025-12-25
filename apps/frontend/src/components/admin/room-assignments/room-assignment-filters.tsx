@@ -32,7 +32,7 @@ export function RoomAssignmentFilters({
             <Input
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search employees or room codes..."
+              placeholder="Search by employee name, room name, or notes..."
               className="pl-10"
             />
           </div>

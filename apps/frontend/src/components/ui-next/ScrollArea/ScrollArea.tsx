@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 
 import { cn } from "../../../common/lib/utils";
-import { Icons } from "../Icons";
+import { ChevronDown } from "lucide-react";
 
 /**
  * Props interface for the ScrollArea component.
@@ -78,12 +78,12 @@ const ScrollArea = React.forwardRef<
       <ScrollAreaPrimitive.Corner />
       {showArrows && showTopArrow && (
         <div className="from-background via-background/80 pointer-events-none absolute -top-1 left-0 right-0 flex h-8 items-center justify-center bg-gradient-to-b to-transparent">
-          <Icons.ChevronOpen className="text-foreground/50 h-8 w-8 rotate-180" />
+          <ChevronDown className="text-foreground/50 h-8 w-8 rotate-180" />
         </div>
       )}
       {showArrows && showBottomArrow && (
         <div className="from-background via-background/80 pointer-events-none absolute -bottom-1 left-0 right-0 flex h-8 items-center justify-center bg-gradient-to-t to-transparent">
-          <Icons.ChevronOpen className="text-foreground/50 h-8 w-8" />
+          <ChevronDown className="text-foreground/50 h-8 w-8" />
         </div>
       )}
     </ScrollAreaPrimitive.Root>
@@ -116,9 +116,9 @@ const ScrollBar = React.forwardRef<
     className={cn(
       "flex touch-none select-none transition-colors",
       orientation === "vertical" &&
-        "h-full w-2.5 border-l border-l-transparent p-[2px]",
+      "h-full w-4 border-l border-l-transparent p-[2px]",
       orientation === "horizontal" &&
-        "h-2 flex-col border-t border-t-transparent p-[1px]",
+      "h-4 flex-col border-t border-t-transparent p-[1px]",
       className
     )}
     {...props}

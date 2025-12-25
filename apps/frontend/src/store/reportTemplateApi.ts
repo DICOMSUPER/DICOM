@@ -29,7 +29,16 @@ export const reportTemplateApi = createApi({
 
     getReportTemplatesPaginated: builder.query<
       PaginatedResponse<ReportTemplate>,
-      { page?: number; limit?: number; search?: string } | void
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        searchField?: string;
+        templateType?: string;
+        isPublic?: boolean;
+        sortField?: string;
+        order?: 'asc' | 'desc';
+      } | void
     >({
       query: (params) => ({
         url: "/paginated",

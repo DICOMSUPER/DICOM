@@ -151,9 +151,23 @@ export class ReportTemplatesService {
   };
 
   findMany = async (
-    paginationDto: RepositoryPaginationDto
+    paginationDto: RepositoryPaginationDto & { templateType?: string; isPublic?: boolean }
   ): Promise<PaginatedResponseDto<ReportTemplate>> => {
-    return await this.reportTemplateRepository.paginate(paginationDto);
+    const { templateType, isPublic, ...basePaginationDto } = paginationDto;
+    
+    // Build where conditions for filters
+    const where: Record<string, any> = {};
+    if (templateType) {
+      where.templateType = templateType;
+    }
+    if (isPublic !== undefined) {
+      where.isPublic = isPublic;
+    }
+
+    return await this.reportTemplateRepository.paginate(
+      basePaginationDto,
+      Object.keys(where).length > 0 ? { where } : undefined
+    );
   };
 
   findByModaltyIdandBodyPartId = async (

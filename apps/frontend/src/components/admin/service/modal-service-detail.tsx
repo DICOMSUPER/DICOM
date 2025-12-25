@@ -67,12 +67,11 @@ export function ModalServiceDetail({
     const colorKey = getStatusBadgeColor(status);
     return (
       <Badge className={`${modalStyles.badge[colorKey]} px-2 py-0.5 text-xs font-medium border flex items-center gap-1.5`}>
-        <div className={`w-1.5 h-1.5 rounded-full ${
-          colorKey === 'green' ? 'bg-emerald-500' : 
-          colorKey === 'amber' ? 'bg-amber-500 animate-pulse' : 
-          colorKey === 'red' ? 'bg-red-500' :
-          'bg-slate-400'
-        }`} />
+        <div className={`w-1.5 h-1.5 rounded-full ${colorKey === 'green' ? 'bg-emerald-500' :
+            colorKey === 'amber' ? 'bg-amber-500 animate-pulse' :
+              colorKey === 'red' ? 'bg-red-500' :
+                'bg-slate-400'
+          }`} />
         {formatStatus(status)}
       </Badge>
     );
@@ -268,9 +267,9 @@ export function ModalServiceDetail({
                     <Building2 className="h-12 w-12 mx-auto mb-4 text-red-400" />
                     <p className="text-red-600 font-semibold">Failed to load assigned rooms</p>
                     <p className="text-sm text-red-500 mt-2">Please try again later</p>
-                    {roomServicesError && 
-                      typeof roomServicesError === 'object' && 
-                      roomServicesError !== null && 
+                    {roomServicesError &&
+                      typeof roomServicesError === 'object' &&
+                      roomServicesError !== null &&
                       'message' in roomServicesError && (
                         <p className="text-xs text-red-400 mt-1">
                           {String((roomServicesError as { message?: string }).message || 'Unknown error')}
@@ -289,6 +288,7 @@ export function ModalServiceDetail({
                     showNumberColumn={true}
                     page={1}
                     limit={roomServices.length}
+                    total={roomServices.length}
                     className="border-0 shadow-none"
                   />
                 )}
