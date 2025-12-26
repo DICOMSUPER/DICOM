@@ -37,16 +37,6 @@ export function RoomAssignmentStats({
       value: totalAssignments,
       description: "Overall scheduled assignments",
       icon: statIcons.total,
-      badge: `${activeAssignments} active`,
-    },
-    {
-      label: "Active Assignments",
-      value: activeAssignments,
-      description: "Currently active schedules",
-      icon: statIcons.active,
-      badge: `${Math.round(
-        totalAssignments === 0 ? 0 : (activeAssignments / totalAssignments) * 100
-      )}% of total`,
     },
     {
       label: "Rooms Covered",
@@ -63,7 +53,7 @@ export function RoomAssignmentStats({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {stats.map((stat) => (
         <Card key={stat.label} className="border border-border">
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">

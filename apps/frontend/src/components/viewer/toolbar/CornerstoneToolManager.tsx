@@ -164,6 +164,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     const imageRenderedHandlerRef = useRef<((evt: any) => void) | null>(null);
     const viewportRef = useRef(viewport);
     const selectedToolRef = useRef(selectedTool);
+    const viewportReadyRef = useRef(viewportReady);
     const viewportRegisteredRef = useRef<boolean>(false);
     const pendingToolActivationRef = useRef<string | null>(null);
 
@@ -171,6 +172,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       recordAnnotationHistoryEntry,
       updateAnnotationHistoryEntry,
       removeAnnotationHistoryEntry,
+      getStackViewport,
     } = useViewer();
     const safeViewportIndex = useMemo(() => viewportIndex ?? 0, [viewportIndex]);
 
@@ -181,7 +183,8 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     useEffect(() => {
       viewportRef.current = viewport;
       selectedToolRef.current = selectedTool;
-    }, [viewport, selectedTool]);
+      viewportReadyRef.current = viewportReady;
+    }, [viewport, selectedTool, viewportReady]);
 
     const updateViewportCamera = useCallback((updateFn: (camera: any) => any, action: string) => {
       if (!viewport || !viewportReady) return;
@@ -196,36 +199,36 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
     }, [viewport, viewportReady, viewportId]);
 
     const handleResetView = useCallback(() => {
-      console.log("[ToolManager] handleResetView called", { viewportId, viewportReady, hasViewport: !!viewport });
-      if (!viewport || !viewportReady) return;
+      // Get viewport directly from context to ensure we have the latest reference
+      const currentViewport = getStackViewport(safeViewportIndex);
+      const isReady = viewportReadyRef.current;
+      if (!currentViewport || !isReady) return;
 
       try {
-        viewport.resetCamera();
-        setTimeout(() => batchedRender(viewport), 100);
-        console.log("[ToolManager] Viewport reset successfully");
+        currentViewport.resetCamera();
+        batchedRender(currentViewport);
       } catch (error) {
         console.error("Error resetting view:", error);
       }
-    }, [viewport, viewportReady, viewportId]);
+    }, [viewportId, getStackViewport, safeViewportIndex]);
 
     const handleInvertColorMap = useCallback(() => {
-      console.log("[ToolManager] handleInvertColorMap called", { viewportId, viewportReady });
-      if (!viewport || !viewportReady) return;
+      // Get viewport directly from context to ensure we have the latest reference
+      const currentViewport = getStackViewport(safeViewportIndex);
+      const isReady = viewportReadyRef.current;
+      if (!currentViewport || !isReady) return;
 
       try {
-        if (typeof viewport.setProperties === "function") {
-          const currentProperties = viewport.getProperties();
-          console.log("[ToolManager] Current invert state:", currentProperties.invert);
-          viewport.setProperties({ ...currentProperties, invert: !currentProperties.invert });
-          batchedRender(viewport);
-          console.log("[ToolManager] Inverted color map to:", !currentProperties.invert);
-        } else {
-          console.warn("setProperties not available for color map inversion");
+        if (typeof currentViewport.setProperties === "function") {
+          const currentProperties = currentViewport.getProperties();
+          currentViewport.setProperties({ ...currentProperties, invert: !currentProperties.invert });
+          batchedRender(currentViewport);
         }
       } catch (error) {
         console.error("Error inverting color map:", error);
       }
-    }, [viewport, viewportReady, viewportId]);
+    }, [viewportId, getStackViewport, safeViewportIndex]);
+
 
     const handleClearAnnotations = useCallback(() => {
       try {

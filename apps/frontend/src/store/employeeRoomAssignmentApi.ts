@@ -6,6 +6,7 @@ import {
   EmployeeRoomAssignment,
   EmployeeRoomAssignmentStats,
 } from "@/common/interfaces/user/employee-room-assignment.interface";
+import { RoomScheduleApi } from "./roomScheduleApi";
 
 export const employeeRoomAssignmentApi = createApi({
   reducerPath: "employeeRoomAssignmentApi",
@@ -61,6 +62,15 @@ export const employeeRoomAssignmentApi = createApi({
         { type: "RoomSchedule", id: roomScheduleId },
         "RoomSchedule",
       ],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Invalidate RoomScheduleApi tags for available employees and schedules
+          dispatch(RoomScheduleApi.util.invalidateTags(["Employee", "RoomSchedule"]));
+        } catch {
+          // Query failed, no need to invalidate
+        }
+      },
     }),
     bulkCreateEmployeeRoomAssignments: builder.mutation<
       ApiResponse<EmployeeRoomAssignment[]>,
@@ -81,6 +91,15 @@ export const employeeRoomAssignmentApi = createApi({
         { type: "RoomSchedule", id: roomScheduleId },
         "RoomSchedule",
       ],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          // Invalidate RoomScheduleApi tags for available employees and schedules
+          dispatch(RoomScheduleApi.util.invalidateTags(["Employee", "RoomSchedule"]));
+        } catch {
+          // Query failed, no need to invalidate
+        }
+      },
     }),
     updateEmployeeRoomAssignment: builder.mutation<
       ApiResponse<EmployeeRoomAssignment>,
@@ -174,7 +193,9 @@ export const employeeRoomAssignmentApi = createApi({
         method: "GET",
         params: { work_date },
       }),
+      providesTags: ["EmployeeRoomAssignment"],
     }),
+
   }),
 });
 

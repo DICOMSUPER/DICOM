@@ -69,6 +69,7 @@ import {
 import {
   useCreateEmployeeRoomAssignmentMutation,
   useBulkCreateEmployeeRoomAssignmentsMutation,
+  useGetEmployeeRoomAssignmentInWorkDateQuery,
 } from "@/store/employeeRoomAssignmentApi";
 import { useGetModalitiesInRoomQuery } from "@/store/modalityMachineApi";
 import { useGetDepartmentsQuery } from "@/store/departmentApi";
@@ -141,6 +142,13 @@ export function AssignEmployeeForm({
   const { data: allSchedulesData } = useGetRoomSchedulesQuery({});
   const schedules = allSchedulesData ?? [];
 
+  // Fetch assignments for the selected date to calculate room occupancy
+  const formDateString = formDate ? format(formDate, "yyyy-MM-dd") : undefined;
+  const { data: assignmentsData } = useGetEmployeeRoomAssignmentInWorkDateQuery(
+    formDateString || "",
+    { skip: !formDateString }
+  );
+
   const { data: roomsData, isLoading: loadingRooms } = useGetRoomsQuery({
     page: 1,
     limit: 1000,
@@ -187,6 +195,14 @@ export function AssignEmployeeForm({
     ? selectedSchedule.actual_end_time.trim()
     : formEndTime || undefined;
 
+  const hasRequiredFieldsForEmployeeQuery = useMemo(() => {
+    const hasDate = !!employeeQueryDate;
+    const hasRoom = !!(selectedSchedule?.room_id || formRoomId);
+    const hasStartTime = !!(employeeQueryStartTime);
+    const hasEndTime = !!(employeeQueryEndTime);
+    return hasDate && hasRoom && hasStartTime && hasEndTime;
+  }, [employeeQueryDate, selectedSchedule?.room_id, formRoomId, employeeQueryStartTime, employeeQueryEndTime]);
+
   const {
     data: availableEmployeesData,
     isFetching: availableEmployeesLoading,
@@ -201,9 +217,11 @@ export function AssignEmployeeForm({
       departmentId: activeDepartmentFilter || undefined,
     },
     {
-      skip: !employeeQueryDate,
+      skip: !hasRequiredFieldsForEmployeeQuery,
+      refetchOnMountOrArgChange: true,
     }
   );
+
 
   const availableEmployees = useMemo(
     () => extractApiData<Employee>(availableEmployeesData),
@@ -263,6 +281,13 @@ export function AssignEmployeeForm({
       }
     }
   }, [formShiftId, shiftTemplates, selectedSchedule]);
+
+  useEffect(() => {
+    setSelectedEmployeeId("");
+    setSelectedEmployeeIds([]);
+    setConfirmAssign(false);
+  }, [formDate, formRoomId, formShiftId]);
+
 
   const handleSearch = () => {
     setActiveSearch(employeeSearch);
@@ -496,6 +521,18 @@ export function AssignEmployeeForm({
 
   const currentOccupancy = useMemo(() => {
     if (!selectedRoom || !formDate) return 0;
+
+    // Use assignments from dedicated API if available
+    const assignments = assignmentsData?.data ?? [];
+    if (assignments.length > 0) {
+      // Count assignments for the selected room on the selected date
+      return assignments.filter((a) => {
+        const schedule = a.roomSchedule;
+        return schedule?.room_id === selectedRoom.id;
+      }).length;
+    }
+
+    // Fallback to schedules data (in case assignmentsData is not loaded yet)
     const roomSchedules = schedules.filter(
       (s) =>
         s.room_id === selectedRoom.id &&
@@ -505,7 +542,7 @@ export function AssignEmployeeForm({
     return roomSchedules.reduce((count, schedule) => {
       return count + (schedule.employeeRoomAssignments?.length || 0);
     }, 0);
-  }, [selectedRoom, formDate, schedules]);
+  }, [selectedRoom, formDate, schedules, assignmentsData]);
 
   const wouldExceedCapacity = useMemo(() => {
     if (!selectedRoom?.capacity) return false;
@@ -1284,20 +1321,21 @@ export function AssignEmployeeForm({
         {formDate && formRoomId && !selectedSchedule && (
           <>
             <div>
-              <label className="text-sm font-medium mb-2 text-foreground block">
-                Shift Template (Optional)
+              <label className="text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                  3
+                </span>
+                Select Shift Template <span className="text-red-500">*</span>
               </label>
               <p className="text-xs text-foreground mb-2">
-                Select a shift template to automatically fill start and end
-                times.
+                A shift template is required to set the schedule time.
               </p>
               <Select
-                value={formShiftId || "__none__"}
-                onValueChange={(value) => {
-                  setFormShiftId(value === "__none__" ? "" : value);
-                }}
+                value={formShiftId || undefined}
+                onValueChange={(value) => setFormShiftId(value)}
                 disabled={loadingShiftTemplates}
               >
+
                 <SelectTrigger>
                   <SelectValue placeholder="Select a shift template" />
                 </SelectTrigger>
@@ -1338,16 +1376,6 @@ export function AssignEmployeeForm({
                 }
                 return null;
               })()}
-
-            {/* Warning if no shift template selected */}
-            {!formShiftId && (
-              <p className="text-xs text-amber-600 flex items-center gap-1.5">
-                <AlertTriangle className="h-3 w-3 shrink-0" />
-                <span>
-                  Please select a shift template to set the schedule time
-                </span>
-              </p>
-            )}
           </>
         )}
 

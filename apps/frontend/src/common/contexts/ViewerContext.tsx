@@ -1484,9 +1484,17 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
         studyId: runtime.studyId,
         forceRebuild: true,
       });
+
+      const vp = getStackViewport(viewport);
+      if (vp) {
+        vp.resize?.();
+        vp.resetCamera();
+        batchedRender(vp);
+      }
     },
-    [getViewportSeries, getViewportRuntimeState, loadSeriesIntoViewport]
+    [getViewportSeries, getViewportRuntimeState, loadSeriesIntoViewport, getStackViewport]
   );
+
 
   const updateViewportTransform = useCallback(
     (viewport: number, transform: Partial<ViewportTransform>) => {

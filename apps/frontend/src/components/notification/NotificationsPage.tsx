@@ -15,15 +15,13 @@ import {
 import { CheckCheck, Search, Bell } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshButton } from "@/components/ui/refresh-button";
-import { NotificationType } from "@/common/enums/notification.enum";
-import { getNotificationTypeConfig } from "@/common/utils/notification-utils";
+
 import { useGetNotificationsByUserQuery } from "@/store/notificationApi";
 import { FilterNotificationDto } from "@/common/interfaces/system/notification.interface";
 
 export function NotificationsPage() {
   const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   // Build filter parameters for API
@@ -35,19 +33,9 @@ export function NotificationsPage() {
       params.title = searchQuery.trim();
     }
 
-    // Type filter
-    if (filterType !== "all") {
-      params.type = filterType as NotificationType;
-    }
-
-
-    // Status filter
-    if (filterStatus !== "all") {
-      params.isRead = filterStatus === "read";
-    }
 
     return params;
-  }, [searchQuery, filterType, filterStatus]);
+  }, [searchQuery]);
 
   // Fetch notifications with filters
   const {
@@ -57,7 +45,16 @@ export function NotificationsPage() {
     refetch,
   } = useGetNotificationsByUserQuery({ filter: filterParams });
 
-  const notifications = notificationsResponse?.data || [];
+  const allNotifications = notificationsResponse?.data || [];
+
+  // Filter notifications client-side based on status
+  const notifications = useMemo(() => {
+    if (filterStatus === "all") return allNotifications;
+
+    const isReadFilter = filterStatus === "read";
+    return allNotifications.filter(n => n.isRead === isReadFilter);
+  }, [allNotifications, filterStatus]);
+
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -105,22 +102,7 @@ export function NotificationsPage() {
             />
           </div>
 
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {Object.values(NotificationType).map((type) => {
-                const config = getNotificationTypeConfig(type);
-                return (
-                  <SelectItem key={type} value={type}>
-                    {config.label}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+
 
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full md:w-[200px]">

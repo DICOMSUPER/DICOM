@@ -335,7 +335,7 @@ export function ScheduleForm({
           <SelectTrigger id="employee_id" className="h-16 min-h-16">
             <SelectValue placeholder="Select employee" />
           </SelectTrigger>
-          <SelectContent className="border-border shadow-lg max-h-80">
+          <SelectContent className="border-border shadow-lg max-h-72">
             {users.map((user: any) => (
               <SelectItem
                 key={user.id}

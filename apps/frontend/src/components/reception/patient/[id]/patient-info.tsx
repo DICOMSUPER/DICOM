@@ -59,7 +59,7 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className={modalStyles.infoCard}>
             <div className={modalStyles.sectionIconContainer}>
               <Calendar className={modalStyles.sectionIcon} />
@@ -86,23 +86,11 @@ export default function PatientInfo({ patient }: { patient: Patient }) {
               <p className="text-xs text-slate-500">Patient gender</p>
             </div>
           </div>
-          <div className={modalStyles.infoCard}>
-            <div className={modalStyles.sectionIconContainer}>
-              <Heart className={modalStyles.sectionIcon} />
-            </div>
-            <div>
-              <p className={modalStyles.infoCardLabel}>Blood Type</p>
-              <p className={modalStyles.infoCardLarge}>
-                {patient?.bloodType || "N/A"}
-              </p>
-              <p className="text-xs text-slate-500">Blood group</p>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Contact Information Section */}
-      <section className={modalStyles.section}>
+      <section className={`${modalStyles.section} mt-6`}>
         <div className={modalStyles.sectionHeader}>
           <div className={modalStyles.sectionIconContainer}>
             <Phone className={modalStyles.sectionIcon} />

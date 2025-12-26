@@ -1,9 +1,7 @@
 import axios from "axios";
 
-// Using relative /api path - Next.js rewrites will proxy to the actual backend
-// This ensures cookies are set on the frontend domain (vercel.app)
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
   withCredentials: true,
 });
 
