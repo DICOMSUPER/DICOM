@@ -97,7 +97,7 @@ export const modalStyles = {
   dialogFooter: "flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white shrink-0",
   
   // Hero section (top gradient section)
-  heroSection: "rounded-xl bg-gradient-to-br from-teal-50 to-slate-50 p-6 border border-teal-200/50 shadow-sm",
+  heroSection: "rounded-xl bg-gradient-to-br from-teal-50 to-slate-50 p-6 border border-teal-200/50 shadow-sm flex flex-col gap-6",
   heroTitle: "text-2xl font-bold text-slate-900",
   heroSubtitle: "text-sm text-slate-600 flex items-center gap-2",
   heroLabel: "text-xs font-semibold text-teal-600 uppercase tracking-wide flex items-center gap-2",
