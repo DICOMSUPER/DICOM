@@ -162,9 +162,10 @@ export function OrderTable({
       sortField: "completedDate",
       cell: (order: ImagingOrder) => (
         <div className="space-y-1">
-          {order.completedDate ? (
+          {order.updatedAt &&
+          order.orderStatus === ImagingOrderStatus.COMPLETED ? (
             <div className="font-semibold text-foreground text-sm">
-              {formatDateTime(order.completedDate)}
+              {formatDateTime(order.updatedAt)}
             </div>
           ) : (
             <div className="text-foreground">—</div>
@@ -186,7 +187,9 @@ export function OrderTable({
       header: "Notes",
       sortable: false,
       cell: (order: ImagingOrder) => (
-        <div className="text-foreground">{order.notes || "—"}</div>
+        <div className="text-foreground">
+          {order?.imagingOrderForm?.notes || "—"}
+        </div>
       ),
     },
     {
