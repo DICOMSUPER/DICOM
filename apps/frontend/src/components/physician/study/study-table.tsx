@@ -157,23 +157,23 @@ export function DicomStudyTable({
         </div>
       ),
     },
-    {
-      header: "Study Date",
-      headerClassName: "text-center",
-      sortable: true,
-      sortField: "studyDate",
-      cell: (study: DicomStudy) => (
-        <div className="space-y-2 ml-6">
-          <span className="font-semibold text-foreground text-sm">
-            {formatDateTime(study.studyDate, { showTime: false })}
-          </span>
-          <div className="flex items-center gap-2 text-xs text-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{study.studyTime}</span>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   header: "Study Date",
+    //   headerClassName: "text-center",
+    //   sortable: true,
+    //   sortField: "studyDate",
+    //   cell: (study: DicomStudy) => (
+    //     <div className="space-y-2 ml-6">
+    //       <span className="font-semibold text-foreground text-sm">
+    //         {formatDateTime(study.studyDate, { showTime: false })}
+    //       </span>
+    //       <div className="flex items-center gap-2 text-xs text-foreground">
+    //         <Clock className="w-3.5 h-3.5" />
+    //         <span>{study.studyTime}</span>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       header: "Created",
       sortable: true,
