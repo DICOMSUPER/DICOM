@@ -266,7 +266,13 @@ export class EmployeeRoomAssignmentsController {
     }
   }
 
-  @Role(Roles.IMAGING_TECHNICIAN, Roles.PHYSICIAN, Roles.RADIOLOGIST)
+  @Role(
+    Roles.IMAGING_TECHNICIAN,
+    Roles.PHYSICIAN,
+    Roles.RADIOLOGIST,
+    Roles.RECEPTION_STAFF,
+    Roles.SYSTEM_ADMIN
+  )
   @Get('by-date')
   async findEmployeeRoomAssignmentForEmployeeInWorkDate(
     @Req() req: IAuthenticatedRequest,
