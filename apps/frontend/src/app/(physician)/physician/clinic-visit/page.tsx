@@ -225,6 +225,7 @@ export default function QueuePage() {
           status: EncounterStatus.FINISHED,
         },
       }).unwrap();
+      toast.success("Completed serving patient");
     } catch (error) {
       console.error("Failed to complete queue:", error);
       toast.error("Failed to complete queue. Please try again.");
