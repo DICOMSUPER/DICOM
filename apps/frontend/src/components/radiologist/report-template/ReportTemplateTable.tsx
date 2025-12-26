@@ -99,28 +99,26 @@ export const ReportTemplateTable: React.FC<ReportTemplateTableProps> = ({
       ),
     },
     {
-      header: "Modality",
+      header: "Description",
       cell: (template: ReportTemplate) => (
-        <div className="text-foreground">
-          {template.modality?.modalityName || "—"}
+        <div className="text-foreground text-sm max-w-xs truncate" title={template.descriptionTemplate || ""}>
+          {template.descriptionTemplate || "—"}
         </div>
       ),
     },
     {
-      header: "Body Part",
+      header: "Findings",
       cell: (template: ReportTemplate) => (
-        <div className="text-foreground">
-          {template.bodyPart?.name || "—"}
+        <div className="text-foreground text-sm max-w-xs truncate" title={template.findingsTemplate || ""}>
+          {template.findingsTemplate || "—"}
         </div>
       ),
     },
     {
-      header: "Owner",
+      header: "Conclusion",
       cell: (template: ReportTemplate) => (
-        <div className="text-foreground">
-          {template.ownerUserId
-            ? `${(template.ownerUserId as any)?.firstName || ""} ${(template.ownerUserId as any)?.lastName || ""}`.trim() || "—"
-            : "—"}
+        <div className="text-foreground text-sm max-w-xs truncate" title={template.conclusionTemplate || ""}>
+          {template.conclusionTemplate || "—"}
         </div>
       ),
     },
