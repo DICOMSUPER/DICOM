@@ -42,11 +42,11 @@ export function ReportTemplateFilters({
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-4 mb-6">
+    <div className="mb-6">
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
             <Input
               placeholder="Search by template name..."
               value={searchTerm}

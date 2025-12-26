@@ -35,8 +35,8 @@ interface QueueTableProps {
   onRemoveFromQueue?: (assignment: QueueAssignment) => void;
   onStartTreatment?: (assignment: QueueAssignment) => void;
   onMarkComplete?: (assignment: QueueAssignment) => void;
-  showWaitTime?: boolean;
   showCompletedTime?: boolean;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -54,6 +54,7 @@ export function QueueTable({
   onMarkComplete,
   showWaitTime = false,
   showCompletedTime = false,
+  total,
   onSort,
   initialSort,
 }: QueueTableProps) {
@@ -198,6 +199,7 @@ export function QueueTable({
           : undefined
       }
       rowKey={(assignment) => assignment.id}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

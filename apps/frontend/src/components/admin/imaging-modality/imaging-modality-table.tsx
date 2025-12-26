@@ -23,6 +23,7 @@ interface ImagingModalityTableProps {
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
@@ -39,15 +40,17 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
   limit = 10,
   onSort,
   initialSort,
+  total,
 }) => {
 
   const columns = [
     {
       header: 'Modality Code',
+      headerClassName: 'text-center',
       sortable: true,
       sortField: 'modalityCode',
       cell: (modality: ImagingModality) => (
-        <div className="font-medium text-blue-600">
+        <div className="font-medium text-blue-600 text-center">
           {modality.modalityCode || '—'}
         </div>
       ),
@@ -87,6 +90,7 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (modality: ImagingModality) => getStatusBadge(modality.isActive ?? true),
     },
@@ -147,6 +151,7 @@ export const ImagingModalityTable: React.FC<ImagingModalityTableProps> = ({
       limit={limit}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

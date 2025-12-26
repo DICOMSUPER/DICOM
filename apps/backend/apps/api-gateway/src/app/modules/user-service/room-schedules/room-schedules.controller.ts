@@ -164,9 +164,12 @@ export class RoomSchedulesController {
           paginationDto: {
             page: query.page || 1,
             limit: query.limit || 10,
+            employeeId: query.employee_id,
             roomId: query.room_id,
             workDateFrom: query.work_date_from,
             workDateTo: query.work_date_to,
+            startTime: query.start_time,
+            endTime: query.end_time,
             scheduleStatus: query.schedule_status,
             search: query.search,
             sortField: query.sort_field,

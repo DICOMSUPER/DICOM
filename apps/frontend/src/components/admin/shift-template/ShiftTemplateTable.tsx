@@ -20,6 +20,7 @@ interface ShiftTemplateTableProps {
   onDeleteTemplate?: (template: ShiftTemplate) => void;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -36,6 +37,7 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
   onDeleteTemplate,
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }) => {
@@ -112,6 +114,7 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (template: ShiftTemplate) => getStatusBadge(template.is_active ?? true),
     },
@@ -185,6 +188,7 @@ export const ShiftTemplateTable: React.FC<ShiftTemplateTableProps> = ({
       rowKey={(template) => template.shift_template_id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

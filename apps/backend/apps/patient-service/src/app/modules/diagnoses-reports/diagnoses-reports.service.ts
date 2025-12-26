@@ -205,6 +205,7 @@ export class DiagnosesReportService {
       diagnosisDateFrom,
       diagnosisDateTo,
       diagnosisType,
+      diagnosisStatus,
       sortBy,
       order,
     } = filter;
@@ -257,6 +258,12 @@ export class DiagnosesReportService {
     if (diagnosisType) {
       queryBuilder.andWhere('diagnosisReport.diagnosisType = :diagnosisType', {
         diagnosisType,
+      });
+    }
+
+    if (diagnosisStatus) {
+      queryBuilder.andWhere('diagnosisReport.diagnosisStatus = :diagnosisStatus', {
+        diagnosisStatus,
       });
     }
 

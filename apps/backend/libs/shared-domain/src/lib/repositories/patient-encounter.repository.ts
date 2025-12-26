@@ -141,9 +141,10 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     }
 
     if (filters.chiefComplaint) {
-      queryBuilder.andWhere('encounter.chiefComplaint ILIKE :chiefComplaint', {
-        chiefComplaint: `%${filters.chiefComplaint}%`,
-      });
+      queryBuilder.andWhere(
+        'unaccent(LOWER(encounter.chiefComplaint)) ILIKE unaccent(LOWER(:chiefComplaint))',
+        { chiefComplaint: `%${filters.chiefComplaint}%` }
+      );
     }
 
     if (filters.limit) {
@@ -533,8 +534,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     const endOfDate = new Date();
     endOfDate.setHours(23, 59, 59, 999);
 
-    console.log('Start of date:', startOfDate);
-    console.log('End of date:', endOfDate);
+
 
     const repository = await this.getRepository();
 
@@ -550,7 +550,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
       })
       .andWhere('encounter.is_deleted = :isDeleted', { isDeleted: false });
 
-    console.log(qb.getSql());
+
 
     return qb.getMany();
   }
@@ -565,7 +565,7 @@ export class PatientEncounterRepository extends BaseRepository<PatientEncounter>
     priority?: EncounterPriorityLevel;
     type?: EncounterType;
   }): Promise<PaginatedResponseDto<PatientEncounter>> {
-    // console.log('encounter filter data: ', data);
+
 
     if (Array.isArray(data.roomServiceIds) && data.roomServiceIds.length === 0)
       return {

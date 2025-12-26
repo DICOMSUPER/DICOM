@@ -77,9 +77,10 @@ export class ImagingOrderFormRepository extends BaseRepository<ImagingOrderForm>
 
     //  Search filter
     if (search && searchField) {
-      query.andWhere(`entity.${searchField} LIKE :search`, {
-        search: `%${search}%`,
-      });
+      query.andWhere(
+        `unaccent(LOWER(entity.${searchField})) ILIKE unaccent(LOWER(:search))`,
+        { search: `%${search}%` }
+      );
     }
 
     //  Relations

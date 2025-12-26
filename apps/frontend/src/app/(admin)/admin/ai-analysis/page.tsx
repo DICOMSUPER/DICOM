@@ -37,6 +37,8 @@ export default function Page() {
   const limit = 10;
   const [searchTerm, setSearchTerm] = useState("");
   const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [feedbackFilter, setFeedbackFilter] = useState<string>("ALL");
   const [error, setError] = useState<string | null>(null);
   const [selectedAiAnalysis, setSelectedAiAnalysis] =
     useState<AiAnalysis | null>(null);
@@ -56,6 +58,21 @@ export default function Page() {
       params.search = appliedSearchTerm.trim();
     }
 
+    if (statusFilter && statusFilter !== "ALL") {
+      params.status = statusFilter;
+    }
+
+    if (feedbackFilter && feedbackFilter !== "ALL") {
+      if (feedbackFilter === "helpful") {
+        params.isHelpful = true;
+      } else if (feedbackFilter === "not_helpful") {
+        params.isHelpful = false;
+      }
+      // Note: "no_feedback" logic would depend on backend support query mechanism for null/undefined explicitly if needed, 
+      // typically omitting it means "all". If the user wants to see "only those without feedback", backend needs to support it.
+      // For now, only helpful/not_helpful/all are fully supported by standard bool filter.
+    }
+
     // Add sort parameters (supports n fields)
     const sortParams = sortConfigToQueryParams(sortConfig);
     if (Object.keys(sortParams).length > 0) {
@@ -63,7 +80,7 @@ export default function Page() {
     }
 
     return params;
-  }, [page, limit, appliedSearchTerm, sortConfig]);
+  }, [page, limit, appliedSearchTerm, sortConfig, statusFilter, feedbackFilter]);
 
   const {
     data: aiAnalysisData,
@@ -135,6 +152,8 @@ export default function Page() {
   const handleResetFilters = useCallback(() => {
     setSearchTerm("");
     setAppliedSearchTerm("");
+    setStatusFilter("ALL");
+    setFeedbackFilter("ALL");
     setPage(1);
   }, []);
 
@@ -246,6 +265,16 @@ export default function Page() {
       <AiAnalysisFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        statusValue={statusFilter}
+        onStatusChange={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
+        feedbackValue={feedbackFilter}
+        onFeedbackChange={(value) => {
+          setFeedbackFilter(value);
+          setPage(1);
+        }}
         onSearch={handleSearch}
         onReset={handleResetFilters}
         isSearching={aiAnalysisLoading}
@@ -261,6 +290,7 @@ export default function Page() {
         onDeleteAiAnalysis={handleDeleteAiAnalysis}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

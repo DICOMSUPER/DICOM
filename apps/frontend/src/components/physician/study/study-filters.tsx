@@ -111,14 +111,17 @@ export function DicomStudyFiltersSection({
                 Pending Approval
               </SelectItem>
               <SelectItem value={DicomStudyStatus.APPROVED}>Approved</SelectItem>
+              <SelectItem value={DicomStudyStatus.RESULT_PRINTED}>
+                Result Printed
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={handleReset} className="whitespace-nowrap h-9 px-4">
             <RotateCcw className="h-4 w-4 mr-2" />
             Reset
           </Button>
-          <Button 
-            onClick={handleSearch} 
+          <Button
+            onClick={handleSearch}
             disabled={isSearching}
             className="h-9 px-4"
           >

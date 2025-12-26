@@ -14,7 +14,7 @@ import {
 import { ThrowMicroserviceException } from '@backend/shared-utils';
 import { IMAGING_SERVICE } from '../../../constant/microservice.constant';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, FindOptionsWhere, ILike } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { MachineStatus } from '@backend/shared-enums';
 
 const relations = ['modality'];
@@ -273,9 +273,10 @@ export class ModalityMachinesService {
       }
       
       if (restPaginationDto.search && restPaginationDto.searchField) {
-        qb.andWhere(`machine.${restPaginationDto.searchField} LIKE :search`, {
-          search: `%${restPaginationDto.search}%`,
-        });
+        qb.andWhere(
+          `unaccent(LOWER(machine.${restPaginationDto.searchField})) ILIKE unaccent(LOWER(:search))`,
+          { search: `%${restPaginationDto.search}%` }
+        );
       }
       
       qb.orderBy(`machine.${restPaginationDto.sortField || 'createdAt'}`, (restPaginationDto.order || 'desc').toUpperCase() as 'ASC' | 'DESC')

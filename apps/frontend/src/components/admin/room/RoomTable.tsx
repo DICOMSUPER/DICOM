@@ -20,6 +20,7 @@ interface RoomTableProps {
   onDeleteRoom?: (room: Room) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const RoomTable: React.FC<RoomTableProps> = ({
@@ -34,6 +35,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
   onDeleteRoom,
   onSort,
   initialSort,
+  total,
 }) => {
   const columns = [
     {
@@ -67,34 +69,36 @@ export const RoomTable: React.FC<RoomTableProps> = ({
     },
     {
       header: "Floor",
+      headerClassName: "text-center",
       sortable: true,
       sortField: "floor",
       cell: (room: Room) => (
-        <div className="text-foreground">
+        <div className="text-foreground text-center">
           {room.floor !== undefined ? room.floor : "—"}
         </div>
       ),
     },
     {
       header: "Capacity",
+      headerClassName: "text-center",
       sortable: true,
       sortField: "capacity",
       cell: (room: Room) => (
-        <div className="text-foreground">
+        <div className="text-foreground text-center">
           {room.capacity !== undefined ? room.capacity : "—"}
         </div>
       ),
     },
     {
       header: "Price/Day",
+      headerClassName: "text-center",
       cell: (room: Room) => (
-        <div className="text-foreground">
+        <div className="text-foreground text-center">
           {room.pricePerDay !== undefined
-            ? `${
-                typeof room.pricePerDay === "number"
-                  ? room.pricePerDay.toLocaleString()
-                  : Number(room.pricePerDay).toLocaleString()
-              } ₫`
+            ? `${typeof room.pricePerDay === "number"
+              ? room.pricePerDay.toLocaleString()
+              : Number(room.pricePerDay).toLocaleString()
+            } ₫`
             : "—"}
         </div>
       ),
@@ -273,6 +277,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       rowKey={(room) => room.id}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

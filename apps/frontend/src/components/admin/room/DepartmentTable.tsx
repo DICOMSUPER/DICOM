@@ -21,6 +21,7 @@ interface DepartmentTableProps {
   onDeleteDepartment?: (department: Department) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const DepartmentTable: React.FC<DepartmentTableProps> = ({
@@ -35,6 +36,7 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
   onDeleteDepartment,
   onSort,
   initialSort,
+  total,
 }) => {
   const columns = [
     {
@@ -202,6 +204,7 @@ export const DepartmentTable: React.FC<DepartmentTableProps> = ({
       rowKey={(department) => department.id}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

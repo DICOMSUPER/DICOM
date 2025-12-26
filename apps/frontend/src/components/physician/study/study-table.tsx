@@ -27,6 +27,7 @@ interface DicomStudyTableProps {
   emptyStateDescription?: string;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -40,6 +41,7 @@ export function DicomStudyTable({
   emptyStateDescription = "No studies match your search criteria. Try adjusting your filters or search terms.",
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }: DicomStudyTableProps) {
@@ -155,23 +157,23 @@ export function DicomStudyTable({
         </div>
       ),
     },
-    {
-      header: "Study Date",
-      headerClassName: "text-center",
-      sortable: true,
-      sortField: "studyDate",
-      cell: (study: DicomStudy) => (
-        <div className="space-y-2 ml-6">
-          <span className="font-semibold text-foreground text-sm">
-            {formatDateTime(study.studyDate, { showTime: false })}
-          </span>
-          <div className="flex items-center gap-2 text-xs text-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{study.studyTime}</span>
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   header: "Study Date",
+    //   headerClassName: "text-center",
+    //   sortable: true,
+    //   sortField: "studyDate",
+    //   cell: (study: DicomStudy) => (
+    //     <div className="space-y-2 ml-6">
+    //       <span className="font-semibold text-foreground text-sm">
+    //         {formatDateTime(study.studyDate, { showTime: false })}
+    //       </span>
+    //       <div className="flex items-center gap-2 text-xs text-foreground">
+    //         <Clock className="w-3.5 h-3.5" />
+    //         <span>{study.studyTime}</span>
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       header: "Created",
       sortable: true,
@@ -220,6 +222,7 @@ export function DicomStudyTable({
       rowKey={(study) => study.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

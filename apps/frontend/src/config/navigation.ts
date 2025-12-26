@@ -106,7 +106,7 @@ export const roleNavigation: RoleNavigation = {
     },
     {
       href: "/admin/ai-analysis",
-      label: "AI Analysis",
+      label: "AI Analyses",
       icon: Brain,
       description: "Manage AI analyses",
     },

@@ -268,10 +268,10 @@ export class PatientEncounterService {
       whereConditions.patient = {
         firstName: Raw(
           (alias: string) =>
-            `(${alias} || ' ' || last_name) ILIKE :patientName OR 
-         (last_name || ' ' || ${alias}) ILIKE :patientName OR 
-         ${alias} ILIKE :patientName OR 
-         last_name ILIKE :patientName`,
+            `unaccent(LOWER(${alias} || ' ' || last_name)) ILIKE unaccent(LOWER(:patientName)) OR 
+         unaccent(LOWER(last_name || ' ' || ${alias})) ILIKE unaccent(LOWER(:patientName)) OR 
+         unaccent(LOWER(${alias})) ILIKE unaccent(LOWER(:patientName)) OR 
+         unaccent(LOWER(last_name)) ILIKE unaccent(LOWER(:patientName))`,
           { patientName: `%${patientName}%` }
         ),
       };

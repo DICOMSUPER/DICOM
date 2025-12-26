@@ -167,8 +167,8 @@ export default function Page() {
       };
       toast.error(
         apiError?.data?.message ||
-          apiError?.message ||
-          "Failed to delete assignment"
+        apiError?.message ||
+        "Failed to delete assignment"
       );
     }
   };
@@ -236,6 +236,7 @@ export default function Page() {
         onDeleteBodyPart={handleDeleteBodyPart}
         onSort={handleSort}
         initialSort={sortConfig.field ? sortConfig : undefined}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

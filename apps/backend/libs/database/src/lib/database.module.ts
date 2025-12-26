@@ -100,7 +100,15 @@ export class DatabaseModule {
             const connectionInfo = `[${prefixUpper}] host=${host} port=${port} database=${database} username=${maskedUsername}`;
 
             class ConnectionAwareLogger implements TypeOrmLogger {
-              logQuery(query: string, parameters?: any[]) {}
+              logQuery(query: string, parameters?: any[]) {
+                // Log UPDATE queries to help debug createdAt issues
+                if (query.toUpperCase().includes('UPDATE')) {
+                  logger.debug(`${connectionInfo} - UPDATE Query: ${query}`);
+                  if (parameters && parameters.length > 0) {
+                    logger.debug(`${connectionInfo} - Parameters: ${JSON.stringify(parameters)}`);
+                  }
+                }
+              }
 
               logQueryError(error: string, query: string, parameters?: any[]) {
                 logger.error(`${connectionInfo} - Query Error: ${error}`);

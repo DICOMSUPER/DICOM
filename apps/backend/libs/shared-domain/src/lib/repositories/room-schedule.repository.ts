@@ -87,10 +87,24 @@ export class RoomScheduleRepository {
       });
     }
 
+    // Filter by start time (actual_start_time >= startTime)
+    if (paginationDto.startTime) {
+      queryBuilder.andWhere('schedule.actual_start_time >= :startTime', {
+        startTime: paginationDto.startTime,
+      });
+    }
+
+    // Filter by end time (actual_end_time <= endTime)
+    if (paginationDto.endTime) {
+      queryBuilder.andWhere('schedule.actual_end_time <= :endTime', {
+        endTime: paginationDto.endTime,
+      });
+    }
+
     // Search functionality
     if (search) {
       queryBuilder.andWhere(
-        '(employee.first_name ILIKE :search OR employee.last_name ILIKE :search OR room.room_name ILIKE :search OR schedule.notes ILIKE :search)',
+        '(unaccent(LOWER(employee.first_name)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(employee.last_name)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(room.room_name)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(schedule.notes)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${search}%` }
       );
     }
@@ -385,7 +399,7 @@ export class RoomScheduleRepository {
 
     if (search) {
       qb.andWhere(
-        '(employee.username ILIKE :search OR employee.email ILIKE :search OR employee.firstName ILIKE :search OR employee.lastName ILIKE :search)',
+        '(unaccent(LOWER(employee.username)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(employee.email)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(employee.firstName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(employee.lastName)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${search}%` }
       );
     }

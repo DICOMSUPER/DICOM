@@ -20,6 +20,7 @@ interface ServiceTableProps {
   onDelete?: (service: Services) => void;
   page?: number;
   limit?: number;
+  total?: number;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
 }
@@ -36,6 +37,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
   onDelete,
   page = 1,
   limit = 10,
+  total,
   onSort,
   initialSort,
 }) => {
@@ -86,6 +88,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
     },
     {
       header: 'Status',
+      headerClassName: 'text-center',
       sortable: false,
       cell: (service: Services) => getStatusBadge(service.isActive ?? true),
     },
@@ -143,6 +146,7 @@ export const ServiceTable: React.FC<ServiceTableProps> = ({
       rowKey={(service) => service.id}
       page={page}
       limit={limit}
+      total={total}
       onSort={onSort}
       initialSort={initialSort}
     />

@@ -19,6 +19,7 @@ interface RequestProcedureTableProps {
   onDeleteProcedure?: (procedure: RequestProcedure) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
@@ -33,6 +34,7 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
   onDeleteProcedure,
   onSort,
   initialSort,
+  total,
 }) => {
   const columns = [
     {
@@ -146,6 +148,7 @@ export const RequestProcedureTable: React.FC<RequestProcedureTableProps> = ({
       rowKey={(procedure) => procedure.id}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

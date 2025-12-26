@@ -20,6 +20,7 @@ interface BodyPartTableProps {
   onDeleteBodyPart?: (bodyPart: BodyPart) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const BodyPartTable: React.FC<BodyPartTableProps> = ({
@@ -33,6 +34,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
   onDeleteBodyPart,
   onSort,
   initialSort,
+  total,
 }) => {
   const columns = [
     {
@@ -123,6 +125,7 @@ export const BodyPartTable: React.FC<BodyPartTableProps> = ({
       emptyStateDescription={emptyStateDescription}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

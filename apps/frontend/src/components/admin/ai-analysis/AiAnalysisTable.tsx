@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Eye, Edit, Trash2, Activity } from "lucide-react";
 import { AiAnalysis } from "@/common/interfaces/system/ai-analysis.interface";
+import { getAiAnalysisStatusBadge, getAiAnalysisFeedbackBadge } from "@/common/utils/status-badge";
 import { DataTable } from "@/components/ui/data-table";
 import { formatDateTime } from "@/common/utils/format-status";
 import { SortConfig } from "@/components/ui/data-table";
@@ -21,6 +21,7 @@ interface AiAnalysisTableProps {
   onDeleteAiAnalysis?: (aiAnalysis: AiAnalysis) => void;
   onSort?: (sortConfig: SortConfig) => void;
   initialSort?: SortConfig;
+  total?: number;
 }
 
 export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
@@ -33,6 +34,7 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
   onDeleteAiAnalysis,
   onSort,
   initialSort,
+  total,
 }) => {
   const columns = [
     {
@@ -61,83 +63,27 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
     },
     {
       header: "Status",
+      headerClassName: "text-center",
       sortable: true,
       sortField: "analysisStatus",
       cell: (aiAnalysis: AiAnalysis) => {
-        const status = aiAnalysis.analysisStatus;
-
-        const getStatusConfig = (status?: AnalysisStatus) => {
-          switch (status) {
-            case AnalysisStatus.COMPLETED:
-              return {
-                variant: "default" as const,
-                className:
-                  "bg-green-500 hover:bg-green-600 text-white border-green-500",
-                label: "Completed",
-              };
-            case AnalysisStatus.PENDING:
-              return {
-                variant: "secondary" as const,
-                className:
-                  "bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500",
-                label: "Pending",
-              };
-            case AnalysisStatus.FAILED:
-              return {
-                variant: "destructive" as const,
-                className:
-                  "bg-red-500 hover:bg-red-600 text-white border-red-500",
-                label: "Failed",
-              };
-            default:
-              return {
-                variant: "outline" as const,
-                className: "",
-                label: status || "—",
-              };
-          }
-        };
-        const config = getStatusConfig(status);
         return (
-          <Badge variant={config.variant} className={config.className}>
-            {config.label}
-          </Badge>
+          <div className="flex justify-center">
+            {getAiAnalysisStatusBadge(aiAnalysis.analysisStatus)}
+          </div>
         );
       },
     },
     {
       header: "Feedback",
+      headerClassName: "text-center",
       sortable: true,
       sortField: "isHelpful",
       cell: (aiAnalysis: AiAnalysis) => {
-        const isHelpful = aiAnalysis.isHelpful;
-        const getStatusConfig = (isHelpful?: boolean) => {
-          return isHelpful
-            ? {
-              variant: "default" as const,
-              className:
-                "bg-blue-500 hover:bg-blue-600 text-white border-blue-500",
-              label: "Helpful",
-            }
-            : isHelpful === false
-              ? {
-                variant: "destructive" as const,
-                className:
-                  "bg-red-500 hover:bg-red-600 text-white border-red-500",
-                label: "Not Helpful",
-              }
-              : {
-                variant: "outline" as const,
-                className: "",
-                label: "No Feedback",
-              };
-        };
-        const config = getStatusConfig(isHelpful);
-
         return (
-          <Badge variant={config.variant} className={config.className}>
-            {config.label}
-          </Badge>
+          <div className="flex justify-center">
+            {getAiAnalysisFeedbackBadge(aiAnalysis.isHelpful)}
+          </div>
         );
       },
     },
@@ -205,6 +151,7 @@ export const AiAnalysisTable: React.FC<AiAnalysisTableProps> = ({
       emptyStateDescription={emptyStateDescription}
       onSort={onSort}
       initialSort={initialSort}
+      total={total}
     />
   );
 };

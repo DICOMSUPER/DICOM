@@ -119,7 +119,14 @@ export class TransformInterceptor<T>
           return throwError(() => error);
         }
 
-        console.log('error  inthe transformer interceptor', error); //debug proper status
+        console.log('Error details in transform.interceptor.ts:', {
+          error,
+          rpcPayload,
+          payloadCode,
+          payloadMessage,
+          payloadLocation,
+        });
+
         const rawStatus =
           (error as any)?.code ||
           (error as any)?.status ||

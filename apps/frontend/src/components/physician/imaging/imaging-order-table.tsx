@@ -27,6 +27,7 @@ interface ImagingOrderFormTableProps {
   emptyStateIcon?: React.ReactNode;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
+  total?: number;
   page?: number;
   limit?: number;
   onSort?: (sortConfig: SortConfig) => void;
@@ -40,6 +41,7 @@ export function ImagingOrderFormTable({
   emptyStateIcon = <User className="h-12 w-12 text-foreground" />,
   emptyStateTitle = "No imaging orders found",
   emptyStateDescription = "No imaging orders match your search criteria. Try adjusting your filters or search terms.",
+  total,
   page = 1,
   limit = 10,
   onSort,
@@ -158,6 +160,7 @@ export function ImagingOrderFormTable({
       emptyStateTitle={emptyStateTitle}
       emptyStateDescription={emptyStateDescription}
       rowKey={(order) => order.id}
+      total={total}
       page={page}
       limit={limit}
       onSort={onSort}

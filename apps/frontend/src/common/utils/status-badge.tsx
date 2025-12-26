@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatStatus } from './format-status';
+import { AnalysisStatus } from '../enums/image-dicom.enum';
 
 export interface StatusBadgeConfig {
   label: string;
@@ -292,3 +293,69 @@ export const getEncounterPriorityBadge = (priority: string): React.ReactNode => 
   return getStatusBadge(priority, priorityConfig);
 };
 
+
+export const getAiAnalysisStatusBadge = (status: string): React.ReactNode => {
+  const statusConfig: Record<string, StatusBadgeConfig> = {
+    [AnalysisStatus.COMPLETED]: {
+      label: 'Completed',
+      colorClass: 'bg-green-100 text-green-700',
+      dotColorClass: 'bg-green-500',
+      shouldAnimate: false,
+    },
+    [AnalysisStatus.PENDING]: {
+      label: 'Pending',
+      colorClass: 'bg-yellow-100 text-yellow-700',
+      dotColorClass: 'bg-yellow-500',
+      shouldAnimate: true,
+    },
+    [AnalysisStatus.FAILED]: {
+      label: 'Failed',
+      colorClass: 'bg-red-100 text-red-700',
+      dotColorClass: 'bg-red-500',
+      shouldAnimate: false,
+    },
+    [AnalysisStatus.PROCESSING]: {
+      label: 'Processing',
+      colorClass: 'bg-blue-100 text-blue-700',
+      dotColorClass: 'bg-blue-500',
+      shouldAnimate: true,
+    },
+  };
+
+  return getStatusBadge(status, statusConfig);
+};
+
+export const getAiAnalysisFeedbackBadge = (isHelpful: boolean | null | undefined): React.ReactNode => {
+  return getStatusBadge(isHelpful, {
+    'true': {
+      label: 'Helpful',
+      colorClass: 'bg-blue-100 text-blue-700',
+      dotColorClass: 'bg-blue-500',
+      shouldAnimate: false,
+    },
+    'false': {
+      label: 'Not Helpful',
+      colorClass: 'bg-red-100 text-red-700',
+      dotColorClass: 'bg-red-500',
+      shouldAnimate: false,
+    },
+    'null': {
+      label: 'No Feedback',
+      colorClass: 'bg-slate-100 text-slate-700',
+      dotColorClass: 'bg-slate-400',
+      shouldAnimate: false,
+    },
+    'undefined': {
+      label: 'No Feedback',
+      colorClass: 'bg-slate-100 text-slate-700',
+      dotColorClass: 'bg-slate-400',
+      shouldAnimate: false,
+    },
+    '': {
+      label: 'No Feedback',
+      colorClass: 'bg-slate-100 text-slate-700',
+      dotColorClass: 'bg-slate-400',
+      shouldAnimate: false,
+    }
+  });
+};

@@ -89,32 +89,36 @@ body {
 
 /* === CUSTOM SCROLLBAR - GLOBAL === */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 16px;
+  height: 16px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(226, 232, 240, 0.5); /* slate-200/50 - light gray for white background */
+  background: rgba(226, 232, 240, 0.5);
+  /* slate-200/50 - light gray for white background */
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.6); /* slate-400/60 - medium gray */
+  background: rgba(148, 163, 184, 0.6);
+  /* slate-400/60 - medium gray */
   border-radius: 9999px;
   border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.8); /* slate-500/80 - darker gray on hover */
+  background: rgba(100, 116, 139, 0.8);
+  /* slate-500/80 - darker gray on hover */
 }
 
 ::-webkit-scrollbar-corner {
-  background: rgba(248, 250, 252, 0.9); /* slate-50 - very light gray */
+  background: rgba(248, 250, 252, 0.9);
+  /* slate-50 - very light gray */
 }
 
 /* Firefox */
 * {
-  scrollbar-width: thin;
+  scrollbar-width: auto;
   scrollbar-color: rgba(148, 163, 184, 0.6) rgba(226, 232, 240, 0.5);
 }
 
@@ -139,57 +143,71 @@ body {
 
 /* === HORIZONTAL SCROLLBAR UTILITY === */
 .horizontal-scrollbar::-webkit-scrollbar:horizontal {
-  height: 8px;
+  height: 16px;
 }
 
 .horizontal-scrollbar::-webkit-scrollbar-thumb:horizontal {
-  background: rgba(148, 163, 184, 0.6); /* slate-400/60 - medium gray */
+  background: rgba(148, 163, 184, 0.6);
+  /* slate-400/60 - medium gray */
   border-radius: 9999px;
 }
 
 .horizontal-scrollbar::-webkit-scrollbar-track:horizontal {
-  background: rgba(226, 232, 240, 0.5); /* slate-200/50 - light gray */
+  background: rgba(226, 232, 240, 0.5);
+  /* slate-200/50 - light gray */
   border-radius: 9999px;
 }
 
 /* Firefox (affects both axes; no horizontal-only selector available) */
 .horizontal-scrollbar {
-  scrollbar-width: thin;
+  scrollbar-width: auto;
   scrollbar-color: rgba(148, 163, 184, 0.6) rgba(226, 232, 240, 0.5);
 }
 
 /* === LOGIN PAGE ANIMATIONS === */
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) translateX(0px);
   }
+
   50% {
     transform: translateY(-20px) translateX(10px);
   }
 }
 
 @keyframes float-delayed {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) translateX(0px);
   }
+
   50% {
     transform: translateY(20px) translateX(-10px);
   }
 }
 
 @keyframes float-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) translateX(0px);
   }
+
   50% {
     transform: translateY(-15px) translateX(5px);
   }
 }
 
 @keyframes gradient {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -229,6 +247,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -243,6 +262,7 @@ body {
     opacity: 0;
     transform: translateX(-1rem);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -258,6 +278,7 @@ body {
     opacity: 0;
     transform: translateX(1rem);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -273,6 +294,7 @@ body {
     opacity: 0;
     transform: translateY(0.5rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

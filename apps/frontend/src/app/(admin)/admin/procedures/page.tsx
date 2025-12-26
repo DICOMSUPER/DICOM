@@ -71,7 +71,7 @@ export default function Page() {
     isLoading: statsLoading,
     refetch: refetchStats,
   } = useGetRequestProcedureStatsQuery();
-  console.log("procedure statsData",statsData?.data?.data );
+  console.log("procedure statsData", statsData?.data?.data);
 
   const [deleteRequestProcedure, { isLoading: isDeletingProcedure }] = useDeleteRequestProcedureMutation();
 
@@ -80,8 +80,8 @@ export default function Page() {
       const error = proceduresError as FetchBaseQueryError;
       const errorMessage =
         error?.data &&
-        typeof error.data === 'object' &&
-        'message' in error.data
+          typeof error.data === 'object' &&
+          'message' in error.data
           ? (error.data as { message: string }).message
           : 'Failed to load procedure data. Please try again.';
       setError(errorMessage);
@@ -222,6 +222,7 @@ export default function Page() {
         onViewDetails={handleViewDetails}
         onEditProcedure={handleEditProcedure}
         onDeleteProcedure={handleDeleteProcedure}
+        total={paginationMeta?.total}
       />
       {paginationMeta && (
         <Pagination

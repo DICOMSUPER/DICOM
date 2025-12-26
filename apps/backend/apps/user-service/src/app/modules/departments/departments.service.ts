@@ -79,7 +79,7 @@ export class DepartmentsService {
 
     if (query.search) {
       qb.andWhere(
-        '(department.departmentName ILIKE :search OR department.departmentCode ILIKE :search)',
+        '(unaccent(LOWER(department.departmentName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(department.departmentCode)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${query.search}%` },
       );
     }
@@ -126,7 +126,7 @@ export class DepartmentsService {
 
     if (query?.search) {
       qb.andWhere(
-        '(department.departmentName ILIKE :search OR department.departmentCode ILIKE :search)',
+        '(unaccent(LOWER(department.departmentName)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(department.departmentCode)) ILIKE unaccent(LOWER(:search)))',
         { search: `%${query.search}%` },
       );
     }

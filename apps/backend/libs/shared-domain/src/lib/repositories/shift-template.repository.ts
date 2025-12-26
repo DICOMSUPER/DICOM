@@ -81,7 +81,7 @@ export class ShiftTemplateRepository extends BaseRepository<ShiftTemplate> {
 
     if (search) {
       queryBuilder.andWhere(
-        'shiftTemplate.shift_name ILIKE :search OR shiftTemplate.description ILIKE :search',
+        'unaccent(LOWER(shiftTemplate.shift_name)) ILIKE unaccent(LOWER(:search)) OR unaccent(LOWER(shiftTemplate.description)) ILIKE unaccent(LOWER(:search))',
         { search: `%${search}%` }
       );
     }

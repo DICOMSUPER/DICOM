@@ -54,6 +54,7 @@ export default function BaseTab() {
           isLoading={isLoadingStudy}
           refetch={refetchStudy}
           error={!!studyError}
+          total={(studyData?.data || []).length}
         />
       </div>
     </Suspense>

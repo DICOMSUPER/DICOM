@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportTemplate } from "@/common/interfaces/patient/report-template.interface";
-import { FileText, Calendar, User, Eye, Lock } from "lucide-react";
+import { FileText, Calendar, Eye, Lock } from "lucide-react";
 import { TemplateType } from "@/common/enums/report-template.enum";
-import { formatDateTime } from "@/common/utils/format-status";
+import { formatDateTime, modalStyles } from "@/common/utils/format-status";
 
 interface ReportTemplateViewModalProps {
   template: ReportTemplate | null;
@@ -63,9 +63,9 @@ export function ReportTemplateViewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[70vw] max-w-[1200px] sm:max-w-[70vw] h-[90vh] max-h-[90vh] flex flex-col border-0 p-0 overflow-hidden bg-slate-50">
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-100 shrink-0 px-6 pt-6 bg-white">
-          <DialogTitle className="text-xl font-semibold">
+      <DialogContent className={modalStyles.dialogContent}>
+        <DialogHeader className={modalStyles.dialogHeader}>
+          <DialogTitle className={modalStyles.dialogTitle}>
             Report Template Details
           </DialogTitle>
         </DialogHeader>
@@ -108,31 +108,17 @@ export function ReportTemplateViewModal({
                 </h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <p className="text-sm text-slate-500 mb-1">Modality</p>
-                    <p className="font-medium text-slate-800">
-                      {template.modality?.modalityName || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">Body Part</p>
-                    <p className="font-medium text-slate-800">
-                      {template.bodyPart?.bodyPartName || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">Owner</p>
-                    <p className="font-medium text-slate-800 flex items-center gap-1">
-                      <User className="h-4 w-4" />
-                      {template.ownerUserId
-                        ? `${(template.ownerUserId as any)?.firstName || ""} ${(template.ownerUserId as any)?.lastName || ""}`.trim() || "—"
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
                     <p className="text-sm text-slate-500 mb-1">Created</p>
                     <p className="font-medium text-slate-800 flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
                       {formatDateTime(template.createdAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-1">Updated</p>
+                    <p className="font-medium text-slate-800 flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {formatDateTime(template.updatedAt)}
                     </p>
                   </div>
                 </div>
@@ -215,12 +201,12 @@ export function ReportTemplateViewModal({
           )}
         </ScrollArea>
 
-        <DialogFooter className="px-6 py-4 border-t border-gray-100 shrink-0 bg-white">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className={modalStyles.dialogFooter}>
+          <Button variant="outline" onClick={onClose} className={modalStyles.secondaryButton}>
             Close
           </Button>
           {template && onEdit && (
-            <Button onClick={() => onEdit(template)}>Edit Template</Button>
+            <Button onClick={() => onEdit(template)} className={modalStyles.primaryButton}>Edit Template</Button>
           )}
         </DialogFooter>
       </DialogContent>

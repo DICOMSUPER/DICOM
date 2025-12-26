@@ -116,7 +116,7 @@ export class ReportTemplatesController {
 
   @MessagePattern(`PatientService.ReportTemplate.FindMany`)
   async findMany(
-    @Payload() data: { paginationDto: RepositoryPaginationDto }
+    @Payload() data: { paginationDto: RepositoryPaginationDto & { templateType?: string; isPublic?: boolean } }
   ): Promise<PaginatedResponseDto<ReportTemplate>> {
     try {
       const { paginationDto } = data;
@@ -124,9 +124,11 @@ export class ReportTemplatesController {
         page: paginationDto.page || 1,
         limit: paginationDto.limit || 10,
         search: paginationDto.search || '',
-        searchField: paginationDto.searchField || 'modalityName',
+        searchField: paginationDto.searchField || 'templateName',
         sortField: paginationDto.sortField || 'createdAt',
-        order: paginationDto.order || 'asc',
+        order: paginationDto.order || 'desc',
+        templateType: paginationDto.templateType,
+        isPublic: paginationDto.isPublic,
       });
     } catch (error) {
       throw handleErrorFromMicroservices(
