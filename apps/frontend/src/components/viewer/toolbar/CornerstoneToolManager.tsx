@@ -524,12 +524,26 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         // Activate the selected tool
         if (typeof toolGroup.setToolActive === "function") {
           toolGroup.setToolActive(toolName, { bindings: [{ mouseButton: MouseBindings.Primary }] });
+
+          // Bind Pan to Middle Click (Auxiliary) if it's not the primary tool
+          const panToolName = TOOL_MAPPINGS.Pan.toolName;
+          if (toolName !== panToolName) {
+            toolGroup.setToolActive(panToolName, { bindings: [{ mouseButton: MouseBindings.Auxiliary }] });
+          }
+
+          // Bind Zoom to Right Click (Secondary) if it's not the primary tool
+          const zoomToolName = TOOL_MAPPINGS.Zoom.toolName;
+          if (toolName !== zoomToolName) {
+            toolGroup.setToolActive(zoomToolName, { bindings: [{ mouseButton: MouseBindings.Secondary }] });
+          }
+
           toolGroup.setToolActive(StackScrollTool.toolName, { bindings: [{ mouseButton: MouseBindings.Wheel }] });
           toolGroup.setToolActive(PlanarRotateTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Wheel, modifierKey: ToolEnums.KeyboardBindings.Ctrl }]
           });
           return true;
         }
+
       } catch (error) {
         console.warn(`Failed to activate tool ${toolName}:`, error);
       }
