@@ -22,10 +22,8 @@ import {
   MIPJumpToClickTool,
   SegmentBidirectionalTool,
   KeyImageTool,
-  LabelTool,
   DragProbeTool,
   PaintFillTool,
-  EraserTool,
   BrushTool,
   CircleScissorsTool,
   RectangleScissorsTool,
@@ -33,6 +31,7 @@ import {
   ScaleOverlayTool,
 } from "@cornerstonejs/tools";
 import { MouseBindings } from "@cornerstonejs/tools/enums";
+import { CustomLabelTool } from "./CustomLabelTool";
 
 export type NavigationTool =
   | "WindowLevel"
@@ -101,6 +100,7 @@ export interface ToolMapping {
     | "annotation"
     | "segmentation"
     | "custom";
+  configuration?: Record<string, unknown>;
 }
 
 export interface ToolBindings {
@@ -232,8 +232,8 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     category: "annotation",
   },
   Label: {
-    toolName: LabelTool.toolName,
-    toolClass: LabelTool,
+    toolName: CustomLabelTool.toolName,
+    toolClass: CustomLabelTool,
     category: "annotation",
   },
   DragProbe: {
@@ -247,9 +247,9 @@ export const TOOL_MAPPINGS: Record<ToolType, ToolMapping> = {
     category: "annotation",
   },
   Eraser: {
-    toolName: EraserTool.toolName,
-    toolClass: EraserTool,
-    category: "segmentation", // Changed from "annotation" - Eraser works on segmentation labelmaps
+    toolName: BrushTool.toolName, // Use BrushTool with segment index 0 for segmentation erasing
+    toolClass: BrushTool,
+    category: "segmentation",
   },
   ScaleOverlay: {
     toolName: ScaleOverlayTool.toolName,

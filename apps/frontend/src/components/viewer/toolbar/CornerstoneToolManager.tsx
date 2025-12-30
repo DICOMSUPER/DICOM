@@ -60,9 +60,15 @@ const cloneAnnotationPayload = <T,>(value: T): T => {
   if (value === null || value === undefined) {
     return value;
   }
+  // Try structuredClone first, but it fails on objects containing functions
   if (typeof structuredCloneAdapter === "function") {
-    return structuredCloneAdapter(value);
+    try {
+      return structuredCloneAdapter(value);
+    } catch {
+      // Fall through to JSON fallback
+    }
   }
+  // JSON fallback - strips functions but works for most annotation data
   try {
     return JSON.parse(JSON.stringify(value));
   } catch {
@@ -103,35 +109,6 @@ const isDatabaseAnnotation = (annotationCandidate?: Annotation | null) => {
   return sourceValue === "db";
 };
 
-// const removeDraftAnnotationsFromElement = (element: HTMLDivElement | null) => {
-//   if (!element) {
-//     return;
-//   }
-
-//   annotationToolNames.forEach((toolName) => {
-//     try {
-//       const annotationsForTool = annotation.state.getAnnotations(
-//         toolName,
-//         element
-//       ) as Annotation[] | undefined;
-//       if (!annotationsForTool?.length) {
-//         return;
-//       }
-//       annotationsForTool.forEach((annotationItem) => {
-//         if (isDatabaseAnnotation(annotationItem)) {
-//           return;
-//         }
-//         if (annotationItem?.annotationUID) {
-//           annotation.state.removeAnnotation(annotationItem.annotationUID);
-//         }
-//       });
-//     } catch (error) {
-//       console.warn(`Failed to remove annotations for tool ${toolName}:`, error);
-//     }
-//   });
-// };
-
-// Keyboard shortcut helpers are imported from tool-constants
 
 interface CornerstoneToolManagerProps {
   toolGroupId?: string;
@@ -480,7 +457,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       handleUndoAnnotation, handleResetView]);
 
     // Helper function to activate a tool with default bindings
-    const activateTool = useCallback((toolGroup: any, toolName: string, viewportId?: string, toolGroupId?: string) => {
+    const activateTool = useCallback((toolGroup: any, toolName: string, viewportId?: string, toolGroupId?: string, originalToolType?: string) => {
       if (!toolGroup || !toolName) return false;
 
       try {
@@ -514,8 +491,23 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
                 segUtilsAny.setActiveSegmentationRepresentation(toolGroupId, segmentationId);
               }
               if (typeof segUtilsAny?.setActiveSegmentIndex === "function") {
-                const isEraser = toolName === TOOL_MAPPINGS.Eraser?.toolName;
+                // Use the original ToolType (not toolName) to detect Eraser, since Eraser maps to BrushTool
+                const isEraser = originalToolType === "Eraser";
                 segUtilsAny.setActiveSegmentIndex(toolGroupId, isEraser ? 0 : 1);
+              }
+
+              // Configure BrushTool strategy: ERASE_INSIDE_CIRCLE for eraser, FILL_INSIDE_CIRCLE for brush
+              try {
+                const isEraser = originalToolType === "Eraser";
+                const brushToolInstance = toolGroup.getToolInstance?.(TOOL_MAPPINGS.Brush.toolName);
+                if (brushToolInstance?.configuration) {
+                  brushToolInstance.configuration.activeStrategy = isEraser
+                    ? 'ERASE_INSIDE_CIRCLE'
+                    : 'FILL_INSIDE_CIRCLE';
+                  console.debug(`[Segmentation] Set brush strategy: ${brushToolInstance.configuration.activeStrategy}`);
+                }
+              } catch (e) {
+                console.debug('[Segmentation] Could not configure brush erase mode:', e);
               }
             } catch { }
           }
@@ -777,7 +769,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
       // NOTE: Do NOT enable ScaleOverlayTool here - it needs the viewport to be added first
       // We'll enable it after adding the viewport below
 
-      if (toolGroup && typeof toolGroup.addViewport === "function") {
+      if (toolGroup) {
         try {
           // Get viewport from rendering engine instead of relying on prop
           const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -869,7 +861,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
                 if (currentSelectedTool && toolGroup.hasTool && !isCustomTool(currentSelectedTool as ToolType)) {
                   const actualToolName = getToolName(currentSelectedTool as ToolType);
                   if (actualToolName && toolGroup.hasTool(actualToolName)) {
-                    activateTool(toolGroup, actualToolName, viewportId, toolGroupId);
+                    activateTool(toolGroup, actualToolName, viewportId, toolGroupId, currentSelectedTool);
                   }
                 }
                 pendingToolActivationRef.current = null;
@@ -1121,7 +1113,7 @@ const CornerstoneToolManager = forwardRef<any, CornerstoneToolManagerProps>(
         toolGroupRef.current.hasTool &&
         toolGroupRef.current.hasTool(actualToolName)
       ) {
-        activateTool(toolGroupRef.current, actualToolName, viewportId, toolGroupId);
+        activateTool(toolGroupRef.current, actualToolName, viewportId, toolGroupId, selectedTool);
         onToolChange?.(actualToolName);
       }
     }, [selectedTool, onToolChange, viewportReady, handleCustomTool, allToolNames, viewportId, toolGroupId, activateTool]);

@@ -24,7 +24,11 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
+  Download,
+  Printer,
+  Copy,
 } from "lucide-react";
+import { Type, Pen, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -51,6 +55,11 @@ import { toast } from "sonner";
 import { useMemo, useCallback, memo, useState, useEffect } from "react";
 import { Slider } from "@/components/ui/slider";
 import { useAISegmentation } from "@/common/hooks/useAISegmentation";
+import {
+  downloadViewportImage,
+  printViewport,
+  copyViewportToClipboard,
+} from "@/common/utils/viewportCapture";
 
 interface ViewerLeftSidebarProps {
   seriesLayout: string;
@@ -114,13 +123,17 @@ const ANNOTATION_MANAGEMENT_TOOLS: readonly ToolConfig[] = [
 ] as const;
 
 
-const ANNOTATION_TOOLS: readonly ToolConfig[] = [];
+const ANNOTATION_TOOLS: readonly ToolConfig[] = [
+  { id: "Label", icon: Type, label: "Label", shortcut: "T" },
+  { id: "PlanarFreehandROI", icon: Pen, label: "Freehand", shortcut: "F" },
+  { id: "DragProbe", icon: Crosshair, label: "Drag Probe", shortcut: "D" },
+];
 
 const SEGMENTATION_TOOLS: readonly ToolConfig[] = [
-  { id: "Brush", icon: Paintbrush, label: "Brush", shortcut: "S" },
+  { id: "Brush", icon: Paintbrush, label: "Brush", shortcut: "B" },
+  { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "E" },
   { id: "CircleScissors", icon: CircleDot, label: "Circle Scissors", shortcut: "G" },
   { id: "RectangleScissors", icon: Square, label: "Rectangle Scissors", shortcut: "X" },
-  // { id: "Eraser", icon: Eraser, label: "Eraser", shortcut: "Shift+Z" }, // temporarily hidden
 ] as const;
 
 const deriveFrameForLayer = (snapshots: SegmentationSnapshot[]): number => {
@@ -490,6 +503,66 @@ export default function ViewerLeftSidebar({
     );
   }, [activeViewportId, startAISegmentationMode, cancelAISegmentationMode, isAISegmentationMode, state.activeViewport, getRenderingEngineId, getImageIdToInstanceMap]);
 
+  // Export/Print handlers
+  const handlePrintViewport = useCallback(async () => {
+    if (!activeViewportId) {
+      toast.error("No active viewport");
+      return;
+    }
+    const renderingEngineId = getRenderingEngineId(state.activeViewport);
+    if (!renderingEngineId) {
+      toast.error("Viewport not ready");
+      return;
+    }
+    const success = await printViewport(renderingEngineId, activeViewportId);
+    if (success) {
+      toast.success("Print dialog opened");
+    } else {
+      toast.error("Failed to print viewport");
+    }
+  }, [activeViewportId, state.activeViewport, getRenderingEngineId]);
+
+  const handleDownloadViewport = useCallback(async () => {
+    if (!activeViewportId) {
+      toast.error("No active viewport");
+      return;
+    }
+    const renderingEngineId = getRenderingEngineId(state.activeViewport);
+    if (!renderingEngineId) {
+      toast.error("Viewport not ready");
+      return;
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const success = await downloadViewportImage(
+      renderingEngineId,
+      activeViewportId,
+      `dicom-capture-${timestamp}`
+    );
+    if (success) {
+      toast.success("Image downloaded");
+    } else {
+      toast.error("Failed to download image");
+    }
+  }, [activeViewportId, state.activeViewport, getRenderingEngineId]);
+
+  const handleCopyViewport = useCallback(async () => {
+    if (!activeViewportId) {
+      toast.error("No active viewport");
+      return;
+    }
+    const renderingEngineId = getRenderingEngineId(state.activeViewport);
+    if (!renderingEngineId) {
+      toast.error("Viewport not ready");
+      return;
+    }
+    const success = await copyViewportToClipboard(renderingEngineId, activeViewportId);
+    if (success) {
+      toast.success("Image copied to clipboard");
+    } else {
+      toast.error("Failed to copy image to clipboard");
+    }
+  }, [activeViewportId, state.activeViewport, getRenderingEngineId]);
+
 
   return (
     <TooltipProvider>
@@ -573,6 +646,67 @@ export default function ViewerLeftSidebar({
             )}
           </div>
 
+          {/* Export Tools Section */}
+          <div>
+            <h3 className="text-white font-semibold mb-3">Export & Print</h3>
+            <p className="text-slate-400 text-xs mb-3">
+              Export, print, or copy the current viewport image
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrintViewport}
+                    disabled={!viewportReady}
+                    className="h-12 px-2 py-2 transition-all duration-200 rounded-lg flex flex-col items-center justify-center text-center bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                  >
+                    <Printer className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px]">Print</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                  Print viewport with annotations
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDownloadViewport}
+                    disabled={!viewportReady}
+                    className="h-12 px-2 py-2 transition-all duration-200 rounded-lg flex flex-col items-center justify-center text-center bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                  >
+                    <Download className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px]">Download</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                  Download viewport as PNG image
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyViewport}
+                    disabled={!viewportReady}
+                    className="h-12 px-2 py-2 transition-all duration-200 rounded-lg flex flex-col items-center justify-center text-center bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-teal-300"
+                  >
+                    <Copy className="h-4 w-4 mb-0.5" />
+                    <span className="text-[10px]">Copy</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-slate-800 border-teal-700 text-white">
+                  Copy viewport to clipboard
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
           {/* Navigation & View Control Tools Section */}
           <div>
             <h3 className="text-white font-semibold mb-3">Navigation & View Control</h3>
@@ -650,35 +784,16 @@ export default function ViewerLeftSidebar({
           <div>
             <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
             <p className="text-slate-400 text-xs mb-3">
-              Add notes, measure, and analyze regions of interest (ROI)
+              Measure, annotate, and mark regions of interest
             </p>
             <div className="grid grid-cols-2 gap-2">
-              {MEASUREMENT_TOOLS.map((tool) => (
+              {[...MEASUREMENT_TOOLS, ...ANNOTATION_TOOLS].map((tool) => (
                 <ToolButton
                   key={tool.id}
                   tool={tool}
                   isActive={selectedTool === getToolDisplayName(tool.id)}
                   onClick={() => onToolSelect(tool.id)}
                   disabled={!viewportReady}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* (Legacy) Annotation Tools Section */}
-          <div>
-            <h3 className="text-white font-semibold mb-3">Annotation Tools</h3>
-            <p className="text-slate-400 text-xs mb-3">
-              Add notes and markers to images
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ANNOTATION_TOOLS.map((tool) => (
-                <ToolButton
-                  key={tool.id}
-                  tool={tool}
-                  isActive={selectedTool === getToolDisplayName(tool.id)}
-                  onClick={() => onToolSelect(tool.id)}
-                  disabled={!viewportReady || isStudyLocked}
                 />
               ))}
             </div>

@@ -913,14 +913,6 @@ export async function ensureViewportLabelmapSegmentation(options: {
       // Some versions expose setActiveSegmentation
       segUtilsAny.setActiveSegmentation(toolGroupId, segmentationId);
     }
-
-    // Default active segment index to 1 (background is 0)
-    if (
-      toolGroupId &&
-      typeof segUtilsAny?.setActiveSegmentIndex === "function"
-    ) {
-      segUtilsAny.setActiveSegmentIndex(toolGroupId, 1);
-    }
   } catch (err) {
     // Swallow optional API errors to avoid breaking older versions
     console.error("[Segmentation] Tool-group registration failed:", err);
