@@ -14,6 +14,7 @@ import {
   Zap,
   UserStar,
   Play,
+  ArrowLeftRight,
 } from "lucide-react";
 import { formatDate, formatTime, formatTimeVN } from "@/common/lib/formatTimeDate";
 import Pagination, {
@@ -285,6 +286,17 @@ export function PatientEncounterTable({
                 Transfer
               </Button>
             )}
+          {encounter.isTransferred && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleShowTransferDetail(encounter)}
+              className="h-8 text-xs font-medium border-purple-200 text-purple-700 hover:bg-purple-50"
+              title="View Transfer Details"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5 mr-1.5" />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -323,6 +335,16 @@ export function PatientEncounterTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showTransferModal && selectedEncounter && (
+        <TransferDetailModal
+          encounter={selectedEncounter}
+          onClose={() => {
+            setShowTransferModal(false);
+            setSelectedEncounter(null);
+          }}
+        />
+      )}
     </>
   );
 }

@@ -55,6 +55,15 @@ const ModalTransferPhysician = ({
           transferNotes: notes,
         },
       }).unwrap();
+      // console.log("transfer information:",{
+      //   id: encounterId,
+      //   data: {
+      //     assignedPhysicianId: selectedPhysicianId,
+      //     isTransferred: true,
+      //     transferNotes: notes,
+      //   },
+      // } );
+      
       toast.success("Patient transferred successfully");
       onClose();
       resetForm();
@@ -124,8 +133,8 @@ const ModalTransferPhysician = ({
                   availablePhysicians?.map(
                     (employeeAssignInRoom: EmployeeRoomAssignment) => (
                       <SelectItem
-                        key={employeeAssignInRoom.id}
-                        value={employeeAssignInRoom.id}
+                        key={employeeAssignInRoom.employeeId}
+                        value={employeeAssignInRoom.employeeId}
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">
